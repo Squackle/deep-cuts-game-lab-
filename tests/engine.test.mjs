@@ -112,6 +112,7 @@ test("collision rules stay active when turns are buffered",()=>{
  step(run);
  assert.deepEqual(run.body[0],{x:5,y:4});
  step(run);
- assert.deepEqual(run.body[0],{x:4,y:4});
+ assert.deepEqual(run.body[0],{x:5,y:4},"collision must not advance the head into an occupied segment");
  assert.equal(run.status,"over");
+ assert.match(run.endReason,/own swarm/);
 });
