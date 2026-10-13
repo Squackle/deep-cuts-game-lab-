@@ -4,25 +4,25 @@
 
 - [x] Separate GitHub repo established: **Squackle/deep-cuts-game-lab-** (note trailing hyphen).
 - [x] Source-of-truth documentation and dated DEVLOG introduced.
-- [ ] Set up separate Cloudflare Pages project and verify live testing URL.
+- [x] Set up separate Cloudflare Pages project and verify live testing URL: https://deep-cuts-game-lab.pages.dev/
 - [ ] Decide legally safe final game title and original art.
-- [ ] Add CI checks once actual game code exists.
+- [x] Add CI engine tests and syntax checks (first workflow run passed).
 
 ## Prototype 0.1 — Genuine arcade gameplay
 
-- [ ] Responsive crisp Canvas arena playable portrait on iPhone and desktop.
-- [ ] Deterministic four-direction fixed-timestep hive movement.
-- [ ] Touch swipes and WASD / arrow controls.
-- [ ] No immediate 180° reversal or accidental scroll inside game area.
-- [ ] Valid spawn tiles; brood pickup, score and hive growth.
-- [ ] Arena boundaries and self-collision cause game over.
-- [ ] One-tap restart and persistent personal best.
-- [ ] Start, pause, resume, safe background/visibility handling.
-- [ ] Simple on-screen instructions; accessible buttons and focus.
-- [ ] Automated movement, pickup, collision and restart tests.
-- [ ] Mobile width tests: 320px, 375px, 390px; tablet 768px; desktop.
-- [ ] No horizontal overflow or obstructed touch targets; mobile browser manual QA.
-- [ ] Isolated test site deployed and checked; commit, URL and results logged.
+- [x] Responsive crisp Canvas arena playable portrait on iPhone and desktop.
+- [x] Deterministic four-direction fixed-timestep hive movement.
+- [x] Touch swipes and WASD / arrow controls.
+- [x] No immediate 180° reversal or accidental scroll inside game area.
+- [x] Valid spawn tiles; brood pickup, score and hive growth.
+- [x] Arena boundaries and self-collision cause game over.
+- [x] One-tap restart and persistent personal best.
+- [x] Start, pause, resume, safe background/visibility handling.
+- [x] Simple on-screen instructions; accessible buttons and focus.
+- [x] Automated movement, pickup, collision and restart tests.
+- [ ] Mobile width tests: 320px, 375px, 390px; tablet 768px; desktop. Automated browser checked 320px, 390px and desktop 1280px; 375px and tablet remain to check.
+- [ ] No horizontal overflow or obstructed touch targets; mobile browser manual QA. Automated widths 320px, 390px, 1280px had no overflow; real-device manual QA remains.
+- [x] Isolated test site deployed and checked; commit, URL and results logged.
 
 **Acceptance criterion:** A player can load the site on a phone without installing anything, swipe to turn, collect brood, grow, collide, lose, restart and chase a real saved high score. No mocked controls.
 

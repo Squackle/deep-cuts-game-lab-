@@ -129,3 +129,23 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 - **Verification:** Confirmed GitHub repository and write access; reviewed starter documentation. Commit link: see repository history for this entry.
 - **Remaining tasks:** Create the isolated Pages test project; build and test prototype v0.1; record real-device feedback in this log.
 - **Open legal risk:** Sliver Swarm is a working project name, not permission to use Wizards' Sliver character/art IP. Use original assets unless properly licensed.
+
+
+---
+
+## 2026-10-13 — Separate Cloudflare site created and playable prototype deployed
+
+- **Status:** DEPLOYED AND LIVE-BROWSER VERIFIED. First working v0.1 arcade build; not feature-complete.
+- **URL:** https://deep-cuts-game-lab.pages.dev/ (Cloudflare Pages project: deep-cuts-game-lab).
+- **GitHub source:** https://github.com/Squackle/deep-cuts-game-lab- (the repository includes a trailing hyphen).
+- **Deployment configuration:** GitHub source, automatic deployments from main; separate from Squackle/deep-cuts-edh production.
+- **Game commit:** https://github.com/Squackle/deep-cuts-game-lab-/commit/5527d3f6045f218de36937b18f6f375a4a4a59c0
+- **CI:** https://github.com/Squackle/deep-cuts-game-lab-/actions/runs/38483294930 — successful Node tests and JS syntax check.
+- **Cloudflare deployment:** 07fa6bd7-a555-4715-81c7-bf20073a1d5b — reported success.
+- **Actually implemented:** Original-creature Snake gameplay, Canvas pixel graphics, fixed timestep, keyboard/WASD and touch-swipes, four on-screen direction buttons, collectible spawn/growth, 100-point scoring, stage/speed scaling, wall/self-collision, pause/resume, restart, on-device personal best and optional synthesized audio.
+- **Automated tests:** Ten engine checks for movement, reverse-turn blocking, pickup growth, score/stage, wall/self collision, tail exception, pause, deterministic spawning and win condition. All passed in Actions.
+- **Live browser testing:** 390px viewport had no horizontal overflow; Start, Pause, Resume and Restart controls worked. 320px viewport showed arena and four direction controls with no overflow. Desktop 1280px viewport also showed gameplay and Start worked without overflow.
+- **Not yet verified:** Extended actual gameplay playtests on physical iOS Safari/Android Chrome; touch feel, scoring and death in real multi-minute runs, 375px/tablet breakpoint, high-score persistence through full restarts on a physical device.
+- **Not implemented:** Mutation draft, enemy stages and bosses, seeded daily challenge, public leaderboard, Field Network linkage or multiplayer. Stages currently increase by brood count, not new maps.
+- **IP caution:** Public prototype is branded HIVE RUN with original geometric creatures. Sliver Swarm remains the working concept title only; no official MTG artwork or Sliver character is used.
+- **Next steps:** Open the test URL on a phone and play it; capture swipe control/pace feedback. Fix issues in this game repository, then introduce mutation mechanics after basic controls feel good.
