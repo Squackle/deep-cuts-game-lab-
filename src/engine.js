@@ -24,8 +24,8 @@ export function newRun({cols=18,rows=22,random=Math.random}={}){
  if(!Number.isInteger(cols)||!Number.isInteger(rows)||cols<8||rows<8)throw Error("Invalid arena dimensions");
  const y=Math.floor(rows/2),x=Math.max(2,Math.floor(cols/2));
  const body=[{x,y},{x:x-1,y},{x:x-2,y}];
- return {cols,rows,body,direction:"right",queued:null,food:emptyTile(body,cols,rows,random),
-  score:0,brood:0,stage:1,tickMs:155,status:"ready",endReason:"",random};
+ return {cols,rows,body,direction:"right",turnQueue:[],food:emptyTile(body,cols,rows,random),
+  score:0,brood:0,stage:1,tickMs:120,status:"ready",endReason:"",random};
 }
 export function start(run){
  if(run.status==="ready")run.status="running";
@@ -36,18 +36,21 @@ export function pause(run){
  if(run.status==="running")run.status="paused";
  return run;
 }
+// Buffer two valid bends. Fast consecutive swipes needn't wait for each movement tick.
 export function turn(run,heading){
- if(!Object.hasOwn(DIRECTIONS,heading)||run.status!=="running"||run.queued!==null)return false;
- const current=DIRECTIONS[run.direction],next=DIRECTIONS[heading];
+ if(!Object.hasOwn(DIRECTIONS,heading)||run.status!=="running")return false;
+ if(run.turnQueue.length>=2)return false;
+ const last=run.turnQueue.at(-1)??run.direction;
+ const current=DIRECTIONS[last],next=DIRECTIONS[heading];
  if(current.x+next.x===0&&current.y+next.y===0)return false;
  if(equal(current,next))return false;
- run.queued=heading;
+ run.turnQueue.push(heading);
  return true;
 }
 export function step(run){
  if(run.status!=="running")return run;
- const going=run.queued??run.direction;
- run.direction=going;run.queued=null;
+ const going=run.turnQueue.shift()??run.direction;
+ run.direction=going;
  const delta=DIRECTIONS[going],head=run.body[0];
  const next={x:head.x+delta.x,y:head.y+delta.y};
  if(next.x<0||next.x>=run.cols||next.y<0||next.y>=run.rows){
@@ -62,7 +65,7 @@ export function step(run){
  if(eating){
   run.score+=100;run.brood++;
   run.stage=1+Math.floor(run.brood/5);
-  run.tickMs=Math.max(85,155-Math.floor(run.brood/5)*8);
+  run.tickMs=Math.max(75,120-Math.floor(run.brood/5)*6);
   run.food=emptyTile(run.body,run.cols,run.rows,run.random);
   if(!run.food){run.status="won";run.endReason="The entire arena is yours!"}
  }else run.body.pop();

@@ -15,10 +15,12 @@ test("touch and keyboard direction input cannot reverse into existing body",()=>
  start(run);
  assert.equal(turn(run,"left"),false);
  assert.equal(turn(run,"up"),true);
- assert.equal(turn(run,"down"),false,"one direction per tick");
+ assert.equal(turn(run,"down"),false,"no reversal of buffered heading");
+ assert.equal(turn(run,"left"),true,"next valid bend is buffered, not dropped");
+ assert.equal(turn(run,"right"),false,"buffer limited to two turns");
  step(run);assert.equal(run.direction,"up");
- assert.equal(turn(run,"down"),false,"no 180-degree reversal");
- assert.equal(turn(run,"left"),true);
+ step(run);assert.equal(run.direction,"left");
+ assert.equal(turn(run,"right"),false,"no 180-degree reversal from current heading");
 });
 test("collecting a pickup earns points and increases swarm length",()=>{
  const run=newRun({cols:10,rows:10,random:()=>0});
@@ -35,7 +37,7 @@ test("stage increases and tick duration decreases every fifth pickup",()=>{
  start(run);run.brood=4;
  const {x,y}=run.body[0];run.food={x:x+1,y};
  step(run);
- assert.equal(run.stage,2);assert.equal(run.tickMs,147);assert.equal(progress(run).untilNext,5);
+ assert.equal(run.stage,2);assert.equal(run.tickMs,114);assert.equal(progress(run).untilNext,5);
 });
 test("wall collision ends game without advancing score",()=>{
  const run=newRun({cols:10,rows:10,random:()=>0});
@@ -72,4 +74,44 @@ test("full-board pickup ends in a win without trying to spawn unavailable food",
  const all=[];for(let y=0;y<8;y++)for(let x=0;x<8;x++)if(!(x===free.x&&y===free.y)&&!(x===head.x&&y===head.y))all.push({x,y});
  run.body=[head,...all];run.food=free;
  step(run);assert.equal(run.status,"won");assert.equal(run.food,null);assert.equal(run.score,100);
+});
+
+
+test("rapid valid turns are applied in order over successive ticks",()=>{
+ const run=newRun({cols:12,rows:12,random:()=>0});
+ start(run);
+ assert.equal(run.tickMs,120);
+ assert.equal(turn(run,"up"),true);
+ assert.equal(turn(run,"left"),true);
+ assert.deepEqual(run.turnQueue,["up","left"]);
+ const startPos={...run.body[0]};
+ step(run);
+ assert.equal(run.direction,"up");
+ assert.deepEqual(run.body[0],{x:startPos.x,y:startPos.y-1});
+ assert.deepEqual(run.turnQueue,["left"]);
+ step(run);
+ assert.equal(run.direction,"left");
+ assert.deepEqual(run.body[0],{x:startPos.x-1,y:startPos.y-1});
+ assert.deepEqual(run.turnQueue,[]);
+});
+test("duplicate and reverse input never changes an already-buffered turn",()=>{
+ const run=newRun({cols:12,rows:12,random:()=>0});start(run);
+ assert.equal(turn(run,"up"),true);
+ assert.equal(turn(run,"up"),false);
+ assert.equal(turn(run,"down"),false);
+ assert.deepEqual(run.turnQueue,["up"]);
+ assert.equal(turn(run,"left"),true);
+ assert.equal(turn(run,"down"),false,"full queue rejects late turns");
+ assert.deepEqual(run.turnQueue,["up","left"]);
+});
+test("collision rules stay active when turns are buffered",()=>{
+ const run=newRun({cols:10,rows:10,random:()=>0});start(run);
+ run.body=[{x:5,y:5},{x:5,y:6},{x:4,y:6},{x:3,y:6},{x:3,y:5},{x:3,y:4},{x:4,y:4},{x:4,y:3}];
+ assert.equal(turn(run,"up"),true);
+ assert.equal(turn(run,"left"),true);
+ step(run);
+ assert.deepEqual(run.body[0],{x:5,y:4});
+ step(run);
+ assert.deepEqual(run.body[0],{x:4,y:4});
+ assert.equal(run.status,"over");
 });

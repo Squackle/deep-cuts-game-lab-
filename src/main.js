@@ -1,6 +1,6 @@
 import {newRun,start,pause,turn,step,progress} from "./engine.js";
 
-/* HIVE RUN test build 0.1. No third-party assets or frameworks. */
+/* HIVE RUN test build 0.1.1 — low-latency touch and buffered turns. */
 const $=id=>document.getElementById(id);
 const canvas=$("gameCanvas");
 const context=canvas.getContext("2d",{alpha:false});
@@ -63,7 +63,7 @@ function hideOverlay(){$("gameOverlay").hidden=true}
 function begin(){
  if(state.run.status==="over"||state.run.status==="won")state.run=newRun({cols:COLS,rows:ROWS});
  start(state.run);
- state.accumulator=0;state.lastFrame=0;
+ state.accumulator=0;state.lastFrame=0;state.pointer=null;
  hideOverlay();
  syncUI();
  announce("Swarm moving. Swipe to steer or use arrow keys.");
@@ -71,14 +71,14 @@ function begin(){
 }
 function reset(){
  state.run=newRun({cols:COLS,rows:ROWS});
- state.accumulator=0;state.lastFrame=0;
+ state.accumulator=0;state.lastFrame=0;state.pointer=null;
  showOverlay("READY TO SWARM?","Collect the glowing brood. Each pickup adds a new segment. Avoid walls and your own tail.","START RUN ▶");
  syncUI();draw();
  announce("New run ready. Select Start Run to play.");
 }
 function togglePause(){
  if(state.run.status==="running"){
-  pause(state.run);
+  pause(state.run);state.pointer=null;
   showOverlay("RUN PAUSED","Your swarm will wait here until you're ready.","RESUME RUN ▶");
   announce("Game paused.");
  }else if(state.run.status==="paused"){
@@ -88,9 +88,10 @@ function togglePause(){
  syncUI();
 }
 function handleDirection(direction){
- if(state.run.status==="paused"||state.run.status==="over"||state.run.status==="won")return;
- if(state.run.status==="ready")return; // Avoid surprise movement before starting.
- if(turn(state.run,direction))playTone(210,.02,.009);
+ if(state.run.status!=="running")return false;
+ if(!turn(state.run,direction))return false;
+ playTone(210,.02,.009);
+ return true;
 }
 function drawCell(x,y,fill,inset=0){
  context.fillStyle=fill;
@@ -178,9 +179,22 @@ $("soundButton").addEventListener("click",()=>{
  try{localStorage.setItem(SOUND_STORE,state.audio?"on":"off")}catch{}
  syncUI();if(state.audio)playTone(520,.12);
 });
-document.querySelectorAll("[data-direction]").forEach(b=>b.addEventListener("click",()=>{
- handleDirection(b.getAttribute("data-direction"));canvas.focus({preventScroll:true});
-}));
+document.querySelectorAll("[data-direction]").forEach(b=>{
+ const steer=()=>{
+  handleDirection(b.getAttribute("data-direction"));
+  canvas.focus({preventScroll:true});
+ };
+ // Turn on touch-down rather than waiting for a full press/release gesture.
+ b.addEventListener("pointerdown",event=>{
+  if(event.button!==0)return;
+  steer();
+ });
+ // Keyboard and assistive-technology button activation remains supported.
+ // Do not double-steer the synthetic click following a pointerdown.
+ b.addEventListener("click",event=>{
+  if(event.detail===0)steer();
+ });
+});
 const keys={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",
  w:"up",s:"down",a:"left",d:"right",W:"up",S:"down",A:"left",D:"right"};
 document.addEventListener("keydown",event=>{
@@ -196,19 +210,30 @@ document.addEventListener("keydown",event=>{
   event.preventDefault();togglePause();
  }
 });
+// Recognize a swipe as the finger moves (not after lift-off).
+// A short threshold prevents accidental taps; one turn per gesture keeps
+// repeated pointermove events from creating unintended extra bends.
+function swipeDirection(event){
+ const pointer=state.pointer;
+ if(!pointer||pointer.id!==event.pointerId||pointer.triggered||state.run.status!=="running")return;
+ const dx=event.clientX-pointer.x,dy=event.clientY-pointer.y;
+ if(Math.max(Math.abs(dx),Math.abs(dy))<12)return;
+ const heading=Math.abs(dx)>Math.abs(dy)?(dx>0?"right":"left"):(dy>0?"down":"up");
+ if(handleDirection(heading))pointer.triggered=true;
+}
 canvas.addEventListener("pointerdown",event=>{
- if(state.run.status!=="running")return;
- state.pointer={x:event.clientX,y:event.clientY,id:event.pointerId};
+ if(state.run.status!=="running"||state.pointer)return;
+ state.pointer={x:event.clientX,y:event.clientY,id:event.pointerId,triggered:false};
  try{canvas.setPointerCapture(event.pointerId)}catch{}
 });
+canvas.addEventListener("pointermove",swipeDirection);
 canvas.addEventListener("pointerup",event=>{
- const p=state.pointer;state.pointer=null;
- if(!p||p.id!==event.pointerId||state.run.status!=="running")return;
- const dx=event.clientX-p.x,dy=event.clientY-p.y;
- if(Math.hypot(dx,dy)<18)return;
- handleDirection(Math.abs(dx)>Math.abs(dy)?(dx>0?"right":"left"):(dy>0?"down":"up"));
+ swipeDirection(event); // Handles quick flicks without an intermediate move event.
+ if(state.pointer?.id===event.pointerId)state.pointer=null;
 });
-canvas.addEventListener("pointercancel",()=>{state.pointer=null});
+canvas.addEventListener("pointercancel",event=>{
+ if(state.pointer?.id===event.pointerId)state.pointer=null;
+});
 document.addEventListener("visibilitychange",()=>{
  if(document.hidden&&state.run.status==="running")togglePause();
  state.lastFrame=0;state.accumulator=0;

@@ -149,3 +149,15 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 - **Not implemented:** Mutation draft, enemy stages and bosses, seeded daily challenge, public leaderboard, Field Network linkage or multiplayer. Stages currently increase by brood count, not new maps.
 - **IP caution:** Public prototype is branded HIVE RUN with original geometric creatures. Sliver Swarm remains the working concept title only; no official MTG artwork or Sliver character is used.
 - **Next steps:** Open the test URL on a phone and play it; capture swipe control/pace feedback. Fix issues in this game repository, then introduce mutation mechanics after basic controls feel good.
+
+
+---
+
+## 2026-10-13 — Input latency response: v0.1.1
+
+- **User feedback:** First mobile build is fun, but input feels far too slow.
+- **Diagnosis:** Swipe movement was processed only on finger **release** (pointerup), up to one 155 ms simulation tick later; only one turn could be queued, so rapid cornering could be lost. Touch-pad buttons also waited for click/release.
+- **Change:** Detect the first deliberate swipe after 12 px of movement on `pointermove`, with a pointerup fallback for very quick flicks. Execute direction-pad commands on pointerdown while keeping keyboard/screen-reader click activation. Queue up to two valid turns for consecutive movement ticks (while rejecting 180-degree reversals). Start movement tick at 120 ms, scaling to a 75 ms floor as the run progresses. Reset captured gesture state on pause/restart.
+- **Files:** `src/engine.js`, `src/main.js`, `tests/engine.test.mjs`, `index.html`.
+- **Risk/tradeoff:** Faster speed increases difficulty; owner should test on an actual phone and give feedback. Gesture changes make touch input register during swipe rather than requiring finger lift. Actual perceived latency varies by screen and device.
+- **Verification:** Pending CI and live-browser tests at time of writing; deployment outcome should be verified and recorded below.
