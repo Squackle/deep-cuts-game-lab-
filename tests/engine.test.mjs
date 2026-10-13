@@ -106,7 +106,7 @@ test("duplicate and reverse input never changes an already-buffered turn",()=>{
 });
 test("collision rules stay active when turns are buffered",()=>{
  const run=newRun({cols:10,rows:10,random:()=>0});start(run);
- run.body=[{x:5,y:5},{x:5,y:6},{x:4,y:6},{x:3,y:6},{x:3,y:5},{x:3,y:4},{x:4,y:4},{x:4,y:3}];
+ run.body=[{x:5,y:5},{x:5,y:6},{x:4,y:6},{x:3,y:6},{x:3,y:5},{x:3,y:4},{x:4,y:4},{x:4,y:3},{x:4,y:2}];
  assert.equal(turn(run,"up"),true);
  assert.equal(turn(run,"left"),true);
  step(run);
