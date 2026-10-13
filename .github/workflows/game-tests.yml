@@ -1,0 +1,30 @@
+name: Hive Run prototype checks
+on:
+  push:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "index.html"
+      - "styles.css"
+      - ".github/workflows/game-tests.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "index.html"
+      - "styles.css"
+      - ".github/workflows/game-tests.yml"
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run deterministic arcade-engine regression suite
+        run: node --test tests/engine.test.mjs
+      - name: Check source module syntax
+        run: |
+          node --check src/engine.js
+          node --check src/main.js
