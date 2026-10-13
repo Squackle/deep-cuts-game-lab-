@@ -37,7 +37,7 @@ test("stage increases and tick duration decreases every fifth pickup",()=>{
  start(run);run.brood=4;
  const {x,y}=run.body[0];run.food={x:x+1,y};
  step(run);
- assert.equal(run.stage,2);assert.equal(run.tickMs,114);assert.equal(progress(run).untilNext,5);
+ assert.equal(run.stage,2);assert.equal(run.tickMs,129);assert.equal(progress(run).untilNext,5);
 });
 test("wall collision ends game without advancing score",()=>{
  const run=newRun({cols:10,rows:10,random:()=>0});
@@ -80,7 +80,7 @@ test("full-board pickup ends in a win without trying to spawn unavailable food",
 test("rapid valid turns are applied in order over successive ticks",()=>{
  const run=newRun({cols:12,rows:12,random:()=>0});
  start(run);
- assert.equal(run.tickMs,120);
+ assert.equal(run.tickMs,135);
  assert.equal(turn(run,"up"),true);
  assert.equal(turn(run,"left"),true);
  assert.deepEqual(run.turnQueue,["up","left"]);

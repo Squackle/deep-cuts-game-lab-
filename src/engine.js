@@ -25,7 +25,7 @@ export function newRun({cols=18,rows=22,random=Math.random}={}){
  const y=Math.floor(rows/2),x=Math.max(2,Math.floor(cols/2));
  const body=[{x,y},{x:x-1,y},{x:x-2,y}];
  return {cols,rows,body,direction:"right",turnQueue:[],food:emptyTile(body,cols,rows,random),
-  score:0,brood:0,stage:1,tickMs:120,status:"ready",endReason:"",random};
+  score:0,brood:0,stage:1,tickMs:135,status:"ready",endReason:"",random};
 }
 export function start(run){
  if(run.status==="ready")run.status="running";
@@ -65,7 +65,7 @@ export function step(run){
  if(eating){
   run.score+=100;run.brood++;
   run.stage=1+Math.floor(run.brood/5);
-  run.tickMs=Math.max(75,120-Math.floor(run.brood/5)*6);
+  run.tickMs=Math.max(85,135-Math.floor(run.brood/5)*6);
   run.food=emptyTile(run.body,run.cols,run.rows,run.random);
   if(!run.food){run.status="won";run.endReason="The entire arena is yours!"}
  }else run.body.pop();

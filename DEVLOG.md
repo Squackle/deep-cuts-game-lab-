@@ -163,3 +163,12 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 - **Verification:** **PASSED, v0.1.1.** Final corrected engine regression suite passed **13/13 tests** in [GitHub Actions run 38484426135](https://github.com/Squackle/deep-cuts-game-lab-/actions/runs/38484426135). Cloudflare Pages reported **successful production deployment** `db2cb7b5-b619-4b6c-8fee-13ab553a01b1` at commit `db11c7f0ae596975e05d103a6d07fe9f881745c8`. Browser-rendered verification at 390px on https://deep-cuts-game-lab.pages.dev/ observed the creature actually move upward after a simulated pointerdown+pointermove while the finger was **still down**; no horizontal overflow and the v0.1.1 badge was present.
 - **Testing correction:** Two transient failed Actions runs reflected an incorrect **test fixture/expectation** (a move onto a vacating tail square is permitted; a fatal collision does not advance the head). The final test asserts collision against a still-occupied segment and all checks pass. No gameplay defect was identified in these failures.
 - **Remaining feedback:** Please confirm whether shorter 120ms start cadence plus early swipe detection feels better on a physical phone. Real-device Safari/Android touch responsiveness still needs user playtesting.
+
+
+## 2026-10-13 — v0.1.2: creature identity and gentler movement
+
+- **User feedback:** Movement should be a tiny bit slower, but retain immediate mobile input. Creature should resemble a segmented sliver with a distinct head, tail, and 45 visually different body-section types.
+- **Implemented:** Base movement tick increased from 120 to **135 ms** (minimum speed 85 ms, down from 75 ms), preserving early-swipe detection and buffered turns.
+- **Implemented:** Original procedural pixel creature artwork drawn on Canvas: elongated horned head with eye and beak, tapered hooked tail, and **45 deterministic combinations** of armor, dorsal spines, crests, markings and colors for middle sections. Segments are oriented along movement; body patterns remain consistent while moving.
+- **Copyright approach:** New pixel artwork is original and sliver-inspired, not a transformation or trace of official MTG illustrations.
+- **Next QA:** Verify tests and actual mobile browser rendering. Long-term polish: turn-joint transitions and silhouette refinement.

@@ -1,6 +1,6 @@
 import {newRun,start,pause,turn,step,progress} from "./engine.js";
 
-/* HIVE RUN test build 0.1.1 — low-latency touch and buffered turns. */
+/* HIVE RUN v0.1.2 — segmented original sliver-inspired pixel creature. */
 const $=id=>document.getElementById(id);
 const canvas=$("gameCanvas");
 const context=canvas.getContext("2d",{alpha:false});
@@ -97,6 +97,64 @@ function drawCell(x,y,fill,inset=0){
  context.fillStyle=fill;
  context.fillRect(x*CELLS+inset,y*CELLS+inset,CELLS-2*inset,CELLS-2*inset);
 }
+// Forty-five deterministic, individually shaped anatomical plates.
+// Pixel geometry is original: no converted or traced official MTG art.
+const SEGMENT_TYPES=45;
+const segmentCatalog=Array.from({length:SEGMENT_TYPES},(_,id)=>({
+ id,armor:id%5,spine:Math.floor(id/5)%3,crest:Math.floor(id/15),
+ glow:id%7===0,shade:id%3
+}));
+const pigment=["#88b9a0","#9bbd92","#78b5b5","#b0ab85","#86a7bc"];
+function tilePixel(x,y,w,h,color){
+ context.fillStyle=color;context.fillRect(Math.round(x),Math.round(y),w,h);
+}
+function orientation(from,to){
+ if(!to)return "right";
+ if(to.x>from.x)return "right";
+ if(to.x<from.x)return "left";
+ if(to.y>from.y)return "down";
+ return "up";
+}
+function drawCreaturePiece(part,kind,id,heading){
+ const baseX=part.x*CELLS,baseY=part.y*CELLS;
+ const cfg=segmentCatalog[id%SEGMENT_TYPES];
+ context.save();
+ context.translate(baseX+10,baseY+10);
+ context.rotate(({right:0,down:Math.PI/2,left:Math.PI,up:-Math.PI/2})[heading]);
+ const px=(x,y,w,h,color)=>tilePixel(x-10,y-10,w,h,color);
+ const shell=pigment[(cfg.armor+cfg.crest)%pigment.length];
+ const dark="#29493f",edge="#d3d8b0",glint="#e5cf92";
+ if(kind==="head"){
+  // Distinctive long beaked profile, forward horn, crest and bright eye.
+  px(2,6,12,9,dark);px(4,7,11,7,"#86b99d");
+  px(12,8,6,3,edge);px(17,9,2,1,glint);
+  px(5,3,4,4,"#a3c5a6");px(8,1,2,5,edge);
+  px(9,9,3,2,"#172b27");px(10,9,1,1,"#ffe3a3");
+  px(4,15,4,3,dark);px(2,16,3,2,edge);
+ }else if(kind==="tail"){
+  // Tapered hooked tail with two dark spurs.
+  px(2,8,13,5,dark);px(3,9,11,3,shell);
+  px(0,9,5,2,edge);px(12,7,3,3,"#c7d5a9");
+  px(12,12,4,3,dark);px(15,13,3,2,edge);
+ }else{
+  // Spine count, dorsal crests, armor ribbing and palette vary across 45 types.
+  px(1,6,18,9,dark);px(2,7,16,7,shell);
+  px(3,9,14,3,pigment[cfg.shade]);
+  for(let n=0;n<=cfg.spine;n++){
+   const sx=4+n*5+(cfg.crest===2?1:0);
+   px(sx,4-(n%2),3,4,cfg.crest===0?edge:glint);
+   if(cfg.crest>0)px(sx+1,2-(n%2),1,3,"#e7dfbb");
+  }
+  if(cfg.armor===0||cfg.armor===3){px(6,7,2,7,dark);px(12,7,2,7,dark)}
+  if(cfg.armor===1||cfg.armor===4){px(5,8,2,4,edge);px(11,8,2,4,edge)}
+  if(cfg.armor===2){px(4,11,12,2,dark);px(8,7,4,3,glint)}
+  if(cfg.glow){px(9,9,2,2,"#e9d991")}
+  if(cfg.crest===1){px(5,15,3,3,dark);px(13,15,3,3,dark)}
+  if(cfg.crest===2){px(3,14,4,4,edge);px(13,14,4,4,edge)}
+ }
+ context.restore();
+}
+
 function draw(){
  if(!context)return;
  const run=state.run;
@@ -119,19 +177,13 @@ function draw(){
   context.lineTo(cx,cy+8);context.lineTo(cx-8,cy);context.closePath();context.fill();
   context.fillStyle="#fff6c3";context.fillRect(cx-2,cy-4,4,4);
  }
+ // Keep each segment's appearance attached to its place in the creature,
+ // rather than randomly changing it on every animation frame.
  run.body.forEach((part,i)=>{
-  if(i===0){
-   drawCell(part.x,part.y,"#e0c98e",1);
-   drawCell(part.x,part.y,"#a0bc91",4);
-   // Bright lead segment with direction indicator eye.
-   const d=run.direction;const eye=d==="right"?[14,7]:d==="left"?[5,7]:d==="up"?[8,4]:[8,14];
-   context.fillStyle="#192b1f";context.fillRect(part.x*CELLS+eye[0],part.y*CELLS+eye[1],3,3);
-  }else{
-   drawCell(part.x,part.y,i%2?"#6f9873":"#567f62",2);
-   context.fillStyle="#acd0a3";context.fillRect(part.x*CELLS+7,part.y*CELLS+7,6,6);
-   context.fillStyle="#9cbf95";
-   context.fillRect(part.x*CELLS+2,part.y*CELLS+2,3,3);
-  }
+  const next=run.body[i+1];
+  const heading=i===0?run.direction:orientation(next??run.body[i-1],part);
+  const kind=i===0?"head":i===run.body.length-1?"tail":"body";
+  drawCreaturePiece(part,kind,(run.body.length-1-i)%SEGMENT_TYPES,heading);
  });
  if(run.status==="over"){
   context.fillStyle="#dcb78b";
