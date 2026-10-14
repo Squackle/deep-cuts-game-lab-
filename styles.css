@@ -139,3 +139,7 @@ h1,h2,h3,p{margin-top:0}h1{font:800 clamp(44px,5vw,75px)/.98 Georgia,serif;lette
  .music-track strong{font-size:10px}
  .music-track small{font-size:8px}
 }
+
+/* Keep the preview player a true two-column grid: the generic .music-note > div selector uses flex. */
+.music-note > .music-track-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;width:100%;gap:8px}
+@media(max-width:350px){.music-note > .music-track-list{gap:6px}}
