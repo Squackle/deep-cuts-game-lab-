@@ -345,3 +345,6 @@ body.game-only .arcade-frame{grid-template-rows:auto auto minmax(0,1fr) auto}
 .patch-note-entry>span{font:850 10px ui-monospace,monospace;color:#e2be78;letter-spacing:.06em}
 .patch-note-entry h3{font:750 18px/1.2 Georgia,serif;color:#f2deb2;margin:7px 0 4px}
 .patch-note-entry p{font-size:12px;line-height:1.55;color:#c6d1c0;margin:0}
+
+/* In immersive Game Only mode the arena stays clear; guidance remains below it in regular view. */
+body.game-only .arcade-frame>.mutation-guide{display:none!important}
