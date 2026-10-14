@@ -27,7 +27,8 @@ test("background image draws before the guide grid and restores canvas state",()
  };
  drawLevelBackground(ctx,{width:360,height:440},{complete:true,naturalWidth:240},18,22,20);
  assert.ok(calls.includes("drawImage"));
- assert.ok(calls.indexOf("drawImage")<calls.indexOf("stroke"));
+ assert.ok(calls.indexOf("drawImage")<calls.lastIndexOf("fillRect"),"pixel grid draws on top of the artwork");
+ assert.ok(calls.filter(c=>c==="fillRect").length>60,"each grid boundary remains individually visible");
  assert.equal(calls.at(-1),"restore");
 });
 test("image failure uses fallback without crashing",()=>{
