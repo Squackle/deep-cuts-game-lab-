@@ -163,3 +163,12 @@
 - [x] Keep prey/miniboss movement measured in the same fixed simulation steps, avoid altering combat timers or mutation rules, and add automated tests for both speed curves.
 - [x] Re-version replay-verified ranked results to `hive-0.4.1` to avoid mixing different difficulties; prior leaderboard entries retained in storage.
 - [ ] Get player feedback on an actual iPhone to see whether 150ms gives enough planning time; adjust again if necessary.
+
+
+## Ability ownership — minibosses and full bosses only
+
+- [x] **Regular prey never have activated powers.** Skitter and Burrow Runner can move and select escape routes, but they have **no Burrow Dash, webs, cooldown meter or other unique signature abilities**.
+- [x] **Burrow Stalker (miniboss):** its own enemy-only Burrow Dash teleports the **Stalker**, not the player's snake, exactly five grid steps to a safe telegraphed location after a 10-second charge.
+- [x] **Tunnel Weaver (miniboss):** its own enemy-only Web Snare places a single active hazard tile every 10 seconds; the **player is the one stunned** for two seconds on entering the web.
+- [ ] **Future full bosses (Hatchery Warden and Rift Guardian)** should each have a **different signature activated ability** and the same ochre top-right ring, shown only during its encounter. Boss powers are not yet implemented in Alpha 0.4.1.
+- [x] The player retains only **the existing WUBRG mutation powers** (White/Blue/Black/Red/Green). Neither the Stalker burrow nor Weaver web is available as a player ability.

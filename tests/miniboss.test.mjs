@@ -138,3 +138,23 @@ test("leaderboard replay rejects fabricated boss-score in existing version",()=>
  assert.equal(replayScore(seed,[],summary).ok,true);
  assert.equal(replayScore(seed,[],{...summary,score:summary.score+750}).ok,false);
 });
+
+test("enemy-exclusive powers: ordinary prey and the player cannot use boss signature abilities",()=>{
+ assert.deepEqual(Object.keys(ABILITIES).sort(),["stalker","weaver"]);
+ assert.equal(ABILITIES.skitter,undefined);
+ assert.equal(ABILITIES.runner,undefined);
+ const ordinary=newRun({seed:66});start(ordinary);
+ assert.equal(ordinary.encounter,null);
+ assert.equal(abilityState(ordinary),null);
+ assert.equal(tickMiniboss(ordinary,10000),null);
+ assert.equal(spawnMiniboss(ordinary,"skitter"),false);
+ assert.equal(spawnMiniboss(ordinary,"runner"),false);
+ assert.equal(ordinary.enemies.length,1);
+ assert.equal(ordinary.enemies[0].kind,"skitter");
+ assert.equal(ordinary.encounter,null);
+ // Only choosing a milestone mutation can introduce a miniboss encounter.
+ evolve(ordinary,2);
+ assert.equal(ordinary.encounter.kind,"stalker");
+ assert.equal(ordinary.enemies[0].kind,"stalker");
+ assert.ok(abilityState(ordinary));
+});
