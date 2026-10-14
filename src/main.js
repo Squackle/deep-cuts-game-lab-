@@ -15,9 +15,8 @@ import {drawPrey,drawCapture} from "./enemy-render.js";
 import {drawAbilityMeter,drawMiniboss,drawWebs,drawBurrowWarning} from "./boss-art.js";
 import {abilityState,ABILITIES} from "./miniboss.js";
 import {BRIEFINGS,BossBriefingGate} from "./boss-briefing.js";
-import {LeaderboardClient} from "./leaderboard-client.js";
-import {renderLeaderboard,updateSubmission} from "./leaderboard-ui.js";
 import {createGameOnlyMode} from "./game-only.js";
+import {createSoloSession} from "./solo-session.js";
 
 /* HIVE RUN Alpha 0.4 — hand-authored pixel-art minibosses and encounter powers. */
 const $=id=>document.getElementById(id);
@@ -29,17 +28,6 @@ const WUBRG_COLORS=["#e7d8b4","#65a9d5","#7e6a88","#dd684a","#75ad7b"];
 let creatureArt=null;
 let arenaBackground=null;
 let visualBurst=null,lastCapture=null,startingRun=false,lastEncounterSeen=null;
-const leaderboard=new LeaderboardClient();
-async function refreshLeaderboard(){
- try{
-  const data=await leaderboard.load(selectedMode,selectedChallenge);
-  renderLeaderboard($("leaderboardEntries"),data);
-  $("playerProfile").disabled=!!data.profile;
-  if(data.profile){$("playerProfile").value=data.profile.handle;$("profileNotice").textContent="Signed in as @"+data.profile.handle+". Scores will link to your verified Field Network profile.";}
-
-  $("leaderboardStatus").textContent=MODES[selectedMode].name.toUpperCase()+" · "+(selectedChallenge==="daily"?"DAILY "+data.day:"ARCADE")+" · TOP 25";
- }catch{$("leaderboardStatus").textContent="BOARD UNAVAILABLE · PRACTICE STILL WORKS"}
-}
 const prefersReducedMotion=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches??false;
 let selectedMode="hunt",selectedChallenge="arcade";
 try{selectedMode=localStorage.getItem("hive-mode-v1")==="classic"?"classic":"hunt"}catch{}
@@ -53,7 +41,7 @@ function setEncounterMusic(encounterType){
  syncSoundtrack();syncUI();
 }
 const state={run:newRun({cols:COLS,rows:ROWS,mode:selectedMode}),best:0,audio:false,musicOn:false,ctx:null,
- lastFrame:0,accumulator:0,lastAnnouncement:"",pointer:null,ranked:false};
+ lastFrame:0,accumulator:0,lastAnnouncement:"",pointer:null};
 try{state.best=Math.max(0,Number(localStorage.getItem(bestKey()))||0);
  state.audio=localStorage.getItem(SOUND_STORE)==="on";
  state.musicOn=localStorage.getItem(MUSIC_STORE)==="on";
@@ -182,7 +170,6 @@ function showOverlay(title,description,buttonLabel){
  $("primaryButton").textContent=buttonLabel;
  $("gameOverlay").hidden=false;
  $("modeMenu").hidden=state.run.status==="paused";
- $("submitShortcut").hidden=!["over","won"].includes(state.run.status)||!state.ranked;
 }
 function hideOverlay(){$("gameOverlay").hidden=true}
 /** Once per encounter, not per phase: a presentation-only pause. */
@@ -239,7 +226,6 @@ function showDraftScreen(){
 }
 function selectMutation(color){
  if(state.run.status!=="draft"||!state.run.draftOptions.includes(color))return;
- leaderboard.action(state.run.runTicks,"choose",color);
  if(!chooseMutation(state.run,color))return;
  visualBurst={color,until:performance.now()+1150};
  hideMutationDraft($("mutationOverlay"));
@@ -253,50 +239,17 @@ function selectMutation(color){
  }else announce(MUTATIONS[color].name+" acquired. "+MUTATIONS[color].short+".");
  if(!showBossBriefing()){syncUI();canvas.focus({preventScroll:true})}
 }
-async function begin(){
+function begin(){
  if(startingRun||bossGate.blocking)return;
- wakeAudio(); // Unlock before the awaited leaderboard request drops user activation.
+ wakeAudio();
  if(["ready","over","won"].includes(state.run.status)){
-  startingRun=true;
-  $("gameMode").disabled=true;$("gameChallenge").disabled=true;$("primaryButton").disabled=true;$("primaryButton").textContent="PREPARING RUN...";
-  try{
-   const session=await leaderboard.start(selectedMode,selectedChallenge);
-   state.ranked=session.ranked;state.day=session.day;loadBest();
-   state.run=newRun({cols:COLS,rows:ROWS,seed:session.seed,mode:selectedMode});
-   resetBossBriefing();
-   lastCapture=null;visualBurst=null;lastEncounterSeen=null;
-   $("rankedNotice").textContent=session.ranked?"RANKED · REPLAY VERIFIED AFTER GAME OVER":"PRACTICE · RANKED SERVICE UNAVAILABLE";
-  }finally{startingRun=false;$("gameMode").disabled=false;$("gameChallenge").disabled=false;$("primaryButton").disabled=false}
+  const session=createSoloSession(selectedMode,selectedChallenge);
+  state.day=session.day;loadBest();
+  state.run=newRun({cols:COLS,rows:ROWS,seed:session.seed,mode:selectedMode});
+  resetBossBriefing();
+  lastCapture=null;visualBurst=null;lastEncounterSeen=null;
+  $("rankedNotice").textContent=session.day?"SOLO DAILY SEED · LOCAL RECORDS ONLY":"SOLO EXPERIMENT · NO ONLINE RANKING";
  }
- start(state.run);
- state.accumulator=0;state.lastFrame=0;state.pointer=null;
- hideOverlay();hideMutationDraft($("mutationOverlay"));
- updateSubmission($("submissionPanel"),null,false);
- setEncounterMusic(musicForRun());syncUI();
- announce(MODES[selectedMode].description);
- canvas.focus({preventScroll:true});
-}
-function reset(){
- if(startingRun)return;
- resetBossBriefing();
- state.run=newRun({cols:COLS,rows:ROWS,mode:selectedMode});state.day="";loadBest();
- leaderboard.session=null;leaderboard.events=[];
- state.ranked=false;lastCapture=null;visualBurst=null;lastEncounterSeen=null;
- state.accumulator=0;state.lastFrame=0;state.pointer=null;
- hideMutationDraft($("mutationOverlay"));
- showOverlay(MODES[selectedMode].name.toUpperCase(),MODES[selectedMode].description,"START "+MODES[selectedMode].verb+" ▶");
- updateSubmission($("submissionPanel"),null,false);
- $("rankedNotice").textContent=selectedChallenge==="daily"?"DAILY RITUAL · RESETS MIDNIGHT CENTRAL":"ARCADE · NEW SEED EACH RUN";
- soundtrack.setTrack("hatchery");syncSoundtrack();syncUI();draw();
- announce("New run ready. Select Start Run to play.");
-}
-function togglePause(){
- if(bossGate.blocking)return;
- if(state.run.status==="running"){
-  pause(state.run);state.pointer=null;
-  showOverlay("RUN PAUSED","Your swarm will wait here until you're ready.","RESUME RUN ▶");
-  announce("Game paused.");
- }else if(state.run.status==="paused"){
   start(state.run);hideOverlay();state.accumulator=0;state.lastFrame=0;
   announce("Game resumed.");
  }
@@ -305,7 +258,6 @@ function togglePause(){
 function handleDirection(direction){
  if(bossGate.blocking||state.run.status!=="running")return false;
  if(!turn(state.run,direction))return false;
- leaderboard.action(state.run.runTicks,"turn",direction);
  // Draw in the same keydown/pointer event: players see their buffered turn
  // immediately rather than waiting for a movement tick or animation frame.
  draw();
@@ -515,9 +467,7 @@ function loop(time){
     showOverlay(final?"HIVE COMPLETE!":"GAME OVER",
      state.run.endReason+" Final score: "+state.run.score.toLocaleString()+". Best: "+state.best.toLocaleString()+".",
      "PLAY AGAIN ↺");
-    updateSubmission($("submissionPanel"),state.run,state.ranked);
-    $("finalRunSummary").textContent=(state.run.mode==="classic"?state.run.brood+" orbs":state.run.kills+" captures")+" · "+state.run.evolutionsChosen+" evolutions · "+state.run.score+" points";
-    announce((final?"Win! ":"Game over. ")+state.run.endReason+" Final score "+state.run.score+". Submit your ranked replay below.");
+    announce((final?"Win! ":"Game over. ")+state.run.endReason+" Final score "+state.run.score+". Saved on this device only.");
    }
   }
   if(catchUps===3)state.accumulator=Math.min(state.accumulator,effectiveTickMs(state.run));
@@ -529,30 +479,6 @@ function loop(time){
 // Unlock on direct interaction; an async score request is too late for autoplay rules.
 document.addEventListener("pointerdown",wakeAudio,{capture:true,passive:true});
 $("primaryButton").addEventListener("click",begin);
-$("submitShortcut").addEventListener("click",event=>{
- // A ranked Game Only run should never strand the submission form behind
- // the fixed fullscreen canvas.
- if(!gameOnly.isActive())return;
- event.preventDefault();
- gameOnly.leave();
- requestAnimationFrame(()=>$("submissionPanel").scrollIntoView({block:"start",behavior:"smooth"}));
-});
-$("leaderboardRefresh").addEventListener("click",refreshLeaderboard);
-$("leaderboardForm").addEventListener("submit",async event=>{
- event.preventDefault();const button=$("submitScoreButton"),notice=$("scoreSubmitStatus");
- if(!state.ranked||!["over","won"].includes(state.run.status))return;
- button.disabled=true;notice.textContent="REPLAYING RUN ON SERVER...";
- try{
-  const alias=$("playerAlias").value.trim();
-  const handle=$("playerProfile").value.trim();
-  const submitted=await leaderboard.submit(state.run,alias,handle);
-  notice.textContent="RANKED! VERIFIED "+submitted.score+" POINTS";
-  state.ranked=false;$("submitShortcut").hidden=true;
-  try{localStorage.setItem("hive-last-alias-v1",alias)}catch{}
-  await refreshLeaderboard();
- }catch(error){notice.textContent=error.message||"Could not submit this run."}
- finally{button.disabled=!leaderboard.session}
-});
 $("pauseButton").addEventListener("click",togglePause);
 $("restartButton").addEventListener("click",reset);
 $("soundButton").addEventListener("click",()=>{
@@ -665,10 +591,10 @@ window.addEventListener("blur",()=>{
 });
 $("gameMode").addEventListener("change",()=>{
  selectedMode=$("gameMode").value;try{localStorage.setItem("hive-mode-v1",selectedMode)}catch{}
- reset();void refreshLeaderboard();
+ reset();
 });
-$("gameChallenge").addEventListener("change",()=>{selectedChallenge=$("gameChallenge").value;reset();void refreshLeaderboard()});
-reset();refreshLeaderboard();
+$("gameChallenge").addEventListener("change",()=>{selectedChallenge=$("gameChallenge").value;reset()});
+reset();
 try{$("playerAlias").value=localStorage.getItem("hive-last-alias-v1")||""}catch{}
 // The Hatchery remains the sole arena during the first Predator release.
 arenaBackground=loadLevelBackground(()=>draw());
