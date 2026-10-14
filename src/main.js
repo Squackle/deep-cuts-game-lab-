@@ -116,6 +116,7 @@ function showOverlay(title,description,buttonLabel){
  $("overlayDescription").textContent=description;
  $("primaryButton").textContent=buttonLabel;
  $("gameOverlay").hidden=false;
+ $("submitShortcut").hidden=!["over","won"].includes(state.run.status)||!state.ranked;
 }
 function hideOverlay(){$("gameOverlay").hidden=true}
 function showDraftScreen(){
@@ -384,7 +385,7 @@ $("leaderboardForm").addEventListener("submit",async event=>{
   const handle=$("playerProfile").value.trim();
   const submitted=await leaderboard.submit(state.run,alias,handle);
   notice.textContent="RANKED! VERIFIED "+submitted.score+" POINTS · "+submitted.kills+" KILLS";
-  state.ranked=false;
+  state.ranked=false;$("submitShortcut").hidden=true;
   try{localStorage.setItem("hive-last-alias-v1",alias)}catch{}
   await refreshLeaderboard();
  }catch(error){notice.textContent=error.message||"Could not submit this run."}

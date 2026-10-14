@@ -175,3 +175,7 @@ h1,h2,h3,p{margin-top:0}h1{font:800 clamp(44px,5vw,75px)/.98 Georgia,serif;lette
 .submission-panel button{min-height:44px;background:#dbc08a;border:1px solid #f8dcab;border-radius:3px;color:#162b21;font:800 11px ui-monospace,monospace}
 .submission-panel button:disabled{opacity:.5}
 .board-integrity{border-top:1px solid #53644c;padding-top:12px;margin:14px 0 0}
+
+.submit-shortcut{display:block;margin-top:13px;color:#f9d89d;font:800 10px/1.6 ui-monospace,monospace;text-decoration:underline;text-underline-offset:3px}
+.submit-shortcut[hidden]{display:none}
+.submit-shortcut:focus-visible{outline:3px solid #f8d79a;outline-offset:3px}
