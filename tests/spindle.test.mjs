@@ -76,3 +76,19 @@ test("encounter HUD is outside the full 18x22 arena, including Game Only",()=>{
  assert.match(main,/\$\("encounterHud"\)\.hidden=!ability&&banner\.hidden/);
  assert.match(html,/1\.3 · SPINDLE/);
 });
+
+test("Weaver can spin three distinct snares within 15 seconds; a fourth is capped",()=>{
+ const run=createLairRun("weaver");
+ start(run);run.encounter.introMs=0;
+ run.enemies[0].pos={x:9,y:5};
+ for(let i=0;i<3;i++){
+  const power=tickMiniboss(run,5000);
+  assert.equal(power?.type,"web","the Weaver casts every five seconds");
+  assert.equal(run.encounter.webs.length,i+1);
+ }
+ const unique=new Set(run.encounter.webs.map(w=>w.pos.x+","+w.pos.y));
+ assert.equal(unique.size,3);
+ const blocked=tickMiniboss(run,100);
+ assert.equal(blocked,null);
+ assert.equal(run.encounter.webs.length,3);
+});
