@@ -326,4 +326,4 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 
 - Removed the standalone player-training video and watch page from the Game Lab deployment at the owner's request, along with their GitHub documentation references. This does not alter gameplay or leaderboard rules.
 - Confirmed signature powers are **exclusive to miniboss enemies now and to full-boss enemies when implemented**. The Burrow Stalker's five-tile Burrow Dash moves **the enemy**, while the Tunnel Weaver enemy lays player-stunning webs. Regular Skitter and Burrow Runner prey have no activated abilities, and the player cannot acquire boss abilities through mutation drafts.
-- Verification of deployment and live removal pending.
+- GitHub deletion and CI passed at commit `ec089801d55cdb9e41477d6d0c9b343679c7e83f`, but spot-testing exposed **stale CDN HITs** on the old exact URLs despite those assets being absent from the latest Git tree. Added a retired-path Cloudflare Pages Function returning **410 Gone, no-store**, so the old URLs no longer deliver the video or watch page. Deployment QA and exact-path verification pending.
