@@ -182,3 +182,14 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 - **Gameplay:** Render actual concept-derived sprites, rotated with movement direction, connected with a WUBRG-colored spine. Every new body section cycles W/U/B/R/G, while successive cycles use new section designs. Adds an on-page Creature Codex preview of all 45 body types, head and tail.
 - **Files:** `src/creature-sprites.js`, `src/main.js`, `index.html`, `styles.css`, `docs/ART_DIRECTION.md`, tests, README, CI.
 - **QA: VERIFIED.** [GitHub Actions run 38489259321](https://github.com/Squackle/deep-cuts-game-lab-/actions/runs/38489259321) completed **successfully** (engine, sprite-data tests and JS syntax). Cloudflare deployment `1f704f6f-ef7f-4c95-88d5-13e2c495ca48` completed **successfully** for commit `6dcd5ab8208c9e85be0ce30a8aeaa32798fac67a`. A live 390px mobile browser audit showed v0.1.3, no horizontal overflow, 45-section Creature Codex drawn (8,575 non-background body-region pixels), visible head (722) and forked tail (349), four touch controls, and Start entered IN MOTION with overlay hidden. Physical-device QA is still pending. Source artwork is an original generated concept and does not incorporate a pasted official card image.
+
+
+## 2026-10-13 — Level 01: The Hatchery background integrated (v0.1.4)
+
+- **Owner direction:** Stop deferring game updates to copy-paste patches; directly edit and deploy the code. Use the newly generated Gothic Alien Hive background for Level 1.
+- **Approved source:** Original vertical 941 × 1672 pixel Hatchery artwork, featuring spines, glowing organic egg clusters, textured central floor, and WUBRG colors.
+- **Source preservation:** Saved the full PNG to persistent ChatGPT Library at `/Deep Cuts Game Lab/Hive Run - Level 1 Hatchery Background.png`.
+- **Game asset:** Optimized real WebP source at `assets/backgrounds/hatchery.webp` (240 × 427, 12,430 bytes), committed as a binary Git blob. Game loads this local image; no network hosting dependency or copied third-party assets.
+- **Rendering:** New `src/level-background.js` handles image loading, fallback, subtle tint and grid overlay. Main Canvas draws the image every frame before food and original WUBRG creature artwork. Entire artwork is retained, not center-cropped; readability overlay remains subtle.
+- **Level labeling:** HUD names **Level 01 / The Hatchery**; the numerical Stage counter remains a rising speed tier, not a change in background or map (no other levels built yet).
+- **Status:** Source staging in progress as of this log entry; verify browser rendering, correct local asset response, tests and Cloudflare deployment before treating release as complete.

@@ -57,3 +57,7 @@ h1,h2,h3,p{margin-top:0}h1{font:800 clamp(44px,5vw,75px)/.98 Georgia,serif;lette
 .creature-codex p{font-size:12px;line-height:1.55;color:#bfcfb9;margin:10px 0}
 .wubrg-legend{display:flex;flex-wrap:wrap;gap:5px 11px;font:800 10px ui-monospace,monospace}
 .mana-w{color:#e7d8b4}.mana-u{color:#65a9d5}.mana-b{color:#ad90b7}.mana-r{color:#ed8262}.mana-g{color:#85c98e}
+
+/* Level 01: organically framed Hatchery playfield. Art itself is painted inside the Canvas. */
+.arena{border-color:#9f7854;box-shadow:0 0 0 2px #241e18,0 0 20px #c97b2b22}
+.cabinet-top{color:#d8ad77}

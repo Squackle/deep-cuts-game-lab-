@@ -38,3 +38,8 @@ Each substantive session should append a dated `DEVLOG.md` entry covering the go
 ## Creature art — WUBRG concept sheet (v0.1.3)
 
 The approved original 1312×1199 concept poster is preserved in the user's ChatGPT Library at `/Deep Cuts Game Lab/Hive Run - WUBRG Creature Concept.png`. The **game uses artwork sampled and pixel-reduced from that exact poster**, packed as a small self-contained indexed sprite module (`src/creature-sprites.js`) rather than loading the multi-megabyte poster at runtime. It includes 45 WUBRG body variations, the one-armed pointed head, and forked tail. The gallery on the live game page previews all 45, and gameplay draws those same sprites. The fallback procedural renderer is retained for browsers without `DecompressionStream`. See `docs/ART_DIRECTION.md`.
+
+
+## Level 01 — The Hatchery
+
+The first environment now uses the original Gothic Alien Hive artwork, optimized to a ~12 KB WebP and rendered beneath the moving creature and brood in `src/level-background.js`. The original full-resolution PNG is preserved in ChatGPT Library at `/Deep Cuts Game Lab/Hive Run - Level 1 Hatchery Background.png`. It is a real image, not a conceptual placeholder. Stage numbers currently increase movement speed; future levels and arenas will introduce new maps when built. The old grid remains a loading/error fallback.

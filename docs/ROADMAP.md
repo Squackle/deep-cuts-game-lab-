@@ -26,6 +26,15 @@
 
 **Acceptance criterion:** A player can load the site on a phone without installing anything, swipe to turn, collect brood, grow, collide, lose, restart and chase a real saved high score. No mocked controls.
 
+## Level 01 Environment — The Hatchery
+
+- [x] User-approved original background generated and archived.
+- [x] Optimized mobile WebP (12.4 KB) committed as `assets/backgrounds/hatchery.webp`.
+- [x] Canvas draws actual artwork behind sprites/collectibles with subtle darkening and guide grid.
+- [x] Retain fallback grid if the background image cannot load.
+- [ ] Real-device visual tuning and game readability checks.
+- [ ] Add distinctive Stage 2+ maps only alongside real level progression; current numbered stage counter measures speed tiers, so stay in Hatchery during endless runs.
+
 ## Alpha 0.2 — Hive mutations / hazard stages
 
 - [ ] Mutation selection draft with three choices after a score threshold.

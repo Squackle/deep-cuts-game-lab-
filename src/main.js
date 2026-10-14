@@ -1,13 +1,15 @@
 import {newRun,start,pause,turn,step,progress} from "./engine.js";
 import {loadCreatureArt,variantForSegment,WUBRG} from "./creature-sprites.js";
+import {drawLevelBackground,loadLevelBackground,levelForStage} from "./level-background.js";
 
-/* HIVE RUN v0.1.3 — playable concept-sheet WUBRG pixel sprites. */
+/* HIVE RUN v0.1.4 — Level 1 Hatchery original painted background. */
 const $=id=>document.getElementById(id);
 const canvas=$("gameCanvas");
 const context=canvas.getContext("2d",{alpha:false});
 const CELLS=20,COLS=18,ROWS=22;
 const WUBRG_COLORS=["#e7d8b4","#65a9d5","#7e6a88","#dd684a","#75ad7b"];
 let creatureArt=null;
+let arenaBackground=null;
 const STORE="deepcuts-hive-run-best-v1",SOUND_STORE="deepcuts-hive-run-audio-v1";
 const state={run:newRun({cols:COLS,rows:ROWS}),best:0,audio:false,ctx:null,
  lastFrame:0,accumulator:0,lastAnnouncement:"",pointer:null};
@@ -208,16 +210,7 @@ function drawCreaturePreview(){
 function draw(){
  if(!context)return;
  const run=state.run;
- context.fillStyle="#172d22";
- context.fillRect(0,0,canvas.width,canvas.height);
- // Subtle tiled background, original-art low-res pixel aesthetic.
- for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
-  context.fillStyle=(x+y)%2===0?"#1b3427":"#1a3024";
-  context.fillRect(x*CELLS+1,y*CELLS+1,CELLS-2,CELLS-2);
- }
- context.fillStyle="#365541";
- for(let x=0;x<COLS;x++){context.fillRect(x*CELLS,0,1,canvas.height)}
- for(let y=0;y<ROWS;y++){context.fillRect(0,y*CELLS,canvas.width,1)}
+ drawLevelBackground(context,canvas,arenaBackground,COLS,ROWS,CELLS);
  // Collectible: golden diamond and contrasting inner pixel.
  if(run.food){
   const {x,y}=run.food,cx=x*CELLS+CELLS/2,cy=y*CELLS+CELLS/2;
@@ -352,6 +345,8 @@ window.addEventListener("blur",()=>{
  state.lastFrame=0;state.accumulator=0;
 });
 syncUI();draw();
+// The Hatchery is the sole playable location while numbered stages are speed tiers.
+arenaBackground=loadLevelBackground(()=>draw());
 loadCreatureArt().then(art=>{
  if(!art)return;
  creatureArt=art;
