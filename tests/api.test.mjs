@@ -33,7 +33,7 @@ test("Arcade and Daily Test Seeds run locally with no session requests",()=>{
 test("standalone UI has no online rank, score submission or profile forms",()=>{
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  const js=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
- assert.match(html,/id="soloTitle"/);
+ assert.match(html,/id="patchNotesTitle"/);
  assert.doesNotMatch(html,/id="submissionPanel"|id="leaderboardEntries"|id="playerProfile"|id="playerAlias"/);
  assert.doesNotMatch(js,/LeaderboardClient|refreshLeaderboard|leaderboard\.submit|leaderboard\.load|updateSubmission/);
  assert.match(js,/createSoloSession\(selectedMode,selectedChallenge\)/);
