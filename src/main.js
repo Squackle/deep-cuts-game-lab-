@@ -5,6 +5,8 @@ import {loadCreatureArt,variantForSegment} from "./creature-sprites.js";
 import {drawLevelBackground,loadLevelBackground,levelForStage} from "./level-background.js";
 import {drawBroodPickup} from "./pickups.js";
 import {HatcherySoundtrack,TRACKS,trackForEncounter} from "./soundtrack.js";
+import {canPlayMusic,resumeFromGesture} from "./audio-activation.js";
+import {drawPlayerLocator} from "./player-visibility.js";
 import {showMutationDraft,hideMutationDraft,drawMutationHud} from "./evolution-ui.js";
 import {renderMutationEffects} from "./evolution-visuals.js";
 import {drawPrey,drawCapture} from "./enemy-render.js";
@@ -84,7 +86,7 @@ function syncUI(){
  $("soundButton").setAttribute("aria-pressed",String(state.audio));
  $("musicButton").textContent=state.musicOn?"♫ MUSIC ON":"♫ MUSIC OFF";
  $("musicButton").setAttribute("aria-pressed",String(state.musicOn));
- $("soundStatus").textContent=state.musicOn?"♫ "+TRACKS[soundtrack.trackId].type.toUpperCase():state.audio?"FX ON":"AUDIO OFF";
+ $("soundStatus").textContent=state.musicOn?(state.ctx?.state==="running"?"♫ "+TRACKS[soundtrack.trackId].type.toUpperCase():"♫ TAP TO ENABLE MUSIC"):state.audio?"FX ON":"AUDIO OFF";
  const ability=abilityState(run),panel=$("abilityPanel"),banner=$("encounterBanner");
  panel.hidden=!ability;
  if(ability){
@@ -114,26 +116,47 @@ function saveBest(){
  state.best=state.run.score;
  try{localStorage.setItem(bestKey(),String(state.best))}catch{}
 }
+// Restore music preferences without attempting background autoplay.
+// The first genuine click or keyboard gesture unlocks desktop Web Audio.
 function getAudioContext(){
  try{
   const AudioContextClass=window.AudioContext||window.webkitAudioContext;
   if(!AudioContextClass)return null;
-  const audio=state.ctx??(state.ctx=new AudioContextClass());
-  if(audio.state==="suspended")audio.resume().catch(()=>{});
-  return audio;
+  if(state.ctx?.state==="closed")state.ctx=null;
+  if(state.ctx)return state.ctx;
+  const created=new AudioContextClass();
+  state.ctx=created;
+  created.addEventListener?.("statechange",()=>{
+   if(state.ctx!==created)return;
+   syncSoundtrack();syncUI();
+  });
+  return created;
  }catch{return null}
 }
 function syncSoundtrack(){
- const allowed=state.musicOn&&(state.run.status==="ready"||state.run.status==="running")&&!document.hidden;
- if(!allowed){soundtrack.stop();return}
+ if(!canPlayMusic(state.musicOn,state.run.status,document.hidden)){
+  soundtrack.stop();return;
+ }
+ const audio=state.ctx;
+ if(audio?.state==="running")soundtrack.start(audio);
+ else soundtrack.stop();
+}
+function wakeAudio(){
+ if(!state.musicOn&&!state.audio)return;
  const audio=getAudioContext();
- if(audio)soundtrack.start(audio);
+ if(!audio)return;
+ resumeFromGesture(audio,()=>{
+  if(state.ctx!==audio)return;
+  syncSoundtrack();syncUI();
+ });
+ syncSoundtrack();syncUI();
 }
 function playTone(hz,duration=0.09,volume=.025){
  if(!state.audio)return;
  try{
   const audio=getAudioContext();
   if(!audio)return;
+  if(audio.state!=="running"){wakeAudio();return}
   const oscillator=audio.createOscillator(),gain=audio.createGain();
   oscillator.type="square";oscillator.frequency.value=hz;
   gain.gain.setValueAtTime(volume,audio.currentTime);
@@ -176,6 +199,7 @@ function selectMutation(color){
 }
 async function begin(){
  if(startingRun)return;
+ wakeAudio(); // Unlock before the awaited leaderboard request drops user activation.
  if(["ready","over","won"].includes(state.run.status)){
   startingRun=true;
   $("gameMode").disabled=true;$("gameChallenge").disabled=true;$("primaryButton").disabled=true;$("primaryButton").textContent="PREPARING RUN...";
@@ -326,6 +350,8 @@ function draw(){
   drawMiniboss(context,run.enemies,CELLS,run.encounter.phase);
   drawBurrowWarning(context,run.encounter.telegraph,CELLS);
  }
+ // The head tile is framed independently from the detailed creature sprite.
+ drawPlayerLocator(context,run.body[0],run.direction,CELLS,"below");
  // A single outlined spine connects the independently colored WUBRG plates.
  // Draw back-to-front so the pointed head stays visible over the neck.
  if(creatureArt)drawConnectedSpine(run.body);
@@ -337,6 +363,7 @@ function draw(){
   if(creatureArt)drawArtCreature(part,kind,id,heading);
   else drawCreaturePiece(part,kind,id,heading);
  }
+ drawPlayerLocator(context,run.body[0],run.direction,CELLS,"above");
  renderMutationEffects(context,run,CELLS,performance.now(),visualBurst,prefersReducedMotion());
  if(lastCapture)drawCapture(context,lastCapture.pos,CELLS,performance.now(),lastCapture.until,prefersReducedMotion());
  if(run.status==="over"){
@@ -414,6 +441,8 @@ function loop(time){
  draw();
  requestAnimationFrame(loop);
 }
+// Unlock on direct interaction; an async score request is too late for autoplay rules.
+document.addEventListener("pointerdown",wakeAudio,{capture:true,passive:true});
 $("primaryButton").addEventListener("click",begin);
 $("submitShortcut").addEventListener("click",event=>{
  // A ranked Game Only run should never strand the submission form behind
@@ -449,8 +478,9 @@ $("soundButton").addEventListener("click",()=>{
 $("musicButton").addEventListener("click",()=>{
  state.musicOn=!state.musicOn;
  try{localStorage.setItem(MUSIC_STORE,state.musicOn?"on":"off")}catch{}
+ if(state.musicOn)wakeAudio();
  syncSoundtrack();syncUI();
- announce(state.musicOn?TRACKS[soundtrack.trackId].name+" enabled. Original retro soundtrack playing.":"Background music muted.");
+ announce(state.musicOn?(state.ctx?.state==="running"?TRACKS[soundtrack.trackId].name+" playing.":"Music enabled. Use a game control to allow desktop audio."):"Background music muted.");
 });
 document.querySelectorAll("[data-direction]").forEach(b=>{
  const steer=()=>{
@@ -473,6 +503,7 @@ const keys={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",
 document.addEventListener("keydown",event=>{
  const focus=document.activeElement;
  if(["INPUT","TEXTAREA","SELECT"].includes(focus?.tagName))return;
+ if(!event.repeat)wakeAudio();
  if(state.run.status==="draft"&&["1","2","3"].includes(event.key)){
   event.preventDefault();
   selectMutation(state.run.draftOptions[Number(event.key)-1]);
@@ -521,8 +552,11 @@ document.addEventListener("visibilitychange",()=>{
  if(document.hidden){
   if(state.run.status==="running")togglePause();
   soundtrack.stop(); // Also silence title-screen music in hidden tabs.
- }
- state.lastFrame=0;state.accumulator=0;
+ }else syncSoundtrack();
+ syncUI();state.lastFrame=0;state.accumulator=0;
+});
+window.addEventListener("focus",()=>{
+ if(!document.hidden){syncSoundtrack();syncUI()}
 });
 window.addEventListener("pagehide",()=>{
  if(state.run.status==="running")togglePause();

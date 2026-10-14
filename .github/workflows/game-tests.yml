@@ -41,6 +41,8 @@ jobs:
           node --check src/level-background.js
           node --check src/pickups.js
           node --check src/soundtrack.js
+          node --check src/audio-activation.js
+          node --check src/player-visibility.js
           node --check src/evolution-ui.js
           node --check src/evolution-visuals.js
           node --check src/enemies.js

@@ -17,6 +17,23 @@ export function loadLevelBackground(onReady=()=>{}){
  image.src=LEVEL_ONE.asset;
  return image;
 }
+/** Readable cell edges on top of decorative pixel-art cave flooring. */
+export function drawArenaGrid(ctx,cols,rows,cellSize,biome=1){
+ ctx.save();
+ ctx.fillStyle=biome===1?"rgba(3,14,12,.12)":"rgba(4,8,15,.12)";
+ for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
+  if((x+y)%2===0)ctx.fillRect(x*cellSize+1,y*cellSize+1,cellSize-1,cellSize-1);
+ }
+ for(let x=1;x<cols;x++){
+  ctx.fillStyle=x%5===0?"rgba(244,213,159,.37)":"rgba(228,220,185,.24)";
+  ctx.fillRect(x*cellSize-1,0,1,rows*cellSize);
+ }
+ for(let y=1;y<rows;y++){
+  ctx.fillStyle=y%5===0?"rgba(244,213,159,.37)":"rgba(228,220,185,.24)";
+  ctx.fillRect(0,y*cellSize-1,cols*cellSize,1);
+ }
+ ctx.restore();
+}
 export function drawLevelBackground(ctx,canvas,background,cols,rows,cellSize,biome=1){
  const width=canvas.width,height=canvas.height;
  ctx.save();
@@ -43,11 +60,8 @@ export function drawLevelBackground(ctx,canvas,background,cols,rows,cellSize,bio
    ctx.fillRect(x*cellSize,y*cellSize,cellSize,cellSize);
   }
  }
- ctx.strokeStyle="rgba(226,216,180,.045)";
- ctx.lineWidth=.65;ctx.beginPath();
- for(let x=1;x<cols;x++){const pos=x*cellSize+.5;ctx.moveTo(pos,0);ctx.lineTo(pos,height)}
- for(let y=1;y<rows;y++){const pos=y*cellSize+.5;ctx.moveTo(0,pos);ctx.lineTo(width,pos)}
- ctx.stroke();ctx.restore();
+ drawArenaGrid(ctx,cols,rows,cellSize,biome);
+ ctx.restore();
 }
 /** Hand-built pixel architecture, fixed to the arena; no random frame noise. */
 function drawCavern(ctx,w,h,biome){
