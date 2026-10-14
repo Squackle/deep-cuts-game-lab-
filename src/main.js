@@ -2,11 +2,11 @@ import {newRun,start,pause,turn,step,progress,MUTATIONS,COLORS,chooseMutation,ef
 import {loadCreatureArt,variantForSegment,WUBRG} from "./creature-sprites.js";
 import {drawLevelBackground,loadLevelBackground,levelForStage} from "./level-background.js";
 import {drawBroodPickup} from "./pickups.js";
-import {HatcherySoundtrack} from "./soundtrack.js";
+import {HatcherySoundtrack,TRACKS,trackForEncounter} from "./soundtrack.js";
 import {showMutationDraft,hideMutationDraft,drawMutationHud} from "./evolution-ui.js";
 import {renderMutationEffects} from "./evolution-visuals.js";
 
-/* HIVE RUN Alpha 0.2 — WUBRG draft, gameplay powers and evolution visuals. */
+/* HIVE RUN Alpha 0.2.1 — four original chiptunes, preview player and encounter-ready music director. */
 const $=id=>document.getElementById(id);
 const canvas=$("gameCanvas");
 const context=canvas.getContext("2d",{alpha:false});
@@ -18,6 +18,12 @@ let visualBurst=null;
 const prefersReducedMotion=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches??false;
 const STORE="deepcuts-hive-run-best-v1",SOUND_STORE="deepcuts-hive-run-audio-v1",MUSIC_STORE="deepcuts-hive-run-music-v1";
 const soundtrack=new HatcherySoundtrack();
+// Combat engine will invoke this on actual enemy/boss encounter transitions.
+// Preview controls never claim that enemies or bosses already exist.
+function setEncounterMusic(encounterType){
+ soundtrack.setTrack(trackForEncounter(encounterType));
+ syncSoundtrack();syncUI();
+}
 const state={run:newRun({cols:COLS,rows:ROWS}),best:0,audio:false,musicOn:false,ctx:null,
  lastFrame:0,accumulator:0,lastAnnouncement:"",pointer:null};
 try{state.best=Math.max(0,Number(localStorage.getItem(STORE))||0);
@@ -46,7 +52,14 @@ function syncUI(){
  $("soundButton").setAttribute("aria-pressed",String(state.audio));
  $("musicButton").textContent=state.musicOn?"♫ MUSIC ON":"♫ MUSIC OFF";
  $("musicButton").setAttribute("aria-pressed",String(state.musicOn));
- $("soundStatus").textContent=state.musicOn?"♫ HATCHERY THEME":state.audio?"FX ON":"AUDIO OFF";
+ $("soundStatus").textContent=state.musicOn?"♫ "+TRACKS[soundtrack.trackId].type.toUpperCase():state.audio?"FX ON":"AUDIO OFF";
+ $("currentTrack").textContent=TRACKS[soundtrack.trackId].name+" · "+TRACKS[soundtrack.trackId].bpm+" BPM";
+ document.querySelectorAll("[data-music-track]").forEach(button=>{
+  const selected=button.dataset.musicTrack===soundtrack.trackId;
+  button.setAttribute("aria-pressed",String(selected));
+  button.classList.toggle("selected",selected);
+  button.disabled=["draft","paused","over","won"].includes(run.status);
+ });
 }
 function announce(message){
  if(message!==state.lastAnnouncement){
@@ -331,11 +344,24 @@ $("soundButton").addEventListener("click",()=>{
  try{localStorage.setItem(SOUND_STORE,state.audio?"on":"off")}catch{}
  syncUI();if(state.audio)playTone(520,.12);
 });
+document.querySelectorAll("[data-music-track]").forEach(button=>{
+ button.addEventListener("click",()=>{
+  if(["draft","paused","over","won"].includes(state.run.status))return;
+  const id=button.dataset.musicTrack;
+  if(!TRACKS[id])return;
+  soundtrack.setTrack(id);
+  // The preview click is a deliberate user gesture. No autoplay on page-load.
+  state.musicOn=true;
+  try{localStorage.setItem(MUSIC_STORE,"on")}catch{}
+  syncSoundtrack();syncUI();
+  announce("Now previewing "+TRACKS[id].name+", "+TRACKS[id].bpm+" beats per minute.");
+ });
+});
 $("musicButton").addEventListener("click",()=>{
  state.musicOn=!state.musicOn;
  try{localStorage.setItem(MUSIC_STORE,state.musicOn?"on":"off")}catch{}
  syncSoundtrack();syncUI();
- announce(state.musicOn?"Hatchery Theme enabled. Original retro soundtrack playing.":"Background music muted.");
+ announce(state.musicOn?TRACKS[soundtrack.trackId].name+" enabled. Original retro soundtrack playing.":"Background music muted.");
 });
 document.querySelectorAll("[data-direction]").forEach(b=>{
  const steer=()=>{

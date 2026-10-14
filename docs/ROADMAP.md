@@ -61,7 +61,10 @@
 - [ ] Collision and enemy-trapping mechanics with clear kill animations/reward feedback.
 - [ ] Multiple enemy personalities and capped concurrent enemies.
 - [ ] Evolution-based miniboss and boss triggers; multi-capture phases with safe gate resets.
-- [ ] Boss/enemy art, attack telegraphs, HUD and original sound cues.
+- [ ] Boss/enemy art, attack telegraphs and encounter HUD.
+- [x] Compose original normal-enemy, miniboss and full-boss chiptunes; 4-track preview controls with opt-in Web Audio (Alpha 0.2.1).
+- [ ] Automatically switch audio by real encounter state, and add final victory/phase stingers once enemies and bosses exist.
+- [ ] Physical-device volume, loudness matching and smoother musical transitions.
 - [ ] WUBRG combat effect integration (Red score but not EV, Green growth from kills, defensive survival).
 - [ ] Burrows/Fracture environments only after trap combat is proven fun and fair.
 - [ ] Full regression, mobile browser and real physical-device QA.

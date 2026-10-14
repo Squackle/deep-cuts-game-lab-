@@ -108,3 +108,25 @@ Each enemy executes one grid movement on its own fixed interval, not one move pe
 - No change to public Deep Cuts EDH repo without owner's approval.
 
 **Current implementation status:** These enemy and boss changes are not yet coded or deployed. The current playable Alpha 0.2 still evolves through brood orbs. This document is the source of truth for the next gameplay release.
+
+
+## Adaptive retro soundtrack — four original tracks (music implemented ahead of combat)
+
+There are four original, generated-in-browser 8-bit compositions. Each is a distinct eight-bar loop with its own melody, harmonies, bass and percussion:
+
+| Game mode | Soundtrack | Tempo | Feel |
+| --- | --- | ---: | --- |
+| Hatchery exploration / ready | The Hatchery Theme | 108 BPM | Eerie, atmospheric arcade melody |
+| Ordinary enemies | Skitter Chase | 124 BPM | Fast arpeggios, restless bass and snappy drums |
+| Miniboss | Stalker's Pursuit | 142 BPM | Chromatic pursuit, urgent percussion |
+| Full boss | Warden of the Hive | 156 BPM | Dark low-register motifs and heavy double-time pulse |
+
+### Director behavior when combat is implemented
+- The encounter controller picks one track by encounter type: exploration -> Hatchery, normal prey -> Skitter Chase, miniboss -> Stalker's Pursuit, and boss -> Warden of the Hive.
+- Switch only at explicit encounter starts (after safe spawn warning), never for every AI decision or enemy animation frame.
+- Keep the miniboss/boss theme continuing across all of its two/three capture phases; phase transitions pause gameplay and do not stack music layers.
+- After final victory, return to normal-hunt music when regular enemies resume. Mutation draft, ordinary pause, death, tab hidden and music-off all mute the active track.
+- Sound-effects toggle stays independent of Music. Play only after an explicit click/tap and preserve music-enabled preference locally.
+- Avoid rapid re-triggers, doubling tracks, or excessive volume on phone speakers. Add win stingers and smooth crossfades during later boss tuning.
+
+**Implementation status:** The compositions and four-track preview interface are playable now in the isolated Game Lab. Automatic encounter changes are staged as an API but will not execute until enemies/bosses actually exist.

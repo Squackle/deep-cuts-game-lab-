@@ -16,7 +16,7 @@
    <span class="brand-mark" aria-hidden="true">◈</span>
    <span>DEEP CUTS <strong>GAME LAB</strong><small>INDEPENDENT TEST SERVER</small></span>
   </a>
-  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> ALPHA 0.2 · EVOLUTION</span>
+  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> ALPHA 0.2.1 · SOUNDTRACKS</span>
  </header>
  <main>
   <section class="intro" aria-labelledby="mainTitle">
@@ -81,9 +81,17 @@
     <span class="mission-kicker">LEVEL 01 / THE HATCHERY</span>
     <h2 id="missionTitle">GROW THE <em>HIVE.</em></h2>
     <p>Enter the Hatchery: a living cavern lined with spines and luminous WUBRG brood. Move across its ancient organic floor, grow your serpent, and survive.</p>
-    <section class="music-note" aria-label="Music track information">
-      <div><span aria-hidden="true">♫</span><strong>NOW AVAILABLE: THE HATCHERY THEME</strong></div>
-      <p>Original looping 8-bit music: eerie lead, synth bass, arpeggios and arcade drums. Use the <strong>Music</strong> button to play or mute it independently of sound effects. No streaming or downloads.</p>
+    <section class="music-note" aria-label="Original music library">
+      <div><span aria-hidden="true">♫</span><strong>ORIGINAL CHIPTUNE SOUNDTRACKS</strong></div>
+      <p>Four looping 8-bit compositions. Tap any track to hear a preview. The three combat tracks will switch automatically during enemy, miniboss, and boss encounters when those features are built. No combat encounters are live yet.</p>
+      <div class="track-current" aria-live="polite">NOW SELECTED <strong id="currentTrack">The Hatchery Theme · 108 BPM</strong></div>
+      <div class="music-track-list" role="group" aria-label="Preview original retro game music">
+        <button class="music-track selected" type="button" data-music-track="hatchery" aria-pressed="true"><span class="track-number">01</span><strong>HATCHERY</strong><small>108 BPM · EXPLORATION</small></button>
+        <button class="music-track" type="button" data-music-track="hunt" aria-pressed="false"><span class="track-number">02</span><strong>ENEMY HUNT</strong><small>124 BPM · CHASE</small></button>
+        <button class="music-track" type="button" data-music-track="miniboss" aria-pressed="false"><span class="track-number">03</span><strong>MINIBOSS</strong><small>142 BPM · PURSUIT</small></button>
+        <button class="music-track" type="button" data-music-track="boss" aria-pressed="false"><span class="track-number">04</span><strong>FULL BOSS</strong><small>156 BPM · SHOWDOWN</small></button>
+      </div>
+      <p class="track-disclaimer">Preview only. Encounter-based automatic music switching will activate when enemy combat ships. MUSIC OFF mutes the soundtrack; the sound-effects toggle is independent.</p>
     </section>
     <section class="creature-codex" aria-labelledby="creatureCodexTitle">
       <div class="codex-heading"><strong id="creatureCodexTitle">CREATURE CODEX</strong><span>45 BODY TYPES + HEAD / TAIL</span></div>
@@ -96,7 +104,7 @@
     <div class="mission-row"><span>01</span><div><strong>COLLECT BROOD</strong><p>Every five glowing brood pauses the game for a three-choice mutation draft.</p></div></div>
     <div class="mission-row"><span>02</span><div><strong>DON'T DOUBLE BACK</strong><p>Swipe to turn or tap the direction pad. Reverse turns are blocked.</p></div></div>
     <div class="mission-row"><span>03</span><div><strong>EVOLVE TO SURVIVE</strong><p>White shields, blue slow-time, black molts, red double-scoring and green extra growth change every run.</p></div></div>
-    <div class="release-note"><span>DEVELOPMENT STATUS</span><strong>ALPHA 0.2 / WUBRG EVOLUTION</strong><p>Five implemented powers, three-choice drafts every five brood, evolving creature auras, active ability indicators and the original Hatchery Theme. Later-stage enemy arenas, daily challenges and multiplayer remain planned.</p></div>
+    <div class="release-note"><span>DEVELOPMENT STATUS</span><strong>ALPHA 0.2.1 / FOUR ORIGINAL THEMES</strong><p>Five implemented powers, three-choice drafts every five brood, evolving creature auras, active ability indicators and the original Hatchery Theme. Later-stage enemy arenas, daily challenges and multiplayer remain planned.</p></div>
     <div class="repo-links"><a href="https://github.com/Squackle/deep-cuts-game-lab-" target="_blank" rel="noopener noreferrer">GITHUB REPOSITORY ↗</a><a href="https://github.com/Squackle/deep-cuts-game-lab-/blob/main/DEVLOG.md" target="_blank" rel="noopener noreferrer">READ DEVELOPMENT LOG ↗</a><a href="https://github.com/Squackle/deep-cuts-game-lab-/blob/main/docs/ROADMAP.md" target="_blank" rel="noopener noreferrer">VIEW ROADMAP ↗</a></div>
    </aside>
   </div>

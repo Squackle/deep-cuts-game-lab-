@@ -58,3 +58,8 @@ Music is **opt-in** via the separate `MUSIC` button, and the setting is remember
 ## Alpha 0.2 — Evolution & Mutations
 
 Every five brood, the game pauses for a touch-friendly three-card WUBRG draft. Choose one of the five working abilities: White (impact shield), Blue (time-slow), Black (shed three segments on fatal collision), Red (faster speed and 2× pickup scoring), or Green (bonus segment for four brood). The HUD shows acquired powers and active charges/timers, and WUBRG visual effects surround the actual moving creature. The original soundtrack pauses during choices. All updates remain in this isolated Game Lab site; new levels and enemies will follow in a later release.
+
+
+## Original enemy, miniboss and boss themes (Alpha 0.2.1)
+
+The existing original 108 BPM Hatchery Theme is now joined by three new tracks: **Skitter Chase** (normal enemy, 124 BPM), **Stalker's Pursuit** (miniboss, 142 BPM), and **Warden of the Hive** (boss, 156 BPM). Every track is a locally synthesized original composition in the single src/soundtrack.js module; there are no downloaded audio files, samples or added dependencies. Try the four preview buttons in the Game Lab music panel. All music requires a deliberate user click/tap. Automatic encounter transitions will be connected when the separately designed enemy AI/boss update ships. The existing main Deep Cuts EDH site is unaffected.

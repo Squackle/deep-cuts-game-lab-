@@ -234,3 +234,12 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 - **Provisional economy:** prey +3 EV, rare orb +1 EV (20–32 sec active-time spawn), 5 EV per chosen mutation, miniboss +5 EV, boss +8 EV. Carry over excess energy. Numbers are design values pending testing, not shipping behavior.
 - **Design resource:** Added [Predator Loop & Evolution Bosses](docs/ENCOUNTER_DESIGN.md), with kill-credit logic, AI safety, combat mutations, encounter roster, mobile HUD and test gates. Updated GDD, roadmap and decision register. No gameplay code changed by this design commit.
 - **Live reality:** Current Alpha 0.2 on isolated Game Lab site remains orb/evolution based, without moving enemies or bosses. The next gameplay implementation must follow the design stages and pass CI/mobile checks before making feature claims.
+
+
+## 2026-10-13 — Original three-tier battle music (Alpha 0.2.1)
+
+- **Owner request:** Include original music for ordinary enemies, minibosses and bosses, each a distinctive retro composition.
+- **Composed:** Skitter Chase (ordinary prey, 124 BPM), Stalker's Pursuit (miniboss, 142 BPM), Warden of the Hive (boss, 156 BPM). Previous The Hatchery Theme (108 BPM) remains. Every piece is a newly authored 8-bar chiptune with original melody, chords, bass, synthesized kick/snare/hat.
+- **Player interface:** Four accessible music-preview buttons in the sidebar, with current title/tempo, touch targets and separate Music/Effects toggles. Music is user-gesture gated and muted when draft, pause, death or tab hidden.
+- **Encounter integration:** Original soundtrack module now accepts distinct tracks via a track registry, deterministic sequencer, track selection method and encounter-to-track mapping. Future boss code must call the director when real encounters begin; this does not imply any current live enemies or bosses.
+- **Status:** Await automated CI and live test-site verification. Core game remains the Alpha 0.2 orb-based evolution prototype.
