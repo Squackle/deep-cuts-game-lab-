@@ -371,3 +371,11 @@ Version 1.1 · **Lair**. Unranked, repeatable single-boss practice for Burrow St
 **Ranked safety:** Practice does not request a leaderboard session, cannot submit a score, and cannot modify local or personal record values. Simulation and server replay modules are unchanged; RULES_VERSION remains hive-1.0.2. Brood Trail is unchanged. Full regression tests include all four bosses, seeded reproduction, briefing timing, warning effects, practice victory and ranked-mode isolation.
 
 **One-word release title:** Lair. Preserve the permanent naming policy in docs/HIVE-RUN-RELEASE-NAMING.md.
+
+## Snare
+
+Version 1.2. Tunnel Weaver webs immobilize only the player for 2 seconds; the enemy, web expiry and ability recharge continue through the stun. Rift Guardian's RIFT PULSE recharges every 2 active seconds, with telegraphed tile hazards. All four boss phases share the same 4-step move period, and all solo Lair fixtures run at the same base tick speed. Brood Trail has no expedition selector; Predator Hunt offers permanent Arcade and unranked Lair. Daily Ritual has been retired from all new runs and score sessions.
+
+Ranked simulation changes increment the rules version to `hive-1.2`. Existing verified Arcade records remain stored and visible in the permanent top ten, marked OLD where applicable. Historic Daily Ritual scores remain archived in storage but no longer appear in active competition. Never delete historical D1 scores for this update.
+
+**Permanent release naming:** Use one word only as the Hive Run release title, as required by `docs/HIVE-RUN-RELEASE-NAMING.md`.
