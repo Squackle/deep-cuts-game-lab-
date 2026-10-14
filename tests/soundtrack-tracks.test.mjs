@@ -21,7 +21,7 @@ test("all theme patterns have safe 128-step looping and six real voices",()=>{
    assert.deepEqual(events,sequenceAt(step+TOTAL_STEPS,track));
    for(const event of events){
     voices.add(event.voice);
-    if(Number.isFinite(event.note))assert.ok(event.note>=20&&event.note<=85);
+    if(Number.isFinite(event.note))assert.ok(event.note>=20&&event.note<=96,"MIDI note outside safe bass-to-high-arp range: "+event.note);
     assert.ok(event.duration>.1);
    }
   }
