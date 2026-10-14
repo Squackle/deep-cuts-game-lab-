@@ -28,6 +28,8 @@ const WUBRG_COLORS=["#e7d8b4","#65a9d5","#7e6a88","#dd684a","#75ad7b"];
 let creatureArt=null;
 let arenaBackground=null;
 let visualBurst=null,lastCapture=null,startingRun=false,lastEncounterSeen=null;
+// Diagnostics are opt-in for development, never a public gameplay panel.
+if(new URLSearchParams(window.location.search).get("debug")==="1")$("devDiagnostics").hidden=false;
 const prefersReducedMotion=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches??false;
 let selectedMode="hunt",selectedChallenge="arcade";
 try{selectedMode=localStorage.getItem("hive-mode-v1")==="classic"?"classic":"hunt"}catch{}
@@ -519,22 +521,6 @@ $("musicButton").addEventListener("click",()=>{
  if(state.musicOn)wakeAudio();
  syncSoundtrack();syncUI();
  announce(state.musicOn?(state.ctx?.state==="running"?TRACKS[soundtrack.trackId].name+" playing.":"Music enabled. Use a game control to allow desktop audio."):"Background music muted.");
-});
-document.querySelectorAll("[data-direction]").forEach(b=>{
- const steer=()=>{
-  handleDirection(b.getAttribute("data-direction"));
-  canvas.focus({preventScroll:true});
- };
- // Turn on touch-down rather than waiting for a full press/release gesture.
- b.addEventListener("pointerdown",event=>{
-  if(event.button!==0)return;
-  steer();
- });
- // Keyboard and assistive-technology button activation remains supported.
- // Do not double-steer the synthetic click following a pointerdown.
- b.addEventListener("click",event=>{
-  if(event.detail===0)steer();
- });
 });
 document.addEventListener("keydown",event=>{
  if(bossGate.blocking){

@@ -326,3 +326,22 @@ body.game-only .boss-dossier{max-width:365px;padding:9px 12px 6px}
 .solo-panel p strong{color:#f2d69d}
 .solo-production-link{display:inline-flex;min-height:39px;align-items:center;padding:8px 12px;margin-top:5px;border:1px solid #c6ab73;color:#f6e0b0;background:#2a4435;text-decoration:none;font:800 10px/1.35 ui-monospace,monospace;letter-spacing:.02em}
 .solo-production-link:hover,.solo-production-link:focus-visible{background:#44614b;color:#fff2cc}
+
+/* Clean arcade HUD: ?debug=1 unlocks a collapsed development-only panel. */
+.dev-diagnostics[hidden]{display:none!important}
+.dev-diagnostics{margin-top:9px;padding:7px;border:1px solid #50674d;background:#101d19}
+.dev-diagnostics summary{cursor:pointer;color:#e9c78c;font:850 10px/1.4 ui-monospace,monospace;letter-spacing:.06em}
+.dev-diagnostics .evolution-hud{margin-top:8px}
+body.game-only .dev-diagnostics{display:none!important}
+body.game-only .arcade-frame{grid-template-rows:auto auto minmax(0,1fr) auto}
+.mutation-guide{margin-top:14px}
+.mutation-guide strong{color:#f3d5a2}
+.mission--patch-notes{padding-top:14px}
+.patch-notes-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.patch-notes-live{padding:5px 8px;border:1px solid #84915e;background:#2b4233;font:850 9px ui-monospace,monospace;color:#e9d6a7}
+.mission--patch-notes h2{margin:12px 0 7px;font-size:clamp(28px,4vw,40px)}
+.mission--patch-notes .patch-notes-intro{margin:0 0 15px;font-size:12px;color:#bbcfb7}
+.patch-note-entry{padding:13px 0 14px;border-top:1px solid #53664d}
+.patch-note-entry>span{font:850 10px ui-monospace,monospace;color:#e2be78;letter-spacing:.06em}
+.patch-note-entry h3{font:750 18px/1.2 Georgia,serif;color:#f2deb2;margin:7px 0 4px}
+.patch-note-entry p{font-size:12px;line-height:1.55;color:#c6d1c0;margin:0}

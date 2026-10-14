@@ -74,11 +74,11 @@ test("browser-owned native fullscreen dismissal restores page mode",async()=>{
  doc.fullscreenElement=null;doc.emit("fullscreenchange");
  assert.equal(c.isActive(),false);
 });
-test("game-only HTML/CSS retain solo gameplay, exit control and anti-scroll selectors",()=>{
+test("game-only HTML/CSS retain streamlined solo gameplay and touch safeguards",()=>{
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  const css=readFileSync(new URL("../styles.css",import.meta.url),"utf8");
  const js=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
- for(const id of ["fullscreenButton","gameCanvas","gameOverlay","mutationOverlay","pauseButton","restartButton","musicButton","soloTitle"]){
+ for(const id of ["fullscreenButton","gameCanvas","gameOverlay","mutationOverlay","pauseButton","restartButton","musicButton","patchNotesTitle","fieldGuide","devDiagnostics"]){
   assert.match(html,new RegExp("id=\\\""+id+"\\\""),id);
  }
  assert.match(css,/body\.game-only \.arcade-frame/);
