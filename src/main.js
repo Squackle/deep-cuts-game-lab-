@@ -14,6 +14,7 @@ import {renderMutationEffects} from "./evolution-visuals.js";
 import {drawPrey,drawCapture} from "./enemy-render.js";
 import {drawAbilityMeter,drawMiniboss,drawWebs,drawBurrowWarning} from "./boss-art.js";
 import {abilityState,ABILITIES} from "./miniboss.js";
+import {BRIEFINGS,BossBriefingGate} from "./boss-briefing.js";
 import {LeaderboardClient} from "./leaderboard-client.js";
 import {renderLeaderboard,updateSubmission} from "./leaderboard-ui.js";
 import {createGameOnlyMode} from "./game-only.js";
@@ -45,6 +46,7 @@ try{selectedMode=localStorage.getItem("hive-mode-v1")==="classic"?"classic":"hun
 $("gameMode").value=selectedMode;
 const STORE="deepcuts-hive-run-best-v4",SOUND_STORE="deepcuts-hive-run-audio-v1",MUSIC_STORE="deepcuts-hive-run-music-v1";
 const soundtrack=new HatcherySoundtrack();
+const bossGate=new BossBriefingGate();
 // Encounter director selects music automatically; no player-facing track previews.
 function setEncounterMusic(encounterType){
  soundtrack.setTrack(trackForEncounter(encounterType));
@@ -84,9 +86,11 @@ function syncUI(){
  $("evoCount").textContent=run.evolutionsChosen+" "+(run.evolutionsChosen===1?"EVOLUTION":"EVOLUTIONS");
  drawMutationHud($("mutationInventory"),run);
  $("lastEvolution").textContent=run.lastMutation?"LAST: "+run.lastMutation.name.toUpperCase():"FIVE COLORS · FIVE POWERS";
- $("stateLabel").textContent=({ready:"AWAITING PLAYER",running:"IN MOTION",paused:"PAUSED",draft:"EVOLVING",over:"RUN ENDED",won:"HIVE COMPLETE"})[run.status];
+ $("stateLabel").textContent=bossGate.phase==="briefing"?"BOSS DOSSIER · PAUSED":
+  bossGate.phase==="countdown"?"REGROUP · "+bossGate.seconds:
+  ({ready:"AWAITING PLAYER",running:"IN MOTION",paused:"PAUSED",draft:"EVOLVING",over:"RUN ENDED",won:"HIVE COMPLETE"})[run.status];
  const playable=run.status==="running";
- $("pauseButton").disabled=!playable;
+ $("pauseButton").disabled=!playable||bossGate.blocking;
  $("pauseButton").textContent="Ⅱ PAUSE";
  $("soundButton").textContent=state.audio?"♪ SOUND ON":"♪ SOUND OFF";
  $("soundButton").setAttribute("aria-pressed",String(state.audio));
@@ -143,6 +147,7 @@ function syncSoundtrack(){
  if(!canPlayMusic(state.musicOn,state.run.status,document.hidden)){
   soundtrack.stop();return;
  }
+ if(bossGate.blocking){soundtrack.stop();return}
  const audio=state.ctx;
  if(audio?.state==="running")soundtrack.start(audio);
  else soundtrack.stop();
@@ -180,6 +185,52 @@ function showOverlay(title,description,buttonLabel){
  $("submitShortcut").hidden=!["over","won"].includes(state.run.status)||!state.ranked;
 }
 function hideOverlay(){$("gameOverlay").hidden=true}
+/** Once per encounter, not per phase: a presentation-only pause. */
+function showBossBriefing(){
+ const run=state.run;
+ if(run.status!=="running"||run.mode!=="hunt"||!bossGate.begin(run.encounter))return false;
+ const info=BRIEFINGS[run.encounter.kind];
+ $("bossBriefingName").textContent=info.name;
+ $("bossBriefingTitle").textContent=info.title;
+ $("bossBriefingTag").textContent=info.tag;
+ $("bossBriefingRank").textContent=info.rank;
+ $("bossBriefingPhases").textContent=info.captures+" CAPTURES TO DEFEAT";
+ $("bossBriefingTips").textContent=info.tip;
+ const list=$("bossBriefingMechanics");list.replaceChildren();
+ for(const description of info.mechanics){
+  const item=document.createElement("li");item.textContent=description;list.appendChild(item);
+ }
+ drawAbilityMeter($("bossBriefingIcon"),run.encounter.kind,0);
+ $("bossBriefing").style.setProperty("--boss-ink",info.accent);
+ $("bossBriefing").hidden=false;$("bossCountdown").hidden=true;
+ state.accumulator=0;state.lastFrame=0;state.pointer=null;
+ soundtrack.stop();syncUI();
+ $("bossBriefingResume").focus({preventScroll:true});
+ announce(info.name+" incoming. The hive is paused; review the dossier and begin when ready.");
+ return true;
+}
+function reopenBossBriefing(){
+ if(!bossGate.interrupt())return false;
+ $("bossCountdown").hidden=true;$("bossBriefing").hidden=false;
+ state.accumulator=0;state.lastFrame=0;state.pointer=null;
+ soundtrack.stop();syncUI();
+ $("bossBriefingResume").focus({preventScroll:true});
+ announce("The encounter was held. Begin the regroup countdown again when ready.");
+ return true;
+}
+function resetBossBriefing(){
+ bossGate.reset();$("bossBriefing").hidden=true;$("bossCountdown").hidden=true;
+}
+function beginBossCountdown(){
+ if(!bossGate.resume(performance.now()))return;
+ $("bossBriefing").hidden=true;$("bossCountdown").hidden=false;
+ $("bossCountdownNumber").textContent="3";
+ state.lastFrame=0;state.accumulator=0;state.pointer=null;
+ soundtrack.stop();syncUI();
+ $("bossCountdown").focus({preventScroll:true});
+ announce("Encounter resumes in three seconds.");
+}
+$("bossBriefingResume").addEventListener("click",beginBossCountdown);
 function showDraftScreen(){
  soundtrack.stop();
  showMutationDraft($("mutationOverlay"),$("mutationChoices"),state.run.draftOptions,selectMutation);
@@ -200,11 +251,10 @@ function selectMutation(color){
   announce(ABILITIES[state.run.encounter.kind].name+" approaching! "+state.run.encounter.phases+" captures to win.");
   playTone(244,.18,.04);
  }else announce(MUTATIONS[color].name+" acquired. "+MUTATIONS[color].short+".");
- syncUI();
- canvas.focus({preventScroll:true});
+ if(!showBossBriefing()){syncUI();canvas.focus({preventScroll:true})}
 }
 async function begin(){
- if(startingRun)return;
+ if(startingRun||bossGate.blocking)return;
  wakeAudio(); // Unlock before the awaited leaderboard request drops user activation.
  if(["ready","over","won"].includes(state.run.status)){
   startingRun=true;
@@ -213,6 +263,7 @@ async function begin(){
    const session=await leaderboard.start(selectedMode,selectedChallenge);
    state.ranked=session.ranked;state.day=session.day;loadBest();
    state.run=newRun({cols:COLS,rows:ROWS,seed:session.seed,mode:selectedMode});
+   resetBossBriefing();
    lastCapture=null;visualBurst=null;lastEncounterSeen=null;
    $("rankedNotice").textContent=session.ranked?"RANKED · REPLAY VERIFIED AFTER GAME OVER":"PRACTICE · RANKED SERVICE UNAVAILABLE";
   }finally{startingRun=false;$("gameMode").disabled=false;$("gameChallenge").disabled=false;$("primaryButton").disabled=false}
@@ -227,6 +278,7 @@ async function begin(){
 }
 function reset(){
  if(startingRun)return;
+ resetBossBriefing();
  state.run=newRun({cols:COLS,rows:ROWS,mode:selectedMode});state.day="";loadBest();
  leaderboard.session=null;leaderboard.events=[];
  state.ranked=false;lastCapture=null;visualBurst=null;lastEncounterSeen=null;
@@ -239,6 +291,7 @@ function reset(){
  announce("New run ready. Select Start Run to play.");
 }
 function togglePause(){
+ if(bossGate.blocking)return;
  if(state.run.status==="running"){
   pause(state.run);state.pointer=null;
   showOverlay("RUN PAUSED","Your swarm will wait here until you're ready.","RESUME RUN ▶");
@@ -250,7 +303,7 @@ function togglePause(){
  syncSoundtrack();syncUI();
 }
 function handleDirection(direction){
- if(state.run.status!=="running")return false;
+ if(bossGate.blocking||state.run.status!=="running")return false;
  if(!turn(state.run,direction))return false;
  leaderboard.action(state.run.runTicks,"turn",direction);
  // Draw in the same keydown/pointer event: players see their buffered turn
@@ -383,6 +436,25 @@ function draw(){
  }
 }
 function loop(time){
+ // The dossier and countdown are UI-only: game time and ranked replay freeze.
+ if(bossGate.blocking){
+  if(bossGate.phase==="countdown"){
+   const finished=bossGate.advance(time);
+   if(finished){
+    $("bossCountdown").hidden=true;
+    state.lastFrame=0;state.accumulator=0;state.pointer=null;
+    canvas.focus({preventScroll:true});
+    setEncounterMusic(musicForRun());syncUI();
+    announce("Encounter active. Keep your escape route open.");
+   }else{
+    const value=String(bossGate.seconds);
+    if($("bossCountdownNumber").textContent!==value){
+     $("bossCountdownNumber").textContent=value;syncUI();
+    }
+   }
+  }
+  draw();requestAnimationFrame(loop);return;
+ }
  let dt=0;
  if(state.lastFrame)dt=Math.min(time-state.lastFrame,250);
  state.lastFrame=time;
@@ -429,6 +501,8 @@ function loop(time){
     announce("Brood collected! +1 evolution energy.");
    }
    if(state.run.status==="draft")showDraftScreen();
+   // A queued boss can spawn from an engine step rather than mutation choice.
+   if(state.run.status==="running"&&showBossBriefing())break;
    // Maintain miniboss soundtrack throughout its multi-capture phases;
    // first cue follows the safe warning, never preview high-tier music.
    const nextTrack=musicForRun();
@@ -510,6 +584,14 @@ document.querySelectorAll("[data-direction]").forEach(b=>{
  });
 });
 document.addEventListener("keydown",event=>{
+ if(bossGate.blocking){
+  if(event.key==="Tab"&&bossGate.phase==="briefing"){
+   event.preventDefault();$("bossBriefingResume").focus({preventScroll:true});
+  }else if(Object.hasOwn(KEY_DIRECTIONS,event.key)||event.key==="Escape"||event.key===" "){
+   event.preventDefault();
+  }
+  return;
+ }
  const focus=document.activeElement;
  if(["INPUT","TEXTAREA","SELECT"].includes(focus?.tagName))return;
  if(!event.repeat)wakeAudio();
@@ -559,7 +641,8 @@ canvas.addEventListener("pointercancel",event=>{
 });
 document.addEventListener("visibilitychange",()=>{
  if(document.hidden){
-  if(state.run.status==="running")togglePause();
+  if(bossGate.blocking)reopenBossBriefing();
+   else if(state.run.status==="running")togglePause();
   soundtrack.stop(); // Also silence title-screen music in hidden tabs.
  }else syncSoundtrack();
  syncUI();state.lastFrame=0;state.accumulator=0;
@@ -568,12 +651,14 @@ window.addEventListener("focus",()=>{
  if(!document.hidden){syncSoundtrack();syncUI()}
 });
 window.addEventListener("pagehide",()=>{
- if(state.run.status==="running")togglePause();
+ if(bossGate.blocking)reopenBossBriefing();
+ else if(state.run.status==="running")togglePause();
  soundtrack.stop();
  state.lastFrame=0;state.accumulator=0;
 });
 window.addEventListener("blur",()=>{
- if(state.run.status==="running")togglePause();
+ if(bossGate.blocking)reopenBossBriefing();
+ else if(state.run.status==="running")togglePause();
  soundtrack.stop();
  state.lastFrame=0;state.accumulator=0;
 });
