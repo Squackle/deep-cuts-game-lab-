@@ -1,6 +1,6 @@
-# Sliver Swarm — Game Design Document (GDD) v0.1
+# Hive Run — Game Design Document (GDD), Alpha 0.2
 
-**Working title; not authorized to use Wizards artwork or creature designs** · Drafted 2026-10-13 · Design stage only
+**Public game identity: Hive Run, original art** · First drafted 2026-10-13 · Implemented playable Alpha 0.2 evolution systems. "Sliver Swarm" remains an unlicensed working inspiration, not the public title.
 
 ## Vision and pillars
 
@@ -43,7 +43,7 @@ Core principles: understand gameplay in five seconds; whole-swarm evolution diff
 | Red — Frenzy | Risk/scoring | Blood Rush increases speed and points temporarily | Harder maneuvering |
 | Green — Brood | Growth | Rapid Brood increases brood/segment rewards | Longer, riskier body |
 
-Every mutation should meaningfully alter decision-making for the **entire swarm**, not simply add invisible stats. A future mutation draft could pause play after enough brood and offer three randomized choices. None of these abilities is implemented yet.
+**Implemented in Alpha 0.2:** Every fifth brood pickup pauses for three distinct random WUBRG choices, selected using touch or keyboard 1/2/3. Each mutation changes the pure game engine, the status HUD and an aura on the actual creature. White grants a one-hit shield; blue slows 28 simulation steps; black consumes a stored charge and three segments to avoid a crash; red speeds movement and doubles scoring for 24 steps; green gives double growth for the next four brood. Effects can stack within bounded durations. Actual Stage 2+ maps and enemies remain planned.
 
 ## Stages and hazards
 

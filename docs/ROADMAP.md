@@ -38,8 +38,12 @@
 ## Alpha 0.2 — Hive mutations / hazard stages
 
 - [x] Begin soundtrack work early: original Hatchery chiptune loop, independent music toggle, user-gesture audio and pause/mute behavior (v0.1.6). Musical polishing remains a future task.
-- [ ] Mutation selection draft with three choices after a score threshold.
-- [ ] Five meaningful mutation families with tested whole-swarm effects.
+- [x] Mutation selection draft with three choices after every five brood, mobile click and keyboard shortcuts.
+- [x] Five meaningful, tested mutation families: white shield, blue slow-time, black sacrifice, red frenzy/scoring and green extra growth.
+- [x] WUBRG visual auras and evolution-selection burst for the active hive.
+- [x] HUD: owned mutations, shield/molt charges, timed effects and next draft countdown.
+- [x] Original Hatchery soundtrack integrated with drafts and gameplay pause.
+- [ ] Physical-device balance/playtesting and final polish before declaring Alpha 0.2 release complete.
 - [ ] Stage changes: Hatchery, Burrows, Fracture.
 - [ ] Terrain walls, enemy movement, fair difficulty escalation.
 - [ ] Balance based on recorded real playtests.

@@ -53,3 +53,8 @@ The Level 1 art is intentionally dimmed more than before (36% global veil plus e
 ## Original Hatchery Theme (v0.1.6)
 
 Music is **opt-in** via the separate `MUSIC` button, and the setting is remembered on that device. All musical notes and synthesized percussion are authored in `src/soundtrack.js` and produced locally with Web Audio, so the game needs no external sound files or licensing. The melody continues across an eight-bar sequence, pauses cleanly with gameplay, and stays off when a tab is backgrounded. Sound effects remain independently selectable. Full five-color mutation gameplay belongs to Alpha 0.2 and is **not yet implemented**.
+
+
+## Alpha 0.2 — Evolution & Mutations
+
+Every five brood, the game pauses for a touch-friendly three-card WUBRG draft. Choose one of the five working abilities: White (impact shield), Blue (time-slow), Black (shed three segments on fatal collision), Red (faster speed and 2× pickup scoring), or Green (bonus segment for four brood). The HUD shows acquired powers and active charges/timers, and WUBRG visual effects surround the actual moving creature. The original soundtrack pauses during choices. All updates remain in this isolated Game Lab site; new levels and enemies will follow in a later release.

@@ -45,3 +45,19 @@ Mark checks only after verification. Capture device, browser, build and observed
 - **Resolution and verification (after fix):**
 
 Transfer significant findings into dated DEVLOG entries. Never mark untested outcomes as passing.
+
+## Alpha 0.2 mutation regression matrix
+
+- [ ] Fifth brood freezes movement and music; exactly three different choices display
+- [ ] Draft cards all fit on 320px portrait and remain accessible at 375px, 390px and 768px
+- [ ] 1, 2, 3 keyboard shortcuts select the visible mutation
+- [ ] White: shield charge visible, consumed on fatal wall/self hit; avoids death
+- [ ] Blue: visible aura and slowed movement expire after 28 steps
+- [ ] Black: stored molt charge, consumes three tail segments to survive collision
+- [ ] Red: speed increase, 2× brood points for 24 steps, then normal score returns
+- [ ] Green: four bonus-growth pickups add one extra segment each
+- [ ] Multiple drafted powers co-exist and timers decrement only during running play
+- [ ] Draft choice visibly modifies the creature and updates mutation inventory/HUD
+- [ ] Music stops for draft/death/pause, resumes after choice if enabled
+- [ ] Reset clears mutations and buffs but retains local personal best
+- [ ] Real-device touch steering after a draft has no delayed or unexpected turn

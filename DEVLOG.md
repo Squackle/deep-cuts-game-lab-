@@ -212,3 +212,15 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 - **Source:** `src/soundtrack.js` exports a deterministic original composition and lightweight Web Audio scheduler. `src/main.js` starts/stops based on game state; `index.html` and `styles.css` add touch-friendly controls and track info.
 - **Still planned:** The three-choice mutation system and five WUBRG abilities, new maps/enemies, and potential further music for future levels. This is a soundtrack addition, not a claim Alpha 0.2 is complete.
 - **Verification: PASSED and DEPLOYED.** Commit `33fa4e9aed9f78d99127339cfe7876230faa1c50` deployed successfully to Cloudflare Pages deployment `bb27adad-f59a-4bbe-844d-530ebf768b0c`. [GitHub Actions run 38492848717](https://github.com/Squackle/deep-cuts-game-lab-/actions/runs/38492848717) passed the full Node regression suite, including soundtrack sequence/scheduler checks and syntax checks. Live 390px browser confirmed an eight-bar 108 BPM soundtrack with all six voices, 10 oscillators actually created during playback, separate music and effects toggles, saved on/off preference, and no further notes scheduled after pause. Live 320px mobile check confirmed all four action buttons were legible 43px-high targets in a 2×2 arrangement, no horizontal overflow, and a running game. Real physical-phone listening is still useful for volume/timbre feedback.
+
+
+## 2026-10-13 — Alpha 0.2: Complete five-color evolution system
+
+- **User request:** Implement in one deployment the major update promised: draft every five brood, all five real WUBRG powers, evolution visuals, HUD/status, soundtrack integration and robust tests.
+- **Pure game engine:** Deterministic three-distinct-color draft per five brood; draft freezes game and pauses music. Select using mobile cards or keys 1/2/3. Effects: white collision shield, blue 28-step slow-time, black rescue charge consuming three tail segments, red 24-step speed/2× points, green four double-growth pickups. Color effects stack with bounded durations; collision saves pick a safe diversion or respawn safely when trapped.
+- **Visuals:** Whole-swarm WUBRG-colored protection/slow/frenzy/molt/growth effects, animated evolution burst respecting reduced-motion, selected mutation announcement.
+- **HUD:** Owned color counts, active effect durations/charges, countdown to next draft and number of evolutions. Main Hatchery stage speed-tier counter remains separate from actual map progression.
+- **Music:** Original Hatchery theme from v0.1.6 preserved; stops while draft is open, resumes upon selection if user enabled music, without automatic page-load sound.
+- **Files:** `src/engine.js`, `src/evolution-ui.js`, `src/evolution-visuals.js`, `src/main.js`, `index.html`, `styles.css`, dedicated test files, roadmap and QA notes.
+- **Excluded intentionally:** Stage 2/3 maps, hazards, enemies, daily challenge and multiplayer, all of which remain separate later milestones.
+- **Verification:** Await final GitHub Actions / live browser confirmation before marking deployment complete.

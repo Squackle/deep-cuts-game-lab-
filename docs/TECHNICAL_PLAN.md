@@ -53,3 +53,14 @@ No fake game interactions; protect v0.1 scope. Prevent impossible 180° U-turns,
 - `index.html`, `styles.css`: static mobile-first game UI.
 - `tests/engine.test.mjs`, `.github/workflows/game-tests.yml`: automated engine and syntax checks.
 - Additional modules, bosses and mutation handling in the earlier proposed file layout are **not yet implemented**.
+
+
+## Alpha 0.2 — Evolution system architecture
+
+- `src/engine.js`: pure deterministic mutation choices, game state, effects, duration-limited powers, safe collision rescue, scoring and double growth; can be unit-tested without browser APIs.
+- `src/evolution-ui.js`: DOM-managed accessible mutation buttons, mobile three-choice draft and active buff HUD.
+- `src/evolution-visuals.js`: independent Canvas aura and evolution bursts, reduced-motion aware.
+- `src/main.js`: event integration; pauses the fixed-step loop/audio on draft, resumes after chosen mutation, updates HUD on every simulation step.
+- `tests/mutations.test.mjs`: pure-model regression checks. Existing tests for movement, soundtrack, background and pickups stay enabled in CI.
+- `src/soundtrack.js`: already implemented original Web Audio theme; paused during mutation selections.
+- No new route, remote backend or main-site production change required. All five color effects work locally; high scores remain on-device until server-side anti-abuse and profiles are designed.

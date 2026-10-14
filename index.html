@@ -16,7 +16,7 @@
    <span class="brand-mark" aria-hidden="true">◈</span>
    <span>DEEP CUTS <strong>GAME LAB</strong><small>INDEPENDENT TEST SERVER</small></span>
   </a>
-  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> PROTOTYPE 0.1.6 · HATCHERY THEME</span>
+  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> ALPHA 0.2 · EVOLUTION</span>
  </header>
  <main>
   <section class="intro" aria-labelledby="mainTitle">
@@ -44,6 +44,20 @@
         <button id="primaryButton" class="primary-button" type="button">START RUN ▶</button>
        </div>
      </div>
+     <div id="mutationOverlay" class="mutation-overlay" role="dialog" aria-modal="true" aria-labelledby="mutationTitle" aria-describedby="mutationIntro" hidden>
+       <div class="mutation-modal">
+         <div class="mutation-eyebrow">◈ THE HIVE IS EVOLVING ◈</div>
+         <h2 id="mutationTitle">CHOOSE A MUTATION</h2>
+         <p id="mutationIntro">Select one of three adaptations. Your choice changes how the entire swarm survives.</p>
+         <div id="mutationChoices" class="mutation-choices"></div>
+         <p class="mutation-hint">TAP TO SELECT · KEYBOARD 1 / 2 / 3</p>
+       </div>
+     </div>
+    </div>
+    <div class="evolution-hud" aria-label="Mutation status">
+      <div class="evolution-summary"><span>EVOLUTION PROGRESS <strong id="evoCountdown">5 / 5 BROOD</strong></span><span id="evoCount">0 EVOLUTIONS</span></div>
+      <div id="mutationInventory" class="mutation-inventory" aria-label="Owned mutations and active effects"><span class="mutation-none">NO MUTATIONS YET</span></div>
+      <p id="lastEvolution" class="last-evolution">FIVE COLORS · FIVE POWERS</p>
     </div>
     <div class="cabinet-bottom"><span id="progress">NEXT STAGE IN 5 BROOD</span><span id="stateLabel">AWAITING PLAYER</span></div>
     <div class="game-actions">
@@ -79,10 +93,10 @@
         <span class="mana-w">W · WHITE</span><span class="mana-u">U · BLUE</span><span class="mana-b">B · BLACK</span><span class="mana-r">R · RED</span><span class="mana-g">G · GREEN</span>
       </div>
     </section>
-    <div class="mission-row"><span>01</span><div><strong>COLLECT BROOD</strong><p>Every glowing crystal earns 100 points and adds to your trail.</p></div></div>
+    <div class="mission-row"><span>01</span><div><strong>COLLECT BROOD</strong><p>Every five glowing brood pauses the game for a three-choice mutation draft.</p></div></div>
     <div class="mission-row"><span>02</span><div><strong>DON'T DOUBLE BACK</strong><p>Swipe to turn or tap the direction pad. Reverse turns are blocked.</p></div></div>
-    <div class="mission-row"><span>03</span><div><strong>OUTRUN YOURSELF</strong><p>Your body is your biggest enemy. Speed rises every five pickups.</p></div></div>
-    <div class="release-note"><span>DEVELOPMENT STATUS</span><strong>V0.1.6 / ORIGINAL SOUNDTRACK</strong><p>This first build includes real movement, collectible growth, scoring, collisions, pause, restart and an on-device best score. Mutations, enemies, daily challenges and multiplayer are planned—not built yet.</p></div>
+    <div class="mission-row"><span>03</span><div><strong>EVOLVE TO SURVIVE</strong><p>White shields, blue slow-time, black molts, red double-scoring and green extra growth change every run.</p></div></div>
+    <div class="release-note"><span>DEVELOPMENT STATUS</span><strong>ALPHA 0.2 / WUBRG EVOLUTION</strong><p>Five implemented powers, three-choice drafts every five brood, evolving creature auras, active ability indicators and the original Hatchery Theme. Later-stage enemy arenas, daily challenges and multiplayer remain planned.</p></div>
     <div class="repo-links"><a href="https://github.com/Squackle/deep-cuts-game-lab-" target="_blank" rel="noopener noreferrer">GITHUB REPOSITORY ↗</a><a href="https://github.com/Squackle/deep-cuts-game-lab-/blob/main/DEVLOG.md" target="_blank" rel="noopener noreferrer">READ DEVELOPMENT LOG ↗</a><a href="https://github.com/Squackle/deep-cuts-game-lab-/blob/main/docs/ROADMAP.md" target="_blank" rel="noopener noreferrer">VIEW ROADMAP ↗</a></div>
    </aside>
   </div>

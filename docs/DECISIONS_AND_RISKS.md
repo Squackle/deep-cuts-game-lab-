@@ -4,10 +4,10 @@
 
 | ID | Decision | Status |
 | --- | --- | --- |
-| D-001 | Create a real, playable browser game, not a static mock-up. | Confirmed intent, unbuilt |
+| D-001 | Create a real, playable browser game, not a static mock-up. | Implemented and deployed |
 | D-002 | **Mobile is mandatory**; touch controls, phone layout and tests from the first prototype. | Confirmed |
 | D-003 | Snake-inspired retro **Sliver Swarm** concept is particularly appealing. | Favored concept, working name |
-| D-004 | Isolate game code in a **separate repo and test site**, not the production Deep Cuts code. | Separate repo created; test hosting pending |
+| D-004 | Isolate game code in a **separate repo and test site**, not the production Deep Cuts code. | Implemented at https://deep-cuts-game-lab.pages.dev/ |
 | D-005 | Maintain an ongoing dated dev log so design decisions survive between sessions. | Introduced 2026-10-13 |
 
 ## Proposals requiring real gameplay validation
@@ -16,10 +16,10 @@
 | --- | --- | --- |
 | P-001 | Endless Arcade first, rather than a level-based victory goal. | Recommended, not explicitly chosen |
 | P-002 | Portrait phone layout, swipe-to-turn on play field; keyboard for desktop. | Proposed |
-| P-003 | Five mutations: white protection, blue control, black sacrifice, red aggression, green growth. | Drafted but not implemented |
+| P-003 | Five mutations: white protection, blue control, black sacrifice, red aggression, green growth. | Implemented Alpha 0.2; real-device balance testing remains |
 | P-004 | Average runs 2–5 minutes. | Goal, untested |
 | P-005 | Daily Challenge, bosses, online scores and accounts are later-stage features. | Roadmap proposal |
-| P-006 | HTML5 Canvas/ES modules with separated simulation and rendering. | Technical proposal |
+| P-006 | HTML5 Canvas/ES modules with separated simulation and rendering. | Implemented |
 | P-007 | Repository **Squackle/deep-cuts-game-lab-** is the isolation boundary. | Confirmed repo existence; note trailing hyphen |
 
 ## Questions for the owner after the first demo
