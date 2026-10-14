@@ -359,3 +359,7 @@ Deployed all four newly commissioned cavern backgrounds: glowing egg-laden Hatch
 ## October 14, 2026 — Standalone Game Lab: solo-only testing
 
 Removed the retired online leaderboard, public rank lists, score submission form, and guest profile linking from the standalone Game Lab. Predator Hunt and Brood Trail now start synchronously with locally generated Arcade seeds, or reproducible daily test seeds that reset on America/Chicago midnight. The BEST counter remains saved in the user's browser for each mode and challenge. The test site's `/api/leaderboard` responds with HTTP 410 for both GET and POST, without accessing the shared D1 database; the public Deep Cuts EDH game and its rankings remain independent. Deterministic replay verification was retained solely as a pure test module. Removed unused leaderboard client, leaderboard renderer and profile integration files; blocked direct export to the production site's authenticated game.
+
+## Instinct
+
+Version 1.0.5. Keyboard mutation selection via W/A/S, ↑/←/↓ and 1/2/3; desktop safe-resume freeze until a fresh valid movement key, touchscreen tap immediately resumes. Brood Trail orb-only wording for mutation powers. The upper HUD shows session best (in-memory per mode/expedition, reset on reload) without changing saved local personal best values. No gameplay-engine or replay-rules-version change. Future release titles follow docs/HIVE-RUN-RELEASE-NAMING.md.

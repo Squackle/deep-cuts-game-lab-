@@ -1,3 +1,5 @@
+> **Release naming:** Read [HIVE-RUN-RELEASE-NAMING.md](HIVE-RUN-RELEASE-NAMING.md). Every future Hive Run release title must be one thematic word. Current title: **Instinct** (1.0.5).
+
 # Milestones & Release Checklist
 
 ## Repository and isolation

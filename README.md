@@ -98,3 +98,6 @@ Tap **⛶ GAME ONLY** in the arcade header to isolate the game in the visible vi
 Owner playtesting found Alpha 0.4 slightly too fast. The starting movement interval increases **135 → 150 ms per grid step**, which means **about 10% fewer player moves per second**. Later evolution speed scaling retains the existing 4-ms-per-two-evolution progression, but its fastest base speed is raised from **94 → 105 ms per step** (also around 10% fewer moves per second). Regular enemy step intervals (Skitter/Runner 4 player ticks), miniboss powers, WUBRG mutations, controls, music, touch controls and Game Only are unchanged. The leaderboard simulation uses `hive-0.4.1`, separating the balanced run rankings from older `hive-0.4.0` scores while retaining historical entries in D1. The main Deep Cuts EDH site remains untouched.
 
 **Ability ownership:** Only miniboss enemies currently cast unique signature powers (Burrow Stalker burrows; Tunnel Weaver places webs). Regular Skitters and Burrow Runners have movement AI, not activated abilities; the player's powers come solely from five WUBRG mutations. Full bosses will receive their own exclusive signature abilities when implemented in a future update.
+
+
+**Release title convention:** See [docs/HIVE-RUN-RELEASE-NAMING.md](docs/HIVE-RUN-RELEASE-NAMING.md). One thematic word per Hive Run update, not descriptive titles.

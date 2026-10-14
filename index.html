@@ -16,7 +16,7 @@
    <span class="brand-mark" aria-hidden="true">◈</span>
    <span>DEEP CUTS <strong>GAME LAB</strong><small>TWO PATHS. ONE HIVE.</small></span>
   </a>
-  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> 1.0.4 · SOLO DEVELOPMENT LAB</span>
+  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> 1.0.5 · INSTINCT</span>
  </header>
  <main>
   <section class="intro" aria-labelledby="mainTitle">
@@ -31,7 +31,7 @@
     <div class="cabinet-top"><span id="biomeLabel">◈ THE HATCHERY</span><div class="cabinet-top-right"><span id="soundStatus">AUDIO OFF</span><button id="fullscreenButton" class="game-only-button" type="button" aria-pressed="false" aria-label="Expand to Game Only fullscreen mode" title="Play without page scrolling">⛶ GAME ONLY</button></div></div>
     <div class="hud" aria-label="Game scores">
      <div><span class="hud-label">SCORE</span><strong id="score" aria-live="off">000000</strong></div>
-     <div><span class="hud-label">BEST</span><strong class="gold" id="best">000000</strong></div>
+     <div><span class="hud-label">SESSION BEST</span><strong class="gold" id="best">000000</strong></div>
      <div><span class="hud-label">EVOLUTION</span><strong id="stage">01</strong></div>
     </div>
     <div class="arena" id="arena">
@@ -90,13 +90,14 @@
        <p>PREPARE YOUR SWARM</p>
       </div>
      </div>
+     <div id="mutationResume" class="mutation-resume" role="status" aria-live="polite" hidden><div class="mutation-resume-inner"><strong>INSTINCT READY</strong><span>PRESS A MOVEMENT KEY TO RESUME</span><small>ARROWS OR WASD · NO TIME LIMIT</small></div></div>
      <div id="mutationOverlay" class="mutation-overlay" role="dialog" aria-modal="true" aria-labelledby="mutationTitle" aria-describedby="mutationIntro" hidden>
        <div class="mutation-modal">
          <div class="mutation-eyebrow">◈ THE HIVE IS EVOLVING ◈</div>
          <h2 id="mutationTitle">CHOOSE A MUTATION</h2>
          <p id="mutationIntro">Select one of three adaptations. Your choice changes how the entire swarm survives.</p>
          <div id="mutationChoices" class="mutation-choices"></div>
-         <p class="mutation-hint">TAP TO SELECT · KEYBOARD 1 / 2 / 3</p>
+         <p class="mutation-hint">TAP TO SELECT · W / A / S · ↑ / ← / ↓ · 1 / 2 / 3</p>
        </div>
      </div>
     </div>
@@ -130,6 +131,7 @@
 <div class="patch-notes-header"><span class="mission-kicker">DEEP CUTS / DEVELOPMENT LAB</span><span class="patch-notes-live">SOLO BUILD</span></div>
 <h2 id="patchNotesTitle">PATCH <em>NOTES.</em></h2>
 <p class="patch-notes-intro">Latest changes to the standalone test build.</p>
+<article class="patch-note-entry"><span>14 OCT 2026 · INSTINCT</span><h3>Instinct</h3><p>Mutation shortcuts: W/A/S, ↑/←/↓, or 1/2/3. Desktop gameplay waits for a deliberate movement key; touch play resumes instantly. Brood Trail descriptions now match its orb-only rules. HUD shows a session-only best.</p></article>
 <article class="patch-note-entry"><span>14 OCT 2026 · UI CLEANUP</span><h3>Clearer Playfield</h3><p>Removed directional buttons, extra statistics and the long instruction sidebar. Steering remains swipe and keyboard, with hidden diagnostics available on demand.</p></article>
 <article class="patch-note-entry"><span>14 OCT 2026 · SOLO LAB</span><h3>Local Experiments Only</h3><p>Removed shared scores, account links and submissions. Test both modes with local records or a repeatable daily seed.</p></article>
 <article class="patch-note-entry"><span>14 OCT 2026 · 1.0.4</span><h3>Four Painted Depths</h3><p>Added individually illustrated backgrounds for the Hatchery, Burrows, Fracture and Deep Fracture.</p></article>
