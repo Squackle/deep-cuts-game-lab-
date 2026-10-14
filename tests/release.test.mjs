@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {newRun,start,step,chooseMutation,turn} from '../src/engine.js';
 import {spawnMiniboss,tickMiniboss,ABILITIES} from '../src/miniboss.js';
 import {setBiome,tickTerrain,terrainBlocks,warnTerrain,BIOMES} from '../src/environments.js';
-import {chicagoDay,dailySeed} from '../src/modes.js';
+import {boardKey} from '../src/modes.js';
 import {replayScore} from '../src/replay-verification.js';
 const evolve=r=>{r.status='draft';r.draftOptions=['W','U','G'];chooseMutation(r,'W')};
 const finish=r=>{start(r);for(let i=0;i<7000&&r.status==='running';i++)step(r);return r};
@@ -64,12 +64,9 @@ test('biome transitions keep the exterior path clear; warning tiles turn solid o
 test('terrain collisions and occupied growing tail are fatal without defense',()=>{
  const r=newRun({seed:3,mode:'classic'});start(r);const h=r.body[0];r.terrain=[{pos:{x:h.x+1,y:h.y},kind:'rock',warningMs:0,lifeMs:null}];step(r);assert.equal(r.status,'over');
 });
-test('daily seed respects Central midnight and DST, and separates modes',()=>{
- assert.equal(chicagoDay(new Date('2026-10-14T04:59:59Z')),'2026-10-13');
- assert.equal(chicagoDay(new Date('2026-10-14T05:00:00Z')),'2026-10-14');
- assert.equal(chicagoDay(new Date('2026-12-14T05:59:59Z')),'2026-12-13');
- assert.equal(dailySeed('2026-10-14','hunt'),dailySeed('2026-10-14','hunt'));
- assert.notEqual(dailySeed('2026-10-14','hunt'),dailySeed('2026-10-14','classic'));
+test('permanent Arcade standings separate game modes, without daily resets',()=>{
+ assert.equal(boardKey('hunt'),'hunt|arcade');
+ assert.equal(boardKey('classic'),'classic|arcade');
  assert.deepEqual(BIOMES.map(b=>b.bpm),[80,105,132,165]);
 });
 test('missing safe phase gate uses a protected reset instead of infinite frozen ticks',()=>{
