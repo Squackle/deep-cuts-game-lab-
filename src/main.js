@@ -1,8 +1,9 @@
 import {newRun,start,pause,turn,step,progress} from "./engine.js";
 import {loadCreatureArt,variantForSegment,WUBRG} from "./creature-sprites.js";
 import {drawLevelBackground,loadLevelBackground,levelForStage} from "./level-background.js";
+import {drawBroodPickup} from "./pickups.js";
 
-/* HIVE RUN v0.1.4 — Level 1 Hatchery original painted background. */
+/* HIVE RUN v0.1.5 — readable brood pickup and restrained Hatchery backdrop. */
 const $=id=>document.getElementById(id);
 const canvas=$("gameCanvas");
 const context=canvas.getContext("2d",{alpha:false});
@@ -211,15 +212,8 @@ function draw(){
  if(!context)return;
  const run=state.run;
  drawLevelBackground(context,canvas,arenaBackground,COLS,ROWS,CELLS);
- // Collectible: golden diamond and contrasting inner pixel.
- if(run.food){
-  const {x,y}=run.food,cx=x*CELLS+CELLS/2,cy=y*CELLS+CELLS/2;
-  context.fillStyle="#806b39";context.fillRect(x*CELLS+2,y*CELLS+2,16,16);
-  context.fillStyle="#e2ba73";
-  context.beginPath();context.moveTo(cx,cy-8);context.lineTo(cx+8,cy);
-  context.lineTo(cx,cy+8);context.lineTo(cx-8,cy);context.closePath();context.fill();
-  context.fillStyle="#fff6c3";context.fillRect(cx-2,cy-4,4,4);
- }
+ // The brood is a gameplay target; keep it conspicuous over busy art.
+ if(run.food)drawBroodPickup(context,run.food,CELLS,performance.now());
  // A single outlined spine connects the independently colored WUBRG plates.
  // Draw back-to-front so the pointed head stays visible over the neck.
  if(creatureArt)drawConnectedSpine(run.body);

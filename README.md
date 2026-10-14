@@ -43,3 +43,8 @@ The approved original 1312×1199 concept poster is preserved in the user's ChatG
 ## Level 01 — The Hatchery
 
 The first environment now uses the original Gothic Alien Hive artwork, optimized to a ~12 KB WebP and rendered beneath the moving creature and brood in `src/level-background.js`. The original full-resolution PNG is preserved in ChatGPT Library at `/Deep Cuts Game Lab/Hive Run - Level 1 Hatchery Background.png`. It is a real image, not a conceptual placeholder. Stage numbers currently increase movement speed; future levels and arenas will introduce new maps when built. The old grid remains a loading/error fallback.
+
+
+### Hatchery pickup readability (v0.1.5)
+
+The Level 1 art is intentionally dimmed more than before (36% global veil plus edge fades). Brood collectibles now use a high-contrast illuminated, outlined amber orb drawn by `src/pickups.js`. This addresses the user-reported issue of pickups blending into the ornamental hatchery egg clusters.

@@ -193,3 +193,12 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 - **Rendering:** New `src/level-background.js` handles image loading, fallback, subtle tint and grid overlay. Main Canvas draws the image every frame before food and original WUBRG creature artwork. Entire artwork is retained, not center-cropped; readability overlay remains subtle.
 - **Level labeling:** HUD names **Level 01 / The Hatchery**; the numerical Stage counter remains a rising speed tier, not a change in background or map (no other levels built yet).
 - **Status: DEPLOYED AND VERIFIED.** Build commit `bd1fd30633501b676fdb40193476517c9c1014cf` successfully deployed as Cloudflare Pages deployment `2d26d7f5-8d13-4a3d-835b-18c1c939fb81`. GitHub Actions run [38491324429](https://github.com/Squackle/deep-cuts-game-lab-/actions/runs/38491324429) passed. A live 390px mobile browser test confirmed the optimized WebP returned as a real loaded 240 × 427 image, `PROTOTYPE 0.1.4 · HATCHERY` was visible, Level 01 Hatchery appeared in the arcade cabinet, there was no horizontal overflow (390px content for 390px viewport), and Start entered `IN MOTION`. Extended physical-phone QA remains pending.
+
+
+## 2026-10-13 — v0.1.5: Hatchery readability / brood visibility fix
+
+- **User feedback:** The first-level background is too intense, and the brood orbs are very difficult to distinguish from the brightly colored background eggs.
+- **Implemented:** Increased the full-arena dark veil from 12% to 36%, darkened each bright edge independently using transparent gradients, and reduced grid contrast. Art remains visible and full-frame, but is distinctly subordinate to gameplay.
+- **Implemented:** Replaced the small flat gold diamond with a high-contrast brood beacon: dark near-black disc, thin ivory rim, bright amber center, white core and sparkle, plus soft pulsing radial glow extending beyond one cell. The animation does not affect collision or score logic.
+- **Files:** `src/level-background.js`, `src/pickups.js`, `src/main.js`, `index.html`, new tests, CI.
+- **Verification:** pending final CI and live browser confirmation for this commit. Main Deep Cuts EDH production site remains unchanged.
