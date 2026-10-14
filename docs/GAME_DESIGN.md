@@ -79,3 +79,9 @@ The owner's chosen direction replaces the orb-centric identity with **HUNT → T
 - Detailed specification, fairness cases, tuning and testing: [docs/ENCOUNTER_DESIGN.md](ENCOUNTER_DESIGN.md).
 
 **Important:** This is an approved next direction and documented plan, not a gameplay claim. Current live Alpha 0.2 still grants evolutions primarily by collecting brood, and has no enemies or bosses.
+
+## Future alternate game mode — Classic Snake (design only)
+
+**Classic Snake:** A separate, enemy-free mode that brings back Hive Run's original gameplay: steer the swarm, collect glowing orbs, grow longer, and choose one of three mutations after every five orb pickups. Use the original WUBRG effects: White shield, Blue temporary slow movement, Black emergency molt (lose three segments to survive), Red movement boost and double orb score, and Green bonus growth from orbs. Classic players should still be able to travel through each planned environment and naturally hear the matching level music as they progress. No trapping, enemy kills, minibosses or bosses are used for evolution or gameplay in this mode.
+
+The current enemy-hunting Predator Hunt remains unchanged as a separate selectable option. Scores, rankings and rule versions must be mode-specific. Shared art/music/controls can be reused, but classic rules and orb-based pacing must be independent. This idea has **not** been implemented; it requires a future mode selector, level transitions and independent replay-verified leaderboards.

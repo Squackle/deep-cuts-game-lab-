@@ -113,3 +113,16 @@
 - [ ] **Hatchling Ward mutation:** A player-placed stationary hatchling occupies **one grid square** and frightens enemies away from its square and the **eight directly neighboring squares** (one-square-radius, 3×3 deterrent). Design the usage cost/charges, safe placement, lifetime, enemy routing and visual indicators. Block passive score farming and unavoidable enemy traps; record placement decisions in deterministic server replays.
 - [ ] **Level 1–4 music intensity and tempo scaling:** Make Level 1 **dramatically calmer than Level 4**, with clear steps for Levels 2 and 3. Proposed testing targets: **~80 BPM (Level 1)**, **~105 (Level 2)**, **~132 (Level 3)** and **~165 (Level 4)**. Also escalate melody, percussion layers and tension. Trigger progression based on actual evolution/encounter milestones; preserve mute and pause. **No audio tempo changes have been deployed yet.**
 - [x] **Alpha 0.3.2 UI cleanup:** Hide sprite codex, GitHub repository/roadmap/devlog shortcuts, and public soundtrack selection/testing. Preserve music on/off and automatically selected combat music; preserve source documentation and automated regression tests.
+
+## Future game mode — Classic Snake (orb-only progression; not implemented)
+
+- [ ] Add **Classic Snake** as a separate selectable game mode alongside **Predator Hunt**, without replacing or changing the hunt-and-trap mode.
+- [ ] Restore the original Snake loop: **collect orbs to grow your body, increase your score and progress toward evolutions**. No enemies, captures, minibosses or bosses in Classic mode.
+- [ ] Restore the original evolution pacing: **every five orbs collected opens a three-choice WUBRG mutation draft**, independent of enemy kills or hunt energy.
+- [ ] Bring back the original five playable mutations and their orb-era behavior: **White — Hardened Shell** (one collision shield); **Blue — Temporal Drift** (temporarily slow movement); **Black — Emergency Molt** (sacrifice three tail segments to survive a fatal hit); **Red — Blood Rush** (faster movement and double orb points); **Green — Rapid Brood** (bonus growth from orb pickups).
+- [ ] Let Classic mode advance through the game's **different levels/environments and their distinct music**, including planned later areas, while retaining simple orb-only Snake gameplay. Level transitions are unlocked by orb/evolution progression, never combat.
+- [ ] Preserve automatic soundtrack progression and the Music toggle; **do not restore a public soundtrack preview/testing panel**.
+- [ ] Keep each mode's best scores, ranked leaderboards, replay validation and progression separate, since their scoring systems and difficulty are not comparable. Choose the mode from an accessible game-start menu.
+- [ ] Reuse shared rendering, level assets, controls, mutation cards and original sound engine where feasible, but keep each mode's simulation and scoring rules explicitly versioned and tested.
+
+**Design summary:** *Classic Snake is the original orb-collecting Hive Run, with the original five WUBRG upgrades and full level/music progression, but no enemies or boss fights. Predator Hunt remains its own separate mode.*
