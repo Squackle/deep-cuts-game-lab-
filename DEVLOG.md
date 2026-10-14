@@ -363,3 +363,11 @@ Removed the retired online leaderboard, public rank lists, score submission form
 ## Instinct
 
 Version 1.0.5. Keyboard mutation selection via W/A/S, ↑/←/↓ and 1/2/3; desktop safe-resume freeze until a fresh valid movement key, touchscreen tap immediately resumes. Brood Trail orb-only wording for mutation powers. The upper HUD shows session best (in-memory per mode/expedition, reset on reload) without changing saved local personal best values. No gameplay-engine or replay-rules-version change. Future release titles follow docs/HIVE-RUN-RELEASE-NAMING.md.
+
+## Lair
+
+Version 1.1 · **Lair**. Unranked, repeatable single-boss practice for Burrow Stalker, Hatchery Warden, Tunnel Weaver, and Rift Guardian. Each scenario uses a fixed seed and correct biome/evolution speed, with the existing boss dossier and 3-second countdown. Boss selection, immediate retry after death/victory, attack warning overlays, and pixel capture/defeat bursts are presentation/solo-only additions. Completing a practice boss ends the practice run; no new mutations or ordinary prey are spawned.
+
+**Ranked safety:** Practice does not request a leaderboard session, cannot submit a score, and cannot modify local or personal record values. Simulation and server replay modules are unchanged; RULES_VERSION remains hive-1.0.2. Brood Trail is unchanged. Full regression tests include all four bosses, seeded reproduction, briefing timing, warning effects, practice victory and ranked-mode isolation.
+
+**One-word release title:** Lair. Preserve the permanent naming policy in docs/HIVE-RUN-RELEASE-NAMING.md.
