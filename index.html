@@ -16,7 +16,7 @@
    <span class="brand-mark" aria-hidden="true">◈</span>
    <span>DEEP CUTS <strong>GAME LAB</strong><small>TWO PATHS. ONE HIVE.</small></span>
   </a>
-  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> 1.0.5 · INSTINCT</span>
+  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> 1.1 · LAIR</span>
  </header>
  <main>
   <section class="intro" aria-labelledby="mainTitle">
@@ -53,7 +53,18 @@
          <label for="gameMode">CHOOSE YOUR PATH</label>
          <select id="gameMode"><option value="hunt">PREDATOR HUNT</option><option value="classic">BROOD TRAIL · CLASSIC SNAKE</option></select>
          <label for="gameChallenge">EXPEDITION</label>
-         <select id="gameChallenge"><option value="arcade">ARCADE · NEW SEED EACH RUN</option><option value="daily">DAILY TEST SEED · REPEATABLE</option></select>
+         <select id="gameChallenge"><option value="arcade">ARCADE · NEW SEED EACH RUN</option><option value="daily">DAILY TEST SEED · REPEATABLE</option><option value="practice">THE LAIR · BOSS PRACTICE</option></select>
+<div class="lair-picker" id="lairPicker" hidden aria-label="Choose a boss to practice">
+  <strong class="lair-label">◈ SELECT YOUR PREY</strong>
+  <div class="lair-choices" role="group" aria-label="Boss selection">
+   <button type="button" class="lair-choice" data-lair-boss="stalker" aria-pressed="true"><strong>BURROW STALKER</strong><small>DASH · 2 CAPTURES</small></button>
+   <button type="button" class="lair-choice" data-lair-boss="warden" aria-pressed="false"><strong>HATCHERY WARDEN</strong><small>SEAL · 3 CAPTURES</small></button>
+   <button type="button" class="lair-choice" data-lair-boss="weaver" aria-pressed="false"><strong>TUNNEL WEAVER</strong><small>WEBS · 2 CAPTURES</small></button>
+   <button type="button" class="lair-choice" data-lair-boss="guardian" aria-pressed="false"><strong>RIFT GUARDIAN</strong><small>RIFTS · 3 CAPTURES</small></button>
+  </div>
+  <p class="lair-selection-info" id="lairTip" aria-live="polite">Watch the marked exit. Two captures to win.</p>
+  <p class="lair-disclaimer">UNRANKED · REPEATABLE PRACTICE · INSTANT RETRY · NO PUBLIC SCORES</p>
+ </div>
         </div>
         <button id="primaryButton" class="primary-button" type="button">START HUNT ▶</button>
         
@@ -130,7 +141,7 @@
    <aside class="mission mission--patch-notes" aria-labelledby="patchNotesTitle">
 <div class="patch-notes-header"><span class="mission-kicker">DEEP CUTS / DEVELOPMENT LAB</span><span class="patch-notes-live">SOLO BUILD</span></div>
 <h2 id="patchNotesTitle">PATCH <em>NOTES.</em></h2>
-<p class="patch-notes-intro">Latest changes to the standalone test build.</p>
+<p class="patch-notes-intro">Latest changes to the standalone test build.</p><article class="patch-note-entry"><span>14 OCT 2026 · LAIR</span><h3>Lair</h3><p>Select and practice any of the four bosses. Instant retry, danger warnings and richer capture effects. No leaderboard or profile scores.</p></article>
 <article class="patch-note-entry"><span>14 OCT 2026 · INSTINCT</span><h3>Instinct</h3><p>Mutation shortcuts: W/A/S, ↑/←/↓, or 1/2/3. Desktop gameplay waits for a deliberate movement key; touch play resumes instantly. Brood Trail descriptions now match its orb-only rules. HUD shows a session-only best.</p></article>
 <article class="patch-note-entry"><span>14 OCT 2026 · UI CLEANUP</span><h3>Clearer Playfield</h3><p>Removed directional buttons, extra statistics and the long instruction sidebar. Steering remains swipe and keyboard, with hidden diagnostics available on demand.</p></article>
 <article class="patch-note-entry"><span>14 OCT 2026 · SOLO LAB</span><h3>Local Experiments Only</h3><p>Removed shared scores, account links and submissions. Test both modes with local records or a repeatable daily seed.</p></article>
