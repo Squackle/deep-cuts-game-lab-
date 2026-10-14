@@ -6,7 +6,9 @@ import {drawLevelBackground,loadLevelBackground,levelForStage} from "./level-bac
 import {drawBroodPickup} from "./pickups.js";
 import {HatcherySoundtrack,TRACKS,trackForEncounter} from "./soundtrack.js";
 import {canPlayMusic,resumeFromGesture} from "./audio-activation.js";
-import {drawPlayerLocator} from "./player-visibility.js";
+import {drawPlayerLocator,drawQueuedTurn} from "./player-visibility.js";
+import {drawTrapHints} from "./trap-assist.js";
+import {KEY_DIRECTIONS,keyboardDirection} from "./input-controls.js";
 import {showMutationDraft,hideMutationDraft,drawMutationHud} from "./evolution-ui.js";
 import {renderMutationEffects} from "./evolution-visuals.js";
 import {drawPrey,drawCapture} from "./enemy-render.js";
@@ -41,7 +43,7 @@ const prefersReducedMotion=()=>window.matchMedia?.("(prefers-reduced-motion: red
 let selectedMode="hunt",selectedChallenge="arcade";
 try{selectedMode=localStorage.getItem("hive-mode-v1")==="classic"?"classic":"hunt"}catch{}
 $("gameMode").value=selectedMode;
-const STORE="deepcuts-hive-run-best-v3",SOUND_STORE="deepcuts-hive-run-audio-v1",MUSIC_STORE="deepcuts-hive-run-music-v1";
+const STORE="deepcuts-hive-run-best-v4",SOUND_STORE="deepcuts-hive-run-audio-v1",MUSIC_STORE="deepcuts-hive-run-music-v1";
 const soundtrack=new HatcherySoundtrack();
 // Encounter director selects music automatically; no player-facing track previews.
 function setEncounterMusic(encounterType){
@@ -71,6 +73,10 @@ function syncUI(){
  $("enemyCount").textContent=String(run.mode==="classic"?run.body.length:run.enemies.length).padStart(2,"0");
  $("collectionLabel").textContent=run.mode==="classic"?"ORBS":"CAPTURES";
  $("populationLabel").textContent=run.mode==="classic"?"SWARM LENGTH":"PREY ON BOARD";
+ $("playerAids").hidden=run.mode==="classic";
+ $("mercyStatus").textContent=run.mercy>0?"◆ INSTINCT READY · 1 FREE PREY DODGE":"◆ INSTINCT USED";
+ $("trapHelp").textContent=run.encounter?"◇ BOSS · NO TRAP HINTS":
+  run.evolutionsChosen<3?"◇ AMBER = LIMITED ESCAPES":"◇ TRAP TRAINING COMPLETE";
  const p=progress(run);
  $("progress").textContent=run.status==="won"?"HIVE COMPLETE":
   run.status==="draft"?"CHOOSE YOUR EVOLUTION":("NEXT MUTATION IN "+p.untilNext+" ENERGY");
@@ -247,6 +253,9 @@ function handleDirection(direction){
  if(state.run.status!=="running")return false;
  if(!turn(state.run,direction))return false;
  leaderboard.action(state.run.runTicks,"turn",direction);
+ // Draw in the same keydown/pointer event: players see their buffered turn
+ // immediately rather than waiting for a movement tick or animation frame.
+ draw();
  playTone(210,.02,.009);
  return true;
 }
@@ -346,6 +355,7 @@ function draw(){
  if(run.food)drawBroodPickup(context,run.food,CELLS,performance.now());
  if(run.encounter)drawWebs(context,run.encounter.webs,CELLS);
  drawPrey(context,run.enemies,CELLS,performance.now(),prefersReducedMotion());
+ drawTrapHints(context,run,CELLS);
  if(run.encounter){
   drawMiniboss(context,run.enemies,CELLS,run.encounter.phase);
   drawBurrowWarning(context,run.encounter.telegraph,CELLS);
@@ -357,13 +367,14 @@ function draw(){
  if(creatureArt)drawConnectedSpine(run.body);
  for(let i=run.body.length-1;i>=0;i--){
   const part=run.body[i],next=run.body[i+1];
-  const heading=i===0?run.direction:orientation(next??run.body[i-1],part);
+  const heading=i===0?(run.turnQueue[0]??run.direction):orientation(next??run.body[i-1],part);
   const kind=i===0?"head":i===run.body.length-1?"tail":"body";
   const id=variantForSegment(Math.max(0,i-1));
   if(creatureArt)drawArtCreature(part,kind,id,heading);
   else drawCreaturePiece(part,kind,id,heading);
  }
- drawPlayerLocator(context,run.body[0],run.direction,CELLS,"above");
+ drawPlayerLocator(context,run.body[0],run.turnQueue[0]??run.direction,CELLS,"above");
+ drawQueuedTurn(context,run.body[0],run.turnQueue[0],COLS,ROWS,CELLS);
  renderMutationEffects(context,run,CELLS,performance.now(),visualBurst,prefersReducedMotion());
  if(lastCapture)drawCapture(context,lastCapture.pos,CELLS,performance.now(),lastCapture.until,prefersReducedMotion());
  if(run.status==="over"){
@@ -498,8 +509,6 @@ document.querySelectorAll("[data-direction]").forEach(b=>{
   if(event.detail===0)steer();
  });
 });
-const keys={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",
- w:"up",s:"down",a:"left",d:"right",W:"up",S:"down",A:"left",D:"right"};
 document.addEventListener("keydown",event=>{
  const focus=document.activeElement;
  if(["INPUT","TEXTAREA","SELECT"].includes(focus?.tagName))return;
@@ -509,10 +518,10 @@ document.addEventListener("keydown",event=>{
   selectMutation(state.run.draftOptions[Number(event.key)-1]);
   return;
  }
- if(Object.hasOwn(keys,event.key)){
-  if(state.run.status==="running"){
-   event.preventDefault();handleDirection(keys[event.key]);
-  }
+ if(Object.hasOwn(KEY_DIRECTIONS,event.key)&&state.run.status==="running"){
+  event.preventDefault(); // Stop page scroll, including repeated arrow presses.
+  const requested=keyboardDirection(event.key,event.repeat);
+  if(requested)handleDirection(requested);
  }
  if(event.key==="Escape"&&state.run.status==="running"){event.preventDefault();togglePause()}
  if(event.key===" "&&focus===canvas&&["running","paused"].includes(state.run.status)){

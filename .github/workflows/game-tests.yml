@@ -43,6 +43,8 @@ jobs:
           node --check src/soundtrack.js
           node --check src/audio-activation.js
           node --check src/player-visibility.js
+          node --check src/input-controls.js
+          node --check src/trap-assist.js
           node --check src/evolution-ui.js
           node --check src/evolution-visuals.js
           node --check src/enemies.js
