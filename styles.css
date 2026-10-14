@@ -224,3 +224,27 @@ body.game-only .mutation-overlay{overflow-y:auto;overscroll-behavior:contain;tou
 .encounter-banner{position:absolute;top:36%;left:50%;transform:translateX(-50%);width:max-content;max-width:92%;padding:8px 11px;white-space:normal;text-align:center;line-height:1.35;font:900 12px ui-monospace,monospace;background:#17241be8;border:1px solid #998557;color:#d9c494;text-shadow:1px 1px #090e0c}
 @media(max-width:350px){.ability-panel{width:63px;min-height:70px;top:3px;right:3px}.ability-panel canvas{width:56px;height:56px}.encounter-badge{font-size:8px;max-width:calc(100% - 70px)}.encounter-banner{font-size:10px}}
 body.game-only .encounter-hud{pointer-events:none}
+
+/* Release 1.0: accessible path / expedition controls inside the start screen. */
+.mode-menu {display:grid;gap:6px;width:100%;margin:12px 0;text-align:left}
+.mode-menu[hidden] {display:none}
+.mode-menu label {font:700 9px/1.3 monospace;letter-spacing:1px;color:#b9b497}
+.mode-menu select {width:100%;min-width:0;min-height:38px;background:#14231d;color:#e1d8b7;border:1px solid #6c7152;border-radius:3px;padding:8px;font:700 10px/1.4 monospace}
+.mode-menu select:focus-visible {outline:2px solid #d4bb7d;outline-offset:2px}
+.overlay-content {max-height:100%;overflow-y:auto;overscroll-behavior:contain}
+.overlay-content h2 {font-size:clamp(20px,5vw,30px)}
+.overlay-content p {margin:8px 0;font-size:12px;line-height:1.5}
+.mutation-guide {margin-top:20px;border-top:1px solid #526049;padding:16px 0;color:#c6ccb7;font-size:12px;line-height:1.8}
+.mutation-guide summary {cursor:pointer;color:#d3bd82;font:700 11px/1.6 monospace}
+#encounterBadge[hidden] {display:none}
+.game-only .mode-menu {margin:6px 0;gap:3px}
+.game-only .mode-menu select {min-height:32px;padding:5px}
+.game-only .overlay-content .pixel-symbol {display:none}
+@media(max-width:380px){.mode-menu select{font-size:9px}.overlay-content{padding:14px}.overlay-content h2{font-size:20px}.mode-menu{gap:4px;margin:8px 0}}
+
+@media(max-width:380px){
+ .game-overlay .pixel-symbol{display:none}
+ .game-overlay .overlay-content{padding:12px 10px}
+ .game-overlay .overlay-content p{font-size:11px;line-height:1.4}
+ .game-overlay .primary-button{min-height:40px;padding:9px 12px}
+}

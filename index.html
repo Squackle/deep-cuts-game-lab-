@@ -4,7 +4,7 @@
  <meta charset="utf-8">
  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
  <meta name="theme-color" content="#101e17">
- <meta name="description" content="Hive Run: a genuine mobile-first, retro Snake-inspired arcade prototype being developed for Deep Cuts Game Lab.">
+ <meta name="description" content="Hive Run: a free pixel-art arcade game. Hunt evolving bosses or follow Brood Trail, a classic Snake adventure. Daily challenges and five mutations.">
  <title>HIVE RUN — Deep Cuts Game Lab</title>
  <link rel="stylesheet" href="./styles.css">
  <script type="module" src="./src/main.js"></script>
@@ -14,25 +14,25 @@
  <header class="lab-header">
   <a class="brand" href="/" aria-label="Deep Cuts Game Lab home">
    <span class="brand-mark" aria-hidden="true">◈</span>
-   <span>DEEP CUTS <strong>GAME LAB</strong><small>INDEPENDENT TEST SERVER</small></span>
+   <span>DEEP CUTS <strong>GAME LAB</strong><small>TWO PATHS. ONE HIVE.</small></span>
   </a>
-  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> ALPHA 0.4.1 · CALMER HUNT</span>
+  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> 1.0 · PATHS OF THE HIVE</span>
  </header>
  <main>
   <section class="intro" aria-labelledby="mainTitle">
    <div><p class="kicker">EXPERIMENT 001 / RETRO ARCADE</p>
     <h1 id="mainTitle">HIVE <em>RUN.</em></h1>
-    <p class="intro-description">HUNT • TRAP • EVOLVE. Outmaneuver living prey, turn your WUBRG swarm into a moving wall, and evolve through successful captures.</p>
+    <p class="intro-description">Two ways to grow. Trap evolving predators in Predator Hunt, or collect glowing brood in Brood Trail. Descend through ancient chambers with five colors of mutation.</p>
    </div>
    <p class="prototype-note">Original pixel-art creature inspired by classic hive-serpent fantasy. Five WUBRG color families; no official MTG art is used.</p>
   </section>
   <div class="game-layout">
    <section class="arcade-frame" id="game" aria-label="Playable arcade game">
-    <div class="cabinet-top"><span>◈ LEVEL 01 · THE HATCHERY</span><div class="cabinet-top-right"><span id="soundStatus">AUDIO OFF</span><button id="fullscreenButton" class="game-only-button" type="button" aria-pressed="false" aria-label="Expand to Game Only fullscreen mode" title="Play without page scrolling">⛶ GAME ONLY</button></div></div>
+    <div class="cabinet-top"><span id="biomeLabel">◈ THE HATCHERY</span><div class="cabinet-top-right"><span id="soundStatus">AUDIO OFF</span><button id="fullscreenButton" class="game-only-button" type="button" aria-pressed="false" aria-label="Expand to Game Only fullscreen mode" title="Play without page scrolling">⛶ GAME ONLY</button></div></div>
     <div class="hud" aria-label="Game scores">
      <div><span class="hud-label">SCORE</span><strong id="score" aria-live="off">000000</strong></div>
      <div><span class="hud-label">BEST</span><strong class="gold" id="best">000000</strong></div>
-     <div><span class="hud-label">HUNT</span><strong id="stage">01</strong></div>
+     <div><span class="hud-label">EVOLUTION</span><strong id="stage">01</strong></div>
     </div>
     <div class="arena" id="arena">
      <div id="encounterHud" class="encounter-hud" aria-live="off">
@@ -49,6 +49,12 @@
         <div class="pixel-symbol" aria-hidden="true">◆ ◈ ◆</div>
         <h2 id="overlayTitle">READY TO SWARM?</h2>
         <p id="overlayDescription">Trap constantly moving prey against your swarm. Kills unlock evolutions; rare orbs help you grow.</p>
+        <div id="modeMenu" class="mode-menu">
+         <label for="gameMode">CHOOSE YOUR PATH</label>
+         <select id="gameMode"><option value="hunt">PREDATOR HUNT</option><option value="classic">BROOD TRAIL · CLASSIC SNAKE</option></select>
+         <label for="gameChallenge">EXPEDITION</label>
+         <select id="gameChallenge"><option value="arcade">ARCADE · NEW SEED EACH RUN</option><option value="daily">DAILY RITUAL · SHARED SEED</option></select>
+        </div>
         <button id="primaryButton" class="primary-button" type="button">START HUNT ▶</button>
         <a id="submitShortcut" class="submit-shortcut" href="#submissionPanel" hidden>↓ SUBMIT YOUR SCORE TO THE LEADERBOARD</a>
        </div>
@@ -68,7 +74,7 @@
       <div id="mutationInventory" class="mutation-inventory" aria-label="Owned mutations and active effects"><span class="mutation-none">NO MUTATIONS YET</span></div>
       <p id="lastEvolution" class="last-evolution">FIVE COLORS · FIVE POWERS</p>
     </div>
-    <div class="hunt-hud"><span>CAPTURES <strong id="killCount">00</strong></span><span>PREY ON BOARD <strong id="enemyCount">01</strong></span></div>
+    <div class="hunt-hud"><span><span id="collectionLabel">CAPTURES</span> <strong id="killCount">00</strong></span><span><span id="populationLabel">PREY ON BOARD</span> <strong id="enemyCount">01</strong></span></div>
     <div class="cabinet-bottom"><span id="progress">NEXT MUTATION IN 5 ENERGY</span><span id="stateLabel">AWAITING PLAYER</span></div>
     <p id="rankedNotice" class="ranked-notice">START A HUNT TO GET A RANKED SEED</p>
     <div class="game-actions">
@@ -89,16 +95,17 @@
     <p class="sr-only" id="gameAnnouncement" role="status" aria-live="polite"></p>
    </section>
    <aside class="mission" aria-labelledby="missionTitle">
-    <span class="mission-kicker">LEVEL 01 / THE HATCHERY</span>
-    <h2 id="missionTitle">HUNT THE <em>HIVE.</em></h2>
-    <p>The Hatchery's prey try to escape your growing swarm. At evolution 2, face the Burrow Stalker and its five-tile Burrow Dash; at evolution 6, avoid the Tunnel Weaver's 15-second webs. Each miniboss takes two captures to defeat. A cracked-stone ability meter fills in weathered ochre over 10 seconds.</p>
+    <span class="mission-kicker">CHOOSE YOUR PATH / CHASE YOUR RECORD</span>
+    <h2 id="missionTitle">PATHS OF <em>THE HIVE.</em></h2>
+    <p>Predator Hunt turns your body into a trap. Burrow Stalker and Tunnel Weaver need two captures; Hatchery Warden and Rift Guardian need three. Brood Trail follows the classic Snake rhythm: collect an orb, grow, repeat. Both paths descend through the Hatchery, Burrows and Fracture.</p>
+    <p class="mode-detail" id="modeDetail">Daily Ritual uses a shared seed and resets at midnight Central. Retry freely; each completed run can be submitted. Rankings are separate for every path and expedition.</p>
     <section class="leaderboard-panel" id="leaderboard" aria-labelledby="leaderboardTitle">
      <div class="board-heading"><span>FIELD NETWORK / HIVE RUN</span><button type="button" id="leaderboardRefresh">↻ REFRESH</button></div>
-     <h3 id="leaderboardTitle">HUNTER <em>LEADERBOARD.</em></h3>
+     <h3 id="leaderboardTitle">HIVE <em>LEADERBOARD.</em></h3>
      <p id="leaderboardStatus" class="board-caption">LOADING RANKED SCORES...</p>
      <div id="leaderboardEntries" class="board-entries" aria-live="polite"></div>
      <div id="submissionPanel" class="submission-panel" hidden>
-      <strong>SUBMIT YOUR FINAL HUNT</strong>
+      <strong>SUBMIT YOUR FINAL RUN</strong>
       <p id="finalRunSummary"></p>
       <p class="submit-explanation"></p>
       <form id="leaderboardForm">
@@ -106,20 +113,21 @@
        <input id="playerAlias" name="alias" minlength="2" maxlength="23" pattern="[A-Za-z0-9][A-Za-z0-9 _-]{1,22}" placeholder="Anonymous Hunter">
        <label for="playerProfile">MAIN SITE PROFILE HANDLE (OPTIONAL)</label>
        <input id="playerProfile" name="profileHandle" maxlength="24" pattern="[A-Za-z][A-Za-z0-9_]{2,23}" placeholder="e.g. Squackle">
-       <small>Links to a public <a href="https://deep-cuts-edh.pages.dev/community.html#account" target="_blank" rel="noopener noreferrer">Field Network profile</a>. Ownership cannot be verified across domains yet; links are labeled unverified.</small>
+       <small id="profileNotice">Links to a public <a href="https://deep-cuts-edh.pages.dev/community.html#account" target="_blank" rel="noopener noreferrer">Field Network profile</a>. Play on the main site while signed in to verify ownership; guest links are labeled unverified.</small>
        <button type="submit" id="submitScoreButton">SUBMIT VERIFIED REPLAY ↗</button>
       </form>
       <p id="scoreSubmitStatus" role="status" aria-live="polite"></p>
      </div>
-     <p class="board-integrity">Scores are replayed by the server against a seeded run. This verifies game rules, not human input. Public profile handles are user-supplied until a shared-site identity bridge is available.</p>
+     <p class="board-integrity">Scores are replayed by the server against a seeded run. This verifies game rules, not human input. Signed-in main-site profiles receive verified ownership. Guest profile links are self-reported.</p>
     </section>
-    <div class="mission-row"><span>01</span><div><strong>CAPTURE MOVING PREY</strong><p>Trap enemies against your living body for 3 energy each. Smart prey keep moving to escape.</p></div></div>
-    <div class="mission-row"><span>02</span><div><strong>RARE BROOD</strong><p>Glowing orbs appear much less often, granting 1 energy and a new segment.</p></div></div>
-    <div class="mission-row"><span>03</span><div><strong>EVOLVE TO SURVIVE</strong><p>Every 5 energy opens a WUBRG mutation draft. Red doubles score, not evolution energy.</p></div></div>
-    <div class="release-note"><span>DEVELOPMENT STATUS</span><strong>ALPHA 0.4.1 / CALMER PLAYER PACE</strong><p>Trap the Burrow Stalker and Tunnel Weaver in two phases, survive their special abilities and earn evolution energy. The pixel-art charge ring reveals when an ability is ready. Your swarm now moves about 10% slower, giving you more time to plan every turn.</p></div>
+    <div class="mission-row"><span>01</span><div><strong>HUNT OR FOLLOW THE TRAIL</strong><p>Predator Hunt: trap prey for 3 energy. Brood Trail: collect orbs for 1 energy. Every 5 energy offers three mutations.</p></div></div>
+    <div class="mission-row"><span>02</span><div><strong>READ THE CHAMBER</strong><p>Burrows introduce stone islands. Fracture rifts mark their tiles before they become dangerous. Dashed tiles are warnings; solid tiles block your path.</p></div></div>
+    <div class="mission-row"><span>03</span><div><strong>EVOLVE TO SURVIVE</strong><p>White shields. Blue slows. Black sheds your tail to save you. Red speeds up and doubles points. Green adds growth.</p></div></div>
+    <div class="release-note"><span>PATHS OF THE HIVE</span><strong>1.0 / TWO MODES · FOUR DEPTHS</strong><p>Distinct bosses, living terrain, daily seeded challenges and separate records. Slower opening movement gives you time to plan. Music builds from a quiet Hatchery to the deepest Fracture.</p></div>
+    <details class="mutation-guide"><summary>FIELD GUIDE · ENCOUNTERS &amp; MUTATIONS</summary><p>Evolution 2: Burrow Stalker relocates five tiles after a warning. Evolution 4: Hatchery Warden seals up to three tiles. Evolution 6: Tunnel Weaver places webs that briefly freeze the hunt. Evolution 8: Rift Guardian warns before rupturing nearby tiles.</p><p>Boss powers charge for ten active seconds. The ochre ring closes when ready. The field pauses between capture phases. Only the final capture grants a reward. Brood Trail has no encounters.</p><p>Areas change every four evolutions. Reach twelve for the Deep Fracture. Expeditions finish after 6,000 simulation steps, or earlier if your swarm crashes. Shields and molts can save you; the walls and your own body remain dangerous.</p></details>
    </aside>
   </div>
  </main>
- <footer class="site-footer"><span>DEEP CUTS GAME LAB</span><span>UNOFFICIAL ORIGINAL-ART PROTOTYPE · SEPARATE FROM THE MAIN WEBSITE</span><a href="https://deep-cuts-edh.pages.dev/" rel="noopener noreferrer">RETURN TO DEEP CUTS EDH ↗</a></footer>
+ <footer class="site-footer"><span>DEEP CUTS GAME LAB</span><span>ORIGINAL PIXEL-ART ARCADE · FREE TO PLAY</span><a href="https://deep-cuts-edh.pages.dev/" rel="noopener noreferrer">RETURN TO DEEP CUTS EDH ↗</a></footer>
 </body>
 </html>

@@ -36,3 +36,7 @@ Copy additional art assets actually referenced by the game. Preserve all existin
 - Never guess a profile identity from a displayed handle and call it verified.
 - Never copy application credentials, member keys, or recovery keys into the game.
 - Never assume D1 bindings migrate automatically with copied source.
+
+## Release 1.0 integration (2026-10-14)
+
+Owner explicitly authorized remaining roadmap deployment including integration. The main site now carries portable files under `games/hive-run/`; `scripts/export-main-site.mjs` reproduces the asset and server-handler export. The site-owned Functions wrapper resolves the existing HttpOnly device cookie through `community-core.auth`, ignores typed handles for authenticated ownership, and resolves current public handles on leaderboard reads. Deleted profiles lose verified attribution. Public profile records are read by `/api/hive-profile` using the server-authenticated profile id stored on verified submissions. Both origins share HIVE_DB; existing alpha tables are retained and release 1.0 uses distinct mode/day/version tables. No recovery keys are copied to the game.

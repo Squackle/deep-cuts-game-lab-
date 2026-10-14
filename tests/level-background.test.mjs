@@ -7,8 +7,8 @@ test("level 1 has an exact local background asset and Hatchery name",()=>{
  assert.equal(LEVEL_ONE.name,"THE HATCHERY");
  assert.match(LEVEL_ONE.asset,/\/assets\/backgrounds\/hatchery\.webp$/);
 });
-test("speed tiers do not switch to a non-existent second level",()=>{
- for(const stage of [1,2,3,20])assert.equal(levelForStage(stage),LEVEL_ONE);
+test("evolution milestones select four distinct playable depths",()=>{
+ assert.deepEqual([1,5,9,13,20].map(n=>levelForStage(n).id),[1,2,3,4,4]);
 });
 test("headless loading returns a graceful null",()=>{
  assert.equal(loadLevelBackground(),null);

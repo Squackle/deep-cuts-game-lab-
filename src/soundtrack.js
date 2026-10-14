@@ -1,3 +1,4 @@
+import {BIOMES} from "./environments.js";
 /**
  * HIVE RUN — ORIGINAL FOUR-THEME ARCADE SOUNDTRACK
  * Composed for this game in JS: no samples, external streams or imported tunes.
@@ -113,8 +114,9 @@ export class HatcherySoundtrack{
  constructor(){
   this.context=null;this.output=null;this.playing=false;
   this.trackId="hatchery";this.position=0;this.nextTime=0;
-  this.noise=null;this.playedSteps=0;
+  this.noise=null;this.playedSteps=0;this.level=1;
  }
+ setLevel(level){this.level=Math.max(1,Math.min(4,level));}
  setTrack(id){
   if(!Object.hasOwn(TRACKS,id))return false;
   if(id===this.trackId)return true;
@@ -142,14 +144,17 @@ export class HatcherySoundtrack{
  tick(){
   const ctx=this.context;
   if(!this.playing||!ctx||ctx.state!=="running"||!this.output)return;
-  const stepSeconds=60/TRACKS[this.trackId].bpm/4;
+  const stepSeconds=60/(BIOMES[this.level-1].bpm+(this.trackId==="boss"?12:this.trackId==="miniboss"?6:0))/4;
   if(!this.nextTime)this.nextTime=ctx.currentTime+.025;
   const until=ctx.currentTime+.19;
   let count=0;
   while(this.nextTime<until&&count<8){
    const time=this.nextTime;
-   for(const ev of sequenceAt(this.position,this.trackId))
+   for(const ev of sequenceAt(this.position,this.trackId)){
+    if(this.level===1&&(ev.voice==="hat"||ev.voice==="snare"))continue;
+    if(this.level===2&&ev.voice==="hat"&&this.position%4!==1)continue;
     this.schedule(ev,time,stepSeconds);
+   }
    this.position=(this.position+1)%TOTAL_STEPS;
    this.nextTime+=stepSeconds;count++;this.playedSteps++;
   }

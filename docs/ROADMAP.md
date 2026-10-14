@@ -172,3 +172,22 @@
 - [x] **Tunnel Weaver (miniboss):** its own enemy-only Web Snare places a single active hazard tile every 10 seconds; the **player is the one stunned** for two seconds on entering the web.
 - [ ] **Future full bosses (Hatchery Warden and Rift Guardian)** should each have a **different signature activated ability** and the same ochre top-right ring, shown only during its encounter. Boss powers are not yet implemented in Alpha 0.4.1.
 - [x] The player retains only **the existing WUBRG mutation powers** (White/Blue/Black/Red/Green). Neither the Stalker burrow nor Weaver web is available as a player ability.
+
+## Release 1.0 — Paths of the Hive (2026-10-14)
+
+This section supersedes earlier planned/not-implemented labels above; those sections remain as design history.
+
+- [x] Alpha 0.5: Hatchery Warden at evolution 4 and Rift Guardian at evolution 8; three trap phases, safe resets, enemy-exclusive Brood Seal/Rift Pulse and original pixel-art charge emblems. Repeat in the established cadence.
+- [x] Alpha 0.6: Burrows rock islands, Fracture warning/rupture tiles, and a deeper fourth intensity tier. Both modes change depths after 4/8/12 completed evolutions.
+- [x] **Brood Trail**: the themed classic Snake mode, one replenishing orb, five orbs per three-choice WUBRG draft, no prey or bosses, separate best scores and ranked boards.
+- [x] **Daily Ritual** for each mode: server-selected daily seed, Central midnight reset including DST, repeat attempts, separate day/mode boards. Arcade gets a fresh random seed.
+- [x] All four soundtrack intensity tiers: 80/105/132/165 BPM, additional 6/12 BPM for miniboss/full boss encounters, reduced early percussion, user-controlled music and sound.
+- [x] Mode-aware deterministic server replay, transactionally single-use submissions, persisted local records/settings, historical alpha leaderboard tables preserved.
+- [x] Main-site integration prepared at `/games/hive-run/`, games-hub entry, first-party cookie identity resolution, verified game records on public profiles, and anonymous/clearly unverified guest play.
+- [x] In-game field guide, boss phase/death cues, responsive controls and Game Only support.
+- [ ] Production deployment and live verification (record final result in DEVLOG).
+- [ ] Physical-device Safari/Android playtesting remains owner feedback; emulation is not physical-phone testing.
+
+**Not included:** Broodmother campaigns, multiplayer, additional mutation synergies, achievements, and Hatchling Ward remain uncommitted ideas. The later confirmed ability-ownership rule limits the player to the original five WUBRG mutations; enemy powers are never player upgrades.
+
+**Balance:** Retain the 150ms opening pace and 105ms minimum. At 6,000 active simulation steps an expedition ends successfully rather than silently exceeding the replay verifier's run limit. This is a technical run boundary, not a narrative boss-campaign ending.

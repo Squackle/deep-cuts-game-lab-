@@ -103,7 +103,7 @@ test("red and blue change effective player speed but not WUBRG mutation identity
 });
 
 test("Alpha 0.4.1 calms the player pace around ten percent while retaining relative evolution scaling",()=>{
- assert.equal(RULES_VERSION,"hive-0.4.1");
+ assert.equal(RULES_VERSION,"hive-1.0.0");
  assert.equal(PLAYER_BASE_TICK_MS,150);
  assert.equal(PLAYER_MIN_TICK_MS,105);
  assert.equal(PLAYER_ACCELERATION_MS,4);

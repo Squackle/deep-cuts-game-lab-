@@ -1,3 +1,4 @@
+import {setBiome,tickTerrain,terrainBlocks,reservedTerrain} from "./environments.js";
 /**
  * HIVE RUN 0.3 — deterministic Hunt • Trap • Evolve rules.
  * The same module runs in browser, CI and score replay verification.
@@ -7,7 +8,7 @@ import {encounterKind,spawnMiniboss,spawnNextPhase,tickMiniboss,triggerWeb,consu
 export const DIRECTIONS=Object.freeze(Object.fromEntries(Object.entries(VECTORS).map(([k,v])=>[k,{x:v[0],y:v[1]}])));
 export const COLORS=Object.freeze(["W","U","B","R","G"]);
 export const EVOLUTION_COST=5;
-export const RULES_VERSION="hive-0.4.1";
+export const RULES_VERSION="hive-1.0.0";
 // Player speed is set in milliseconds per grid step (larger = easier).
 // Playtest adjustment: about 10% less movement per second at every stage.
 export const PLAYER_BASE_TICK_MS=150;
@@ -35,11 +36,12 @@ export function draftMutationOptions(random=Math.random){
  for(let i=0;i<3;i++)out.push(remaining.splice(Math.floor(val(random)*remaining.length),1)[0]);
  return out;
 }
-export function newRun({cols=18,rows=22,random,seed}={}){
+export function newRun({cols=18,rows=22,random,seed,mode="hunt"}={}){
  if(!Number.isInteger(cols)||!Number.isInteger(rows)||cols<8||rows<8)throw Error("Invalid arena dimensions");
+ if(!["hunt","classic"].includes(mode))throw Error("Invalid game mode");
  const rng=random||((seed===undefined)?Math.random:seededRandom(seed));
- const y=Math.floor(rows/2),x=Math.max(2,Math.floor(cols/2));
- const run={cols,rows,random:rng,seed:seed??null,body:Array.from({length:7},(_,i)=>({x:x-i,y})),
+ const y=Math.floor(rows/2),x=Math.max(6,Math.floor(cols/2));
+ const run={cols,rows,mode,biome:1,terrain:[],hazardMs:0,biomeNoticeMs:0,bossWins:0,random:rng,seed:seed??null,body:Array.from({length:7},(_,i)=>({x:x-i,y})),
   direction:"right",turnQueue:[],food:null,orbIn:145,
   score:0,brood:0,kills:0,energy:0,earnedEnergy:0,stage:1,tickMs:PLAYER_BASE_TICK_MS,
   evolutionsChosen:0,draftCount:0,draftOptions:[],mutations:{W:0,U:0,B:0,R:0,G:0},
@@ -47,7 +49,8 @@ export function newRun({cols=18,rows=22,random,seed}={}){
   enemies:[],enemySerial:0,respawnIn:0,runTicks:0,moves:0,saves:0,
   encounter:null,queuedEncounter:null,minibossWins:0,lastEncounter:null,
   status:"ready",endReason:"",lastMutation:null,event:null,eventSerial:0};
- const prey=spawnPrey(run);if(prey)run.enemies.push(prey);
+ if(mode==="hunt"){const prey=spawnPrey(run);if(prey)run.enemies.push(prey)}
+ else run.food=emptyTile(run.body,cols,rows,rng);
  return run;
 }
 export function start(run){
@@ -73,16 +76,21 @@ export function chooseMutation(run,color){
  if(color==="G")e.greenPickups=Math.min(12,e.greenPickups+4);
  run.evolutionsChosen++;
  run.stage=run.evolutionsChosen+1;
+ setBiome(run);
  run.tickMs=Math.max(PLAYER_MIN_TICK_MS,PLAYER_BASE_TICK_MS-Math.floor(run.evolutionsChosen/2)*PLAYER_ACCELERATION_MS);
  run.lastMutation={color,name:MUTATIONS[color].name,move:run.moves};
  run.status="running";run.draftOptions=[];run.turnQueue=[];
  emit(run,{type:"mutation",color,name:MUTATIONS[color].name});
  // Milestones are *completed choices*, never energy or draft openings.
- const kind=encounterKind(run.evolutionsChosen);
+ const kind=run.mode==="hunt"?encounterKind(run.evolutionsChosen):null;
  if(kind){
   if(run.encounter)run.queuedEncounter=kind;
   else if(spawnMiniboss(run,kind))emit(run,{type:"encounter-start",kind,name:ABILITIES[kind].name});
   else run.queuedEncounter=kind;
+ }
+ if(run.energy>=EVOLUTION_COST){
+  run.energy-=EVOLUTION_COST;run.status="draft";run.draftCount++;
+  run.draftOptions=draftMutationOptions(run.random);
  }
  return true;
 }
@@ -93,8 +101,8 @@ const emit=(run,event)=>{run.event=event;run.eventSerial++};
 function decay(run){if(run.effects.blueTicks>0)run.effects.blueTicks--;if(run.effects.redTicks>0)run.effects.redTicks--}
 function target(run,heading){
  const d=DIRECTIONS[heading],head=run.body[0],next={x:head.x+d.x,y:head.y+d.y};
- const wall=!inside(run,next),eating=!!run.food&&same(next,run.food);
- const occupied=eating?run.body:run.body.slice(0,-1);
+ const wall=!inside(run,next)||terrainBlocks(run,next),eating=!!run.food&&same(next,run.food);
+ const occupied=eating||run.growthDebt>0?run.body:run.body.slice(0,-1);
  return {next,wall,body:occupied.some(p=>same(p,next)),enemy:run.enemies.some(e=>same(e.pos,next)),eating};
 }
 function recover(run,failed){
@@ -111,7 +119,7 @@ function recover(run,failed){
  else {
   // Teleport only as defensive emergency fallback, selecting a genuinely
   // unoccupied triple instead of blindly occupying the board center.
-  const occupied=[...run.enemies.map(e=>e.pos)];
+  const occupied=[...run.enemies.map(e=>e.pos),...run.terrain.map(t=>t.pos),...(run.encounter?.webs||[]).map(w=>w.pos)];
   if(run.food)occupied.push(run.food);
   let found=null;
   for(let y=2;y<run.rows-1&&!found;y++)for(let x=3;x<run.cols-1&&!found;x++){
@@ -141,7 +149,7 @@ function reward(run,{energy,score,growth,type,at}){
 }
 function schedulePrey(run){
  const desired=run.evolutionsChosen>=1?2:1;
- if(run.encounter||run.queuedEncounter||run.enemies.length>=desired)return;
+ if(run.mode==="classic"||run.encounter||run.queuedEncounter||run.enemies.length>=desired)return;
  if(run.respawnIn>0){run.respawnIn--;return}
  const kind=run.evolutionsChosen>=1&&run.enemies.some(e=>e.kind==="skitter")?"runner":"skitter";
  const prey=spawnPrey(run,kind);
@@ -149,18 +157,27 @@ function schedulePrey(run){
 }
 function spawnOrb(run){
  if(run.food)return;
- if(--run.orbIn>0)return;
- const exclusions=[...run.body,...run.enemies.map(e=>e.pos),...(run.encounter?.webs||[]).map(w=>w.pos)];
+ if(run.mode!=="classic"&&--run.orbIn>0)return;
+ const exclusions=[...run.body,...run.terrain.map(t=>t.pos),...run.enemies.map(e=>e.pos),...(run.encounter?.webs||[]).map(w=>w.pos)];
  run.food=emptyTile(exclusions,run.cols,run.rows,run.random);
+ if(!run.food&&run.mode==="classic"){run.status="won";run.endReason="Every open tile belongs to your brood."}
  run.orbIn=145+Math.floor(val(run.random)*85); // ~20-31s of active ticks
 }
 export function step(run){
  if(run.status!=="running")return run;
+ if(run.runTicks>=6000){run.status="won";run.endReason="Expedition complete. Your hive endured 6,000 steps.";return run}
  // Intro and web-stun ticks advance replay time but never force the player
  // into collisions while inputs are temporarily disabled.
  const elapsed=effectiveTickMs(run);
  if(run.encounter?.awaitSpawn){
-  if(spawnNextPhase(run)){run.encounter.awaitSpawn=false;emit(run,{type:"boss-phase",kind:run.encounter.kind,phase:run.encounter.phase})}
+  if(!spawnNextPhase(run)){
+   const savedLength=run.body.length;
+   const cx=Math.floor(run.cols/2),cy=Math.floor(run.rows/2);
+   run.body=[{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy}];run.direction="right";run.turnQueue=[];
+   run.growthDebt+=Math.max(0,savedLength-3);run.terrain=[];run.food=null;
+   spawnNextPhase(run);
+  }
+  if(run.enemies.length){run.encounter.awaitSpawn=false;emit(run,{type:"boss-phase",kind:run.encounter.kind,phase:run.encounter.phase})}
   run.runTicks++;
   return run;
  }
@@ -170,6 +187,7 @@ export function step(run){
   emit(run,{type:"encounter-start",kind,name:ABILITIES[kind].name});
   run.runTicks++;return run;
  }
+ tickTerrain(run,elapsed);
  const heading=run.turnQueue.shift()??run.direction,t=target(run,heading);
  if(t.wall||t.body||t.enemy){
   run.direction=heading;
@@ -191,6 +209,7 @@ export function step(run){
  // Both prey and player freeze for 2 seconds: not a cheap unavoidable death.
  if(triggerWeb(run,t.next)){emit(run,{type:"web-stun",at:t.next});return run}
  if(run.status!=="running")return run;
+ if(run.mode==="classic"){spawnOrb(run);return run}
  const abilityEvent=tickMiniboss(run,elapsed);
  if(abilityEvent?.type==="burrow-warning"||abilityEvent?.type==="burrow"||abilityEvent?.type==="web")
   emit(run,abilityEvent);
@@ -217,10 +236,12 @@ export function step(run){
     }
     const kind=encounter.kind;
     run.encounter=null;run.enemies=[];
-    run.minibossWins++;run.kills++;
-    run.lastEncounter={kind,type:"defeat",phase:2,at:{...enemy.pos},tick:run.runTicks};
-    reward(run,{energy:5,score:750,growth:2,type:"miniboss",at:{...enemy.pos}});
-    run.respawnIn=18;
+    const full=encounter.phases===3;
+    if(full)run.bossWins++;else run.minibossWins++;run.kills++;
+    run.terrain=run.terrain.filter(t=>t.kind==="rock");
+    run.lastEncounter={kind,type:"defeat",phase:encounter.phases,at:{...enemy.pos},tick:run.runTicks};
+    reward(run,{energy:full?8:5,score:full?1500:750,growth:full?3:2,type:full?"boss":"miniboss",at:{...enemy.pos}});
+    run.respawnIn=full?36:18;
     return run;
    }
    reward(run,{energy:3,score:300,growth:1,type:"kill",at:{...enemy.pos}});

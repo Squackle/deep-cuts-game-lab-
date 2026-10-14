@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {newRun,start} from "../src/engine.js";
 import {PREY,spawnPrey,decidePrey,advancePrey,reachableArea} from "../src/enemies.js";
 test("all prey and two miniboss types have distinct defined AI identities",()=>{
- assert.deepEqual(Object.keys(PREY),["skitter","runner","stalker","weaver"]);
+ assert.deepEqual(Object.keys(PREY),["warden","guardian","skitter","runner","stalker","weaver"]);
  assert.ok(PREY.stalker.period>0&&PREY.weaver.period>0);
  assert.notEqual(PREY.skitter.accent,PREY.runner.accent);
 });

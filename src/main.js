@@ -1,3 +1,5 @@
+import {BIOMES,drawTerrain} from "./environments.js";
+import {MODES,boardKey,chicagoDay} from "./modes.js";
 import {newRun,start,pause,turn,step,progress,MUTATIONS,COLORS,chooseMutation,effectiveTickMs,activeEffects} from "./engine.js";
 import {loadCreatureArt,variantForSegment} from "./creature-sprites.js";
 import {drawLevelBackground,loadLevelBackground,levelForStage} from "./level-background.js";
@@ -25,32 +27,48 @@ let visualBurst=null,lastCapture=null,startingRun=false,lastEncounterSeen=null;
 const leaderboard=new LeaderboardClient();
 async function refreshLeaderboard(){
  try{
-  renderLeaderboard($("leaderboardEntries"),await leaderboard.load());
-  $("leaderboardStatus").textContent="ALPHA 0.4 · REPLAY-VERIFIED TOP 25";
- }catch{$("leaderboardStatus").textContent="BOARD UNAVAILABLE · LOCAL HUNTS STILL WORK"}
+  const data=await leaderboard.load(selectedMode,selectedChallenge);
+  renderLeaderboard($("leaderboardEntries"),data);
+  $("playerProfile").disabled=!!data.profile;
+  if(data.profile){$("playerProfile").value=data.profile.handle;$("profileNotice").textContent="Signed in as @"+data.profile.handle+". Scores will link to your verified Field Network profile.";}
+
+  $("leaderboardStatus").textContent=MODES[selectedMode].name.toUpperCase()+" · "+(selectedChallenge==="daily"?"DAILY "+data.day:"ARCADE")+" · TOP 25";
+ }catch{$("leaderboardStatus").textContent="BOARD UNAVAILABLE · PRACTICE STILL WORKS"}
 }
 const prefersReducedMotion=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches??false;
-const STORE="deepcuts-hive-run-best-v2",SOUND_STORE="deepcuts-hive-run-audio-v1",MUSIC_STORE="deepcuts-hive-run-music-v1";
+let selectedMode="hunt",selectedChallenge="arcade";
+try{selectedMode=localStorage.getItem("hive-mode-v1")==="classic"?"classic":"hunt"}catch{}
+$("gameMode").value=selectedMode;
+const STORE="deepcuts-hive-run-best-v3",SOUND_STORE="deepcuts-hive-run-audio-v1",MUSIC_STORE="deepcuts-hive-run-music-v1";
 const soundtrack=new HatcherySoundtrack();
 // Encounter director selects music automatically; no player-facing track previews.
 function setEncounterMusic(encounterType){
  soundtrack.setTrack(trackForEncounter(encounterType));
  syncSoundtrack();syncUI();
 }
-const state={run:newRun({cols:COLS,rows:ROWS}),best:0,audio:false,musicOn:false,ctx:null,
+const state={run:newRun({cols:COLS,rows:ROWS,mode:selectedMode}),best:0,audio:false,musicOn:false,ctx:null,
  lastFrame:0,accumulator:0,lastAnnouncement:"",pointer:null,ranked:false};
-try{state.best=Math.max(0,Number(localStorage.getItem(STORE))||0);
+try{state.best=Math.max(0,Number(localStorage.getItem(bestKey()))||0);
  state.audio=localStorage.getItem(SOUND_STORE)==="on";
  state.musicOn=localStorage.getItem(MUSIC_STORE)==="on";
 }catch{}
+function bestKey(){return STORE+"|"+boardKey(selectedMode,selectedChallenge,state?.day||chicagoDay())}
+function loadBest(){try{state.best=Math.max(0,Number(localStorage.getItem(bestKey()))||0)}catch{state.best=0}}
+function musicForRun(){
+ const r=state.run;soundtrack.setLevel(r.biome);
+ return r.encounter?(r.encounter.phases===3?"boss":"miniboss"):r.mode==="classic"?["hatchery","hunt","miniboss","boss"][r.biome-1]:"hunt";
+}
 const padScore=n=>String(Math.floor(Math.max(0,n))).padStart(6,"0");
 function syncUI(){
  const run=state.run;
  $("score").textContent=padScore(run.score);
  $("best").textContent=padScore(state.best);
- $("stage").textContent=String(run.stage).padStart(2,"0");
- $("killCount").textContent=String(run.kills).padStart(2,"0");
- $("enemyCount").textContent=String(run.enemies.length).padStart(2,"0");
+ $("biomeLabel").textContent="◈ "+BIOMES[run.biome-1].name;
+ $("stage").textContent=String(run.evolutionsChosen).padStart(2,"0");
+ $("killCount").textContent=String(run.mode==="classic"?run.brood:run.kills).padStart(2,"0");
+ $("enemyCount").textContent=String(run.mode==="classic"?run.body.length:run.enemies.length).padStart(2,"0");
+ $("collectionLabel").textContent=run.mode==="classic"?"ORBS":"CAPTURES";
+ $("populationLabel").textContent=run.mode==="classic"?"SWARM LENGTH":"PREY ON BOARD";
  const p=progress(run);
  $("progress").textContent=run.status==="won"?"HIVE COMPLETE":
   run.status==="draft"?"CHOOSE YOUR EVOLUTION":("NEXT MUTATION IN "+p.untilNext+" ENERGY");
@@ -82,7 +100,8 @@ function syncUI(){
    spec.name+" · "+(ability.phase===1?"INCOMING":"NEXT PHASE")+" · "+Math.ceil(ability.introMs/280):
    ability.stunMs>0?"WEBBED · "+(ability.stunMs/1000).toFixed(1)+"s":"";
   banner.hidden=!banner.textContent;
- }else banner.hidden=true;
+ }else {banner.hidden=run.biomeNoticeMs<=0;banner.textContent=run.biomeNoticeMs>0?BIOMES[run.biome-1].name+" · WATCH FOR MARKED TERRAIN":"";}
+ $("encounterBadge").hidden=!ability;
 }
 function announce(message){
  if(message!==state.lastAnnouncement){
@@ -93,7 +112,7 @@ function announce(message){
 function saveBest(){
  if(state.run.score<=state.best)return;
  state.best=state.run.score;
- try{localStorage.setItem(STORE,String(state.best))}catch{}
+ try{localStorage.setItem(bestKey(),String(state.best))}catch{}
 }
 function getAudioContext(){
  try{
@@ -128,6 +147,7 @@ function showOverlay(title,description,buttonLabel){
  $("overlayDescription").textContent=description;
  $("primaryButton").textContent=buttonLabel;
  $("gameOverlay").hidden=false;
+ $("modeMenu").hidden=state.run.status==="paused";
  $("submitShortcut").hidden=!["over","won"].includes(state.run.status)||!state.ranked;
 }
 function hideOverlay(){$("gameOverlay").hidden=true}
@@ -143,11 +163,12 @@ function selectMutation(color){
  if(!chooseMutation(state.run,color))return;
  visualBurst={color,until:performance.now()+1150};
  hideMutationDraft($("mutationOverlay"));
+ if(state.run.status==="draft"){showDraftScreen();return}
  state.accumulator=0;state.lastFrame=0;state.pointer=null;
- setEncounterMusic("hunt");
+ setEncounterMusic(musicForRun());
  playTone({W:540,U:670,B:330,R:790,G:475}[color],.18,.045);
  if(state.run.encounter){
-  announce(ABILITIES[state.run.encounter.kind].name+" approaching! Two captures to win.");
+  announce(ABILITIES[state.run.encounter.kind].name+" approaching! "+state.run.encounter.phases+" captures to win.");
   playTone(244,.18,.04);
  }else announce(MUTATIONS[color].name+" acquired. "+MUTATIONS[color].short+".");
  syncUI();
@@ -157,32 +178,33 @@ async function begin(){
  if(startingRun)return;
  if(["ready","over","won"].includes(state.run.status)){
   startingRun=true;
-  $("primaryButton").disabled=true;$("primaryButton").textContent="PREPARING HUNT...";
+  $("gameMode").disabled=true;$("gameChallenge").disabled=true;$("primaryButton").disabled=true;$("primaryButton").textContent="PREPARING RUN...";
   try{
-   const session=await leaderboard.start();
-   state.ranked=session.ranked;
-   state.run=newRun({cols:COLS,rows:ROWS,seed:session.seed});
+   const session=await leaderboard.start(selectedMode,selectedChallenge);
+   state.ranked=session.ranked;state.day=session.day;loadBest();
+   state.run=newRun({cols:COLS,rows:ROWS,seed:session.seed,mode:selectedMode});
    lastCapture=null;visualBurst=null;lastEncounterSeen=null;
    $("rankedNotice").textContent=session.ranked?"RANKED · REPLAY VERIFIED AFTER GAME OVER":"PRACTICE · RANKED SERVICE UNAVAILABLE";
-  }finally{startingRun=false;$("primaryButton").disabled=false}
+  }finally{startingRun=false;$("gameMode").disabled=false;$("gameChallenge").disabled=false;$("primaryButton").disabled=false}
  }
  start(state.run);
  state.accumulator=0;state.lastFrame=0;state.pointer=null;
  hideOverlay();hideMutationDraft($("mutationOverlay"));
  updateSubmission($("submissionPanel"),null,false);
- setEncounterMusic("hunt");syncUI();
- announce("Hunt moving prey. Force them into your body to earn evolution energy.");
+ setEncounterMusic(musicForRun());syncUI();
+ announce(MODES[selectedMode].description);
  canvas.focus({preventScroll:true});
 }
 function reset(){
- state.run=newRun({cols:COLS,rows:ROWS});
+ if(startingRun)return;
+ state.run=newRun({cols:COLS,rows:ROWS,mode:selectedMode});state.day="";loadBest();
  leaderboard.session=null;leaderboard.events=[];
  state.ranked=false;lastCapture=null;visualBurst=null;lastEncounterSeen=null;
  state.accumulator=0;state.lastFrame=0;state.pointer=null;
  hideMutationDraft($("mutationOverlay"));
- showOverlay("READY TO HUNT?","Corner moving prey against your living trail. Each capture earns 3 energy; rare orbs give 1. Avoid your own body.","START HUNT ▶");
+ showOverlay(MODES[selectedMode].name.toUpperCase(),MODES[selectedMode].description,"START "+MODES[selectedMode].verb+" ▶");
  updateSubmission($("submissionPanel"),null,false);
- $("rankedNotice").textContent="START A HUNT TO GET A RANKED SEED";
+ $("rankedNotice").textContent=selectedChallenge==="daily"?"DAILY RITUAL · RESETS MIDNIGHT CENTRAL":"ARCADE · NEW SEED EACH RUN";
  soundtrack.setTrack("hatchery");syncSoundtrack();syncUI();draw();
  announce("New run ready. Select Start Run to play.");
 }
@@ -294,7 +316,8 @@ function drawArtCreature(part,kind,id,heading){
 function draw(){
  if(!context)return;
  const run=state.run;
- drawLevelBackground(context,canvas,arenaBackground,COLS,ROWS,CELLS);
+ drawLevelBackground(context,canvas,arenaBackground,COLS,ROWS,CELLS,run.biome);
+ drawTerrain(context,run,CELLS);
  // The brood is a gameplay target; keep it conspicuous over busy art.
  if(run.food)drawBroodPickup(context,run.food,CELLS,performance.now());
  if(run.encounter)drawWebs(context,run.encounter.webs,CELLS);
@@ -349,10 +372,10 @@ function loop(time){
      lastEncounterSeen=id;
      lastCapture={pos:encounterMoment.at,until:performance.now()+850};
      if(encounterMoment.type==="phase"){
-      announce("Miniboss captured! "+encounterMoment.kind.toUpperCase()+" enters its final phase.");
+      announce(ABILITIES[encounterMoment.kind].name+" captured! Phase "+encounterMoment.phase+".");
       playTone(490,.22,.055);
      }else{
-      announce("MINIBOSS DEFEATED! +5 evolution energy and +750 base score.");
+      announce(ABILITIES[encounterMoment.kind].name+" DEFEATED! "+(ABILITIES[encounterMoment.kind].phases===3?"+8 energy and +1500 base score.":"+5 energy and +750 base score."));
       playTone(790,.30,.06);
      }
     }
@@ -365,16 +388,13 @@ function loop(time){
      announce("Enemy captured! +3 evolution energy. Total captures "+state.run.kills+".");
    }else if(state.run.brood>prevBrood){
     playTone(480,.09,.028);saveBest();
-    announce("Rare brood collected! +1 evolution energy.");
+    announce("Brood collected! +1 evolution energy.");
    }
    if(state.run.status==="draft")showDraftScreen();
    // Maintain miniboss soundtrack throughout its multi-capture phases;
    // first cue follows the safe warning, never preview high-tier music.
-   if(state.run.encounter&&(!state.run.encounter.introMs||soundtrack.trackId==="miniboss")){
-    if(soundtrack.trackId!=="miniboss"&&state.run.status==="running")setEncounterMusic("miniboss");
-   }else if(!state.run.encounter&&soundtrack.trackId==="miniboss"){
-    setEncounterMusic("hunt");
-   }
+   const nextTrack=musicForRun();
+   if(soundtrack.trackId!==nextTrack&&state.run.status==="running")setEncounterMusic(nextTrack);
    if(state.run.status==="over"||state.run.status==="won"){
     soundtrack.stop();
     saveBest();syncUI();
@@ -384,7 +404,7 @@ function loop(time){
      state.run.endReason+" Final score: "+state.run.score.toLocaleString()+". Best: "+state.best.toLocaleString()+".",
      "PLAY AGAIN ↺");
     updateSubmission($("submissionPanel"),state.run,state.ranked);
-    $("finalRunSummary").textContent=state.run.kills+" captures · "+state.run.evolutionsChosen+" evolutions · "+state.run.score+" points";
+    $("finalRunSummary").textContent=(state.run.mode==="classic"?state.run.brood+" orbs":state.run.kills+" captures")+" · "+state.run.evolutionsChosen+" evolutions · "+state.run.score+" points";
     announce((final?"Win! ":"Game over. ")+state.run.endReason+" Final score "+state.run.score+". Submit your ranked replay below.");
    }
   }
@@ -412,12 +432,12 @@ $("leaderboardForm").addEventListener("submit",async event=>{
   const alias=$("playerAlias").value.trim();
   const handle=$("playerProfile").value.trim();
   const submitted=await leaderboard.submit(state.run,alias,handle);
-  notice.textContent="RANKED! VERIFIED "+submitted.score+" POINTS · "+submitted.kills+" KILLS";
+  notice.textContent="RANKED! VERIFIED "+submitted.score+" POINTS";
   state.ranked=false;$("submitShortcut").hidden=true;
   try{localStorage.setItem("hive-last-alias-v1",alias)}catch{}
   await refreshLeaderboard();
  }catch(error){notice.textContent=error.message||"Could not submit this run."}
- finally{button.disabled=true}
+ finally{button.disabled=!leaderboard.session}
 });
 $("pauseButton").addEventListener("click",togglePause);
 $("restartButton").addEventListener("click",reset);
@@ -452,7 +472,7 @@ const keys={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",
  w:"up",s:"down",a:"left",d:"right",W:"up",S:"down",A:"left",D:"right"};
 document.addEventListener("keydown",event=>{
  const focus=document.activeElement;
- if(focus?.tagName==="INPUT"||focus?.tagName==="TEXTAREA")return;
+ if(["INPUT","TEXTAREA","SELECT"].includes(focus?.tagName))return;
  if(state.run.status==="draft"&&["1","2","3"].includes(event.key)){
   event.preventDefault();
   selectMutation(state.run.draftOptions[Number(event.key)-1]);
@@ -514,7 +534,12 @@ window.addEventListener("blur",()=>{
  soundtrack.stop();
  state.lastFrame=0;state.accumulator=0;
 });
-syncUI();draw();refreshLeaderboard();
+$("gameMode").addEventListener("change",()=>{
+ selectedMode=$("gameMode").value;try{localStorage.setItem("hive-mode-v1",selectedMode)}catch{}
+ reset();void refreshLeaderboard();
+});
+$("gameChallenge").addEventListener("change",()=>{selectedChallenge=$("gameChallenge").value;reset();void refreshLeaderboard()});
+reset();refreshLeaderboard();
 try{$("playerAlias").value=localStorage.getItem("hive-last-alias-v1")||""}catch{}
 // The Hatchery remains the sole arena during the first Predator release.
 arenaBackground=loadLevelBackground(()=>draw());

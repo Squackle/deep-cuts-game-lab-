@@ -13,16 +13,16 @@ export function renderLeaderboard(root,data){
   if(row.profileHandle){
    const href=profileLink(row.profileHandle);
    if(href){
-    const a=el(doc,"a","↗ @"+row.profileHandle+" (unverified)","board-profile");
+    const a=el(doc,"a","↗ @"+row.profileHandle+(row.profileVerified?" · VERIFIED":" (unverified)"),"board-profile");
     a.href=href;a.target="_blank";a.rel="noopener noreferrer";
-    a.title="Public Deep Cuts profile link provided by this player; ownership is NOT verified.";
+    a.title=row.profileVerified?"Verified Field Network profile":"Public profile link provided by this player; ownership is not verified.";
     player.append(a);
    }
   }
   r.append(player);
   const stats=el(doc,"div",undefined,"board-stat");
   stats.append(el(doc,"strong",Number(row.score||0).toLocaleString()));
-  stats.append(el(doc,"small",Number(row.kills||0)+" KILLS · "+Number(row.evolutions||0)+" EVO"));
+  stats.append(el(doc,"small",(data.mode==="classic"?"BROOD TRAIL":Number(row.kills||0)+" CAPTURES")+" · "+Number(row.evolutions||0)+" EVO"));
   r.append(stats);root.append(r);
  }
 }

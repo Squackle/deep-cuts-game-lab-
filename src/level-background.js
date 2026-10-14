@@ -1,3 +1,4 @@
+import {BIOMES,biomeForEvolution} from "./environments.js";
 /**
  * HIVE RUN / Level 01: The Hatchery
  * Original user-approved painted background, contrast-corrected for gameplay.
@@ -7,7 +8,7 @@ export const LEVEL_ONE={
  name:"THE HATCHERY",
  asset:new URL("../assets/backgrounds/hatchery.webp",import.meta.url).toString()
 };
-export function levelForStage(stage){return LEVEL_ONE}
+export function levelForStage(stage){const b=biomeForEvolution(Math.max(0,stage-1));return b.id===1?LEVEL_ONE:b}
 export function loadLevelBackground(onReady=()=>{}){
  if(typeof Image==="undefined")return null;
  const image=new Image();image.decoding="async";
@@ -16,11 +17,12 @@ export function loadLevelBackground(onReady=()=>{}){
  image.src=LEVEL_ONE.asset;
  return image;
 }
-export function drawLevelBackground(ctx,canvas,background,cols,rows,cellSize){
+export function drawLevelBackground(ctx,canvas,background,cols,rows,cellSize,biome=1){
  const width=canvas.width,height=canvas.height;
  ctx.save();
  ctx.fillStyle="#14251e";ctx.fillRect(0,0,width,height);
- if(background?.complete&&background.naturalWidth>0){
+ if(biome>1){drawCavern(ctx,width,height,biome)}
+ else if(background?.complete&&background.naturalWidth>0){
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";
   ctx.drawImage(background,0,0,width,height);
   // Background is stage atmosphere, not gameplay information.
@@ -46,4 +48,35 @@ export function drawLevelBackground(ctx,canvas,background,cols,rows,cellSize){
  for(let x=1;x<cols;x++){const pos=x*cellSize+.5;ctx.moveTo(pos,0);ctx.lineTo(pos,height)}
  for(let y=1;y<rows;y++){const pos=y*cellSize+.5;ctx.moveTo(0,pos);ctx.lineTo(width,pos)}
  ctx.stroke();ctx.restore();
+}
+/** Hand-built pixel architecture, fixed to the arena; no random frame noise. */
+function drawCavern(ctx,w,h,biome){
+ const stone=biome===2?['#171d18','#23281e','#32362a','#5c5541']:biome===3?['#141521','#20212e','#313040','#675873']:['#1e151b','#2b2029','#3c2a36','#765565'];
+ ctx.imageSmoothingEnabled=false;ctx.fillStyle=stone[0];ctx.fillRect(0,0,w,h);
+ // Cut-stone floor, inset ribbing and deeply recessed arches.
+ for(let y=0;y<h;y+=16)for(let x=0;x<w;x+=24){
+  const offset=y%32?12:0,n=(x*13+y*7)%17;
+  ctx.fillStyle=stone[n<8?1:0];ctx.fillRect(x-offset+1,y+1,22,14);
+  if(n<4){ctx.fillStyle=stone[2];ctx.fillRect(x-offset+4,y+3,6,1)}
+ }
+ for(let y=14;y<h;y+=72){
+  for(const side of [0,1]){
+   const x=side?w-30:8;
+   ctx.fillStyle=stone[2];ctx.fillRect(x,y,22,54);
+   ctx.fillStyle=stone[3];ctx.fillRect(x+2,y+2,3,48);ctx.fillRect(x+3,y,16,4);
+   ctx.fillStyle=stone[0];ctx.fillRect(x+8,y+8,10,38);
+   ctx.fillStyle=stone[1];ctx.fillRect(x-4,y+51,30,7);
+   if(biome>=3){
+    const glow=biome===3?'#786c91':'#945c72';
+    ctx.fillStyle=glow;ctx.fillRect(x+8,y+18,4,15);ctx.fillRect(x+12,y+12,3,18);
+    ctx.fillStyle='#b3a4bd';ctx.fillRect(x+12,y+13,1,9);
+   }
+  }
+ }
+ // Broken vault ribs stay on the periphery, leaving the central playfield quiet.
+ for(let i=0;i<8;i++){
+  ctx.fillStyle=stone[2];ctx.fillRect(30+i*5,4+i*3,5,5);ctx.fillRect(w-35-i*5,4+i*3,5,5);
+  ctx.fillRect(30+i*5,h-9-i*3,5,5);ctx.fillRect(w-35-i*5,h-9-i*3,5,5);
+ }
+ ctx.fillStyle='rgba(3,8,11,.28)';ctx.fillRect(0,0,w,h);
 }

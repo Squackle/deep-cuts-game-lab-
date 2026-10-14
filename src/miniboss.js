@@ -1,3 +1,4 @@
+import {reservedTerrain,warnTerrain} from "./environments.js";
 /**
  * Alpha 0.4: deterministic two-capture miniboss encounters.
  * Only simulation milliseconds advance timers, never Date.now or animation frames.
@@ -6,6 +7,8 @@
 import {spawnPrey,same,inside,reachableArea,HEADINGS,VECTORS} from "./enemies.js";
 
 export const ABILITIES=Object.freeze({
+ warden:Object.freeze({name:"HATCHERY WARDEN",ability:"BROOD SEAL",cooldownMs:10000,phases:3,icon:"seal"}),
+ guardian:Object.freeze({name:"RIFT GUARDIAN",ability:"RIFT PULSE",cooldownMs:10000,phases:3,icon:"rift"}),
  stalker:Object.freeze({name:"BURROW STALKER",ability:"BURROW DASH",cooldownMs:10000,phases:2,icon:"burrow"}),
  weaver:Object.freeze({name:"TUNNEL WEAVER",ability:"WEB SNARE",cooldownMs:10000,phases:2,icon:"web"})
 });
@@ -20,9 +23,10 @@ const distance=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
 const occupied=(run,p,id=null)=>run.body.some(b=>same(p,b))||
  run.enemies.some(e=>e.id!==id&&same(p,e.pos))||
  !!run.food&&same(p,run.food);
-const available=(run,p,id=null)=>inside(run,p)&&!occupied(run,p,id);
+const available=(run,p,id=null)=>inside(run,p)&&!reservedTerrain(run,p)&&!isEnemyWeb(run,p)&&!occupied(run,p,id);
 export function encounterKind(evolutions){
  if(evolutions>=2&&evolutions%4===2)return evolutions%8===2?"stalker":"weaver";
+ if(evolutions>=4&&evolutions%4===0)return evolutions%8===4?"warden":"guardian";
  return null;
 }
 export function spawnMiniboss(run,kind){
@@ -30,7 +34,7 @@ export function spawnMiniboss(run,kind){
  const backup=run.enemies;
  run.enemies=[];const newEnemy=spawnPrey(run,kind);
  if(!newEnemy){run.enemies=backup;return false}
- run.encounter={kind,phase:1,phases:2,clockMs:0,abilityMs:0,stunMs:0,
+ run.encounter={kind,phase:1,phases:ABILITIES[kind].phases,clockMs:0,abilityMs:0,stunMs:0,
   introMs:INTRO_MS,telegraph:null,webs:[],lastAbility:null};
  run.enemies=[newEnemy];run.respawnIn=0;
  return true;
@@ -41,6 +45,7 @@ export function spawnNextPhase(run){
  run.enemies=[];
  const enemy=spawnPrey(run,encounter.kind);
  if(!enemy)return false;
+ if(encounter.phases===3)enemy.period=encounter.phase===3?3:4;
  run.enemies=[enemy];
  encounter.abilityMs=0;
  encounter.introMs=INTRO_MS;
@@ -135,6 +140,15 @@ export function tickMiniboss(run,dt){
   if(!candidate)return null;
   e.telegraph={pos:candidate.pos,from:{...enemy.pos},remainingMs:TELEGRAPH_MS};
   return {type:"burrow-warning",at:candidate.pos};
+ }
+ if(e.kind==="warden"||e.kind==="guardian"){
+  const x=enemy.pos.x,y=enemy.pos.y;
+  const positions=e.kind==="warden"?
+   (e.phase%2?[{x:x-1,y:y+2},{x,y:y+2},{x:x+1,y:y+2}]:[{x:x+2,y:y-1},{x:x+2,y},{x:x+2,y:y+1}]):
+   [{x:x-2,y},{x:x+2,y},{x,y:y-2},{x,y:y+2}];
+  warnTerrain(run,positions,e.kind==="warden"?"seal":"rift",1400,e.kind==="warden"?3500:2200);
+  e.abilityMs=0;e.lastAbility={type:"boss-power",at:{...enemy.pos},tick:run.runTicks};
+  return e.lastAbility;
  }
  if(e.webs.length>=MAX_WEBS)return null;
  const pos=selectWebTile(run,enemy);

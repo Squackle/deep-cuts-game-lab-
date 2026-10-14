@@ -17,7 +17,22 @@ const WEB=[
 "...ksk........ksk..","....k..........k....","....................","...................."
 ].map(row=>row.padEnd(20,"."));
 const PALETTE=Object.freeze({".":null,k:"#090e0c",s:"#383b30",g:"#706b53",h:"#afa487",d:"#17221c"});
-export const ICON_PIXELS=Object.freeze({stalker:BURROW,weaver:WEB});
+// A crowned stone carapace and a split crystal eye, each in a centered 20px field.
+const WARDEN=[
+"....................","....h....hh....h....","....sh..hssh..hs....","....gshhsssshsg.....",
+"....ggssssssggg.....","...kggghhhhhhgggk...","..ksgghgggggghggsk..","..ksgggssssssgggsk..",
+"..ksggshhsshhsggsk..","..ksggshdssdhsggsk..","..ksggssssssssggsk..","...ksgggssssgggsk...",
+"...kssgghhhhgssk....","....kssgssssgssk....",".....kssggggssk.....",".....ksgssssgsk.....",
+"......ksshhssk......",".......kssssk.......","........kkkk........","...................."
+].map(r=>r.padEnd(20,'.').slice(0,20));
+const GUARDIAN=[
+"....................",".........hh.........","........hssh........",".......hssssh.......",
+"...h..hssddssh..h...","..hsshssddddsshssh..","...hssgghhhhggssh...","....hsgghddhggsh....",
+".....sgghddhggs.....","..hhssgghddhggsshh..","..hhssgghddhggsshh..",".....sgghddhggs.....",
+"....hsgghddhggsh....","...hssgghhhhggssh...","..hsshssddddsshssh..","...h..hssddssh..h...",
+".......hssssh.......","........hssh........",".........hh.........","...................."
+].map(r=>r.padEnd(20,'.').slice(0,20));
+export const ICON_PIXELS=Object.freeze({stalker:BURROW,weaver:WEB,warden:WARDEN,guardian:GUARDIAN});
 export const OCHRE=Object.freeze({track:"#414335",fill:"#98824b",ready:"#b19a5a",stone:"#b2ab8f"});
 export function validateIcons(){return Object.values(ICON_PIXELS).every(a=>a.length===20&&a.every(row=>row.length===20&&[...row].every(c=>Object.hasOwn(PALETTE,c))))}
 export function chargePixels(charge){
@@ -63,7 +78,7 @@ export function drawMiniboss(ctx,enemies,cell,phase=1){
   if(!ICON_PIXELS[enemy.kind])continue;
   const box=24,x=enemy.pos.x*cell+(cell-box)/2,y=enemy.pos.y*cell+(cell-box)/2;
   ctx.fillStyle="#0b1410";ctx.fillRect(x,y,box,box);
-  ctx.strokeStyle=phase===2?"#b19a5a":"#746d56";ctx.lineWidth=1;ctx.strokeRect(x+.5,y+.5,box-1,box-1);
+  ctx.strokeStyle=phase>=2?"#b19a5a":"#746d56";ctx.lineWidth=1;ctx.strokeRect(x+.5,y+.5,box-1,box-1);
   drawBossPixelIcon(ctx,enemy.kind,x+2,y+2,20);
  }
 }
