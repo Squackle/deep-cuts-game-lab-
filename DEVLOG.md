@@ -379,3 +379,13 @@ Version 1.2. Tunnel Weaver webs immobilize only the player for 2 seconds; the en
 Ranked simulation changes increment the rules version to `hive-1.2`. Existing verified Arcade records remain stored and visible in the permanent top ten, marked OLD where applicable. Historic Daily Ritual scores remain archived in storage but no longer appear in active competition. Never delete historical D1 scores for this update.
 
 **Permanent release naming:** Use one word only as the Hive Run release title, as required by `docs/HIVE-RUN-RELEASE-NAMING.md`.
+
+## Spindle
+
+Version 1.3 · **Spindle**. Tunnel Weaver web-snares recharge in 5 active seconds (previously 10), with up to three simultaneous webs (previously two), each lasting 15 seconds. Rift Guardian Rift Burst recharge is 4 active seconds (previously two). Hatchery Warden, Rift Guardian, and Tunnel Weaver never step into their own active or warning ability tiles; their AI also excludes those tiles from route evaluation and waits instead of disappearing if its own hazards temporarily surround it.
+
+The encounter name, phase counter, dingy-ochre ability charge ring and WEBBED banner now occupy a compact, independent status row **above** the canvas, never covering playable arena tiles, including immersive Game Only mode. Reduced viewport sizes keep the status compact and preserve the 18 × 22 board.
+
+Since simulation behavior changed, `RULES_VERSION` is now `hive-1.3`. Permanent Arcade leaderboards retain older verified scores, identifying legacy rules when appropriate. New ranked sessions use the revised deterministic replay rules. Lair remains unranked; no Daily Ritual was restored.
+
+**Naming convention:** Future releases retain the single-word thematic titles required in `docs/HIVE-RUN-RELEASE-NAMING.md`.
