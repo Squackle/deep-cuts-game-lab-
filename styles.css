@@ -388,3 +388,6 @@ body.game-only .arcade-frame>.mutation-guide{display:none!important}
 body.lair-active .leaderboard-panel{display:none!important}
 @media(max-width:410px){.lair-picker{padding:7px}.lair-choices{gap:5px}.lair-choice{padding:6px;min-height:59px}.lair-choice strong{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.lair-choice{transition:none}}
+
+/* Brood Trail has no boss expeditions. */
+#gameChallenge[hidden],#gameChallengeLabel[hidden]{display:none!important}

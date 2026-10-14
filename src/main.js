@@ -1,5 +1,5 @@
 import {BIOMES,drawTerrain} from "./environments.js";
-import {MODES,boardKey,chicagoDay} from "./modes.js";
+import {MODES,boardKey} from "./modes.js";
 import {newRun,start,pause,turn,step,progress,MUTATIONS,COLORS,chooseMutation,effectiveTickMs,activeEffects} from "./engine.js";
 import {loadCreatureArt,variantForSegment} from "./creature-sprites.js";
 import {drawLevelBackground,loadLevelBackground,levelForStage} from "./level-background.js";
@@ -64,7 +64,7 @@ try{state.best=Math.max(0,Number(localStorage.getItem(bestKey()))||0);
  state.audio=localStorage.getItem(SOUND_STORE)==="on";
  state.musicOn=localStorage.getItem(MUSIC_STORE)==="on";
 }catch{}
-function bestKey(){return STORE+"|"+boardKey(selectedMode,selectedChallenge,state?.day||chicagoDay())}
+function bestKey(){return STORE+"|"+boardKey(selectedMode)}
 function loadBest(){if(lairActive()){state.best=0;state.sessionBest=0;return}
  try{state.best=Math.max(0,Number(localStorage.getItem(bestKey()))||0)}catch{state.best=0}state.sessionBest=sessionBests.get(bestKey())}
 function musicForRun(){
@@ -293,10 +293,10 @@ function begin(){
    state.run=createLairRun(selectedLairBoss,COLS,ROWS);
    $("rankedNotice").textContent="THE LAIR · UNRANKED · RETRY ANYTIME";
   }else{
-   const session=createSoloSession(selectedMode,selectedChallenge);
+   const session=createSoloSession(selectedMode,"arcade");
    state.day=session.day;loadBest();
    state.run=newRun({cols:COLS,rows:ROWS,seed:session.seed,mode:selectedMode});
-   $("rankedNotice").textContent=session.day?"SOLO DAILY SEED · LOCAL RECORDS ONLY":"SOLO EXPERIMENT · NO ONLINE RANKING";
+   $("rankedNotice").textContent="SOLO EXPERIMENT · NO ONLINE RANKING";
   }
   lastCapture=null;visualBurst=null;lastEncounterSeen=null;lairBurst=null;
  }
@@ -319,7 +319,7 @@ function reset(){
  showOverlay(lairActive()?lairTitle():MODES[selectedMode].name.toUpperCase(),
  lairActive()?"Practice one boss in a repeatable, unranked encounter.":MODES[selectedMode].description,
  lairActive()?"ENTER THE LAIR ▶":"START "+MODES[selectedMode].verb+" ▶");
- $("rankedNotice").textContent=lairActive()?"THE LAIR · UNRANKED":selectedChallenge==="daily"?"SOLO DAILY SEED · RESETS MIDNIGHT CENTRAL":"SOLO EXPERIMENT · LOCAL RECORDS ONLY";
+ $("rankedNotice").textContent=lairActive()?"THE LAIR · UNRANKED":"SOLO EXPERIMENT · LOCAL RECORDS ONLY";
  soundtrack.setTrack("hatchery");syncSoundtrack();syncUI();draw();
  announce("New local test ready. Select Start Run to play.");
 }
@@ -669,26 +669,28 @@ window.addEventListener("blur",()=>{
  soundtrack.stop();
  state.lastFrame=0;state.accumulator=0;
 });
-$("gameMode").addEventListener("change",()=>{
- selectedMode=$("gameMode").value;
- if(selectedMode==="classic"&&selectedChallenge==="practice"){
+function syncExpeditionChoice(){
+ if(selectedMode==="classic"){
   selectedChallenge="arcade";$("gameChallenge").value="arcade";
  }
- $("gameChallenge").querySelector('option[value="practice"]').disabled=selectedMode==="classic";
+ $("gameChallenge").hidden=selectedMode==="classic";
+ $("gameChallengeLabel").hidden=selectedMode==="classic";
+}
+$("gameMode").addEventListener("change",()=>{
+ selectedMode=$("gameMode").value;
+ syncExpeditionChoice();
  try{localStorage.setItem("hive-mode-v1",selectedMode)}catch{}
  reset();
 });
 $("gameChallenge").addEventListener("change",()=>{
- selectedChallenge=$("gameChallenge").value;
- if(selectedMode==="classic"&&selectedChallenge==="practice"){
-  selectedChallenge="arcade";$("gameChallenge").value="arcade";
- }
+ selectedChallenge=selectedMode==="classic"?"arcade":$("gameChallenge").value;
+ syncExpeditionChoice();
  reset();
 });
 for(const button of document.querySelectorAll("[data-lair-boss]")){
  button.addEventListener("click",()=>{selectedLairBoss=button.dataset.lairBoss;reset()});
 }
-$("gameChallenge").querySelector('option[value="practice"]').disabled=selectedMode==="classic";
+syncExpeditionChoice();
 reset();
 // The Hatchery remains the sole arena during the first Predator release.
 arenaBackground=loadLevelBackground(()=>draw());

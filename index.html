@@ -16,7 +16,7 @@
    <span class="brand-mark" aria-hidden="true">◈</span>
    <span>DEEP CUTS <strong>GAME LAB</strong><small>TWO PATHS. ONE HIVE.</small></span>
   </a>
-  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> 1.1 · LAIR</span>
+  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> 1.2 · SNARE</span>
  </header>
  <main>
   <section class="intro" aria-labelledby="mainTitle">
@@ -52,8 +52,8 @@
         <div id="modeMenu" class="mode-menu">
          <label for="gameMode">CHOOSE YOUR PATH</label>
          <select id="gameMode"><option value="hunt">PREDATOR HUNT</option><option value="classic">BROOD TRAIL · CLASSIC SNAKE</option></select>
-         <label for="gameChallenge">EXPEDITION</label>
-         <select id="gameChallenge"><option value="arcade">ARCADE · NEW SEED EACH RUN</option><option value="daily">DAILY TEST SEED · REPEATABLE</option><option value="practice">THE LAIR · BOSS PRACTICE</option></select>
+         <label for="gameChallenge" id="gameChallengeLabel">EXPEDITION</label>
+         <select id="gameChallenge"><option value="arcade">ARCADE · NEW SEED EACH RUN</option><option value="practice">THE LAIR · BOSS PRACTICE</option></select>
 <div class="lair-picker" id="lairPicker" hidden aria-label="Choose a boss to practice">
   <strong class="lair-label">◈ SELECT YOUR PREY</strong>
   <div class="lair-choices" role="group" aria-label="Boss selection">
@@ -135,7 +135,7 @@
 <p><strong>BROOD TRAIL:</strong> Classic Snake. Swipe or use arrow keys / WASD, collect brood orbs, grow your swarm and avoid your tail.</p>
 <p><strong>MUTATIONS:</strong> Captures grant 3 energy; Brood Trail orbs grant 1. Every 5 energy, choose a mutation: white shields, blue slows, black sheds your tail, red boosts speed and points, green grows the swarm.</p>
 <p><strong>BOSSES:</strong> Evolution 2: Burrow Stalker burrows five tiles. Evolution 4: Hatchery Warden seals tiles. Evolution 6: Tunnel Weaver places webs. Evolution 8: Rift Guardian opens rifts. Powers charge every 10 active seconds. Boss dossiers pause the action before encounters.</p>
-<p><strong>DEPTHS:</strong> Backgrounds change after 4, 8, and 12 evolutions. Dashed tiles warn before blocking. Daily Test Seed repeats until midnight Central.</p></details>
+<p><strong>DEPTHS:</strong> Backgrounds change after 4, 8, and 12 evolutions. Dashed tiles warn before blocking. </p></details>
     <p class="sr-only" id="gameAnnouncement" role="status" aria-live="polite"></p>
    </section>
    <aside class="mission mission--patch-notes" aria-labelledby="patchNotesTitle">
@@ -144,7 +144,7 @@
 <p class="patch-notes-intro">Latest changes to the standalone test build.</p><article class="patch-note-entry"><span>14 OCT 2026 · LAIR</span><h3>Lair</h3><p>Select and practice any of the four bosses. Instant retry, danger warnings and richer capture effects. No leaderboard or profile scores.</p></article>
 <article class="patch-note-entry"><span>14 OCT 2026 · INSTINCT</span><h3>Instinct</h3><p>Mutation shortcuts: W/A/S, ↑/←/↓, or 1/2/3. Desktop gameplay waits for a deliberate movement key; touch play resumes instantly. Brood Trail descriptions now match its orb-only rules. HUD shows a session-only best.</p></article>
 <article class="patch-note-entry"><span>14 OCT 2026 · UI CLEANUP</span><h3>Clearer Playfield</h3><p>Removed directional buttons, extra statistics and the long instruction sidebar. Steering remains swipe and keyboard, with hidden diagnostics available on demand.</p></article>
-<article class="patch-note-entry"><span>14 OCT 2026 · SOLO LAB</span><h3>Local Experiments Only</h3><p>Removed shared scores, account links and submissions. Test both modes with local records or a repeatable daily seed.</p></article>
+<article class="patch-note-entry"><span>14 OCT 2026 · SOLO LAB</span><h3>Local Experiments Only</h3><p>Removed shared scores, account links and submissions. Test both modes locally with Arcade runs and repeatable Lair encounters.</p></article>
 <article class="patch-note-entry"><span>14 OCT 2026 · 1.0.4</span><h3>Four Painted Depths</h3><p>Added individually illustrated backgrounds for the Hatchery, Burrows, Fracture and Deep Fracture.</p></article>
 <article class="patch-note-entry"><span>14 OCT 2026 · 1.0.3</span><h3>Boss Dossiers</h3><p>Each boss pauses the game for a mechanics briefing and a three-second regroup countdown.</p></article>
 <article class="patch-note-entry"><span>14 OCT 2026 · 1.0.2</span><h3>Early Game Balance</h3><p>Faster turn feedback, one forgiving prey collision, slower opening enemies, quicker orbs and optional trap hints.</p></article>
