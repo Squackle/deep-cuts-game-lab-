@@ -104,7 +104,12 @@ export function decidePrey(run,enemy){
 }
 export function advancePrey(run,enemy){
  enemy.clock++;
- if(enemy.clock<enemy.period)return {type:"waiting"};
+ // Only natural-cadence ordinary prey slow during the opening. Bosses and
+ // forced one-tick capture fixtures keep their original movement periods.
+ const grace=run.openingGraceMs>0&&ORDINARY_PREY.includes(enemy.kind)&&
+  enemy.period>=PREY[enemy.kind].period;
+ const period=enemy.period+(grace?3:0);
+ if(enemy.clock<period)return {type:"waiting"};
  enemy.clock=0;enemy.moves++;
  const chosen=decidePrey(run,enemy);
  if(chosen){enemy.pos=chosen.dest;enemy.dir=chosen.dir;return {type:"moved",id:enemy.id,pos:chosen.dest}}

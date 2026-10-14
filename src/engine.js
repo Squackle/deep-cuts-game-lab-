@@ -8,7 +8,11 @@ import {encounterKind,spawnMiniboss,spawnNextPhase,tickMiniboss,triggerWeb,consu
 export const DIRECTIONS=Object.freeze(Object.fromEntries(Object.entries(VECTORS).map(([k,v])=>[k,{x:v[0],y:v[1]}])));
 export const COLORS=Object.freeze(["W","U","B","R","G"]);
 export const EVOLUTION_COST=5;
-export const RULES_VERSION="hive-1.0.1";
+export const OPENING_GRACE_MS=9000;
+export const OPENING_EVOLUTIONS=2;
+export const OPENING_ORB_MIN=70;
+export const OPENING_ORB_SPREAD=35;
+export const RULES_VERSION="hive-1.0.2";
 // Player speed is set in milliseconds per grid step (larger = easier).
 // Playtest adjustment: about 10% less movement per second at every stage.
 export const PLAYER_BASE_TICK_MS=150;
@@ -42,7 +46,9 @@ export function newRun({cols=18,rows=22,random,seed,mode="hunt"}={}){
  const rng=random||((seed===undefined)?Math.random:seededRandom(seed));
  const y=Math.floor(rows/2),x=Math.max(6,Math.floor(cols/2));
  const run={cols,rows,mode,biome:1,terrain:[],hazardMs:0,biomeNoticeMs:0,bossWins:0,random:rng,seed:seed??null,body:Array.from({length:7},(_,i)=>({x:x-i,y})),
-  direction:"right",turnQueue:[],food:null,orbIn:145,
+  direction:"right",turnQueue:[],food:null,orbIn:mode==="hunt"?72:145,
+  openingGraceMs:mode==="hunt"?OPENING_GRACE_MS:0,
+  mercy:mode==="hunt"?1:0,
   score:0,brood:0,kills:0,energy:0,earnedEnergy:0,stage:1,tickMs:PLAYER_BASE_TICK_MS,
   evolutionsChosen:0,draftCount:0,draftOptions:[],mutations:{W:0,U:0,B:0,R:0,G:0},
   effects:{shield:0,molt:0,blueTicks:0,redTicks:0,greenPickups:0},growthDebt:0,
@@ -105,10 +111,11 @@ function target(run,heading){
  const occupied=eating||run.growthDebt>0?run.body:run.body.slice(0,-1);
  return {next,wall,body:occupied.some(p=>same(p,next)),enemy:run.enemies.some(e=>same(e.pos,next)),eating};
 }
-function recover(run,failed){
+function recover(run,failed,freePreyDodge=false){
  const e=run.effects;
  let color=null;
- if(e.shield>0){e.shield--;color="W"}
+ if(freePreyDodge&&run.mercy>0){run.mercy--;color="G"}
+ else if(e.shield>0){e.shield--;color="W"}
  else if(e.molt>0&&run.body.length>=5){e.molt--;color="B";run.body.splice(run.body.length-3,3)}
  if(!color)return false;
  const compass=["up","right","down","left"],i=compass.indexOf(failed);
@@ -119,7 +126,7 @@ function recover(run,failed){
  else {
   // Teleport only as defensive emergency fallback, selecting a genuinely
   // unoccupied triple instead of blindly occupying the board center.
-  const occupied=[...run.enemies.map(e=>e.pos),...run.terrain.map(t=>t.pos),...(run.encounter?.webs||[]).map(w=>w.pos)];
+  const occupied=[...run.body,...run.enemies.map(e=>e.pos),...run.terrain.map(t=>t.pos),...(run.encounter?.webs||[]).map(w=>w.pos)];
   if(run.food)occupied.push(run.food);
   let found=null;
   for(let y=2;y<run.rows-1&&!found;y++)for(let x=3;x<run.cols-1&&!found;x++){
@@ -129,7 +136,7 @@ function recover(run,failed){
   if(found){const oldLength=run.body.length;run.body=found;run.growthDebt+=Math.max(0,oldLength-3);run.direction="right";run.turnQueue=[]}
   else{run.status="over";run.endReason="No safe recovery tile.";return false}
  }
- run.saves++;emit(run,{type:"rescue",color,name:MUTATIONS[color].name});
+ run.saves++;emit(run,{type:"rescue",color,name:freePreyDodge?"Brood Instinct":MUTATIONS[color].name});
  decay(run);run.moves++;run.runTicks++;
  return true;
 }
@@ -148,12 +155,19 @@ function reward(run,{energy,score,growth,type,at}){
  }
 }
 function schedulePrey(run){
- const desired=run.evolutionsChosen>=1?2:1;
+ // One ordinary enemy at a time until the third chosen evolution.
+ const desired=run.evolutionsChosen>=3?2:1;
  if(run.mode==="classic"||run.encounter||run.queuedEncounter||run.enemies.length>=desired)return;
  if(run.respawnIn>0){run.respawnIn--;return}
  const kind=run.evolutionsChosen>=1&&run.enemies.some(e=>e.kind==="skitter")?"runner":"skitter";
  const prey=spawnPrey(run,kind);
  if(prey){run.enemies.push(prey);run.respawnIn=12}
+}
+export function orbInterval(run){
+ // During the first two evolutions, catch-up energy is easier to acquire.
+ if(run.mode==="hunt"&&run.evolutionsChosen<OPENING_EVOLUTIONS)
+  return OPENING_ORB_MIN+Math.floor(val(run.random)*OPENING_ORB_SPREAD);
+ return 145+Math.floor(val(run.random)*85);
 }
 function spawnOrb(run){
  if(run.food)return;
@@ -161,7 +175,7 @@ function spawnOrb(run){
  const exclusions=[...run.body,...run.terrain.map(t=>t.pos),...run.enemies.map(e=>e.pos),...(run.encounter?.webs||[]).map(w=>w.pos)];
  run.food=emptyTile(exclusions,run.cols,run.rows,run.random);
  if(!run.food&&run.mode==="classic"){run.status="won";run.endReason="Every open tile belongs to your brood."}
- run.orbIn=145+Math.floor(val(run.random)*85); // ~20-31s of active ticks
+ run.orbIn=orbInterval(run); // early hunt: ~10–15s; later: ~20–31s
 }
 export function step(run){
  if(run.status!=="running")return run;
@@ -191,7 +205,11 @@ export function step(run){
  const heading=run.turnQueue.shift()??run.direction,t=target(run,heading);
  if(t.wall||t.body||t.enemy){
   run.direction=heading;
-  if(recover(run,heading))return run;
+  // Beginner's one-use instinct evades only ordinary prey, never a boss,
+  // terrain wall, or the player's own body. Keep defenses for boss contact.
+  const ordinary=run.mode==="hunt"&&!run.encounter&&t.enemy&&
+   run.enemies.some(e=>(e.kind==="skitter"||e.kind==="runner")&&same(e.pos,t.next));
+  if(recover(run,heading,ordinary&&run.mercy>0))return run;
   run.status="over";
   run.endReason=t.enemy?"A hunter collided with you.":t.wall?"You hit the arena wall.":"You crossed your own swarm.";
   emit(run,{type:"death",name:run.endReason});return run;
@@ -203,13 +221,15 @@ export function step(run){
  decay(run);run.moves++;run.runTicks++;
  if(t.eating){
   run.brood++;reward(run,{energy:1,score:100,growth:1,type:"orb",at:t.next});
-  run.orbIn=145+Math.floor(val(run.random)*85);
+  run.orbIn=orbInterval(run);
  }
  // A web only immobilizes the head after entering the visible marked tile.
  // Both prey and player freeze for 2 seconds: not a cheap unavoidable death.
  if(triggerWeb(run,t.next)){emit(run,{type:"web-stun",at:t.next});return run}
  if(run.status!=="running")return run;
  if(run.mode==="classic"){spawnOrb(run);return run}
+ // Opening grace advances only on active moves, never pause or draft time.
+ run.openingGraceMs=Math.max(0,run.openingGraceMs-elapsed);
  const abilityEvent=tickMiniboss(run,elapsed);
  if(abilityEvent?.type==="burrow-warning"||abilityEvent?.type==="burrow"||abilityEvent?.type==="web")
   emit(run,abilityEvent);

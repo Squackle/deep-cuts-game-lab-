@@ -4,7 +4,7 @@ export function chicagoDay(date=new Date()){
 }
 export function dailySeed(day,mode){
  let hash=2166136261;
- for(const char of 'hive-1.0.1|'+day+'|'+mode){hash^=char.charCodeAt(0);hash=Math.imul(hash,16777619)}
+ for(const char of 'hive-1.0.2|'+day+'|'+mode){hash^=char.charCodeAt(0);hash=Math.imul(hash,16777619)}
  return (hash>>>0)||1;
 }
 export const boardKey=(mode,challenge,day)=>mode+'|'+(challenge==='daily'?day:'arcade');
