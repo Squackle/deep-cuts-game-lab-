@@ -587,7 +587,8 @@ document.addEventListener("keydown",event=>{
  if(bossGate.blocking){
   if(event.key==="Tab"&&bossGate.phase==="briefing"){
    event.preventDefault();$("bossBriefingResume").focus({preventScroll:true});
-  }else if(Object.hasOwn(KEY_DIRECTIONS,event.key)||event.key==="Escape"||event.key===" "){
+  }else if(Object.hasOwn(KEY_DIRECTIONS,event.key)||event.key==="Escape"||event.key==="Tab"||
+   (event.key===" "&&document.activeElement!==$("bossBriefingResume"))){
    event.preventDefault();
   }
   return;
