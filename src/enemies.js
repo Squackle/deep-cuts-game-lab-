@@ -1,9 +1,10 @@
 import {terrainBlocks,reservedTerrain} from "./environments.js";
 /**
- * Hive Run 0.3: deterministic always-moving prey.
- * Enemies take a step every "period" player simulation ticks, score safe space
- * via bounded flood-fill, avoid sudden reversals, and can be cornered into the
- * player's trail. Collision outcomes never mutate scores here.
+ * Two tiers of deterministic, always-moving prey:
+ * ordinary Skitters/Runners make simple, short-sighted decisions and can be
+ * baited into a trap; encounter bosses analyze reachable escape routes.
+ * Neither may reverse or walk through occupied tiles. Collision outcomes
+ * never mutate scores here.
  */
 export const VECTORS=Object.freeze({up:[0,-1],right:[1,0],down:[0,1],left:[-1,0]});
 export const HEADINGS=Object.freeze(Object.keys(VECTORS));
@@ -58,25 +59,43 @@ export function spawnPrey(run,kind="skitter"){
  const id=++run.enemySerial;
  return {id,kind,pos,dir:directions[Math.floor(run.random()*directions.length)],period:PREY[kind]?.period??4,clock:0,moves:0};
 }
+export const ORDINARY_PREY=Object.freeze(["skitter","runner"]);
 export function decidePrey(run,enemy){
- const viable=[],head=run.body[0];
+ const viable=[];
  for(const dir of HEADINGS){
   if(dir===inverse[enemy.dir])continue;
   const dest=point(enemy.pos,dir);
-  if(!safePreyTile(run,dest,enemy.id))continue;
-  const area=reachableArea(run,dest,enemy.id,110);
+  if(safePreyTile(run,dest,enemy.id))viable.push({dir,dest});
+ }
+ if(!viable.length)return null;
+ // Ordinary prey are prey, not strategic hunters: they only inspect the next
+ // tile. Skitters sometimes zigzag; Runners commit to straight corridors.
+ // They do not calculate reachable area, avoid future dead ends, or react to
+ // the player's distant body. All randomness comes from the seeded run RNG.
+ if(ORDINARY_PREY.includes(enemy.kind)){
+  const forward=viable.find(candidate=>candidate.dir===enemy.dir);
+  const forwardChance=enemy.kind==="runner"?.85:.65;
+  if(forward&&run.random()<forwardChance)return forward;
+  const turns=viable.filter(candidate=>candidate.dir!==enemy.dir);
+  if(turns.length)return turns[Math.floor(run.random()*turns.length)];
+  return forward||viable[0];
+ }
+ // Bosses retain long-range route evaluation, making them a distinct threat.
+ const head=run.body[0];
+ for(const candidate of viable){
+  const {dir,dest}=candidate;
+  const area=reachableArea(run,dest,enemy.id,150);
   const distance=Math.abs(dest.x-head.x)+Math.abs(dest.y-head.y);
   const wallDistance=Math.min(dest.x,run.cols-1-dest.x,dest.y,run.rows-1-dest.y);
   const forward=dir===enemy.dir?1:0;
-  // Survival-first AI, but fallible: novice Skitters underestimate space,
-  // Runners favor the heading they already have and open corridors.
-  const spaceWeight=enemy.kind==="runner"?.11:enemy.kind==="stalker"?.15:enemy.kind==="weaver"?.105:.07;
-  const score=Math.min(area,110)*spaceWeight+Math.min(distance,16)*.25+
-   Math.min(wallDistance,5)*(enemy.kind==="weaver"?.08:.24)+forward*(enemy.kind==="runner"?2:enemy.kind==="stalker"?1.0:enemy.kind==="weaver"?.45:.7)+run.random()*(enemy.kind==="skitter"?2.4:enemy.kind==="stalker"?.45:1.0);
-  viable.push({dir,dest,score});
+  const spaceWeight=enemy.kind==="stalker"?.19:enemy.kind==="weaver"?.16:.18;
+  candidate.score=Math.min(area,150)*spaceWeight+Math.min(distance,16)*.25+
+   Math.min(wallDistance,5)*(enemy.kind==="weaver"?.08:.24)+
+   forward*(enemy.kind==="stalker"?1.0:enemy.kind==="weaver"?.45:.7)+
+   run.random()*(enemy.kind==="stalker"?.45:1.0);
  }
  viable.sort((a,b)=>b.score-a.score);
- return viable[0]||null;
+ return viable[0];
 }
 export function advancePrey(run,enemy){
  enemy.clock++;

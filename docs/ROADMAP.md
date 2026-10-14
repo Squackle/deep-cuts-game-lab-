@@ -191,3 +191,13 @@ This section supersedes earlier planned/not-implemented labels above; those sect
 **Not included:** Broodmother campaigns, multiplayer, additional mutation synergies, achievements, and Hatchling Ward remain uncommitted ideas. The later confirmed ability-ownership rule limits the player to the original five WUBRG mutations; enemy powers are never player upgrades.
 
 **Balance:** Retain the 150ms opening pace and 105ms minimum. At 6,000 active simulation steps an expedition ends successfully rather than silently exceeding the replay verifier's run limit. This is a technical run boundary, not a narrative boss-campaign ending.
+
+
+## Release 1.0.1 — Prey versus predator difficulty balance (2026-10-14)
+
+- [x] Split enemy intelligence into two clear tiers: Skitters/Runners only examine adjacent free tiles, choosing to continue straight 65%/85% of the time when possible, otherwise making simple seeded turns. They no longer flood-fill future escape routes or strategically avoid the player's distant traps.
+- [x] Keep encounter enemies strategic: minibosses/full bosses analyze up to 150 reachable cells, retain their 10-second activated powers and 2/3 capture phases, and remain capturable via deliberate path closures.
+- [x] Retain existing enemy speeds, player pace, WUBRG mutations and both game modes to isolate the effect of prey intelligence on perceived difficulty.
+- [x] Re-version ranked server replays to `hive-1.0.1` and version daily seeded challenges so players are compared against identical AI rules; older scores remain in historical storage.
+- [x] Cover short-sighted dead-end decisions, legal movement and boss intelligence differences with deterministic tests.
+- [ ] Playtest real gamepad/keyboard/touch skill progression and iterate on tutorial, optional beginner protection and boss introduction if early completion remains difficult.
