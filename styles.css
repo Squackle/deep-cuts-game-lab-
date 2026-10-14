@@ -143,3 +143,35 @@ h1,h2,h3,p{margin-top:0}h1{font:800 clamp(44px,5vw,75px)/.98 Georgia,serif;lette
 /* Keep the preview player a true two-column grid: the generic .music-note > div selector uses flex. */
 .music-note > .music-track-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;width:100%;gap:8px}
 @media(max-width:350px){.music-note > .music-track-list{gap:6px}}
+
+.hunt-hud{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid #4d624e;border-top:0;background:#172b23;font:800 10px ui-monospace,monospace;color:#b8cbb3}
+.hunt-hud strong{margin-left:5px;color:#ffca95}
+.ranked-notice{margin:5px 0 0;color:#d5bb7b;text-align:center;font:750 9px/1.4 ui-monospace,monospace;letter-spacing:.04em}
+.leaderboard-panel{border:1px solid #a58b59;background:#10231c;padding:14px;margin:18px 0 22px;border-radius:6px}
+.board-heading{display:flex;gap:8px;align-items:center;justify-content:space-between;color:#d9ba84;font:800 10px ui-monospace,monospace}
+.board-heading button{border:1px solid #72876a;background:#1c3b2a;color:#d7e4cd;padding:5px 7px;font:800 10px ui-monospace,monospace}
+.leaderboard-panel h3{font:800 clamp(22px,4vw,31px)/1.05 Georgia,serif;letter-spacing:-.025em;margin:13px 0 9px}
+.leaderboard-panel h3 em{color:#e9c488}
+.board-caption,.board-integrity{font:750 10px/1.55 ui-monospace,monospace;color:#b3c4ac}
+.board-entries{display:flex;flex-direction:column;gap:4px;margin-top:12px;max-height:470px;overflow-y:auto}
+.board-row{display:grid;grid-template-columns:27px minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px 6px;border-bottom:1px solid #456049;background:#142921}
+.board-row .rank{color:#eaca92;font:800 12px ui-monospace,monospace}
+.board-player{min-width:0;display:flex;flex-direction:column;gap:1px}
+.board-player strong{font-size:12px;overflow-wrap:anywhere}
+.board-profile{font:750 10px ui-monospace,monospace;color:#bcd4c4;text-decoration:underline}
+.board-stat{text-align:right;display:flex;flex-direction:column;gap:1px}
+.board-stat strong{font:900 15px ui-monospace,monospace;color:#e9cd91}
+.board-stat small{font:750 9px ui-monospace,monospace;color:#a8c1ad}
+.board-empty{color:#d5c69f;font-size:12px}
+.submission-panel{border-top:1px solid #71815e;margin-top:15px;padding-top:14px}
+.submission-panel[hidden]{display:none}
+.submission-panel>strong{font:800 13px ui-monospace,monospace;color:#f0d5a1}
+.submission-panel>p{font-size:12px;color:#b9cbb7;margin:5px 0}
+.submission-panel form{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.submission-panel label{font:800 10px ui-monospace,monospace;color:#e4d0a2}
+.submission-panel input{width:100%;min-height:40px;border:1px solid #75846b;border-radius:3px;background:#091b16;color:#f7eed4;padding:8px 10px;font-size:14px}
+.submission-panel small{font:11px/1.5 system-ui;color:#bdcdb7}
+.submission-panel small a{text-decoration:underline;color:#f1d397}
+.submission-panel button{min-height:44px;background:#dbc08a;border:1px solid #f8dcab;border-radius:3px;color:#162b21;font:800 11px ui-monospace,monospace}
+.submission-panel button:disabled{opacity:.5}
+.board-integrity{border-top:1px solid #53644c;padding-top:12px;margin:14px 0 0}

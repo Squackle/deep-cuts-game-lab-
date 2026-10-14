@@ -34,3 +34,9 @@ jobs:
           node --check src/soundtrack.js
           node --check src/evolution-ui.js
           node --check src/evolution-visuals.js
+          node --check src/enemies.js
+          node --check src/enemy-render.js
+          node --check src/leaderboard-client.js
+          node --check src/leaderboard-ui.js
+          node --check src/integration.js
+          node --check functions/api/leaderboard.js

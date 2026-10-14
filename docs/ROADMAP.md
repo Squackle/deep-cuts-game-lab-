@@ -55,24 +55,24 @@
 - [x] Design approved: moving survival-first enemy AI, trap/corralling captures using player body, rare orb supplement.
 - [x] Encounter cadence designed: miniboss at evolutions **2/6/10/...**, full boss at **4/8/12/...** (completed choices, not accumulated EV).
 - [x] Initial design for Skitter, Burrow Runner, Burrow Stalker, Hatchery Warden, Tunnel Weaver and Rift Guardian, with 2-/3-phase boss captures.
-- [ ] Replace brood-based mutation threshold with kill-driven EV energy (+3 prey, +1 rare orb, 5 EV per evolution as preliminary playtest balance).
-- [ ] Rare-orb, collision-credit and anti-stall rules; no idle waiting for XP farming or unrelated suicides.
-- [ ] Testable continually moving enemy AI: safe spawn, no instant reversal, reachable-area routing, reasonable fallibility.
-- [ ] Collision and enemy-trapping mechanics with clear kill animations/reward feedback.
-- [ ] Multiple enemy personalities and capped concurrent enemies.
+- [x] Alpha 0.3: kill-driven EV energy (+3 normal captures, +1 rare orb, 5 EV per evolution).
+- [x] Alpha 0.3: rare-orb active-tick cooldown, no XP from unrelated prey crashes, no evolution from passive waiting. Further mobile balancing and softlock audit remain.
+- [x] Alpha 0.3: seeded continuously moving Skitter/Runner AI, bounded flood fill, no reversal and safe initial spawning; physical-phone difficulty balance pending.
+- [x] Alpha 0.3: moving-body trap collision, capture energy/scoring, kill burst and status announcements.
+- [x] Alpha 0.3: Skitter and Burrow Runner movement personalities; cap of two after first evolution.
 - [ ] Evolution-based miniboss and boss triggers; multi-capture phases with safe gate resets.
 - [ ] Boss/enemy art, attack telegraphs and encounter HUD.
 - [x] Compose original normal-enemy, miniboss and full-boss chiptunes; 4-track preview controls with opt-in Web Audio (Alpha 0.2.1).
 - [ ] Automatically switch audio by real encounter state, and add final victory/phase stingers once enemies and bosses exist.
 - [ ] Physical-device volume, loudness matching and smoother musical transitions.
-- [ ] WUBRG combat effect integration (Red score but not EV, Green growth from kills, defensive survival).
+- [x] WUBRG capture integration: Red doubles score not EV, Green adds growth from kills/orbs, White/Black defensive saves, Blue steering control.
 - [ ] Burrows/Fracture environments only after trap combat is proven fun and fair.
 - [ ] Full regression, mobile browser and real physical-device QA.
 
 ## Beta 0.3 — Engagement and polish
 
 - [ ] Daily seeded challenge and reproducible conditions.
-- [ ] Client and/or server scoreboard design, abuse protection before online leaderboards.
+- [x] Alpha 0.3: D1-backed top-25 leaderboard, server-seeded replay verification, single-use sessions, rate limiting and same-origin POST; main-site profile links clearly unverified until a first-party identity bridge exists.
 - [ ] Original pixel-art creatures, animations and optional chiptune/sound. **Original 8-bit Hatchery soundtrack is implemented in v0.1.6; final animation and music balance remain to polish.**
 - [ ] Scores and settings persist gracefully.
 - [ ] QA across actual Safari/Chrome phones, accessibility and performance.
@@ -90,3 +90,13 @@
 - [ ] Mutation synergies and new stages.
 - [ ] Field Network accounts / achievements.
 - [ ] Multiplayer only after dedicated product/security review.
+
+
+## Migration / Main Site Merge Preparation (Alpha 0.3)
+
+- [x] Single source-of-truth profile origin and URL builder in `src/integration.js`.
+- [x] Game assets load relative to their own folder and no app routes depend on absolute root paths.
+- [x] Separate database and portable Cloudflare Pages Function for submissions and leaderboard reads.
+- [x] Complete move/copy checklist and D1 schema tracked in `docs/MAIN_SITE_MERGE.md` and `db/leaderboard.sql`.
+- [ ] Build verified first-party profile bridge on the main site **when authorized to modify it**; do not link a handle as authenticated merely because a guest typed it.
+- [ ] After merger, migrate D1 leaderboard data and function binding, point game nav from main page, run full authentication and score regression matrix.

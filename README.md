@@ -63,3 +63,12 @@ Every five brood, the game pauses for a touch-friendly three-card WUBRG draft. C
 ## Original enemy, miniboss and boss themes (Alpha 0.2.1)
 
 The existing original 108 BPM Hatchery Theme is now joined by three new tracks: **Skitter Chase** (normal enemy, 124 BPM), **Stalker's Pursuit** (miniboss, 142 BPM), and **Warden of the Hive** (boss, 156 BPM). Every track is a locally synthesized original composition in the single src/soundtrack.js module; there are no downloaded audio files, samples or added dependencies. Try the four preview buttons in the Game Lab music panel. All music requires a deliberate user click/tap. Automatic encounter transitions will be connected when the separately designed enemy AI/boss update ships. The existing main Deep Cuts EDH site is unaffected.
+
+
+## Alpha 0.3 — PREDATOR HUNT + server-replayed leaderboard
+
+The playable Hatchery now has moving Skitters and Burrow Runners. Each makes continuous scheduled grid moves, picks escape routes with a bounded flood-fill path planner, and earns the player a capture only when forced into their living body wall. Kills award 3 evolution energy; rare orbs appear after about 20–32 seconds of active play and award 1; 5 energy opens the familiar 3-choice WUBRG draft. Red doubles score, never evolution energy. Green boosts growth from captures and orbs. The 108/124 BPM Hatchery and Enemy Hunt themes switch when entering/leaving play; miniboss and boss compositions remain previews until their gameplay ships.
+
+**Leaderboard:** Cloudflare Pages Function `functions/api/leaderboard.js` uses a dedicated D1 `HIVE_DB` binding (SQL source in `db/leaderboard.sql`). Server creates one-time seeded runs and independently replays all player turns and mutation choices before accepting final results. Only finished runs can enter the top 25. The game remains playable in practice mode if the API is unavailable. Profile handles, if entered, link to real public Field Network profile URLs but are **unverified self-reported links**, not impersonation-safe account ownership. Rules replay limits simple score manipulation but cannot establish that input came from a human. The production Deep Cuts EDH repository was not edited.
+
+**Merge guide:** `docs/MAIN_SITE_MERGE.md`. All game files are portable into `/games/hive-run/` with relative assets/API paths; identity verification requires a future main-site endpoint with owner approval.

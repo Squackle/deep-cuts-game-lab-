@@ -6,8 +6,8 @@
  <meta name="theme-color" content="#101e17">
  <meta name="description" content="Hive Run: a genuine mobile-first, retro Snake-inspired arcade prototype being developed for Deep Cuts Game Lab.">
  <title>HIVE RUN — Deep Cuts Game Lab</title>
- <link rel="stylesheet" href="/styles.css">
- <script type="module" src="/src/main.js"></script>
+ <link rel="stylesheet" href="./styles.css">
+ <script type="module" src="./src/main.js"></script>
 </head>
 <body>
  <a class="skip-link" href="#game">Skip to game</a>
@@ -16,13 +16,13 @@
    <span class="brand-mark" aria-hidden="true">◈</span>
    <span>DEEP CUTS <strong>GAME LAB</strong><small>INDEPENDENT TEST SERVER</small></span>
   </a>
-  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> ALPHA 0.2.1 · SOUNDTRACKS</span>
+  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> ALPHA 0.3 · PREDATOR HUNT</span>
  </header>
  <main>
   <section class="intro" aria-labelledby="mainTitle">
    <div><p class="kicker">EXPERIMENT 001 / RETRO ARCADE</p>
     <h1 id="mainTitle">HIVE <em>RUN.</em></h1>
-    <p class="intro-description">One pointed head. One scythe arm. A forked tail. Grow through 45 WUBRG body variations and push your high score.</p>
+    <p class="intro-description">HUNT • TRAP • EVOLVE. Outmaneuver living prey, turn your WUBRG swarm into a moving wall, and evolve through successful captures.</p>
    </div>
    <p class="prototype-note">Original pixel-art creature inspired by classic hive-serpent fantasy. Five WUBRG color families; no official MTG art is used.</p>
   </section>
@@ -32,7 +32,7 @@
     <div class="hud" aria-label="Game scores">
      <div><span class="hud-label">SCORE</span><strong id="score" aria-live="off">000000</strong></div>
      <div><span class="hud-label">BEST</span><strong class="gold" id="best">000000</strong></div>
-     <div><span class="hud-label">STAGE</span><strong id="stage">01</strong></div>
+     <div><span class="hud-label">HUNT</span><strong id="stage">01</strong></div>
     </div>
     <div class="arena" id="arena">
      <canvas id="gameCanvas" width="360" height="440" tabindex="0" aria-label="Hive Run game board. Swipe to turn on mobile, or use arrow keys or WASD on a keyboard."></canvas>
@@ -40,8 +40,8 @@
        <div class="overlay-content">
         <div class="pixel-symbol" aria-hidden="true">◆ ◈ ◆</div>
         <h2 id="overlayTitle">READY TO SWARM?</h2>
-        <p id="overlayDescription">Collect the glowing brood. Each pickup adds a new segment. Avoid walls and your own tail.</p>
-        <button id="primaryButton" class="primary-button" type="button">START RUN ▶</button>
+        <p id="overlayDescription">Trap constantly moving prey against your swarm. Kills unlock evolutions; rare orbs help you grow.</p>
+        <button id="primaryButton" class="primary-button" type="button">START HUNT ▶</button>
        </div>
      </div>
      <div id="mutationOverlay" class="mutation-overlay" role="dialog" aria-modal="true" aria-labelledby="mutationTitle" aria-describedby="mutationIntro" hidden>
@@ -55,11 +55,13 @@
      </div>
     </div>
     <div class="evolution-hud" aria-label="Mutation status">
-      <div class="evolution-summary"><span>EVOLUTION PROGRESS <strong id="evoCountdown">5 / 5 BROOD</strong></span><span id="evoCount">0 EVOLUTIONS</span></div>
+      <div class="evolution-summary"><span>EVOLUTION PROGRESS <strong id="evoCountdown">0 / 5 EV</strong></span><span id="evoCount">0 EVOLUTIONS</span></div>
       <div id="mutationInventory" class="mutation-inventory" aria-label="Owned mutations and active effects"><span class="mutation-none">NO MUTATIONS YET</span></div>
       <p id="lastEvolution" class="last-evolution">FIVE COLORS · FIVE POWERS</p>
     </div>
-    <div class="cabinet-bottom"><span id="progress">NEXT STAGE IN 5 BROOD</span><span id="stateLabel">AWAITING PLAYER</span></div>
+    <div class="hunt-hud"><span>CAPTURES <strong id="killCount">00</strong></span><span>PREY ON BOARD <strong id="enemyCount">01</strong></span></div>
+    <div class="cabinet-bottom"><span id="progress">NEXT MUTATION IN 5 ENERGY</span><span id="stateLabel">AWAITING PLAYER</span></div>
+    <p id="rankedNotice" class="ranked-notice">START A HUNT TO GET A RANKED SEED</p>
     <div class="game-actions">
      <button id="pauseButton" type="button" disabled>Ⅱ PAUSE</button>
      <button id="restartButton" type="button">↺ RESTART</button>
@@ -79,11 +81,11 @@
    </section>
    <aside class="mission" aria-labelledby="missionTitle">
     <span class="mission-kicker">LEVEL 01 / THE HATCHERY</span>
-    <h2 id="missionTitle">GROW THE <em>HIVE.</em></h2>
-    <p>Enter the Hatchery: a living cavern lined with spines and luminous WUBRG brood. Move across its ancient organic floor, grow your serpent, and survive.</p>
+    <h2 id="missionTitle">HUNT THE <em>HIVE.</em></h2>
+    <p>The Hatchery is alive with Skitters and Burrow Runners. Prey never wait for you: chase, corner, and force them into your growing body. Each capture earns 3 evolution energy; rare orbs spawn roughly every 20–32 seconds for 1 energy.</p>
     <section class="music-note" aria-label="Original music library">
       <div><span aria-hidden="true">♫</span><strong>ORIGINAL CHIPTUNE SOUNDTRACKS</strong></div>
-      <p>Four looping 8-bit compositions. Tap any track to hear a preview. The three combat tracks will switch automatically during enemy, miniboss, and boss encounters when those features are built. No combat encounters are live yet.</p>
+      <p>Four original 8-bit loops. Enemy Hunt music now starts automatically during active hunts when enabled. Miniboss and Boss themes are previewable ahead of their upcoming encounters.</p>
       <div class="track-current" aria-live="polite">NOW SELECTED <strong id="currentTrack">The Hatchery Theme · 108 BPM</strong></div>
       <div class="music-track-list" role="group" aria-label="Preview original retro game music">
         <button class="music-track selected" type="button" data-music-track="hatchery" aria-pressed="true"><span class="track-number">01</span><strong>HATCHERY</strong><small>108 BPM · EXPLORATION</small></button>
@@ -91,7 +93,28 @@
         <button class="music-track" type="button" data-music-track="miniboss" aria-pressed="false"><span class="track-number">03</span><strong>MINIBOSS</strong><small>142 BPM · PURSUIT</small></button>
         <button class="music-track" type="button" data-music-track="boss" aria-pressed="false"><span class="track-number">04</span><strong>FULL BOSS</strong><small>156 BPM · SHOWDOWN</small></button>
       </div>
-      <p class="track-disclaimer">Preview only. Encounter-based automatic music switching will activate when enemy combat ships. MUSIC OFF mutes the soundtrack; the sound-effects toggle is independent.</p>
+      <p class="track-disclaimer">Hunt music is live. Miniboss and Boss previews are for upcoming encounters. MUSIC OFF mutes the soundtrack without muting sound effects.</p>
+    </section>
+    <section class="leaderboard-panel" id="leaderboard" aria-labelledby="leaderboardTitle">
+     <div class="board-heading"><span>FIELD NETWORK / HIVE RUN</span><button type="button" id="leaderboardRefresh">↻ REFRESH</button></div>
+     <h3 id="leaderboardTitle">HUNTER <em>LEADERBOARD.</em></h3>
+     <p id="leaderboardStatus" class="board-caption">LOADING RANKED SCORES...</p>
+     <div id="leaderboardEntries" class="board-entries" aria-live="polite"></div>
+     <div id="submissionPanel" class="submission-panel" hidden>
+      <strong>SUBMIT YOUR FINAL HUNT</strong>
+      <p id="finalRunSummary"></p>
+      <p class="submit-explanation"></p>
+      <form id="leaderboardForm">
+       <label for="playerAlias">DISPLAY NAME</label>
+       <input id="playerAlias" name="alias" minlength="2" maxlength="23" pattern="[A-Za-z0-9][A-Za-z0-9 _-]{1,22}" placeholder="Anonymous Hunter">
+       <label for="playerProfile">MAIN SITE PROFILE HANDLE (OPTIONAL)</label>
+       <input id="playerProfile" name="profileHandle" maxlength="24" pattern="[A-Za-z][A-Za-z0-9_]{2,23}" placeholder="e.g. Squackle">
+       <small>Links to a public <a href="https://deep-cuts-edh.pages.dev/community.html#account" target="_blank" rel="noopener noreferrer">Field Network profile</a>. Ownership cannot be verified across domains yet; links are labeled unverified.</small>
+       <button type="submit" id="submitScoreButton">SUBMIT VERIFIED REPLAY ↗</button>
+      </form>
+      <p id="scoreSubmitStatus" role="status" aria-live="polite"></p>
+     </div>
+     <p class="board-integrity">Scores are replayed by the server against a seeded run. This verifies game rules, not human input. Public profile handles are user-supplied until a shared-site identity bridge is available.</p>
     </section>
     <section class="creature-codex" aria-labelledby="creatureCodexTitle">
       <div class="codex-heading"><strong id="creatureCodexTitle">CREATURE CODEX</strong><span>45 BODY TYPES + HEAD / TAIL</span></div>
@@ -101,10 +124,10 @@
         <span class="mana-w">W · WHITE</span><span class="mana-u">U · BLUE</span><span class="mana-b">B · BLACK</span><span class="mana-r">R · RED</span><span class="mana-g">G · GREEN</span>
       </div>
     </section>
-    <div class="mission-row"><span>01</span><div><strong>COLLECT BROOD</strong><p>Every five glowing brood pauses the game for a three-choice mutation draft.</p></div></div>
-    <div class="mission-row"><span>02</span><div><strong>DON'T DOUBLE BACK</strong><p>Swipe to turn or tap the direction pad. Reverse turns are blocked.</p></div></div>
-    <div class="mission-row"><span>03</span><div><strong>EVOLVE TO SURVIVE</strong><p>White shields, blue slow-time, black molts, red double-scoring and green extra growth change every run.</p></div></div>
-    <div class="release-note"><span>DEVELOPMENT STATUS</span><strong>ALPHA 0.2.1 / FOUR ORIGINAL THEMES</strong><p>Five implemented powers, three-choice drafts every five brood, evolving creature auras, active ability indicators and the original Hatchery Theme. Later-stage enemy arenas, daily challenges and multiplayer remain planned.</p></div>
+    <div class="mission-row"><span>01</span><div><strong>CAPTURE MOVING PREY</strong><p>Trap enemies against your living body for 3 energy each. Smart prey keep moving to escape.</p></div></div>
+    <div class="mission-row"><span>02</span><div><strong>RARE BROOD</strong><p>Glowing orbs appear much less often, granting 1 energy and a new segment.</p></div></div>
+    <div class="mission-row"><span>03</span><div><strong>EVOLVE TO SURVIVE</strong><p>Every 5 energy opens a WUBRG mutation draft. Red doubles score, not evolution energy.</p></div></div>
+    <div class="release-note"><span>DEVELOPMENT STATUS</span><strong>ALPHA 0.3 / PREDATOR LOOP</strong><p>Moving Skitters and Burrow Runners, chase-and-trap combat, kill-based evolution, scarce orbs, replay-verified rankings and independent retro music. Evolution-gated minibosses and bosses remain upcoming.</p></div>
     <div class="repo-links"><a href="https://github.com/Squackle/deep-cuts-game-lab-" target="_blank" rel="noopener noreferrer">GITHUB REPOSITORY ↗</a><a href="https://github.com/Squackle/deep-cuts-game-lab-/blob/main/DEVLOG.md" target="_blank" rel="noopener noreferrer">READ DEVELOPMENT LOG ↗</a><a href="https://github.com/Squackle/deep-cuts-game-lab-/blob/main/docs/ROADMAP.md" target="_blank" rel="noopener noreferrer">VIEW ROADMAP ↗</a></div>
    </aside>
   </div>

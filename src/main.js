@@ -5,8 +5,11 @@ import {drawBroodPickup} from "./pickups.js";
 import {HatcherySoundtrack,TRACKS,trackForEncounter} from "./soundtrack.js";
 import {showMutationDraft,hideMutationDraft,drawMutationHud} from "./evolution-ui.js";
 import {renderMutationEffects} from "./evolution-visuals.js";
+import {drawPrey,drawCapture} from "./enemy-render.js";
+import {LeaderboardClient} from "./leaderboard-client.js";
+import {renderLeaderboard,updateSubmission} from "./leaderboard-ui.js";
 
-/* HIVE RUN Alpha 0.2.1 — four original chiptunes, preview player and encounter-ready music director. */
+/* HIVE RUN Alpha 0.3 — hunt, trap, evolve and a verified-replay leaderboard. */
 const $=id=>document.getElementById(id);
 const canvas=$("gameCanvas");
 const context=canvas.getContext("2d",{alpha:false});
@@ -14,9 +17,16 @@ const CELLS=20,COLS=18,ROWS=22;
 const WUBRG_COLORS=["#e7d8b4","#65a9d5","#7e6a88","#dd684a","#75ad7b"];
 let creatureArt=null;
 let arenaBackground=null;
-let visualBurst=null;
+let visualBurst=null,lastCapture=null,startingRun=false;
+const leaderboard=new LeaderboardClient();
+async function refreshLeaderboard(){
+ try{
+  renderLeaderboard($("leaderboardEntries"),await leaderboard.load());
+  $("leaderboardStatus").textContent="TOP 25 · REPLAY-VERIFIED SCORES";
+ }catch{$("leaderboardStatus").textContent="BOARD UNAVAILABLE · LOCAL HUNTS STILL WORK"}
+}
 const prefersReducedMotion=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches??false;
-const STORE="deepcuts-hive-run-best-v1",SOUND_STORE="deepcuts-hive-run-audio-v1",MUSIC_STORE="deepcuts-hive-run-music-v1";
+const STORE="deepcuts-hive-run-best-v2",SOUND_STORE="deepcuts-hive-run-audio-v1",MUSIC_STORE="deepcuts-hive-run-music-v1";
 const soundtrack=new HatcherySoundtrack();
 // Combat engine will invoke this on actual enemy/boss encounter transitions.
 // Preview controls never claim that enemies or bosses already exist.
@@ -25,7 +35,7 @@ function setEncounterMusic(encounterType){
  syncSoundtrack();syncUI();
 }
 const state={run:newRun({cols:COLS,rows:ROWS}),best:0,audio:false,musicOn:false,ctx:null,
- lastFrame:0,accumulator:0,lastAnnouncement:"",pointer:null};
+ lastFrame:0,accumulator:0,lastAnnouncement:"",pointer:null,ranked:false};
 try{state.best=Math.max(0,Number(localStorage.getItem(STORE))||0);
  state.audio=localStorage.getItem(SOUND_STORE)==="on";
  state.musicOn=localStorage.getItem(MUSIC_STORE)==="on";
@@ -36,12 +46,13 @@ function syncUI(){
  $("score").textContent=padScore(run.score);
  $("best").textContent=padScore(state.best);
  $("stage").textContent=String(run.stage).padStart(2,"0");
+ $("killCount").textContent=String(run.kills).padStart(2,"0");
+ $("enemyCount").textContent=String(run.enemies.length).padStart(2,"0");
  const p=progress(run);
  $("progress").textContent=run.status==="won"?"HIVE COMPLETE":
-  run.status==="draft"?"CHOOSE YOUR EVOLUTION":("NEXT MUTATION IN "+p.untilNext+" BROOD");
- $("evoCountdown").textContent=run.status==="draft"?"READY":
-   p.untilNext+" / 5 BROOD";
- $("evoCount").textContent=run.draftCount+" "+(run.draftCount===1?"EVOLUTION":"EVOLUTIONS");
+  run.status==="draft"?"CHOOSE YOUR EVOLUTION":("NEXT MUTATION IN "+p.untilNext+" ENERGY");
+ $("evoCountdown").textContent=run.status==="draft"?"READY":p.energy+" / 5 EV";
+ $("evoCount").textContent=run.evolutionsChosen+" "+(run.evolutionsChosen===1?"EVOLUTION":"EVOLUTIONS");
  drawMutationHud($("mutationInventory"),run);
  $("lastEvolution").textContent=run.lastMutation?"LAST: "+run.lastMutation.name.toUpperCase():"FIVE COLORS · FIVE POWERS";
  $("stateLabel").textContent=({ready:"AWAITING PLAYER",running:"IN MOTION",paused:"PAUSED",draft:"EVOLVING",over:"RUN ENDED",won:"HIVE COMPLETE"})[run.status];
@@ -111,34 +122,51 @@ function showDraftScreen(){
  soundtrack.stop();
  showMutationDraft($("mutationOverlay"),$("mutationChoices"),state.run.draftOptions,selectMutation);
  syncUI();
- announce("Evolution ready. Select one of three mutations; use buttons or keys 1, 2, 3.");
+ announce("Evolution ready. Choose one of three mutations after five earned energy.");
 }
 function selectMutation(color){
+ if(state.run.status!=="draft"||!state.run.draftOptions.includes(color))return;
+ leaderboard.action(state.run.runTicks,"choose",color);
  if(!chooseMutation(state.run,color))return;
  visualBurst={color,until:performance.now()+1150};
  hideMutationDraft($("mutationOverlay"));
  state.accumulator=0;state.lastFrame=0;state.pointer=null;
- syncSoundtrack();syncUI();
+ setEncounterMusic("hunt");
  playTone({W:540,U:670,B:330,R:790,G:475}[color],.18,.045);
  announce(MUTATIONS[color].name+" acquired. "+MUTATIONS[color].short+".");
  canvas.focus({preventScroll:true});
 }
-function begin(){
- if(state.run.status==="over"||state.run.status==="won")state.run=newRun({cols:COLS,rows:ROWS});
+async function begin(){
+ if(startingRun)return;
+ if(["ready","over","won"].includes(state.run.status)){
+  startingRun=true;
+  $("primaryButton").disabled=true;$("primaryButton").textContent="PREPARING HUNT...";
+  try{
+   const session=await leaderboard.start();
+   state.ranked=session.ranked;
+   state.run=newRun({cols:COLS,rows:ROWS,seed:session.seed});
+   lastCapture=null;visualBurst=null;
+   $("rankedNotice").textContent=session.ranked?"RANKED · REPLAY VERIFIED AFTER GAME OVER":"PRACTICE · RANKED SERVICE UNAVAILABLE";
+  }finally{startingRun=false;$("primaryButton").disabled=false}
+ }
  start(state.run);
  state.accumulator=0;state.lastFrame=0;state.pointer=null;
  hideOverlay();hideMutationDraft($("mutationOverlay"));
- syncSoundtrack();syncUI();
- announce("Swarm moving. Swipe to steer or use arrow keys.");
+ updateSubmission($("submissionPanel"),null,false);
+ setEncounterMusic("hunt");syncUI();
+ announce("Hunt moving prey. Force them into your body to earn evolution energy.");
  canvas.focus({preventScroll:true});
 }
 function reset(){
  state.run=newRun({cols:COLS,rows:ROWS});
- visualBurst=null;
+ leaderboard.session=null;leaderboard.events=[];
+ state.ranked=false;lastCapture=null;visualBurst=null;
  state.accumulator=0;state.lastFrame=0;state.pointer=null;
  hideMutationDraft($("mutationOverlay"));
- showOverlay("READY TO SWARM?","Collect the glowing brood. Each pickup adds a new segment. Avoid walls and your own tail.","START RUN ▶");
- syncSoundtrack();syncUI();draw();
+ showOverlay("READY TO HUNT?","Corner moving prey against your living trail. Each capture earns 3 energy; rare orbs give 1. Avoid your own body.","START HUNT ▶");
+ updateSubmission($("submissionPanel"),null,false);
+ $("rankedNotice").textContent="START A HUNT TO GET A RANKED SEED";
+ soundtrack.setTrack("hatchery");syncSoundtrack();syncUI();draw();
  announce("New run ready. Select Start Run to play.");
 }
 function togglePause(){
@@ -155,6 +183,7 @@ function togglePause(){
 function handleDirection(direction){
  if(state.run.status!=="running")return false;
  if(!turn(state.run,direction))return false;
+ leaderboard.action(state.run.runTicks,"turn",direction);
  playTone(210,.02,.009);
  return true;
 }
@@ -273,6 +302,7 @@ function draw(){
  drawLevelBackground(context,canvas,arenaBackground,COLS,ROWS,CELLS);
  // The brood is a gameplay target; keep it conspicuous over busy art.
  if(run.food)drawBroodPickup(context,run.food,CELLS,performance.now());
+ drawPrey(context,run.enemies,CELLS,performance.now(),prefersReducedMotion());
  // A single outlined spine connects the independently colored WUBRG plates.
  // Draw back-to-front so the pointed head stays visible over the neck.
  if(creatureArt)drawConnectedSpine(run.body);
@@ -285,6 +315,7 @@ function draw(){
   else drawCreaturePiece(part,kind,id,heading);
  }
  renderMutationEffects(context,run,CELLS,performance.now(),visualBurst,prefersReducedMotion());
+ if(lastCapture)drawCapture(context,lastCapture.pos,CELLS,performance.now(),lastCapture.until,prefersReducedMotion());
  if(run.status==="over"){
   context.fillStyle="#dcb78b";
   const head=run.body[0];context.fillRect(head.x*CELLS+5,head.y*CELLS+5,10,10);
@@ -299,7 +330,8 @@ function loop(time){
   let catchUps=0;
   while(state.accumulator>=effectiveTickMs(state.run)&&catchUps<3&&state.run.status==="running"){
    const currentTick=effectiveTickMs(state.run);
-   const prevBrood=state.run.brood,prevStage=state.run.stage,prevEvent=state.run.eventSerial;
+   const prevBrood=state.run.brood,prevEvent=state.run.eventSerial,prevKills=state.run.kills;
+   const enemyBefore=state.run.enemies.map(e=>({id:e.id,pos:{...e.pos}}));
    step(state.run);
    state.accumulator=Math.max(0,state.accumulator-currentTick);
    catchUps++;
@@ -310,11 +342,14 @@ function loop(time){
     playTone(state.run.event.color==="W"?760:285,.22,.04);
    }
    syncUI();
-   if(state.run.brood>prevBrood){
-    playTone(prevStage!==state.run.stage?600:420,prevStage!==state.run.stage?.18:.07);
-    saveBest();
-    announce("Brood collected! Score "+state.run.score+". Stage "+state.run.stage+".");
-    syncUI();
+   if(state.run.kills>prevKills){
+    const removed=enemyBefore.find(e=>!state.run.enemies.some(now=>now.id===e.id));
+    if(removed)lastCapture={pos:removed.pos,until:performance.now()+620};
+    playTone(740,.13,.04);saveBest();
+    announce("Enemy captured! +3 evolution energy. Total captures "+state.run.kills+".");
+   }else if(state.run.brood>prevBrood){
+    playTone(480,.09,.028);saveBest();
+    announce("Rare brood collected! +1 evolution energy.");
    }
    if(state.run.status==="draft"){
     showDraftScreen();
@@ -327,7 +362,9 @@ function loop(time){
     showOverlay(final?"HIVE COMPLETE!":"GAME OVER",
      state.run.endReason+" Final score: "+state.run.score.toLocaleString()+". Best: "+state.best.toLocaleString()+".",
      "PLAY AGAIN ↺");
-    announce((final?"Win! ":"Game over. ")+state.run.endReason+" Final score "+state.run.score+".");
+    updateSubmission($("submissionPanel"),state.run,state.ranked);
+    $("finalRunSummary").textContent=state.run.kills+" captures · "+state.run.evolutionsChosen+" evolutions · "+state.run.score+" points";
+    announce((final?"Win! ":"Game over. ")+state.run.endReason+" Final score "+state.run.score+". Submit your ranked replay below.");
    }
   }
   if(catchUps===3)state.accumulator=Math.min(state.accumulator,effectiveTickMs(state.run));
@@ -337,6 +374,22 @@ function loop(time){
  requestAnimationFrame(loop);
 }
 $("primaryButton").addEventListener("click",begin);
+$("leaderboardRefresh").addEventListener("click",refreshLeaderboard);
+$("leaderboardForm").addEventListener("submit",async event=>{
+ event.preventDefault();const button=$("submitScoreButton"),notice=$("scoreSubmitStatus");
+ if(!state.ranked||!["over","won"].includes(state.run.status))return;
+ button.disabled=true;notice.textContent="REPLAYING RUN ON SERVER...";
+ try{
+  const alias=$("playerAlias").value.trim();
+  const handle=$("playerProfile").value.trim();
+  const submitted=await leaderboard.submit(state.run,alias,handle);
+  notice.textContent="RANKED! VERIFIED "+submitted.score+" POINTS · "+submitted.kills+" KILLS";
+  state.ranked=false;
+  try{localStorage.setItem("hive-last-alias-v1",alias)}catch{}
+  await refreshLeaderboard();
+ }catch(error){notice.textContent=error.message||"Could not submit this run."}
+ finally{button.disabled=true}
+});
 $("pauseButton").addEventListener("click",togglePause);
 $("restartButton").addEventListener("click",reset);
 $("soundButton").addEventListener("click",()=>{
@@ -440,8 +493,9 @@ window.addEventListener("blur",()=>{
  soundtrack.stop();
  state.lastFrame=0;state.accumulator=0;
 });
-syncUI();draw();
-// The Hatchery is the sole playable location while numbered stages are speed tiers.
+syncUI();draw();refreshLeaderboard();
+try{$("playerAlias").value=localStorage.getItem("hive-last-alias-v1")||""}catch{}
+// The Hatchery remains the sole arena during the first Predator release.
 arenaBackground=loadLevelBackground(()=>draw());
 loadCreatureArt().then(art=>{
  if(!art)return;

@@ -130,3 +130,12 @@ There are four original, generated-in-browser 8-bit compositions. Each is a dist
 - Avoid rapid re-triggers, doubling tracks, or excessive volume on phone speakers. Add win stingers and smooth crossfades during later boss tuning.
 
 **Implementation status:** The compositions and four-track preview interface are playable now in the isolated Game Lab. Automatic encounter changes are staged as an API but will not execute until enemies/bosses actually exist.
+
+
+## Alpha 0.3 shipped scope (as opposed to later bosses)
+
+- One moving Skitter at start; after a chosen evolution allow up to two roaming Skitter/Runner prey. Base prey movement advances every two player ticks and uses bounded seeded connected-area search, heading persistence, and survival-aware route selection. All hostile sprites are new procedural art.
+- Player starts with seven linked segments for tactical trapping. Prey captured against a swarm body or unavoidably enclosed by player barriers award +3 EV, +300 score and growth, once. Unrelated prey wall crashes give no EV.
+- Rare orbs spawn only after 145–229 active player ticks (~20–31 seconds at initial speed); +1 EV each. Draft threshold 5 EV carries excess. Per-run EV and stats are replayable server-side.
+- Alpha 0.3 only: ordinary predators and two enemy personalities; the Burrow Stalker miniboss and Warden full boss are next milestones. This section will be marked deployed only after CI and browser verification; follow the DEVLOG.
+- Public leaderboard is seeded and rules-replayed through a separate D1-backed Pages Function. User-entered links to main Field Network profiles are flagged unverified until the main site's secure account sessions can be trusted on a single origin after merge.

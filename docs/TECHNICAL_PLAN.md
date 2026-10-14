@@ -64,3 +64,12 @@ No fake game interactions; protect v0.1 scope. Prevent impossible 180° U-turns,
 - `tests/mutations.test.mjs`: pure-model regression checks. Existing tests for movement, soundtrack, background and pickups stay enabled in CI.
 - `src/soundtrack.js`: already implemented original Web Audio theme; paused during mutation selections.
 - No new route, remote backend or main-site production change required. All five color effects work locally; high scores remain on-device until server-side anti-abuse and profiles are designed.
+
+
+## Alpha 0.3 predator engine and portable leaderboard
+
+- `src/enemies.js` holds bounded flood-fill prey AI, motion, safe spawns and capture conditions. `src/engine.js` runs deterministic seeded movement, energy progression, WUBRG, rare orbs, captures and game terminal state. `src/enemy-render.js` draws original contrast-corrected enemy shapes and capture burst.
+- `src/leaderboard-client.js` logs accepted turns and choices per simulation tick. `functions/api/leaderboard.js` verifies the entire finished run using the **same pure simulation modules** and accepts a score only if it agrees with every step. Games still work offline/unranked.
+- `src/integration.js` is the single identity/URL adapter for eventual main-site merge. All assets/APIs live below the game folder, rather than absolute site root.
+- The Game Lab uses isolated D1 `deep-cuts-hive-leaderboard`, bound to Pages as `HIVE_DB`. There are no writes to the main EDH database or main EDH repository.
+- Profile deep links point to `community.html?profile=Handle`; handles are not authenticated cross-origin and are clearly flagged **unverified**. After main-site merge, verify with the same-origin remembered-device session server-side; see `docs/MAIN_SITE_MERGE.md`.

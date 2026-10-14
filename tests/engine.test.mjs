@@ -1,118 +1,103 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {newRun,start,pause,step,turn,emptyTile,progress} from "../src/engine.js";
+import {newRun,start,pause,turn,step,progress,emptyTile,seededRandom,effectiveTickMs,chooseMutation} from "../src/engine.js";
 
-test("run starts ready and moves right only after start",()=>{
- const run=newRun({cols:10,rows:10,random:()=>0});
- const before={...run.body[0]};
- step(run);assert.deepEqual(run.body[0],before);
- start(run);step(run);
- assert.deepEqual(run.body[0],{x:before.x+1,y:before.y});
- assert.equal(run.status,"running");assert.equal(run.body.length,3);
+test("new seeded predator run starts with moving prey and scarce brood",()=>{
+ const a=newRun({cols:18,rows:22,seed:48}),b=newRun({cols:18,rows:22,seed:48});
+ assert.equal(a.status,"ready");assert.equal(a.food,null);
+ assert.equal(a.enemies.length,1);
+ assert.deepEqual(a.enemies,b.enemies);
+ assert.ok(a.orbIn>=100);
+ const e=a.enemies[0];assert.ok(Math.abs(e.pos.x-a.body[0].x)+Math.abs(e.pos.y-a.body[0].y)>=6);
 });
-test("touch and keyboard direction input cannot reverse into existing body",()=>{
- const run=newRun({cols:10,rows:10,random:()=>0});
- start(run);
- assert.equal(turn(run,"left"),false);
- assert.equal(turn(run,"up"),true);
- assert.equal(turn(run,"down"),false,"no reversal of buffered heading");
- assert.equal(turn(run,"left"),true,"next valid bend is buffered, not dropped");
- assert.equal(turn(run,"right"),false,"buffer limited to two turns");
- step(run);assert.equal(run.direction,"up");
- step(run);assert.equal(run.direction,"left");
- assert.equal(turn(run,"right"),false,"no 180-degree reversal from current heading");
-});
-test("collecting a pickup earns points and increases swarm length",()=>{
- const run=newRun({cols:10,rows:10,random:()=>0});
- start(run);const {x,y}=run.body[0];
- run.food={x:x+1,y};const length=run.body.length;
- step(run);
- assert.equal(run.score,100);assert.equal(run.brood,1);
- assert.equal(run.body.length,length+1);
- assert.equal(progress(run).untilNext,4);
- assert.ok(run.food===null || !run.body.some(p=>p.x===run.food.x&&p.y===run.food.y));
-});
-test("stage increases and tick duration decreases every fifth pickup",()=>{
- const run=newRun({cols:10,rows:10,random:()=>0});
- start(run);run.brood=4;
- const {x,y}=run.body[0];run.food={x:x+1,y};
- step(run);
- assert.equal(run.stage,2);assert.equal(run.tickMs,129);assert.equal(progress(run).untilNext,5);
-});
-test("wall collision ends game without advancing score",()=>{
- const run=newRun({cols:10,rows:10,random:()=>0});
- start(run);run.body=[{x:9,y:4},{x:8,y:4},{x:7,y:4}];run.direction="right";
- step(run);assert.equal(run.status,"over");assert.match(run.endReason,/wall/i);assert.equal(run.score,0);
-});
-test("self-collision is game over",()=>{
- const run=newRun({cols:10,rows:10,random:()=>0});
- start(run);run.body=[{x:5,y:5},{x:5,y:6},{x:4,y:6},{x:4,y:5},{x:4,y:4}];run.direction="left";
- step(run);assert.equal(run.status,"over");assert.match(run.endReason,/own swarm/);
-});
-test("stepping onto old tail space without eating is valid",()=>{
- const run=newRun({cols:10,rows:10,random:()=>0});
- start(run);run.body=[{x:5,y:5},{x:5,y:6},{x:4,y:6},{x:4,y:5}];
- run.direction="left";run.food={x:0,y:0};
- step(run);assert.equal(run.status,"running");assert.deepEqual(run.body[0],{x:4,y:5});
-});
-test("paused or game-over engine ignores movement",()=>{
- const run=newRun({cols:10,rows:10,random:()=>0});
- start(run);pause(run);const h={...run.body[0]};
- assert.equal(turn(run,"up"),false);step(run);assert.deepEqual(run.body[0],h);
- start(run);assert.equal(run.status,"running");
- run.status="over";step(run);assert.deepEqual(run.body[0],h);
-});
-test("food appears only on unoccupied tiles, with deterministic injectable randomness",()=>{
- const body=[{x:0,y:0},{x:1,y:0},{x:0,y:1}];
- assert.deepEqual(emptyTile(body,2,2,()=>0.75),{x:1,y:1});
- assert.equal(emptyTile([{x:0,y:0}],1,1,()=>0),null);
-});
-test("full-board pickup ends in a win without trying to spawn unavailable food",()=>{
- const run=newRun({cols:8,rows:8,random:()=>0});
- run.status="running";run.direction="right";
- const free={x:7,y:7},head={x:6,y:7};
- const all=[];for(let y=0;y<8;y++)for(let x=0;x<8;x++)if(!(x===free.x&&y===free.y)&&!(x===head.x&&y===head.y))all.push({x,y});
- run.body=[head,...all];run.food=free;
- step(run);assert.equal(run.status,"won");assert.equal(run.food,null);assert.equal(run.score,100);
-});
-
-
-test("rapid valid turns are applied in order over successive ticks",()=>{
- const run=newRun({cols:12,rows:12,random:()=>0});
- start(run);
- assert.equal(run.tickMs,135);
+test("player moves using deterministic queue; reversing is blocked",()=>{
+ const run=newRun({seed:11});const head={...run.body[0]};step(run);
+ assert.deepEqual(run.body[0],head);
+ start(run);assert.equal(turn(run,"left"),false);
  assert.equal(turn(run,"up"),true);
  assert.equal(turn(run,"left"),true);
- assert.deepEqual(run.turnQueue,["up","left"]);
- const startPos={...run.body[0]};
- step(run);
- assert.equal(run.direction,"up");
- assert.deepEqual(run.body[0],{x:startPos.x,y:startPos.y-1});
- assert.deepEqual(run.turnQueue,["left"]);
- step(run);
- assert.equal(run.direction,"left");
- assert.deepEqual(run.body[0],{x:startPos.x-1,y:startPos.y-1});
- assert.deepEqual(run.turnQueue,[]);
+ step(run);step(run);
+ assert.deepEqual(run.body[0],{x:head.x-1,y:head.y-1});
+ assert.equal(run.runTicks,2);
 });
-test("duplicate and reverse input never changes an already-buffered turn",()=>{
- const run=newRun({cols:12,rows:12,random:()=>0});start(run);
- assert.equal(turn(run,"up"),true);
- assert.equal(turn(run,"up"),false);
- assert.equal(turn(run,"down"),false);
- assert.deepEqual(run.turnQueue,["up"]);
- assert.equal(turn(run,"left"),true);
- assert.equal(turn(run,"down"),false,"full queue rejects late turns");
- assert.deepEqual(run.turnQueue,["up","left"]);
+test("enemy movement is continuous at a fixed interval and obeys board boundaries",()=>{
+ const run=newRun({seed:16});start(run);
+ const enemy=run.enemies[0];const from={...enemy.pos};
+ enemy.period=1;run.direction="right";run.body=[{x:5,y:6},{x:4,y:6},{x:3,y:6}];
+ run.enemies=[{...enemy,pos:{x:11,y:13},dir:"up",clock:0}];
+ step(run);const pos=run.enemies[0].pos;
+ assert.notDeepEqual(pos,{x:11,y:13});
+ assert.ok(pos.x>=0&&pos.y>=0&&pos.x<18&&pos.y<22);
 });
-test("collision rules stay active when turns are buffered",()=>{
- const run=newRun({cols:10,rows:10,random:()=>0});start(run);
- run.body=[{x:5,y:5},{x:5,y:6},{x:4,y:6},{x:3,y:6},{x:3,y:5},{x:3,y:4},{x:4,y:4},{x:4,y:3},{x:4,y:2}];
- assert.equal(turn(run,"up"),true);
- assert.equal(turn(run,"left"),true);
+test("enemy capture is credited exactly once, awards 3 EV and growth",()=>{
+ const run=newRun({seed:3});start(run);
+ run.body=[{x:9,y:10},{x:8,y:10},{x:6,y:6},{x:5,y:5},{x:5,y:7},{x:10,y:10}];
+ run.direction="down";run.enemies=[{id:20,kind:"skitter",pos:{x:5,y:6},dir:"right",period:1,clock:0,moves:0}];
+ run.enemySerial=20;const before=run.score;
  step(run);
- assert.deepEqual(run.body[0],{x:5,y:4});
+ assert.equal(run.kills,1);
+ assert.equal(run.energy,3);
+ assert.equal(run.score,before+300);
+ assert.equal(run.enemies.length,0);
+ assert.ok(run.growthDebt>0);
+ const energy=run.energy;step(run);assert.equal(run.energy,energy);
+});
+test("two normal captures unlock one mutation at 5 EV and carry remainder",()=>{
+ const run=newRun({seed:3});start(run);
+ for(let i=0;i<2;i++){
+  run.body=[{x:9,y:10},{x:8,y:10},{x:6,y:6},{x:5,y:5},{x:5,y:7},{x:10,y:10}];
+  run.direction="down";run.turnQueue=[];
+  run.enemies=[{id:20+i,kind:"skitter",pos:{x:5,y:6},dir:"right",period:1,clock:0,moves:0}];
+  step(run);
+ }
+ assert.equal(run.kills,2);assert.equal(run.energy,1);
+ assert.equal(run.status,"draft");assert.equal(run.draftOptions.length,3);
+ assert.equal(chooseMutation(run,run.draftOptions[0]),true);
+ assert.equal(run.evolutionsChosen,1);assert.equal(run.stage,2);
+});
+test("rare orb rewards 1 EV, and orbs do not instantly respawn",()=>{
+ const run=newRun({seed:31});start(run);
+ run.enemies=[];run.respawnIn=20;
+ run.food={x:run.body[0].x+1,y:run.body[0].y};
  step(run);
- assert.deepEqual(run.body[0],{x:5,y:4},"collision must not advance the head into an occupied segment");
- assert.equal(run.status,"over");
- assert.match(run.endReason,/own swarm/);
+ assert.equal(run.energy,1);assert.equal(run.brood,1);assert.equal(run.score,100);
+ assert.equal(run.food,null);assert.ok(run.orbIn>=145);
+});
+test("pausing/drafting stops movement, AI clocks and orb countdowns",()=>{
+ const run=newRun({seed:4});start(run);pause(run);
+ const pos={...run.body[0]},cl=run.enemies[0].clock,orb=run.orbIn;
+ step(run);
+ assert.deepEqual(run.body[0],pos);assert.equal(run.enemies[0].clock,cl);assert.equal(run.orbIn,orb);
+ run.status="draft";step(run);assert.deepEqual(run.body[0],pos);
+});
+test("stepping onto an enemy kills the player, without crediting a capture",()=>{
+ const run=newRun({seed:4});start(run);
+ const head=run.body[0];run.enemies=[{id:2,kind:"skitter",pos:{x:head.x+1,y:head.y},dir:"up",period:2,clock:0}];
+ step(run);assert.equal(run.status,"over");assert.equal(run.kills,0);
+ assert.match(run.endReason,/hunter/i);
+});
+test("a white shield can avert dangerous interception",()=>{
+ const run=newRun({seed:4});start(run);
+ run.effects.shield=1;const head=run.body[0];
+ run.enemies=[{id:2,kind:"skitter",pos:{x:head.x+1,y:head.y},dir:"up",period:2,clock:0}];
+ step(run);
+ assert.equal(run.status,"running");assert.equal(run.effects.shield,0);assert.equal(run.saves,1);
+});
+test("regular death after wall crossing still terminates run",()=>{
+ const run=newRun({seed:88});start(run);
+ run.body=[{x:17,y:11},{x:16,y:11},{x:15,y:11}];run.direction="right";
+ run.effects.shield=0;run.effects.molt=0;
+ step(run);assert.equal(run.status,"over");assert.match(run.endReason,/wall/i);
+});
+test("seeded random source stable and empty tile never overlaps body",()=>{
+ const a=seededRandom(123),b=seededRandom(123);
+ assert.deepEqual(Array.from({length:10},()=>a()),Array.from({length:10},()=>b()));
+ const tile=emptyTile([{x:0,y:0},{x:1,y:0}],2,2,()=>0);
+ assert.deepEqual(tile,{x:0,y:1});
+});
+test("red and blue change effective player speed but not WUBRG mutation identity",()=>{
+ const run=newRun({seed:21});const base=effectiveTickMs(run);
+ run.effects.blueTicks=28;assert.ok(effectiveTickMs(run)>base);
+ run.effects.blueTicks=0;run.effects.redTicks=24;assert.ok(effectiveTickMs(run)<base);
+ assert.equal(progress(run).untilNext,5);
 });

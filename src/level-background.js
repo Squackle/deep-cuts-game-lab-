@@ -5,7 +5,7 @@
 export const LEVEL_ONE={
  id:1,
  name:"THE HATCHERY",
- asset:"/assets/backgrounds/hatchery.webp"
+ asset:new URL("../assets/backgrounds/hatchery.webp",import.meta.url).toString()
 };
 export function levelForStage(stage){return LEVEL_ONE}
 export function loadLevelBackground(onReady=()=>{}){

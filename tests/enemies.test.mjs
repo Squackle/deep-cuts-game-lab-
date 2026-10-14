@@ -1,0 +1,32 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {newRun,start} from "../src/engine.js";
+import {PREY,spawnPrey,decidePrey,advancePrey,reachableArea} from "../src/enemies.js";
+test("both enemy types have distinct visual identities and finite movement periods",()=>{
+ assert.deepEqual(Object.keys(PREY),["skitter","runner"]);
+ assert.notEqual(PREY.skitter.accent,PREY.runner.accent);
+});
+test("a normal enemy spawns well clear of head and stays off the moving body",()=>{
+ const run=newRun({seed:76});
+ const enemy=run.enemies[0];
+ assert.ok(enemy);
+ assert.ok(!run.body.some(p=>p.x===enemy.pos.x&&p.y===enemy.pos.y));
+ assert.ok(reachableArea(run,enemy.pos,enemy.id)>10);
+});
+test("AI chooses one of the three non-reversing moves and never teleports",()=>{
+ const run=newRun({seed:7});
+ const e=run.enemies[0],first={...e.pos};
+ const d=decidePrey(run,e);
+ assert.ok(d);
+ assert.ok(Math.abs(d.dest.x-first.x)+Math.abs(d.dest.y-first.y)===1);
+ e.clock=e.period-1;const n=advancePrey(run,e);
+ assert.equal(n.type,"moved");assert.deepEqual(e.pos,d.dest);
+});
+test("fully surrounded prey must collide rather than stand still",()=>{
+ const run=newRun({seed:13});start(run);
+ const e={id:60,pos:{x:6,y:6},dir:"right",period:1,clock:0,moves:0,kind:"skitter"};
+ run.body=[{x:10,y:10},{x:7,y:6},{x:6,y:5},{x:6,y:7},{x:5,y:6}];
+ run.enemies=[e];
+ const p=advancePrey(run,e);
+ assert.equal(p.type,"captured");
+});
