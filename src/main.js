@@ -250,6 +250,33 @@ function begin(){
   lastCapture=null;visualBurst=null;lastEncounterSeen=null;
   $("rankedNotice").textContent=session.day?"SOLO DAILY SEED · LOCAL RECORDS ONLY":"SOLO EXPERIMENT · NO ONLINE RANKING";
  }
+ start(state.run);
+ state.accumulator=0;state.lastFrame=0;state.pointer=null;
+ hideOverlay();hideMutationDraft($("mutationOverlay"));
+ setEncounterMusic(musicForRun());syncUI();
+ announce(MODES[selectedMode].description);
+ canvas.focus({preventScroll:true});
+}
+function reset(){
+ if(startingRun)return;
+ resetBossBriefing();
+ state.run=newRun({cols:COLS,rows:ROWS,mode:selectedMode});
+ state.day="";loadBest();
+ lastCapture=null;visualBurst=null;lastEncounterSeen=null;
+ state.accumulator=0;state.lastFrame=0;state.pointer=null;
+ hideMutationDraft($("mutationOverlay"));
+ showOverlay(MODES[selectedMode].name.toUpperCase(),MODES[selectedMode].description,"START "+MODES[selectedMode].verb+" ▶");
+ $("rankedNotice").textContent=selectedChallenge==="daily"?"SOLO DAILY SEED · RESETS MIDNIGHT CENTRAL":"SOLO EXPERIMENT · LOCAL RECORDS ONLY";
+ soundtrack.setTrack("hatchery");syncSoundtrack();syncUI();draw();
+ announce("New local test ready. Select Start Run to play.");
+}
+function togglePause(){
+ if(bossGate.blocking)return;
+ if(state.run.status==="running"){
+  pause(state.run);state.pointer=null;
+  showOverlay("RUN PAUSED","Your swarm will wait here until you're ready.","RESUME RUN ▶");
+  announce("Game paused.");
+ }else if(state.run.status==="paused"){
   start(state.run);hideOverlay();state.accumulator=0;state.lastFrame=0;
   announce("Game resumed.");
  }
