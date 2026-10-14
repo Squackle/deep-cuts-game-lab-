@@ -347,3 +347,7 @@ Following owner feedback that ordinary enemies feel unreasonably difficult, spli
 ## 2026-10-14 — Hive Run 1.0.2 beginner balance and input response
 
 Implemented owner-selected fixes together: synchronous accepted-input marker/head facing, suppression of held-key repeats, one free ordinary prey-only Brood Instinct evasive recovery, nine seconds of active-play prey slowdown, single normal enemy until the third evolution, faster initial/early Hunt evolution orbs, and amber trap hints for zero/one legal escape directions. Boss speed, strategic AI, hazards, abilities and capture phases were preserved. Server and client use the same deterministic version `hive-1.0.2` with versioned daily seed and historical score isolation. The UI explains the free rescue and amber hints. Regression suite includes mechanic separation and input feedback. Await owner keyboard and touch playtest.
+
+## October 14, 2026 — 1.0.3 Boss dossiers
+
+Added polished cave-themed paused boss-introduction dossiers for the Burrow Stalker, Tunnel Weaver, Hatchery Warden, and Rift Guardian. Each is introduced once per encounter, not between individual capture phases, with an authentic boss-specific hand-drawn pixel ability icon, exact ability intervals, telegraphs, hazard durations, phase counts, and survival tips. Begin Encounter runs a fully paused three-second countdown. Regrouping freezes gameplay entirely, and backgrounding requires a fresh deliberate resume. No gameplay rules, seeded RNG, or server replay version changed.
