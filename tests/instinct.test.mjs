@@ -102,7 +102,7 @@ test("browser gate freezes the frame loop and retains replay-rules version",()=>
  assert.match(main,/showMutationDraft\([^\n]*state\.run\.mode\)/);
  assert.match(html,/id="mutationResume"[^>]*hidden/);
  assert.match(html,/SESSION BEST/);
- assert.match(html,/1\.0\.5 · INSTINCT/);
+ assert.match(html,/1\.1 · LAIR/);
  assert.equal(RULES_VERSION,"hive-1.0.2","UI-only release does not alter replay rules");
 });
 test("permanent release naming instruction is kept in source control",()=>{
