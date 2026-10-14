@@ -286,3 +286,11 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 - **QA passed / deployed:** Gameplay+UI commit `51b8cd20ac5c78326124281bb719dd739874cae5`, aspect-ratio/leaderboard polish commit `27690febcfe25b5db6e3e5575470982507447f3b`. Final [GitHub Actions run 38504188337](https://github.com/Squackle/deep-cuts-game-lab-/actions/runs/38504188337) passed; Cloudflare Pages production deployment `50b7310f-e614-4439-b85a-583f0630bdb8` succeeded. Live 320×700 mobile browser verified game frame occupying 320×700, no underlying page scroll, no horizontal overflow, canvas aspect ratio 0.816 (target 18:22), touchmove scroll blocked, touch pad fully visible, game enters IN MOTION, exit returns to normal page and leaderboard, no JavaScript exceptions. Physical iPhone Safari gesture testing remains outstanding; browser chrome/system-edge gestures may be reserved.
 
 - Final mobile QA polish: constrain arena height by viewport width to preserve the 18:22 canvas aspect ratio in Game Only; intercept the post-game score link to exit Game Only before scrolling to the leaderboard form.
+
+## 2026-10-13 — Miniboss abilities and top-right charge ring (design-only update)
+
+- Owner defined **Burrow Stalker** power: a **five-tile burrow** available every **10 seconds**. Design now requires a safe, visible arrival location, deterministic AI and clear counterplay.
+- Owner defined **Tunnel Weaver** power: creates **one web tile per cast** every **10 seconds**. Contact **stuns player for two seconds**; an untriggered web disappears after **15 seconds**. Provisional cap of two simultaneous webs and anti-unavoidable-death behavior need testing.
+- **HUD specification:** small boss/miniboss ability icon at the **top-right of the game**, with a clockwise **yellow/gold circular cooldown meter** surrounding it. A **completely yellow ring means charged**; it resets after use. Symbols: 🕳 (Burrow) and 🕸 (Web). Show only during an active encounter with a defined special ability, including Game Only.
+- Timers use active gameplay time and freeze during pause/draft/intro/phase resets. Server-side replay and new regression coverage required when implemented.
+- Added plans to encounter spec, roadmap and GDD. **No production gameplay code was changed or deployed in this design-only update.** The live build remains Alpha 0.3.3.

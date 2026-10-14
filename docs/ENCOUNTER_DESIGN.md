@@ -145,3 +145,29 @@ There are four original, generated-in-browser 8-bit compositions. Each is a dist
 A **Hatchling Ward** is a stationary friendly unit placed by an earned player action. It occupies one cell and makes prey avoid its own square plus the surrounding eight squares wherever a safe alternative exists. It creates tactical zones for body-wall traps without granting passive kills. Specify resource cost, limited lifetime, safe placement, enemy AI exceptions and deterministic leaderboard replay before shipping. This is not playable in Alpha 0.3.2.
 
 Rearrange the original soundtrack to scale markedly from calm Level 1 to dramatic Level 4: exploratory playtest targets **80 → 105 → 132 → 165 BPM**, with increasingly urgent patterns and rhythm layering. Players should discover each track organically as encounters unlock; there is no longer a public preview player. Current live track tempos are unchanged.
+
+## Alpha 0.4 — Miniboss signature powers & visible charge rings (approved design; future release)
+
+### Burrow Stalker — Burrow Dash
+
+- **Activation:** Becomes available every **10 seconds of active encounter gameplay**. The Stalker can relocate **exactly five connected grid steps in distance** (Manhattan distance 5) rather than moving normally. This is its signature burrow, separate from the safe-gate phase respawn after a successful capture.
+- **AI and counterplay:** The Stalker chooses a **safe unoccupied exit** at distance 5, preferring escape lanes but not teleporting into the player's body/head, other enemies, walls, hazards or an enclosed trap. It briefly signals the old tile and expected exit before disappearing/reappearing, so the player can react. If no safe fair exit exists, keep the ability ready and wait; do not bypass a completed player trap or allow free, unavoidable damage.
+- **Cooldown cycle:** Cast → yellow ring empties → refill clockwise over 10 seconds → complete ring = ready to burrow again. No charge progression during paused/draft/intro/phase transitions.
+
+### Tunnel Weaver — Web Snare
+
+- **Activation:** Can leave **one web tile per cast**, **every 10 seconds of active encounter gameplay**.
+- **Effect:** If the player's head enters an active web tile, player movement is **stunned for 2 seconds**; display a visible snare effect and clear countdown. A triggered web is consumed.
+- **Lifetime:** Untriggered webs disappear **15 seconds after placement** (visible fade near expiry). Web placement may not overlap walls, the player, an active web, spawn gates or an unsafe cell. Because web duration exceeds cooldown, there can temporarily be more than one web: propose **maximum two active webs** until real playtests establish the right balance.
+- **Fairness:** Telegraphed placement, readable one-cell footprint, no unavoidable spawn trap; ensure the player is not killed solely because the input is disabled during the two-second stun. Suggested provisional implementation: enemies may continue navigating while a stunned player gets collision protection against unavoidable enemy contact until control is restored, then a short visible resume warning. Revisit after balance testing. Clear stun/web effects on death and encounter exit; avoid accumulating multiple overlapping stuns.
+
+### Encounter charge meter — UI contract
+
+- **Location:** **Top-right of the game view** for *any ability-equipped miniboss or boss*, including the mobile **Game Only** layout. Keep it clear of the active board where practical, and within safe-area insets.
+- **Appearance:** Show only a **single recognizable symbol** inside a circular border: **🕳** = Stalker Burrow, **🕸** = Weaver Web. Render a **yellowish/gold progress circle** around the symbol; clockwise circumference corresponds to 0–100% recharge.
+- **States:** Cooldown spent = no/empty yellow arc; recharging = advancing arc; **fully charged = continuous complete yellow ring**. On casting, empty instantly and begin a fresh 10-second cycle. The indicator is hidden when that opponent is not actively on-screen or after defeat, and paused/frozen during phase transitions. Use a small distinct ready glow only if reduced-motion settings allow it.
+- **Accessibility:** Non-color shape/progress distinguishes charged from charging; provide screen-reader name and remaining cooldown or READY state. Avoid trapping taps/interfering with swipe steering.
+- **Extensibility:** Reuse the same ring component for future full bosses; their symbols, cooldowns and signature abilities will be defined separately. Do not show a fake cooldown for bosses that don't yet have a specified active ability.
+- **Testing:** Check arc at 0 / 25 / 50 / 75 / 100%, visibility/placement on 320/375/390/768px and Game Only, pause/draft/hidden-tab freezes, 10-second reload, 15-second web expiry, two-second stun and safe burrow destinations. Verify the deterministic game/score replay matches the client exactly.
+
+**Status:** Planning only. No active minibosses, boss abilities, webs or yellow-ring HUD are live in Alpha 0.3.3.
