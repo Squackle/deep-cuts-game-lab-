@@ -22,7 +22,7 @@ function forcedBossCapture(r){
  step(r);
 }
 test("Alpha 0.4 evolution milestones 2/6 and 10/14 repeat with full bosses on 4/8",()=>{
- assert.equal(RULES_VERSION,"hive-1.2");
+ assert.equal(RULES_VERSION,"hive-1.3");
  assert.deepEqual([0,1,2,3,4,5,6,7,8,9,10,14].map(encounterKind),
   [null,null,"stalker",null,"warden",null,"weaver",null,"guardian",null,"stalker","weaver"]);
  const r=newRun({seed:42});start(r);evolve(r,2);
@@ -62,19 +62,19 @@ test("blocked burrow destination cancels without crushing the player or spending
  assert.deepEqual(r.enemies[0].pos,original);
  assert.equal(abilityState(r).ready,true);
 });
-test("weaver creates one web every ten active seconds, capped at two and expires in 15 seconds",()=>{
+test("weaver creates a web every five active seconds, capped at three and expires in 15 seconds",()=>{
  const r=newRun({seed:5});start(r);spawnMiniboss(r,"weaver");r.encounter.introMs=0;
- assert.equal(ABILITIES.weaver.cooldownMs,10000);
- r.encounter.abilityMs=9999;assert.equal(tickMiniboss(r,1).type,"web");
+ assert.equal(ABILITIES.weaver.cooldownMs,5000);
+ r.encounter.abilityMs=4999;assert.equal(tickMiniboss(r,1).type,"web");
  assert.equal(r.encounter.webs.length,1);
  const original={...r.encounter.webs[0].pos};
  assert.equal(r.encounter.webs[0].lifeMs,WEB_LIFETIME_MS);
- const next=tickMiniboss(r,10000);
+ const next=tickMiniboss(r,5000);
  assert.equal(next.type,"web");
  assert.equal(r.encounter.webs.length,2);
  tickMiniboss(r,5001);
  assert.ok(!r.encounter.webs.some(w=>w.pos.x===original.x&&w.pos.y===original.y));
- assert.ok(r.encounter.webs.length<=2);
+ assert.ok(r.encounter.webs.length<=3);
 });
 test("a web stuns only the player; Weaver keeps moving and abilities charge",()=>{
  const r=newRun({seed:61});start(r);spawnMiniboss(r,"weaver");r.encounter.introMs=0;

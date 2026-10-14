@@ -41,7 +41,7 @@ test("practice is deterministic, repeatable and never treated as ranked",()=>{
  assert.equal(isLairChallenge("hunt","practice"),true);
  assert.equal(isLairChallenge("classic","practice"),false);
  assert.equal(isLairChallenge("hunt","daily"),false);
- assert.equal(RULES_VERSION,"hive-1.2","existing ranked replay rules version is unaffected");
+ assert.equal(RULES_VERSION,"hive-1.3","existing ranked replay rules version is unaffected");
 });
 test("practicing a boss ends in a dedicated victory instead of a mutation draft",()=>{
  const run=createLairRun("weaver");
@@ -106,5 +106,5 @@ test("both page variants offer four accessible boss buttons and clear unranked s
  assert.match(js,/showBossBriefing\(\)/);
  assert.match(js,/RETRY BOSS/);
  assert.match(css,/\.lair-choices/);
- assert.match(html,/1\.2 · SNARE/);
+ assert.match(html,/1\.3 · SPINDLE/);
 });

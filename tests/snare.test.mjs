@@ -7,7 +7,7 @@ import {PREY} from "../src/enemies.js";
 import {LAIR_BOSSES,createLairRun} from "../src/lair.js";
 import {boardKey} from "../src/modes.js";
 test("Snare creates an independent, versioned and deterministic replay ruleset",()=>{
- assert.equal(RULES_VERSION,"hive-1.2");
+ assert.equal(RULES_VERSION,"hive-1.3");
  assert.equal(boardKey("classic"),"classic|arcade");
  assert.equal(boardKey("hunt"),"hunt|arcade");
 });
@@ -53,19 +53,19 @@ test("Weaver web freezes the swarm but continues enemy movement, web expiry and 
  while(run.encounter.stunMs>0)step(run);
  assert.equal(run.encounter.stunMs,0);
 });
-test("the Rift Guardian recharges and pulses after each 2-second combat window",()=>{
+test("the Rift Guardian recharges and pulses after each 4-second combat window",()=>{
  const run=createLairRun("guardian");
  start(run);run.encounter.introMs=0;
- assert.equal(ABILITIES.guardian.cooldownMs,2000);
- assert.equal(abilityState(run).remainingMs,2000);
- let cast=tickMiniboss(run,1999);
+ assert.equal(ABILITIES.guardian.cooldownMs,4000);
+ assert.equal(abilityState(run).remainingMs,4000);
+ let cast=tickMiniboss(run,3999);
  assert.equal(cast,null);assert.equal(abilityState(run).ready,false);
  cast=tickMiniboss(run,1);
  assert.equal(cast?.type,"boss-power");
  assert.equal(abilityState(run).charge,0);
  const n=run.terrain.length;assert.ok(n>0);
  assert.ok(run.terrain.every(t=>t.warningMs>0));
- cast=tickMiniboss(run,2000);
+ cast=tickMiniboss(run,4000);
  assert.equal(cast?.type,"boss-power");
  assert.ok(run.terrain.length>=n);
 });
@@ -88,7 +88,7 @@ test("Brood Trail has no expedition control; neither game page exposes Daily Rit
  const main=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
  const css=readFileSync(new URL("../styles.css",import.meta.url),"utf8");
  assert.doesNotMatch(html,/value="daily"|DAILY RITUAL|DAILY TEST SEED/i);
- assert.match(html,/1\.2 · SNARE/);
+ assert.match(html,/1\.3 · SPINDLE/);
  assert.match(main,/function syncExpeditionChoice\(/);
  assert.match(main,/\$\("gameChallenge"\)\.hidden=selectedMode==="classic"/);
  assert.match(main,/\$\("gameChallengeLabel"\)\.hidden=selectedMode==="classic"/);
