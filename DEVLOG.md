@@ -284,3 +284,5 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 - Implemented viewport locking via `src/game-only.js`: fixed document height from `visualViewport`, scroll-gesture cancellation outside mutation overlay, fullscreen API when available, reliable iOS Safari CSS-only fallback, keyboard Escape, native fullscreen dismissal cleanup.
 - Added touch-action and overscroll prevention for the arena and on-screen directional pad even outside Game Only, while preserving pointer-swipe turn handling. No changes to deterministic engine, rankings, enemy speed or mutations.
 - CI and deployed mobile QA pending.
+
+- Final mobile QA polish: constrain arena height by viewport width to preserve the 18:22 canvas aspect ratio in Game Only; intercept the post-game score link to exit Game Only before scrolling to the leaderboard form.

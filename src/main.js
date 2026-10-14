@@ -347,6 +347,14 @@ function loop(time){
  requestAnimationFrame(loop);
 }
 $("primaryButton").addEventListener("click",begin);
+$("submitShortcut").addEventListener("click",event=>{
+ // A ranked Game Only run should never strand the submission form behind
+ // the fixed fullscreen canvas.
+ if(!gameOnly.isActive())return;
+ event.preventDefault();
+ gameOnly.leave();
+ requestAnimationFrame(()=>$("submissionPanel").scrollIntoView({block:"start",behavior:"smooth"}));
+});
 $("leaderboardRefresh").addEventListener("click",refreshLeaderboard);
 $("leaderboardForm").addEventListener("submit",async event=>{
  event.preventDefault();const button=$("submitScoreButton"),notice=$("scoreSubmitStatus");
