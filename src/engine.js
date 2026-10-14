@@ -7,7 +7,12 @@ import {encounterKind,spawnMiniboss,spawnNextPhase,tickMiniboss,triggerWeb,consu
 export const DIRECTIONS=Object.freeze(Object.fromEntries(Object.entries(VECTORS).map(([k,v])=>[k,{x:v[0],y:v[1]}])));
 export const COLORS=Object.freeze(["W","U","B","R","G"]);
 export const EVOLUTION_COST=5;
-export const RULES_VERSION="hive-0.4.0";
+export const RULES_VERSION="hive-0.4.1";
+// Player speed is set in milliseconds per grid step (larger = easier).
+// Playtest adjustment: about 10% less movement per second at every stage.
+export const PLAYER_BASE_TICK_MS=150;
+export const PLAYER_MIN_TICK_MS=105;
+export const PLAYER_ACCELERATION_MS=4;
 export const MUTATIONS=Object.freeze({
  W:{color:"W",name:"Hardened Shell",school:"CARAPACE",icon:"◈",description:"Gain one shield. Survive a fatal impact and evade danger.",short:"+1 shield"},
  U:{color:"U",name:"Temporal Drift",school:"ADAPTATION",icon:"◷",description:"Slow your hive's movement for 28 steps to steer tighter traps.",short:"28 slow steps"},
@@ -36,7 +41,7 @@ export function newRun({cols=18,rows=22,random,seed}={}){
  const y=Math.floor(rows/2),x=Math.max(2,Math.floor(cols/2));
  const run={cols,rows,random:rng,seed:seed??null,body:Array.from({length:7},(_,i)=>({x:x-i,y})),
   direction:"right",turnQueue:[],food:null,orbIn:145,
-  score:0,brood:0,kills:0,energy:0,earnedEnergy:0,stage:1,tickMs:135,
+  score:0,brood:0,kills:0,energy:0,earnedEnergy:0,stage:1,tickMs:PLAYER_BASE_TICK_MS,
   evolutionsChosen:0,draftCount:0,draftOptions:[],mutations:{W:0,U:0,B:0,R:0,G:0},
   effects:{shield:0,molt:0,blueTicks:0,redTicks:0,greenPickups:0},growthDebt:0,
   enemies:[],enemySerial:0,respawnIn:0,runTicks:0,moves:0,saves:0,
@@ -68,7 +73,7 @@ export function chooseMutation(run,color){
  if(color==="G")e.greenPickups=Math.min(12,e.greenPickups+4);
  run.evolutionsChosen++;
  run.stage=run.evolutionsChosen+1;
- run.tickMs=Math.max(94,135-Math.floor(run.evolutionsChosen/2)*4);
+ run.tickMs=Math.max(PLAYER_MIN_TICK_MS,PLAYER_BASE_TICK_MS-Math.floor(run.evolutionsChosen/2)*PLAYER_ACCELERATION_MS);
  run.lastMutation={color,name:MUTATIONS[color].name,move:run.moves};
  run.status="running";run.draftOptions=[];run.turnQueue=[];
  emit(run,{type:"mutation",color,name:MUTATIONS[color].name});

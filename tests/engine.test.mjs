@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {newRun,start,pause,turn,step,progress,emptyTile,seededRandom,effectiveTickMs,chooseMutation} from "../src/engine.js";
+import {newRun,start,pause,turn,step,progress,emptyTile,seededRandom,effectiveTickMs,chooseMutation,PLAYER_BASE_TICK_MS,PLAYER_MIN_TICK_MS,PLAYER_ACCELERATION_MS,RULES_VERSION} from "../src/engine.js";
 
 test("new seeded predator run starts with moving prey and scarce brood",()=>{
  const a=newRun({cols:18,rows:22,seed:48}),b=newRun({cols:18,rows:22,seed:48});
@@ -100,4 +100,39 @@ test("red and blue change effective player speed but not WUBRG mutation identity
  run.effects.blueTicks=28;assert.ok(effectiveTickMs(run)>base);
  run.effects.blueTicks=0;run.effects.redTicks=24;assert.ok(effectiveTickMs(run)<base);
  assert.equal(progress(run).untilNext,5);
+});
+
+test("Alpha 0.4.1 calms the player pace around ten percent while retaining relative evolution scaling",()=>{
+ assert.equal(RULES_VERSION,"hive-0.4.1");
+ assert.equal(PLAYER_BASE_TICK_MS,150);
+ assert.equal(PLAYER_MIN_TICK_MS,105);
+ assert.equal(PLAYER_ACCELERATION_MS,4);
+ const run=newRun({seed:123});
+ assert.equal(run.tickMs,150);
+ assert.equal(effectiveTickMs(run),150);
+ assert.ok(135/150<=.91&&135/150>=.89,"starting speed should be about 10% slower");
+ start(run);
+ for(let i=1;i<=32;i++){
+  run.status="draft";run.draftOptions=["W","G","B"];
+  assert.ok(chooseMutation(run,"W"));
+  assert.equal(run.tickMs,Math.max(105,150-Math.floor(i/2)*4));
+ }
+ assert.ok(run.tickMs>=105,"high-level play remains manageable");
+ assert.ok(94/105>=.89&&94/105<=.91,"late-game cap should also be about 10% slower");
+});
+test("a slower baseline preserves active WUBRG movement modifiers and deterministic replay",()=>{
+ const a=newRun({seed:61}),b=newRun({seed:61});
+ start(a);start(b);
+ for(let tick=0;tick<5;tick++){
+  if(tick===1){assert.equal(turn(a,"up"),true);assert.equal(turn(b,"up"),true)}
+  step(a);step(b);
+  assert.equal(a.runTicks,b.runTicks);
+  assert.deepEqual(a.body,b.body);
+  assert.equal(a.score,b.score);
+ }
+ const base=effectiveTickMs(a);
+ a.effects.blueTicks=4;
+ assert.ok(effectiveTickMs(a)>base,"Blue still slows player");
+ a.effects.blueTicks=0;a.effects.redTicks=4;
+ assert.ok(effectiveTickMs(a)<base,"Red still speeds player");
 });

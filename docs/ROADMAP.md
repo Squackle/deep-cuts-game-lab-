@@ -154,3 +154,12 @@
 - [x] +5 EV, +750 base score, +2 growth **only after final miniboss capture**; no double award for phase 1. Previous regular prey score/evolution behavior retained; server and browser run exactly the same seeded code.
 - [x] Bump leaderboard ruleset to `hive-0.4.0`; previous version rankings remain archived, and new scores require replay verification against miniboss rules.
 - [ ] Physical-phone balancing, particularly winning captures at evolution 2/6 and avoiding visual overlap under different Safari browser chrome. Release automation and live browser tests are recorded separately in DEVLOG.
+
+
+## Alpha 0.4.1 — Calmer player movement balance
+
+- [x] Reduce player grid movement rate by approximately 10% following owner feedback that Alpha 0.4 is a little too difficult: starting tick `135ms → 150ms`.
+- [x] Preserve per-evolution acceleration (4ms per 2 chosen mutations) while bringing the late-run minimum movement interval from `94ms → 105ms`.
+- [x] Keep prey/miniboss movement measured in the same fixed simulation steps, avoid altering combat timers or mutation rules, and add automated tests for both speed curves.
+- [x] Re-version replay-verified ranked results to `hive-0.4.1` to avoid mixing different difficulties; prior leaderboard entries retained in storage.
+- [ ] Get player feedback on an actual iPhone to see whether 150ms gives enough planning time; adjust again if necessary.

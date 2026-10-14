@@ -67,7 +67,7 @@ export async function onRequestGet({env}){
  if(!env.HIVE_DB)return error("Leaderboard storage unavailable.",503);
  try{
   const rows=await env.HIVE_DB.prepare("SELECT id,alias,profile_handle AS profileHandle,profile_verified AS profileVerified,score,kills,evolutions,created_at AS createdAt FROM hive_scores WHERE rules_version=? ORDER BY score DESC,kills DESC,created_at ASC LIMIT 25").bind(RULES_VERSION).all();
-  return json({season:"Alpha 0.4",rulesVersion:RULES_VERSION,verifiedScores:true,profileOwnershipVerified:false,entries:rows.results||[]});
+  return json({season:"Alpha 0.4.1",rulesVersion:RULES_VERSION,verifiedScores:true,profileOwnershipVerified:false,entries:rows.results||[]});
  }catch{return error("Could not load leaderboard.",503)}
 }
 export async function onRequestPost({request,env}){

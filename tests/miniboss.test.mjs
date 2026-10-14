@@ -22,7 +22,7 @@ function forcedBossCapture(r){
  step(r);
 }
 test("Alpha 0.4 evolution milestones 2/6 and 10/14 repeat without replacing normal wave on 4/8",()=>{
- assert.equal(RULES_VERSION,"hive-0.4.0");
+ assert.equal(RULES_VERSION,"hive-0.4.1");
  assert.deepEqual([0,1,2,3,4,5,6,7,8,9,10,14].map(encounterKind),
   [null,null,"stalker",null,null,null,"weaver",null,null,null,"stalker","weaver"]);
  const r=newRun({seed:42});start(r);evolve(r,2);

@@ -312,3 +312,12 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 - Player-facing UI gains phase indicators, live cooldown and warning feedback, active encounter soundtrack changing automatically, and small high-contrast web/burrow telegraphs. No new public preview gallery and main Deep Cuts site unchanged.
 - Ranked rules bumped to `hive-0.4.0`, historical D1 scores remain separated, original anti-fraud seeded full-replay validation retained, normal and minboss stats verified against exact same logic.
 - **QA:** Pending end-to-end CI and live deployment confirmation before marking shipped.
+
+
+## 2026-10-13 — Alpha 0.4.1: Slower, fairer player pace
+
+- Owner feedback: "Unfortunately the game is a little bit too difficult. Can we tone the speed of the character down a little bit?"
+- Changed **only the player movement pacing**: initial grid step from 135ms to **150ms** (~10% slower in grid steps per second), late-stage minimum from 94ms to **105ms**, retaining 4ms per 2 chosen evolutions speed scaling. WUBRG Blue/Red modifiers apply as before; deterministic model remains shared between browser and server. Existing enemy movement periods, miniboss burrow/web charges and trap mechanics remain untouched.
+- Leaderboard rules version updated from `hive-0.4.0` to `hive-0.4.1` so different play speeds don't compete on the same ranked table; old scores preserved in D1.
+- Added speed-curve and deterministic-input regression tests; changed the public release badge and game description to show new player pace.
+- **Validation:** Pending GitHub Actions and Cloudflare deploy and mobile browser QA.
