@@ -313,3 +313,6 @@ body.game-only .boss-dossier{max-width:365px;padding:9px 12px 6px}
  #bossBriefingResume{min-height:39px}
 }
 @media(prefers-reduced-motion:reduce){.boss-dossier,.boss-countdown{scroll-behavior:auto}}
+
+/* The arena disables swipe scrolling during play; restore it for dossier reading. */
+.arena:has(.boss-briefing:not([hidden])){touch-action:pan-y}
