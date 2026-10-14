@@ -262,3 +262,10 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 - Added explicit test coverage for both enemy defaults, spawn interval and three waiting beats followed by a fourth-beat move.
 - Leaderboard rules bumped to `hive-0.3.1` so faster predecessor runs are retained in D1 but not mixed with the slower update. Client reads the shared engine version rather than repeating a string constant.
 - Deployment checks pending CI and Cloudflare verification.
+
+## 2026-10-13 — Alpha 0.3.2: immersive UI cleanup and upcoming features
+
+- Owner proposed a deployable stationary **Hatchling Ward** covering its tile and the eight neighboring tiles with an enemy-fear field; future design must address charges, duration, valid placement and verified score replay.
+- Owner wants significant Level 1-to-Level 4 soundtrack escalation (draft playtest targets 80/105/132/165 BPM); this remains **future music work**, not live tempo changes.
+- Removed the public creature codex, three bottom developer-resource links and interactive soundtrack-testing/preview interface. Preserved music mute, automatic encounter selection, internal soundtrack unit tests, leaderboard and WUBRG art used in actual play.
+- Verification pending GitHub Actions and live browser.

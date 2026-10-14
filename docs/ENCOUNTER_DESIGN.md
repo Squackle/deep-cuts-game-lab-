@@ -139,3 +139,9 @@ There are four original, generated-in-browser 8-bit compositions. Each is a dist
 - Rare orbs spawn only after 145–229 active player ticks (~20–31 seconds at initial speed); +1 EV each. Draft threshold 5 EV carries excess. Per-run EV and stats are replayable server-side.
 - Alpha 0.3 only: ordinary predators and two enemy personalities; the Burrow Stalker miniboss and Warden full boss are next milestones. This section will be marked deployed only after CI and browser verification; follow the DEVLOG.
 - Public leaderboard is seeded and rules-replayed through a separate D1-backed Pages Function. User-entered links to main Field Network profiles are flagged unverified until the main site's secure account sessions can be trusted on a single origin after merge.
+
+## Future owner ideas — Hatchling Ward and evolving soundtrack
+
+A **Hatchling Ward** is a stationary friendly unit placed by an earned player action. It occupies one cell and makes prey avoid its own square plus the surrounding eight squares wherever a safe alternative exists. It creates tactical zones for body-wall traps without granting passive kills. Specify resource cost, limited lifetime, safe placement, enemy AI exceptions and deterministic leaderboard replay before shipping. This is not playable in Alpha 0.3.2.
+
+Rearrange the original soundtrack to scale markedly from calm Level 1 to dramatic Level 4: exploratory playtest targets **80 → 105 → 132 → 165 BPM**, with increasingly urgent patterns and rhythm layering. Players should discover each track organically as encounters unlock; there is no longer a public preview player. Current live track tempos are unchanged.

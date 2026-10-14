@@ -107,3 +107,9 @@
 - [x] Half Skitter and Burrow Runner speeds (movement period 2 → 4 player ticks) following owner feedback.
 - [x] Version game rules and isolate new rankings by version to keep the leaderboard comparable.
 - [ ] Gather real-device feedback about whether the slower pace makes trapping more enjoyable; adjust different enemy personalities separately if needed.
+
+## Potential future: Hatchling Ward & Musical Escalation (owner ideas — not implemented)
+
+- [ ] **Hatchling Ward mutation:** A player-placed stationary hatchling occupies **one grid square** and frightens enemies away from its square and the **eight directly neighboring squares** (one-square-radius, 3×3 deterrent). Design the usage cost/charges, safe placement, lifetime, enemy routing and visual indicators. Block passive score farming and unavoidable enemy traps; record placement decisions in deterministic server replays.
+- [ ] **Level 1–4 music intensity and tempo scaling:** Make Level 1 **dramatically calmer than Level 4**, with clear steps for Levels 2 and 3. Proposed testing targets: **~80 BPM (Level 1)**, **~105 (Level 2)**, **~132 (Level 3)** and **~165 (Level 4)**. Also escalate melody, percussion layers and tension. Trigger progression based on actual evolution/encounter milestones; preserve mute and pause. **No audio tempo changes have been deployed yet.**
+- [x] **Alpha 0.3.2 UI cleanup:** Hide sprite codex, GitHub repository/roadmap/devlog shortcuts, and public soundtrack selection/testing. Preserve music on/off and automatically selected combat music; preserve source documentation and automated regression tests.

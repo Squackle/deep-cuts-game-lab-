@@ -1,5 +1,5 @@
 import {newRun,start,pause,turn,step,progress,MUTATIONS,COLORS,chooseMutation,effectiveTickMs,activeEffects} from "./engine.js";
-import {loadCreatureArt,variantForSegment,WUBRG} from "./creature-sprites.js";
+import {loadCreatureArt,variantForSegment} from "./creature-sprites.js";
 import {drawLevelBackground,loadLevelBackground,levelForStage} from "./level-background.js";
 import {drawBroodPickup} from "./pickups.js";
 import {HatcherySoundtrack,TRACKS,trackForEncounter} from "./soundtrack.js";
@@ -9,7 +9,7 @@ import {drawPrey,drawCapture} from "./enemy-render.js";
 import {LeaderboardClient} from "./leaderboard-client.js";
 import {renderLeaderboard,updateSubmission} from "./leaderboard-ui.js";
 
-/* HIVE RUN Alpha 0.3 — hunt, trap, evolve and a verified-replay leaderboard. */
+/* HIVE RUN Alpha 0.3.2 — immersive UI cleanup without gameplay-rule changes. */
 const $=id=>document.getElementById(id);
 const canvas=$("gameCanvas");
 const context=canvas.getContext("2d",{alpha:false});
@@ -28,8 +28,7 @@ async function refreshLeaderboard(){
 const prefersReducedMotion=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches??false;
 const STORE="deepcuts-hive-run-best-v2",SOUND_STORE="deepcuts-hive-run-audio-v1",MUSIC_STORE="deepcuts-hive-run-music-v1";
 const soundtrack=new HatcherySoundtrack();
-// Combat engine will invoke this on actual enemy/boss encounter transitions.
-// Preview controls never claim that enemies or bosses already exist.
+// Encounter director selects music automatically; no player-facing track previews.
 function setEncounterMusic(encounterType){
  soundtrack.setTrack(trackForEncounter(encounterType));
  syncSoundtrack();syncUI();
@@ -64,13 +63,6 @@ function syncUI(){
  $("musicButton").textContent=state.musicOn?"♫ MUSIC ON":"♫ MUSIC OFF";
  $("musicButton").setAttribute("aria-pressed",String(state.musicOn));
  $("soundStatus").textContent=state.musicOn?"♫ "+TRACKS[soundtrack.trackId].type.toUpperCase():state.audio?"FX ON":"AUDIO OFF";
- $("currentTrack").textContent=TRACKS[soundtrack.trackId].name+" · "+TRACKS[soundtrack.trackId].bpm+" BPM";
- document.querySelectorAll("[data-music-track]").forEach(button=>{
-  const selected=button.dataset.musicTrack===soundtrack.trackId;
-  button.setAttribute("aria-pressed",String(selected));
-  button.classList.toggle("selected",selected);
-  button.disabled=["draft","paused","over","won"].includes(run.status);
- });
 }
 function announce(message){
  if(message!==state.lastAnnouncement){
@@ -275,28 +267,6 @@ function drawArtCreature(part,kind,id,heading){
  context.drawImage(sprite,-width/2,-height/2,width,height);
  context.restore();
 }
-function drawCreaturePreview(){
- const preview=$("creaturePreview");
- if(!preview||!creatureArt)return;
- const ctx=preview.getContext("2d");if(!ctx)return;
- ctx.imageSmoothingEnabled=false;ctx.fillStyle="#0b1a16";
- ctx.fillRect(0,0,preview.width,preview.height);
- WUBRG.forEach((symbol,row)=>{
-  ctx.font="bold 18px ui-monospace,monospace";ctx.fillStyle=WUBRG_COLORS[row];
-  ctx.fillText(symbol,13,33+row*34);
-  for(let col=0;col<9;col++){
-   const tile=creatureArt.body[row*9+col];
-   ctx.drawImage(tile,49+col*29,8+row*34,27,27);
-  }
- });
- ctx.fillStyle="#d3b78d";ctx.font="bold 10px ui-monospace,monospace";
- ctx.fillText("HEAD",350,15);ctx.fillText("TAIL",407,15);
- ctx.drawImage(creatureArt.head,345,25,44,57);
- ctx.drawImage(creatureArt.tail,398,25,46,58);
- ctx.font="9px ui-monospace,monospace";ctx.fillStyle="#b8c9b3";
- ctx.fillText("ONE ARM",344,99);ctx.fillText("FORKED",400,99);
-}
-
 function draw(){
  if(!context)return;
  const run=state.run;
@@ -398,19 +368,6 @@ $("soundButton").addEventListener("click",()=>{
  try{localStorage.setItem(SOUND_STORE,state.audio?"on":"off")}catch{}
  syncUI();if(state.audio)playTone(520,.12);
 });
-document.querySelectorAll("[data-music-track]").forEach(button=>{
- button.addEventListener("click",()=>{
-  if(["draft","paused","over","won"].includes(state.run.status))return;
-  const id=button.dataset.musicTrack;
-  if(!TRACKS[id])return;
-  soundtrack.setTrack(id);
-  // The preview click is a deliberate user gesture. No autoplay on page-load.
-  state.musicOn=true;
-  try{localStorage.setItem(MUSIC_STORE,"on")}catch{}
-  syncSoundtrack();syncUI();
-  announce("Now previewing "+TRACKS[id].name+", "+TRACKS[id].bpm+" beats per minute.");
- });
-});
 $("musicButton").addEventListener("click",()=>{
  state.musicOn=!state.musicOn;
  try{localStorage.setItem(MUSIC_STORE,state.musicOn?"on":"off")}catch{}
@@ -501,6 +458,6 @@ arenaBackground=loadLevelBackground(()=>draw());
 loadCreatureArt().then(art=>{
  if(!art)return;
  creatureArt=art;
- drawCreaturePreview();draw();
+ draw();
 });
 requestAnimationFrame(loop);

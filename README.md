@@ -77,3 +77,7 @@ The playable Hatchery now has moving Skitters and Burrow Runners. Each makes con
 ## Alpha 0.3.1 — Predator speed adjustment
 
 Skitter and Burrow Runner now take **one grid step every four player simulation steps**, compared with every two before this update. Player movement and controls are unchanged. Because this affects difficulty and submitted score comparability, the ranked leaderboard uses rules version `hive-0.3.1`; historical `hive-0.3.0` results remain stored separately rather than mixed into the adjusted leaderboard.
+
+## Alpha 0.3.2 — Immersive game-page layout
+
+The public game UI no longer displays its pixel-art codex, GitHub/roadmap/devlog shortcuts or soundtrack preview/testing panel. Original music still plays automatically during its appropriate game state if enabled, and the Music toggle works separately from sound effects. Soundtrack regression tests remain in CI. A one-square-radius Hatchling Ward and dramatically scaled music intensity from Levels 1–4 are future ideas, not present gameplay.
