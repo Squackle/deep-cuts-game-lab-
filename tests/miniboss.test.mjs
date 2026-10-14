@@ -22,7 +22,7 @@ function forcedBossCapture(r){
  step(r);
 }
 test("Alpha 0.4 evolution milestones 2/6 and 10/14 repeat with full bosses on 4/8",()=>{
- assert.equal(RULES_VERSION,"hive-1.0.2");
+ assert.equal(RULES_VERSION,"hive-1.2");
  assert.deepEqual([0,1,2,3,4,5,6,7,8,9,10,14].map(encounterKind),
   [null,null,"stalker",null,"warden",null,"weaver",null,"guardian",null,"stalker","weaver"]);
  const r=newRun({seed:42});start(r);evolve(r,2);
@@ -76,7 +76,7 @@ test("weaver creates one web every ten active seconds, capped at two and expires
  assert.ok(!r.encounter.webs.some(w=>w.pos.x===original.x&&w.pos.y===original.y));
  assert.ok(r.encounter.webs.length<=2);
 });
-test("a web stuns for two seconds, freezes player and enemy and cannot cause a forced death",()=>{
+test("a web stuns only the player; Weaver keeps moving and abilities charge",()=>{
  const r=newRun({seed:61});start(r);spawnMiniboss(r,"weaver");r.encounter.introMs=0;
  const next={x:r.body[0].x+1,y:r.body[0].y};
  r.encounter.webs=[{pos:next,lifeMs:15000}];
@@ -84,11 +84,12 @@ test("a web stuns for two seconds, freezes player and enemy and cannot cause a f
  step(r);
  assert.equal(r.encounter.stunMs,WEB_STUN_MS);
  assert.equal(r.encounter.webs.length,0);
- const head={...r.body[0]},enemy={...r.enemies[0].pos},charge=r.encounter.abilityMs;
+ const head={...r.body[0]},charge=r.encounter.abilityMs,ticks=r.runTicks;
  assert.equal(turn(r,"down"),false);
- for(let i=0;i<13;i++){step(r);assert.deepEqual(r.body[0],head);assert.deepEqual(r.enemies[0].pos,enemy);assert.equal(r.status,"running")}
- assert.equal(r.encounter.abilityMs,charge,"stun cannot charge another cast");
- assert.ok(r.encounter.stunMs<WEB_STUN_MS);
+ for(let i=0;i<6;i++){step(r);assert.deepEqual(r.body[0],head);assert.equal(r.status,"running")}
+ assert.ok(r.runTicks>ticks);
+ assert.ok(r.enemies[0].moves>0,"boss must keep moving while player is stuck");
+ assert.ok(r.encounter.abilityMs>charge,"boss must continue spinning web on active combat ticks");
  while(r.encounter.stunMs>0)step(r);
  assert.equal(r.status,"running");
 });

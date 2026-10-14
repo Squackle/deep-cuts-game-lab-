@@ -42,11 +42,8 @@ test("server replay verifies real recorded turn input",()=>{
  const expected={score:run.score,kills:run.kills,evolutionsChosen:run.evolutionsChosen,ticks:run.runTicks};
  assert.equal(replayScore(32,events,expected).ok,true);
 });
-test("daily solo test seeds are repeatable and never ranked",()=>{
- const date=new Date("2026-10-14T13:00:00Z");
- const a=createSoloSession("classic","daily",date),b=createSoloSession("classic","daily",date);
- assert.deepEqual(a,b);assert.equal(a.ranked,false);
- assert.notEqual(createSoloSession("hunt","daily",date).seed,a.seed);
- const arcade=createSoloSession("classic","arcade",date);
+test("daily seeds are retired: offline practice offers only Arcade",()=>{
+ assert.throws(()=>createSoloSession("hunt","daily"),/Unknown expedition/);
+ const arcade=createSoloSession("classic","arcade");
  assert.equal(arcade.day,"");assert.equal(arcade.ranked,false);
 });

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {onRequestGet,onRequestPost} from "../functions/api/leaderboard.js";
 import {createSoloSession} from "../src/solo-session.js";
-import {dailySeed,chicagoDay} from "../src/modes.js";
+
 
 test("online score GET and POST are disabled before any shared database access",async()=>{
  const touch=()=>{throw Error("Shared DB must not be read or written by the Game Lab")};
@@ -18,16 +18,14 @@ test("online score GET and POST are disabled before any shared database access",
   assert.equal(post.status,410);assert.match((await post.json()).error,/disabled/i);
  }
 });
-test("Arcade and Daily Test Seeds run locally with no session requests",()=>{
+test("Only random Arcade seeds are supported by offline practice",()=>{
  const prior=globalThis.fetch;
- globalThis.fetch=()=>{throw Error("Solo seed generation must not make network requests")};
+ globalThis.fetch=()=>{throw Error("Solo seed must never make network requests")};
  try{
-  const today=new Date("2026-10-14T04:30:00Z");
-  const daily=createSoloSession("classic","daily",today);
-  assert.equal(daily.seed,dailySeed("2026-10-13","classic"));
-  assert.equal(daily.day,"2026-10-13");assert.equal(daily.ranked,false);
-  assert.equal(createSoloSession("hunt","arcade",today).day,"");
-  assert.equal(chicagoDay(today),"2026-10-13");
+  const arcade=createSoloSession("hunt","arcade");
+  assert.equal(arcade.day,"");assert.equal(arcade.ranked,false);
+  assert.ok(Number.isInteger(arcade.seed)&&arcade.seed>0);
+  assert.throws(()=>createSoloSession("classic","daily"),/Unknown expedition/);
  }finally{globalThis.fetch=prior}
 });
 test("standalone UI has no online rank, score submission or profile forms",()=>{
@@ -36,5 +34,5 @@ test("standalone UI has no online rank, score submission or profile forms",()=>{
  assert.match(html,/id="patchNotesTitle"/);
  assert.doesNotMatch(html,/id="submissionPanel"|id="leaderboardEntries"|id="playerProfile"|id="playerAlias"/);
  assert.doesNotMatch(js,/LeaderboardClient|refreshLeaderboard|leaderboard\.submit|leaderboard\.load|updateSubmission/);
- assert.match(js,/createSoloSession\(selectedMode,selectedChallenge\)/);
+ assert.match(js,/createSoloSession\(selectedMode,"arcade"\)/);
 });

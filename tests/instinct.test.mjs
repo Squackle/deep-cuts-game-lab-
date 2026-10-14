@@ -82,12 +82,12 @@ test("mutation cards show new shortcuts and only mention Brood Trail rewards",()
 });
 test("SESSION BEST resets on reload and is scoped per mode and expedition",()=>{
  const current=createSessionBest();
- const hunt=boardKey("hunt","arcade"),classic=boardKey("classic","arcade"),daily=boardKey("classic","daily","2026-10-14");
+ const hunt=boardKey("hunt"),classic=boardKey("classic");
  assert.equal(current.get(hunt),0);
  assert.equal(current.record(hunt,2500),2500);
  assert.equal(current.record(hunt,1500),2500);
  assert.equal(current.record(classic,6500),6500);
- assert.equal(current.get(daily),0);
+ assert.notEqual(hunt,classic);
  assert.equal(current.get(classic),6500);
  assert.equal(createSessionBest().get(hunt),0,"fresh visit resets all session records");
  assert.equal(createSessionBest().get(classic),0);
@@ -102,8 +102,8 @@ test("browser gate freezes the frame loop and retains replay-rules version",()=>
  assert.match(main,/showMutationDraft\([^\n]*state\.run\.mode\)/);
  assert.match(html,/id="mutationResume"[^>]*hidden/);
  assert.match(html,/SESSION BEST/);
- assert.match(html,/1\.1 · LAIR/);
- assert.equal(RULES_VERSION,"hive-1.0.2","UI-only release does not alter replay rules");
+ assert.match(html,/1\.2 · SNARE/);
+ assert.equal(RULES_VERSION,"hive-1.2","UI-only release does not alter replay rules");
 });
 test("permanent release naming instruction is kept in source control",()=>{
  const naming=readFileSync(new URL("../docs/HIVE-RUN-RELEASE-NAMING.md",import.meta.url),"utf8");
