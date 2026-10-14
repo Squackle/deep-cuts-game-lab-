@@ -17,7 +17,7 @@ test("diagnostic internals remain hidden unless explicitly requested",()=>{
  assert.match(html,/id="devDiagnostics" class="dev-diagnostics" hidden/);
  for(const id of ["evoCountdown","evoCount","mutationInventory","killCount","enemyCount","stateLabel"])
  assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(js,/get\("debug"\)==="1"/);assert.match(css,/\.dev-diagnostics\[hidden\]/);
+ assert.doesNotMatch(js,/get\("debug"\)==="1"/);assert.match(css,/\.dev-diagnostics\[hidden\]/);
 });
 test("unwanted page copy removed",()=>{
  assert.doesNotMatch(html,/Original pixel-art creature inspired by classic hive-serpent fantasy|ORIGINAL PIXEL-ART ARCADE · FREE TO PLAY|CHOOSE YOUR PATH \/ CHASE YOUR RECORD/);

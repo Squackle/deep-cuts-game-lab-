@@ -28,8 +28,7 @@ const WUBRG_COLORS=["#e7d8b4","#65a9d5","#7e6a88","#dd684a","#75ad7b"];
 let creatureArt=null;
 let arenaBackground=null;
 let visualBurst=null,lastCapture=null,startingRun=false,lastEncounterSeen=null;
-// Diagnostics are opt-in for development, never a public gameplay panel.
-if(new URLSearchParams(window.location.search).get("debug")==="1")$("devDiagnostics").hidden=false;
+// Game state diagnostics remain hidden. Inspect local DOM/game state using developer tools.
 const prefersReducedMotion=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches??false;
 let selectedMode="hunt",selectedChallenge="arcade";
 try{selectedMode=localStorage.getItem("hive-mode-v1")==="classic"?"classic":"hunt"}catch{}
@@ -608,7 +607,6 @@ $("gameMode").addEventListener("change",()=>{
 });
 $("gameChallenge").addEventListener("change",()=>{selectedChallenge=$("gameChallenge").value;reset()});
 reset();
-try{$("playerAlias").value=localStorage.getItem("hive-last-alias-v1")||""}catch{}
 // The Hatchery remains the sole arena during the first Predator release.
 arenaBackground=loadLevelBackground(()=>draw());
 loadCreatureArt().then(art=>{
