@@ -7,8 +7,8 @@
 export const VECTORS=Object.freeze({up:[0,-1],right:[1,0],down:[0,1],left:[-1,0]});
 export const HEADINGS=Object.freeze(Object.keys(VECTORS));
 export const PREY=Object.freeze({
- skitter:Object.freeze({name:"SKITTER",period:2,accent:"#ffaf75",icon:"◆"}),
- runner:Object.freeze({name:"BURROW RUNNER",period:2,accent:"#e399f5",icon:"◇"})
+ skitter:Object.freeze({name:"SKITTER",period:4,accent:"#ffaf75",icon:"◆"}),
+ runner:Object.freeze({name:"BURROW RUNNER",period:4,accent:"#e399f5",icon:"◇"})
 });
 export function inside(run,p){return p.x>=0&&p.y>=0&&p.x<run.cols&&p.y<run.rows}
 export const same=(a,b)=>a.x===b.x&&a.y===b.y;
@@ -46,7 +46,7 @@ export function spawnPrey(run,kind="skitter"){
  const choose=Math.min(available.length-1,Math.floor(run.random()*available.length));
  const pos=available[choose],directions=HEADINGS.filter(d=>safePreyTile(run,point(pos,d)));
  const id=++run.enemySerial;
- return {id,kind,pos,dir:directions[Math.floor(run.random()*directions.length)],period:PREY[kind]?.period??2,clock:0,moves:0};
+ return {id,kind,pos,dir:directions[Math.floor(run.random()*directions.length)],period:PREY[kind]?.period??4,clock:0,moves:0};
 }
 export function decidePrey(run,enemy){
  const viable=[],head=run.body[0];

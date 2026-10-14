@@ -30,3 +30,29 @@ test("fully surrounded prey must collide rather than stand still",()=>{
  const p=advancePrey(run,e);
  assert.equal(p.type,"captured");
 });
+
+test("Alpha 0.3.1 halves both enemy speeds without changing player speed",()=>{
+ const run=newRun({seed:111});
+ assert.equal(PREY.skitter.period,4,"Skitter should move once per four player simulation steps");
+ assert.equal(PREY.runner.period,4,"Runner should move once per four player simulation steps");
+ const initial=run.enemies[0];
+ assert.equal(initial.period,4);
+ const runner=spawnPrey(run,"runner");
+ assert.ok(runner);
+ assert.equal(runner.period,4);
+});
+test("newly spawned prey wait three beats and move exactly on fourth beat",()=>{
+ const run=newRun({seed:7});
+ const enemy=run.enemies[0];
+ const initial={...enemy.pos};
+ for(let i=1;i<4;i++){
+  const result=advancePrey(run,enemy);
+  assert.equal(result.type,"waiting");
+  assert.deepEqual(enemy.pos,initial,"prey moved before fourth simulation step");
+  assert.equal(enemy.moves,0);
+ }
+ const result=advancePrey(run,enemy);
+ assert.equal(result.type,"moved");
+ assert.equal(enemy.moves,1);
+ assert.equal(Math.abs(enemy.pos.x-initial.x)+Math.abs(enemy.pos.y-initial.y),1);
+});

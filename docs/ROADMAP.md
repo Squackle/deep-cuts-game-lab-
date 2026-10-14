@@ -100,3 +100,10 @@
 - [x] Complete move/copy checklist and D1 schema tracked in `docs/MAIN_SITE_MERGE.md` and `db/leaderboard.sql`.
 - [ ] Build verified first-party profile bridge on the main site **when authorized to modify it**; do not link a handle as authenticated merely because a guest typed it.
 - [ ] After merger, migrate D1 leaderboard data and function binding, point game nav from main page, run full authentication and score regression matrix.
+
+
+## Alpha 0.3.1 — Prey pace playtest tuning
+
+- [x] Half Skitter and Burrow Runner speeds (movement period 2 → 4 player ticks) following owner feedback.
+- [x] Version game rules and isolate new rankings by version to keep the leaderboard comparable.
+- [ ] Gather real-device feedback about whether the slower pace makes trapping more enjoyable; adjust different enemy personalities separately if needed.

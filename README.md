@@ -72,3 +72,8 @@ The playable Hatchery now has moving Skitters and Burrow Runners. Each makes con
 **Leaderboard:** Cloudflare Pages Function `functions/api/leaderboard.js` uses a dedicated D1 `HIVE_DB` binding (SQL source in `db/leaderboard.sql`). Server creates one-time seeded runs and independently replays all player turns and mutation choices before accepting final results. Only finished runs can enter the top 25. The game remains playable in practice mode if the API is unavailable. Profile handles, if entered, link to real public Field Network profile URLs but are **unverified self-reported links**, not impersonation-safe account ownership. Rules replay limits simple score manipulation but cannot establish that input came from a human. The production Deep Cuts EDH repository was not edited.
 
 **Merge guide:** `docs/MAIN_SITE_MERGE.md`. All game files are portable into `/games/hive-run/` with relative assets/API paths; identity verification requires a future main-site endpoint with owner approval.
+
+
+## Alpha 0.3.1 — Predator speed adjustment
+
+Skitter and Burrow Runner now take **one grid step every four player simulation steps**, compared with every two before this update. Player movement and controls are unchanged. Because this affects difficulty and submitted score comparability, the ranked leaderboard uses rules version `hive-0.3.1`; historical `hive-0.3.0` results remain stored separately rather than mixed into the adjusted leaderboard.

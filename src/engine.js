@@ -6,7 +6,7 @@ import {PREY,spawnPrey,advancePrey,same,inside,VECTORS} from "./enemies.js";
 export const DIRECTIONS=Object.freeze(Object.fromEntries(Object.entries(VECTORS).map(([k,v])=>[k,{x:v[0],y:v[1]}])));
 export const COLORS=Object.freeze(["W","U","B","R","G"]);
 export const EVOLUTION_COST=5;
-export const RULES_VERSION="hive-0.3.0";
+export const RULES_VERSION="hive-0.3.1";
 export const MUTATIONS=Object.freeze({
  W:{color:"W",name:"Hardened Shell",school:"CARAPACE",icon:"◈",description:"Gain one shield. Survive a fatal impact and evade danger.",short:"+1 shield"},
  U:{color:"U",name:"Temporal Drift",school:"ADAPTATION",icon:"◷",description:"Slow your hive's movement for 28 steps to steer tighter traps.",short:"28 slow steps"},

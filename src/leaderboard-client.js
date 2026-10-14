@@ -1,4 +1,5 @@
 import {API_URL} from "./integration.js";
+import {RULES_VERSION} from "./engine.js";
 const SAFE_SEED=()=>Math.floor(Math.random()*4294967295)||1;
 export class LeaderboardClient{
  constructor(endpoint=API_URL){this.endpoint=endpoint;this.session=null;this.events=[];this.error="";}
@@ -12,7 +13,7 @@ export class LeaderboardClient{
   this.session=null;this.events=[];this.error="";
   try{
    const data=await this.request({action:"start"});
-   if(data.rulesVersion!=="hive-0.3.0")throw Error("Leaderboard rules version mismatch.");
+   if(data.rulesVersion!==RULES_VERSION)throw Error("Leaderboard rules version mismatch.");
    this.session={token:data.token,seed:data.seed};
    return {seed:data.seed,ranked:true};
   }catch(error){this.error=String(error.message||error);return {seed:SAFE_SEED(),ranked:false}}
