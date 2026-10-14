@@ -12,7 +12,7 @@ export const OPENING_GRACE_MS=9000;
 export const OPENING_EVOLUTIONS=2;
 export const OPENING_ORB_MIN=70;
 export const OPENING_ORB_SPREAD=35;
-export const RULES_VERSION="hive-1.0.2";
+export const RULES_VERSION="hive-1.2";
 // Player speed is set in milliseconds per grid step (larger = easier).
 // Playtest adjustment: about 10% less movement per second at every stage.
 export const PLAYER_BASE_TICK_MS=150;
@@ -180,8 +180,8 @@ function spawnOrb(run){
 export function step(run){
  if(run.status!=="running")return run;
  if(run.runTicks>=6000){run.status="won";run.endReason="Expedition complete. Your hive endured 6,000 steps.";return run}
- // Intro and web-stun ticks advance replay time but never force the player
- // into collisions while inputs are temporarily disabled.
+ // Intro freezes the arena. A web, however, immobilizes ONLY the player:
+ // the Weaver, cooldowns, webs and terrain continue advancing deterministically.
  const elapsed=effectiveTickMs(run);
  if(run.encounter?.awaitSpawn){
   if(!spawnNextPhase(run)){
@@ -201,7 +201,15 @@ export function step(run){
   emit(run,{type:"encounter-start",kind,name:ABILITIES[kind].name});
   run.runTicks++;return run;
  }
+ const webbed=!!(run.encounter?.kind==="weaver"&&run.encounter.stunMs>0);
+ if(webbed){
+  const e=run.encounter;
+  e.stunMs=Math.max(0,e.stunMs-elapsed);
+  if(!e.stunMs)e.lastAbility={type:"stun-ended",tick:run.runTicks};
+  run.turnQueue=[]; // held or buffered inputs cannot force a death on release
+ }
  tickTerrain(run,elapsed);
+ if(!webbed){
  const heading=run.turnQueue.shift()??run.direction,t=target(run,heading);
  if(t.wall||t.body||t.enemy){
   run.direction=heading;
@@ -223,13 +231,15 @@ export function step(run){
   run.brood++;reward(run,{energy:1,score:100,growth:1,type:"orb",at:t.next});
   run.orbIn=orbInterval(run);
  }
- // A web only immobilizes the head after entering the visible marked tile.
- // Both prey and player freeze for 2 seconds: not a cheap unavoidable death.
+ // Entering a web costs two seconds of movement, not two seconds of combat.
  if(triggerWeb(run,t.next)){emit(run,{type:"web-stun",at:t.next});return run}
  if(run.status!=="running")return run;
+ }else{
+  run.runTicks++; // simulation time and enemy actions continue while head is stuck
+ }
  if(run.mode==="classic"){spawnOrb(run);return run}
- // Opening grace advances only on active moves, never pause or draft time.
- run.openingGraceMs=Math.max(0,run.openingGraceMs-elapsed);
+ // Opening grace advances only when the player can move.
+ if(!webbed)run.openingGraceMs=Math.max(0,run.openingGraceMs-elapsed);
  const abilityEvent=tickMiniboss(run,elapsed);
  if(abilityEvent?.type==="burrow-warning"||abilityEvent?.type==="burrow"||abilityEvent?.type==="web")
   emit(run,abilityEvent);

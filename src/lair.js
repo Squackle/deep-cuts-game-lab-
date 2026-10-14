@@ -17,7 +17,7 @@ export function createLairRun(kind,cols=18,rows=22){
  const run=newRun({cols,rows,seed:spec.seed,mode:"hunt"});
  run.enemies=[];run.food=null;run.orbIn=10000000;run.respawnIn=0;
  run.energy=0;run.earnedEnergy=0;run.evolutionsChosen=spec.evolution;run.stage=spec.evolution+1;
- run.tickMs=Math.max(PLAYER_MIN_TICK_MS,PLAYER_BASE_TICK_MS-Math.floor(spec.evolution/2)*PLAYER_ACCELERATION_MS);
+ run.tickMs=PLAYER_BASE_TICK_MS; // Identical real-time movement cadence across all four Lair bosses.
  run.openingGraceMs=0;run.mercy=0;
  setBiome(run);run.biomeNoticeMs=0;
  if(!spawnMiniboss(run,kind))throw Error("No safe spawn for Lair boss");

@@ -13,7 +13,7 @@ export const PREY=Object.freeze({
  guardian:Object.freeze({name:"RIFT GUARDIAN",period:4,accent:"#b19ac2"}),
  skitter:Object.freeze({name:"SKITTER",period:4,accent:"#ffaf75",icon:"◆"}),
  runner:Object.freeze({name:"BURROW RUNNER",period:4,accent:"#e399f5",icon:"◇"}),
- stalker:Object.freeze({name:"BURROW STALKER",period:3,accent:"#c2a56a",icon:"◈"}),
+ stalker:Object.freeze({name:"BURROW STALKER",period:4,accent:"#c2a56a",icon:"◈"}),
  weaver:Object.freeze({name:"TUNNEL WEAVER",period:4,accent:"#a99a8b",icon:"⌁"})
 });
 export function inside(run,p){return p.x>=0&&p.y>=0&&p.x<run.cols&&p.y<run.rows}

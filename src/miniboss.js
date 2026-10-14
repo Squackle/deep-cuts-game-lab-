@@ -8,7 +8,7 @@ import {spawnPrey,same,inside,reachableArea,HEADINGS,VECTORS} from "./enemies.js
 
 export const ABILITIES=Object.freeze({
  warden:Object.freeze({name:"HATCHERY WARDEN",ability:"BROOD SEAL",cooldownMs:10000,phases:3,icon:"seal"}),
- guardian:Object.freeze({name:"RIFT GUARDIAN",ability:"RIFT PULSE",cooldownMs:10000,phases:3,icon:"rift"}),
+ guardian:Object.freeze({name:"RIFT GUARDIAN",ability:"RIFT PULSE",cooldownMs:2000,phases:3,icon:"rift"}),
  stalker:Object.freeze({name:"BURROW STALKER",ability:"BURROW DASH",cooldownMs:10000,phases:2,icon:"burrow"}),
  weaver:Object.freeze({name:"TUNNEL WEAVER",ability:"WEB SNARE",cooldownMs:10000,phases:2,icon:"web"})
 });
@@ -45,7 +45,7 @@ export function spawnNextPhase(run){
  run.enemies=[];
  const enemy=spawnPrey(run,encounter.kind);
  if(!enemy)return false;
- if(encounter.phases===3)enemy.period=encounter.phase===3?3:4;
+ enemy.period=4; // All bosses share the same movement cadence in every phase.
  run.enemies=[enemy];
  encounter.abilityMs=0;
  encounter.introMs=INTRO_MS;
@@ -112,7 +112,7 @@ export function abilityState(run){
 export function tickMiniboss(run,dt){
  const e=run.encounter;
  if(!e)return null;
- if(e.introMs>0||e.stunMs>0)return null;
+ if(e.introMs>0)return null; // Web snare does not halt the Weaver or its powers.
  e.clockMs+=dt;
  for(const web of e.webs)web.lifeMs-=dt;
  e.webs=e.webs.filter(web=>web.lifeMs>0);
@@ -166,14 +166,6 @@ export function consumeEncounterFreeze(run,dt){
   run.runTicks++;
   return true;
  }
- if(e.stunMs>0){
-  // Both the player and prey are motion-frozen during the two-second stun:
-  // no forced deaths, cooldown farming, orb spawns or untimely enemy motion.
-  e.stunMs=Math.max(0,e.stunMs-dt);
-  if(!e.stunMs)e.lastAbility={type:"stun-ended",tick:run.runTicks};
-  run.turnQueue=[];
-  run.runTicks++;
-  return true;
- }
+
  return false;
 }
