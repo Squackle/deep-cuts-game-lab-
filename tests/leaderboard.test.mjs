@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {newRun,start,step,turn,chooseMutation} from "../src/engine.js";
-import {replayScore} from "../functions/api/leaderboard.js";
-import {profileLink,gamePaths} from "../src/integration.js";
+import {replayScore} from "../src/replay-verification.js";
+import {createSoloSession} from "../src/solo-session.js";
 function finished(seed,actions=[]){
  const run=newRun({seed});start(run);
  let index=0;
@@ -42,11 +42,11 @@ test("server replay verifies real recorded turn input",()=>{
  const expected={score:run.score,kills:run.kills,evolutionsChosen:run.evolutionsChosen,ticks:run.runTicks};
  assert.equal(replayScore(32,events,expected).ok,true);
 });
-test("public profile links are allowlisted and safely encoded",()=>{
- assert.equal(profileLink("Squackle"),"https://deep-cuts-edh.pages.dev/community.html?profile=Squackle");
- assert.equal(profileLink("<script>"),null);
- assert.equal(profileLink(""),null);
- assert.equal(profileLink("foo/bar"),null);
- const p=gamePaths();assert.match(p.api,/\/api\/leaderboard$/);
- assert.match(p.assetRoot,/\/assets\/$/);
+test("daily solo test seeds are repeatable and never ranked",()=>{
+ const date=new Date("2026-10-14T13:00:00Z");
+ const a=createSoloSession("classic","daily",date),b=createSoloSession("classic","daily",date);
+ assert.deepEqual(a,b);assert.equal(a.ranked,false);
+ assert.notEqual(createSoloSession("hunt","daily",date).seed,a.seed);
+ const arcade=createSoloSession("classic","arcade",date);
+ assert.equal(arcade.day,"");assert.equal(arcade.ranked,false);
 });
