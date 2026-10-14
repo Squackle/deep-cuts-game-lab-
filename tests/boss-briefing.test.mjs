@@ -101,7 +101,7 @@ test("the browser places blocking UI above the arena and guards replay-steering"
  assert.match(css,/\.arena:has\(\.boss-briefing:not\(\[hidden\]\)\)/);
  assert.ok(js.indexOf("if(bossGate.blocking){\n  if(bossGate.phase")<js.indexOf("state.accumulator+=dt"),
   "UI gate must be evaluated before the simulation accumulates time");
- assert.match(js,/if\(bossGate.blocking\|\|state\.run\.status!=="running"\)return false/);
+ assert.match(js,/if\(bossGate.blocking\|\|awaitingMutationResume\|\|state\.run\.status!=="running"\)return false/);
  assert.match(js,/if\(state\.run\.status==="running"&&showBossBriefing\(\)\)break/);
  assert.match(js,/if\(!showBossBriefing\(\)\)/);
  assert.match(js,/resetBossBriefing\(\)/);

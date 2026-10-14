@@ -82,7 +82,7 @@ function syncUI(){
   bossGate.phase==="countdown"?"REGROUP · "+bossGate.seconds:
   ({ready:"AWAITING PLAYER",running:"IN MOTION",paused:"PAUSED",draft:"EVOLVING",over:"RUN ENDED",won:"HIVE COMPLETE"})[run.status];
  const playable=run.status==="running";
- $("pauseButton").disabled=!playable||bossGate.blocking;
+ $("pauseButton").disabled=!playable||bossGate.blocking||awaitingMutationResume;
  $("pauseButton").textContent="Ⅱ PAUSE";
  $("soundButton").textContent=state.audio?"♪ SOUND ON":"♪ SOUND OFF";
  $("soundButton").setAttribute("aria-pressed",String(state.audio));
