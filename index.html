@@ -4,7 +4,7 @@
  <meta charset="utf-8">
  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
  <meta name="theme-color" content="#101e17">
- <meta name="description" content="Hive Run: a free pixel-art arcade game. Hunt evolving bosses or follow Brood Trail, a classic Snake adventure. Daily challenges and five mutations.">
+ <meta name="description" content="Hive Run solo development lab for Predator Hunt and Brood Trail. Test the game with local scores, repeatable seeds and no online leaderboards.">
  <title>HIVE RUN — Deep Cuts Game Lab</title>
  <link rel="stylesheet" href="./styles.css">
  <script type="module" src="./src/main.js"></script>
@@ -16,11 +16,11 @@
    <span class="brand-mark" aria-hidden="true">◈</span>
    <span>DEEP CUTS <strong>GAME LAB</strong><small>TWO PATHS. ONE HIVE.</small></span>
   </a>
-  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> 1.0.4 · FOUR PAINTED DEPTHS</span>
+  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> 1.0.4 · SOLO DEVELOPMENT LAB</span>
  </header>
  <main>
   <section class="intro" aria-labelledby="mainTitle">
-   <div><p class="kicker">EXPERIMENT 001 / RETRO ARCADE</p>
+   <div><p class="kicker">DEVELOPMENT LAB / SOLO TEST RUNS</p>
     <h1 id="mainTitle">HIVE <em>RUN.</em></h1>
     <p class="intro-description">Two ways to grow. Trap evolving predators in Predator Hunt, or collect glowing brood in Brood Trail. Descend through ancient chambers with five colors of mutation.</p>
    </div>
@@ -53,10 +53,10 @@
          <label for="gameMode">CHOOSE YOUR PATH</label>
          <select id="gameMode"><option value="hunt">PREDATOR HUNT</option><option value="classic">BROOD TRAIL · CLASSIC SNAKE</option></select>
          <label for="gameChallenge">EXPEDITION</label>
-         <select id="gameChallenge"><option value="arcade">ARCADE · NEW SEED EACH RUN</option><option value="daily">DAILY RITUAL · SHARED SEED</option></select>
+         <select id="gameChallenge"><option value="arcade">ARCADE · NEW SEED EACH RUN</option><option value="daily">DAILY TEST SEED · REPEATABLE</option></select>
         </div>
         <button id="primaryButton" class="primary-button" type="button">START HUNT ▶</button>
-        <a id="submitShortcut" class="submit-shortcut" href="#submissionPanel" hidden>↓ SUBMIT YOUR SCORE TO THE LEADERBOARD</a>
+        
        </div>
      </div>
      <div id="bossBriefing" class="boss-briefing" role="dialog" aria-modal="true" aria-labelledby="bossBriefingName" aria-describedby="bossBriefingTips" hidden>
@@ -108,7 +108,7 @@
     <div class="hunt-hud"><span><span id="collectionLabel">CAPTURES</span> <strong id="killCount">00</strong></span><span><span id="populationLabel">PREY ON BOARD</span> <strong id="enemyCount">01</strong></span></div>
     <div class="player-aids" id="playerAids" aria-label="Predator Hunt beginner assistance"><span id="mercyStatus">◆ INSTINCT READY · 1 FREE PREY DODGE</span><span id="trapHelp">◇ AMBER = LIMITED ESCAPES</span></div>
     <div class="cabinet-bottom"><span id="progress">NEXT MUTATION IN 5 ENERGY</span><span id="stateLabel">AWAITING PLAYER</span></div>
-    <p id="rankedNotice" class="ranked-notice">START A HUNT TO GET A RANKED SEED</p>
+    <p id="rankedNotice" class="ranked-notice">SOLO EXPERIMENT · NO ONLINE SCORES</p>
     <div class="game-actions">
      <button id="pauseButton" type="button" disabled>Ⅱ PAUSE</button>
      <button id="restartButton" type="button">↺ RESTART</button>
@@ -130,32 +130,18 @@
     <span class="mission-kicker">CHOOSE YOUR PATH / CHASE YOUR RECORD</span>
     <h2 id="missionTitle">PATHS OF <em>THE HIVE.</em></h2>
     <p>Predator Hunt turns your body into a trap. Your first prey collision gets a free instinct dodge; early prey move more slowly, one at a time, with extra evolution orbs and amber hints when escape options are limited. Bosses plan their escapes: Burrow Stalker and Tunnel Weaver need two captures; Hatchery Warden and Rift Guardian need three. Brood Trail follows the classic Snake rhythm: collect an orb, grow, repeat. Both paths descend through the Hatchery, Burrows and Fracture.</p>
-    <p class="mode-detail" id="modeDetail">Daily Ritual uses a shared seed and resets at midnight Central. Retry freely; each completed run can be submitted. Rankings are separate for every path and expedition.</p>
-    <section class="leaderboard-panel" id="leaderboard" aria-labelledby="leaderboardTitle">
-     <div class="board-heading"><span>FIELD NETWORK / HIVE RUN</span><button type="button" id="leaderboardRefresh">↻ REFRESH</button></div>
-     <h3 id="leaderboardTitle">HIVE <em>LEADERBOARD.</em></h3>
-     <p id="leaderboardStatus" class="board-caption">LOADING RANKED SCORES...</p>
-     <div id="leaderboardEntries" class="board-entries" aria-live="polite"></div>
-     <div id="submissionPanel" class="submission-panel" hidden>
-      <strong>SUBMIT YOUR FINAL RUN</strong>
-      <p id="finalRunSummary"></p>
-      <p class="submit-explanation"></p>
-      <form id="leaderboardForm">
-       <label for="playerAlias">DISPLAY NAME</label>
-       <input id="playerAlias" name="alias" minlength="2" maxlength="23" pattern="[A-Za-z0-9][A-Za-z0-9 _-]{1,22}" placeholder="Anonymous Hunter">
-       <label for="playerProfile">MAIN SITE PROFILE HANDLE (OPTIONAL)</label>
-       <input id="playerProfile" name="profileHandle" maxlength="24" pattern="[A-Za-z][A-Za-z0-9_]{2,23}" placeholder="e.g. Squackle">
-       <small id="profileNotice">Links to a public <a href="https://deep-cuts-edh.pages.dev/community.html#account" target="_blank" rel="noopener noreferrer">Field Network profile</a>. Play on the main site while signed in to verify ownership; guest links are labeled unverified.</small>
-       <button type="submit" id="submitScoreButton">SUBMIT VERIFIED REPLAY ↗</button>
-      </form>
-      <p id="scoreSubmitStatus" role="status" aria-live="polite"></p>
-     </div>
-     <p class="board-integrity">Scores are replayed by the server against a seeded run. This verifies game rules, not human input. Signed-in main-site profiles receive verified ownership. Guest profile links are self-reported.</p>
+    <p class="mode-detail" id="modeDetail">This is a solo testing environment. Arcade uses fresh random seeds; Daily Test Seed repeats until midnight Central for consistent experiments.</p>
+    <section class="solo-panel" aria-labelledby="soloTitle">
+     <div class="board-heading"><span>DEEP CUTS / DEVELOPMENT LAB</span><span>LOCAL ONLY</span></div>
+     <h3 id="soloTitle">SOLO <em>TESTING.</em></h3>
+     <p>No public leaderboard, account connection or multiplayer competition here. Your personal best is saved in this browser separately for each mode and expedition.</p>
+     <p><strong>ARCADE:</strong> Fresh random seed each run. <strong>DAILY TEST SEED:</strong> A repeatable board until midnight Central—useful for comparing balance changes.</p>
+     <a class="solo-production-link" href="https://deep-cuts-edh.pages.dev/games/hive-run/">PLAY THE PUBLIC VERSION ↗</a>
     </section>
     <div class="mission-row"><span>01</span><div><strong>HUNT OR FOLLOW THE TRAIL</strong><p>Predator Hunt: trap prey for 3 energy. Brood Trail: collect orbs for 1 energy. Every 5 energy offers three mutations.</p></div></div>
     <div class="mission-row"><span>02</span><div><strong>READ THE CHAMBER</strong><p>Burrows introduce stone islands. Fracture rifts mark their tiles before they become dangerous. Dashed tiles are warnings; solid tiles block your path.</p></div></div>
     <div class="mission-row"><span>03</span><div><strong>EVOLVE TO SURVIVE</strong><p>White shields. Blue slows. Black sheds your tail to save you. Red speeds up and doubles points. Green adds growth.</p></div></div>
-    <div class="release-note"><span>PATHS OF THE HIVE</span><strong>1.0.4 / TWO MODES · FOUR PAINTED DEPTHS</strong><p>Distinct bosses, living terrain, daily seeded challenges and separate records. Slower opening movement gives you time to plan. Four original, detailed cavern paintings change every four evolutions, while music builds from the Hatchery to the deepest Fracture.</p></div>
+    <div class="release-note"><span>PATHS OF THE HIVE</span><strong>1.0.4 / TWO MODES · FOUR PAINTED DEPTHS</strong><p>Distinct bosses, living terrain and locally seeded test challenges. Slower opening movement gives you time to plan. Four original, detailed cavern paintings change every four evolutions, while music builds from the Hatchery to the deepest Fracture.</p></div>
     <details class="mutation-guide"><summary>FIELD GUIDE · ENCOUNTERS &amp; MUTATIONS</summary><p>Evolution 2: Burrow Stalker relocates five tiles after a warning. Evolution 4: Hatchery Warden seals up to three tiles. Evolution 6: Tunnel Weaver places webs that briefly freeze the hunt. Evolution 8: Rift Guardian warns before rupturing nearby tiles.</p><p>Boss powers charge for ten active seconds. The ochre ring closes when ready. The field pauses between capture phases. Only the final capture grants a reward. Brood Trail has no encounters.</p><p>Areas change every four evolutions. Reach twelve for the Deep Fracture. Expeditions finish after 6,000 simulation steps, or earlier if your swarm crashes. Shields and molts can save you; the walls and your own body remain dangerous.</p></details>
    </aside>
   </div>

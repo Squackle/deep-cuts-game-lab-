@@ -316,3 +316,13 @@ body.game-only .boss-dossier{max-width:365px;padding:9px 12px 6px}
 
 /* The arena disables swipe scrolling during play; restore it for dossier reading. */
 .arena:has(.boss-briefing:not([hidden])){touch-action:pan-y}
+
+/* Solo test status: quiet laboratory note replaces public scoreboard. */
+.solo-panel{border:1px solid #9f8c63;border-radius:4px;padding:17px 16px;background:linear-gradient(160deg,#132922,#1f2c22);margin:21px 0 25px;color:#d9d3b2}
+.solo-panel .board-heading{margin:0 0 12px;color:#f4cc82}
+.solo-panel h3{font:900 clamp(20px,3vw,28px)/1.15 Georgia,serif;color:#efdebe;margin:0 0 10px}
+.solo-panel h3 em{color:#edc789}
+.solo-panel p{font:550 12px/1.65 system-ui,sans-serif;margin:0 0 10px;color:#d9d7c8}
+.solo-panel p strong{color:#f2d69d}
+.solo-production-link{display:inline-flex;min-height:39px;align-items:center;padding:8px 12px;margin-top:5px;border:1px solid #c6ab73;color:#f6e0b0;background:#2a4435;text-decoration:none;font:800 10px/1.35 ui-monospace,monospace;letter-spacing:.02em}
+.solo-production-link:hover,.solo-production-link:focus-visible{background:#44614b;color:#fff2cc}
