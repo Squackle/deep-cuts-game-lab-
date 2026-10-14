@@ -61,3 +61,21 @@ Use independently designed sprites, backgrounds, collectibles, creatures, hazard
 ## Quality bar and exclusions
 
 It must be truly playable: working movement, collisions, growth, score, game-over and retry—not an animation or concept art. Test actual controls on iPhone-class portrait widths and desktop keyboards. Do **not** add MTG deck gameplay, official card art, network multiplayer, logins, purchases or speculative boss content to v0.1. Keep game self-contained, with the Deep Cuts public site unchanged until owner approval.
+
+## Next major update — Predator Loop / Evolution Milestone Encounters (design approved, not shipped)
+
+The owner's chosen direction replaces the orb-centric identity with **HUNT → TRAP → EVOLVE**: moving prey survive intelligently but cannot stand still; the player closes escape routes using their body (light-cycle-style territorial control). Most mutation energy comes from prey captures; occasional orbs offer slower secondary progress.
+
+- Provisional economy: normal prey +3 EV; rare orb +1 EV at 20–32 second active-time intervals; mutation selection for every 5 EV with remainder carried over; miniboss +5 EV and boss +8 EV on final capture only.
+- Completed mutation choices, NOT simply draft offers, count as evolutions and trigger encounters.
+- **At 2, 6, 10... evolutions:** a two-phase miniboss with distinct movement strategy.
+- **At 4, 8, 12... evolutions:** a three-phase boss with new arena behavior.
+- Intro/phase transitions freeze everyone together and visibly warn the player before safe spawning; enemies move continuously at all other times.
+- Enemy AI values reachable space and avoiding walls/body, but remains fallible and computationally bounded. No free XP from an unrelated enemy wall collision.
+- The first encounter roster: Skitter → Burrow Runner → Burrow Stalker (miniboss) → Hatchery Warden (boss), followed by Tunnel Weaver / Rift Guardian and new biomes.
+- Retain all five WUBRG abilities with capture-specific effects; never let Red double mutation energy.
+- Boss rewards apply once; bosses require two or three true traps instead of traditional bullets/HP.
+- First implement and prove ordinary trapping inside the existing Hatchery, then enemy families, milestone bosses, and later distinct Burrows/Fracture map assets.
+- Detailed specification, fairness cases, tuning and testing: [docs/ENCOUNTER_DESIGN.md](ENCOUNTER_DESIGN.md).
+
+**Important:** This is an approved next direction and documented plan, not a gameplay claim. Current live Alpha 0.2 still grants evolutions primarily by collecting brood, and has no enemies or bosses.

@@ -61,3 +61,20 @@ Transfer significant findings into dated DEVLOG entries. Never mark untested out
 - [ ] Music stops for draft/death/pause, resumes after choice if enabled
 - [ ] Reset clears mutations and buffs but retains local personal best
 - [ ] Real-device touch steering after a draft has no delayed or unexpected turn
+
+
+## Future predator-loop & boss playtest matrix (design only)
+
+- [ ] Skitter moves continuously, survives intelligently, but is trappable within a realistic phone run.
+- [ ] Player's body acts as a solid moving barrier; enemy trapped against body counts exactly one kill.
+- [ ] No player XP for enemy wall crash away from player pressure; no repeated kill credits.
+- [ ] Decreased rare-orb frequency and exact EV carryover after 5 EV mutation threshold.
+- [ ] No idle/paused/off-tab EV farming; no softlock when enemy spawn is blocked.
+- [ ] Miniboss triggered after second completed mutation; exactly two capture phases.
+- [ ] Full boss triggered after fourth completed mutation; exactly three capture phases.
+- [ ] Boss phase transition telegraphed; enemy spawns clear of head/body and resumes fairly.
+- [ ] EV and score bonuses awarded on boss's FINAL capture only; Red doubles score not EV.
+- [ ] Mutation effects integrate with combat and remain accessible/visible on 320px screen.
+- [ ] Enemies/bosses never insta-kill from spawn; collision order deterministic under simultaneous movement.
+- [ ] Enemy pathfinding bounded for performance on mobile; control input responsive under multiple enemies.
+- [ ] No claim of success until actual phone gameplay, CI and deployed browser verification.

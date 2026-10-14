@@ -48,6 +48,24 @@
 - [ ] Terrain walls, enemy movement, fair difficulty escalation.
 - [ ] Balance based on recorded real playtests.
 
+## Next Major Update — Predator Loop and Evolution Bosses (design complete; NOT implemented)
+
+**Accepted gameplay direction:** replace common-orb Snake progression with a continuous, territorial **HUNT → TRAP → EVOLVE** loop. Full spec: [ENCOUNTER_DESIGN.md](ENCOUNTER_DESIGN.md).
+
+- [x] Design approved: moving survival-first enemy AI, trap/corralling captures using player body, rare orb supplement.
+- [x] Encounter cadence designed: miniboss at evolutions **2/6/10/...**, full boss at **4/8/12/...** (completed choices, not accumulated EV).
+- [x] Initial design for Skitter, Burrow Runner, Burrow Stalker, Hatchery Warden, Tunnel Weaver and Rift Guardian, with 2-/3-phase boss captures.
+- [ ] Replace brood-based mutation threshold with kill-driven EV energy (+3 prey, +1 rare orb, 5 EV per evolution as preliminary playtest balance).
+- [ ] Rare-orb, collision-credit and anti-stall rules; no idle waiting for XP farming or unrelated suicides.
+- [ ] Testable continually moving enemy AI: safe spawn, no instant reversal, reachable-area routing, reasonable fallibility.
+- [ ] Collision and enemy-trapping mechanics with clear kill animations/reward feedback.
+- [ ] Multiple enemy personalities and capped concurrent enemies.
+- [ ] Evolution-based miniboss and boss triggers; multi-capture phases with safe gate resets.
+- [ ] Boss/enemy art, attack telegraphs, HUD and original sound cues.
+- [ ] WUBRG combat effect integration (Red score but not EV, Green growth from kills, defensive survival).
+- [ ] Burrows/Fracture environments only after trap combat is proven fun and fair.
+- [ ] Full regression, mobile browser and real physical-device QA.
+
 ## Beta 0.3 — Engagement and polish
 
 - [ ] Daily seeded challenge and reproducible conditions.

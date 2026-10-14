@@ -9,6 +9,8 @@
 | D-003 | Snake-inspired retro **Sliver Swarm** concept is particularly appealing. | Favored concept, working name |
 | D-004 | Isolate game code in a **separate repo and test site**, not the production Deep Cuts code. | Implemented at https://deep-cuts-game-lab.pages.dev/ |
 | D-005 | Maintain an ongoing dated dev log so design decisions survive between sessions. | Introduced 2026-10-13 |
+| D-006 | Make moving survival-minded enemies and player-body trapping the core game identity; remove common-orb-only progression. | Confirmed direction; not yet coded |
+| D-007 | Add enemies, minibosses and bosses gated by the number of completed evolutions. | Confirmed direction; not yet coded |
 
 ## Proposals requiring real gameplay validation
 
@@ -18,7 +20,9 @@
 | P-002 | Portrait phone layout, swipe-to-turn on play field; keyboard for desktop. | Proposed |
 | P-003 | Five mutations: white protection, blue control, black sacrifice, red aggression, green growth. | Implemented Alpha 0.2; real-device balance testing remains |
 | P-004 | Average runs 2–5 minutes. | Goal, untested |
-| P-005 | Daily Challenge, bosses, online scores and accounts are later-stage features. | Roadmap proposal |
+| P-005 | Daily Challenge, online scores and accounts are later-stage features; owner has explicitly moved bosses into next combat milestone. | Updated priority |
+| P-008 | A miniboss at evolution 2/6/10 and a full boss at 4/8/12, requiring 2/3 successful traps respectively. | Draft tuning; test |
+| P-009 | 5 EV to evolve; prey 3 EV, rare orb 1 EV, miniboss 5, boss 8; 20–32 sec orb timer. | Starting balance; playtest before locking |
 | P-006 | HTML5 Canvas/ES modules with separated simulation and rendering. | Implemented |
 | P-007 | Repository **Squackle/deep-cuts-game-lab-** is the isolation boundary. | Confirmed repo existence; note trailing hyphen |
 
@@ -38,7 +42,7 @@ Likewise, classic Snake-style *mechanics* are a source of inspiration; never cop
 
 ## Other risks
 
-- **Scope creep:** prevent premature RPG, multiplayer or boss systems.
+- **Scope creep:** owner has now explicitly prioritized core combat and evolution-gated bosses; limit first release to safe trapping, enemies and boss phases. Keep RPG, multiplayer and accounts deferred.
 - **Mobile input:** touch navigation versus page scrolling; provide forgiving turn rules.
 - **Unfair difficulty:** long hive + speed increases must be tuned empirically.
 - **Score cheating:** no trusted public leaderboard without validation / anti-abuse.

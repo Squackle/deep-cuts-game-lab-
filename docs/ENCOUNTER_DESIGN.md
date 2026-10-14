@@ -1,0 +1,110 @@
+# Hive Run: Predators, Traps & Evolution Bosses
+**Design proposal v0.3 — approved direction; NOT live gameplay** · 2026-10-13
+
+## Core identity: HUNT → TRAP → EVOLVE → SURVIVE
+Hive Run shifts from food-driven Snake into a moving, territorial hunt. The connected swarm is both a vulnerability and a weapon. Prey constantly move, avoid danger and seek open routes; players must cut off their escapes with the moving body, Tron/light-cycle style. Captures drive evolution; rare orbs give a smaller supplemental reward.
+
+## Foundational rules
+1. The player does not shoot or automatically damage enemies. Prey are captured when their mandatory movement step crashes into the player's body or they are unavoidably enclosed by player-created barriers.
+2. Enemy AI must keep moving on scheduled ticks, not freeze in front of the player's head or dodge with unlimited reflexes. No instantaneous 180-degree reversal and no phasing through trails.
+3. A prey wall crash away from the player's pressure is not a free kill. XP/score are credited only to validated player traps; never twice for one enemy.
+4. The player can also lose to body/wall and enemy contact unless protected by a mutation. Opponents have a clear visual shape and movement rhythm.
+5. Energy is gained through captures primarily, rare orbs secondarily. The old orb-count-driven stage and mutation progression must be replaced; the current live game does NOT yet implement these changes.
+6. All encounter logic must be deterministic/testable and tuned for 320px portrait gameplay.
+
+## Evolution economy (starting playtest numbers, not final)
+| Event | Evolution Energy (EV) | Score | Growth |
+| --- | ---: | ---: | ---: |
+| Capture normal prey | +3 | +300 | +1 |
+| Collect rare orb | +1 | +100 | +1 |
+| Defeat miniboss | +5 | +750 | +2 |
+| Defeat full boss | +8 | +1500 | +3 |
+
+- Mutation draft triggers for every 5 EV. Carry EV remainder: 3+3 energy leads to one draft and 1 stored EV. Handle accumulated thresholds without stacking simultaneous overlays.
+- Rare orbs: max 1 active, a randomized 20–32 seconds of **active simulation time** between spawns; only safe unoccupied cells; prevent paused/off-tab spawning and XP farming.
+- Maintain at least one valid source of progression (prey or rare orb), even through difficult map geometry; never unwinnable softlock.
+- Red doubles score, NOT EV; Green increases body growth rewards, NOT EV. White and Black rescues cannot generate free kills.
+- **Evolution count equals completed mutation selections.** Track a new evolutionsChosen counter, distinct from current draft count, and use it for encounter progression.
+
+## Encounter schedule by completed evolutions
+| Evolutions selected | Encounter | Behavior | Defeat |
+| ---: | --- | --- | --- |
+| 0 | Skitter Hunt | One skittish prey; basic avoidance, forgiving movement | One trap |
+| 1 | Pack Pressure | Up to two prey, including straight-line Burrow Runner | Capture prey |
+| **2** | **MINIBOSS — Burrow Stalker** | Fast, seeks open passages, forced to adapt when boxed in | **2 trapping phases** |
+| 3 | Advanced Hunt | Mixed prey with stronger but still fallible survival AI | Capture prey |
+| **4** | **BOSS — Hatchery Warden** | Three distinct chase phases, speed/pattern changes telegraphed | **3 trapping phases** |
+| 5 | Recovery Wave | Temporary reduced pressure following boss | Capture prey |
+| **6** | **MINIBOSS — Tunnel Weaver** | Prefers corridors and detects obvious traps | 2 phases |
+| 7 | High Pressure | More coordinated escape routes, not perfect prediction | Capture prey |
+| **8** | **BOSS — Rift Guardian** | Three phases and one clearly marked environmental danger | 3 phases |
+| 9+ | Endless rotation | Similar pattern, gradually escalating difficulty and later biomes | Continue survival |
+
+**Repeatable cadence:** miniboss at 2,6,10,14... completed evolutions; full boss at 4,8,12,16... . Boss or miniboss encounter is queued only **after a mutation is chosen**. One encounter at a time; do not spawn it immediately into the player's body or head. Use a clear 3-beat announcement and resume movement together.
+
+### Making boss phases work with body trapping
+- Normal enemies require one collision/capture; minibosses require two captures, full bosses require three.
+- On each successful boss trap, break one visible armor ring. **Only the final hit gives the full boss EV and score.**
+- After a non-final capture, use a clearly announced between-phase reset to a prevalidated empty gate, with 2–3 countdown beats. Both player and boss stop together during that transition. This is not mid-chase teleportation.
+- Each phase modifies a visible characteristic and a modest AI speed/path-preference. Preserve no-phasing and identical collision rules.
+- If no safe gate exists, choose a certified open reset layout; never spawn in a body or run a zero-escape countdown. Log recovery cases in tests.
+- Bosses should have unique original silhouettes and adaptive music cues; existing Hatchery soundtrack remains for ordinary play.
+
+## Enemy intelligence that feels clever but beatable
+Each enemy executes one grid movement on its own fixed interval, not one move per visual frame:
+1. Gather legal non-reverse directions; reject walls, swarm body, other enemies and impending hazard tiles.
+2. Rank remaining routes by reachable connected open area (bounded flood-fill), 1–3 steps of lookahead, distance from the player and heading continuity.
+3. Apply distinct personalities: Skitter makes more predictable errors; Runner favors open straight lanes; Stalker looks farther ahead; Weaver favors corridors.
+4. Use seeded pseudo-random tie breaks and a bounded per-tick CPU cost; do NOT give the AI clairvoyance about future input.
+5. If no legal step exists, the compulsory next move collides and can count as a capture if the player visibly closed the route.
+6. Specify deterministic collision order for simultaneous moves, crossing-head attacks and two enemies trying the same cell. Enemy and player deaths are resolved once per tick.
+
+## Spawn fairness and pacing
+- One active prey at the opening, at most two by evolution 1; three only after confirmed phone performance.
+- Safe spawn at least two clear tiles from the player head, never within the body, on food, or on a hazard.
+- Spawn gates flicker/announce for 2–3 beats before the enemy becomes active.
+- Keep normal-prey speeds slightly slower than the early player until balances establish fair trapping, not outrunning indefinitely.
+- After ~25–35 seconds without a meaningful chase, adjust enemy risk taking or route bias rather than handing over kills or spawning instant-death hazards.
+- No offscreen kills rewarded, no guaranteed survival, no unfair instant spawn damage.
+- Contrast/readability: readable enemy silhouettes on dimmed arena; boss phase rings visible in color and shape; reduce flash for reduced-motion preference.
+
+## Existing five WUBRG powers in combat
+| Mutation | Trapping role | Rule |
+| --- | --- | --- |
+| White (Carapace) | Block a dangerous interception | Shield saves player collision once; not free kill XP |
+| Blue (Temporal Drift) | More control while corralling | Clarify player/enemy tick interaction; limit extreme slowdown |
+| Black (Emergency Molt) | Sacrifice tail to escape a failed trap | Opening the body should affect enemy escape calculations |
+| Red (Blood Rush) | Chase prey and double score | No doubled evolution XP; faster movement is risky |
+| Green (Rapid Brood) | Build longer barriers from captures and orbs | Extra growth, not extra XP; no duplicate body tiles |
+
+## Visuals and interface
+- New main game identity and onboarding: **HUNT • TRAP • EVOLVE**.
+- HUD: EV meter (e.g., 3/5), evolution count, enemies remaining, current biome, boss phase marks and acquired mutations.
+- Ordinary capture: quick sound, bright kill burst and +EV/score toast, with no huge modal.
+- Boss announcement: title, short distinct rule/pattern hint, explicit countdown, and a small boss/phase tracker during chase.
+- Existing three-choice mutation draft reappears after EV threshold rather than five brood.
+- Local records: high score, total prey captured, bosses and highest evolution reached. Online public leaderboards remain deferred.
+
+## Implementation order (single release candidate only after passing gates)
+**A. First playable trap.** Pure simulation module for a single Skitter, continuous enemy ticks, legal route planning, trap collisions and kill-only energy. Replace frequent orb growth with rare-orb fallback. Confirm actual mobile trap can be made.
+
+**B. Enemy families.** Runner, Stalker and Weaver patterns; two-enemy wave, safe gates, reward ledger, and evolution progression. Integrate WUBRG effects with actual capture events.
+
+**C. Boss milestones.** Schedule at evolution 2/4/6/8; implement two/three capture phases, phase ring UI, fair reset, original sprites and audio cues.
+
+**D. Environment expansion & polish.** Introduce Burrows and Fracture only after trapping works reliably in Hatchery; add hazards deliberately, avoiding inescapable simultaneous attacks.
+
+## Test gates (non-negotiable)
+- Deterministic enemy direction and avoidance; never stand still while active.
+- No impossible reverse turns; reachable-space score bounded for performance.
+- Safe enemy spawn, no collision with player on spawn, guaranteed action during countdown.
+- Capture credited once; no free XP for unprovoked enemy wall deaths.
+- 5 EV threshold carries remainder and drafts trigger only when warranted.
+- One boss/miniboss per evolution threshold; no overlapping encounters.
+- Boss exactly 2/3 capture phases; each phase change safe, reward only once.
+- White/Black defensive rescues and Red/Green score/growth effects remain correct.
+- Correct behavior at player death, background tab, pause and restart.
+- Real 320px/375px/390px portrait and desktop playtests, practical enemy AI difficulty and frame time.
+- No change to public Deep Cuts EDH repo without owner's approval.
+
+**Current implementation status:** These enemy and boss changes are not yet coded or deployed. The current playable Alpha 0.2 still evolves through brood orbs. This document is the source of truth for the next gameplay release.
