@@ -68,7 +68,9 @@ test("ordinary prey are deliberately short-sighted while a boss anticipates a de
   body:[{x:10,y:10},{x:7,y:5},{x:6,y:4},{x:6,y:6}],
   enemies:[],terrain:[],random:()=>0};
  const enemy={id:9,pos:{x:5,y:5},dir:"right",clock:0,period:4,moves:0};
- assert.equal(reachableArea(run,{x:6,y:5},9),1);
+ // A flood fill can backtrack through (5,5), but enemy reversal is banned.
+ assert.ok(reachableArea(run,{x:6,y:5},9)>1);
+ assert.deepEqual(run.body.slice(1),[{x:7,y:5},{x:6,y:4},{x:6,y:6}]);
  for(const kind of ORDINARY_PREY){
   const chosen=decidePrey(run,{...enemy,kind});
   assert.equal(chosen.dir,"right",kind+" should favor an obvious corridor instead of pathfinding");

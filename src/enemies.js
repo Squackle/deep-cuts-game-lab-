@@ -88,10 +88,15 @@ export function decidePrey(run,enemy){
   const distance=Math.abs(dest.x-head.x)+Math.abs(dest.y-head.y);
   const wallDistance=Math.min(dest.x,run.cols-1-dest.x,dest.y,run.rows-1-dest.y);
   const forward=dir===enemy.dir?1:0;
+  // Flood fill alone incorrectly treats walking backwards as an escape.
+  // Bosses anticipate one move ahead, avoiding non-reversible dead ends.
+  const onward=HEADINGS.filter(nextDir=>
+   nextDir!==inverse[dir]&&safePreyTile(run,point(dest,nextDir),enemy.id)).length;
   const spaceWeight=enemy.kind==="stalker"?.19:enemy.kind==="weaver"?.16:.18;
   candidate.score=Math.min(area,150)*spaceWeight+Math.min(distance,16)*.25+
    Math.min(wallDistance,5)*(enemy.kind==="weaver"?.08:.24)+
    forward*(enemy.kind==="stalker"?1.0:enemy.kind==="weaver"?.45:.7)+
+   onward*1.5-(onward===0?90:0)+
    run.random()*(enemy.kind==="stalker"?.45:1.0);
  }
  viable.sort((a,b)=>b.score-a.score);
