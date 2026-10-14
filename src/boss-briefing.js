@@ -32,7 +32,8 @@ export class BossBriefingGate {
  }
  advance(now){
   if(this.phase!=="countdown"||!Number.isFinite(now))return false;
-  this.remainingMs=Math.max(0,this.remainingMs-Math.max(0,now-this.lastTime));this.lastTime=now;
+  this.remainingMs=Math.max(0,this.remainingMs-Math.max(0,now-this.lastTime));
+  this.lastTime=Math.max(this.lastTime,now); // Ignore out-of-order animation timestamps.
   if(this.remainingMs===0){this.phase="idle";this.kind=null;this.lastTime=null;return true}
   return false;
  }
