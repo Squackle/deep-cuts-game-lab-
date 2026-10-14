@@ -81,3 +81,8 @@ Skitter and Burrow Runner now take **one grid step every four player simulation 
 ## Alpha 0.3.2 — Immersive game-page layout
 
 The public game UI no longer displays its pixel-art codex, GitHub/roadmap/devlog shortcuts or soundtrack preview/testing panel. Original music still plays automatically during its appropriate game state if enabled, and the Music toggle works separately from sound effects. Soundtrack regression tests remain in CI. A one-square-radius Hatchling Ward and dramatically scaled music intensity from Levels 1–4 are future ideas, not present gameplay.
+
+
+## Alpha 0.3.3 — Game Only mode
+
+Tap **⛶ GAME ONLY** in the arcade header to isolate the game in the visible viewport, including score, WUBRG status, swipeable Canvas, Pause, Restart, Sound/Music, and directional buttons. It prevents accidental page scrolling from downward swipes on mobile. Exit using **↙ EXIT GAME ONLY** or keyboard Escape to return to the leaderboard and rest of the page, restoring scroll position. Uses real browser fullscreen where supported and an iPhone-compatible CSS fixed-viewport fallback otherwise. Game scoring and leaderboard rules do not change.

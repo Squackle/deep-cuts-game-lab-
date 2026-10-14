@@ -126,3 +126,11 @@
 - [ ] Reuse shared rendering, level assets, controls, mutation cards and original sound engine where feasible, but keep each mode's simulation and scoring rules explicitly versioned and tested.
 
 **Design summary:** *Classic Snake is the original orb-collecting Hive Run, with the original five WUBRG upgrades and full level/music progression, but no enemies or boss fights. Predator Hunt remains its own separate mode.*
+
+
+## Alpha 0.3.3 — Game Only full-screen play
+
+- [x] Offer an explicit Game Only / Exit Game Only control adjacent to the arena header, with native Fullscreen API when supported and a robust fixed-viewport iPhone Safari fallback.
+- [x] Lock page scrolling, browser overscroll and touch gestures while in Game Only mode; preserve drag/swipe steering and visible score, mutation draft, sound, pause/restart and touch pad.
+- [x] Restore original scroll position on exit, allow Escape on keyboard, and leave the leaderboard and Field Network profiles available after exiting.
+- [ ] Verify additional physical iPhone Safari and Android touch behavior; mobile browsers can still reserve system-edge gestures and their browser chrome.

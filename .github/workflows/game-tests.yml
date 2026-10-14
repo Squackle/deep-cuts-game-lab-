@@ -27,6 +27,7 @@ jobs:
       - name: Check source module syntax
         run: |
           node --check src/engine.js
+          node --check src/game-only.js
           node --check src/main.js
           node --check src/creature-sprites.js
           node --check src/level-background.js

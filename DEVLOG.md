@@ -276,3 +276,11 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 - The new **Classic Snake** mode must have **no enemies, minibosses, bosses or kill-driven evolution**. It should be selectable separately from the existing **Predator Hunt** and share art, maps, soundtrack and UI components where practical.
 - Classic mode and Predator Hunt should keep separate scoring and replay-verified ranking categories so the two rulesets remain comparable within their respective modes. Do not reintroduce soundtrack preview controls; players discover different themes through advancement.
 - Recorded as a **future roadmap idea only**. No gameplay code, main-site repo or production UI modified by this documentation change.
+
+
+## 2026-10-13 — Alpha 0.3.3: Game Only display and swipe protection
+
+- Owner feedback: downward swipes scroll the webpage while playing, leading to accidental deaths. Added an accessible Game Only button directly in the arcade header, switching to an isolated screen-filling arcade UI with visible game controls. Tapping again returns to the original page position.
+- Implemented viewport locking via `src/game-only.js`: fixed document height from `visualViewport`, scroll-gesture cancellation outside mutation overlay, fullscreen API when available, reliable iOS Safari CSS-only fallback, keyboard Escape, native fullscreen dismissal cleanup.
+- Added touch-action and overscroll prevention for the arena and on-screen directional pad even outside Game Only, while preserving pointer-swipe turn handling. No changes to deterministic engine, rankings, enemy speed or mutations.
+- CI and deployed mobile QA pending.

@@ -8,11 +8,13 @@ import {renderMutationEffects} from "./evolution-visuals.js";
 import {drawPrey,drawCapture} from "./enemy-render.js";
 import {LeaderboardClient} from "./leaderboard-client.js";
 import {renderLeaderboard,updateSubmission} from "./leaderboard-ui.js";
+import {createGameOnlyMode} from "./game-only.js";
 
-/* HIVE RUN Alpha 0.3.2 — immersive UI cleanup without gameplay-rule changes. */
+/* HIVE RUN Alpha 0.3.3 — fullscreen Game Only mode and touch scroll protection. */
 const $=id=>document.getElementById(id);
 const canvas=$("gameCanvas");
 const context=canvas.getContext("2d",{alpha:false});
+const gameOnly=createGameOnlyMode({doc:document,win:window,root:$("game"),button:$("fullscreenButton")});
 const CELLS=20,COLS=18,ROWS=22;
 const WUBRG_COLORS=["#e7d8b4","#65a9d5","#7e6a88","#dd684a","#75ad7b"];
 let creatureArt=null;
@@ -423,11 +425,16 @@ function swipeDirection(event){
 }
 canvas.addEventListener("pointerdown",event=>{
  if(state.run.status!=="running"||state.pointer)return;
+ if(event.cancelable&&event.pointerType==="touch")event.preventDefault();
  state.pointer={x:event.clientX,y:event.clientY,id:event.pointerId,triggered:false};
  try{canvas.setPointerCapture(event.pointerId)}catch{}
 });
-canvas.addEventListener("pointermove",swipeDirection);
+canvas.addEventListener("pointermove",event=>{
+ if(event.cancelable&&event.pointerType==="touch")event.preventDefault();
+ swipeDirection(event);
+});
 canvas.addEventListener("pointerup",event=>{
+ if(event.cancelable&&event.pointerType==="touch")event.preventDefault();
  swipeDirection(event); // Handles quick flicks without an intermediate move event.
  if(state.pointer?.id===event.pointerId)state.pointer=null;
 });
