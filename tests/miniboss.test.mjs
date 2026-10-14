@@ -72,7 +72,7 @@ test("weaver creates a web every five active seconds, capped at three and expire
  const next=tickMiniboss(r,5000);
  assert.equal(next.type,"web");
  assert.equal(r.encounter.webs.length,2);
- tickMiniboss(r,5001);
+ tickMiniboss(r,10001); // a 15-second web expires despite shorter cast recharge
  assert.ok(!r.encounter.webs.some(w=>w.pos.x===original.x&&w.pos.y===original.y));
  assert.ok(r.encounter.webs.length<=3);
 });
