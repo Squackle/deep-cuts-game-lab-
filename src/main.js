@@ -79,7 +79,7 @@ function syncUI(){
   $("encounterPhase").textContent="PHASE "+ability.phase+" / "+ability.phases;
   $("abilityStatus").textContent=ability.ready?"READY":Math.ceil(ability.remainingMs/1000)+"s";
   banner.textContent=ability.introMs>0?
-   spec.name+" · "+(ability.phase===1?"INCOMING":"NEXT PHASE"):
+   spec.name+" · "+(ability.phase===1?"INCOMING":"NEXT PHASE")+" · "+Math.ceil(ability.introMs/280):
    ability.stunMs>0?"WEBBED · "+(ability.stunMs/1000).toFixed(1)+"s":"";
   banner.hidden=!banner.textContent;
  }else banner.hidden=true;
