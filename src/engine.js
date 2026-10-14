@@ -12,7 +12,7 @@ export const OPENING_GRACE_MS=9000;
 export const OPENING_EVOLUTIONS=2;
 export const OPENING_ORB_MIN=70;
 export const OPENING_ORB_SPREAD=35;
-export const RULES_VERSION="hive-1.2";
+export const RULES_VERSION="hive-1.3";
 // Player speed is set in milliseconds per grid step (larger = easier).
 // Playtest adjustment: about 10% less movement per second at every stage.
 export const PLAYER_BASE_TICK_MS=150;

@@ -391,3 +391,34 @@ body.lair-active .leaderboard-panel{display:none!important}
 
 /* Brood Trail has no boss expeditions. */
 #gameChallenge[hidden],#gameChallengeLabel[hidden]{display:none!important}
+
+/* Spindle: status lives in a dedicated cabinet row above the entire arena. */
+.encounter-hud[hidden],.encounter-badge[hidden]{display:none!important}
+.encounter-hud{position:relative;inset:auto;z-index:auto;pointer-events:none;
+ display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;
+ gap:5px;padding:4px 8px;min-width:0;width:100%;background:#101e19;
+ border:1px solid #7b704a;border-top:0}
+.encounter-hud .encounter-badge{position:static;top:auto;left:auto;
+ display:flex;max-width:none;min-width:0;min-height:36px;padding:3px 7px;
+ justify-content:center;line-height:1.25;overflow-wrap:anywhere}
+.encounter-hud .encounter-badge span{font-size:clamp(8px,2vw,10px)}
+.encounter-hud .encounter-badge small{font-size:clamp(8px,1.8vw,9px)}
+.encounter-hud .ability-panel{position:static;top:auto;right:auto;
+ display:flex;flex-direction:row;align-items:center;gap:4px;
+ width:auto;min-height:0;padding:1px 6px;border-radius:2px}
+.encounter-hud .ability-panel[hidden]{display:none!important}
+.encounter-hud .ability-panel canvas{width:42px;height:42px;flex:none}
+.encounter-hud .ability-panel small{font-size:10px;min-width:30px;padding:0;text-align:center}
+.encounter-hud .encounter-banner{position:static;top:auto;left:auto;transform:none;
+ grid-column:1/-1;width:100%;max-width:100%;padding:3px 6px;
+ font-size:10px;line-height:1.2;min-height:0}
+.encounter-hud .encounter-banner[hidden]{display:none!important}
+@media(max-width:350px){.encounter-hud{padding:2px 4px;gap:3px}
+ .encounter-hud .ability-panel{padding:1px 3px;gap:2px}
+ .encounter-hud .ability-panel canvas{width:36px;height:36px}
+ .encounter-hud .ability-panel small{font-size:9px;min-width:26px}}
+body.game-only .arcade-frame{grid-template-rows:auto auto auto minmax(0,1fr) auto}
+body.game-only .encounter-hud{padding:2px 5px;gap:3px}
+body.game-only .encounter-hud .ability-panel canvas{width:34px;height:34px}
+body.game-only .encounter-hud .encounter-badge{min-height:30px;padding:1px 6px}
+body.game-only .encounter-hud .encounter-banner{padding:2px 5px;font-size:9px}

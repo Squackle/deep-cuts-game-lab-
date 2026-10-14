@@ -21,8 +21,16 @@ export const same=(a,b)=>a.x===b.x&&a.y===b.y;
 const k=p=>p.x+","+p.y;
 const point=(p,dir)=>({x:p.x+VECTORS[dir][0],y:p.y+VECTORS[dir][1]});
 const inverse={up:"down",down:"up",left:"right",right:"left"};
+/** Do not path through our own ability, including its warning phase. */
+export function ownAbilityHazard(run,p){
+ const encounter=run.encounter;
+ if(!encounter)return false;
+ if(encounter.kind==="weaver")return !!encounter.webs?.some(w=>same(w.pos,p));
+ const tileKind=encounter.kind==="guardian"?"rift":encounter.kind==="warden"?"seal":null;
+ return !!tileKind&&!!run.terrain?.some(t=>t.kind===tileKind&&same(t.pos,p));
+}
 export function safePreyTile(run,p,id=null){
- return inside(run,p)&&!terrainBlocks(run,p)&&!run.body.some(b=>same(b,p))&&
+ return inside(run,p)&&!terrainBlocks(run,p)&&!ownAbilityHazard(run,p)&&!run.body.some(b=>same(b,p))&&
   !run.enemies.some(e=>e.id!==id&&same(e.pos,p));
 }
 export function reachableArea(run,start,id,cap=run.cols*run.rows){
@@ -30,7 +38,12 @@ export function reachableArea(run,start,id,cap=run.cols*run.rows){
  const total=run.cols*run.rows,blocked=new Uint8Array(total),seen=new Uint8Array(total);
  for(const p of run.body)if(inside(run,p))blocked[p.y*run.cols+p.x]=1;
  for(const e of run.enemies)if(e.id!==id)blocked[e.pos.y*run.cols+e.pos.x]=1;
- for(const t of run.terrain||[])if(t.warningMs<=0)blocked[t.pos.y*run.cols+t.pos.x]=1;
+ for(const t of run.terrain||[])if(t.warningMs<=0||
+ (run.encounter?.kind==="guardian"&&t.kind==="rift")||
+ (run.encounter?.kind==="warden"&&t.kind==="seal"))
+ blocked[t.pos.y*run.cols+t.pos.x]=1;
+ if(run.encounter?.kind==="weaver")for(const w of run.encounter.webs||[])
+  if(inside(run,w.pos))blocked[w.pos.y*run.cols+w.pos.x]=1;
  const queue=new Int32Array(total),limit=Math.min(500,Math.max(1,cap));
  queue[0]=start.y*run.cols+start.x;seen[queue[0]]=1;let count=1;
  for(let i=0;i<count&&count<limit;i++){
@@ -119,5 +132,8 @@ export function advancePrey(run,enemy){
  const bodyImpact=candidates.some(pos=>run.body.some(b=>same(b,pos)));
  const id=enemy.id;
  if(bodyImpact)return {type:"captured",id,kind:enemy.kind};
+ // An enemy boxed in by its own temporary powers must not vanish.
+ if(run.encounter?.kind===enemy.kind&&candidates.some(p=>ownAbilityHazard(run,p)))
+  return {type:"waiting",id,kind:enemy.kind};
  return {type:"escaped",id,kind:enemy.kind};
 }

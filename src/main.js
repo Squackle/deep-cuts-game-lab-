@@ -121,6 +121,7 @@ function syncUI(){
   banner.hidden=!banner.textContent;
  }else {banner.hidden=run.biomeNoticeMs<=0;banner.textContent=run.biomeNoticeMs>0?BIOMES[run.biome-1].name+" · WATCH FOR MARKED TERRAIN":"";}
  $("encounterBadge").hidden=!ability;
+ $("encounterHud").hidden=!ability&&banner.hidden;
 }
 function announce(message){
  if(message!==state.lastAnnouncement){

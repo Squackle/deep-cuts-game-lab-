@@ -8,16 +8,16 @@ import {spawnPrey,same,inside,reachableArea,HEADINGS,VECTORS} from "./enemies.js
 
 export const ABILITIES=Object.freeze({
  warden:Object.freeze({name:"HATCHERY WARDEN",ability:"BROOD SEAL",cooldownMs:10000,phases:3,icon:"seal"}),
- guardian:Object.freeze({name:"RIFT GUARDIAN",ability:"RIFT PULSE",cooldownMs:2000,phases:3,icon:"rift"}),
+ guardian:Object.freeze({name:"RIFT GUARDIAN",ability:"RIFT PULSE",cooldownMs:4000,phases:3,icon:"rift"}),
  stalker:Object.freeze({name:"BURROW STALKER",ability:"BURROW DASH",cooldownMs:10000,phases:2,icon:"burrow"}),
- weaver:Object.freeze({name:"TUNNEL WEAVER",ability:"WEB SNARE",cooldownMs:10000,phases:2,icon:"web"})
+ weaver:Object.freeze({name:"TUNNEL WEAVER",ability:"WEB SNARE",cooldownMs:5000,phases:2,icon:"web"})
 });
 export const WEB_LIFETIME_MS=15000;
 export const WEB_STUN_MS=2000;
 export const BURROW_RANGE=5;
 export const TELEGRAPH_MS=500;
 export const INTRO_MS=840;
-export const MAX_WEBS=2;
+export const MAX_WEBS=3;
 
 const distance=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
 const occupied=(run,p,id=null)=>run.body.some(b=>same(p,b))||

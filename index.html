@@ -16,7 +16,7 @@
    <span class="brand-mark" aria-hidden="true">◈</span>
    <span>DEEP CUTS <strong>GAME LAB</strong><small>TWO PATHS. ONE HIVE.</small></span>
   </a>
-  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> 1.2 · SNARE</span>
+  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> 1.3 · SPINDLE</span>
  </header>
  <main>
   <section class="intro" aria-labelledby="mainTitle">
@@ -34,8 +34,7 @@
      <div><span class="hud-label">SESSION BEST</span><strong class="gold" id="best">000000</strong></div>
      <div><span class="hud-label">EVOLUTION</span><strong id="stage">01</strong></div>
     </div>
-    <div class="arena" id="arena">
-     <div id="encounterHud" class="encounter-hud" aria-live="off">
+    <div id="encounterHud" class="encounter-hud" aria-live="off" hidden>
       <div id="encounterBanner" class="encounter-banner" hidden></div>
       <div id="encounterBadge" class="encounter-badge"><span id="encounterName"></span><small id="encounterPhase"></small></div>
       <div id="abilityPanel" class="ability-panel" role="status" aria-live="off" aria-label="Miniboss ability charge" hidden>
@@ -43,6 +42,7 @@
        <small id="abilityStatus">CHARGING</small>
       </div>
      </div>
+    <div class="arena" id="arena">
      <canvas id="gameCanvas" width="360" height="440" tabindex="0" aria-label="Hive Run game board. Swipe to turn on mobile, or use arrow keys or WASD on a keyboard."></canvas>
      <div id="gameOverlay" class="game-overlay">
        <div class="overlay-content">
@@ -141,7 +141,7 @@
    <aside class="mission mission--patch-notes" aria-labelledby="patchNotesTitle">
 <div class="patch-notes-header"><span class="mission-kicker">DEEP CUTS / DEVELOPMENT LAB</span><span class="patch-notes-live">SOLO BUILD</span></div>
 <h2 id="patchNotesTitle">PATCH <em>NOTES.</em></h2>
-<p class="patch-notes-intro">Latest changes to the standalone test build.</p><article class="patch-note-entry"><span>14 OCT 2026 · SNARE</span><h3>Snare</h3><p>Webs immobilize only your swarm while the Weaver keeps hunting and spinning webs. Rift Guardian pulses every 2 seconds; all bosses move at the same cadence. Brood Trail is Arcade-only, and the dated challenge has been retired.</p></article><article class="patch-note-entry"><span>14 OCT 2026 · LAIR</span><h3>Lair</h3><p>Select and practice any of the four bosses. Instant retry, danger warnings and richer capture effects. No leaderboard or profile scores.</p></article>
+<p class="patch-notes-intro">Latest changes to the standalone test build.</p><article class="patch-note-entry"><span>14 OCT 2026 · SPINDLE</span><h3>Spindle</h3><p>Webs recharge every 5 seconds, with three simultaneously. Rift Guardian charges for 4 seconds. Bosses avoid their own ability hazards. Phase and ability meters are outside the arena.</p></article><article class="patch-note-entry"><span>14 OCT 2026 · SNARE</span><h3>Snare</h3><p>Webs immobilize only your swarm while the Weaver keeps hunting and spinning webs. Rift Guardian pulses every 2 seconds; all bosses move at the same cadence. Brood Trail is Arcade-only, and the dated challenge has been retired.</p></article><article class="patch-note-entry"><span>14 OCT 2026 · LAIR</span><h3>Lair</h3><p>Select and practice any of the four bosses. Instant retry, danger warnings and richer capture effects. No leaderboard or profile scores.</p></article>
 <article class="patch-note-entry"><span>14 OCT 2026 · INSTINCT</span><h3>Instinct</h3><p>Mutation shortcuts: W/A/S, ↑/←/↓, or 1/2/3. Desktop gameplay waits for a deliberate movement key; touch play resumes instantly. Brood Trail descriptions now match its orb-only rules. HUD shows a session-only best.</p></article>
 <article class="patch-note-entry"><span>14 OCT 2026 · UI CLEANUP</span><h3>Clearer Playfield</h3><p>Removed directional buttons, extra statistics and the long instruction sidebar. Steering remains swipe and keyboard, with hidden diagnostics available on demand.</p></article>
 <article class="patch-note-entry"><span>14 OCT 2026 · SOLO LAB</span><h3>Local Experiments Only</h3><p>Removed shared scores, account links and submissions. Test both modes locally with Arcade runs and repeatable Lair encounters.</p></article>
