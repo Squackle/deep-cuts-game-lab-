@@ -93,3 +93,8 @@ The current enemy-hunting Predator Hunt remains unchanged as a separate selectab
 **Tunnel Weaver (evolution 6):** Every 10 seconds, may place a **single-tile web**. Stepping on the web **stuns player movement for two seconds**; untriggered webs fade away after **15 seconds**. A **custom torn-cobweb icon** (not emoji) appears inside the same top-right **dingy brass/ochre** circular meter to indicate cooldown/ready status. Provisional maximum two active webs and fair protection against unavoidable deaths while immobilized; confirm during playtesting.
 
 The shared charge-ring UI will work for any later boss or miniboss with a defined active power, including Game Only mode, and remain hidden when no ability-bearing encounter is active. **All timers freeze** during pause, evolution draft, app backgrounding or encounter phase transitions. Leaderboard replay must simulate identical ability choices, placements and timers. This is a plan, not live code. Detailed mechanics: [ENCOUNTER_DESIGN.md](ENCOUNTER_DESIGN.md).
+
+
+## Alpha 0.4 current-play scope
+
+*Burrow Uprising* implements Burrow Stalker at two chosen evolutions and Tunnel Weaver at six, with safe special abilities (five-tile burrow, two-second stun web), two captures each, survival-first pathfinding, separate higher-tier miniboss music and a custom weathered-ochre pixel-art cooldown ring. Full bosses remain a later major milestone; Classic Snake, Hatchling Ward and new Burrows/Fracture maps remain future ideas. Ranked scores are replayed against ruleset `hive-0.4.0` and kept separate from prior seasons.

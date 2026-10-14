@@ -3,6 +3,7 @@ import {PREY} from "./enemies.js";
 const angle={right:0,down:Math.PI/2,left:Math.PI,up:-Math.PI/2};
 export function drawPrey(ctx,enemies,cell,time=0,reducedMotion=false){
  for(const enemy of enemies){
+  if(enemy.kind==="stalker"||enemy.kind==="weaver")continue;
   const color=PREY[enemy.kind]?.accent||"#ffbc85";
   const x=enemy.pos.x*cell+cell/2,y=enemy.pos.y*cell+cell/2;
   ctx.save();ctx.translate(x,y);ctx.rotate(angle[enemy.dir]||0);

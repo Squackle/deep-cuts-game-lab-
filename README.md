@@ -86,3 +86,8 @@ The public game UI no longer displays its pixel-art codex, GitHub/roadmap/devlog
 ## Alpha 0.3.3 — Game Only mode
 
 Tap **⛶ GAME ONLY** in the arcade header to isolate the game in the visible viewport, including score, WUBRG status, swipeable Canvas, Pause, Restart, Sound/Music, and directional buttons. It prevents accidental page scrolling from downward swipes on mobile. Exit using **↙ EXIT GAME ONLY** or keyboard Escape to return to the leaderboard and rest of the page, restoring scroll position. Uses real browser fullscreen where supported and an iPhone-compatible CSS fixed-viewport fallback otherwise. Game scoring and leaderboard rules do not change.
+
+
+## Alpha 0.4 — The Burrow Uprising
+
+**Minibosses now playable:** Burrow Stalker arrives at the second evolution, Tunnel Weaver at the sixth, with repeating Stalker/Weaver encounters on later milestones. Each must be trapped **twice**; only the final capture pays +5 EV/+750 base score/+2 growth. Stalker marks a safe tile five grid steps away and burrows after a warning every charged 10s; Weaver creates an individual one-square web every 10s (15s lifetime), stopping the player for 2s if triggered. Bosses and player are both protected/frozen during web stun so the effect cannot force an unavoidable death. Both are styled using original 20x20 hand-authored pixel art, centered beneath a chunky 64px weathered-ochre charge ring in the arena's upper-right. Three-choice WUBRG drafts, full-screen Game Only, mobile swipe and score replay all remain. Separate season `hive-0.4.0` preserves prior rankings for historical comparison. Full three-phase bosses are planned for the next milestone.

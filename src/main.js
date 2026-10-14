@@ -6,11 +6,13 @@ import {HatcherySoundtrack,TRACKS,trackForEncounter} from "./soundtrack.js";
 import {showMutationDraft,hideMutationDraft,drawMutationHud} from "./evolution-ui.js";
 import {renderMutationEffects} from "./evolution-visuals.js";
 import {drawPrey,drawCapture} from "./enemy-render.js";
+import {drawAbilityMeter,drawMiniboss,drawWebs,drawBurrowWarning} from "./boss-art.js";
+import {abilityState,ABILITIES} from "./miniboss.js";
 import {LeaderboardClient} from "./leaderboard-client.js";
 import {renderLeaderboard,updateSubmission} from "./leaderboard-ui.js";
 import {createGameOnlyMode} from "./game-only.js";
 
-/* HIVE RUN Alpha 0.3.3 — fullscreen Game Only mode and touch scroll protection. */
+/* HIVE RUN Alpha 0.4 — hand-authored pixel-art minibosses and encounter powers. */
 const $=id=>document.getElementById(id);
 const canvas=$("gameCanvas");
 const context=canvas.getContext("2d",{alpha:false});
@@ -19,12 +21,12 @@ const CELLS=20,COLS=18,ROWS=22;
 const WUBRG_COLORS=["#e7d8b4","#65a9d5","#7e6a88","#dd684a","#75ad7b"];
 let creatureArt=null;
 let arenaBackground=null;
-let visualBurst=null,lastCapture=null,startingRun=false;
+let visualBurst=null,lastCapture=null,startingRun=false,lastEncounterSeen=null;
 const leaderboard=new LeaderboardClient();
 async function refreshLeaderboard(){
  try{
   renderLeaderboard($("leaderboardEntries"),await leaderboard.load());
-  $("leaderboardStatus").textContent="TOP 25 · REPLAY-VERIFIED SCORES";
+  $("leaderboardStatus").textContent="ALPHA 0.4 · REPLAY-VERIFIED TOP 25";
  }catch{$("leaderboardStatus").textContent="BOARD UNAVAILABLE · LOCAL HUNTS STILL WORK"}
 }
 const prefersReducedMotion=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches??false;
@@ -65,6 +67,22 @@ function syncUI(){
  $("musicButton").textContent=state.musicOn?"♫ MUSIC ON":"♫ MUSIC OFF";
  $("musicButton").setAttribute("aria-pressed",String(state.musicOn));
  $("soundStatus").textContent=state.musicOn?"♫ "+TRACKS[soundtrack.trackId].type.toUpperCase():state.audio?"FX ON":"AUDIO OFF";
+ const ability=abilityState(run),panel=$("abilityPanel"),banner=$("encounterBanner");
+ panel.hidden=!ability;
+ if(ability){
+  drawAbilityMeter($("abilityIcon"),ability.kind,ability.charge);
+  const spec=ABILITIES[ability.kind];
+  panel.setAttribute("aria-label",spec.name+", "+spec.ability+
+   (ability.ready?", ready":", charging, "+Math.ceil(ability.remainingMs/1000)+" seconds remaining")+
+   ", phase "+ability.phase+" of "+ability.phases);
+  $("encounterName").textContent=spec.name;
+  $("encounterPhase").textContent="PHASE "+ability.phase+" / "+ability.phases;
+  $("abilityStatus").textContent=ability.ready?"READY":Math.ceil(ability.remainingMs/1000)+"s";
+  banner.textContent=ability.introMs>0?
+   spec.name+" · "+(ability.phase===1?"INCOMING":"NEXT PHASE"):
+   ability.stunMs>0?"WEBBED · "+(ability.stunMs/1000).toFixed(1)+"s":"";
+  banner.hidden=!banner.textContent;
+ }else banner.hidden=true;
 }
 function announce(message){
  if(message!==state.lastAnnouncement){
@@ -128,7 +146,11 @@ function selectMutation(color){
  state.accumulator=0;state.lastFrame=0;state.pointer=null;
  setEncounterMusic("hunt");
  playTone({W:540,U:670,B:330,R:790,G:475}[color],.18,.045);
- announce(MUTATIONS[color].name+" acquired. "+MUTATIONS[color].short+".");
+ if(state.run.encounter){
+  announce(ABILITIES[state.run.encounter.kind].name+" approaching! Two captures to win.");
+  playTone(244,.18,.04);
+ }else announce(MUTATIONS[color].name+" acquired. "+MUTATIONS[color].short+".");
+ syncUI();
  canvas.focus({preventScroll:true});
 }
 async function begin(){
@@ -140,7 +162,7 @@ async function begin(){
    const session=await leaderboard.start();
    state.ranked=session.ranked;
    state.run=newRun({cols:COLS,rows:ROWS,seed:session.seed});
-   lastCapture=null;visualBurst=null;
+   lastCapture=null;visualBurst=null;lastEncounterSeen=null;
    $("rankedNotice").textContent=session.ranked?"RANKED · REPLAY VERIFIED AFTER GAME OVER":"PRACTICE · RANKED SERVICE UNAVAILABLE";
   }finally{startingRun=false;$("primaryButton").disabled=false}
  }
@@ -155,7 +177,7 @@ async function begin(){
 function reset(){
  state.run=newRun({cols:COLS,rows:ROWS});
  leaderboard.session=null;leaderboard.events=[];
- state.ranked=false;lastCapture=null;visualBurst=null;
+ state.ranked=false;lastCapture=null;visualBurst=null;lastEncounterSeen=null;
  state.accumulator=0;state.lastFrame=0;state.pointer=null;
  hideMutationDraft($("mutationOverlay"));
  showOverlay("READY TO HUNT?","Corner moving prey against your living trail. Each capture earns 3 energy; rare orbs give 1. Avoid your own body.","START HUNT ▶");
@@ -275,7 +297,12 @@ function draw(){
  drawLevelBackground(context,canvas,arenaBackground,COLS,ROWS,CELLS);
  // The brood is a gameplay target; keep it conspicuous over busy art.
  if(run.food)drawBroodPickup(context,run.food,CELLS,performance.now());
+ if(run.encounter)drawWebs(context,run.encounter.webs,CELLS);
  drawPrey(context,run.enemies,CELLS,performance.now(),prefersReducedMotion());
+ if(run.encounter){
+  drawMiniboss(context,run.enemies,CELLS,run.encounter.phase);
+  drawBurrowWarning(context,run.encounter.telegraph,CELLS);
+ }
  // A single outlined spine connects the independently colored WUBRG plates.
  // Draw back-to-front so the pointed head stays visible over the neck.
  if(creatureArt)drawConnectedSpine(run.body);
@@ -315,17 +342,38 @@ function loop(time){
     playTone(state.run.event.color==="W"?760:285,.22,.04);
    }
    syncUI();
+   const encounterMoment=state.run.lastEncounter;
+   if(encounterMoment){
+    const id=encounterMoment.kind+"/"+encounterMoment.type+"/"+encounterMoment.phase+"/"+encounterMoment.tick;
+    if(lastEncounterSeen!==id){
+     lastEncounterSeen=id;
+     lastCapture={pos:encounterMoment.at,until:performance.now()+850};
+     if(encounterMoment.type==="phase"){
+      announce("Miniboss captured! "+encounterMoment.kind.toUpperCase()+" enters its final phase.");
+      playTone(490,.22,.055);
+     }else{
+      announce("MINIBOSS DEFEATED! +5 evolution energy and +750 base score.");
+      playTone(790,.30,.06);
+     }
+    }
+   }
    if(state.run.kills>prevKills){
     const removed=enemyBefore.find(e=>!state.run.enemies.some(now=>now.id===e.id));
     if(removed)lastCapture={pos:removed.pos,until:performance.now()+620};
     playTone(740,.13,.04);saveBest();
-    announce("Enemy captured! +3 evolution energy. Total captures "+state.run.kills+".");
+    if(!encounterMoment||encounterMoment.type!=="defeat"||encounterMoment.tick!==state.run.runTicks)
+     announce("Enemy captured! +3 evolution energy. Total captures "+state.run.kills+".");
    }else if(state.run.brood>prevBrood){
     playTone(480,.09,.028);saveBest();
     announce("Rare brood collected! +1 evolution energy.");
    }
-   if(state.run.status==="draft"){
-    showDraftScreen();
+   if(state.run.status==="draft")showDraftScreen();
+   // Maintain miniboss soundtrack throughout its multi-capture phases;
+   // first cue follows the safe warning, never preview high-tier music.
+   if(state.run.encounter&&(!state.run.encounter.introMs||soundtrack.trackId==="miniboss")){
+    if(soundtrack.trackId!=="miniboss"&&state.run.status==="running")setEncounterMusic("miniboss");
+   }else if(!state.run.encounter&&soundtrack.trackId==="miniboss"){
+    setEncounterMusic("hunt");
    }
    if(state.run.status==="over"||state.run.status==="won"){
     soundtrack.stop();

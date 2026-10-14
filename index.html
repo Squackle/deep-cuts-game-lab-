@@ -16,7 +16,7 @@
    <span class="brand-mark" aria-hidden="true">◈</span>
    <span>DEEP CUTS <strong>GAME LAB</strong><small>INDEPENDENT TEST SERVER</small></span>
   </a>
-  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> ALPHA 0.3.3 · GAME ONLY</span>
+  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> ALPHA 0.4 · BURROW UPRISING</span>
  </header>
  <main>
   <section class="intro" aria-labelledby="mainTitle">
@@ -35,6 +35,14 @@
      <div><span class="hud-label">HUNT</span><strong id="stage">01</strong></div>
     </div>
     <div class="arena" id="arena">
+     <div id="encounterHud" class="encounter-hud" aria-live="off">
+      <div id="encounterBanner" class="encounter-banner" hidden></div>
+      <div id="encounterBadge" class="encounter-badge"><span id="encounterName"></span><small id="encounterPhase"></small></div>
+      <div id="abilityPanel" class="ability-panel" role="status" aria-live="off" aria-label="Miniboss ability charge" hidden>
+       <canvas id="abilityIcon" width="64" height="64" aria-hidden="true"></canvas>
+       <small id="abilityStatus">CHARGING</small>
+      </div>
+     </div>
      <canvas id="gameCanvas" width="360" height="440" tabindex="0" aria-label="Hive Run game board. Swipe to turn on mobile, or use arrow keys or WASD on a keyboard."></canvas>
      <div id="gameOverlay" class="game-overlay">
        <div class="overlay-content">
@@ -83,7 +91,7 @@
    <aside class="mission" aria-labelledby="missionTitle">
     <span class="mission-kicker">LEVEL 01 / THE HATCHERY</span>
     <h2 id="missionTitle">HUNT THE <em>HIVE.</em></h2>
-    <p>The Hatchery is alive with Skitters and Burrow Runners. Prey never wait for you: chase, corner, and force them into your growing body. Each capture earns 3 evolution energy; rare orbs spawn roughly every 20–32 seconds for 1 energy.</p>
+    <p>The Hatchery's prey try to escape your growing swarm. At evolution 2, face the Burrow Stalker and its five-tile Burrow Dash; at evolution 6, avoid the Tunnel Weaver's 15-second webs. Each miniboss takes two captures to defeat. A cracked-stone ability meter fills in weathered ochre over 10 seconds.</p>
     <section class="leaderboard-panel" id="leaderboard" aria-labelledby="leaderboardTitle">
      <div class="board-heading"><span>FIELD NETWORK / HIVE RUN</span><button type="button" id="leaderboardRefresh">↻ REFRESH</button></div>
      <h3 id="leaderboardTitle">HUNTER <em>LEADERBOARD.</em></h3>
@@ -108,7 +116,7 @@
     <div class="mission-row"><span>01</span><div><strong>CAPTURE MOVING PREY</strong><p>Trap enemies against your living body for 3 energy each. Smart prey keep moving to escape.</p></div></div>
     <div class="mission-row"><span>02</span><div><strong>RARE BROOD</strong><p>Glowing orbs appear much less often, granting 1 energy and a new segment.</p></div></div>
     <div class="mission-row"><span>03</span><div><strong>EVOLVE TO SURVIVE</strong><p>Every 5 energy opens a WUBRG mutation draft. Red doubles score, not evolution energy.</p></div></div>
-    <div class="release-note"><span>DEVELOPMENT STATUS</span><strong>ALPHA 0.3.3 / IMMERSIVE CONTROLS</strong><p>Hunt and trap moving prey without accidental page scrolling. Tap GAME ONLY to fill the screen with the arena and controls; exit anytime to view the leaderboard.</p></div>
+    <div class="release-note"><span>DEVELOPMENT STATUS</span><strong>ALPHA 0.4 / MINIBOSS ENCOUNTERS</strong><p>Trap the Burrow Stalker and Tunnel Weaver in two phases, survive their special abilities and earn evolution energy. The pixel-art charge ring reveals when an ability is ready.</p></div>
    </aside>
   </div>
  </main>

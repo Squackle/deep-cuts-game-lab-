@@ -3,10 +3,11 @@
  * The same module runs in browser, CI and score replay verification.
  */
 import {PREY,spawnPrey,advancePrey,same,inside,VECTORS} from "./enemies.js";
+import {encounterKind,spawnMiniboss,spawnNextPhase,tickMiniboss,triggerWeb,consumeEncounterFreeze,ABILITIES} from "./miniboss.js";
 export const DIRECTIONS=Object.freeze(Object.fromEntries(Object.entries(VECTORS).map(([k,v])=>[k,{x:v[0],y:v[1]}])));
 export const COLORS=Object.freeze(["W","U","B","R","G"]);
 export const EVOLUTION_COST=5;
-export const RULES_VERSION="hive-0.3.1";
+export const RULES_VERSION="hive-0.4.0";
 export const MUTATIONS=Object.freeze({
  W:{color:"W",name:"Hardened Shell",school:"CARAPACE",icon:"◈",description:"Gain one shield. Survive a fatal impact and evade danger.",short:"+1 shield"},
  U:{color:"U",name:"Temporal Drift",school:"ADAPTATION",icon:"◷",description:"Slow your hive's movement for 28 steps to steer tighter traps.",short:"28 slow steps"},
@@ -39,6 +40,7 @@ export function newRun({cols=18,rows=22,random,seed}={}){
   evolutionsChosen:0,draftCount:0,draftOptions:[],mutations:{W:0,U:0,B:0,R:0,G:0},
   effects:{shield:0,molt:0,blueTicks:0,redTicks:0,greenPickups:0},growthDebt:0,
   enemies:[],enemySerial:0,respawnIn:0,runTicks:0,moves:0,saves:0,
+  encounter:null,queuedEncounter:null,minibossWins:0,lastEncounter:null,
   status:"ready",endReason:"",lastMutation:null,event:null,eventSerial:0};
  const prey=spawnPrey(run);if(prey)run.enemies.push(prey);
  return run;
@@ -49,7 +51,7 @@ export function start(run){
 }
 export function pause(run){if(run.status==="running")run.status="paused";return run}
 export function turn(run,heading){
- if(run.status!=="running"||!Object.hasOwn(DIRECTIONS,heading)||run.turnQueue.length>=2)return false;
+ if(run.status!=="running"||run.encounter&&(run.encounter.introMs>0||run.encounter.stunMs>0)||!Object.hasOwn(DIRECTIONS,heading)||run.turnQueue.length>=2)return false;
  const last=run.turnQueue.at(-1)??run.direction,a=DIRECTIONS[last],b=DIRECTIONS[heading];
  if(a.x+b.x===0&&a.y+b.y===0)return false;
  if(a.x===b.x&&a.y===b.y)return false;
@@ -70,6 +72,13 @@ export function chooseMutation(run,color){
  run.lastMutation={color,name:MUTATIONS[color].name,move:run.moves};
  run.status="running";run.draftOptions=[];run.turnQueue=[];
  emit(run,{type:"mutation",color,name:MUTATIONS[color].name});
+ // Milestones are *completed choices*, never energy or draft openings.
+ const kind=encounterKind(run.evolutionsChosen);
+ if(kind){
+  if(run.encounter)run.queuedEncounter=kind;
+  else if(spawnMiniboss(run,kind))emit(run,{type:"encounter-start",kind,name:ABILITIES[kind].name});
+  else run.queuedEncounter=kind;
+ }
  return true;
 }
 export function effectiveTickMs(run){
@@ -127,7 +136,7 @@ function reward(run,{energy,score,growth,type,at}){
 }
 function schedulePrey(run){
  const desired=run.evolutionsChosen>=1?2:1;
- if(run.enemies.length>=desired)return;
+ if(run.encounter||run.queuedEncounter||run.enemies.length>=desired)return;
  if(run.respawnIn>0){run.respawnIn--;return}
  const kind=run.evolutionsChosen>=1&&run.enemies.some(e=>e.kind==="skitter")?"runner":"skitter";
  const prey=spawnPrey(run,kind);
@@ -136,12 +145,26 @@ function schedulePrey(run){
 function spawnOrb(run){
  if(run.food)return;
  if(--run.orbIn>0)return;
- const exclusions=[...run.body,...run.enemies.map(e=>e.pos)];
+ const exclusions=[...run.body,...run.enemies.map(e=>e.pos),...(run.encounter?.webs||[]).map(w=>w.pos)];
  run.food=emptyTile(exclusions,run.cols,run.rows,run.random);
  run.orbIn=145+Math.floor(val(run.random)*85); // ~20-31s of active ticks
 }
 export function step(run){
  if(run.status!=="running")return run;
+ // Intro and web-stun ticks advance replay time but never force the player
+ // into collisions while inputs are temporarily disabled.
+ const elapsed=effectiveTickMs(run);
+ if(run.encounter?.awaitSpawn){
+  if(spawnNextPhase(run)){run.encounter.awaitSpawn=false;emit(run,{type:"boss-phase",kind:run.encounter.kind,phase:run.encounter.phase})}
+  run.runTicks++;
+  return run;
+ }
+ if(consumeEncounterFreeze(run,elapsed))return run;
+ if(run.queuedEncounter&&!run.encounter&&spawnMiniboss(run,run.queuedEncounter)){
+  const kind=run.queuedEncounter;run.queuedEncounter=null;
+  emit(run,{type:"encounter-start",kind,name:ABILITIES[kind].name});
+  run.runTicks++;return run;
+ }
  const heading=run.turnQueue.shift()??run.direction,t=target(run,heading);
  if(t.wall||t.body||t.enemy){
   run.direction=heading;
@@ -159,16 +182,52 @@ export function step(run){
   run.brood++;reward(run,{energy:1,score:100,growth:1,type:"orb",at:t.next});
   run.orbIn=145+Math.floor(val(run.random)*85);
  }
+ // A web only immobilizes the head after entering the visible marked tile.
+ // Both prey and player freeze for 2 seconds: not a cheap unavoidable death.
+ if(triggerWeb(run,t.next)){emit(run,{type:"web-stun",at:t.next});return run}
  if(run.status!=="running")return run;
+ const abilityEvent=tickMiniboss(run,elapsed);
+ if(abilityEvent?.type==="burrow-warning"||abilityEvent?.type==="burrow"||abilityEvent?.type==="web")
+  emit(run,abilityEvent);
  // The body is a moving wall: prey avoid it until forced into collision.
  const survivors=[];
  for(const enemy of run.enemies){
-  const result=advancePrey(run,enemy);
+  // A burrow wind-up shows a fixed entrance and target; no gliding while
+  // the player watches the telegraph. Enemy still visible and trap-able.
+  const encounter=run.encounter;
+  const result=encounter?.telegraph&&enemy.kind===encounter.kind?
+   {type:"waiting"}:advancePrey(run,enemy);
   if(result.type==="captured"){
+   if(encounter&&enemy.kind===encounter.kind){
+    if(encounter.phase<encounter.phases){
+     encounter.phase++;
+     run.lastEncounter={kind:encounter.kind,type:"phase",phase:encounter.phase,at:{...enemy.pos},tick:run.runTicks};
+     // Spawn the next phase from a certified safe gate; delay until a gate
+     // is free instead of teleporting onto the player's body.
+     run.enemies=survivors;
+     encounter.telegraph=null;encounter.webs=[];
+     if(!spawnNextPhase(run)){encounter.introMs=840;encounter.awaitSpawn=true}
+     emit(run,{type:"boss-phase",kind:encounter.kind,phase:encounter.phase});
+     return run;
+    }
+    const kind=encounter.kind;
+    run.encounter=null;run.enemies=[];
+    run.minibossWins++;run.kills++;
+    run.lastEncounter={kind,type:"defeat",phase:2,at:{...enemy.pos},tick:run.runTicks};
+    reward(run,{energy:5,score:750,growth:2,type:"miniboss",at:{...enemy.pos}});
+    run.respawnIn=18;
+    return run;
+   }
    reward(run,{energy:3,score:300,growth:1,type:"kill",at:{...enemy.pos}});
    run.respawnIn=10;
   }else if(result.type==="escaped"){
-   // Wall crashes are not eligible for evolution energy.
+   if(encounter&&enemy.kind===encounter.kind){
+    // A miniboss must not vanish without giving the player its encounter.
+    run.enemies=survivors;
+    encounter.introMs=840;encounter.awaitSpawn=true;
+    emit(run,{type:"boss-reposition",kind:encounter.kind});
+    return run;
+   }
    emit(run,{type:"escaped",name:"Prey escaped outside your trap."});
    run.respawnIn=10;
   }else survivors.push(enemy);
@@ -179,7 +238,7 @@ export function step(run){
 }
 export function progress(run){
  return {stage:run.stage,untilNext:EVOLUTION_COST-run.energy,speedMs:effectiveTickMs(run),drafts:run.draftCount,
-  energy:run.energy,kills:run.kills,evolutions:run.evolutionsChosen};
+  energy:run.energy,kills:run.kills,evolutions:run.evolutionsChosen,minibossWins:run.minibossWins,encounter:run.encounter?.kind||null};
 }
 export function activeEffects(run){
  const e=run.effects,a=[];

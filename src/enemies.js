@@ -8,7 +8,9 @@ export const VECTORS=Object.freeze({up:[0,-1],right:[1,0],down:[0,1],left:[-1,0]
 export const HEADINGS=Object.freeze(Object.keys(VECTORS));
 export const PREY=Object.freeze({
  skitter:Object.freeze({name:"SKITTER",period:4,accent:"#ffaf75",icon:"◆"}),
- runner:Object.freeze({name:"BURROW RUNNER",period:4,accent:"#e399f5",icon:"◇"})
+ runner:Object.freeze({name:"BURROW RUNNER",period:4,accent:"#e399f5",icon:"◇"}),
+ stalker:Object.freeze({name:"BURROW STALKER",period:3,accent:"#c2a56a",icon:"◈"}),
+ weaver:Object.freeze({name:"TUNNEL WEAVER",period:4,accent:"#a99a8b",icon:"⌁"})
 });
 export function inside(run,p){return p.x>=0&&p.y>=0&&p.x<run.cols&&p.y<run.rows}
 export const same=(a,b)=>a.x===b.x&&a.y===b.y;
@@ -60,9 +62,9 @@ export function decidePrey(run,enemy){
   const forward=dir===enemy.dir?1:0;
   // Survival-first AI, but fallible: novice Skitters underestimate space,
   // Runners favor the heading they already have and open corridors.
-  const spaceWeight=enemy.kind==="runner"?.11:.07;
+  const spaceWeight=enemy.kind==="runner"?.11:enemy.kind==="stalker"?.15:enemy.kind==="weaver"?.105:.07;
   const score=Math.min(area,110)*spaceWeight+Math.min(distance,16)*.25+
-   Math.min(wallDistance,5)*.24+forward*(enemy.kind==="runner"?2.0:.7)+run.random()*(enemy.kind==="skitter"?2.4:1.0);
+   Math.min(wallDistance,5)*(enemy.kind==="weaver"?.08:.24)+forward*(enemy.kind==="runner"?2:enemy.kind==="stalker"?1.0:enemy.kind==="weaver"?.45:.7)+run.random()*(enemy.kind==="skitter"?2.4:enemy.kind==="stalker"?.45:1.0);
   viable.push({dir,dest,score});
  }
  viable.sort((a,b)=>b.score-a.score);

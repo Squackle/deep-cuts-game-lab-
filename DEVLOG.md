@@ -302,3 +302,13 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 - Replaced emoji glyphs in the planned UI specification with **custom icon art**: Stalker = fractured stone tunnel opening, Weaver = ragged irregular web fixed to cavern rock; textured, low-gloss look in worn limestone over peat-black backgrounds.
 - Charge ring: **weathered ochre** `#98824B`, **fully charged antique brass** `#B19A5A`, dark olive recessed track `#414335`. Clockwise fill to a continuous dull brass ring at 100%; no flashy neon effects. Ready state additionally uses a small solid notch for non-color accessibility.
 - This changes the **future Alpha 0.4 visual design only**. No existing game code, music, or production Deep Cuts site modified.
+
+
+## 2026-10-13 — Alpha 0.4 Burrow Uprising implementation
+
+- Owner approved one release implementing both minibosses with two trapping phases each, timed signature powers and **high-quality hand-authored pixel art**. Stalker at evolution 2 (and 10), Weaver at evolution 6 (and 14). Full bosses at 4/8 are a different future milestone and not falsely advertised as live.
+- Built `src/miniboss.js` as a fully seeded, deterministic encounter/special-ability state machine, shared by browser and score replay. 10s active cooldown, exact 5-tile safe Stalker dash after 500ms marked entrance, 10s single web placement, 15s lifetime, max 2 webs, web contact freezes both sides for 2s to avoid an unfair forced death. Two real captures with safe respawns, only final capture awards +5 EV/+750 base/+2 growth.
+- Built `src/boss-art.js` with original 20x20 hand-pixelled cave-mouth and rough cobweb sprites, nearest-neighbor rendering, centered art with mathematically accurate 64px chunky pixel-charge ring (`#98824b` charging / `#b19a5a` ready). Boss shapes appear in-arena, upper-right ability HUD is noninteractive and responsive including Game Only.
+- Player-facing UI gains phase indicators, live cooldown and warning feedback, active encounter soundtrack changing automatically, and small high-contrast web/burrow telegraphs. No new public preview gallery and main Deep Cuts site unchanged.
+- Ranked rules bumped to `hive-0.4.0`, historical D1 scores remain separated, original anti-fraud seeded full-replay validation retained, normal and minboss stats verified against exact same logic.
+- **QA:** Pending end-to-end CI and live deployment confirmation before marking shipped.
