@@ -4,7 +4,7 @@ import {newRun,start,step,chooseMutation,turn} from '../src/engine.js';
 import {spawnMiniboss,tickMiniboss,ABILITIES} from '../src/miniboss.js';
 import {setBiome,tickTerrain,terrainBlocks,warnTerrain,BIOMES} from '../src/environments.js';
 import {chicagoDay,dailySeed} from '../src/modes.js';
-import {replayScore} from '../functions/api/leaderboard.js';
+import {replayScore} from '../src/replay-verification.js';
 const evolve=r=>{r.status='draft';r.draftOptions=['W','U','G'];chooseMutation(r,'W')};
 const finish=r=>{start(r);for(let i=0;i<7000&&r.status==='running';i++)step(r);return r};
 function capture(r){

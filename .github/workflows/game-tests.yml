@@ -52,7 +52,6 @@ jobs:
           node --check src/evolution-visuals.js
           node --check src/enemies.js
           node --check src/enemy-render.js
-          node --check src/leaderboard-client.js
-          node --check src/leaderboard-ui.js
-          node --check src/integration.js
+          node --check src/solo-session.js
+          node --check src/replay-verification.js
           node --check functions/api/leaderboard.js

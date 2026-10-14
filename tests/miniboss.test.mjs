@@ -5,7 +5,7 @@ import {ABILITIES,BURROW_RANGE,WEB_LIFETIME_MS,WEB_STUN_MS,INTRO_MS,TELEGRAPH_MS
  encounterKind,spawnMiniboss,tickMiniboss,triggerWeb,consumeEncounterFreeze,abilityState,
  dashCandidates} from "../src/miniboss.js";
 import {validateIcons,chargePixels,ICON_PIXELS,OCHRE,drawAbilityMeter} from "../src/boss-art.js";
-import {replayScore} from "../functions/api/leaderboard.js";
+import {replayScore} from "../src/replay-verification.js";
 
 function evolve(r,n){
  for(let i=0;i<n;i++){
