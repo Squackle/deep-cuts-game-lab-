@@ -172,3 +172,13 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 - **Implemented:** Original procedural pixel creature artwork drawn on Canvas: elongated horned head with eye and beak, tapered hooked tail, and **45 deterministic combinations** of armor, dorsal spines, crests, markings and colors for middle sections. Segments are oriented along movement; body patterns remain consistent while moving.
 - **Copyright approach:** New pixel artwork is original and sliver-inspired, not a transformation or trace of official MTG illustrations.
 - **Next QA:** Verify tests and actual mobile browser rendering. Long-term polish: turn-joint transitions and silhouette refinement.
+
+
+## 2026-10-14 — v0.1.3: Save approved art and put it in the actual game
+
+- **User request:** Save the generated HIVE RUN WUBRG concept sheet and move its character design into the playable game.
+- **Original saved:** Full 1312×1199 PNG concept sheet uploaded to persistent ChatGPT Library: `/Deep Cuts Game Lab/Hive Run - WUBRG Creature Concept.png`.
+- **Implementation:** 45 body sections selected from the poster (9 per W/U/B/R/G color row), plus pointed single-armed head and double-pronged tail. Pixel-reduced and indexed for a tiny embedded sprite module, without third-party hosting or extra network requests. Uses native browser zlib decompression; existing procedural art is retained as fallback.
+- **Gameplay:** Render actual concept-derived sprites, rotated with movement direction, connected with a WUBRG-colored spine. Every new body section cycles W/U/B/R/G, while successive cycles use new section designs. Adds an on-page Creature Codex preview of all 45 body types, head and tail.
+- **Files:** `src/creature-sprites.js`, `src/main.js`, `index.html`, `styles.css`, `docs/ART_DIRECTION.md`, tests, README, CI.
+- **QA:** Verify on Cloudflare live URL and GitHub Actions before marking deployed. Source artwork is an original generated concept and does not incorporate a pasted official card image.

@@ -48,3 +48,12 @@ h1,h2,h3,p{margin-top:0}h1{font:800 clamp(44px,5vw,75px)/.98 Georgia,serif;lette
 @media(max-width:830px){.game-layout{grid-template-columns:minmax(0,1fr);gap:31px}.arcade-frame{margin:0 auto}.mission{max-width:600px;margin:0 auto}.intro{padding:24px 0;display:block}.prototype-note{max-width:650px;margin-top:14px}}
 @media(max-width:420px){main{padding:0 10px 38px}.lab-header{padding:9px 12px;min-height:67px}.lab-badge{font-size:8px;padding:7px 5px}.brand{font-size:12px;gap:6px}.brand-mark{width:34px;height:36px;font-size:27px}.brand small{font-size:7px}.intro{padding:17px 5px 15px}h1{font-size:48px}.intro-description{font-size:13px}.prototype-note{font-size:11px;padding-left:9px;margin-top:11px}.arcade-frame{padding:8px;border-width:2px}.hud{padding:8px}.touch-pad button{height:40px;width:54px}.cabinet-top,.cabinet-bottom{font-size:8px}.game-actions button{font-size:9px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.touch-pad button:active{transform:none}}
+
+/* WUBRG creature gallery — responsive without horizontal scrolling. */
+.creature-codex{margin:20px 0 6px;border:1px solid #7b694b;background:#0c1b17;padding:12px;border-radius:6px}
+.codex-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;color:#e7c58d;font:800 10px ui-monospace,monospace;letter-spacing:.07em;margin-bottom:8px}
+.codex-heading span{color:#adbbab;font-size:9px}
+#creaturePreview{width:100%;height:auto;display:block;border:1px solid #384a3d;image-rendering:pixelated}
+.creature-codex p{font-size:12px;line-height:1.55;color:#bfcfb9;margin:10px 0}
+.wubrg-legend{display:flex;flex-wrap:wrap;gap:5px 11px;font:800 10px ui-monospace,monospace}
+.mana-w{color:#e7d8b4}.mana-u{color:#65a9d5}.mana-b{color:#ad90b7}.mana-r{color:#ed8262}.mana-g{color:#85c98e}

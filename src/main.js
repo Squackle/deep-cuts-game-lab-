@@ -1,10 +1,13 @@
 import {newRun,start,pause,turn,step,progress} from "./engine.js";
+import {loadCreatureArt,variantForSegment,WUBRG} from "./creature-sprites.js";
 
-/* HIVE RUN v0.1.2 — segmented original sliver-inspired pixel creature. */
+/* HIVE RUN v0.1.3 — playable concept-sheet WUBRG pixel sprites. */
 const $=id=>document.getElementById(id);
 const canvas=$("gameCanvas");
 const context=canvas.getContext("2d",{alpha:false});
 const CELLS=20,COLS=18,ROWS=22;
+const WUBRG_COLORS=["#e7d8b4","#65a9d5","#7e6a88","#dd684a","#75ad7b"];
+let creatureArt=null;
 const STORE="deepcuts-hive-run-best-v1",SOUND_STORE="deepcuts-hive-run-audio-v1";
 const state={run:newRun({cols:COLS,rows:ROWS}),best:0,audio:false,ctx:null,
  lastFrame:0,accumulator:0,lastAnnouncement:"",pointer:null};
@@ -155,6 +158,53 @@ function drawCreaturePiece(part,kind,id,heading){
  context.restore();
 }
 
+
+function drawConnectedSpine(body){
+ context.save();context.lineCap="round";context.lineJoin="round";
+ for(let i=body.length-1;i>0;i--){
+  const a=body[i],b=body[i-1],color=WUBRG_COLORS[Math.floor(variantForSegment(Math.max(0,i-1))/9)];
+  const ax=a.x*CELLS+10,ay=a.y*CELLS+10,bx=b.x*CELLS+10,by=b.y*CELLS+10;
+  context.beginPath();context.moveTo(ax,ay);context.lineTo(bx,by);
+  context.strokeStyle="#0c1717";context.lineWidth=14;context.stroke();
+  context.strokeStyle=color;context.lineWidth=9;context.stroke();
+ }
+ context.restore();
+}
+function drawArtCreature(part,kind,id,heading){
+ const sprite=kind==="head"?creatureArt.head:kind==="tail"?creatureArt.tail:creatureArt.body[id];
+ if(!sprite)return;
+ const facing={right:0,down:Math.PI/2,left:Math.PI,up:-Math.PI/2}[heading];
+ // The source art faces diagonally; rotate to face the actual travel heading.
+ const artAngle=kind==="head"?Math.PI*3/4:Math.PI/4;
+ const width=kind==="head"?37:kind==="tail"?32:27;
+ const height=kind==="head"?48:kind==="tail"?42:27;
+ context.save();context.translate(part.x*CELLS+10,part.y*CELLS+10);
+ context.rotate(facing+artAngle);context.imageSmoothingEnabled=false;
+ context.drawImage(sprite,-width/2,-height/2,width,height);
+ context.restore();
+}
+function drawCreaturePreview(){
+ const preview=$("creaturePreview");
+ if(!preview||!creatureArt)return;
+ const ctx=preview.getContext("2d");if(!ctx)return;
+ ctx.imageSmoothingEnabled=false;ctx.fillStyle="#0b1a16";
+ ctx.fillRect(0,0,preview.width,preview.height);
+ WUBRG.forEach((symbol,row)=>{
+  ctx.font="bold 18px ui-monospace,monospace";ctx.fillStyle=WUBRG_COLORS[row];
+  ctx.fillText(symbol,13,33+row*34);
+  for(let col=0;col<9;col++){
+   const tile=creatureArt.body[row*9+col];
+   ctx.drawImage(tile,49+col*29,8+row*34,27,27);
+  }
+ });
+ ctx.fillStyle="#d3b78d";ctx.font="bold 10px ui-monospace,monospace";
+ ctx.fillText("HEAD",350,15);ctx.fillText("TAIL",407,15);
+ ctx.drawImage(creatureArt.head,345,25,44,57);
+ ctx.drawImage(creatureArt.tail,398,25,46,58);
+ ctx.font="9px ui-monospace,monospace";ctx.fillStyle="#b8c9b3";
+ ctx.fillText("ONE ARM",344,99);ctx.fillText("FORKED",400,99);
+}
+
 function draw(){
  if(!context)return;
  const run=state.run;
@@ -177,14 +227,17 @@ function draw(){
   context.lineTo(cx,cy+8);context.lineTo(cx-8,cy);context.closePath();context.fill();
   context.fillStyle="#fff6c3";context.fillRect(cx-2,cy-4,4,4);
  }
- // Keep each segment's appearance attached to its place in the creature,
- // rather than randomly changing it on every animation frame.
- run.body.forEach((part,i)=>{
-  const next=run.body[i+1];
+ // A single outlined spine connects the independently colored WUBRG plates.
+ // Draw back-to-front so the pointed head stays visible over the neck.
+ if(creatureArt)drawConnectedSpine(run.body);
+ for(let i=run.body.length-1;i>=0;i--){
+  const part=run.body[i],next=run.body[i+1];
   const heading=i===0?run.direction:orientation(next??run.body[i-1],part);
   const kind=i===0?"head":i===run.body.length-1?"tail":"body";
-  drawCreaturePiece(part,kind,(run.body.length-1-i)%SEGMENT_TYPES,heading);
- });
+  const id=variantForSegment(Math.max(0,i-1));
+  if(creatureArt)drawArtCreature(part,kind,id,heading);
+  else drawCreaturePiece(part,kind,id,heading);
+ }
  if(run.status==="over"){
   context.fillStyle="#dcb78b";
   const head=run.body[0];context.fillRect(head.x*CELLS+5,head.y*CELLS+5,10,10);
@@ -299,4 +352,9 @@ window.addEventListener("blur",()=>{
  state.lastFrame=0;state.accumulator=0;
 });
 syncUI();draw();
+loadCreatureArt().then(art=>{
+ if(!art)return;
+ creatureArt=art;
+ drawCreaturePreview();draw();
+});
 requestAnimationFrame(loop);

@@ -28,3 +28,4 @@ jobs:
         run: |
           node --check src/engine.js
           node --check src/main.js
+          node --check src/creature-sprites.js

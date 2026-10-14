@@ -34,3 +34,7 @@ A mobile-first, Snake-inspired, retro fantasy arcade survival game. The current 
 ## How to keep this log useful
 
 Each substantive session should append a dated `DEVLOG.md` entry covering the goal, decisions, changed files, tests, known problems, and the next task. Major design changes should also update the corresponding document and decision register. Do not silently overwrite earlier decisions; record what changed and why.
+
+## Creature art — WUBRG concept sheet (v0.1.3)
+
+The approved original 1312×1199 concept poster is preserved in the user's ChatGPT Library at `/Deep Cuts Game Lab/Hive Run - WUBRG Creature Concept.png`. The **game uses artwork sampled and pixel-reduced from that exact poster**, packed as a small self-contained indexed sprite module (`src/creature-sprites.js`) rather than loading the multi-megabyte poster at runtime. It includes 45 WUBRG body variations, the one-armed pointed head, and forked tail. The gallery on the live game page previews all 45, and gameplay draws those same sprites. The fallback procedural renderer is retained for browsers without `DecompressionStream`. See `docs/ART_DIRECTION.md`.
