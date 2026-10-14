@@ -1,13 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {newRun,start,pause,turn,step,progress,emptyTile,seededRandom,effectiveTickMs,chooseMutation,PLAYER_BASE_TICK_MS,PLAYER_MIN_TICK_MS,PLAYER_ACCELERATION_MS,RULES_VERSION} from "../src/engine.js";
+import {newRun,start,pause,turn,step,progress,emptyTile,seededRandom,effectiveTickMs,chooseMutation,PLAYER_BASE_TICK_MS,PLAYER_MIN_TICK_MS,PLAYER_ACCELERATION_MS,RULES_VERSION,OPENING_GRACE_MS,orbInterval} from "../src/engine.js";
 
 test("new seeded predator run starts with moving prey and scarce brood",()=>{
  const a=newRun({cols:18,rows:22,seed:48}),b=newRun({cols:18,rows:22,seed:48});
  assert.equal(a.status,"ready");assert.equal(a.food,null);
  assert.equal(a.enemies.length,1);
  assert.deepEqual(a.enemies,b.enemies);
- assert.ok(a.orbIn>=100);
+ assert.ok(a.orbIn>=70&&a.orbIn<=105);
  const e=a.enemies[0];assert.ok(Math.abs(e.pos.x-a.body[0].x)+Math.abs(e.pos.y-a.body[0].y)>=6);
 });
 test("player moves using deterministic queue; reversing is blocked",()=>{
@@ -61,7 +61,7 @@ test("rare orb rewards 1 EV, and orbs do not instantly respawn",()=>{
  run.food={x:run.body[0].x+1,y:run.body[0].y};
  step(run);
  assert.equal(run.energy,1);assert.equal(run.brood,1);assert.equal(run.score,100);
- assert.equal(run.food,null);assert.ok(run.orbIn>=145);
+ assert.equal(run.food,null);assert.ok(run.orbIn>=70&&run.orbIn<105);
 });
 test("pausing/drafting stops movement, AI clocks and orb countdowns",()=>{
  const run=newRun({seed:4});start(run);pause(run);
@@ -71,13 +71,13 @@ test("pausing/drafting stops movement, AI clocks and orb countdowns",()=>{
  run.status="draft";step(run);assert.deepEqual(run.body[0],pos);
 });
 test("stepping onto an enemy kills the player, without crediting a capture",()=>{
- const run=newRun({seed:4});start(run);
+ const run=newRun({seed:4});start(run);run.mercy=0;
  const head=run.body[0];run.enemies=[{id:2,kind:"skitter",pos:{x:head.x+1,y:head.y},dir:"up",period:2,clock:0}];
  step(run);assert.equal(run.status,"over");assert.equal(run.kills,0);
  assert.match(run.endReason,/hunter/i);
 });
 test("a white shield can avert dangerous interception",()=>{
- const run=newRun({seed:4});start(run);
+ const run=newRun({seed:4});start(run);run.mercy=0;
  run.effects.shield=1;const head=run.body[0];
  run.enemies=[{id:2,kind:"skitter",pos:{x:head.x+1,y:head.y},dir:"up",period:2,clock:0}];
  step(run);
@@ -103,7 +103,7 @@ test("red and blue change effective player speed but not WUBRG mutation identity
 });
 
 test("Alpha 0.4.1 calms the player pace around ten percent while retaining relative evolution scaling",()=>{
- assert.equal(RULES_VERSION,"hive-1.0.1");
+ assert.equal(RULES_VERSION,"hive-1.0.2");
  assert.equal(PLAYER_BASE_TICK_MS,150);
  assert.equal(PLAYER_MIN_TICK_MS,105);
  assert.equal(PLAYER_ACCELERATION_MS,4);
@@ -135,4 +135,61 @@ test("a slower baseline preserves active WUBRG movement modifiers and determinis
  assert.ok(effectiveTickMs(a)>base,"Blue still slows player");
  a.effects.blueTicks=0;a.effects.redTicks=4;
  assert.ok(effectiveTickMs(a)<base,"Red still speeds player");
+});
+
+test("a single Brood Instinct recovery saves an ordinary prey collision only once",()=>{
+ const run=newRun({seed:47});start(run);
+ assert.equal(run.mercy,1);
+ const first={x:run.body[0].x+1,y:run.body[0].y};
+ run.enemies=[{id:20,kind:"skitter",pos:first,dir:"up",period:4,clock:0}];
+ step(run);
+ assert.equal(run.status,"running");
+ assert.equal(run.mercy,0);assert.equal(run.saves,1);
+ assert.equal(run.event.name,"Brood Instinct");
+ const h=run.body[0],d={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[run.direction];
+ run.enemies=[{id:21,kind:"runner",pos:{x:h.x+d[0],y:h.y+d[1]},dir:"up",period:4,clock:0}];
+ step(run);
+ assert.equal(run.status,"over");assert.match(run.endReason,/hunter/i);
+});
+test("Brood Instinct does not protect against boss contact or arena walls",()=>{
+ const boss=newRun({seed:88});start(boss);
+ boss.enemies=[{id:3,kind:"warden",pos:{x:boss.body[0].x+1,y:boss.body[0].y},dir:"up",period:4,clock:0}];
+ step(boss);assert.equal(boss.status,"over");assert.equal(boss.mercy,1);
+ const wall=newRun({seed:42});start(wall);
+ wall.body=[{x:17,y:11},{x:16,y:11},{x:15,y:11}];wall.direction="right";
+ step(wall);assert.equal(wall.status,"over");assert.equal(wall.mercy,1);
+});
+test("free prey dodge conserves a mutation shield for the actual boss",()=>{
+ const run=newRun({seed:51});start(run);run.effects.shield=1;
+ run.enemies=[{id:4,kind:"skitter",pos:{x:run.body[0].x+1,y:run.body[0].y},dir:"up",period:4,clock:0}];
+ step(run);assert.equal(run.status,"running");assert.equal(run.mercy,0);
+ assert.equal(run.effects.shield,1);
+});
+test("nine seconds of grace decrement only during active Predator Hunt play",()=>{
+ const run=newRun({seed:41});start(run);
+ assert.equal(run.openingGraceMs,OPENING_GRACE_MS);
+ run.enemies=[];run.respawnIn=300;
+ step(run);assert.equal(run.openingGraceMs,OPENING_GRACE_MS-150);
+ pause(run);step(run);assert.equal(run.openingGraceMs,OPENING_GRACE_MS-150);
+ const classic=newRun({seed:41,mode:"classic"});assert.equal(classic.openingGraceMs,0);
+ assert.equal(classic.mercy,0);
+});
+test("the first two evolutions have one regular enemy, then at most two",()=>{
+ for(const ev of [0,1,2,3]){
+  const run=newRun({seed:60});start(run);
+  run.evolutionsChosen=ev;run.enemies=[];run.respawnIn=0;
+  run.body=[{x:9,y:10},{x:8,y:10},{x:7,y:10}];run.direction="right";
+  step(run);assert.equal(run.enemies.length,1,"first prey should spawn");
+  run.respawnIn=0;step(run);
+  assert.equal(run.enemies.length,ev>=3?2:1,"stage "+ev);
+ }
+});
+test("early hunt orbs are more frequent; late and classic keep prior cadence",()=>{
+ const early=newRun({seed:12}),late=newRun({seed:12}),classic=newRun({seed:12,mode:"classic"});
+ const short=orbInterval(early);
+ assert.ok(short>=70&&short<105);
+ late.evolutionsChosen=2;
+ const regular=orbInterval(late);
+ assert.ok(regular>=145&&regular<230);
+ assert.ok(orbInterval(classic)>=145);
 });

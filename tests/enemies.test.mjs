@@ -15,7 +15,7 @@ test("a normal enemy spawns well clear of head and stays off the moving body",()
  assert.ok(reachableArea(run,enemy.pos,enemy.id)>10);
 });
 test("AI chooses one of the three non-reversing moves and never teleports",()=>{
- const run=newRun({seed:7});
+ const run=newRun({seed:7});run.openingGraceMs=0;
  const e=run.enemies[0],first={...e.pos};
  const d=decidePrey(run,e);
  assert.ok(d);
@@ -45,7 +45,7 @@ test("Alpha 0.3.1 halves both enemy speeds without changing player speed",()=>{
  assert.equal(runner.period,4);
 });
 test("newly spawned prey wait three beats and move exactly on fourth beat",()=>{
- const run=newRun({seed:7});
+ const run=newRun({seed:7});run.openingGraceMs=0;
  const enemy=run.enemies[0];
  const initial={...enemy.pos};
  for(let i=1;i<4;i++){
@@ -88,4 +88,21 @@ test("regular prey can turn on a whim, but never reverse or enter an occupied ce
   assert.ok(["up","down"].includes(chosen.dir));
   assert.ok(Math.abs(chosen.dest.x-5)+Math.abs(chosen.dest.y-5)===1);
  }
+});
+
+test("natural prey move every seven beats during opening grace, then every four",()=>{
+ const run=newRun({seed:7});
+ const enemy=run.enemies[0];assert.equal(enemy.period,4);
+ for(let i=1;i<7;i++)assert.equal(advancePrey(run,enemy).type,"waiting");
+ assert.equal(advancePrey(run,enemy).type,"moved");
+ run.openingGraceMs=0;
+ for(let i=1;i<4;i++)assert.equal(advancePrey(run,enemy).type,"waiting");
+ assert.equal(advancePrey(run,enemy).type,"moved");
+});
+test("bosses retain their own movement period during ordinary prey grace",()=>{
+ const run=newRun({seed:7});
+ const enemy={id:35,kind:"warden",pos:{x:5,y:5},dir:"right",period:4,clock:0};
+ run.enemies=[enemy];
+ for(let i=1;i<4;i++)assert.equal(advancePrey(run,enemy).type,"waiting");
+ assert.equal(advancePrey(run,enemy).type,"moved");
 });

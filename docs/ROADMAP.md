@@ -201,3 +201,15 @@ This section supersedes earlier planned/not-implemented labels above; those sect
 - [x] Re-version ranked server replays to `hive-1.0.1` and version daily seeded challenges so players are compared against identical AI rules; older scores remain in historical storage.
 - [x] Cover short-sighted dead-end decisions, legal movement and boss intelligence differences with deterministic tests.
 - [ ] Playtest real gamepad/keyboard/touch skill progression and iterate on tutorial, optional beginner protection and boss introduction if early completion remains difficult.
+
+## Release 1.0.2 — Control response and beginner-friendly hunt balance (2026-10-14)
+
+- [x] Register valid arrow/WASD commands on the original keyboard event, ignore held-key auto-repeat, and immediately draw the queued destination and head orientation. Grid movement remains fixed-tick (150ms opening) so faster button mash cannot increase game speed or bypass ranked replay validation.
+- [x] Brood Instinct: one free automatic sidestep when the player would collide with Skitter/Runner, only in Predator Hunt. No protection from bosses, walls or the player's body. Shield/Molt keep their previous boss-saving role.
+- [x] Opening grace: regular prey take seven movement beats, instead of four, for nine seconds of active gameplay; no grace timer progresses during pause/draft. Bosses stay at their prior pace.
+- [x] Limit simultaneous ordinary prey to one until the third chosen evolution; boss encounters unchanged.
+- [x] Spawn hunt evolution orbs sooner (initial wait 72 steps; early 70–104 steps between orbs), returning to 145–229 step intervals after two evolutions. Brood Trail's normal instant orb replacement stays untouched.
+- [x] Render amber outlines only for ordinary prey with zero/one legal forward exit during early evolutions; boss fights and Brood Trail receive no trap guidance. Render does not affect RNG or scoring.
+- [x] Bump replay rules to `hive-1.0.2`, refresh daily seed derivation and local best key. Historical score rows retained separately; no mixing ranked simulations from prior AI rules.
+- [x] Cover collisions, cadence, orb pacing, population limits, immediate input feedback, boss boundaries and deterministic nonmutating hints with automated regressions.
+- [ ] Physical keyboard and phone playtesting to validate whether the early game is enjoyable and the transition to bosses remains demanding.

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {drawArenaGrid} from "../src/level-background.js";
-import {drawPlayerLocator} from "../src/player-visibility.js";
+import {drawPlayerLocator,drawQueuedTurn} from "../src/player-visibility.js";
 function mock(){
  const rects=[],strokes=[];
  const ctx={fillStyle:"",strokeStyle:"",lineWidth:1,save(){},restore(){},
@@ -28,5 +28,16 @@ test("player head locator overlays a readable directional indicator",()=>{
  assert.ok(rects.some(r=>r.args.join(",")==="116,128,4,4"));
  const before=rects.length;
  drawPlayerLocator(ctx,null,"right");
+ assert.equal(rects.length,before);
+});
+
+test("queued keyboard turn shows a direction marker before the next movement tick",()=>{
+ const {ctx,rects}=mock();
+ assert.equal(drawQueuedTurn(ctx,{x:5,y:5},"up",18,22),true);
+ assert.ok(rects.some(r=>r.args.join(",")==="102,82,16,16"));
+ assert.ok(rects.some(r=>r.args.join(",")==="108,88,4,4"));
+ const before=rects.length;
+ assert.equal(drawQueuedTurn(ctx,{x:5,y:5},null,18,22),false);
+ assert.equal(drawQueuedTurn(ctx,{x:0,y:0},"up",18,22),false);
  assert.equal(rects.length,before);
 });
