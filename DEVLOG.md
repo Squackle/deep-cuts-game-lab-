@@ -351,3 +351,7 @@ Implemented owner-selected fixes together: synchronous accepted-input marker/hea
 ## October 14, 2026 — 1.0.3 Boss dossiers
 
 Added polished cave-themed paused boss-introduction dossiers for the Burrow Stalker, Tunnel Weaver, Hatchery Warden, and Rift Guardian. Each is introduced once per encounter, not between individual capture phases, with an authentic boss-specific hand-drawn pixel ability icon, exact ability intervals, telegraphs, hazard durations, phase counts, and survival tips. Begin Encounter runs a fully paused three-second countdown. Regrouping freezes gameplay entirely, and backgrounding requires a fresh deliberate resume. No gameplay rules, seeded RNG, or server replay version changed.
+
+## October 14, 2026 — Hive Run 1.0.4 original environment illustrations
+
+Deployed all four newly commissioned cavern backgrounds: glowing egg-laden Hatchery, amber tunnel Burrows, violet crystal Fracture and scarlet abyssal Deep Fracture. Compressed to a lightweight single WebP sprite atlas (144×176 per scene, 288×352 sheet). The game loads it once and crops the correct painted environment at completed evolution milestones 0/4/8/12, retaining the original deterministic procedural fallback if artwork fails to load. Dark translucent veils, stronger edge fades and the existing every-five-cell grid protect foreground readability, enemies, orbs and telegraphed boss abilities. No gameplay, server replay, leaderboard rules, soundtrack behavior or encounter timing changed. Automated tests verify all four source crops and image magic bytes.

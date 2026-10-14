@@ -213,3 +213,13 @@ This section supersedes earlier planned/not-implemented labels above; those sect
 - [x] Bump replay rules to `hive-1.0.2`, refresh daily seed derivation and local best key. Historical score rows retained separately; no mixing ranked simulations from prior AI rules.
 - [x] Cover collisions, cadence, orb pacing, population limits, immediate input feedback, boss boundaries and deterministic nonmutating hints with automated regressions.
 - [ ] Physical keyboard and phone playtesting to validate whether the early game is enjoyable and the transition to bosses remains demanding.
+
+## Release 1.0.4 — Four painted arena environments (October 14, 2026)
+
+- [x] Final original painted pixel-art scenes for Hatchery, Burrows, Fracture, Deep Fracture based on project-approved concept sheet.
+- [x] One small 288×352 WebP atlas with 144×176 pixel source tile; loaded once for all four stages; source cropped using only biome ID.
+- [x] Visible art transitions at four, eight and twelve completed evolutions, for both Predator Hunt and Brood Trail.
+- [x] Tuned per-biome darkness and edge fades, grid overlays and crisp pixel display for readable gameplay on mobile and desktop.
+- [x] Keep deterministic painted-cavern fallback when image loading fails; version and rules stay unchanged as this is purely visual.
+- [x] Regression tests for WebP existence, correct quadrant crop and fallback robustness.
+- [ ] Owner physical-device playtest for visual contrast at boss telegraphs and pickups.

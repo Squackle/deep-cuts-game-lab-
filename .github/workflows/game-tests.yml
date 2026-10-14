@@ -8,6 +8,7 @@ on:
       - "db/**"
       - "index.html"
       - "styles.css"
+      - "assets/backgrounds/**"
       - ".github/workflows/game-tests.yml"
   pull_request:
     paths:
@@ -17,6 +18,7 @@ on:
       - "db/**"
       - "index.html"
       - "styles.css"
+      - "assets/backgrounds/**"
       - ".github/workflows/game-tests.yml"
 jobs:
   verify:
