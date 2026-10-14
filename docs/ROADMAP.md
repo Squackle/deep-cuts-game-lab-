@@ -37,6 +37,7 @@
 
 ## Alpha 0.2 — Hive mutations / hazard stages
 
+- [x] Begin soundtrack work early: original Hatchery chiptune loop, independent music toggle, user-gesture audio and pause/mute behavior (v0.1.6). Musical polishing remains a future task.
 - [ ] Mutation selection draft with three choices after a score threshold.
 - [ ] Five meaningful mutation families with tested whole-swarm effects.
 - [ ] Stage changes: Hatchery, Burrows, Fracture.
@@ -47,7 +48,7 @@
 
 - [ ] Daily seeded challenge and reproducible conditions.
 - [ ] Client and/or server scoreboard design, abuse protection before online leaderboards.
-- [ ] Original pixel-art creatures, animations and optional chiptune/sound.
+- [ ] Original pixel-art creatures, animations and optional chiptune/sound. **Original 8-bit Hatchery soundtrack is implemented in v0.1.6; final animation and music balance remain to polish.**
 - [ ] Scores and settings persist gracefully.
 - [ ] QA across actual Safari/Chrome phones, accessibility and performance.
 

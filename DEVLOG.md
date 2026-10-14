@@ -202,3 +202,13 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 - **Implemented:** Replaced the small flat gold diamond with a high-contrast brood beacon: dark near-black disc, thin ivory rim, bright amber center, white core and sparkle, plus soft pulsing radial glow extending beyond one cell. The animation does not affect collision or score logic.
 - **Files:** `src/level-background.js`, `src/pickups.js`, `src/main.js`, `index.html`, new tests, CI.
 - **Verification: PASSED and LIVE.** Commit `83fff16e1057c463659986da29415371a15865dd` deployed successfully to Cloudflare Pages deployment `8b20bd2c-d984-44c7-a0c1-6a1ec233e8c2`. [GitHub Actions run 38491878510](https://github.com/Squackle/deep-cuts-game-lab-/actions/runs/38491878510) passed engine, background/pickup and syntax checks. Live 390px mobile browser test confirmed v0.1.5, the original Hatchery asset loaded, no horizontal overflow (390px), the upgraded orb drew a bright white core RGB (255,249,231), and pressing Start entered `IN MOTION`. Main Deep Cuts EDH production site remains unchanged.
+
+
+## 2026-10-13 — v0.1.6: Original retro soundtrack for Alpha 0.2
+
+- **Owner request:** Include a cool retro soundtrack in the upcoming major Evolution & Mutations update.
+- **Delivered early:** Original, code-composed **The Hatchery Theme**: 108 BPM, eight bars, original melody with square-wave lead, triangle arpeggio, sawtooth bass, and synthesized kick/snare/hi-hat. No samples, streaming, external libraries or asset copyright questions.
+- **Mobile/accessibility:** Independent `♫ MUSIC ON/OFF` button alongside existing effects toggle, saved preference, no autoplay on page-load, music can be enabled from the ready screen, Web Audio timing rather than frame-timed sounds, stops on pause/death/background and can resume without resetting the composition.
+- **Source:** `src/soundtrack.js` exports a deterministic original composition and lightweight Web Audio scheduler. `src/main.js` starts/stops based on game state; `index.html` and `styles.css` add touch-friendly controls and track info.
+- **Still planned:** The three-choice mutation system and five WUBRG abilities, new maps/enemies, and potential further music for future levels. This is a soundtrack addition, not a claim Alpha 0.2 is complete.
+- **Verification:** Pending CI and live Cloudflare browser check before marking deployment successful.

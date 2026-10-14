@@ -48,3 +48,8 @@ The first environment now uses the original Gothic Alien Hive artwork, optimized
 ### Hatchery pickup readability (v0.1.5)
 
 The Level 1 art is intentionally dimmed more than before (36% global veil plus edge fades). Brood collectibles now use a high-contrast illuminated, outlined amber orb drawn by `src/pickups.js`. This addresses the user-reported issue of pickups blending into the ornamental hatchery egg clusters.
+
+
+## Original Hatchery Theme (v0.1.6)
+
+Music is **opt-in** via the separate `MUSIC` button, and the setting is remembered on that device. All musical notes and synthesized percussion are authored in `src/soundtrack.js` and produced locally with Web Audio, so the game needs no external sound files or licensing. The melody continues across an eight-bar sequence, pauses cleanly with gameplay, and stays off when a tab is backgrounded. Sound effects remain independently selectable. Full five-color mutation gameplay belongs to Alpha 0.2 and is **not yet implemented**.

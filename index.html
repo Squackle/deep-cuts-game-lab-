@@ -16,7 +16,7 @@
    <span class="brand-mark" aria-hidden="true">◈</span>
    <span>DEEP CUTS <strong>GAME LAB</strong><small>INDEPENDENT TEST SERVER</small></span>
   </a>
-  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> PROTOTYPE 0.1.5 · PICKUP CLARITY</span>
+  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> PROTOTYPE 0.1.6 · HATCHERY THEME</span>
  </header>
  <main>
   <section class="intro" aria-labelledby="mainTitle">
@@ -28,7 +28,7 @@
   </section>
   <div class="game-layout">
    <section class="arcade-frame" id="game" aria-label="Playable arcade game">
-    <div class="cabinet-top"><span>◈ LEVEL 01 · THE HATCHERY</span><span id="soundStatus">SOUND OFF</span></div>
+    <div class="cabinet-top"><span>◈ LEVEL 01 · THE HATCHERY</span><span id="soundStatus">AUDIO OFF</span></div>
     <div class="hud" aria-label="Game scores">
      <div><span class="hud-label">SCORE</span><strong id="score" aria-live="off">000000</strong></div>
      <div><span class="hud-label">BEST</span><strong class="gold" id="best">000000</strong></div>
@@ -49,7 +49,8 @@
     <div class="game-actions">
      <button id="pauseButton" type="button" disabled>Ⅱ PAUSE</button>
      <button id="restartButton" type="button">↺ RESTART</button>
-     <button id="soundButton" type="button" aria-pressed="false">♪ SOUND OFF</button>
+     <button id="soundButton" type="button" aria-pressed="false" aria-label="Toggle game sound effects">♪ SOUND OFF</button>
+     <button id="musicButton" type="button" aria-pressed="false" aria-label="Toggle Hatchery chiptune music">♫ MUSIC OFF</button>
     </div>
     <div class="touch-pad" aria-label="Optional directional controls">
      <div class="pad-top"><button type="button" data-direction="up" aria-label="Turn up">▲</button></div>
@@ -66,6 +67,10 @@
     <span class="mission-kicker">LEVEL 01 / THE HATCHERY</span>
     <h2 id="missionTitle">GROW THE <em>HIVE.</em></h2>
     <p>Enter the Hatchery: a living cavern lined with spines and luminous WUBRG brood. Move across its ancient organic floor, grow your serpent, and survive.</p>
+    <section class="music-note" aria-label="Music track information">
+      <div><span aria-hidden="true">♫</span><strong>NOW AVAILABLE: THE HATCHERY THEME</strong></div>
+      <p>Original looping 8-bit music: eerie lead, synth bass, arpeggios and arcade drums. Use the <strong>Music</strong> button to play or mute it independently of sound effects. No streaming or downloads.</p>
+    </section>
     <section class="creature-codex" aria-labelledby="creatureCodexTitle">
       <div class="codex-heading"><strong id="creatureCodexTitle">CREATURE CODEX</strong><span>45 BODY TYPES + HEAD / TAIL</span></div>
       <canvas id="creaturePreview" width="460" height="185" role="img" aria-label="Five rows of nine distinct pixel-art body plates: white, blue, black, red and green, alongside the pointed head with one arm and a double-pronged tail."></canvas>
@@ -77,7 +82,7 @@
     <div class="mission-row"><span>01</span><div><strong>COLLECT BROOD</strong><p>Every glowing crystal earns 100 points and adds to your trail.</p></div></div>
     <div class="mission-row"><span>02</span><div><strong>DON'T DOUBLE BACK</strong><p>Swipe to turn or tap the direction pad. Reverse turns are blocked.</p></div></div>
     <div class="mission-row"><span>03</span><div><strong>OUTRUN YOURSELF</strong><p>Your body is your biggest enemy. Speed rises every five pickups.</p></div></div>
-    <div class="release-note"><span>DEVELOPMENT STATUS</span><strong>V0.1.5 / HATCHERY READABILITY</strong><p>This first build includes real movement, collectible growth, scoring, collisions, pause, restart and an on-device best score. Mutations, enemies, daily challenges and multiplayer are planned—not built yet.</p></div>
+    <div class="release-note"><span>DEVELOPMENT STATUS</span><strong>V0.1.6 / ORIGINAL SOUNDTRACK</strong><p>This first build includes real movement, collectible growth, scoring, collisions, pause, restart and an on-device best score. Mutations, enemies, daily challenges and multiplayer are planned—not built yet.</p></div>
     <div class="repo-links"><a href="https://github.com/Squackle/deep-cuts-game-lab-" target="_blank" rel="noopener noreferrer">GITHUB REPOSITORY ↗</a><a href="https://github.com/Squackle/deep-cuts-game-lab-/blob/main/DEVLOG.md" target="_blank" rel="noopener noreferrer">READ DEVELOPMENT LOG ↗</a><a href="https://github.com/Squackle/deep-cuts-game-lab-/blob/main/docs/ROADMAP.md" target="_blank" rel="noopener noreferrer">VIEW ROADMAP ↗</a></div>
    </aside>
   </div>

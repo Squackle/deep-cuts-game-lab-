@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: "22"
       - name: Run deterministic arcade-engine regression suite
-        run: node --test tests/engine.test.mjs
+        run: node --test tests/*.test.mjs
       - name: Check source module syntax
         run: |
           node --check src/engine.js
@@ -31,3 +31,4 @@ jobs:
           node --check src/creature-sprites.js
           node --check src/level-background.js
           node --check src/pickups.js
+          node --check src/soundtrack.js

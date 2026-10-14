@@ -2,8 +2,9 @@ import {newRun,start,pause,turn,step,progress} from "./engine.js";
 import {loadCreatureArt,variantForSegment,WUBRG} from "./creature-sprites.js";
 import {drawLevelBackground,loadLevelBackground,levelForStage} from "./level-background.js";
 import {drawBroodPickup} from "./pickups.js";
+import {HatcherySoundtrack} from "./soundtrack.js";
 
-/* HIVE RUN v0.1.5 — readable brood pickup and restrained Hatchery backdrop. */
+/* HIVE RUN v0.1.6 — original Web Audio chiptune, Hatchery Theme. */
 const $=id=>document.getElementById(id);
 const canvas=$("gameCanvas");
 const context=canvas.getContext("2d",{alpha:false});
@@ -11,11 +12,13 @@ const CELLS=20,COLS=18,ROWS=22;
 const WUBRG_COLORS=["#e7d8b4","#65a9d5","#7e6a88","#dd684a","#75ad7b"];
 let creatureArt=null;
 let arenaBackground=null;
-const STORE="deepcuts-hive-run-best-v1",SOUND_STORE="deepcuts-hive-run-audio-v1";
-const state={run:newRun({cols:COLS,rows:ROWS}),best:0,audio:false,ctx:null,
+const STORE="deepcuts-hive-run-best-v1",SOUND_STORE="deepcuts-hive-run-audio-v1",MUSIC_STORE="deepcuts-hive-run-music-v1";
+const soundtrack=new HatcherySoundtrack();
+const state={run:newRun({cols:COLS,rows:ROWS}),best:0,audio:false,musicOn:false,ctx:null,
  lastFrame:0,accumulator:0,lastAnnouncement:"",pointer:null};
 try{state.best=Math.max(0,Number(localStorage.getItem(STORE))||0);
  state.audio=localStorage.getItem(SOUND_STORE)==="on";
+ state.musicOn=localStorage.getItem(MUSIC_STORE)==="on";
 }catch{}
 const padScore=n=>String(Math.floor(Math.max(0,n))).padStart(6,"0");
 function syncUI(){
@@ -31,7 +34,9 @@ function syncUI(){
  $("pauseButton").textContent="Ⅱ PAUSE";
  $("soundButton").textContent=state.audio?"♪ SOUND ON":"♪ SOUND OFF";
  $("soundButton").setAttribute("aria-pressed",String(state.audio));
- $("soundStatus").textContent=state.audio?"SOUND ON":"SOUND OFF";
+ $("musicButton").textContent=state.musicOn?"♫ MUSIC ON":"♫ MUSIC OFF";
+ $("musicButton").setAttribute("aria-pressed",String(state.musicOn));
+ $("soundStatus").textContent=state.musicOn?"♫ HATCHERY THEME":state.audio?"FX ON":"AUDIO OFF";
 }
 function announce(message){
  if(message!==state.lastAnnouncement){
@@ -44,13 +49,26 @@ function saveBest(){
  state.best=state.run.score;
  try{localStorage.setItem(STORE,String(state.best))}catch{}
 }
+function getAudioContext(){
+ try{
+  const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+  if(!AudioContextClass)return null;
+  const audio=state.ctx??(state.ctx=new AudioContextClass());
+  if(audio.state==="suspended")audio.resume().catch(()=>{});
+  return audio;
+ }catch{return null}
+}
+function syncSoundtrack(){
+ const allowed=state.musicOn&&(state.run.status==="ready"||state.run.status==="running")&&!document.hidden;
+ if(!allowed){soundtrack.stop();return}
+ const audio=getAudioContext();
+ if(audio)soundtrack.start(audio);
+}
 function playTone(hz,duration=0.09,volume=.025){
  if(!state.audio)return;
  try{
-  const AudioContextClass=window.AudioContext||window.webkitAudioContext;
-  if(!AudioContextClass)return;
-  const audio=state.ctx??(state.ctx=new AudioContextClass());
-  if(audio.state==="suspended")audio.resume().catch(()=>{});
+  const audio=getAudioContext();
+  if(!audio)return;
   const oscillator=audio.createOscillator(),gain=audio.createGain();
   oscillator.type="square";oscillator.frequency.value=hz;
   gain.gain.setValueAtTime(volume,audio.currentTime);
@@ -71,7 +89,7 @@ function begin(){
  start(state.run);
  state.accumulator=0;state.lastFrame=0;state.pointer=null;
  hideOverlay();
- syncUI();
+ syncSoundtrack();syncUI();
  announce("Swarm moving. Swipe to steer or use arrow keys.");
  canvas.focus({preventScroll:true});
 }
@@ -79,7 +97,7 @@ function reset(){
  state.run=newRun({cols:COLS,rows:ROWS});
  state.accumulator=0;state.lastFrame=0;state.pointer=null;
  showOverlay("READY TO SWARM?","Collect the glowing brood. Each pickup adds a new segment. Avoid walls and your own tail.","START RUN ▶");
- syncUI();draw();
+ syncSoundtrack();syncUI();draw();
  announce("New run ready. Select Start Run to play.");
 }
 function togglePause(){
@@ -91,7 +109,7 @@ function togglePause(){
   start(state.run);hideOverlay();state.accumulator=0;state.lastFrame=0;
   announce("Game resumed.");
  }
- syncUI();
+ syncSoundtrack();syncUI();
 }
 function handleDirection(direction){
  if(state.run.status!=="running")return false;
@@ -249,6 +267,7 @@ function loop(time){
     syncUI();
    }
    if(state.run.status==="over"||state.run.status==="won"){
+    soundtrack.stop();
     saveBest();syncUI();
     playTone(state.run.status==="won"?720:135,.2,.03);
     const final=state.run.status==="won";
@@ -260,6 +279,7 @@ function loop(time){
   }
   if(catchUps===3)state.accumulator=Math.min(state.accumulator,state.run.tickMs);
  }
+ soundtrack.tick(); // tiny lookahead schedules original 8-bit notes on AudioContext clock.
  draw();
  requestAnimationFrame(loop);
 }
@@ -270,6 +290,12 @@ $("soundButton").addEventListener("click",()=>{
  state.audio=!state.audio;
  try{localStorage.setItem(SOUND_STORE,state.audio?"on":"off")}catch{}
  syncUI();if(state.audio)playTone(520,.12);
+});
+$("musicButton").addEventListener("click",()=>{
+ state.musicOn=!state.musicOn;
+ try{localStorage.setItem(MUSIC_STORE,state.musicOn?"on":"off")}catch{}
+ syncSoundtrack();syncUI();
+ announce(state.musicOn?"Hatchery Theme enabled. Original retro soundtrack playing.":"Background music muted.");
 });
 document.querySelectorAll("[data-direction]").forEach(b=>{
  const steer=()=>{
@@ -327,15 +353,20 @@ canvas.addEventListener("pointercancel",event=>{
  if(state.pointer?.id===event.pointerId)state.pointer=null;
 });
 document.addEventListener("visibilitychange",()=>{
- if(document.hidden&&state.run.status==="running")togglePause();
+ if(document.hidden){
+  if(state.run.status==="running")togglePause();
+  soundtrack.stop(); // Also silence title-screen music in hidden tabs.
+ }
  state.lastFrame=0;state.accumulator=0;
 });
 window.addEventListener("pagehide",()=>{
  if(state.run.status==="running")togglePause();
+ soundtrack.stop();
  state.lastFrame=0;state.accumulator=0;
 });
 window.addEventListener("blur",()=>{
  if(state.run.status==="running")togglePause();
+ soundtrack.stop();
  state.lastFrame=0;state.accumulator=0;
 });
 syncUI();draw();
