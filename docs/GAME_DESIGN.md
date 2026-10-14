@@ -88,8 +88,8 @@ The current enemy-hunting Predator Hunt remains unchanged as a separate selectab
 
 ## Alpha 0.4 signature miniboss abilities (planned)
 
-**Burrow Stalker (evolution 2):** Every 10 seconds while the encounter is active, may burrow to an unoccupied, telegraphed cell exactly five grid steps away. Its active-ability recharge is shown via a small **🕳** symbol with a **gold circular progress ring** at the top-right of the game, reaching a full ring when ready.
+**Burrow Stalker (evolution 2):** Every 10 seconds while the encounter is active, may burrow to an unoccupied, telegraphed cell exactly five grid steps away. Its active-ability recharge is shown in the game’s upper-right by a **custom jagged-earth tunnel icon** (not emoji), encircled by a **muted weathered-ochre** progress ring that closes when ready.
 
-**Tunnel Weaver (evolution 6):** Every 10 seconds, may place a **single-tile web**. Stepping on the web **stuns player movement for two seconds**; untriggered webs fade away after **15 seconds**. A **🕸** symbol in the same top-right gold circular meter shows cooldown/ready status. Provisional maximum two active webs and fair protection against unavoidable deaths while immobilized; confirm during playtesting.
+**Tunnel Weaver (evolution 6):** Every 10 seconds, may place a **single-tile web**. Stepping on the web **stuns player movement for two seconds**; untriggered webs fade away after **15 seconds**. A **custom torn-cobweb icon** (not emoji) appears inside the same top-right **dingy brass/ochre** circular meter to indicate cooldown/ready status. Provisional maximum two active webs and fair protection against unavoidable deaths while immobilized; confirm during playtesting.
 
 The shared charge-ring UI will work for any later boss or miniboss with a defined active power, including Game Only mode, and remain hidden when no ability-bearing encounter is active. **All timers freeze** during pause, evolution draft, app backgrounding or encounter phase transitions. Leaderboard replay must simulate identical ability choices, placements and timers. This is a plan, not live code. Detailed mechanics: [ENCOUNTER_DESIGN.md](ENCOUNTER_DESIGN.md).

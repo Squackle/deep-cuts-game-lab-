@@ -294,3 +294,11 @@ Create the separate `deep-cuts-game-lab` repository; commit this documentation; 
 - **HUD specification:** small boss/miniboss ability icon at the **top-right of the game**, with a clockwise **yellow/gold circular cooldown meter** surrounding it. A **completely yellow ring means charged**; it resets after use. Symbols: 🕳 (Burrow) and 🕸 (Web). Show only during an active encounter with a defined special ability, including Game Only.
 - Timers use active gameplay time and freeze during pause/draft/intro/phase resets. Server-side replay and new regression coverage required when implemented.
 - Added plans to encounter spec, roadmap and GDD. **No production gameplay code was changed or deployed in this design-only update.** The live build remains Alpha 0.3.3.
+
+
+## 2026-10-13 — Alpha 0.4 signature cooldown icon art direction revised (design only)
+
+- Owner requested symbols to better match the **Hatchery/Burrows gothic cave identity**, and the yellow ring to look **dingy rather than bright**.
+- Replaced emoji glyphs in the planned UI specification with **custom icon art**: Stalker = fractured stone tunnel opening, Weaver = ragged irregular web fixed to cavern rock; textured, low-gloss look in worn limestone over peat-black backgrounds.
+- Charge ring: **weathered ochre** `#98824B`, **fully charged antique brass** `#B19A5A`, dark olive recessed track `#414335`. Clockwise fill to a continuous dull brass ring at 100%; no flashy neon effects. Ready state additionally uses a small solid notch for non-color accessibility.
+- This changes the **future Alpha 0.4 visual design only**. No existing game code, music, or production Deep Cuts site modified.
