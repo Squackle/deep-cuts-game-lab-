@@ -251,3 +251,14 @@
 @media(prefers-reduced-motion:reduce){
  .in-heist #battlefield{transition:none}
 }
+
+/* The touch layout keeps actions immediately beneath the reservoir, before the land rows. */
+@media(max-width:800px){
+ .in-heist #heist{grid-template-rows:minmax(165px,1.25fr) minmax(83px,.57fr) 39px minmax(115px,1fr) minmax(90px,.83fr)}
+ .in-heist .side>.controlbar{grid-row:3}
+ .in-heist #heist .table-card:not(.hand-card){grid-row:4}
+ .in-heist #heist .hand-card{grid-row:5}
+}
+@media(max-height:670px) and (max-width:800px){
+ .in-heist #heist{grid-template-rows:minmax(135px,1.22fr) minmax(63px,.57fr) 34px minmax(90px,1fr) minmax(68px,.75fr)}
+}
