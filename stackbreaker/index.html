@@ -967,6 +967,12 @@ function commanderScenario(input,index=0){
  const pool=INSTANT_OPTIONS.filter(n=>!seen.has(n)).map(name=>({name,score:candidateScore(p,name,index*101+37)}))
   .sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name));
  let choiceIndex=0,supportAdded=false;
+ // A full reaction hand still contains actual Commander support cards.
+ // Add them on some turns even when the response chain already fills the hand.
+ if(index%4===0){
+  const support=chooseCommanderPermanent(p,index+19,'support',seen);
+  p.hand.push({id:'real-hand-support',card:support});supportAdded=true;
+ }
  while(p.hand.filter(x=>!x.sourceId).length<minimum){
   const remaining=minimum-p.hand.filter(x=>!x.sourceId).length;
   // Some hands also contain a Commander staple or a sorcery-speed ramp spell.
