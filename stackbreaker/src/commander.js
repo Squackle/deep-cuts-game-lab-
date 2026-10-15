@@ -151,7 +151,11 @@ function chooseCommanderPermanent(p,index,role,seen){
  // Intentionally distribute ramp/sorceries alongside artifacts instead of
  // letting a seeded modulo picker accidentally select only artifacts.
  const sorceries=role==='support'?candidates.filter(n=>CARDS[n].type.startsWith('Sorcery')):[];
- const options=sorceries.length&&index%3!==0?sorceries:candidates;
+ const artifacts=role==='support'?candidates.filter(n=>CARDS[n].type.startsWith('Artifact')):[];
+ // Alternate staple artifacts and real sorcery-speed ramp across the atlas.
+ const wantSorcery=Math.floor(index/4)%2===0;
+ const options=role!=='support'?candidates:
+  wantSorcery&&sorceries.length?sorceries:artifacts.length?artifacts:candidates;
  const chosen=options[commanderRand(index*31+role.length)%options.length];seen.add(chosen);return chosen;
 }
 function chooseCommanderLand(p,index){
