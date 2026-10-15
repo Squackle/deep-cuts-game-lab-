@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101913">
+  <meta name="description" content="Stackbreaker: The Last Response, a tactical stack and priority survival trainer. Solo experimental playtest.">
+  <title>Stackbreaker — The Last Response | Game Incubator</title>
+  <style>:root{color-scheme:dark;--bg:#101913;--bg2:#16241d;--panel:#1b2a23;--line:#435447;--cream:#efe9d5;--muted:#abae9e;--gold:#c9a66d;--mint:#a5ccad;--warn:#e7a780;--wood:#344334}
+*{box-sizing:border-box}html{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--cream)}body{margin:0;background:radial-gradient(ellipse at 35% 0%,#283b2b,transparent 40%),var(--bg);min-height:100vh}button,select{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.43}button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--mint);outline-offset:3px}.sr-only,.skip:not(:focus){position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.skip:focus{position:fixed;z-index:10;top:1rem;left:1rem;background:var(--cream);color:var(--bg);padding:.8rem}.mast{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:17px max(18px,calc((100vw - 1170px)/2));border-bottom:1px solid #3d5140;background:#131f18}.brand{font-size:.8rem;letter-spacing:.14em;display:flex;align-items:center;gap:12px;font-weight:600}.brand b{display:block;color:var(--gold);font-size:.65rem;letter-spacing:.2em;margin-top:.1rem}.sigil{font-size:2rem;color:var(--gold)}.build{font-size:.68rem;letter-spacing:.08em;border:1px solid #5a674b;border-radius:999px;padding:9px 12px;white-space:nowrap}.pulse{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--mint);margin-left:6px}main{width:min(1170px,calc(100% - 36px));margin:0 auto;padding:34px 0 44px}.eyebrow,.sector-header,.small-label,.tagline,.board-rule h3,.objective b,.toolbar label{font-size:.7rem;letter-spacing:.16em;font-weight:750}.eyebrow{display:flex;justify-content:space-between;gap:12px;color:var(--gold);margin-bottom:12px}h1,h2,h3,p{margin-top:0}h1{font-family:Georgia,serif;font-size:clamp(2.5rem,9vw,5.5rem);line-height:.95;letter-spacing:-.055em;margin:0;color:var(--cream)}h1 span{color:var(--gold)}.tagline{color:var(--gold);margin:12px 0 9px;letter-spacing:.32em}.premise{color:#cad1bf;max-width:46rem;margin-bottom:26px;font-size:1.05rem}.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px}.toolbar label{color:var(--gold)}.toolbar select{min-width:min(100%,280px);flex:0 1 360px;border:1px solid var(--line);border-radius:6px;background:#213329;color:var(--cream);padding:12px}.game-note{font-size:.68rem;color:var(--muted);letter-spacing:.06em;margin-left:auto}.board{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.88fr);gap:16px;align-items:start}.arena,.stack-panel,.field-log{border:1px solid var(--line);background:linear-gradient(135deg,#1b2b23,#142118);box-shadow:0 16px 60px #0003}.arena,.stack-panel{min-height:530px;padding:20px}.sector-header{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #52604a;padding-bottom:15px;color:var(--gold);font-size:.62rem}.sector-header span:last-child{color:var(--muted);text-align:right}.scenario-head{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:30px}.scenario-head h2{font-family:Georgia,serif;font-weight:500;font-size:clamp(1.7rem,4vw,2.55rem);line-height:1.1;margin:8px 0}.small-label{color:var(--mint)}.threat-chip{border:1px solid #986b50;color:var(--warn);padding:8px 10px;font-size:.63rem;letter-spacing:.1em}.scenario-copy{color:#c0c9b8;line-height:1.55;max-width:43rem}.life-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:28px 0}.life-card{background:#0e1a14;border:1px solid #3f5646;padding:14px 11px;display:flex;flex-direction:column;min-height:100px}.life-card span{font-size:.62rem;letter-spacing:.08em;color:var(--muted)}.life-card strong{font:2.6rem Georgia,serif;color:var(--mint);margin-top:5px}.life-card.opponent strong{color:var(--warn)}.board-rule{display:flex;align-items:baseline;justify-content:space-between;gap:8px;border-bottom:1px solid #445347;margin-bottom:12px}.board-rule h3{color:var(--gold);margin-bottom:10px}.board-rule span{font-size:.69rem;color:var(--muted)}.unit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:10px;min-height:105px;margin-bottom:24px}.unit{border:1px solid #586950;padding:15px;background:linear-gradient(145deg,#273d2e,#1a2a20);min-height:95px;display:flex;flex-direction:column;justify-content:space-between}.unit-name{font:1.13rem Georgia,serif}.unit-status{font-size:.62rem;color:var(--mint);letter-spacing:.09em}.unit--gone{opacity:.45}.unit--gone .unit-name{text-decoration:line-through}.unit--gone .unit-status{color:var(--warn)}.empty-note{color:var(--muted);font-size:.83rem}.objective{display:flex;gap:14px;background:#22382c;border-left:3px solid var(--gold);padding:17px}.objective-icon{font-size:1.8rem;color:var(--gold)}.objective b{color:var(--gold)}.objective p{margin:6px 0 0;font-size:.84rem;line-height:1.5}.stack-explainer{font-size:.78rem;color:var(--muted);line-height:1.5;margin:17px 0}.stack-list{list-style:none;display:flex;flex-direction:column;gap:8px;padding:0;margin:0 0 28px;min-height:125px}.stack-item{background:#111e18;border:1px solid #3b5545;padding:13px 15px}.stack-item--top{border:1px solid var(--gold);box-shadow:inset 3px 0 var(--gold)}.stack-rank{display:block;font-size:.6rem;letter-spacing:.1em;color:var(--gold);margin-bottom:6px}.stack-item strong{display:block;font-size:.95rem}.stack-item small{font-size:.59rem;color:var(--muted);letter-spacing:.1em}.stack-effect{font-size:.76rem;color:#c0cbbb;margin:4px 0}.stack-empty{border:1px dashed var(--line);color:var(--muted);padding:20px;font-size:.82rem}.action-list{display:grid;gap:8px}.response{text-align:left;display:flex;flex-direction:column;gap:6px;border:1px solid #627051;background:#293c2d;color:var(--cream);padding:15px;width:100%;min-height:75px}.response:not(:disabled):hover{border-color:var(--gold);background:#3a4d37}.response-title{font-size:.88rem;font-weight:750}.response small{color:#ccdac6}.response em{font-style:normal;color:var(--gold);font-size:.72rem}.pass-button{border:1px solid var(--gold);background:var(--gold);color:#172016;font-weight:800;letter-spacing:.09em;display:flex;align-items:center;justify-content:space-between;padding:17px 19px;width:100%;margin-top:16px;min-height:50px}.pass-button:not(:disabled):hover{background:#ebca90}.controls{display:flex;gap:8px;margin-top:8px}.controls button,.result button{border:1px solid #60765e;background:#24362a;color:var(--cream);padding:12px 16px;min-height:44px;flex:1}.controls button:not(:disabled):hover,.result button:hover{background:#344c3a}.keyboard-note{font-size:.69rem;line-height:1.5;color:var(--muted);margin:12px 0 0}.result{margin-top:18px;border:1px solid var(--gold);background:linear-gradient(120deg,#273b2d,#17261c);padding:26px}.result-status{font-size:.68rem;letter-spacing:.2em;color:var(--gold);margin-bottom:10px}.result h2{font:2rem Georgia,serif}.result p{max-width:65rem;line-height:1.6}.result button{margin:5px 10px 0 0}.field-log{margin-top:16px;padding:20px}.field-log ol{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:7px}.field-log li{font-size:.79rem;padding:8px 0;border-bottom:1px solid #304437;color:#c5d0be}.field-log li::before{content:'›';margin-right:10px;color:var(--gold)}.disclaimer{font-size:.73rem;line-height:1.6;color:var(--muted);margin:18px 0 0}footer{padding:20px max(18px,calc((100vw - 1170px)/2));background:#111c15;color:var(--muted);font-size:.65rem;letter-spacing:.08em;display:flex;gap:18px;justify-content:space-between;border-top:1px solid #364939}.load-error{background:#52372c;border:1px solid var(--warn);padding:16px}.result[hidden]{display:none!important}@media(max-width:790px){.board{grid-template-columns:1fr}.arena,.stack-panel{min-height:0}.game-note{margin-left:0}.eyebrow{font-size:.6rem}}@media(max-width:390px){.mast{padding:12px 14px}.build{font-size:.58rem;padding:7px 9px}.brand{font-size:.65rem;letter-spacing:.08em}.brand b{font-size:.54rem}.sigil{font-size:1.6rem}main{width:calc(100% - 24px);padding-top:26px}.arena,.stack-panel{padding:14px}.life-card{padding:10px 7px;min-height:85px}.life-card span{font-size:.54rem}.life-card strong{font-size:2rem}.scenario-head{margin-top:20px}.eyebrow{gap:5px}.threat-chip{padding:6px}.game-note{font-size:.59rem}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media(max-width:390px){h1{font-size:2.2rem;letter-spacing:-.06em}}
+</style>
+  <script type="module">const ENGINE_VERSION = 'sb-core-0.1.0';
+const effectTypes = new Set(['destroyAllUnits','grantIndestructible','dealDamage','gainLife','counterStackObject']);
+const objectiveTypes = new Set(['friendlyAliveAtLeast','survive']);
+const isId = x => typeof x === 'string' && /^[a-zA-Z][\w-]{0,63}$/.test(x);
+const nonNegative = x => Number.isInteger(x) && x >= 0;
+
+function validateScenario(p) {
+  const errors = [];
+  const assert = (ok, message) => { if (!ok) errors.push(message); };
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return {valid:false, errors:['Scenario must be an object']};
+  assert(isId(p.id), 'id must be a unique-looking identifier');
+  assert(p.engineVersion === ENGINE_VERSION, 'engineVersion does not match supported rules');
+  assert(typeof p.title === 'string' && p.title.trim().length > 0 && p.title.length <= 100, 'title missing or too long');
+  assert(typeof p.intro === 'string' && p.intro.trim().length > 0 && p.intro.length <= 500, 'intro missing or too long');
+  assert(p.priority?.currentActor === 'player' && ['player','opponent'].includes(p.priority?.activeActor), 'unsupported opening priority');
+  assert(nonNegative(p.life?.player) && nonNegative(p.life?.opponent), 'life totals must be nonnegative integers');
+  assert(nonNegative(p.resources?.player), 'player resource budget must be nonnegative');
+  assert(Array.isArray(p.units), 'units must be an array');
+  assert(Array.isArray(p.stack) && p.stack.length > 0, 'stack must contain an opening threat');
+  assert(Array.isArray(p.availableActions), 'availableActions must be an array');
+  assert(p.opponentPolicy?.type === 'alwaysPass', 'only scripted alwaysPass opponent is supported');
+  assert(objectiveTypes.has(p.objective?.type), 'unsupported objective');
+  if (p.objective?.type === 'friendlyAliveAtLeast') assert(nonNegative(p.objective.value) && p.objective.value > 0, 'objective value invalid');
+  assert(typeof p.explanation === 'string' && p.explanation.length > 0, 'explanation is required');
+  const seen = new Set();
+  for (const u of Array.isArray(p.units) ? p.units : []) {
+    assert(isId(u?.id) && !seen.has(u.id), 'unit id is missing or duplicated');
+    if (isId(u?.id)) seen.add(u.id);
+    assert(['player','opponent'].includes(u?.owner), 'unit owner invalid');
+    assert(typeof u?.alive === 'boolean' && typeof u?.indestructible === 'boolean', 'unit flags must be boolean');
+    assert(typeof u?.label === 'string' && u.label.length > 0, 'unit label required');
+  }
+  const validateEffect = (e, field) => {
+    assert(effectTypes.has(e?.type), `${field} has unsupported effect`);
+    if (e?.type === 'dealDamage' || e?.type === 'gainLife') {
+      assert(nonNegative(e.amount) && e.amount > 0 && ['player','opponent'].includes(e.target), `${field} has invalid amount or life target`);
+    }
+    if (e?.type === 'grantIndestructible') assert(e.scope === 'otherFriendlyUnits', `${field} has unsupported protection scope`);
+    if (e?.type === 'counterStackObject') assert(isId(e.targetStackId), `${field} must target a stack id`);
+  };
+  const stackIds = new Set();
+  for (const s of Array.isArray(p.stack) ? p.stack : []) {
+    assert(isId(s?.id) && !stackIds.has(s.id) && !seen.has(s.id), 'stack object id missing or duplicated');
+    if (isId(s?.id)) stackIds.add(s.id);
+    assert(['player','opponent'].includes(s?.controller), 'stack controller invalid');
+    assert(typeof s?.label === 'string' && s.label.length > 0, 'stack object label required');
+    validateEffect(s?.effect,'stack item');
+  }
+  const actionIds = new Set();
+  for (const a of Array.isArray(p.availableActions) ? p.availableActions : []) {
+    assert(isId(a?.id) && !actionIds.has(a.id) && !stackIds.has(a.id) && !seen.has(a.id), 'action id missing or duplicated');
+    if (isId(a?.id)) actionIds.add(a.id);
+    assert(typeof a?.label === 'string' && a.label.length > 0, 'action label required');
+    assert(nonNegative(a?.cost?.resource), 'action resource cost invalid');
+    if (a?.cost?.sacrificeUnitId !== undefined) assert(seen.has(a.cost.sacrificeUnitId) && p.units.some(u=>u.id === a.cost.sacrificeUnitId && u.owner === 'player' && u.alive), 'sacrifice cost must identify a friendly living unit');
+    validateEffect(a?.effect,'action');
+    if (a?.effect?.type === 'counterStackObject') assert(stackIds.has(a.effect.targetStackId), 'counter target must appear on the opening stack');
+  }
+  return {valid:errors.length === 0,errors};
+}
+
+function assertValidScenario(p) {
+  const result=validateScenario(p);
+  if (!result.valid) throw new Error(`Invalid scenario ${p?.id || '(unnamed)'}: ${result.errors.join('; ')}`);
+  return p;
+}
+
+
+const copy = value => structuredClone(value);
+const log = (s, message) => s.log.push(message);
+const canPay = (s, action) => s.resources.player >= action.cost.resource && (!action.cost.sacrificeUnitId || s.units.some(u=>u.id===action.cost.sacrificeUnitId && u.owner==='player' && u.alive));
+const countFriendly = s => s.units.filter(u=>u.owner==='player' && u.alive).length;
+function objectiveMet(s) {
+  if (s.objective.type === 'friendlyAliveAtLeast') return countFriendly(s) >= s.objective.value;
+  if (s.objective.type === 'survive') return s.life.player > 0;
+  return false;
+}
+function createGame(puzzle) {
+  const p=assertValidScenario(puzzle);
+  return {id:p.id,engineVersion:p.engineVersion,title:p.title,intro:p.intro,life:copy(p.life),resources:copy(p.resources),units:copy(p.units),stack:copy(p.stack),availableActions:copy(p.availableActions),objective:copy(p.objective),explanation:p.explanation,opponentPolicy:copy(p.opponentPolicy),activeActor:p.priority.activeActor,currentActor:p.priority.currentActor,passes:0,usedActions:[],status:'playing',log:['Threat on the stack. You have priority.'],steps:0};
+}
+function finish(s) {
+  s.status=objectiveMet(s)?'won':'lost';
+  log(s,s.status==='won'?'Objective accomplished.':'Objective failed.');
+}
+function resolveEffect(s,item) {
+  const e=item.effect;
+  switch(e.type) {
+    case 'destroyAllUnits': {
+      let destroyed=0,shielded=0;
+      for(const u of s.units) if(u.alive) {if(u.indestructible){shielded++;continue;}u.alive=false;destroyed++;}
+      log(s,`${item.label}: ${destroyed} units destroyed; ${shielded} protected.`);break;
+    }
+    case 'grantIndestructible': {
+      let protectedCount=0;
+      for(const u of s.units) if(u.alive && u.owner===item.controller && u.id!==item.costSacrificeUnitId){u.indestructible=true;protectedCount++;}
+      log(s,`${item.label}: ${protectedCount} surviving allies gain indestructible.`);break;
+    }
+    case 'dealDamage': s.life[e.target]=Math.max(0,s.life[e.target]-e.amount);log(s,`${item.label}: ${e.target} takes ${e.amount} damage.`);break;
+    case 'gainLife': s.life[e.target]+=e.amount;log(s,`${item.label}: ${e.target} gains ${e.amount} life.`);break;
+    case 'counterStackObject': {
+      const idx=s.stack.findIndex(x=>x.id===e.targetStackId);
+      if(idx>=0){const target=s.stack.splice(idx,1)[0];log(s,`${item.label}: ${target.label} countered.`);}
+      else log(s,`${item.label}: target no longer on stack; effect fizzles.`);
+      break;
+    }
+    default: throw new Error('Unsupported effect');
+  }
+}
+function legalActions(s) {
+  if(s.status!=='playing' || s.currentActor!=='player') return [];
+  return s.availableActions.filter(a=>!s.usedActions.includes(a.id) && canPay(s,a) && (a.effect.type!=='counterStackObject' || s.stack.some(x=>x.id===a.effect.targetStackId))).map(a=>a.id);
+}
+function activateAction(state,id) {
+  if(!legalActions(state).includes(id)) throw new Error('Action is illegal, already used, unaffordable or has no target');
+  const s=copy(state),a=s.availableActions.find(x=>x.id===id);
+  s.resources.player-=a.cost.resource;
+  if(a.cost.sacrificeUnitId){s.units.find(u=>u.id===a.cost.sacrificeUnitId).alive=false;log(s,`${a.label}: ${a.cost.sacrificeUnitId} sacrificed as a cost, before resolution.`);}
+  s.usedActions.push(id);
+  s.stack.push({id:a.id,label:a.label,controller:'player',effect:copy(a.effect),costSacrificeUnitId:a.cost.sacrificeUnitId || null});
+  s.passes=0;s.steps++;
+  log(s,`${a.label} added to TOP of stack. Player retains priority.`);
+  return s;
+}
+function passPriority(state) {
+  if(state.status!=='playing') throw new Error('Game has ended');
+  if(state.currentActor!=='player' && state.currentActor!=='opponent') throw new Error('Unknown priority actor');
+  const s=copy(state),actor=s.currentActor;
+  if(actor==='opponent' && s.opponentPolicy.type!=='alwaysPass') throw new Error('Unsupported opponent policy');
+  s.passes++;s.steps++;
+  log(s,`${actor==='player'?'You':'Opponent'} pass priority.`);
+  if(s.passes<2){s.currentActor=actor==='player'?'opponent':'player';return s;}
+  s.passes=0;
+  if(!s.stack.length) {finish(s);return s;}
+  const top=s.stack.pop();
+  log(s,`Resolving TOP: ${top.label}.`);
+  resolveEffect(s,top);
+  if(s.life.player<=0 || s.life.opponent<=0){finish(s);return s;}
+  s.currentActor=s.activeActor; // after resolving, active player first receives priority
+  return s;
+}
+function advanceOpponent(state) {
+  if(state.status!=='playing' || state.currentActor!=='opponent') return copy(state);
+  return passPriority(state);
+}
+function playToCompletion(state,maxPasses=100) {
+  let s=copy(state);
+  for(let n=0;n<maxPasses && s.status==='playing';n++) s=passPriority(s);
+  if(s.status==='playing') throw new Error('Step budget exceeded');
+  return s;
+}
+
+
+
+const $=id=>document.getElementById(id);
+const puzzlesPromise=Promise.resolve([{"id": "sb-apprentice-001", "engineVersion": "sb-core-0.1.0", "title": "The Last Shelter", "intro": "A sweeping destruction effect is on the stack. Sacrifice one guardian to save at least two allies.", "priority": {"activeActor": "opponent", "currentActor": "player"}, "life": {"player": 7, "opponent": 11}, "resources": {"player": 0}, "units": [{"id": "warden", "label": "Warden", "owner": "player", "alive": true, "indestructible": false}, {"id": "scout", "label": "Scout", "owner": "player", "alive": true, "indestructible": false}, {"id": "mage", "label": "Mage", "owner": "player", "alive": true, "indestructible": false}], "stack": [{"id": "storm", "controller": "opponent", "label": "Cleansing Storm", "effect": {"type": "destroyAllUnits"}}], "availableActions": [{"id": "lastShelter", "label": "Warden's Final Ward", "cost": {"resource": 0, "sacrificeUnitId": "warden"}, "effect": {"type": "grantIndestructible", "scope": "otherFriendlyUnits"}}], "opponentPolicy": {"type": "alwaysPass"}, "objective": {"type": "friendlyAliveAtLeast", "value": 2}, "explanation": "Sacrifice the Warden as a cost to put its ward on the stack. The ward resolves before Cleansing Storm, protecting the two remaining allies. Sacrificing is not destruction."}, {"id": "sb-apprentice-002", "engineVersion": "sb-core-0.1.0", "title": "One Breath Left", "intro": "You have 2 life. A 4-damage blast is already on the stack. You can counter it or gain enough life to withstand it.", "priority": {"activeActor": "opponent", "currentActor": "player"}, "life": {"player": 2, "opponent": 9}, "resources": {"player": 1}, "units": [], "stack": [{"id": "blast", "controller": "opponent", "label": "Last Ember (4 damage)", "effect": {"type": "dealDamage", "amount": 4, "target": "player"}}], "availableActions": [{"id": "negate", "label": "Break the Ember", "cost": {"resource": 1}, "effect": {"type": "counterStackObject", "targetStackId": "blast"}}, {"id": "mend", "label": "Desperate Restoration (+3 life)", "cost": {"resource": 1}, "effect": {"type": "gainLife", "amount": 3, "target": "player"}}], "opponentPolicy": {"type": "alwaysPass"}, "objective": {"type": "survive"}, "explanation": "The last-in-first-out stack offers two solutions: counter the Ember before it resolves, or resolve a 3-life gain first so that its 4 damage leaves you at 1 life. Passing without a response loses."}]);
+let puzzles=[],index=0,state=null,history=[];
+const el=document.createElement.bind(document);
+function text(tag,content,className){const node=el(tag);node.textContent=content;if(className)node.className=className;return node;}
+function announce(msg){$('announcement').textContent=msg;}
+function objectiveLabel(s){return s.objective.type==='friendlyAliveAtLeast'?`Keep at least ${s.objective.value} friendly units alive after the stack empties.`:'Survive until the stack is empty. Your life must stay above zero.';}
+function effectLabel(e){switch(e.type){case 'destroyAllUnits':return 'Destroy all units';case 'grantIndestructible':return 'Remaining friendly units gain indestructible';case 'dealDamage':return `Deal ${e.amount} damage to ${e.target}`;case 'gainLife':return `Gain ${e.amount} life for ${e.target}`;case 'counterStackObject':return `Counter stack object: ${e.targetStackId}`;default:return 'Unknown effect';}}
+function render(){if(!state)return;
+ $('scenarioTitle').textContent=state.title;$('scenarioIntro').textContent=state.intro;
+ $('playerLife').textContent=state.life.player;$('opponentLife').textContent=state.life.opponent;$('playerBudget').textContent=state.resources.player;
+ $('priorityIndicator').textContent=state.status==='playing'?`PRIORITY: ${state.currentActor==='player'?'YOU':'OPPONENT'}`:'CASE RESOLVED';
+ $('objectiveText').textContent=objectiveLabel(state);
+ $('units').replaceChildren();
+ if(!state.units.length)$('units').append(text('p','No friendly units in this encounter.','empty-note'));
+ for(const u of state.units){const card=el('div');card.className='unit'+(u.alive?'':' unit--gone');card.append(text('span',u.label,'unit-name'),text('strong',u.alive?(u.indestructible?'PROTECTED':'ALIVE'):'SACRIFICED / DESTROYED','unit-status'));$('units').append(card);}
+ $('stackList').replaceChildren();
+ if(!state.stack.length)$('stackList').append(text('li','The stack is empty. Both players must pass to close the turn.','stack-empty'));
+ for(const [i,item] of [...state.stack].reverse().entries()){const li=el('li');li.className='stack-item'+(i===0?' stack-item--top':'');li.append(text('span',i===0?'RESOLVES NEXT':`WAITING / ${i+1}`,'stack-rank'),text('strong',item.label),text('p',effectLabel(item.effect),'stack-effect'),text('small',item.controller==='player'?'YOUR RESPONSE':'OPPONENT THREAT'));$('stackList').append(li);}
+ const legal=new Set(legalActions(state));$('actionList').replaceChildren();
+ for(const [i,a] of state.availableActions.entries()){const btn=el('button');btn.type='button';btn.className='response';btn.disabled=!legal.has(a.id);btn.append(text('span',`0${i+1} / ${a.label}`,'response-title'),text('small',effectLabel(a.effect)),text('em',a.cost.sacrificeUnitId?`Sacrifice ${a.cost.sacrificeUnitId} as cost`:`Cost: ${a.cost.resource} response energy`));btn.addEventListener('click',()=>takeAction(a.id));$('actionList').append(btn);}
+ $('passButton').disabled=state.status!=='playing';$('undoButton').disabled=history.length===0;
+ $('eventLog').replaceChildren();for(const msg of state.log.slice(-10).reverse())$('eventLog').append(text('li',msg));
+ const done=state.status!=='playing';$('result').hidden=!done;
+ if(done){$('resultEyebrow').textContent=state.status==='won'?'CASE CLOSED / SURVIVED':'CASE FAILED / TRY AGAIN';$('resultTitle').textContent=state.status==='won'?'You broke the stack.':'The stack broke you.';$('resultExplanation').textContent=state.explanation;$('nextButton').hidden=index===puzzles.length-1;}
+}
+function takeAction(id){try{history.push(structuredClone(state));state=activateAction(state,id);render();announce(state.log.at(-1));}catch(e){history.pop();announce(e.message);}}
+function pass(){if(state.status!=='playing')return;
+ try{history.push(structuredClone(state));state=passPriority(state);
+   while(state.status==='playing'&&state.currentActor==='opponent')state=advanceOpponent(state);
+   render();announce(state.status==='playing'?state.log.slice(-3).join(' '):`${state.status==='won'?'Success.':'Failure.'} ${state.explanation}`);
+ }catch(e){history.pop();announce(e.message);}}
+function reset(){state=createGame(puzzles[index]);history=[];render();announce(`Case restarted: ${state.title}. ${objectiveLabel(state)}`);}
+function select(i){index=i;$('scenarioSelect').value=String(i);reset();}
+$('passButton').addEventListener('click',pass);
+$('undoButton').addEventListener('click',()=>{if(!history.length)return;state=history.pop();render();announce('Undid last action.');});
+$('restartButton').addEventListener('click',reset);$('retryButton').addEventListener('click',reset);
+$('nextButton').addEventListener('click',()=>select(Math.min(index+1,puzzles.length-1)));
+$('scenarioSelect').addEventListener('change',e=>select(Number(e.target.value)));
+document.addEventListener('keydown',e=>{
+ if(e.altKey||e.ctrlKey||e.metaKey||e.repeat||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;
+ if(e.key==='p'||e.key==='P'){e.preventDefault();pass();}
+ else if(e.key==='u'||e.key==='U'){e.preventDefault();if(history.length){state=history.pop();render();announce('Undid last action.');}}
+ else if(e.key==='r'||e.key==='R'){e.preventDefault();reset();}
+ else if(/^[1-9]$/.test(e.key)){const a=state?.availableActions[Number(e.key)-1];if(a && legalActions(state).includes(a.id)){e.preventDefault();takeAction(a.id);}}
+});
+puzzlesPromise.then(raw=>{
+ if(!Array.isArray(raw)||!raw.length)throw new Error('No cases were supplied');
+ puzzles=raw.map(assertValidScenario);
+ puzzles.forEach((p,i)=>{const opt=el('option');opt.value=String(i);opt.textContent=`${String(i+1).padStart(2,'0')} — ${p.title}`;$('scenarioSelect').append(opt);});
+ reset();
+}).catch(e=>{const m=text('p',`Could not load Stackbreaker: ${e.message}.`,'load-error');$('game').prepend(m);announce(m.textContent);$('passButton').disabled=true;});
+</script>
+</head>
+<body>
+  <a class="skip" href="#game">Skip to the playtest</a>
+  <header class="mast"><div class="brand"><span class="sigil" aria-hidden="true">✦</span><span>DEEP CUTS <b>GAME LAB / STACKBREAKER</b></span></div><span class="build">PLAYTEST 0.1 <span class="pulse" aria-hidden="true"></span></span></header>
+  <main id="game">
+    <div class="eyebrow"><span>TACTICAL SURVIVAL TRAINER</span><span>01 / EXPERIMENTAL</span></div>
+    <h1>STACK<span>BREAKER.</span></h1>
+    <p class="tagline">THE LAST RESPONSE</p>
+    <p class="premise">One move from defeat. Find the response that changes everything.</p>
+    <div class="toolbar"><label for="scenarioSelect">CASE FILE</label><select id="scenarioSelect" aria-label="Choose puzzle"></select><span class="game-note">SOLO · NO ACCOUNT OR LEADERBOARD</span></div>
+    <div class="board">
+      <section class="arena" aria-label="Battlefield and threat">
+        <div class="sector-header"><span>01 / BATTLEFIELD</span><span id="priorityIndicator">PRIORITY: YOU</span></div>
+        <div class="scenario-head"><div><p class="small-label">YOUR FINAL TURN</p><h2 id="scenarioTitle">Loading mission…</h2></div><span class="threat-chip">DANGER</span></div>
+        <p id="scenarioIntro" class="scenario-copy"></p>
+        <div class="life-grid">
+          <div class="life-card"><span>YOUR LIFE</span><strong id="playerLife">—</strong></div>
+          <div class="life-card opponent"><span>OPPONENT LIFE</span><strong id="opponentLife">—</strong></div>
+          <div class="life-card"><span>RESPONSE BUDGET</span><strong id="playerBudget">—</strong></div>
+        </div>
+        <div class="board-rule"><h3>YOUR BOARD</h3><span>Units &amp; protection</span></div>
+        <div id="units" class="unit-grid"></div>
+        <div class="objective"><span class="objective-icon" aria-hidden="true">◎</span><div><b>YOUR OBJECTIVE</b><p id="objectiveText"></p></div></div>
+      </section>
+      <section class="stack-panel" aria-label="Priority and stack">
+        <div class="sector-header"><span>02 / THE STACK</span><span>TOP RESOLVES FIRST ↓</span></div>
+        <div class="stack-explainer">Your response goes <b>on top</b> of the threat. Once both players pass, only the top object resolves.</div>
+        <ol id="stackList" class="stack-list" aria-label="Stack in resolution order"></ol>
+        <div class="board-rule"><h3>AVAILABLE RESPONSES</h3><span>Play before you pass</span></div>
+        <div id="actionList" class="action-list"></div>
+        <button id="passButton" type="button" class="pass-button">PASS PRIORITY <span aria-hidden="true">→</span></button>
+        <div class="controls"><button id="undoButton" type="button">↶ UNDO</button><button id="restartButton" type="button">↻ RESTART</button></div>
+        <p class="keyboard-note">Keyboard: 1 / 2 selects a response · P passes · U undoes · R restarts.</p>
+      </section>
+    </div>
+    <section class="result" id="result" hidden aria-labelledby="resultTitle"><div class="result-status" id="resultEyebrow"></div><h2 id="resultTitle"></h2><p id="resultExplanation"></p><button id="retryButton" type="button">TRY THIS CASE AGAIN ↺</button><button id="nextButton" type="button">NEXT CASE →</button></section>
+    <section class="field-log"><div class="sector-header"><span>03 / RESOLUTION LOG</span><span>LAST ACTIONS</span></div><ol id="eventLog" aria-label="Actions and stack resolutions"></ol></section>
+    <div id="announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+    <p class="disclaimer">An original, restricted priority-and-stack training simulation. It does not reproduce full Magic rules or act as an official rules judge. No external data or accounts are used.</p>
+  </main>
+  <footer><span>STACKBREAKER / SB-CORE-0.1.0</span><a href="/" style="color:var(--gold)">← BACK TO HIVE RUN LAB</a><span>GAME LAB PLAYTEST · NO PUBLIC SCORES</span></footer>
+</body>
+</html>
