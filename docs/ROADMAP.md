@@ -225,3 +225,18 @@ This section supersedes earlier planned/not-implemented labels above; those sect
 - [x] Keep deterministic painted-cavern fallback when image loading fails; version and rules stay unchanged as this is purely visual.
 - [x] Regression tests for WebP existence, correct quadrant crop and fallback robustness.
 - [ ] Owner physical-device playtest for visual contrast at boss telegraphs and pickups.
+
+## Release 1.4 — Beacon (publicly promoted October 15, 2026)
+- [x] Lab first: improved amber trap assistance, score stamps blinking outside the captured tile, smaller Sliver head indicator, numeric-only mutation selection keys.
+- [x] Removed separate First Hunt training, preserving the minimal arcade HUD.
+- [x] Public promotion separately authorized by owner and deployed under public site commit `bc87595aec415756a143c628e1991f95e6018fbb`.
+- [x] Preserved public ranked `hive-1.3` simulation/replay rules, previous verified scores and first-party authentication. Public My Profile displays server-verified, saved boss discovery milestones, not unverified defeat claims.
+
+## Release 1.5 — Matriarch (solo Game Lab experiment, NOT public)
+- [x] **Broodmother** becomes a fifth, three-capture full boss at evolution 12 in Predator Hunt and is selectable in unranked The Lair. Original 20×20 pixel artwork and a 6.5-second charged **Egg Bloom** telegraph produce four short-lived blocking egg tiles. Warning phase is 0.9 seconds; active hazard lasts 3.2 seconds and cannot materialize under occupants.
+- [x] **Hatchling Ward** is an original White+Green synergy: when both mutation families are owned, spend one shield and one Green bonus-growth charge to place a stationary hatchling at the current head tile with Q or the contextual tap button. One ward at a time; its 3×3 deterrence makes ordinary prey prefer safe alternate routes, with a 24-move lifetime. Bosses ignore the ward; the ward does not award score or energy.
+- [x] **WUBRG synergies:** Blue+Red simultaneously active slow/frenzy effects yield more steering time; Black+Green can save one extra body segment during Emergency Molt by spending one Green charge. No additional mutation colors or draft choices.
+- [x] Standalone replay verifier recognizes valid Ward decisions as deterministic events and rejects forged/invalid placements. Lab gameplay `RULES_VERSION` is `hive-1.5`.
+- [ ] Release acceptance: Lab regression suite, CI, Cloudflare deployment and owner hands-on playtest.
+- [ ] **Future public promotion requires entirely separate owner approval and synchronized browser/server `hive-1.5` replay handling.** Never copy the solo Lab engine or ranked APIs directly to the public website. Older `hive-1.3` results must remain preserved and correctly distinguished.
+- [ ] Real iPhone/Android Broodmother fairness, Hatchling Ward tap control and visual contrast checks.
