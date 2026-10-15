@@ -1,3 +1,5 @@
+# Stackbreaker 1.3 — A True Galaxy Difficulty Climb
+
 # Stackbreaker 1.2 — Realistic Mixed Commander Hands
 
 # Stackbreaker 1.1 — Commander Singleton Choice Hands
@@ -42,3 +44,6 @@ Each live training window now has seven distinct physical spells in hand, includ
 Every puzzle now has a seven-card-or-larger singleton response hand with actual basic land cards, a real creature and an enchantment, plus interaction. Some hands have a Commander artifact or sorcery. Later boss levels that already require five responses may have eight cards; this is a tactical snapshot rather than a claim that every player starts with eight. Basic land cards in hand are NOT mana already on the battlefield. Unless it is your main phase with an empty stack, lands cannot be played. Ordinary creatures, artifacts, sorceries and enchantments cannot be cast during an opposing stack-response window; actual flash creatures may be cast if mana is available. Enchantments with ongoing triggers are reference choices only in these response puzzles, never assumed to auto-trigger without a complete engine. The interactive card art comes from Scryfall in chunks of at most 50 identifiers. The 250 scenario solutions and progress IDs remain stable.
 
 This still is not four-player Commander, a complete 100-card deck simulation, or commander color-identity enforcement.
+
+## Difficulty design
+The earliest thirty legacy puzzle IDs and stars remain unchanged. The 220 later stages now use explicit graduated solution lengths, real legal multi-object stack threats, singleton responses, calibrated starting life, progressively smaller safety mana margins and payable false leads. New stages in galaxies 1 through 5 require respectively 2, 3, 4, 5 and 6 responses, with 7 on final-galaxy boss nodes. The original first thirty stages are preserved and therefore aren't perfectly monotone in difficulty; revising them will require separately migrating their progress and authored tutorials. Added challenge tests verify real card identities, timing, stack targets, unique cards, mana, losses if unanswered and a legal deterministic winning line for all 250 levels. These are tactical stress tests of a limited rules engine, not a complete Commander simulation or independently human-playtested difficulty ratings.
