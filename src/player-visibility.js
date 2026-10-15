@@ -4,7 +4,7 @@
 export function drawPlayerLocator(ctx,head,direction,cell=20,layer="above"){
  if(!head)return;
  const x=head.x*cell,y=head.y*cell;
- const center=(cell-size)=>Math.floor((cell-size)/2);
+ const center=size=>Math.floor((cell-size)/2);
  ctx.save();
  if(layer==="below"){
   const size=Math.max(6,Math.round(cell*.4)),inset=center(size);
