@@ -3,7 +3,8 @@ import {COLORS,CARDS,initial,actions,reduce,completed,getCard,lookup,medal} from
 import {solve} from "./solver.js";
 import {highestUnlocked,unlocked,chapterIndex,stageCode,normalizedBests,chapterAccessible} from "./campaign.js";
 import {renderOverworld} from "./overworld.js";
-import {reconstruct,transitionOrbs,consistent,renderSockets,sendOrb} from "./mana-orbs.js";
+import {reconstruct,transitionOrbs,consistent,renderLedger,sendOrb} from "./mana-orbs.js";
+import {renderWardCharge} from "./ward-charge.js";
 import {landPainting} from "./land-art.js";
 import {installLandDragging} from "./drag-lands.js";
 import {renderCardReferences,referenceFor} from "./card-references.js";
@@ -19,6 +20,14 @@ function readProgress(){
 }
 let progress=readProgress(),index=Math.min(progress.index,highestUnlocked(progress.bests)),level=LEVELS[index],state=initial(level),history=[],choiceActions=[],selectedMessage="";
 let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null;
+let viewEpoch=0;
+function chargeWard({pendingId=null,animateId=null}={}){
+ return renderWardCharge({
+  svg:el("wardManaRing"),count:el("wardChargeCount"),
+  cost:level.stages[state.stage]?.cost||{},orbs:manaOrbs,
+  pendingId,animateId,open:completed(level,state)
+ });
+}
 const cardInspector=installCardInspector({dialog:el("realCardInspector"),trigger:el("inspectLand"),closeButton:el("closeInspector")});
 function inspectById(id){
  const record=lookup(level,id);
@@ -73,6 +82,7 @@ function perform(action){
  const sourceRect=action.type==="tap"?el("battlefield").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():null;
  const out=reduce(level,state,action);
  if(!out.ok){if(action?.type==="cast")rejectCast();else message(out.error,true);return;}
+ if(action.type!=="tap"){viewEpoch++;el("manaTravelLayer").replaceChildren();}
  history.push({state,orbs:manaOrbs.map(o=>({...o}))});
  state=out.state;
  manaOrbs=transitionOrbs(manaOrbs,action,state.pool);
@@ -89,7 +99,17 @@ function perform(action){
  else if(action.type==="cast")message("Ward dispelled! "+(level.stages.length-state.stage)+" ward(s) remain.");
  landDrag?.cancel();
  render(pendingId);
- if(pendingId)sendOrb({color:action.color,sourceRect,id:pendingId,layer:el("manaTravelLayer"),target:el("pool")});
+ if(pendingId){
+  const epoch=++viewEpoch;
+  sendOrb({
+   color:action.color,sourceRect,id:pendingId,layer:el("manaTravelLayer"),
+   target:el("pool"),destination:el("wardTarget"),
+   onArrival:()=>{if(epoch===viewEpoch){
+    el("pool").querySelector('[data-orb-id="'+pendingId+'"]')?.classList.remove("in-flight");
+    chargeWard({animateId:pendingId});
+   }}
+  });
+ }
 }
 function tapLand(id){
  lastCardId=id;
@@ -158,7 +178,8 @@ function render(pendingId=null){
  el("libraryPanel").hidden=level.library.length===0;
  el("libraryPanel").textContent=level.library.length?"RESERVE / FETCH TARGETS: "+level.library.map(x=>CARDS[x.card].name).join(" · "):"";
  el("poolTotal").textContent=Object.values(state.pool).reduce((a,b)=>a+b,0)+" IN POOL";
- renderSockets(el("pool"),state.pool,manaOrbs,{pendingId});
+ renderLedger(el("pool"),state.pool,manaOrbs,{pendingId});
+ chargeWard({pendingId});
  el("undo").disabled=history.length===0;
  el("endTurn").disabled=isWin||state.turn===level.turnLimit;
  el("winPanel").hidden=!isWin;
@@ -174,13 +195,14 @@ function render(pendingId=null){
  selectedMessage="";
 }
 function showMap(){
+ viewEpoch++;
  cardInspector.hide({restore:false});
  landDrag?.cancel();
  document.body.classList.remove("in-heist");
  el("gameNotes").hidden=true;
  el("actionBox").hidden=true;
  el("manaTravelLayer").replaceChildren();
- el("pool").querySelectorAll(".awaiting-orb").forEach(x=>x.classList.remove("awaiting-orb"));
+ el("pool").querySelectorAll(".in-flight").forEach(x=>x.classList.remove("in-flight"));
  el("gameScreen").hidden=true;el("campaignScreen").hidden=false;
  renderOverworld({world,bests:progress.bests,index,proofs,medal});
  el("campaignScreen").scrollIntoView({block:"start",behavior:"instant"});
@@ -193,6 +215,7 @@ function showGame(){
  el("gameScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
 function load(i,enter=false){
+ viewEpoch++;
  cardInspector.hide({restore:false});
  lastCardId=null;
  landDrag?.cancel();
@@ -250,7 +273,7 @@ landDrag=installLandDragging({
 el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a)perform(a);});
 el("castButton").addEventListener("click",castSpell);
 el("endTurn").addEventListener("click",()=>{const a=actions(level,state).find(a=>a.type==="end");if(a)perform(a);else message("No turns remain. Undo or restart to try another line.",true);});
-el("undo").addEventListener("click",()=>{if(!history.length)return;const prev=history.pop();state=prev.state;manaOrbs=prev.orbs;el("manaTravelLayer").replaceChildren();render();message("Previous move undone. Land drops, life and mana are restored.");});
+el("undo").addEventListener("click",()=>{if(!history.length)return;viewEpoch++;const prev=history.pop();state=prev.state;manaOrbs=prev.orbs;el("manaTravelLayer").replaceChildren();render();message("Previous move undone. Land drops, life and mana are restored.");});
 el("reset").addEventListener("click",()=>load(index));
 el("skip").addEventListener("click",showMap);
 el("winNext").addEventListener("click",()=>{if(index+1<LEVELS.length&&unlocked(index+1,progress.bests))load(index+1,true);else showMap();});
