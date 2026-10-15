@@ -122,7 +122,7 @@ const GRADES=[
 const COUNTER_ANSWERS=['Dispel','Negate','Arcane Denial','Counterspell','Cancel','Stoic Rebuttal',"Dovin's Veto"];
 const BURN_THREATS=['Lightning Bolt','Lightning Strike','Searing Spear','Incinerate','Open Fire','Fiery Temper'];
 function galaxyTarget(gi,stage){
- return [1,2,3,4,5][gi]+(gi===2&&stage===9?1:0)+(gi===3&&stage>=8?1:0)+(gi===4&&stage>=5?1:0)+(gi===4&&stage===9?1:0);
+ return [2,3,4,5,6][gi]+(gi===4&&stage===9?1:0);
 }
 function graduate(s,line,gi,stage){
  const target=galaxyTarget(gi,stage);
