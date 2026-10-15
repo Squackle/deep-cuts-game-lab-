@@ -401,7 +401,9 @@ const CARDS={
   "Farseek":{"type":"Sorcery","cost":{"generic":1,"G":1},"colors":["G"],"oracle":"Search your library for a Plains, Island, Swamp, or Mountain card, put it onto the battlefield tapped, then shuffle.","effect":null},
   "Ponder":{"type":"Sorcery","cost":{"U":1},"colors":["U"],"oracle":"Look at the top three cards of your library, then put them back in any order. You may shuffle. Draw a card.","effect":null},
   "Harmonize":{"type":"Sorcery","cost":{"generic":2,"G":2},"colors":["G"],"oracle":"Draw three cards.","effect":null},
-  "Read the Bones":{"type":"Sorcery","cost":{"generic":2,"B":1},"colors":["B"],"oracle":"Scry 2, then draw two cards. You lose 2 life.","effect":null}
+  "Read the Bones":{"type":"Sorcery","cost":{"generic":2,"B":1},"colors":["B"],"oracle":"Scry 2, then draw two cards. You lose 2 life.","effect":null},
+  "Urza's Rage":{"type":"Instant","cost":{"generic":2,"R":1},"colors":["R"],"oracle":"Kicker {8}{R}\nThis spell can't be countered.\nUrza's Rage deals 3 damage to any target. If this spell was kicked, instead it deals 10 damage to that permanent or player and the damage can't be prevented.","effect":"damage","amount":3,"targetRule":"any","uncounterable":true,"note":"Unkicked mode only. Three damage can be prevented but the spell cannot be countered."},
+  "Hallow":{"type":"Instant","cost":{"W":1},"colors":["W"],"oracle":"Prevent all damage target spell would deal this turn. You gain life equal to the damage prevented this way.","effect":"preventSpellDamage","targetRule":"stack:spell"}
 };
 const cardLink = name => 'https://scryfall.com/search?q='+encodeURIComponent('!"'+name+'"');
 const isCreature = name => CARDS[name]?.type.startsWith('Creature') || false;
@@ -562,7 +564,8 @@ function resolve(s,item){const c=CARDS[item.card],target=item.targetId;
  case 'destroyAll':{let count=0,warded=0;for(const u of s.units)if(u.zone==='battlefield'){if(u.indestructible)warded++;else{u.zone='graveyard';count++}}s.log.push(`Wrath of God: ${count} creature(s) destroyed, ${warded} indestructible.`);break;}
  case 'ward':{let count=0;for(const u of s.units)if(u.zone==='battlefield'&&u.controller===item.controller){u.indestructible=true;count++}s.log.push(`Selfless Spirit's ability resolved after its source left: ${count} creature(s) gain indestructible.`);break;}
  case 'intervention':{let count=0;for(const u of s.units)if(u.zone==='battlefield'&&u.controller===item.controller){u.indestructible=true;u.hexproof=true;count++}s.log.push(`Heroic Intervention: ${count} permanent(s) gain hexproof and indestructible.`);break;}
- case 'damage':{const amount=c.amount;if(target==='player'||target==='opponent'){s.life[target]-=amount;s.log.push(`${item.card} deals ${amount} damage to ${labelTarget(s,target)}.`);}else{const u=s.units.find(x=>x.id===target);u.damage+=amount;s.log.push(`${item.card} marks ${amount} damage on ${u.card} (${u.damage}/${creatureToughness(u)} damage/toughness).`);}break;}
+ case 'damage':{const amount=c.amount;if(s.preventedSpellDamage?.[item.id]){const prevented=s.preventedSpellDamage[item.id];s.life[prevented]+=amount;s.log.push(`Hallow prevents ${amount} damage from ${item.card}; ${prevented} gains ${amount} life.`);break;}if(target==='player'||target==='opponent'){s.life[target]-=amount;s.log.push(`${item.card} deals ${amount} damage to ${labelTarget(s,target)}.`);}else{const u=s.units.find(x=>x.id===target);u.damage+=amount;s.log.push(`${item.card} marks ${amount} damage on ${u.card} (${u.damage}/${creatureToughness(u)} damage/toughness).`);}break;}
+ case 'preventSpellDamage':{s.preventedSpellDamage??={};s.preventedSpellDamage[target]=item.controller;s.log.push(`Hallow shields against all damage from ${labelTarget(s,target)} this turn.`);break;}
  case 'heal':s.life[target]+=c.amount;s.log.push(`Healing Salve: ${labelTarget(s,target)} gains ${c.amount} life.`);break;
  case 'counter':{let idx=s.stack.findIndex(x=>x.id===target);if(idx>=0){const x=s.stack[idx];if(CARDS[x.card]?.uncounterable){s.log.push(`${x.card} cannot be countered by ${item.card}.`);}else{s.stack.splice(idx,1);s.log.push(`${item.card} counters ${x.card}.`);}}break;}
  case 'boostHexproof':{const u=s.units.find(x=>x.id===target);u.powerBoost+=c.amount;u.toughnessBoost+=c.amount;u.hexproof=true;s.log.push(`${u.card} gets +${c.amount}/+${c.amount} and gains hexproof.`);break;}
@@ -728,8 +731,11 @@ function graduate(s,line,gi,stage){
  const own=new Set([...s.hand.filter(x=>!x.sourceId),...s.units.filter(x=>x.controller==='player'),...s.stack.filter(x=>x.controller==='player')].map(x=>x.card));
  const theirs=new Set(s.stack.filter(x=>x.controller==='opponent').map(x=>x.card));
  for(let k=0;k<extra;k++){
-  const threat=BURN_THREATS.find(x=>!theirs.has(x));
-  const answer=COUNTER_ANSWERS.find(x=>!own.has(x));
+  // Some late cases present an uncounterable spell. Hallow prevents its
+  // damage and gains life; simply firing another counterspell cannot help.
+  const prevention=gi>=3&&stage%3===0&&k===0&&!own.has('Hallow')&&!theirs.has("Urza's Rage");
+  const threat=prevention?"Urza's Rage":BURN_THREATS.find(x=>!theirs.has(x));
+  const answer=prevention?'Hallow':COUNTER_ANSWERS.find(x=>!own.has(x));
   if(!threat||!answer)throw Error('No singleton-safe graduate '+s.id);
   theirs.add(threat);own.add(answer);
   const spellId='peril-'+(k+1),responseId='answer-'+(k+1);
@@ -746,7 +752,7 @@ function graduate(s,line,gi,stage){
  s.difficulty={galaxy:gi+1,requiredResponses:line.length,addedThreats:extra,discipline:GRADES[gi].name};
  s.intro+=' '+extra+' additional incoming stack '+(extra===1?'threat demands':'threats demand')+' exact responses. '+(gi>=3?'Every colored mana and target matters.':'Find the response to each threat.');
  s.hint=gi>=3?'Read every opposing stack object and plan how the entire stack will resolve. Protect colored mana for later replies.':gi===2?'Solve the full stack, not just the top threat.':s.hint;
- s.explanation+=' Also, '+extra+' additional lethal burn '+(extra===1?'spell was':'spells were')+' stopped before resolution.';
+ s.explanation+=' Also, '+extra+' extra burn '+(extra===1?'threat was':'threats were')+' answered before they could defeat you.'+(gi>=3&&stage%3===0?' The uncounterable Urza\'s Rage required Hallow to prevent damage, not a counterspell.':'');
 }
 function generateStages(existing){
  if(existing.length!==30)throw Error('Expected the 30 approved core levels');
