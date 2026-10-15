@@ -455,3 +455,15 @@
  .in-heist #battlefield{--mh-land-width:clamp(115px,11vw,137px)}
  .in-heist #hand{--mh-land-width:clamp(96px,9.6vw,122px)}
 }
+
+/* One consistent path home from the standalone Mana Heist playtest. */
+.bar .lab-home-link{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 11px;border:1px solid #c7ac7255;border-radius:5px;background:#243c39;color:#edce92;white-space:nowrap;line-height:1.4}
+.bar .lab-home-link:hover{background:#2f5049;color:#ffe6ab}
+.bar .lab-home-link:focus-visible{outline:3px solid #e7ca90;outline-offset:2px}
+@media(max-width:580px){
+ .bar{gap:7px}
+ .bar-actions{gap:6px;min-width:0}
+ .bar .test-stamp{display:none}
+ .bar .lab-home-link{padding:7px 8px;min-height:38px;font-size:.62rem;letter-spacing:.025em}
+ .bar .brand{font-size:.63rem;letter-spacing:.06em}
+}
