@@ -725,6 +725,16 @@ const REPLACEMENTS={
  'Giant Growth':['Brute Force','Titanic Growth'],
  'Wrath of God':['Day of Judgment']
 };
+const SHARED_ALIASES=[
+ ['Lightning Bolt','Lightning Strike','Searing Spear','Incinerate','Open Fire','Fiery Temper'],
+ ['Counterspell','Cancel','Stoic Rebuttal','Arcane Denial'],
+ ['Grizzly Bears','Runeclaw Bear','Glory Seeker','Goblin Chariot'],
+ ['Savannah Lions','Elite Vanguard','Coral Merfolk','Goblin Piker'],
+ ['Hill Giant','Centaur Courser','Trained Armodon','War Mammoth'],
+ ['Healing Salve','Soothing Balm'],
+ ['Giant Growth','Brute Force'],
+ ['Murder',"Hero's Downfall",'Mortify','Terminate']
+];
 const COMMANDER_BASICS={W:'Plains',U:'Island',B:'Swamp',R:'Mountain',G:'Forest',C:'Wastes'};
 const COMMANDER_COLORS=['W','U','B','R','G','C'];
 const INSTANT_OPTIONS=[
@@ -764,7 +774,8 @@ function normalizeOwner(p,owner){
  const seen=new Set();
  for(const x of items){
   if(!seen.has(x.card)){seen.add(x.card);continue;}
-  const alternatives=REPLACEMENTS[x.card]||[];
+  const shared=SHARED_ALIASES.find(group=>group.includes(x.card))||[];
+  const alternatives=[...shared.filter(name=>name!==x.card),...(REPLACEMENTS[x.card]||[])];
   const substitute=alternatives.find(c=>!!CARDS[c]&&!seen.has(c));
   if(!substitute)throw Error('Cannot make '+p.id+' singleton for '+owner+': '+x.card);
   const before=x.card;x.card=substitute;seen.add(substitute);
