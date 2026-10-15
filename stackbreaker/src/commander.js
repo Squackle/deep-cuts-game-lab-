@@ -122,24 +122,67 @@ function candidateScore(p,name,seed){
  // useful or unaffordable options—recognizing that distinction is the exercise.
  return (affordable?100:0)+(possibleTargets.length?40:0)+commanderRand(seed+name.length*97+name.charCodeAt(0))%25;
 }
+// Card roles model a midgame Commander hand, not seven interchangeable instants.
+// There is always at least one land, creature and enchantment in these curated
+// reaction windows; high-complexity cases can start with 8 cards (draw-heavy turn).
+const COMMANDER_CREATURES=[
+ 'Llanowar Elves','Birds of Paradise','Elvish Mystic','Ambush Viper','Skylasher',
+ 'Serra Angel','Soul Warden','Wall of Omens','Aven Mindcensor','Archivist of Oghma',
+ 'Mulldrifter','Archaeomancer','Blood Artist','Gray Merchant of Asphodel',
+ 'Goblin Instigator','Young Pyromancer'
+];
+const COMMANDER_ENCHANTMENTS=[
+ 'Rhystic Study','Smothering Tithe','Ghostly Prison','Propaganda',
+ 'Phyrexian Arena','Black Market Connections','Impact Tremors',
+ 'Goblin Bombardment','Sylvan Library','Fecundity',"Mirari's Wake"
+];
+const COMMANDER_SUPPORT=[
+ 'Sol Ring','Arcane Signet','Swiftfoot Boots','Lightning Greaves',
+ 'Skullclamp','Cultivate',"Kodama's Reach",'Farseek','Ponder','Harmonize','Read the Bones'
+];
+function fitCommanderCard(name,identities){
+ const c=CARDS[name];return !!c&&c.colors.every(color=>identities.has(color));
+}
+function chooseCommanderPermanent(p,index,role,seen){
+ const ids=new Set(commanderPalette(p));for(const land of p.lands){const color=LANDS[land.card]?.mana;if(color&&color!=='C')ids.add(color);}
+ const list=role==='creature'?COMMANDER_CREATURES:role==='enchantment'?COMMANDER_ENCHANTMENTS:COMMANDER_SUPPORT;
+ const candidates=list.filter(n=>!seen.has(n)&&fitCommanderCard(n,ids));
+ if(!candidates.length)throw Error('No Commander-compatible '+role+' for '+p.id);
+ const chosen=candidates[commanderRand(index*31+role.length)%candidates.length];seen.add(chosen);return chosen;
+}
+function chooseCommanderLand(p,index){
+ const allowed=[...new Set(p.lands.map(l=>LANDS[l.card]?.mana).filter(Boolean))];
+ const colors=allowed.length?allowed:[...commanderPalette(p)];
+ const color=colors[commanderRand(index*17+111)%colors.length]||'C';
+ return COMMANDER_BASICS[color];
+}
 export function commanderScenario(input,index=0){
  const p=commanderClone(input);const solution=p.solution||CORE_LINES[p.id];
  if(!solution)throw Error('No vetted solution for '+p.id);
  normalizeOwner(p,'player');normalizeOwner(p,'opponent');
  ensureMana(p,solution);
- const seen=new Set([...p.units.filter(x=>x.controller==='player'),...p.stack.filter(x=>x.controller==='player'),...p.hand.filter(x=>!x.sourceId)].map(x=>x.card));
+ const seen=new Set([...p.units.filter(x=>x.controller==='player'),...p.stack.filter(x=>x.controller==='player'),...p.hand.filter(x=>!x.sourceId&&!LANDS[x.card])].map(x=>x.card));
+ const existing=p.hand.filter(x=>!x.sourceId).length;
+ const minimum=Math.max(HAND_SIZE,existing+3);
+ // Physical basics may repeat; one land card in hand is not a new mana source.
+ p.hand.push({id:'real-hand-land',card:chooseCommanderLand(p,index)});
+ p.hand.push({id:'real-hand-creature',card:chooseCommanderPermanent(p,index,'creature',seen)});
+ p.hand.push({id:'real-hand-enchantment',card:chooseCommanderPermanent(p,index+7,'enchantment',seen)});
  const pool=INSTANT_OPTIONS.filter(n=>!seen.has(n)).map(name=>({name,score:candidateScore(p,name,index*101+37)}))
   .sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name));
- const existing=p.hand.filter(x=>!x.sourceId).length;
- for(let i=0;i<Math.max(0,HAND_SIZE-existing);i++){
+ let choiceIndex=0;
+ while(p.hand.filter(x=>!x.sourceId).length<minimum){
+  const remaining=minimum-p.hand.filter(x=>!x.sourceId).length;
+  // Some hands also contain a Commander staple or a sorcery-speed ramp spell.
+  if(remaining>2&&index%4===0){
+   const other=chooseCommanderPermanent(p,index+choiceIndex+19,'support',seen);
+   p.hand.push({id:'real-hand-support',card:other});continue;
+  }
   const next=pool.find(x=>!seen.has(x.name));
-  if(!next)throw Error('Insufficient singleton response cards');
-  const id='choice-'+i;
-  p.hand.push({id,card:next.name});seen.add(next.name);
+  if(!next)throw Error('Insufficient distinct response spells for '+p.id);
+  p.hand.push({id:'choice-'+choiceIndex++,card:next.name});seen.add(next.name);
  }
- p.commanderPractice=true;
- p.format='singleton-response-training';
- p.solution=commanderClone(solution);
- p.companionColors=commanderPalette(p);
+ p.commanderPractice=true;p.format='singleton-realistic-hand';
+ p.solution=commanderClone(solution);p.companionColors=commanderPalette(p);
  return p;
 }
