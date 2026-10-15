@@ -47,7 +47,7 @@ with sync_playwright() as pw:
   assert page.locator('#cardPreview').is_visible(),(width,'hover did not open')
   assert page.locator('#cardPreviewImage').get_attribute('src').startswith('https://cards.scryfall.io/normal/')
   assert 'Test Artist' in page.locator('#cardPreviewCredit').inner_text()
-  page.locator('#missionNum').hover(force=True)
+  page.locator('#mapButton').hover(force=True)
   assert not page.locator('#cardPreview').is_visible(),(width,'preview did not disappear after pointer left artwork')
   assert not errors,(width,errors)
   print('Scryfall batch, card images in all zones, Oracle text, hover dismiss, and viewport',width,height,'passed')

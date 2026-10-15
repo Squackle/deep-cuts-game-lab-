@@ -11,7 +11,8 @@ for src in ['src/cards.js','src/engine.js','src/ui.js']:
  parts.append(s)
 js='\n'.join(parts)
 puzzles=(root/'data/scenarios.json').read_text()
-js=js.replace('const $=id=>document.getElementById(id);','const scenarios='+puzzles+';\nconst $=id=>document.getElementById(id);')
+chapters=(root/'data/chapters.json').read_text()
+js=js.replace('const $=id=>document.getElementById(id);','const scenarios='+puzzles+';\nconst chapters='+chapters+';\nconst $=id=>document.getElementById(id);')
 assert 'const scenarios=' in js and js.count('const scenarios=')==1
 html=html.replace('<link rel="stylesheet" href="./styles.css">','<style>'+css+'</style>')
 html=html.replace('<script type="module" src="./src/ui.js"></script>','')

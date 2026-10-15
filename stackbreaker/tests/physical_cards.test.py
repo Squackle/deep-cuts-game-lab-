@@ -45,7 +45,7 @@ with sync_playwright() as pw:
   if 'CASE SOLVED' in page.locator('#resultEyebrow').inner_text():break
   page.locator('#passButton').click()
  assert 'CASE SOLVED' in page.locator('#resultEyebrow').inner_text()
- page.locator('#nextButton').click();assert page.locator('#missionNum').inner_text().startswith('07')
+ page.locator('#nextButton').click();assert page.locator('#missionNum').inner_text().startswith('2-1')
  print('Final Exchange: drag directly to life and stack spell target, solve and next case: passed')
  # Generic mana is chosen AFTER dropping when multiple pools can legally pay.
  page.locator('#scenarioSelect').select_option('3')

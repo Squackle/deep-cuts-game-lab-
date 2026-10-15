@@ -23,6 +23,11 @@ export const CARDS={
   'Murder':{type:'Instant',cost:{generic:1,B:2},colors:['B'],oracle:'Destroy target creature.',effect:'destroy',targetRule:'creature'},
   'Doom Blade':{type:'Instant',cost:{generic:1,B:1},colors:['B'],oracle:'Destroy target nonblack creature.',effect:'destroy',targetRule:'creature:nonblack'},
   'Swords to Plowshares':{type:'Instant',cost:{W:1},colors:['W'],oracle:'Exile target creature. Its controller gains life equal to its power.',effect:'exile',targetRule:'creature'},
+  'Titanic Growth':{type:'Instant',cost:{generic:1,G:1},colors:['G'],oracle:'Target creature gets +4/+4 until end of turn.',effect:'pump',amount:4,targetRule:'creature'},
+  'Blossoming Defense':{type:'Instant',cost:{G:1},colors:['G'],oracle:'Target creature you control gets +2/+2 and gains hexproof until end of turn.',effect:'blossom',amount:2,targetRule:'creature:own'},
+  'Dive Down':{type:'Instant',cost:{U:1},colors:['U'],oracle:'Target creature you control gets +0/+3 and gains hexproof until end of turn.',effect:'dive',amount:3,targetRule:'creature:own'},
+  'Lightning Strike':{type:'Instant',cost:{generic:1,R:1},colors:['R'],oracle:'Lightning Strike deals 3 damage to any target.',effect:'damage',amount:3,targetRule:'any'},
+  'Cancel':{type:'Instant',cost:{generic:1,U:2},colors:['U'],oracle:'Counter target spell.',effect:'counter',targetRule:'stack:spell'},
   'Unsummon':{type:'Instant',cost:{U:1},colors:['U'],oracle:'Return target creature to its owner’s hand.',effect:'bounce',targetRule:'creature'}
 };
 export const cardLink = name => 'https://scryfall.com/search?q='+encodeURIComponent('!"'+name+'"');
