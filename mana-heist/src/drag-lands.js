@@ -7,7 +7,7 @@ export function withinDropZone(x,y,rect) {
 export function distance(x,y,startX,startY) {
  return Math.hypot(x-startX,y-startY);
 }
-export function installLandDragging({hand,battlefield,onDrop,onHint}) {
+export function installLandDragging({hand,battlefield,onDrop,onHint,onInspect}) {
  if(!hand||!battlefield||typeof onDrop!=="function")throw Error("Missing drag components");
  const zone=battlefield.closest(".table-card");
  let active=null,keyboardId=null;
@@ -64,6 +64,7 @@ export function installLandDragging({hand,battlefield,onDrop,onHint}) {
   restore();
   if(accepted)onDrop(id);
   else if(didDrag)onHint?.("Drop the land inside the highlighted battlefield to play it.",true);
+  else onInspect?.(id);
  });
  hand.addEventListener("pointercancel",()=>restore());
  hand.addEventListener("lostpointercapture",()=>restore());

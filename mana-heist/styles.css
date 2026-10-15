@@ -262,3 +262,22 @@
 @media(max-height:670px) and (max-width:800px){
  .in-heist #heist{grid-template-rows:minmax(135px,1.22fr) minmax(63px,.57fr) 34px minmax(90px,1fr) minmax(68px,.75fr)}
 }
+
+
+/* v0.6: Scryfall learning reference inspector — original game pieces remain untouched. */
+.in-heist .game-titlebar #inspectLand{background:#24403a;border:1px solid #d4bc8366;border-radius:7px;color:var(--gold);cursor:pointer;font:800 .64rem system-ui;letter-spacing:.04em;padding:8px 6px;min-height:31px;white-space:nowrap}
+.in-heist .game-titlebar #inspectLand:hover{background:#355c4f}
+.reference-inspector{position:fixed;inset:0;z-index:160;display:flex;align-items:center;justify-content:center;padding:12px;background:#051110d9;backdrop-filter:blur(8px);overflow:auto}
+.reference-inspector[hidden]{display:none}
+.reference-inspector-panel{border:1px solid #c9ad795c;background:linear-gradient(145deg,#213a36,#111c20);border-radius:14px;width:min(400px,100%);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;padding:15px 18px;box-shadow:0 20px 80px #000c;text-align:center;display:flex;flex-direction:column;align-items:center}
+.reference-inspector-header{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;margin:0 0 6px}
+.reference-inspector-header .overline{font-size:.55rem;margin:0 0 3px}
+.reference-inspector-header h2{font:normal 1.6rem Georgia,serif;color:var(--gold);margin:0}
+.reference-inspector #inspectorGameCard{margin:3px 0 10px;font-size:.69rem;line-height:1.35}
+.reference-inspector .inspector-full-card{max-width:100%;width:auto;height:auto;max-height:min(54dvh,420px);aspect-ratio:488/680;object-fit:contain;border-radius:9px;display:block;box-shadow:0 12px 28px #0009}
+.reference-inspector .inspector-full-card[hidden]{display:none}
+.inspector-link{display:block;width:100%;border:1px solid #ddc08c;color:#edcf98;background:#354b3d;text-align:center;padding:9px 12px;border-radius:7px;font-size:.76rem;font-weight:850;letter-spacing:.06em;margin-top:12px}
+.inspector-link:hover{background:#50624a}
+.inspector-legal{font-size:.61rem;color:var(--muted);line-height:1.45;margin:10px 0 0;text-align:left}
+@media(max-width:390px){.in-heist .game-titlebar #inspectLand{font-size:.52rem;padding:7px 4px}.reference-inspector-panel{padding:10px 12px}.reference-inspector-header h2{font-size:1.26rem}}
+@media(max-height:620px){.reference-inspector{align-items:flex-start}.reference-inspector .inspector-full-card{max-height:42dvh}.reference-inspector-legal{font-size:.57rem}}

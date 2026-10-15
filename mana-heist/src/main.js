@@ -6,7 +6,8 @@ import {renderOverworld} from "./overworld.js";
 import {reconstruct,transitionOrbs,consistent,renderSockets,sendOrb} from "./mana-orbs.js";
 import {landPainting} from "./land-art.js";
 import {installLandDragging} from "./drag-lands.js";
-import {renderCardReferences} from "./card-references.js";
+import {renderCardReferences,referenceFor} from "./card-references.js";
+import {installCardInspector} from "./card-inspector.js";
 const el=id=>document.getElementById(id);
 const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"C"},N:{name:"Generic",color:"#bec5bd",icon:"◇"}};
 const storageKey="dc-mana-heist-landfall-v2";
@@ -15,7 +16,14 @@ function readProgress(){
  return {bests:{},index:0};
 }
 let progress=readProgress(),index=Math.min(progress.index,highestUnlocked(progress.bests)),level=LEVELS[index],state=initial(level),history=[],choiceActions=[],selectedMessage="";
-let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null;
+let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null;
+const cardInspector=installCardInspector({dialog:el("realCardInspector"),trigger:el("inspectLand"),closeButton:el("closeInspector")});
+function inspectById(id){
+ const record=lookup(level,id);
+ if(!record)return false;
+ lastCardId=id;
+ return cardInspector.show(record.card,getCard(level,id).name);
+}
 const proofs=new Map();
 for(const puzzle of LEVELS){
  const proof=solve(puzzle,{maxStates:40000});
@@ -69,6 +77,7 @@ function perform(action){
  if(pendingId)sendOrb({color:action.color,sourceRect,id:pendingId,layer:el("manaTravelLayer"),target:el("pool")});
 }
 function tapLand(id){
+ lastCardId=id;
  if(completed(level,state))return;
  const onField=state.field.find(f=>f.id===id);
  if(!onField||onField.tapped){message("This land is tapped. End your turn to untap it.",true);return;}
@@ -81,6 +90,7 @@ function tapLand(id){
  else message("This land cannot produce mana safely at your current life total.",true);
 }
 function playLand(id){
+ lastCardId=id;
  const card=getCard(level,id),possible=actions(level,state).filter(a=>a.type==="play"&&a.id===id);
  if(!possible.length){message(state.played?"You have already played a land this turn.":"This land cannot be played right now.",true);return;}
  if(possible.length===1)perform(possible[0]);
@@ -95,8 +105,9 @@ function castSpell(){
 }
 function landHtml(instance,field){
  const card=getCard(level,instance.id),tapped=field&&instance.tapped;
+ const realName=referenceFor(lookup(level,instance.id).card)?.name||"Magic land";
  // Original land art, with no network requests.
- return '<button type="button" draggable="false" class="land-card '+(tapped?"is-tapped":"")+'" data-cardid="'+instance.id+'" data-zone="'+(field?"field":"hand")+'" data-kind="'+card.kind+'" aria-label="'+(field?"Tap ":"Drag to battlefield: ")+card.name+(tapped?", tapped":"")+'">'+
+ return '<button type="button" draggable="false" class="land-card '+(tapped?"is-tapped":"")+'" data-cardid="'+instance.id+'" data-zone="'+(field?"field":"hand")+'" data-kind="'+card.kind+'" aria-label="'+(field?"Tap ":"Drag to battlefield: ")+card.name+(tapped?", tapped":"")+'" title="Magic reference: '+realName+' (press I to inspect)">'+
   '<span class="land-name">'+card.name+'</span><span class="land-kind">'+card.kind.toUpperCase()+'</span>'+
   '<span class="land-art" aria-hidden="true">'+landPainting(card)+'</span>'+
   '<span class="type-line">'+card.flavor+'</span>'+
@@ -144,6 +155,7 @@ function render(pendingId=null){
  selectedMessage="";
 }
 function showMap(){
+ cardInspector.hide({restore:false});
  landDrag?.cancel();
  document.body.classList.remove("in-heist");
  el("gameNotes").hidden=true;
@@ -162,6 +174,8 @@ function showGame(){
  el("gameScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
 function load(i,enter=false){
+ cardInspector.hide({restore:false});
+ lastCardId=null;
  landDrag?.cancel();
  if(!unlocked(i,progress.bests)){message("That vault is sealed. Crack the previous stage to unlock it.",true);return false;}
  index=i;world=chapterIndex(index);
@@ -188,15 +202,25 @@ el("worldPips").addEventListener("click",e=>{
  if(button&&!button.disabled){world=Number(button.dataset.world);renderOverworld({world,bests:progress.bests,index,proofs,medal});}
 });
 el("returnMap").addEventListener("click",showMap);
+el("inspectLand").addEventListener("inspect-current-land",()=>{
+ const id=lastCardId&&lookup(level,lastCardId)?lastCardId:(state.field[0]?.id||state.hand[0]);
+ if(id)inspectById(id);
+});
 el("dismissChoices").addEventListener("click",()=>choices("YOUR NEXT CHOICE","Tap a land or play a land from your hand.",[]));
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!el("actionBox").hidden){choices("YOUR NEXT CHOICE","Selection canceled.",[]);}});
 el("battlefield").addEventListener("click",e=>{
  const card=e.target.closest('[data-zone="field"][data-cardid]');
  if(card)tapLand(card.dataset.cardid);
 });
+for(const id of ["battlefield","hand"])el(id).addEventListener("keydown",e=>{
+ if(e.key.toLowerCase()!=="i"||e.altKey||e.ctrlKey||e.metaKey)return;
+ const card=e.target.closest('[data-cardid]');
+ if(card){e.preventDefault();inspectById(card.dataset.cardid);}
+});
 landDrag=installLandDragging({
  hand:el("hand"),battlefield:el("battlefield"),
  onDrop:id=>playLand(id),
+ onInspect:id=>inspectById(id),
  onHint:(text,error=false)=>message(text,error)
 });
 el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a)perform(a);});
