@@ -106,7 +106,7 @@ export const CARDS={
   "Daring Apprentice":{"type":"Creature — Human Wizard","cost":{"generic":1,"U":2},"colors":["U"],"power":1,"toughness":1,"oracle":"{T}, Sacrifice Daring Apprentice: Counter target spell.","effect":"counter","targetRule":"stack:spell","tags":[]}
 };
 export const cardLink = name => 'https://scryfall.com/search?q='+encodeURIComponent('!"'+name+'"');
-export const isCreature = name => CARDS[name]?.type.startsWith('Creature') || false;
+export const isCreature = name => CARDS[name]?.type?.split(' — ')[0].includes('Creature') || false;
 
 // Curated real land cards. The game models the listed basic mana abilities only.
 export const LANDS={
