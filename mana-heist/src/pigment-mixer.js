@@ -104,24 +104,66 @@ export function mixPigments(grid,dt=1){
   turbulence[i]*=.93;
  }
  // Correct transport drift through bounded iterative proportional fitting.
- // Every pixel sums to one; the global concentration stays consistent with
- // 1R+1U = 50/50 and 2R+1U = 66.7/33.3 even after extensive stirring.
- const totals=new Float64Array(C),factors=new Float64Array(C);
- for(let iteration=0;iteration<3;iteration++){
-  totals.fill(0);
-  for(let i=0;i<active.length;i++)if(active[i]){
-   for(let c=0;c<C;c++)totals[c]+=colors[c][i];
-  }
-  for(let c=0;c<C;c++)factors[c]=target[c]>0?
-   clamp(target[c]*grid.coloredCellCount/Math.max(totals[c],1e-10),.65,1.55):0;
-  for(let i=0;i<active.length;i++)if(active[i]){
-   let sum=0;
-   for(let c=0;c<C;c++){colors[c][i]*=factors[c];sum+=colors[c][i];}
-   if(sum>1e-8)for(let c=0;c<C;c++)colors[c][i]/=sum;
-  }
- }
+ // This preserves each individual mana color even after very long stirring.
+ rebalancePigments(grid,3);
  updateRgbFromPigments(grid);
 }
+
+export function rebalancePigments(grid,passes=3){
+ if(!grid.pigmentLive)return;
+ const {active,pigments:colors,pigmentTargets:target}=grid;
+  const totals=new Float64Array(C),factors=new Float64Array(C);
+  for(let iteration=0;iteration<passes;iteration++){
+   totals.fill(0);
+   for(let i=0;i<active.length;i++)if(active[i]){
+    for(let c=0;c<C;c++)totals[c]+=colors[c][i];
+   }
+   for(let c=0;c<C;c++)factors[c]=target[c]>0?
+    clamp(target[c]*grid.coloredCellCount/Math.max(totals[c],1e-10),.65,1.55):0;
+   for(let i=0;i<active.length;i++)if(active[i]){
+    let sum=0;
+    for(let c=0;c<C;c++){colors[c][i]*=factors[c];sum+=colors[c][i];}
+    if(sum>1e-8)for(let c=0;c<C;c++)colors[c][i]/=sum;
+   }
+  }
+ updateRgbFromPigments(grid);
+}
+// Inject a NEW mana into the existing water without resetting stirred dye.
+// Its wedge occupies roughly one new part of the whole bowl, while the other
+// regions keep their existing pigments and mixtures.
+export function introducePigment(grid,orb,allOrbs){
+ if(!grid.pigmentLive)return initializePigments(grid,allOrbs);
+ const ci=COLOR_ORDER.indexOf(orb?.color);
+ if(ci<0)return;
+ const list=allOrbs||[];
+ const total=list.length;
+ if(!total)return;
+ const n=grid.n,mid=(n-1)/2;
+ const fraction=1/total;
+ const id=String(orb.id||"");
+ const seed=id.split("").reduce((sum,ch)=>sum+ch.charCodeAt(0),0);
+ const at=(seed*.037+ci*.113)%1;
+ const fade=Math.min(.0075,fraction*.08);
+ for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+  const i=idx(x,y,n);
+  if(!grid.active[i])continue;
+  const dx=x-mid,dy=y-mid,d=Math.hypot(dx,dy);
+  const angle=(Math.atan2(dy,dx)/TAU+1)%1;
+  const wave=.009*Math.sin(d*.25+angle*17)+.003*Math.sin(x*.21+y*.13);
+  const offset=(angle-at+wave+1)%1;
+  const left=clamp(offset/Math.max(fade,1e-8),0,1);
+  const right=clamp((fraction-offset)/Math.max(fade,1e-8),0,1);
+  const amount=Math.min(left,right)*.995;
+  for(let c=0;c<C;c++)grid.pigments[c][i]*=1-amount;
+  grid.pigments[ci][i]+=amount;
+ }
+ for(let c=0;c<C;c++){
+  const code=COLOR_ORDER[c];
+  grid.pigmentTargets[c]=list.filter(item=>item.color===code).length/total;
+ }
+ rebalancePigments(grid,5);
+}
+
 export function pigmentStatistics(grid){
  if(!grid.pigmentLive)return null;
  const totals=COLOR_ORDER.map(()=>0);
