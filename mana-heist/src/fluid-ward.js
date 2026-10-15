@@ -122,6 +122,10 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
  function clearGrid(){
   target.classList.remove("ward-breaking");
   for(const k of FIELDS)grid[k].fill(0);
+  // Undo, a new ward, or Map must not retain pigment from an old state.
+  grid.pigmentLive=false;
+  grid.pigments?.forEach(field=>field.fill(0));
+  grid.turbulence?.fill(0);
   appliedIds.clear();charged=[];ripples=[];pulse=0;
  }
  const coord=event=>{
