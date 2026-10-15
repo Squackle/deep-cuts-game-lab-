@@ -34,7 +34,8 @@
      <div><small>PAR</small><strong id="parScore">TURN 1</strong></div>
     </div>
     <div class="vault-stage">
-     <div class="lock-ring" id="wardTarget">
+     <div class="lock-ring" id="wardTarget" aria-label="Magical water. Drag inside the circle to stir the mana colors.">
+       <canvas id="wardFluidCanvas" class="ward-fluid-canvas" width="192" height="192" aria-label="Interactive mana water: drag here to stir the colors"></canvas>
        <svg id="wardManaRing" class="ward-mana-ring" viewBox="0 0 120 120" role="img" aria-label="No mana charged toward ward yet" focusable="false"></svg>
        <span class="lock-glyph" id="lockGlyph">◇</span>
        <span class="ward-charge-count" id="wardChargeCount">0 / 1</span>

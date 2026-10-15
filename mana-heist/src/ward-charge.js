@@ -38,7 +38,7 @@ function sectorPath(i,total){
  const a=polar(start),b=polar(end),large=end-start>180?1:0;
  return "M 60 60 L "+a.join(" ")+" A "+radius+" "+radius+" 0 "+large+" 1 "+b.join(" ")+" Z";
 }
-export function renderWardCharge({svg,count,cost,orbs,pendingId=null,pendingIds=[],animateId=null,open=false}){
+export function renderWardCharge({svg,count,cost,orbs,pendingId=null,pendingIds=[],animateId=null,open=false,fluid=false}){
  if(!svg)return {total:0,charged:[]};
  const included=orbs.filter(orb=>orb.id!==pendingId&&!pendingIds.includes(orb.id));
  const result=chargeAllocation(cost,included);
@@ -58,7 +58,9 @@ export function renderWardCharge({svg,count,cost,orbs,pendingId=null,pendingIds=
   ' cx="60" cy="60" r="48" transform="rotate(-90 60 60)" stroke="'+MANA_HUES[item.color]+'"'+
   ' stroke-dasharray="'+arc.toFixed(3)+' '+circle.toFixed(3)+'" stroke-dashoffset="'+(-i*step-gap/2).toFixed(3)+'"'+
   ' style="--arc-length:'+arc.toFixed(3)+';--arc-circumference:'+circle.toFixed(3)+'"/>' ).join("");
- svg.innerHTML='<circle class="ward-charge-back" cx="60" cy="60" r="48"/>'+sectors+track+lights;
+ svg.innerHTML=fluid?
+  '<circle class="ward-charge-back" cx="60" cy="60" r="48"/><circle class="ward-water-rim" cx="60" cy="60" r="48"/>':
+  '<circle class="ward-charge-back" cx="60" cy="60" r="48"/>'+sectors+track+lights;
  svg.setAttribute("aria-label",open?"Vault opened":charged.length+" of "+total+" mana charged toward the ward");
  if(count)count.textContent=open?"OPEN":charged.length+" / "+total;
  if(animateId!=null&&typeof svg.querySelector==="function"){

@@ -839,3 +839,52 @@
 @media(prefers-reduced-motion:reduce){
  .galaxy-tab{transition:none}
 }
+
+
+/* 2.1: top-down enchanted water with physically stirred dye — not rim particles. */
+.lock-ring.fluid-enabled{--fusion-color:#32616d;position:relative;isolation:isolate;cursor:grab;transition:box-shadow .28s,border-color .28s}
+.lock-ring.fluid-enabled.is-stirring{cursor:grabbing;box-shadow:inset 0 0 26px #71b0bd77,0 0 26px var(--fusion-color)!important}
+.lock-ring.fluid-enabled .ward-fluid-canvas{
+ display:block;position:absolute;inset:0;z-index:1;width:100%;height:100%;
+ border-radius:50%;touch-action:none;cursor:grab;pointer-events:auto;
+ user-select:none;-webkit-user-select:none;
+ box-shadow:inset 0 0 11px #050d13,0 0 14px var(--fusion-color);
+}
+.lock-ring.fluid-enabled.is-stirring .ward-fluid-canvas{cursor:grabbing}
+.lock-ring.fluid-enabled .ward-mana-ring{
+ z-index:2;pointer-events:none;
+ filter:drop-shadow(0 0 7px var(--fusion-color));
+}
+.lock-ring.fluid-enabled .ward-charge-back{stroke:#f0dba188;stroke-width:5;fill:none}
+.lock-ring.fluid-enabled .ward-water-rim{fill:none;stroke:#f8eac3bb;stroke-width:2.4}
+.lock-ring.fluid-enabled .lock-glyph,
+.lock-ring.fluid-enabled .ward-charge-count,
+.lock-ring.fluid-enabled .ring-text{z-index:3;pointer-events:none;position:relative}
+.lock-ring.fluid-enabled .lock-glyph{color:#fff5df;text-shadow:0 2px 7px #0c1e24,0 0 10px var(--fusion-color)}
+.lock-ring.fluid-enabled .ward-charge-count{
+ color:#ffffff;text-shadow:0 2px 7px #0a111b,0 0 10px #04070b;
+ background:#0e223366;border-radius:9px;padding:1px 5px
+}
+.lock-ring.fluid-enabled .ring-text{color:#fff3d9;text-shadow:0 1px 6px #08141a}
+.lock-ring.fluid-enabled.auto-primed{
+ border-color:#f8e6bd!important;
+ box-shadow:inset 0 0 28px var(--fusion-color),0 0 0 3px #edcf9280,0 0 30px var(--fusion-color)!important;
+ animation:waterPrimePulse .6s ease-in-out infinite alternate
+}
+@keyframes waterPrimePulse{from{filter:brightness(1)}to{filter:brightness(1.24)}}
+@media(prefers-reduced-motion:reduce){
+ .lock-ring.fluid-enabled,.lock-ring.fluid-enabled.auto-primed{animation:none!important;transition:none!important}
+}
+
+/* Give the stirred pool a little more working room without resizing the board.
+   The temporary hover enlargement never changes document height or card rows. */
+@media(hover:hover) and (min-width:801px){
+ .in-heist .lock-ring.fluid-enabled:hover,
+ .in-heist .lock-ring.fluid-enabled.is-stirring{
+  transform:scale(1.38);transform-origin:center;z-index:30;
+  transition:transform .17s cubic-bezier(.2,.85,.25,1),box-shadow .2s;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .in-heist .lock-ring.fluid-enabled:hover{transform:none!important}
+}

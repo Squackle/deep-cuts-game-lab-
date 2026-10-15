@@ -5,6 +5,8 @@ import {highestUnlocked,unlocked,chapterIndex,stageCode,normalizedBests,chapterA
 import {renderOverworld} from "./overworld.js";
 import {reconstruct,transitionOrbs,consistent,sendOrb} from "./mana-orbs.js";
 import {renderWardCharge} from "./ward-charge.js";
+import {installFluidWard} from "./fluid-ward.js";
+import {PRELOADED_MIX_COUNT} from "./fluid-palette.js";
 import {chooseAutomaticCast} from "./auto-cast.js";
 import {landPainting} from "./land-art.js";
 import {installLandDragging} from "./drag-lands.js";
@@ -28,28 +30,48 @@ function cancelAuto(){
  if(autoTimer!==null){clearTimeout(autoTimer);autoTimer=null;}
  el("wardTarget")?.classList.remove("auto-primed");
 }
+// The water is optional to stir: leave a short window after charging, let
+// stirring postpone the finish, but NEVER let interaction block a puzzle.
+const AUTO_SETTLE_MS=1400,AUTO_STIR_MAX_MS=5100;
 function queueAutoCast(){
  if(pendingFlights.size||completed(level,state))return;
- const payment=chooseAutomaticCast(level,state);
- if(!payment||autoTimer!==null)return;
+ if(!chooseAutomaticCast(level,state)||autoTimer!==null)return;
  el("wardTarget").classList.add("auto-primed");
- el("autoCastLabel").textContent="WARD PRIMED · CASTING AUTOMATICALLY";
- const epoch=viewEpoch;
- autoTimer=setTimeout(()=>{
+ el("autoCastLabel").textContent="WARD READY · STIR TO MIX · AUTO CAST";
+ const epoch=viewEpoch,primedAt=performance.now();
+ function tryCast(){
+  if(epoch!==viewEpoch||pendingFlights.size||completed(level,state)){autoTimer=null;return;}
+  const now=performance.now(),elapsed=now-primedAt;
+  const stirring=fluid.isStirring()||now-fluid.lastStirAt()<650;
+  if(elapsed<AUTO_SETTLE_MS||(stirring&&elapsed<AUTO_STIR_MAX_MS)){
+   autoTimer=setTimeout(tryCast,140);return;
+  }
   autoTimer=null;
-  if(epoch!==viewEpoch||pendingFlights.size||completed(level,state))return;
   const legal=chooseAutomaticCast(level,state);
   if(legal)perform(legal);
- },520);
+ }
+ autoTimer=setTimeout(tryCast,140);
 }
 
 const pendingFlights=new Set();
+const fluid=installFluidWard({
+ canvas:el("wardFluidCanvas"),target:el("wardTarget"),
+ onInteract:()=>{if(autoTimer!==null)el("autoCastLabel").textContent="STIRRING MANA · AUTO CAST ON RELEASE";}
+});
+el("wardTarget").dataset.preloadedMixes=String(PRELOADED_MIX_COUNT);
+let currentFluidStage="";
 function chargeWard({pendingId=null,animateId=null}={}){
- return renderWardCharge({
+ const stageKey=level.id+":"+state.stage;
+ const isNewStage=currentFluidStage!==stageKey;
+ currentFluidStage=stageKey;
+ const result=renderWardCharge({
   svg:el("wardManaRing"),count:el("wardChargeCount"),
   cost:level.stages[state.stage]?.cost||{},orbs:manaOrbs,
-  pendingId,pendingIds:[...pendingFlights],animateId,open:completed(level,state)
+  pendingId,pendingIds:[...pendingFlights],animateId,open:completed(level,state),
+  fluid:fluid.available
  });
+ fluid.sync(result.charged,{reset:isNewStage});
+ return result;
 }
 const cardInspector=installCardInspector({dialog:el("realCardInspector"),closeButton:el("closeInspector")});
 const magnifier=installCardMagnifier({
@@ -239,7 +261,7 @@ function render(pendingId=null){
  el("wardName").textContent=isWin?"The seal is broken":stage.name;
  el("wardCost").innerHTML=isWin?"":costHtml(stage.cost);
  el("wardDescription").textContent=isWin?"The heist is complete. Your best route is preserved on this device.":stage.effect==="untap"?"Casting this heist spell also untaps one land you choose.":"Colored mana symbols require that exact color. A gray diamond is generic: you may use any remaining mana.";
- el("autoCastLabel").textContent=isWin?"ALL WARDS OPEN":stage.effect==="untap"?"AUTO REWIND · CHANNEL MANA":"AUTO-CAST ENABLED · CHANNEL MANA";
+ el("autoCastLabel").textContent=isWin?"ALL WARDS OPEN":stage.effect==="untap"?"AUTO REWIND · SWIRL THE WATER":"SWIRL THE MANA · AUTO-CAST ENABLED";
  el("stageList").innerHTML=level.stages.map((spell,i)=>'<span class="stage-marker '+(i<state.stage?"done":i===state.stage?"active":"")+'">'+(i<state.stage?"✓":String(i+1).padStart(2,"0"))+" "+spell.name+"</span>").join("");
  el("battleCount").textContent=state.field.length+" LAND"+(state.field.length===1?"":"S");
  syncLandRows();
@@ -262,6 +284,7 @@ function render(pendingId=null){
  selectedMessage="";
 }
 function showMap(){
+ fluid.pause();fluid.clear();currentFluidStage="";
  magnifier.hide();
  invalidateStagePrintings();
  cancelAuto();viewEpoch++;pendingFlights.clear();
@@ -276,6 +299,7 @@ function showMap(){
  el("campaignScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
 function showGame(){
+ fluid.resume();
  document.body.classList.add("in-heist");
  el("campaignScreen").hidden=true;el("gameScreen").hidden=false;
  el("gameNotes").hidden=false;
@@ -283,6 +307,7 @@ function showGame(){
  el("gameScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
 function load(i,enter=false){
+ fluid.clear();currentFluidStage="";
  magnifier.hide();
  cancelAuto();viewEpoch++;pendingFlights.clear();
  cardInspector.hide({restore:false});
