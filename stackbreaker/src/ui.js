@@ -130,8 +130,15 @@ function changeCase(n){index=Math.max(0,Math.min(scenarios.length-1,n));game=cre
 function shortCard(u){
  const gone=u.zone!=='battlefield';const ability=game.hand.find(a=>a.sourceId===u.id&&!game.used.includes(a.id));
  const active=ability&&game.status==='playing'&&legalActions(game).includes(ability.id);
+ const power=creaturePower(u),toughness=creatureToughness(u),printed=CARDS[u.card];
+ // Full Scryfall cards already show their printed power/toughness. Only replace
+ // the printed box if a real game effect changes either characteristic.
+ // Marked damage does not reduce toughness in Magic and never changes this box.
+ const changed=power!==printed.power||toughness!==printed.toughness;
  const flags=[u.indestructible?'INDESTRUCTIBLE':'',u.hexproof?'HEXPROOF':'',u.damage?`${u.damage} DAMAGE`:''].filter(Boolean).join(' · ');
- return `<div class="battle-unit"><button type="button" class="battle-card ${gone?'off':''} ${ability?'has-ability':''} ${active?'can-activate':''}" data-unit="${esc(u.id)}" ${ability?'data-activate-source="'+esc(ability.id)+'"':''} aria-label="${esc(u.card)}, ${creaturePower(u)}/${creatureToughness(u)}. ${active?'Activate its printed ability.':'View or target this card.'}">${thumb(u.card,'normal','battle-image')}<span class="flags">${esc(gone?u.zone.toUpperCase():flags)}</span><strong class="pt">${creaturePower(u)}/${creatureToughness(u)}</strong></button></div>`;
+ const altered=changed?`<span class="pt-replacement" data-modified-pt aria-label="Modified power and toughness ${power}/${toughness}" title="Modified power/toughness: ${power}/${toughness}">${power}/${toughness}</span>`:'';
+ const status=flags?`<span class="flags">${esc(flags)}</span>`:'';
+ return `<div class="battle-unit"><button type="button" class="battle-card ${gone?'off':''} ${ability?'has-ability':''} ${active?'can-activate':''}" data-unit="${esc(u.id)}" ${ability?'data-activate-source="'+esc(ability.id)+'"':''} aria-label="${esc(u.card)}, ${power}/${toughness}. ${esc(flags)} ${active?'Activate its printed ability.':'View or target this card.'}"><span class="battle-card-face">${thumb(u.card,'normal','battle-image')}${altered}</span>${status}</button></div>`;
 }
 function landCard(l){const c=LANDS[l.card],m=c.mana;return `<button class="land-card ${m} ${l.tapped?'tapped':''}" type="button" data-land="${esc(l.id)}" ${l.tapped||game.status!=='playing'?'disabled':''} title="${esc(l.card+' — '+c.oracle)}" aria-label="${l.tapped?'Tapped':'Tap'} ${esc(l.card)} for ${m} mana">${thumb(l.card,'normal','land-image')}<span class="tap-label">${l.tapped?'TAPPED':`TAP · ${m}`}</span></button>`;}
 function stackCard(item,i){

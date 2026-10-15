@@ -1,4 +1,4 @@
-# Stackbreaker 0.5 — Tap. Cast. Survive.
+# Stackbreaker 0.6 — Printed Card Stats
 
 An **unofficial, limited Magic: The Gathering tactical training tool** on the independent Deep Cuts Game Lab site.
 
@@ -18,7 +18,7 @@ Permanent Lab URL: https://deep-cuts-game-lab.pages.dev/stackbreaker/
 
 1. Select a case. Evaluate the stack from **top to bottom** and your objective.
 2. Tap named land cards to add mana to the pool. Check the color pips on the spells in your hand.
-3. Choose any target or generic mana payment on a spell. Drag the spell onto the **Stack** table. You can also use the **Cast** button or numeric hotkeys.
+3. Drag a spell card from your hand onto the **Stack** or **Battlefield**. Choose a target and generic mana payment after dropping, only when needed. Permanent spells still use the stack before entering play. Activate battlefield abilities by tapping their real card.
 4. Use **Pass / Resolve** to pass priority; the scripted opponent passes and the stack resolves in last-in-first-out order.
 5. Click **Next Case** or **Reset** from the control strip without scrolling.
 
@@ -32,7 +32,7 @@ Permanent Lab URL: https://deep-cuts-game-lab.pages.dev/stackbreaker/
 
 ## Release boundary
 
-Only `stackbreaker/**` in `Squackle/deep-cuts-game-lab-`. Do not modify Hive Run, Mana Heist, the production `Squackle/deep-cuts-edh` Arcade, site accounts, D1, score stores or other games. Roll back by reverting the specific Stackbreaker 0.5 PR, preserving concurrent Lab work.
+Only `stackbreaker/**` in `Squackle/deep-cuts-game-lab-`. Do not modify Hive Run, Mana Heist, the production `Squackle/deep-cuts-edh` Arcade, site accounts, D1, score stores or other games. Roll back by reverting the specific Stackbreaker PR, preserving concurrent Lab work.
 
 
 ## Scryfall card imagery (0.5)
@@ -47,3 +47,11 @@ Scryfall-supplied art crops have full-card hover previews and artist/copyright c
 - Activate Selfless Spirit by clicking/tapping the real battlefield permanent; sacrifice is an activation cost, not a hand spell. Hold on touch to inspect its full card without activating.
 - If a spell has multiple legal targets, a small in-game target picker appears; choose by tapping a valid permanent/stack entry/life total or by accessible choices. Generic mana selection appears only when genuinely ambiguous.
 - Keyboard equivalent: Enter on hand card, then Enter on battlefield or stack. No Cast button. All game controls remain within viewport.
+
+## v0.6 printed power/toughness
+
+- Battlefield creatures render as unobstructed portrait Scryfall cards. The normal printed P/T on the card is the only visible P/T: there are **no duplicated numeric badges**.
+- An effect that changes effective power or toughness (for example, Giant Growth) creates a small parchment P/T replacement positioned **directly on the image's printed bottom-right P/T box**, showing the current effective value. The replacement disappears if the creature returns to its printed characteristics.
+- Damage marked on a creature is tracked separately by the rules engine; it does **not** reduce toughness or create a P/T replacement. Other conditional game-state indicators remain conditional, not printed P/T duplicates.
+- Portrait-shaped clickable battlefield cards use all available battlefield height (up to 145px) while the full interactive game stays inside its viewport. Existing click-to-activate and drag-to-target behavior remains intact.
+- Regression checks: `python tests/printed_stats.test.py` validates unmodified stats, marked damage, Giant Growth's 5/5 replacement, correct image-relative positioning, and no runtime errors at 320/390/768/1280 viewport widths.
