@@ -7,18 +7,24 @@
 <link rel="stylesheet" href="./styles.css"><script type="module" src="./src/main.js"></script>
 </head>
 <body>
-<a href="#heist" class="skip">Skip to Mana Heist</a>
+<a href="#campaignScreen" class="skip">Skip to campaign</a>
 <header class="bar">
  <a class="brand" href="../"><span class="emblem" aria-hidden="true">◇</span><span>DEEP CUTS <strong>GAME LAB</strong></span></a>
- <div class="bar-actions"><span class="test-stamp">LANDFALL · 0.2 PLAYTEST</span><a href="../" class="back">← HIVE RUN LAB</a></div>
+ <div class="bar-actions"><span class="test-stamp">OVERWORLD · 0.3 PLAYTEST</span><a href="../" class="back">← HIVE RUN LAB</a></div>
 </header>
 <main class="shell">
  <section class="hero">
   <div><p class="overline">AN ORIGINAL LAND-BASED LOGIC HEIST</p><h1>MANA <em>HEIST.</em></h1><p class="tagline">Tap the land. Find the line. Crack the vault.</p><p class="muted">Eighteen handcrafted puzzles. Five escalating chapters. No clock, no accounts, no public scores. Every decision has a cost.</p></div>
   <div class="crest" aria-hidden="true"><span>✶</span></div>
  </section>
- <div class="chapter-top"><div><p class="overline">YOUR CASE FILES</p><h2>THE VAULTS <small>01—18</small></h2></div><div class="campaign-total" id="campaignTotal" aria-live="polite">0 / 18 CRACKED</div></div>
- <div id="chapterPicker" class="chapter-picker" aria-label="Choose a vault"></div>
+ <section id="campaignScreen" class="campaign-screen" aria-labelledby="mapTitle">
+  <div class="campaign-top"><div><p class="overline">THE HEIST CAMPAIGN</p><h2 id="mapTitle">CHOOSE YOUR PATH</h2><p class="muted">Crack each vault to reveal the next. Earlier stages stay replayable.</p></div><span id="campaignTotal" class="campaign-total" aria-live="polite">0 / 18 CRACKED</span></div>
+  <div class="world-navigation"><button type="button" id="previousWorld" aria-label="Previous chapter">← PREVIOUS ACT</button><div class="world-nameplate"><p class="overline" id="worldNumber">ACT I</p><h3 id="worldName">THE FIRST KEY</h3><p id="worldSubtitle" class="muted"></p></div><button type="button" id="nextWorld" aria-label="Next unlocked chapter">NEXT ACT →</button></div>
+  <div class="campaign-track" aria-label="Campaign map"><div class="path-line" aria-hidden="true"></div><div id="chapterPicker" class="chapter-picker" role="group" aria-label="Stages in the current chapter"></div></div>
+  <div class="overworld-footer"><p id="mapHint" role="status" class="muted">Select an unlocked stage to begin.</p><div id="worldPips" class="world-pips" aria-label="Chapter progress"></div></div>
+ </section>
+ <div id="gameScreen" hidden>
+  <div class="game-titlebar"><button type="button" id="returnMap">← CAMPAIGN MAP</button><span id="stageLabel" class="stage-label">STAGE 1:1</span></div>
  <div class="play-grid" id="heist">
   <div class="play-column">
    <section class="vault-card" aria-labelledby="vaultName">
@@ -52,14 +58,14 @@
     <div id="hand" class="land-grid" aria-label="Lands available to play"></div>
     <div id="libraryPanel" class="library-panel" hidden></div>
    </section>
-   <div class="controlbar"><button type="button" id="endTurn" class="primary">END TURN <span>↗</span></button><button id="undo" type="button">↶ UNDO</button><button id="reset" type="button">⟲ RESTART</button><button id="skip" type="button">NEXT VAULT →</button></div>
+   <div class="controlbar"><button type="button" id="endTurn" class="primary">END TURN <span>↗</span></button><button id="undo" type="button">↶ UNDO</button><button id="reset" type="button">⟲ RESTART</button><button id="skip" type="button">← MAP</button></div>
    <p class="feedback" id="feedback" role="status" aria-live="polite">Choose your first move.</p>
   </div>
   <aside class="side">
    <section class="side-box pool-box">
     <div class="section-label"><div><p class="overline">MANA LEDGER</p><h2>Floating mana</h2></div><span id="poolTotal" class="count">0 IN POOL</span></div>
-    <div id="pool" class="pool" aria-label="Mana currently available"></div>
-    <p class="muted small">Mana stays in your pool until spent. Unspent mana empties when you end your turn.</p>
+    <div class="pool-console"><div class="pool-console-top"><span>◉ THE RESERVOIR</span><span>LAND → SOCKET</span></div><div id="pool" class="pool mana-sockets" aria-label="Mana sockets, filled by tapping lands"></div></div>
+    <p id="poolNarration" class="muted small" aria-live="polite">Tap a land: its mana orb travels here to fill a socket. Casting spends filled orbs; ending your turn empties them.</p>
    </section>
    <section class="side-box action-box" id="actionBox">
     <div class="section-label"><div><p class="overline">DECISION POINT</p><h2 id="actionTitle">Your next choice</h2></div><span class="flourish">✧</span></div>
@@ -79,6 +85,8 @@
    </section>
   </aside>
  </div>
+ </div>
 </main>
+<div id="manaTravelLayer" class="mana-travel-layer" aria-hidden="true"></div>
 <footer class="footer"><span>MANA HEIST · AN UNOFFICIAL ORIGINAL PUZZLE PROTOTYPE</span><span>Original card designs and art · no Wizards card images, names or symbols · no production profiles</span><a href="../">GAME LAB ↑</a></footer>
 </body></html>
