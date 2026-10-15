@@ -98,7 +98,9 @@ export const CARDS={
   "Farseek":{"type":"Sorcery","cost":{"generic":1,"G":1},"colors":["G"],"oracle":"Search your library for a Plains, Island, Swamp, or Mountain card, put it onto the battlefield tapped, then shuffle.","effect":null},
   "Ponder":{"type":"Sorcery","cost":{"U":1},"colors":["U"],"oracle":"Look at the top three cards of your library, then put them back in any order. You may shuffle. Draw a card.","effect":null},
   "Harmonize":{"type":"Sorcery","cost":{"generic":2,"G":2},"colors":["G"],"oracle":"Draw three cards.","effect":null},
-  "Read the Bones":{"type":"Sorcery","cost":{"generic":2,"B":1},"colors":["B"],"oracle":"Scry 2, then draw two cards. You lose 2 life.","effect":null}
+  "Read the Bones":{"type":"Sorcery","cost":{"generic":2,"B":1},"colors":["B"],"oracle":"Scry 2, then draw two cards. You lose 2 life.","effect":null},
+  "Urza's Rage":{"type":"Instant","cost":{"generic":2,"R":1},"colors":["R"],"oracle":"Kicker {8}{R}\nThis spell can't be countered.\nUrza's Rage deals 3 damage to any target. If this spell was kicked, instead it deals 10 damage to that permanent or player and the damage can't be prevented.","effect":"damage","amount":3,"targetRule":"any","uncounterable":true,"note":"Unkicked mode only. Three damage can be prevented but the spell cannot be countered."},
+  "Hallow":{"type":"Instant","cost":{"W":1},"colors":["W"],"oracle":"Prevent all damage target spell would deal this turn. You gain life equal to the damage prevented this way.","effect":"preventSpellDamage","targetRule":"stack:spell"}
 };
 export const cardLink = name => 'https://scryfall.com/search?q='+encodeURIComponent('!"'+name+'"');
 export const isCreature = name => CARDS[name]?.type.startsWith('Creature') || false;

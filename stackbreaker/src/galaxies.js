@@ -109,13 +109,65 @@ function landAllocation(p,line,seed){
  return COLORS.flatMap(color=>Array.from({length:c[color]},()=>({card:BASICS[color],controller:'player'})))
  .map((v,j)=>({id:'land-'+(j+1),...v}));
 }
+// Difficulty is calibrated by required independent answers, not by changing
+// cosmetic card names. Each added threat is a real opposing instant on the
+// stack, and every added response is a distinct legal Commander singleton card.
+const GRADES=[
+ {name:'Apprentice',min:1,max:2},
+ {name:'Adept',min:2,max:3},
+ {name:'Tactician',min:3,max:4},
+ {name:'Archmage',min:4,max:5},
+ {name:'Last Response',min:5,max:7}
+];
+const COUNTER_ANSWERS=['Dispel','Negate','Arcane Denial','Counterspell','Cancel','Stoic Rebuttal',"Dovin's Veto"];
+const BURN_THREATS=['Lightning Bolt','Lightning Strike','Searing Spear','Incinerate','Open Fire','Fiery Temper'];
+function galaxyTarget(gi,stage){
+ return [2,3,4,5,6][gi]+(gi===4&&stage===9?1:0);
+}
+function graduate(s,line,gi,stage){
+ const target=galaxyTarget(gi,stage);
+ const extra=Math.max(0,target-line.length);
+ if(extra===0){s.difficulty={galaxy:gi+1,requiredResponses:line.length,addedThreats:0,discipline:GRADES[gi].name};return;}
+ const own=new Set([...s.hand.filter(x=>!x.sourceId),...s.units.filter(x=>x.controller==='player'),...s.stack.filter(x=>x.controller==='player')].map(x=>x.card));
+ const theirs=new Set(s.stack.filter(x=>x.controller==='opponent').map(x=>x.card));
+ for(let k=0;k<extra;k++){
+  // Some late cases present an uncounterable spell. Hallow prevents its
+  // damage and gains life; simply firing another counterspell cannot help.
+  const prevention=gi>=3&&stage%3===0&&k===0&&!own.has('Hallow')&&!theirs.has("Urza's Rage");
+  const threat=prevention?"Urza's Rage":BURN_THREATS.find(x=>!theirs.has(x));
+  const answer=prevention?'Hallow':COUNTER_ANSWERS.find(x=>!own.has(x));
+  if(!threat||!answer)throw Error('No singleton-safe graduate '+s.id);
+  theirs.add(threat);own.add(answer);
+  const spellId='peril-'+(k+1),responseId='answer-'+(k+1);
+  // Existing opponent stack spells are preserved; new threats resolve in LIFO
+  // order unless the player recognizes and answers them first.
+  s.stack.push({id:spellId,card:threat,controller:'opponent',targetId:'player'});
+  s.hand.push({id:responseId,card:answer});
+  line.push([responseId,spellId]);
+ }
+ // Without the new responses, the uncoun­tered burn sequence is lethal.
+ // This deliberately narrows life totals in the advanced one-turn windows.
+ s.life.player=Math.min(s.life.player,3);
+ s.par=line.length;
+ s.difficulty={galaxy:gi+1,requiredResponses:line.length,addedThreats:extra,discipline:GRADES[gi].name};
+ s.intro+=' '+extra+' additional incoming stack '+(extra===1?'threat demands':'threats demand')+' exact responses. '+(gi>=3?'Every colored mana and target matters.':'Find the response to each threat.');
+ s.hint=gi>=3?'Read every opposing stack object and plan how the entire stack will resolve. Protect colored mana for later replies.':gi===2?'Solve the full stack, not just the top threat.':s.hint;
+ s.explanation+=' Also, '+extra+' extra burn '+(extra===1?'threat was':'threats were')+' answered before they could defeat you.'+(gi>=3&&stage%3===0?' The uncounterable Urza\'s Rage required Hallow to prevent damage, not a counterspell.':'');
+}
 export function generateStages(existing){
  if(existing.length!==30)throw Error('Expected the 30 approved core levels');
  const pool=[...existing,...MOTIFS.map(motif)],added=[];
  for(let n=31;n<=250;n++){
   const ix=n-31,gi=Math.floor((n-1)/50),wi=Math.floor(((n-1)%50)/10),stage=(n-1)%10;
-  const chosen=gi>=3&&stage>=7?30+(n+gi)%10:(ix*13+Math.floor(ix/10)*7+gi*11)%pool.length;
-  const source=pool[chosen],s=structuredClone(source),line=structuredClone(source.solution||SOLUTIONS[source.id]);
+  // Never regress to one-response exercises in the final galaxies.
+  const minBase=gi<3?1:gi===3?2:3;
+  const maxBase=gi===0?2:gi===1?3:gi===2?4:gi===3?5:5;
+  const eligible=pool.filter(p=>{
+   const length=(p.solution||SOLUTIONS[p.id])?.length||0;
+   return length>=minBase&&length<=maxBase&&p.objective.type!=='win';
+  });
+  const chosen=(ix*13+Math.floor(ix/10)*7+gi*11)%eligible.length;
+  const source=eligible[chosen],s=structuredClone(source),line=structuredClone(source.solution||SOLUTIONS[source.id]);
   if(!line)throw Error('Untested template '+source.id);
   const rename={};const originals=[...s.units,...s.stack,...s.hand].map(a=>a.card);
   for(let k=0;k<originals.length;k++){const name=originals[k];
@@ -124,7 +176,9 @@ export function generateStages(existing){
   for(const a of [...s.units,...s.stack,...s.hand])a.card=rename[a.card]||a.card;
   for(const [name,newName] of Object.entries(rename))if(name!==newName)
    for(const textField of ['intro','hint','explanation'])s[textField]=s[textField].replaceAll(name,newName);
-  s.id='sg-'+String(n).padStart(3,'0');s.tier=gi===0?'Investigator':'Mastermind';s.mana={};s.par=line.length;s.solution=line;
+  s.id='sg-'+String(n).padStart(3,'0');s.tier=gi===0?'Investigator':'Mastermind';s.mana={};
+  graduate(s,line,gi,stage);
+  s.par=line.length;s.solution=line;
   s.lands=landAllocation(s,line,n);
   s.title=PREFIX[(n*7+gi)%PREFIX.length]+' '+SUFFIX[(n*3+stage)%SUFFIX.length]+': '+s.title;
   s.intro='Galaxy '+(gi+1)+', world '+(wi+1)+', stage '+(stage+1)+'. '+s.intro;
