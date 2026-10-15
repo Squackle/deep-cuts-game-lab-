@@ -7,8 +7,8 @@ import {BRIEFINGS,BossBriefingGate} from "../src/boss-briefing.js";
 import {newRun,start,step,RULES_VERSION} from "../src/engine.js";
 import {ABILITIES} from "../src/miniboss.js";
 
-test("four selectable Lair bosses match original encounter difficulty and correct depths",()=>{
- const ids=["stalker","warden","weaver","guardian"];
+test("five selectable Lair bosses match original encounter difficulty and correct depths",()=>{
+ const ids=["stalker","warden","weaver","guardian","broodmother"];
  assert.deepEqual(LAIR_BOSSES.map(b=>b.id),ids);
  for(const spec of LAIR_BOSSES){
   const run=createLairRun(spec.id);
@@ -41,7 +41,7 @@ test("practice is deterministic, repeatable and never treated as ranked",()=>{
  assert.equal(isLairChallenge("hunt","practice"),true);
  assert.equal(isLairChallenge("classic","practice"),false);
  assert.equal(isLairChallenge("hunt","daily"),false);
- assert.equal(RULES_VERSION,"hive-1.3","existing ranked replay rules version is unaffected");
+ assert.equal(RULES_VERSION,"hive-1.5","solo Matriarch mechanics require a fresh replay rules version");
 });
 test("practicing a boss ends in a dedicated victory instead of a mutation draft",()=>{
  const run=createLairRun("weaver");
@@ -93,7 +93,7 @@ test("Lair flash draws pixel telegraphs and honors reduced motion",()=>{
  drawLairEffects(ctx,run,20,4000,burst,false);
  assert.ok(count>8);
 });
-test("both page variants offer four accessible boss buttons and clear unranked status",()=>{
+test("both page variants offer five accessible boss buttons and clear unranked status",()=>{
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  const js=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
  const css=readFileSync(new URL("../styles.css",import.meta.url),"utf8");
@@ -106,5 +106,5 @@ test("both page variants offer four accessible boss buttons and clear unranked s
  assert.match(js,/showBossBriefing\(\)/);
  assert.match(js,/RETRY BOSS/);
  assert.match(css,/\.lair-choices/);
- assert.match(html,/1\.4 · BEACON/);
+ assert.match(html,/1\.5 · MATRIARCH/);
 });
