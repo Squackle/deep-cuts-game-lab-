@@ -646,3 +646,97 @@
  }
 }
 @media(prefers-reduced-motion:reduce){.lock-ring.auto-primed{animation:none!important}}
+
+
+/* 1.1: Desktop and mobile clip repair. The vault owns its intrinsic height;
+   the battlefield and hand share the rest of the single-screen play area.
+   Earlier fixed fractional grid tracks could clip the ward circle and cards. */
+.in-heist #heist .play-column{
+ grid-template-rows:minmax(max-content, 226px) 42px minmax(0,1fr) minmax(0,1fr)!important;
+ gap:7px!important;
+ min-height:0!important;
+}
+.in-heist #heist .vault-card{
+ min-height:0!important;
+ height:auto!important;
+ overflow:visible!important;
+}
+.in-heist #heist .vault-stage{
+ flex:0 0 auto!important;
+ min-height:112px!important;
+ margin:5px 0 0!important;
+ padding:8px 10px!important;
+}
+.in-heist #heist .lock-ring{
+ width:100px!important;
+ height:100px!important;
+ max-width:100%!important;
+}
+.in-heist #heist .ward-info{
+ min-height:0!important;
+ gap:1px!important;
+}
+.in-heist #heist .auto-cast-status{
+ min-height:30px!important;
+ margin-top:4px!important;
+ padding:6px 10px!important;
+}
+.in-heist #heist .table-card{overflow:hidden!important;min-height:0!important}
+.in-heist #heist .table-card .land-grid{
+ min-height:0!important;
+ overflow-x:auto!important;
+ overflow-y:hidden!important;
+}
+.in-heist #battlefield{
+ --mh-land-width:clamp(94px,calc((100dvh - 425px)*.39),166px);
+}
+.in-heist #hand{
+ --mh-land-width:clamp(85px,calc((100dvh - 445px)*.30),138px);
+}
+.in-heist #battlefield .land-card.mtg-real-land:not(.is-tapped),
+.in-heist #hand .land-card.mtg-real-land:not(.is-tapped){
+ width:auto!important;
+ height:min(calc(var(--mh-land-width)*680/488),calc(100% - 8px))!important;
+ aspect-ratio:488/680!important;
+ flex:0 0 auto!important;
+}
+.in-heist #battlefield .land-card.mtg-real-land.is-tapped{
+ height:min(var(--mh-land-width),calc(100% - 8px))!important;
+ width:auto!important;
+ aspect-ratio:680/488!important;
+ flex:0 0 auto!important;
+}
+.in-heist #battlefield .land-card.mtg-real-land.is-tapped .mtg-card-image{
+ width:var(--mh-land-width)!important;
+ height:calc(var(--mh-land-width)*680/488)!important;
+}
+.in-heist #heist .play-column>.controlbar{position:relative;z-index:1}
+.in-heist .game-titlebar{justify-content:space-between}
+.in-heist .game-titlebar .stage-label{margin:auto}
+@media(max-width:800px){
+ .in-heist #heist .play-column{
+  grid-template-rows:minmax(147px,max-content) 39px minmax(0,1fr) minmax(0,1fr)!important;
+  gap:5px!important;
+ }
+ .in-heist #heist .vault-stage{
+  min-height:77px!important;padding:4px 7px!important;margin-top:3px!important;
+ }
+ .in-heist #heist .lock-ring{width:66px!important;height:66px!important}
+ .in-heist #heist .auto-cast-status{min-height:23px!important;margin-top:2px!important;padding:3px 6px!important}
+ .in-heist #battlefield{--mh-land-width:clamp(64px,11.1dvh,104px)}
+ .in-heist #hand{--mh-land-width:clamp(58px,10.0dvh,95px)}
+}
+@media(max-width:800px) and (max-height:670px){
+ .in-heist #heist .play-column{
+  grid-template-rows:minmax(127px,max-content) 33px minmax(0,1fr) minmax(0,1fr)!important;
+  gap:3px!important;
+ }
+ .in-heist #heist .vault-stage{min-height:70px!important;margin-top:2px!important;padding:2px 5px!important}
+ .in-heist #heist .lock-ring{width:57px!important;height:57px!important}
+ .in-heist #heist .auto-cast-status{min-height:20px!important}
+ .in-heist #battlefield{--mh-land-width:clamp(54px,10dvh,76px)}
+ .in-heist #hand{--mh-land-width:clamp(49px,9dvh,68px)}
+}
+@media(prefers-reduced-motion:reduce){
+ .in-heist .game-titlebar .stage-label{animation:none}
+}

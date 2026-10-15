@@ -2,7 +2,7 @@
 // The puzzle reducer remains authoritative for simplified land actions.
 import {referenceFor} from "./card-references.js";
 export function installCardInspector({dialog,trigger,closeButton}){
- if(!dialog||!trigger||!closeButton)throw Error("Inspector controls missing");
+ if(!dialog||!closeButton)throw Error("Inspector controls missing");
  const $=id=>dialog.querySelector("#"+id);
  const heading=$("inspectorTitle"),caption=$("inspectorGameCard"),image=$("inspectorImage"),fallback=$("inspectorImageFallback"),link=$("inspectorLink");
  let previousFocus=null;
@@ -14,7 +14,7 @@ export function installCardInspector({dialog,trigger,closeButton}){
   if(restore&&previousFocus?.isConnected&&typeof previousFocus.focus==="function")previousFocus.focus();
   previousFocus=null;
  }
- function show(cardKey,gameName){
+ function show(cardKey,gameName,printing=null){
   const real=referenceFor(cardKey);
   if(!real)return false;
   previousFocus=document.activeElement;
@@ -28,11 +28,11 @@ export function installCardInspector({dialog,trigger,closeButton}){
   image.onerror=()=>{image.hidden=true;fallback.hidden=false;};
   dialog.hidden=false;
   // The named-card image endpoint redirects to a full, unmodified card scan.
-  image.src=real.image;
+  image.src=printing?.normal||real.image;
   closeButton.focus();
   return true;
  }
- trigger.addEventListener("click",()=>trigger.dispatchEvent(new CustomEvent("inspect-current-land",{bubbles:true})));
+ if(trigger)trigger.addEventListener("click",()=>trigger.dispatchEvent(new CustomEvent("inspect-current-land",{bubbles:true})));
  closeButton.addEventListener("click",()=>hide());
  dialog.addEventListener("click",e=>{if(e.target===dialog)hide();});
  document.addEventListener("keydown",e=>{
