@@ -32,7 +32,30 @@ const GUARDIAN=[
 "....hsgghddhggsh....","...hssgghhhhggssh...","..hsshssddddsshssh..","...h..hssddssh..h...",
 ".......hssssh.......","........hssh........",".........hh.........","...................."
 ].map(r=>r.padEnd(20,'.').slice(0,20));
-export const ICON_PIXELS=Object.freeze({stalker:BURROW,weaver:WEB,warden:WARDEN,guardian:GUARDIAN});
+// An original egg-crowned matriarch, wider than the existing stone/void bosses.
+const BROODMOTHER=[
+"....................",
+"......h......h......",
+".....hgh....hgh.....",
+"....hsggh..hggsh....",
+"...ksssgghhggsssk...",
+"..ksgggsshhssgggsk..",
+"..ksgghhhhhhhhggsk..",
+".ksggghddssddhgggsk.",
+".ksggshdkkddkdhsggsk",
+".ksggshdkkkkdhsggsk.",
+".ksggshdkkddkdhsggsk",
+".ksggghddddddhgggsk.",
+"..ksgggshhhhsgggsk..",
+"..kssggssssssggssk..",
+"...kssggssggssgssk..",
+"....kssghhhhgssk....",
+".....ksgssssgsk.....",
+"......ksshssk.......",
+".......kkkkkk.......",
+"...................."
+].map(r=>r.padEnd(20,'.').slice(0,20));
+export const ICON_PIXELS=Object.freeze({stalker:BURROW,weaver:WEB,warden:WARDEN,guardian:GUARDIAN,broodmother:BROODMOTHER});
 export const OCHRE=Object.freeze({track:"#414335",fill:"#98824b",ready:"#b19a5a",stone:"#b2ab8f"});
 export function validateIcons(){return Object.values(ICON_PIXELS).every(a=>a.length===20&&a.every(row=>row.length===20&&[...row].every(c=>Object.hasOwn(PALETTE,c))))}
 export function chargePixels(charge){
