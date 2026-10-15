@@ -3,8 +3,9 @@ import {createGame,tapLand,activate,pass,paymentOptions,legalActions,legalTarget
 import coreScenarios from '../data/scenarios.json' with {type:'json'};
 import campaignExpansion from '../data/campaign-expansion.json' with {type:'json'};
 import {GALAXIES,makeWorlds,generateStages} from './galaxies.js';
+import {commanderScenario,HAND_SIZE} from './commander.js';
 const extraStages=generateStages([...coreScenarios,...campaignExpansion]);
-const scenarios=[...coreScenarios,...campaignExpansion,...extraStages];
+const scenarios=[...coreScenarios,...campaignExpansion,...extraStages].map((scenario,i)=>commanderScenario(scenario,i));
 const chapters=makeWorlds();
 
 const $=id=>document.getElementById(id);
@@ -259,7 +260,7 @@ function render(){closeCardPreview();const s=game,p=scenarios[index],worldIndex=
  $('battlefield').innerHTML=s.units.filter(u=>u.zone==='battlefield').length?s.units.filter(u=>u.zone==='battlefield').map(shortCard).join(''):'<span class="empty-creatures">No creatures in this case</span>';
  $('lands').innerHTML=s.lands.length?s.lands.map(landCard).join(''):'<span class="empty-creatures">No lands needed — activate your creature’s ability</span>';
  $('stackCount').textContent=String(s.stack.length).padStart(2,'0');$('stack').innerHTML=s.stack.length?[...s.stack].reverse().map(stackCard).join(''):'<li class="stack-empty">Empty stack</li>';
- const remaining=s.hand.filter(a=>!a.sourceId&&!s.used.includes(a.id));$('handCount').textContent=remaining.length+' CARDS';$('hand').classList.toggle('many',remaining.length>3);$('hand').innerHTML=remaining.map(handCard).join('')||'<span class="empty-creatures">No spells in hand</span>';
+ const remaining=s.hand.filter(a=>!a.sourceId&&!s.used.includes(a.id));$('handCount').textContent=remaining.length+' UNIQUE CARDS';$('hand').classList.toggle('many',remaining.length>3);$('hand').innerHTML=remaining.map(handCard).join('')||'<span class="empty-creatures">No spells in hand</span>';
  $('passButton').disabled=s.status!=='playing';$('undoButton').disabled=!history.length;$('prevButton').disabled=index===0;$('prevButton').textContent='← PREV';$('nextButton').disabled=index===scenarios.length-1;$('nextButton').textContent=index%10===9?'NEXT WORLD →':'NEXT →';$('mapButton').setAttribute('aria-label',`Open chapter map for ${chapters[worldIndex].name}`);
  $('resultMini').className='result-mini'+(s.status==='won'?' won':s.status==='lost'?' lost':'');$('resultEyebrow').textContent=s.status==='won'?'✓ CASE SOLVED':s.status==='lost'?'✕ TRY AGAIN':'YOUR MOVE';
  $('resultTitle').textContent=s.status==='won'?(index%10===9?'★ Chapter completed — claim your flag on the map!':'Next case is ready'):s.status==='lost'?'Reset or undo to retry':'Tap lands, drag a spell, or activate a creature';
@@ -268,7 +269,20 @@ function render(){closeCardPreview();const s=game,p=scenarios[index],worldIndex=
  if(s.status==='won'){const par=p.par||2,stars=s.used.length<=par?3:s.used.length===par+1?2:1;progress[p.id]=Math.max(progress[p.id]||0,stars);save();$('resultStars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);}else $('resultStars').textContent='';
  renderPlayPrompt();$('completed').textContent=Object.keys(progress).filter(id=>scenarios.some(s=>s.id===id)).length+' / '+scenarios.length+' SOLVED';$('log').innerHTML=s.log.slice(-14).reverse().map(x=>`<li>${esc(x)}</li>`).join('');$('version').textContent=RULES_VERSION;$('live').textContent=s.log.at(-1)||'Tap a land to produce mana.';
  if(dragSession)paintLegalDragTargets();
+ refreshHandArrows();
 }
+function refreshHandArrows(){
+ const row=$('hand');const prev=$('handPrev'),next=$('handNext');
+ if(!row||!prev||!next)return;
+ prev.disabled=row.scrollLeft<=2;
+ next.disabled=row.scrollLeft+row.clientWidth>=row.scrollWidth-2;
+}
+function scrollHand(direction){const row=$('hand');if(!row)return;
+ row.scrollBy({left:direction*Math.max(100,Math.floor(row.clientWidth*.7)),behavior:'smooth'});
+}
+$('handPrev').addEventListener('click',()=>scrollHand(-1));
+$('handNext').addEventListener('click',()=>scrollHand(1));
+$('hand').addEventListener('scroll',refreshHandArrows,{passive:true});
 function notify(message){$('live').textContent=message;}
 function pushState(s){clearDragFeedback();history.push(structuredClone(game));game=s;pendingPlay=null;armedCard=null;render()}
 function applyLand(id){try{pushState(tapLand(game,id));}catch(e){notify(e.message)}}
