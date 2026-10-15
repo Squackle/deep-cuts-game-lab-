@@ -125,20 +125,31 @@
 .battle-unit{height:100%;max-height:145px}
 
 
-/* 0.7: physical drag targeting with immediate legal / confirmed glows. */
+/* 0.8: high-contrast GOLD drag confirmation, visible over Scryfall art.
+   The card-frame inset highlight stays visible even if the native dragged-card
+   image partly covers the target, and the outer halo shows through at its edges. */
 .battle-card.drop-target-legal,.stack-entry.drop-target-legal,.life-widget.drop-target-legal{
- outline:2px solid #9dffc2;outline-offset:1px;
- box-shadow:0 0 0 3px #5cff952b,0 0 15px #64ffd358!important;
- transition:box-shadow .11s ease,outline-color .11s ease;
+ outline:2px solid #e3b85d!important;outline-offset:2px;
+ box-shadow:0 0 0 3px #ffd26c77,0 0 19px 4px #e9a63680!important;
+ transition:box-shadow .12s ease,outline-color .12s ease;
 }
 .battle-card.drop-target-hover,.stack-entry.drop-target-hover,.life-widget.drop-target-hover{
- outline:3px solid #dcffaf!important;outline-offset:1px!important;
- box-shadow:0 0 0 5px #75ff9b77,0 0 28px #a3ff9ae8,inset 0 0 13px #adffa879!important;
- filter:brightness(1.12);animation:sb-drop-pulse .7s ease-in-out infinite alternate;
+ outline:4px solid #ffea86!important;outline-offset:3px!important;
+ box-shadow:0 0 0 7px #ffcf3eb8,0 0 21px 9px #ffb11bd9!important;
+ filter:brightness(1.08);
 }
-@keyframes sb-drop-pulse{to{box-shadow:0 0 0 6px #75ff9b9c,0 0 33px #d5ffc9,inset 0 0 17px #ddffc17c!important}}
-.stack-zone.drop-target-legal,.field-zone.drop-target-legal{border-color:#7adca6;box-shadow:inset 0 0 0 2px #8aff9d4d}
-@media(prefers-reduced-motion:reduce){.battle-card.drop-target-hover,.stack-entry.drop-target-hover,.life-widget.drop-target-hover{animation:none}}
+.battle-card.drop-target-legal::after,.battle-card.drop-target-hover::after{
+ content:'';position:absolute;inset:0;z-index:8;pointer-events:none;
+ border:3px solid #f7c660;box-shadow:inset 0 0 13px #ffc229ae;
+ border-radius:4px;opacity:.55;
+}
+.battle-card.drop-target-hover::after{
+ border:4px solid #fff1a3;box-shadow:inset 0 0 20px 5px #ffc727bd;
+ opacity:1;animation:sb-gold-flash .85s ease-in-out infinite alternate;
+}
+@keyframes sb-gold-flash{from{opacity:.68}to{opacity:1}}
+.stack-zone.drop-target-legal,.field-zone.drop-target-legal{border-color:#d9b05c;box-shadow:inset 0 0 0 2px #facb624a}
+@media(prefers-reduced-motion:reduce){.battle-card.drop-target-hover::after{animation:none}}
 
 /* Reallocate wasted vertical room to readable card art without moving the buttons below the fold. */
 @media(min-width:841px){
