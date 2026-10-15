@@ -1,0 +1,57 @@
+[
+  {
+    "id": "w1",
+    "name": "The First Spark",
+    "subtitle": "Priority and your first response",
+    "icon": "\u2726",
+    "color": "#caa55d",
+    "terrain": "sunrise",
+    "start": 1,
+    "end": 6,
+    "boss": "The Final Exchange"
+  },
+  {
+    "id": "w2",
+    "name": "Shatterwood Trail",
+    "subtitle": "Protection, counters and survival",
+    "icon": "\u2667",
+    "color": "#77bf81",
+    "terrain": "forest",
+    "start": 7,
+    "end": 12,
+    "boss": "The Fractured Stack"
+  },
+  {
+    "id": "w3",
+    "name": "Spellwater Coast",
+    "subtitle": "Hexproof, toughness and targeted spells",
+    "icon": "\u2248",
+    "color": "#7fbfe0",
+    "terrain": "coast",
+    "start": 13,
+    "end": 18,
+    "boss": "The Three-Color Gate"
+  },
+  {
+    "id": "w4",
+    "name": "The Mana Rift",
+    "subtitle": "Multiple threats and precision timing",
+    "icon": "\u25c7",
+    "color": "#a996db",
+    "terrain": "rift",
+    "start": 19,
+    "end": 24,
+    "boss": "The Rift Engine"
+  },
+  {
+    "id": "w5",
+    "name": "Last Response Citadel",
+    "subtitle": "The toughest layered exchanges",
+    "icon": "\u265c",
+    "color": "#e2a579",
+    "terrain": "citadel",
+    "start": 25,
+    "end": 30,
+    "boss": "The Last Response"
+  }
+]

@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
 import {CARDS,LANDS,RULES_VERSION} from '../src/cards.js';
 import {validateScenario,createGame,tapLand,legalActions,legalTargets,activate,autoplay,paymentOptions,remainingMana,creaturePower,creatureToughness,pass} from '../src/engine.js';
-const cases=JSON.parse(readFileSync(new URL('../data/scenarios.json',import.meta.url),'utf8'));
+const cases=[...JSON.parse(readFileSync(new URL('../data/scenarios.json',import.meta.url),'utf8')),...JSON.parse(readFileSync(new URL('../data/campaign-expansion.json',import.meta.url),'utf8'))];
 const solutions={
  'sb-01':[['ward',null]],
  'sb-02':[['counter','bolt']],
@@ -14,7 +14,26 @@ const solutions={
  'sb-09':[['salve','player'],['dispel1','theircounter'],['dispel2','theirbolt']],
  'sb-10':[['salve1','player'],['salve2','player'],['dispel','theircounter']],
  'sb-11':[['salve','player'],['dispel','theircounter']],
- 'sb-12':[['salve1','player'],['salve2','player'],['dispel1','theircounter'],['dispel2','bolt1']]
+ 'sb-12':[['salve1','player'],['salve2','player'],['dispel1','theircounter'],['dispel2','bolt1']],
+
+ 'sb-13':[['defend','bear']],
+ 'sb-14':[['defend','lion']],
+ 'sb-15':[['dive','giant']],
+ 'sb-16':[['titan','bear'],['blossom','lion']],
+ 'sb-17':[['dive','giant'],['blossom','bear']],
+ 'sb-18':[['titan','bear'],['cancel','wrath']],
+ 'sb-19':[['blossom','bear'],['dive','giant']],
+ 'sb-20':[['ward',null],['dive','giant']],
+ 'sb-21':[['ward',null],['dive','giant'],['salve','player']],
+ 'sb-22':[['cancel','counterspell'],['salve','player'],['blossom','giant']],
+ 'sb-23':[['salve','player'],['counter','shock']],
+ 'sb-24':[['salve1','player'],['salve2','player'],['dispel1','enemycounter'],['dispel2','bolt1']],
+ 'sb-25':[['ward',null],['blossom','bear']],
+ 'sb-26':[['blossom','giant'],['salve','player']],
+ 'sb-27':[['ward',null],['dive','giant'],['salve','player']],
+ 'sb-28':[['blossom','giant'],['salve','player'],['dispel','enemycounter']],
+ 'sb-29':[['ward',null],['blossom','giant'],['salve','player'],['dispel','enemycounter']],
+ 'sb-30':[['ward',null],['blossom','giant'],['salve','player'],['dispel1','enemycounter'],['dispel2','bolt']]
 };
 const poolByLands=s=>s.lands.reduce((m,l)=>{m[LANDS[l.card].mana]=(m[LANDS[l.card].mana]||0)+1;return m;},{});
 function tapAll(s){for(const land of s.lands){s=tapLand(s,land.id);}return s;}
@@ -29,7 +48,7 @@ for(const p of cases){test(`${p.id}: physical-land mana, winning line, losing li
  let same=tapAll(createGame(p));for(const [id,target] of solutions[p.id])same=activate(same,id,target);assert.deepEqual(autoplay(same),result);
  assert.equal(autoplay(createGame(p)).status,'lost',`${p.id} wins with no response`);
  });}
-test('The Final Exchange is case six and later cases require layered responses',()=>{assert.equal(cases[5].title,'The Final Exchange');assert.equal(cases[5].id,'sb-06');assert.deepEqual(cases.map(c=>c.id),Array.from({length:12},(_,i)=>`sb-${String(i+1).padStart(2,'0')}`));assert.ok(solutions['sb-12'].length>solutions['sb-06'].length);});
+test('The Final Exchange is case six and later worlds require layered responses',()=>{assert.equal(cases[5].title,'The Final Exchange');assert.equal(cases[5].id,'sb-06');assert.deepEqual(cases.map(c=>c.id),Array.from({length:30},(_,i)=>`sb-${String(i+1).padStart(2,'0')}`));assert.ok(solutions['sb-12'].length>solutions['sb-06'].length);});
 test('Mana is NOT preloaded; tapping real named lands changes the pool without using the stack',()=>{const s=createGame(cases[1]);assert.deepEqual(s.mana,{});assert.ok(!legalActions(s).includes('counter'));let t=tapLand(s,'land-1');assert.equal(t.mana.U,1);assert.equal(t.lands[0].tapped,true);assert.equal(t.stack.length,s.stack.length);assert.equal(t.passCount,s.passCount);assert.deepEqual(s.mana,{});assert.throws(()=>tapLand(t,'land-1'),/cannot be tapped/);t=tapLand(t,'land-2');assert.ok(legalActions(t).includes('counter'));assert.ok(!s.lands[0].tapped);});
 test('Colored and true colorless costs must be paid distinctly from generic costs',()=>{let s={mana:{U:1,W:1,C:1,G:1}};assert.equal(remainingMana(s,{U:2}),null);assert.equal(remainingMana(s,{C:2}),null);assert.deepEqual(remainingMana(s,{U:1,C:1,generic:1},{W:1}),{W:0,U:0,B:0,R:0,G:1,C:0});assert.equal(remainingMana(s,{U:1,C:1,generic:1},{W:0}),null);});
 test('Players can choose the color paid for generic costs',()=>{const options=paymentOptions({mana:{U:1,G:1,W:1,C:1}},{U:1,generic:1});assert.ok(options.length>=3);let payGreen=options.find(x=>x.spend.G===1);let payWhite=options.find(x=>x.spend.W===1);assert.equal(payGreen.pool.G,0);assert.equal(payGreen.pool.W,1);assert.equal(payWhite.pool.W,0);assert.equal(payWhite.pool.G,1);});

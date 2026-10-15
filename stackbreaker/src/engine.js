@@ -26,8 +26,8 @@ export function validateScenario(p){
  for(const a of hand){say(!!CARDS[a.card],`unknown hand card ${a.card}`);say(!isCreature(a.card)||!!a.sourceId,'only activated creature abilities in hand');if(a.sourceId)say(units.some(u=>u.id===a.sourceId&&u.card===a.card&&u.controller==='player'),'bad ability source');}
  const allTargets=[...units.map(u=>u.id),...stack.map(x=>x.id),'player','opponent'];
  for(const x of stack)say(!CARDS[x.card]?.targetRule||allTargets.includes(x.targetId),`bad stack target ${x.id}`);
- say(['survive','keepN','keepUnit','win','saveFromGraveyard'].includes(p.objective?.type),'bad objective');
- if(p.objective?.type==='keepUnit'||p.objective?.type==='saveFromGraveyard')say(units.some(u=>u.id===p.objective.unitId),'objective unit missing');
+ say(['survive','keepN','keepUnit','win','winKeepUnit','saveFromGraveyard'].includes(p.objective?.type),'bad objective');
+ if(['keepUnit','winKeepUnit','saveFromGraveyard'].includes(p.objective?.type))say(units.some(u=>u.id===p.objective.unitId),'objective unit missing');
  if(p.objective?.type==='keepN')say(Number.isInteger(p.objective.count)&&p.objective.count>0,'bad objective count');
  return{valid:problems.length===0,errors:problems};
 }
@@ -40,6 +40,7 @@ export const creatureToughness=u=>CARDS[u.card].toughness+(u.toughnessBoost||0);
 export function objectiveMet(s){const o=s.objective; if(s.life.player<=0)return false;
  if(o.type==='survive')return s.life.player>0;
  if(o.type==='win')return s.life.opponent<=0&&s.life.player>0;
+ if(o.type==='winKeepUnit')return s.life.opponent<=0&&s.life.player>0&&s.units.some(u=>u.id===o.unitId&&u.zone==='battlefield'&&u.controller==='player');
  if(o.type==='keepN')return s.units.filter(u=>u.controller==='player'&&u.zone==='battlefield').length>=o.count;
  const unit=s.units.find(u=>u.id===o.unitId);if(!unit)return false;
  return o.type==='keepUnit'?unit.zone==='battlefield':unit.zone!=='graveyard';
@@ -96,6 +97,7 @@ function legalTarget(s,item,targetId){const rule=CARDS[item.card].targetRule;
  if(rule.startsWith('creature')){const u=s.units.find(x=>x.id===targetId&&x.zone==='battlefield');if(!u)return false;
  if(u.hexproof&&u.controller!==item.controller)return false;
  if(rule==='creature:nonblack'&&CARDS[u.card].colors.includes('B'))return false;
+ if(rule==='creature:own'&&u.controller!==item.controller)return false;
  return true;
  }
  if(rule==='any'){if(targetId==='player'||targetId==='opponent')return true;return legalCreatureTarget(s,item,targetId);}
@@ -132,6 +134,8 @@ function resolve(s,item){const c=CARDS[item.card],target=item.targetId;
  case 'damage':{const amount=c.amount;if(target==='player'||target==='opponent'){s.life[target]-=amount;s.log.push(`${item.card} deals ${amount} damage to ${labelTarget(s,target)}.`);}else{const u=s.units.find(x=>x.id===target);u.damage+=amount;s.log.push(`${item.card} marks ${amount} damage on ${u.card} (${u.damage}/${creatureToughness(u)} damage/toughness).`);}break;}
  case 'heal':s.life[target]+=c.amount;s.log.push(`Healing Salve: ${labelTarget(s,target)} gains ${c.amount} life.`);break;
  case 'counter':{let idx=s.stack.findIndex(x=>x.id===target);if(idx>=0){const x=s.stack.splice(idx,1)[0];s.log.push(`${item.card} counters ${x.card}.`);}break;}
+ case 'blossom':{const u=s.units.find(x=>x.id===target);u.powerBoost+=2;u.toughnessBoost+=2;u.hexproof=true;s.log.push(`${u.card} gets +2/+2 and gains hexproof until end of turn.`);break;}
+ case 'dive':{const u=s.units.find(x=>x.id===target);u.toughnessBoost+=3;u.hexproof=true;s.log.push(`${u.card} gets +0/+3 and gains hexproof until end of turn.`);break;}
  case 'pump':{const u=s.units.find(x=>x.id===target);u.powerBoost+=c.amount;u.toughnessBoost+=c.amount;s.log.push(`${u.card} gets +${c.amount}/+${c.amount} until end of turn.`);break;}
  case 'destroy':{const u=s.units.find(x=>x.id===target);if(u.indestructible)s.log.push(`${u.card} cannot be destroyed (indestructible).`);else{u.zone='graveyard';s.log.push(`${item.card} destroys ${u.card}.`);}break;}
  case 'exile':{const u=s.units.find(x=>x.id===target),p=creaturePower(u);u.zone='exile';s.life[u.controller]+=p;s.log.push(`Swords to Plowshares exiles ${u.card}; its controller gains ${p} life.`);break;}

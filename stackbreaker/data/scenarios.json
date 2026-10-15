@@ -49,7 +49,8 @@
     "opponentPolicy": "alwaysPass",
     "hint": "Activated abilities stay on the stack even when their source has been sacrificed.",
     "explanation": "Sacrifice Selfless Spirit as a cost. Its ability gives your other creatures indestructible before Wrath of God destroys creatures. Sacrifice itself does not count as destruction.",
-    "lands": []
+    "lands": [],
+    "par": 1
   },
   {
     "id": "sb-02",
@@ -104,7 +105,8 @@
         "card": "Plains",
         "controller": "player"
       }
-    ]
+    ],
+    "par": 1
   },
   {
     "id": "sb-03",
@@ -152,7 +154,8 @@
         "card": "Forest",
         "controller": "player"
       }
-    ]
+    ],
+    "par": 1
   },
   {
     "id": "sb-04",
@@ -213,7 +216,8 @@
         "card": "Wastes",
         "controller": "player"
       }
-    ]
+    ],
+    "par": 1
   },
   {
     "id": "sb-05",
@@ -257,7 +261,7 @@
     },
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
-    "hint": "Increasing toughness cannot stop a spell that says “destroy.”",
+    "hint": "Increasing toughness cannot stop a spell that says \u201cdestroy.\u201d",
     "explanation": "Heroic Intervention gives your Hill Giant hexproof. On resolution, Murder checks its target again, finds it illegal, and does not resolve. Giant Growth does not prevent destruction.",
     "lands": [
       {
@@ -280,7 +284,8 @@
         "card": "Plains",
         "controller": "player"
       }
-    ]
+    ],
+    "par": 1
   },
   {
     "id": "sb-06",
@@ -347,7 +352,8 @@
         "card": "Forest",
         "controller": "player"
       }
-    ]
+    ],
+    "par": 2
   },
   {
     "id": "sb-07",
@@ -429,7 +435,8 @@
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "Sacrifice the Spirit to defeat the board wipe. Counter the direct removal; a toughness pump cannot stop Murder.",
-    "explanation": "Selfless Spirit grants indestructible to the remaining team, blocking Wrath of God. Counterspell must stop Murder, because indestructible alone does not answer targeted exile or every removal effect."
+    "explanation": "Selfless Spirit grants indestructible to the remaining team, blocking Wrath of God. Counterspell must stop Murder, because indestructible alone does not answer targeted exile or every removal effect.",
+    "par": 2
   },
   {
     "id": "sb-08",
@@ -517,7 +524,8 @@
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "You need all three different responses. Protection from destruction is not life gain.",
-    "explanation": "The Spirit must be sacrificed to protect the Giant from Wrath of God. Healing Salve raises your life before the Bolt, and Counterspell removes Murder before it can destroy the Giant."
+    "explanation": "The Spirit must be sacrificed to protect the Giant from Wrath of God. Healing Salve raises your life before the Bolt, and Counterspell removes Murder before it can destroy the Giant.",
+    "par": 3
   },
   {
     "id": "sb-09",
@@ -594,7 +602,8 @@
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "You must stop their Counterspell AND one burn spell, while gaining enough life to survive the other.",
-    "explanation": "Healing Salve raises you to five. One Dispel protects your winning Bolt and the other counters a damage spell, leaving enough life to survive and deliver lethal damage."
+    "explanation": "Healing Salve raises you to five. One Dispel protects your winning Bolt and the other counters a damage spell, leaving enough life to survive and deliver lethal damage.",
+    "par": 3
   },
   {
     "id": "sb-10",
@@ -680,14 +689,15 @@
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "Two life-gain spells plus a counter for the opposing Counterspell is one solution. Or find another legal answer with your mana.",
-    "explanation": "Two Healing Salves allow you to take both Bolts, and a counterspell clears the path for your own Bolt. Different legal counter and mana allocations can also work."
+    "explanation": "Two Healing Salves allow you to take both Bolts, and a counterspell clears the path for your own Bolt. Different legal counter and mana allocations can also work.",
+    "par": 3
   },
   {
     "id": "sb-11",
     "version": "sb-mtg-training-0.3.0",
     "tier": "Mastermind",
     "title": "Protect the Protection",
-    "intro": "Your Heroic Intervention is ALREADY on the stack—an opponent is countering it. A lethal Bolt is on top, with Wrath and Swords waiting below.",
+    "intro": "Your Heroic Intervention is ALREADY on the stack\u2014an opponent is countering it. A lethal Bolt is on top, with Wrath and Swords waiting below.",
     "life": {
       "player": 2,
       "opponent": 17
@@ -773,7 +783,8 @@
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "Heal to survive the Bolt. Counter the spell that would stop your already-cast Heroic Intervention.",
-    "explanation": "Healing Salve keeps you alive through Bolt. Dispel counters the opposing Counterspell, allowing your Heroic Intervention to resolve. Hexproof invalidates Swords to Plowshares and indestructible shields creatures from Wrath."
+    "explanation": "Healing Salve keeps you alive through Bolt. Dispel counters the opposing Counterspell, allowing your Heroic Intervention to resolve. Hexproof invalidates Swords to Plowshares and indestructible shields creatures from Wrath.",
+    "par": 2
   },
   {
     "id": "sb-12",
@@ -874,6 +885,7 @@
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "Gain six life, stop one of their Bolts, and counter their Counterspell; two damaging Bolts can then resolve safely.",
-    "explanation": "Both Healing Salves add six life, reaching seven. Use one Dispel to stop their Counterspell and another to stop any of their Bolts. Two Bolts still deal six, leaving you alive at one, and your Bolt wins."
+    "explanation": "Both Healing Salves add six life, reaching seven. Use one Dispel to stop their Counterspell and another to stop any of their Bolts. Two Bolts still deal six, leaving you alive at one, and your Bolt wins.",
+    "par": 4
   }
 ]

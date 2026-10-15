@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#101c1c"><meta name="description" content="Stackbreaker — practice real Magic timing, priority, tapping lands for mana and casting spells onto the stack."><title>Stackbreaker 0.8 — The Last Response · Game Lab</title><style>:root{color-scheme:dark;--bg:#071214;--panel:#14292a;--panel2:#1c3333;--edge:#42675e;--gold:#edca81;--ivory:#f0ece0;--muted:#acbfb6;--mana:#a1d0a5;--bad:#e69b8e;--head-h:44px;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}*{box-sizing:border-box}body{margin:0;color:var(--ivory);background:radial-gradient(circle at 20% 25%,#263e3c,#071213 75%);min-width:320px}button,select{font:inherit;color:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,select:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid #f6d782;outline-offset:2px}a{color:var(--gold)}[hidden]{display:none!important}.skip{position:absolute;top:-60px;left:6px;z-index:99;background:white;color:#111}.skip:focus{top:5px}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}.mast{height:var(--head-h);padding:0 clamp(8px,2vw,25px);display:flex;align-items:center;justify-content:space-between;background:#0b1a1c;border-bottom:1px solid #37564d;gap:10px}.site-mark{text-decoration:none;font-size:11px;white-space:nowrap;letter-spacing:.1em}.site-title{font-size:15px;letter-spacing:.11em}.site-title small{font-weight:500;font-size:9px;letter-spacing:.08em;color:var(--muted);margin-left:7px}.site-home{font-size:10px;text-decoration:none;white-space:nowrap}main{max-width:1560px;margin:auto}.game-screen{height:calc(100dvh - var(--head-h));height:calc(100svh - var(--head-h));min-height:470px;display:grid;grid-template-rows:auto minmax(0,1fr) auto minmax(112px,.4fr) auto;gap:5px;padding:7px clamp(7px,1.1vw,16px) 8px;overflow:hidden}.mission-bar{display:flex;align-items:center;gap:12px;justify-content:space-between;min-height:46px;padding:5px 12px;border:1px solid var(--edge);background:linear-gradient(120deg,#274039,#13262a)}.mission-id{min-width:0;display:flex;align-items:center;gap:12px}.mission-id small{font-weight:800;color:var(--gold);font-size:10px;letter-spacing:.06em;white-space:nowrap}.mission-id strong{font:500 clamp(15px,1.6vw,25px) Georgia,serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mission-picker{display:flex;align-items:center;gap:6px;margin-left:auto;min-width:0}.mission-picker label{font-size:10px;white-space:nowrap;color:var(--gold)}.mission-picker select{width:clamp(115px,16vw,208px);min-width:0;min-height:29px;background:#102023;border:1px solid #628376;border-radius:3px;padding:3px;font-size:11px}.run-status{color:#a6f0bf;font-size:10px;white-space:nowrap;font-weight:700}.game-grid{min-height:0;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:5px}.field-zone,.stack-zone,.lands-zone,.hand-zone{background:linear-gradient(160deg,#1a3433,#102022);border:1px solid var(--edge);min-width:0;min-height:0;overflow:hidden;padding:8px 10px;position:relative}.stack-zone{transition:background .16s,border-color .16s}.stack-zone.drop-ready{border-color:#f7cd77;background:linear-gradient(#33443a,#182f2f);box-shadow:inset 0 0 0 2px #f3c06f55}.zone-top{display:flex;align-items:center;justify-content:space-between;gap:6px;color:var(--gold);font-size:10px;letter-spacing:.09em;font-weight:850;white-space:nowrap;min-height:21px}.zone-top em{font-style:normal;font-size:9px;letter-spacing:0;color:var(--muted);font-weight:500;margin-left:6px}.zone-top>span:last-child:not(:first-child){color:var(--muted);font-size:10px}.life-row{display:grid;grid-template-columns:56px minmax(0,1fr) 56px;gap:8px;align-items:center;height:calc(100% - 50px);min-height:65px}.life-widget{background:#0b1e20;border:1px solid #40615b;text-align:center;border-radius:4px;padding:5px 2px}.life-widget small{display:block;font-size:9px;letter-spacing:.05em;color:#aec8bd}.life-widget b{font:700 clamp(22px,3vw,40px) Georgia,serif;color:#f7d58f}.life-widget.enemy b{color:#f2bbb0}.creature-row{display:flex;gap:5px;justify-content:center;align-items:center;min-width:0;min-height:0;max-height:100%}.battle-unit{flex:1;min-width:0;max-width:135px;max-height:100%;display:grid;place-items:center}.battle-card{position:relative;border:2px solid #bca574;border-radius:5px;background:linear-gradient(170deg,#e2d8b4,#b4c8a8);color:#172c28;padding:5px 4px 4px;width:100%;height:100%;min-height:62px;max-height:145px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 2px 7px #0009}.battle-card.off{opacity:.37;filter:grayscale(1)}.battle-card header{font-weight:900;font-size:clamp(8px,.88vw,12px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.battle-card .sig{font:24px Georgia,serif;text-align:center;opacity:.56}.battle-card .pt{align-self:flex-end;border:1px solid #665f50;padding:1px 4px;border-radius:3px;font-weight:900;font-size:12px}.battle-card .flags{font-size:8px;line-height:1.1;color:#173f3c;font-weight:850;overflow:hidden}.empty-creatures{font-size:11px;color:var(--muted);font-style:italic;text-align:center}.objective{margin:0;color:#cfdbc8;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.stack-list{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:3px;max-height:calc(100% - 51px);min-height:0;overflow:hidden}.stack-entry{min-height:0;flex:1 1 0;display:flex;align-items:center;gap:7px;border:1px solid #3c655b;padding:3px 7px;background:#203b3b;border-radius:3px;line-height:1.13;overflow:hidden}.stack-entry.on-top{background:#494537;border-color:var(--gold)}.stack-rank{width:26px;text-align:center;flex-shrink:0;background:#9cac96;color:#101e1b;font-weight:900;font-size:9px;border-radius:2px;padding:5px 1px}.stack-entry.on-top .stack-rank{background:var(--gold)}.stack-entry b{font-size:clamp(10px,1vw,14px);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stack-entry small{color:#a9beb4;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}.stack-entry a{font-size:12px;margin-left:auto;text-decoration:none}.stack-empty{color:var(--muted);text-align:center;margin:auto;font-size:12px}.stack-drop-hint{position:absolute;bottom:2px;left:9px;right:9px;pointer-events:none;text-align:center;color:#879f95;font-size:9px}.lands-zone{display:flex;flex-direction:column;min-height:96px;max-height:128px}.lands-zone .zone-top{flex:0 0 19px}.land-row{min-height:0;flex:1;display:flex;gap:5px;align-items:stretch;justify-content:center}.land-card{min-width:0;width:clamp(44px,7vw,108px);max-width:108px;border:2px solid #9e966d;border-radius:5px;background:radial-gradient(circle at 60% 70%,#a1c6bb,#3e5c52 73%);position:relative;padding:2px 4px;color:#f4f2e0;display:flex;flex-direction:column;align-items:center;justify-content:space-between;transition:transform .16s,filter .16s;overflow:hidden}.land-card .land-name{font-size:clamp(9px,.85vw,12px);font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.land-card .land-sigil{font:clamp(17px,2.4vw,33px) Georgia,serif;text-shadow:0 2px 4px #0009}.land-card .tap-label{font-size:9px;font-weight:900;letter-spacing:.06em}.land-card.tapped{filter:brightness(.52) saturate(.65);transform:rotate(-8deg)}.land-card.tapped .tap-label{color:#f7d38e}.land-card:disabled{opacity:1;cursor:default}.land-card.W{background:linear-gradient(130deg,#706e55,#b1a572)}.land-card.U{background:linear-gradient(130deg,#1e425f,#4c81a0)}.land-card.B{background:linear-gradient(130deg,#393044,#6a506d)}.land-card.R{background:linear-gradient(130deg,#684034,#b76c43)}.land-card.G{background:linear-gradient(130deg,#264535,#618264)}.land-card.C{background:linear-gradient(130deg,#4d5860,#879399)}.pool-label{display:flex;align-items:center;gap:6px}.mana-row{display:inline-flex;gap:3px;align-items:center;flex-wrap:nowrap}.mana-pip{width:18px;height:18px;border:1px solid #eeebddbd;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:0 0 18px;font-size:11px;font-weight:900;color:#172322;background:#dae3d7}.mana-pip.W{background:#f4ebbe}.mana-pip.U{background:#a1ceec}.mana-pip.B{background:#d5b8d2}.mana-pip.R{background:#eba781}.mana-pip.G{background:#aaca96}.mana-pip.C,.mana-pip.generic{background:#d5dad4}.empty-mana{color:#8da399}.hand-zone{display:flex;flex-direction:column}.hand-row{flex:1;display:flex;align-items:stretch;justify-content:center;gap:5px;min-height:0}.response-card{flex:1;min-width:0;max-width:245px;border:2px solid #96815a;border-radius:5px;background:linear-gradient(135deg,#e1d9ba,#b7c6b7);color:#172d28;padding:5px 6px;position:relative;display:flex;flex-direction:column;gap:3px;cursor:grab;touch-action:none;user-select:none}.response-card.ability{border-color:#99bcb5}.response-card.unavailable{filter:saturate(.65);cursor:grab}.response-card.used{opacity:.37;cursor:default;filter:grayscale(1)}.response-card .response-head{display:flex;justify-content:space-between;align-items:start;gap:4px}.response-card strong{font-size:clamp(10px,1vw,14px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.response-card .response-head .mana-row{transform:scale(.83);transform-origin:right top}.response-card .oracle-preview{font:clamp(9px,.76vw,12px)/1.2 Georgia,serif;min-height:0;overflow:hidden;flex:1}.response-card .response-bottom{display:flex;align-items:center;justify-content:space-between;gap:5px;min-height:24px}.response-card label{font-size:9px;font-weight:900;max-width:63%}.response-card select{max-width:100%;min-width:0;display:block;border:1px solid #688078;background:#1c3736;color:#f5eccf;padding:2px;font-size:10px;height:23px}.response-card button{background:#294b43;border:1px solid #385f52;color:#f4e6be;font-size:10px;font-weight:850;border-radius:3px;min-height:25px;padding:2px 7px;white-space:nowrap}.response-card .response-steps{font-size:9px;color:#544b37}.response-card .response-steps .bad-mana{color:#993e25;font-weight:900}.response-card.dragging{opacity:.65}.drag-ghost{position:fixed;z-index:9999;width:148px;height:72px;border:2px solid #e5c683;background:#d0c8a7;color:#152c27;pointer-events:none;padding:7px;border-radius:6px;box-shadow:0 8px 24px #0009;transform:translate(-50%,-50%);font-weight:900;display:flex;align-items:center;justify-content:center;text-align:center}.game-controls{display:grid;grid-template-columns:minmax(140px,1fr) minmax(115px,1fr) repeat(2,minmax(65px,.45fr)) minmax(110px,.76fr);gap:5px;min-height:51px}.game-controls button{min-height:46px;padding:4px 8px;font-weight:850;letter-spacing:.04em;font-size:clamp(10px,.85vw,13px);border:1px solid #59746a}.result-mini{background:#182b2a;border:1px solid #3f5d50;padding:5px 9px;display:flex;flex-direction:column;justify-content:center;overflow:hidden}.result-mini b{color:var(--gold);font-size:10px;letter-spacing:.12em}.result-mini span{color:#cbd7ca;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.result-mini.won{background:#1d5039}.result-mini.lost{background:#5a322e}.pass-button{background:linear-gradient(120deg,#c7a769,#e2c994);color:#102926;border-color:#dfcc96!important}.minor-button{background:#28403c}.next-button{background:#3a5745;border-color:#a5bb7b!important;color:#f5e4b3}.study-notes{padding:26px clamp(16px,3vw,36px) 45px;background:#0e1a1c}.notes-head{display:flex;gap:20px;justify-content:space-between;align-items:center}.eyebrow{font-size:11px;letter-spacing:.17em;color:var(--gold)}.notes-head h1{font:500 clamp(25px,3vw,45px) Georgia,serif;margin:7px 0}.notes-head p{font-size:13px;color:var(--muted)}.progress{display:flex;flex-direction:column;text-align:right;color:var(--gold);white-space:nowrap}.progress span{font-size:10px;color:var(--muted)}.notes-grid{display:grid;grid-template-columns:1fr 1.3fr 1.5fr;gap:12px;margin-top:14px}.notes-box{border:1px solid var(--edge);background:#192829;padding:15px;min-width:0}.notes-box h2{color:var(--gold);font-size:14px;margin:0 0 10px}.notes-box p,.notes-box li{font-size:12px;line-height:1.6;color:#d3dbd4}.notes-box ol{padding-left:19px;max-height:220px;overflow:auto}.notes-box button{border:1px solid #a18b62;background:#223b37;padding:8px;color:var(--gold)}.result-stars{color:var(--gold)}footer{padding-top:18px;margin-top:26px;border-top:1px solid var(--edge);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:24px}footer p{max-width:850px;line-height:1.6}
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#101c1c"><meta name="description" content="Stackbreaker — practice real Magic timing, priority, tapping lands for mana and casting spells onto the stack."><title>Stackbreaker 0.9 — The Last Response · Game Lab</title><style>:root{color-scheme:dark;--bg:#071214;--panel:#14292a;--panel2:#1c3333;--edge:#42675e;--gold:#edca81;--ivory:#f0ece0;--muted:#acbfb6;--mana:#a1d0a5;--bad:#e69b8e;--head-h:44px;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}*{box-sizing:border-box}body{margin:0;color:var(--ivory);background:radial-gradient(circle at 20% 25%,#263e3c,#071213 75%);min-width:320px}button,select{font:inherit;color:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,select:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid #f6d782;outline-offset:2px}a{color:var(--gold)}[hidden]{display:none!important}.skip{position:absolute;top:-60px;left:6px;z-index:99;background:white;color:#111}.skip:focus{top:5px}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}.mast{height:var(--head-h);padding:0 clamp(8px,2vw,25px);display:flex;align-items:center;justify-content:space-between;background:#0b1a1c;border-bottom:1px solid #37564d;gap:10px}.site-mark{text-decoration:none;font-size:11px;white-space:nowrap;letter-spacing:.1em}.site-title{font-size:15px;letter-spacing:.11em}.site-title small{font-weight:500;font-size:9px;letter-spacing:.08em;color:var(--muted);margin-left:7px}.site-home{font-size:10px;text-decoration:none;white-space:nowrap}main{max-width:1560px;margin:auto}.game-screen{height:calc(100dvh - var(--head-h));height:calc(100svh - var(--head-h));min-height:470px;display:grid;grid-template-rows:auto minmax(0,1fr) auto minmax(112px,.4fr) auto;gap:5px;padding:7px clamp(7px,1.1vw,16px) 8px;overflow:hidden}.mission-bar{display:flex;align-items:center;gap:12px;justify-content:space-between;min-height:46px;padding:5px 12px;border:1px solid var(--edge);background:linear-gradient(120deg,#274039,#13262a)}.mission-id{min-width:0;display:flex;align-items:center;gap:12px}.mission-id small{font-weight:800;color:var(--gold);font-size:10px;letter-spacing:.06em;white-space:nowrap}.mission-id strong{font:500 clamp(15px,1.6vw,25px) Georgia,serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mission-picker{display:flex;align-items:center;gap:6px;margin-left:auto;min-width:0}.mission-picker label{font-size:10px;white-space:nowrap;color:var(--gold)}.mission-picker select{width:clamp(115px,16vw,208px);min-width:0;min-height:29px;background:#102023;border:1px solid #628376;border-radius:3px;padding:3px;font-size:11px}.run-status{color:#a6f0bf;font-size:10px;white-space:nowrap;font-weight:700}.game-grid{min-height:0;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:5px}.field-zone,.stack-zone,.lands-zone,.hand-zone{background:linear-gradient(160deg,#1a3433,#102022);border:1px solid var(--edge);min-width:0;min-height:0;overflow:hidden;padding:8px 10px;position:relative}.stack-zone{transition:background .16s,border-color .16s}.stack-zone.drop-ready{border-color:#f7cd77;background:linear-gradient(#33443a,#182f2f);box-shadow:inset 0 0 0 2px #f3c06f55}.zone-top{display:flex;align-items:center;justify-content:space-between;gap:6px;color:var(--gold);font-size:10px;letter-spacing:.09em;font-weight:850;white-space:nowrap;min-height:21px}.zone-top em{font-style:normal;font-size:9px;letter-spacing:0;color:var(--muted);font-weight:500;margin-left:6px}.zone-top>span:last-child:not(:first-child){color:var(--muted);font-size:10px}.life-row{display:grid;grid-template-columns:56px minmax(0,1fr) 56px;gap:8px;align-items:center;height:calc(100% - 50px);min-height:65px}.life-widget{background:#0b1e20;border:1px solid #40615b;text-align:center;border-radius:4px;padding:5px 2px}.life-widget small{display:block;font-size:9px;letter-spacing:.05em;color:#aec8bd}.life-widget b{font:700 clamp(22px,3vw,40px) Georgia,serif;color:#f7d58f}.life-widget.enemy b{color:#f2bbb0}.creature-row{display:flex;gap:5px;justify-content:center;align-items:center;min-width:0;min-height:0;max-height:100%}.battle-unit{flex:1;min-width:0;max-width:135px;max-height:100%;display:grid;place-items:center}.battle-card{position:relative;border:2px solid #bca574;border-radius:5px;background:linear-gradient(170deg,#e2d8b4,#b4c8a8);color:#172c28;padding:5px 4px 4px;width:100%;height:100%;min-height:62px;max-height:145px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 2px 7px #0009}.battle-card.off{opacity:.37;filter:grayscale(1)}.battle-card header{font-weight:900;font-size:clamp(8px,.88vw,12px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.battle-card .sig{font:24px Georgia,serif;text-align:center;opacity:.56}.battle-card .pt{align-self:flex-end;border:1px solid #665f50;padding:1px 4px;border-radius:3px;font-weight:900;font-size:12px}.battle-card .flags{font-size:8px;line-height:1.1;color:#173f3c;font-weight:850;overflow:hidden}.empty-creatures{font-size:11px;color:var(--muted);font-style:italic;text-align:center}.objective{margin:0;color:#cfdbc8;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.stack-list{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:3px;max-height:calc(100% - 51px);min-height:0;overflow:hidden}.stack-entry{min-height:0;flex:1 1 0;display:flex;align-items:center;gap:7px;border:1px solid #3c655b;padding:3px 7px;background:#203b3b;border-radius:3px;line-height:1.13;overflow:hidden}.stack-entry.on-top{background:#494537;border-color:var(--gold)}.stack-rank{width:26px;text-align:center;flex-shrink:0;background:#9cac96;color:#101e1b;font-weight:900;font-size:9px;border-radius:2px;padding:5px 1px}.stack-entry.on-top .stack-rank{background:var(--gold)}.stack-entry b{font-size:clamp(10px,1vw,14px);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stack-entry small{color:#a9beb4;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}.stack-entry a{font-size:12px;margin-left:auto;text-decoration:none}.stack-empty{color:var(--muted);text-align:center;margin:auto;font-size:12px}.stack-drop-hint{position:absolute;bottom:2px;left:9px;right:9px;pointer-events:none;text-align:center;color:#879f95;font-size:9px}.lands-zone{display:flex;flex-direction:column;min-height:96px;max-height:128px}.lands-zone .zone-top{flex:0 0 19px}.land-row{min-height:0;flex:1;display:flex;gap:5px;align-items:stretch;justify-content:center}.land-card{min-width:0;width:clamp(44px,7vw,108px);max-width:108px;border:2px solid #9e966d;border-radius:5px;background:radial-gradient(circle at 60% 70%,#a1c6bb,#3e5c52 73%);position:relative;padding:2px 4px;color:#f4f2e0;display:flex;flex-direction:column;align-items:center;justify-content:space-between;transition:transform .16s,filter .16s;overflow:hidden}.land-card .land-name{font-size:clamp(9px,.85vw,12px);font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.land-card .land-sigil{font:clamp(17px,2.4vw,33px) Georgia,serif;text-shadow:0 2px 4px #0009}.land-card .tap-label{font-size:9px;font-weight:900;letter-spacing:.06em}.land-card.tapped{filter:brightness(.52) saturate(.65);transform:rotate(-8deg)}.land-card.tapped .tap-label{color:#f7d38e}.land-card:disabled{opacity:1;cursor:default}.land-card.W{background:linear-gradient(130deg,#706e55,#b1a572)}.land-card.U{background:linear-gradient(130deg,#1e425f,#4c81a0)}.land-card.B{background:linear-gradient(130deg,#393044,#6a506d)}.land-card.R{background:linear-gradient(130deg,#684034,#b76c43)}.land-card.G{background:linear-gradient(130deg,#264535,#618264)}.land-card.C{background:linear-gradient(130deg,#4d5860,#879399)}.pool-label{display:flex;align-items:center;gap:6px}.mana-row{display:inline-flex;gap:3px;align-items:center;flex-wrap:nowrap}.mana-pip{width:18px;height:18px;border:1px solid #eeebddbd;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:0 0 18px;font-size:11px;font-weight:900;color:#172322;background:#dae3d7}.mana-pip.W{background:#f4ebbe}.mana-pip.U{background:#a1ceec}.mana-pip.B{background:#d5b8d2}.mana-pip.R{background:#eba781}.mana-pip.G{background:#aaca96}.mana-pip.C,.mana-pip.generic{background:#d5dad4}.empty-mana{color:#8da399}.hand-zone{display:flex;flex-direction:column}.hand-row{flex:1;display:flex;align-items:stretch;justify-content:center;gap:5px;min-height:0}.response-card{flex:1;min-width:0;max-width:245px;border:2px solid #96815a;border-radius:5px;background:linear-gradient(135deg,#e1d9ba,#b7c6b7);color:#172d28;padding:5px 6px;position:relative;display:flex;flex-direction:column;gap:3px;cursor:grab;touch-action:none;user-select:none}.response-card.ability{border-color:#99bcb5}.response-card.unavailable{filter:saturate(.65);cursor:grab}.response-card.used{opacity:.37;cursor:default;filter:grayscale(1)}.response-card .response-head{display:flex;justify-content:space-between;align-items:start;gap:4px}.response-card strong{font-size:clamp(10px,1vw,14px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.response-card .response-head .mana-row{transform:scale(.83);transform-origin:right top}.response-card .oracle-preview{font:clamp(9px,.76vw,12px)/1.2 Georgia,serif;min-height:0;overflow:hidden;flex:1}.response-card .response-bottom{display:flex;align-items:center;justify-content:space-between;gap:5px;min-height:24px}.response-card label{font-size:9px;font-weight:900;max-width:63%}.response-card select{max-width:100%;min-width:0;display:block;border:1px solid #688078;background:#1c3736;color:#f5eccf;padding:2px;font-size:10px;height:23px}.response-card button{background:#294b43;border:1px solid #385f52;color:#f4e6be;font-size:10px;font-weight:850;border-radius:3px;min-height:25px;padding:2px 7px;white-space:nowrap}.response-card .response-steps{font-size:9px;color:#544b37}.response-card .response-steps .bad-mana{color:#993e25;font-weight:900}.response-card.dragging{opacity:.65}.drag-ghost{position:fixed;z-index:9999;width:148px;height:72px;border:2px solid #e5c683;background:#d0c8a7;color:#152c27;pointer-events:none;padding:7px;border-radius:6px;box-shadow:0 8px 24px #0009;transform:translate(-50%,-50%);font-weight:900;display:flex;align-items:center;justify-content:center;text-align:center}.game-controls{display:grid;grid-template-columns:minmax(140px,1fr) minmax(115px,1fr) repeat(2,minmax(65px,.45fr)) minmax(110px,.76fr);gap:5px;min-height:51px}.game-controls button{min-height:46px;padding:4px 8px;font-weight:850;letter-spacing:.04em;font-size:clamp(10px,.85vw,13px);border:1px solid #59746a}.result-mini{background:#182b2a;border:1px solid #3f5d50;padding:5px 9px;display:flex;flex-direction:column;justify-content:center;overflow:hidden}.result-mini b{color:var(--gold);font-size:10px;letter-spacing:.12em}.result-mini span{color:#cbd7ca;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.result-mini.won{background:#1d5039}.result-mini.lost{background:#5a322e}.pass-button{background:linear-gradient(120deg,#c7a769,#e2c994);color:#102926;border-color:#dfcc96!important}.minor-button{background:#28403c}.next-button{background:#3a5745;border-color:#a5bb7b!important;color:#f5e4b3}.study-notes{padding:26px clamp(16px,3vw,36px) 45px;background:#0e1a1c}.notes-head{display:flex;gap:20px;justify-content:space-between;align-items:center}.eyebrow{font-size:11px;letter-spacing:.17em;color:var(--gold)}.notes-head h1{font:500 clamp(25px,3vw,45px) Georgia,serif;margin:7px 0}.notes-head p{font-size:13px;color:var(--muted)}.progress{display:flex;flex-direction:column;text-align:right;color:var(--gold);white-space:nowrap}.progress span{font-size:10px;color:var(--muted)}.notes-grid{display:grid;grid-template-columns:1fr 1.3fr 1.5fr;gap:12px;margin-top:14px}.notes-box{border:1px solid var(--edge);background:#192829;padding:15px;min-width:0}.notes-box h2{color:var(--gold);font-size:14px;margin:0 0 10px}.notes-box p,.notes-box li{font-size:12px;line-height:1.6;color:#d3dbd4}.notes-box ol{padding-left:19px;max-height:220px;overflow:auto}.notes-box button{border:1px solid #a18b62;background:#223b37;padding:8px;color:var(--gold)}.result-stars{color:var(--gold)}footer{padding-top:18px;margin-top:26px;border-top:1px solid var(--edge);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:24px}footer p{max-width:850px;line-height:1.6}
 @media(max-width:840px){.site-title small{display:none}.game-grid{grid-template-columns:1fr;grid-template-rows:minmax(88px,.92fr) minmax(122px,1.08fr)}.life-row{grid-template-columns:48px minmax(0,1fr) 48px;gap:5px}.life-widget b{font-size:23px}.field-zone,.stack-zone,.lands-zone,.hand-zone{padding:4px 6px}.objective{font-size:9px}.battle-card{min-height:35px;padding:2px 3px}.battle-card .sig{font-size:14px}.battle-card .pt{font-size:10px}.stack-list{gap:1px;max-height:calc(100% - 39px)}.stack-entry{padding:0 4px;gap:5px}.stack-entry b{font-size:10px}.stack-entry small{font-size:8px}.stack-rank{font-size:8px;width:24px;padding:2px}.stack-drop-hint{font-size:8px}.zone-top{font-size:9px;min-height:17px}.zone-top em{font-size:8px}.response-card{padding:3px 4px}.response-card .oracle-preview{font-size:9px}.notes-grid{grid-template-columns:1fr}.game-controls{grid-template-columns:minmax(100px,1fr) repeat(4,minmax(0,.8fr));gap:3px}.game-controls button{font-size:10px}.result-mini span{font-size:10px}.lands-zone{min-height:75px}.mission-bar{min-height:39px}.run-status{font-size:9px}.site-home{font-size:9px}}
 @media(max-width:500px){:root{--head-h:37px}.mast{padding:0 8px}.site-mark{font-size:9px}.site-title{font-size:11px;letter-spacing:.03em}.site-home{display:none}.game-screen{padding:3px;gap:3px;grid-template-rows:auto minmax(0,1fr) auto minmax(124px,.49fr) auto}.mission-bar{padding:3px 5px;gap:5px}.mission-id{gap:4px;max-width:53%}.mission-id small{font-size:8px}.mission-id strong{font-size:13px}.mission-picker{gap:3px}.mission-picker label{font-size:8px}.mission-picker select{width:92px;min-height:26px;font-size:10px}.run-status{display:none}.game-grid{grid-template-rows:minmax(79px,.89fr) minmax(114px,1.11fr);gap:3px}.zone-top em{display:none}.life-row{height:calc(100% - 37px);min-height:38px}.land-row{gap:3px}.land-card{width:calc((100% - 18px)/5);max-width:75px}.land-card .land-name{font-size:9px}.land-card .land-sigil{font-size:20px}.land-card .tap-label{font-size:8px}.lands-zone{min-height:68px;max-height:94px}.hand-zone .zone-top{min-height:16px}.hand-row{gap:3px;flex-wrap:wrap;justify-content:center}.response-card{min-width:0;flex:1 1 29%;max-width:none;padding:3px;gap:1px}.response-card strong{font-size:10px}.response-card .oracle-preview{font-size:9px}.response-card .response-head .mana-row{transform:scale(.7);max-width:29px}.response-card label{max-width:60%;font-size:8px}.response-card select{font-size:8px;max-width:100%;height:20px}.response-card button{min-height:23px;font-size:9px;padding:1px 4px}.response-card .response-steps{font-size:8px}.response-card .response-bottom{min-height:20px}.game-controls{grid-template-columns:minmax(55px,1fr) minmax(83px,1.1fr) 48px 48px 70px;min-height:44px}.game-controls button{min-height:40px;font-size:9px;letter-spacing:0;padding:3px 2px}.result-mini{padding:2px 3px}.result-mini b{font-size:8px}.result-mini span{font-size:8px}.pool-label{gap:2px}.mana-pip{width:15px;height:15px;flex-basis:15px;font-size:9px}.notes-head{align-items:start}.progress{font-size:10px}}
 @media(max-height:710px){.game-screen{min-height:470px;grid-template-rows:34px minmax(0,1fr) 68px minmax(104px,.46fr) 40px}.mission-bar{min-height:34px}.land-card .land-sigil{font-size:14px}.game-controls{min-height:40px}.game-controls button{min-height:38px}.response-card .oracle-preview{line-height:1.05}.response-card .response-steps{display:none}.stack-list{max-height:calc(100% - 32px)}.stack-drop-hint{font-size:7px}.stack-entry small{display:none}.zone-top{min-height:15px}.land-row{min-height:0}.lands-zone{min-height:0}}
@@ -186,28 +186,89 @@
 /* Keep full card images unwarped even when the battlefield row is tall. */
 .battle-card{height:min(100%,256px);width:auto;aspect-ratio:488 / 680}
 
-/* Persistent Game Lab return link: visible in the 320px single-screen puzzle. */
+/* STACKBREAKER 0.9 — chapter campaign navigation (Lab only) */
+.game-screen{position:relative}
+.mission-picker .map-toggle{min-height:30px;min-width:69px;border:1px solid #d1b373;color:#ffe0a1;background:linear-gradient(145deg,#4c412e,#242d28);border-radius:5px;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap;letter-spacing:.04em}
+.mission-picker .map-toggle:hover,.mission-picker .map-toggle:focus-visible{box-shadow:0 0 0 2px #f4d99577;outline:none}
+.game-controls .level-arrows{display:grid;grid-template-columns:1fr 1fr;gap:4px;min-width:0}
+.game-controls .level-arrows button{min-width:0;width:100%;padding:3px 5px;background:linear-gradient(140deg,#283c38,#142725);color:#f7e2b0;font-weight:900;border:1px solid #92795b;border-radius:4px;white-space:nowrap}
+.game-controls .level-arrows .next-button{color:#142422;background:linear-gradient(145deg,#f4d68e,#b99a50)}
+.game-controls .level-arrows button:hover:not(:disabled),.game-controls .level-arrows button:focus-visible{box-shadow:0 0 0 2px #f1c77799;outline:none}
+.game-controls .level-arrows button:disabled{opacity:.34;cursor:not-allowed}
+.world-map[hidden]{display:none!important}
+.world-map{position:absolute;inset:5px;z-index:150;display:flex;flex-direction:column;gap:9px;overflow:hidden;padding:clamp(10px,1.8vw,22px);border:2px solid #b8a16b;border-radius:12px;color:#f8f0d5;background:radial-gradient(circle at 76% 7%,#334744,#0b181e 64%);box-shadow:0 10px 45px #000e,inset 0 0 90px #0c232b;isolation:isolate}
+.world-map-header{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:48px;border-bottom:1px solid #d3be7960;padding-bottom:10px}
+.world-map-header p{font-size:9px;letter-spacing:.22em;font-weight:800;color:#dbcd96;margin:0 0 2px}
+.world-map-header h2{font:700 clamp(19px,3vw,36px) Georgia,serif;margin:0;letter-spacing:.035em;color:#fff3bf}
+.world-map-header button{background:#2c3230;color:#ffdfac;border:1px solid #9a8966;padding:9px 13px;font-weight:800;border-radius:6px;white-space:nowrap;cursor:pointer}
+.world-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;flex:none}
+.world-tab{min-width:0;display:flex;justify-content:center;align-items:center;gap:9px;min-height:53px;padding:6px 4px;border:1px solid #628078;border-radius:7px;color:#c5d6cc;background:#152b30;cursor:pointer}
+.world-tab.current{border-color:var(--world-accent);background:#304139;box-shadow:0 0 0 1px var(--world-accent),0 0 18px #b1b17a42;color:#fff4cc}
+.world-tab>span{font:29px Georgia,serif;color:var(--world-accent);line-height:1}
+.world-tab b{font:800 16px Georgia,serif}.world-tab small{font-weight:850;color:#bdd5c9;font-size:10px}
+.world-stage{position:relative;display:flex;flex-direction:column;justify-content:space-between;flex:1;min-height:0;padding:clamp(12px,2vw,32px);border:1px solid #75857a;border-radius:12px;overflow:hidden;isolation:isolate;background:linear-gradient(160deg,#375347 0%,#1c3b3e 49%,#132326 100%)}
+.world-stage[data-terrain="sunrise"]{background:linear-gradient(150deg,#785d48 0%,#394e50 50%,#192f2c 100%)}
+.world-stage[data-terrain="forest"]{background:linear-gradient(150deg,#325942 0%,#1c503b 50%,#102826 100%)}
+.world-stage[data-terrain="coast"]{background:linear-gradient(150deg,#265e79 0%,#2e5860 50%,#172a39 100%)}
+.world-stage[data-terrain="rift"]{background:linear-gradient(150deg,#4d376a 0%,#352d5d 50%,#181e33 100%)}
+.world-stage[data-terrain="citadel"]{background:linear-gradient(150deg,#754a41 0%,#49353d 50%,#211f29 100%)}
+.world-stage:before{content:"";position:absolute;inset:45% -10% -35%;border-radius:50%;background:radial-gradient(ellipse,var(--world-color) 0%,transparent 68%);opacity:.16;z-index:-1}
+.world-sky{position:absolute;right:6%;top:4%;font:clamp(60px,16vw,180px) Georgia,serif;line-height:1;color:var(--world-color);opacity:.12;pointer-events:none;transform:rotate(-12deg)}
+.world-sky i{position:absolute;font-style:normal;font-size:.23em;left:-28%;top:48%}.world-sky i+ i{left:105%;top:8%}
+.world-heading{position:relative;text-align:center;flex:none;z-index:2}.world-heading small{display:block;font-size:10px;font-weight:900;color:var(--world-color);letter-spacing:.24em}.world-heading h3{margin:2px 0 3px;font:700 clamp(22px,4vw,42px) Georgia,serif;color:#fff7de;text-shadow:0 3px 8px #000c}.world-heading p{font-size:clamp(10px,1.4vw,13px);margin:0;color:#d8e6e0}
+.world-levels{position:relative;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));align-items:center;gap:clamp(3px,1vw,18px);flex:1;min-height:0;max-height:280px}
+.map-trail{position:absolute;inset:8% 0 0;width:100%;height:87%;opacity:.68;pointer-events:none;filter:drop-shadow(0 0 6px #152e28)}
+.map-level{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:transparent;border:0;color:#eaf0e6;cursor:pointer;font-weight:900;min-width:0;min-height:80px;text-shadow:0 1px 5px #000f}
+.map-level:nth-of-type(2),.map-level:nth-of-type(5){transform:translateY(-23px)}
+.map-level:nth-of-type(3),.map-level:nth-of-type(6){transform:translateY(23px)}
+.map-node{display:grid;place-items:center;border-radius:50%;width:clamp(48px,6.4vw,89px);aspect-ratio:1;border:5px solid #1e3030;background:linear-gradient(145deg,#ccc3a5,#635f52);box-shadow:0 5px 0 #152423,0 7px 12px #000a,inset 0 2px 11px #fff3;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.map-node span{font:900 clamp(16px,2.6vw,33px) Georgia,serif;color:#1e2d2d;text-shadow:0 1px 2px #fffc}
+.map-level.cleared .map-node{background:linear-gradient(135deg,#fae9a9,#c4a150);border-color:#a4d79d}
+.map-level.active .map-node{border-color:#ffde83;box-shadow:0 0 0 4px #f9cd6d88,0 0 23px #ffd56c99,0 6px 0 #1c2020}
+.map-level.boss .map-node{border-radius:23%;background:linear-gradient(135deg,#f5c994,#b96b49);border-color:#ffe2ab}
+.map-level:hover .map-node,.map-level:focus-visible .map-node{transform:scale(1.13);border-color:#fff3c9;box-shadow:0 0 0 5px #f8d27f77,0 0 25px #e9c879b5;outline:none}
+.map-level:focus-visible{outline:none}
+.map-level>b{font-size:clamp(10px,1.5vw,15px);color:#fff0ca}.map-stars{font-size:clamp(8px,1vw,12px);color:#fce39c;white-space:nowrap;letter-spacing:.04em}
+.world-boss{text-align:center;color:#f4dea5;font-weight:850;letter-spacing:.07em;font-size:clamp(9px,1.1vw,13px)}
+.world-map-footer{display:flex;justify-content:space-between;gap:10px;color:#d5e0d8;font-size:11px;font-weight:700;min-height:15px}
+.world-map-footer span:first-child{color:#ffd68a}
+@media(max-width:840px){.world-map{padding:8px;gap:6px}.world-tabs{gap:4px}.world-tab{min-height:42px;gap:4px}.world-tab>span{font-size:20px}.world-tab b{font-size:12px}.world-tab small{font-size:8px}.world-stage{padding:10px}.world-map-header{min-height:36px;padding-bottom:5px}.world-map-header button{padding:6px 8px}.world-levels{max-height:none}.world-map-footer{font-size:9px}}
+@media(max-width:500px){
+ .mission-picker{flex:0 1 auto}.mission-picker .map-toggle{min-height:27px;min-width:47px;padding:3px;font-size:9px}.mission-picker select{width:68px;max-width:68px}.mission-picker label{display:none}
+ .mission-id{max-width:52%}.mission-id small{font-size:7px}.mission-id strong{font-size:12px}
+ .game-controls{grid-template-columns:minmax(38px,.65fr) minmax(70px,1.2fr) 37px 37px minmax(88px,1.15fr);gap:3px}
+ .game-controls .level-arrows{gap:2px}.game-controls .level-arrows button{padding:1px;font-size:8px;letter-spacing:-.04em;min-height:42px}.game-controls .result-mini{padding:2px}
+ .world-map-header p{font-size:7px}.world-map-header h2{font-size:18px}.world-map-header button{font-size:10px;padding:6px}
+ .world-tabs{gap:2px}.world-tab{min-height:40px;flex-direction:column;gap:0;padding:1px}.world-tab>span{font-size:17px}.world-tab b{font-size:10px}.world-tab small{font-size:8px}
+ .world-heading h3{font-size:22px}.world-heading p{font-size:10px}.world-heading small{font-size:9px}
+ .world-levels{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:0 2px;max-height:none;margin:4px 0}
+ .map-level{min-height:55px;gap:1px}.map-level:nth-of-type(n){transform:none}.map-level:nth-of-type(2),.map-level:nth-of-type(5){transform:translateY(-6px)}
+ .map-node{width:clamp(38px,12vw,57px);border-width:3px}.map-node span{font-size:17px}.map-level>b{font-size:10px}.map-stars{font-size:9px}
+ .map-trail{transform:rotate(90deg);height:130%;width:95%;top:-11%;left:2%;opacity:.40}
+ .world-boss{font-size:9px}.world-map-footer{font-size:8px;gap:5px;flex-wrap:wrap}
+}
+@media(max-width:500px) and (max-height:650px){
+ .world-map{inset:1px;padding:5px;gap:4px}.world-map-header{min-height:32px;padding-bottom:3px}.world-tabs{flex:0}.world-tab{min-height:33px}.world-tab>span{font-size:14px}.world-heading h3{font-size:18px}.world-heading p{font-size:9px}.map-node{width:40px}.map-level{min-height:42px}.map-level>b{font-size:9px}.map-stars{font-size:8px}.world-stage{padding:5px}
+}
+
+/* Preserved shared Lab return-link contribution from the parallel navigation PR. */
 .mast .site-home{display:inline-flex;justify-content:center;align-items:center;flex:0 0 auto;min-height:32px;padding:5px 8px;border:1px solid #7b947e80;border-radius:4px;color:#eed19c;font-weight:800;letter-spacing:.025em}
 .mast .site-home:hover{background:#294740;text-decoration:none}
-@media(max-width:500px){
- .mast .site-home{display:inline-flex;font-size:8px;min-height:29px;padding:3px 5px}
- .mast .site-mark{font-size:8px;letter-spacing:0}
- .mast .site-title{font-size:10px;overflow:hidden;text-overflow:ellipsis;min-width:0}
-}
+@media(max-width:500px){.mast .site-home{display:inline-flex;font-size:8px;min-height:29px;padding:3px 5px}.mast .site-mark{font-size:8px;letter-spacing:0}.mast .site-title{font-size:10px;overflow:hidden;text-overflow:ellipsis;min-width:0}}
 @media(max-width:370px){.mast{gap:4px}.mast .site-mark{font-size:7px}.mast .site-title{font-size:9px}.mast .site-home{font-size:7px;padding:3px 4px}}
 </style></head>
 <body><a class="skip" href="#game">Skip to Stackbreaker game</a>
-<header class="mast"><a class="site-mark" href="/lab/" aria-label="Back to Game Test Lab home">◈ <b>DEEP CUTS</b> / GAME LAB</a><strong class="site-title">STACKBREAKER <small>0.8 · THE LAST RESPONSE</small></strong><a class="site-home" href="/lab/" aria-label="Back to Test Lab, choose another game">← ALL GAMES</a></header>
+<header class="mast"><a class="site-mark" href="/lab/" aria-label="Back to Game Test Lab home">◈ <b>DEEP CUTS</b> / GAME LAB</a><strong class="site-title">STACKBREAKER <small>0.9 · FIVE WORLDS</small></strong><a class="site-home" href="/lab/" aria-label="Back to Test Lab, choose another game">GAME LAB ↗</a></header>
 <main><section id="game" class="game-screen" aria-label="Playable Stackbreaker training game">
-<div class="mission-bar"><div class="mission-id"><small id="missionTier">APPRENTICE</small><strong id="scenarioTitle">Loading…</strong></div><div class="mission-picker"><label for="scenarioSelect">LEVEL <span id="missionNum">01 / 12</span></label><select id="scenarioSelect" aria-label="Choose level"></select></div><span class="run-status" id="priority" aria-live="polite">● PRIORITY: YOU</span></div>
+<div class="mission-bar"><div class="mission-id"><small id="missionTier">APPRENTICE</small><strong id="scenarioTitle">Loading…</strong></div><div class="mission-picker"><label for="scenarioSelect">LEVEL <span id="missionNum">1-1</span></label><select id="scenarioSelect" aria-label="Choose level"></select><button type="button" id="mapButton" class="map-toggle" aria-haspopup="dialog" aria-controls="worldMap" aria-expanded="false">◈ MAP</button></div><span class="run-status" id="priority" aria-live="polite">● PRIORITY: YOU</span></div>
 <div class="game-grid"><section class="field-zone" id="fieldDrop" tabindex="0" aria-label="Battlefield drop area; drag a spell here to cast it onto the stack"><div class="zone-top"><span>◈ THE BATTLEFIELD <em>DROP A SPELL OR ACTIVATE A CREATURE</em></span><span id="objectiveShort">SURVIVE</span></div><div class="life-row"><div class="life-widget" data-target-person="player" role="button" tabindex="0" aria-label="Your life total; choose as spell target"><small>YOU</small><b id="playerLife">—</b></div><div class="creature-row" id="battlefield"></div><div class="life-widget enemy" data-target-person="opponent" role="button" tabindex="0" aria-label="Opponent life total; choose as spell target"><small>OPP</small><b id="opponentLife">—</b></div></div><p id="objective" class="objective"></p></section>
 <section class="stack-zone" id="stackDrop" tabindex="0" aria-label="Drop spells here to cast onto the stack"><div class="zone-top"><span>⟠ THE STACK <em>DROP SPELL HERE</em></span><span class="stack-meta"><span id="artStatus">LOADING SCRYFALL…</span> · <span id="stackCount">00</span></span></div><ol class="stack-list" id="stack" aria-label="Stack top-first"></ol><div class="stack-drop-hint">↑ Drop a spell here · top resolves first</div></section></div>
 <div class="lands-zone"><div class="zone-top"><span>◌ YOUR LANDS <em>TAP TO ADD MANA</em></span><span class="pool-label">POOL <span class="mana-row" id="manaPool"></span></span></div><div class="land-row" id="lands" aria-label="Land cards available for mana"></div></div>
 <div class="hand-zone"><div class="zone-top"><span>✧ YOUR HAND <em>DRAG TO A GLOWING TARGET TO CAST</em></span><span id="handCount">0 CARDS</span></div><div class="hand-row" id="hand"></div></div><div id="playPrompt" class="play-prompt" role="group" aria-label="Finish selecting a spell target or mana payment" hidden></div>
-<div class="game-controls"><div class="result-mini" id="resultMini" aria-live="polite"><b id="resultEyebrow">YOUR MOVE</b><span id="resultTitle">Tap lands, then drag your spell.</span></div><button type="button" class="pass-button" id="passButton">PASS / RESOLVE →</button><button type="button" class="minor-button" id="undoButton">↶ UNDO</button><button type="button" class="minor-button" id="restartButton">↻ RESET</button><button type="button" class="next-button" id="nextButton">NEXT CASE →</button></div>
-<div id="live" class="sr-only" role="status" aria-live="polite"></div>
+<div class="game-controls"><div class="result-mini" id="resultMini" aria-live="polite"><b id="resultEyebrow">YOUR MOVE</b><span id="resultTitle">Tap lands, then drag your spell.</span></div><button type="button" class="pass-button" id="passButton">PASS / RESOLVE →</button><button type="button" class="minor-button" id="undoButton">↶ UNDO</button><button type="button" class="minor-button" id="restartButton">↻ RESET</button><div class="level-arrows"><button type="button" class="prev-button" id="prevButton" aria-label="Previous level">← PREV</button><button type="button" class="next-button" id="nextButton" aria-label="Next level">NEXT →</button></div></div>
+<div id="live" class="sr-only" role="status" aria-live="polite"></div><section id="worldMap" class="world-map" role="dialog" aria-modal="true" aria-labelledby="worldMapTitle" aria-hidden="true" hidden><header class="world-map-header"><div><p>STACKBREAKER · CAMPAIGN</p><h2 id="worldMapTitle">CHAPTER SELECT</h2></div><button id="closeMapButton" type="button" aria-label="Close chapter map">✕ CLOSE</button></header><nav class="world-tabs" id="worldTabs" aria-label="Choose a world"></nav><div id="worldStage" class="world-stage"></div><footer class="world-map-footer"><span id="worldMapProgress"></span><span>Choose any stage to practice · victories plant a flag ★</span></footer></section>
 </section>
-<section class="study-notes" id="notes"><div class="notes-head"><div><p class="eyebrow">THE TRAINING FILE</p><h1>ONE TURN TO LIVE.</h1><p id="scenarioIntro"></p></div><div class="progress"><b id="completed">0 / 12 SOLVED</b><span>REAL-CARD TRAINING</span></div></div><div class="notes-grid"><div class="notes-box"><h2>Your objective</h2><p id="objectiveLong"></p><button type="button" id="hintButton" aria-expanded="false">◇ REVEAL HINT</button><p id="hintText" hidden></p></div><div class="notes-box"><h2>Why it worked</h2><p id="resultExplanation">Finish a case to reveal its rules explanation.</p><div id="resultStars" class="result-stars"></div></div><div class="notes-box"><h2>Resolution log</h2><ol id="log" aria-label="Action and stack resolution log"></ol></div></div>
+<section class="study-notes" id="notes"><div class="notes-head"><div><p class="eyebrow">THE TRAINING FILE</p><h1>ONE TURN TO LIVE.</h1><p id="scenarioIntro"></p></div><div class="progress"><b id="completed">0 / 30 SOLVED</b><span>REAL-CARD TRAINING</span></div></div><div class="notes-grid"><div class="notes-box"><h2>Your objective</h2><p id="objectiveLong"></p><button type="button" id="hintButton" aria-expanded="false">◇ REVEAL HINT</button><p id="hintText" hidden></p></div><div class="notes-box"><h2>Why it worked</h2><p id="resultExplanation">Finish a case to reveal its rules explanation.</p><div id="resultStars" class="result-stars"></div></div><div class="notes-box"><h2>Resolution log</h2><ol id="log" aria-label="Action and stack resolution log"></ol></div></div>
 <footer><div><b>STACKBREAKER · <span id="version"></span></b><p>An unofficial educational Magic rules trainer; not affiliated with or endorsed by Wizards of the Coast or Scryfall. Card images and artwork provided by Scryfall, © Wizards of the Coast; card artwork © respective artists. Card-image previews and links open Scryfall. Limited two-player training windows, not a complete MTG rules engine or judge ruling.</p></div><a href="/">← GAME LAB HOME</a></footer></section></main><div id="cardPreview" class="card-preview" hidden role="group" aria-label="Scryfall full card preview"><img id="cardPreviewImage" alt=""/><div id="cardPreviewLabel" class="card-preview-title"></div><small id="cardPreviewCredit"></small><a id="cardPreviewLink" href="https://scryfall.com/" target="_blank" rel="noopener noreferrer" tabindex="-1">Scryfall card reference</a></div><script>// Stackbreaker 0.2 — limited, curated MTG card-reference catalog.
 // Card text and statistics are reference data, not a full executable card interpreter.
 const RULES_VERSION='sb-mtg-training-0.3.0';
@@ -233,6 +294,11 @@ const CARDS={
   'Murder':{type:'Instant',cost:{generic:1,B:2},colors:['B'],oracle:'Destroy target creature.',effect:'destroy',targetRule:'creature'},
   'Doom Blade':{type:'Instant',cost:{generic:1,B:1},colors:['B'],oracle:'Destroy target nonblack creature.',effect:'destroy',targetRule:'creature:nonblack'},
   'Swords to Plowshares':{type:'Instant',cost:{W:1},colors:['W'],oracle:'Exile target creature. Its controller gains life equal to its power.',effect:'exile',targetRule:'creature'},
+  'Titanic Growth':{type:'Instant',cost:{generic:1,G:1},colors:['G'],oracle:'Target creature gets +4/+4 until end of turn.',effect:'pump',amount:4,targetRule:'creature'},
+  'Blossoming Defense':{type:'Instant',cost:{G:1},colors:['G'],oracle:'Target creature you control gets +2/+2 and gains hexproof until end of turn.',effect:'blossom',amount:2,targetRule:'creature:own'},
+  'Dive Down':{type:'Instant',cost:{U:1},colors:['U'],oracle:'Target creature you control gets +0/+3 and gains hexproof until end of turn.',effect:'dive',amount:3,targetRule:'creature:own'},
+  'Lightning Strike':{type:'Instant',cost:{generic:1,R:1},colors:['R'],oracle:'Lightning Strike deals 3 damage to any target.',effect:'damage',amount:3,targetRule:'any'},
+  'Cancel':{type:'Instant',cost:{generic:1,U:2},colors:['U'],oracle:'Counter target spell.',effect:'counter',targetRule:'stack:spell'},
   'Unsummon':{type:'Instant',cost:{U:1},colors:['U'],oracle:'Return target creature to its owner’s hand.',effect:'bounce',targetRule:'creature'}
 };
 const cardLink = name => 'https://scryfall.com/search?q='+encodeURIComponent('!"'+name+'"');
@@ -276,8 +342,8 @@ function validateScenario(p){
  for(const a of hand){say(!!CARDS[a.card],`unknown hand card ${a.card}`);say(!isCreature(a.card)||!!a.sourceId,'only activated creature abilities in hand');if(a.sourceId)say(units.some(u=>u.id===a.sourceId&&u.card===a.card&&u.controller==='player'),'bad ability source');}
  const allTargets=[...units.map(u=>u.id),...stack.map(x=>x.id),'player','opponent'];
  for(const x of stack)say(!CARDS[x.card]?.targetRule||allTargets.includes(x.targetId),`bad stack target ${x.id}`);
- say(['survive','keepN','keepUnit','win','saveFromGraveyard'].includes(p.objective?.type),'bad objective');
- if(p.objective?.type==='keepUnit'||p.objective?.type==='saveFromGraveyard')say(units.some(u=>u.id===p.objective.unitId),'objective unit missing');
+ say(['survive','keepN','keepUnit','win','winKeepUnit','saveFromGraveyard'].includes(p.objective?.type),'bad objective');
+ if(['keepUnit','winKeepUnit','saveFromGraveyard'].includes(p.objective?.type))say(units.some(u=>u.id===p.objective.unitId),'objective unit missing');
  if(p.objective?.type==='keepN')say(Number.isInteger(p.objective.count)&&p.objective.count>0,'bad objective count');
  return{valid:problems.length===0,errors:problems};
 }
@@ -290,6 +356,7 @@ const creatureToughness=u=>CARDS[u.card].toughness+(u.toughnessBoost||0);
 function objectiveMet(s){const o=s.objective; if(s.life.player<=0)return false;
  if(o.type==='survive')return s.life.player>0;
  if(o.type==='win')return s.life.opponent<=0&&s.life.player>0;
+ if(o.type==='winKeepUnit')return s.life.opponent<=0&&s.life.player>0&&s.units.some(u=>u.id===o.unitId&&u.zone==='battlefield'&&u.controller==='player');
  if(o.type==='keepN')return s.units.filter(u=>u.controller==='player'&&u.zone==='battlefield').length>=o.count;
  const unit=s.units.find(u=>u.id===o.unitId);if(!unit)return false;
  return o.type==='keepUnit'?unit.zone==='battlefield':unit.zone!=='graveyard';
@@ -346,6 +413,7 @@ function legalTarget(s,item,targetId){const rule=CARDS[item.card].targetRule;
  if(rule.startsWith('creature')){const u=s.units.find(x=>x.id===targetId&&x.zone==='battlefield');if(!u)return false;
  if(u.hexproof&&u.controller!==item.controller)return false;
  if(rule==='creature:nonblack'&&CARDS[u.card].colors.includes('B'))return false;
+ if(rule==='creature:own'&&u.controller!==item.controller)return false;
  return true;
  }
  if(rule==='any'){if(targetId==='player'||targetId==='opponent')return true;return legalCreatureTarget(s,item,targetId);}
@@ -382,6 +450,8 @@ function resolve(s,item){const c=CARDS[item.card],target=item.targetId;
  case 'damage':{const amount=c.amount;if(target==='player'||target==='opponent'){s.life[target]-=amount;s.log.push(`${item.card} deals ${amount} damage to ${labelTarget(s,target)}.`);}else{const u=s.units.find(x=>x.id===target);u.damage+=amount;s.log.push(`${item.card} marks ${amount} damage on ${u.card} (${u.damage}/${creatureToughness(u)} damage/toughness).`);}break;}
  case 'heal':s.life[target]+=c.amount;s.log.push(`Healing Salve: ${labelTarget(s,target)} gains ${c.amount} life.`);break;
  case 'counter':{let idx=s.stack.findIndex(x=>x.id===target);if(idx>=0){const x=s.stack.splice(idx,1)[0];s.log.push(`${item.card} counters ${x.card}.`);}break;}
+ case 'blossom':{const u=s.units.find(x=>x.id===target);u.powerBoost+=2;u.toughnessBoost+=2;u.hexproof=true;s.log.push(`${u.card} gets +2/+2 and gains hexproof until end of turn.`);break;}
+ case 'dive':{const u=s.units.find(x=>x.id===target);u.toughnessBoost+=3;u.hexproof=true;s.log.push(`${u.card} gets +0/+3 and gains hexproof until end of turn.`);break;}
  case 'pump':{const u=s.units.find(x=>x.id===target);u.powerBoost+=c.amount;u.toughnessBoost+=c.amount;s.log.push(`${u.card} gets +${c.amount}/+${c.amount} until end of turn.`);break;}
  case 'destroy':{const u=s.units.find(x=>x.id===target);if(u.indestructible)s.log.push(`${u.card} cannot be destroyed (indestructible).`);else{u.zone='graveyard';s.log.push(`${item.card} destroys ${u.card}.`);}break;}
  case 'exile':{const u=s.units.find(x=>x.id===target),p=creaturePower(u);u.zone='exile';s.life[u.controller]+=p;s.log.push(`Swords to Plowshares exiles ${u.card}; its controller gains ${p} life.`);break;}
@@ -407,7 +477,8 @@ function autoplay(s0,max=120){let s=clone(s0);for(let i=0;i<max&&s.status==='pla
 
 
 
-const scenarios=[
+
+const coreScenarios=[
   {
     "id": "sb-01",
     "version": "sb-mtg-training-0.3.0",
@@ -458,7 +529,8 @@ const scenarios=[
     "opponentPolicy": "alwaysPass",
     "hint": "Activated abilities stay on the stack even when their source has been sacrificed.",
     "explanation": "Sacrifice Selfless Spirit as a cost. Its ability gives your other creatures indestructible before Wrath of God destroys creatures. Sacrifice itself does not count as destruction.",
-    "lands": []
+    "lands": [],
+    "par": 1
   },
   {
     "id": "sb-02",
@@ -513,7 +585,8 @@ const scenarios=[
         "card": "Plains",
         "controller": "player"
       }
-    ]
+    ],
+    "par": 1
   },
   {
     "id": "sb-03",
@@ -561,7 +634,8 @@ const scenarios=[
         "card": "Forest",
         "controller": "player"
       }
-    ]
+    ],
+    "par": 1
   },
   {
     "id": "sb-04",
@@ -622,7 +696,8 @@ const scenarios=[
         "card": "Wastes",
         "controller": "player"
       }
-    ]
+    ],
+    "par": 1
   },
   {
     "id": "sb-05",
@@ -666,7 +741,7 @@ const scenarios=[
     },
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
-    "hint": "Increasing toughness cannot stop a spell that says “destroy.”",
+    "hint": "Increasing toughness cannot stop a spell that says \u201cdestroy.\u201d",
     "explanation": "Heroic Intervention gives your Hill Giant hexproof. On resolution, Murder checks its target again, finds it illegal, and does not resolve. Giant Growth does not prevent destruction.",
     "lands": [
       {
@@ -689,7 +764,8 @@ const scenarios=[
         "card": "Plains",
         "controller": "player"
       }
-    ]
+    ],
+    "par": 1
   },
   {
     "id": "sb-06",
@@ -756,7 +832,8 @@ const scenarios=[
         "card": "Forest",
         "controller": "player"
       }
-    ]
+    ],
+    "par": 2
   },
   {
     "id": "sb-07",
@@ -838,7 +915,8 @@ const scenarios=[
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "Sacrifice the Spirit to defeat the board wipe. Counter the direct removal; a toughness pump cannot stop Murder.",
-    "explanation": "Selfless Spirit grants indestructible to the remaining team, blocking Wrath of God. Counterspell must stop Murder, because indestructible alone does not answer targeted exile or every removal effect."
+    "explanation": "Selfless Spirit grants indestructible to the remaining team, blocking Wrath of God. Counterspell must stop Murder, because indestructible alone does not answer targeted exile or every removal effect.",
+    "par": 2
   },
   {
     "id": "sb-08",
@@ -926,7 +1004,8 @@ const scenarios=[
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "You need all three different responses. Protection from destruction is not life gain.",
-    "explanation": "The Spirit must be sacrificed to protect the Giant from Wrath of God. Healing Salve raises your life before the Bolt, and Counterspell removes Murder before it can destroy the Giant."
+    "explanation": "The Spirit must be sacrificed to protect the Giant from Wrath of God. Healing Salve raises your life before the Bolt, and Counterspell removes Murder before it can destroy the Giant.",
+    "par": 3
   },
   {
     "id": "sb-09",
@@ -1003,7 +1082,8 @@ const scenarios=[
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "You must stop their Counterspell AND one burn spell, while gaining enough life to survive the other.",
-    "explanation": "Healing Salve raises you to five. One Dispel protects your winning Bolt and the other counters a damage spell, leaving enough life to survive and deliver lethal damage."
+    "explanation": "Healing Salve raises you to five. One Dispel protects your winning Bolt and the other counters a damage spell, leaving enough life to survive and deliver lethal damage.",
+    "par": 3
   },
   {
     "id": "sb-10",
@@ -1089,14 +1169,15 @@ const scenarios=[
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "Two life-gain spells plus a counter for the opposing Counterspell is one solution. Or find another legal answer with your mana.",
-    "explanation": "Two Healing Salves allow you to take both Bolts, and a counterspell clears the path for your own Bolt. Different legal counter and mana allocations can also work."
+    "explanation": "Two Healing Salves allow you to take both Bolts, and a counterspell clears the path for your own Bolt. Different legal counter and mana allocations can also work.",
+    "par": 3
   },
   {
     "id": "sb-11",
     "version": "sb-mtg-training-0.3.0",
     "tier": "Mastermind",
     "title": "Protect the Protection",
-    "intro": "Your Heroic Intervention is ALREADY on the stack—an opponent is countering it. A lethal Bolt is on top, with Wrath and Swords waiting below.",
+    "intro": "Your Heroic Intervention is ALREADY on the stack\u2014an opponent is countering it. A lethal Bolt is on top, with Wrath and Swords waiting below.",
     "life": {
       "player": 2,
       "opponent": 17
@@ -1182,7 +1263,8 @@ const scenarios=[
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "Heal to survive the Bolt. Counter the spell that would stop your already-cast Heroic Intervention.",
-    "explanation": "Healing Salve keeps you alive through Bolt. Dispel counters the opposing Counterspell, allowing your Heroic Intervention to resolve. Hexproof invalidates Swords to Plowshares and indestructible shields creatures from Wrath."
+    "explanation": "Healing Salve keeps you alive through Bolt. Dispel counters the opposing Counterspell, allowing your Heroic Intervention to resolve. Hexproof invalidates Swords to Plowshares and indestructible shields creatures from Wrath.",
+    "par": 2
   },
   {
     "id": "sb-12",
@@ -1283,10 +1365,1449 @@ const scenarios=[
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "Gain six life, stop one of their Bolts, and counter their Counterspell; two damaging Bolts can then resolve safely.",
-    "explanation": "Both Healing Salves add six life, reaching seven. Use one Dispel to stop their Counterspell and another to stop any of their Bolts. Two Bolts still deal six, leaving you alive at one, and your Bolt wins."
+    "explanation": "Both Healing Salves add six life, reaching seven. Use one Dispel to stop their Counterspell and another to stop any of their Bolts. Two Bolts still deal six, leaving you alive at one, and your Bolt wins.",
+    "par": 4
   }
 ]
 ;
+const campaignExpansion=[
+  {
+    "id": "sb-13",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Investigator",
+    "title": "The Seedling Shield",
+    "intro": "Blossoming Defense increases Grizzly Bears to 4/4; three damage does not destroy it.",
+    "life": {
+      "player": 8,
+      "opponent": 18
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "bear"
+      }
+    ],
+    "hand": [
+      {
+        "id": "defend",
+        "card": "Blossoming Defense"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "bear"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Hexproof alone cannot undo marked damage, but increasing toughness can save the creature.",
+    "explanation": "Blossoming Defense increases Grizzly Bears to 4/4; three damage does not destroy it. Hexproof and a toughness increase are different tools.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      }
+    ],
+    "par": 1
+  },
+  {
+    "id": "sb-14",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Investigator",
+    "title": "A Thorn in the Blade",
+    "intro": "Cast Blossoming Defense onto Savannah Lions.",
+    "life": {
+      "player": 7,
+      "opponent": 17
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "lion",
+        "card": "Savannah Lions",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "murder",
+        "card": "Murder",
+        "controller": "opponent",
+        "targetId": "lion"
+      }
+    ],
+    "hand": [
+      {
+        "id": "defend",
+        "card": "Blossoming Defense"
+      },
+      {
+        "id": "grow",
+        "card": "Giant Growth"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "lion"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Murder cares about destroy, not toughness. You need the ability that also grants hexproof.",
+    "explanation": "Cast Blossoming Defense onto Savannah Lions. Once it gains hexproof, the opposing Murder has an illegal target on resolution.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      }
+    ],
+    "par": 1
+  },
+  {
+    "id": "sb-15",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Investigator",
+    "title": "Dive Beneath the Spell",
+    "intro": "Dive Down makes your Hill Giant hexproof and increases its toughness by three; Murder cannot resolve against it.",
+    "life": {
+      "player": 6,
+      "opponent": 18
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "murder",
+        "card": "Murder",
+        "controller": "opponent",
+        "targetId": "giant"
+      }
+    ],
+    "hand": [
+      {
+        "id": "dive",
+        "card": "Dive Down"
+      },
+      {
+        "id": "growth",
+        "card": "Giant Growth"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Choose a card you can actually cast. Dive Down grants hexproof, not just toughness.",
+    "explanation": "Dive Down makes your Hill Giant hexproof and increases its toughness by three; Murder cannot resolve against it.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      }
+    ],
+    "par": 1
+  },
+  {
+    "id": "sb-16",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Investigator",
+    "title": "A Wall of Lightning",
+    "intro": "Cast Titanic Growth on the Bear and Blossoming Defense on Savannah Lions to keep both creatures alive through their individual damage spells.",
+    "life": {
+      "player": 8,
+      "opponent": 19
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      },
+      {
+        "id": "lion",
+        "card": "Savannah Lions",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "bear"
+      },
+      {
+        "id": "shock",
+        "card": "Shock",
+        "controller": "opponent",
+        "targetId": "lion"
+      }
+    ],
+    "hand": [
+      {
+        "id": "titan",
+        "card": "Titanic Growth"
+      },
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      }
+    ],
+    "objective": {
+      "type": "keepN",
+      "count": 2
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Each creature must live through a different damage spell. Two green responses and three mana.",
+    "explanation": "Cast Titanic Growth on the Bear and Blossoming Defense on Savannah Lions to keep both creatures alive through their individual damage spells.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Wastes",
+        "controller": "player"
+      }
+    ],
+    "par": 2
+  },
+  {
+    "id": "sb-17",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Investigator",
+    "title": "Blackwater Crossing",
+    "intro": "Blossoming Defense saves Grizzly Bears through the Bolt; Dive Down grants hexproof to the Giant so Swords to Plowshares cannot exile it.",
+    "life": {
+      "player": 8,
+      "opponent": 16
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "swords",
+        "card": "Swords to Plowshares",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "bear"
+      }
+    ],
+    "hand": [
+      {
+        "id": "dive",
+        "card": "Dive Down"
+      },
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      }
+    ],
+    "objective": {
+      "type": "keepN",
+      "count": 2
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Indestructible does not stop exile. Hexproof can make an existing target illegal.",
+    "explanation": "Blossoming Defense saves Grizzly Bears through the Bolt; Dive Down grants hexproof to the Giant so Swords to Plowshares cannot exile it.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Forest",
+        "controller": "player"
+      }
+    ],
+    "par": 2
+  },
+  {
+    "id": "sb-18",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Investigator",
+    "title": "The Three-Color Gate",
+    "intro": "Titanic Growth raises Grizzly Bears toughness above Bolt damage; Cancel counters Wrath of God.",
+    "life": {
+      "player": 8,
+      "opponent": 18
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "bear"
+      }
+    ],
+    "hand": [
+      {
+        "id": "cancel",
+        "card": "Cancel"
+      },
+      {
+        "id": "titan",
+        "card": "Titanic Growth"
+      },
+      {
+        "id": "scatter",
+        "card": "Essence Scatter"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "bear"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "You must prevent the wipe and the damage. A creature-only counter cannot stop Wrath of God.",
+    "explanation": "Titanic Growth raises Grizzly Bears toughness above Bolt damage; Cancel counters Wrath of God. Essence Scatter cannot counter a sorcery.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-4",
+        "card": "Wastes",
+        "controller": "player"
+      },
+      {
+        "id": "land-5",
+        "card": "Wastes",
+        "controller": "player"
+      }
+    ],
+    "par": 2
+  },
+  {
+    "id": "sb-19",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "Two Blades, Two Defenses",
+    "intro": "Grant Grizzly Bears hexproof with Blossoming Defense and Hill Giant hexproof with Dive Down.",
+    "life": {
+      "player": 8,
+      "opponent": 19
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "doom",
+        "card": "Doom Blade",
+        "controller": "opponent",
+        "targetId": "bear"
+      },
+      {
+        "id": "murder",
+        "card": "Murder",
+        "controller": "opponent",
+        "targetId": "giant"
+      }
+    ],
+    "hand": [
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      },
+      {
+        "id": "dive",
+        "card": "Dive Down"
+      },
+      {
+        "id": "growth",
+        "card": "Giant Growth"
+      }
+    ],
+    "objective": {
+      "type": "keepN",
+      "count": 2
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Both targeted removal spells must lose their legal target. Pure toughness is not enough.",
+    "explanation": "Grant Grizzly Bears hexproof with Blossoming Defense and Hill Giant hexproof with Dive Down. Both black removal spells then fail on resolution.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Island",
+        "controller": "player"
+      }
+    ],
+    "par": 2
+  },
+  {
+    "id": "sb-20",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "Ward the Pack",
+    "intro": "Sacrifice Selfless Spirit to protect the Giant from Wrath and cast Dive Down on the Giant so Doom Blade has an illegal target.",
+    "life": {
+      "player": 8,
+      "opponent": 18
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "doom",
+        "card": "Doom Blade",
+        "controller": "opponent",
+        "targetId": "giant"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "dive",
+        "card": "Dive Down"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "One ability handles the board wipe; another response blanks the targeted removal.",
+    "explanation": "Sacrifice Selfless Spirit to protect the Giant from Wrath and cast Dive Down on the Giant so Doom Blade has an illegal target.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      }
+    ],
+    "par": 2
+  },
+  {
+    "id": "sb-21",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "The Triple Firewall",
+    "intro": "Gain life with Healing Salve, give the Giant hexproof with Dive Down, and sacrifice Selfless Spirit to survive the Wrath.",
+    "life": {
+      "player": 2,
+      "opponent": 18
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "murder",
+        "card": "Murder",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "dive",
+        "card": "Dive Down"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "You have three different problems: lethal damage, targeted removal, and a mass destroy effect.",
+    "explanation": "Gain life with Healing Salve, give the Giant hexproof with Dive Down, and sacrifice Selfless Spirit to survive the Wrath. Every response matters.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      }
+    ],
+    "par": 3
+  },
+  {
+    "id": "sb-22",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "Unbroken Intervention",
+    "intro": "Healing Salve saves you from Lightning Bolt, Cancel stops the opposing Counterspell so Heroic Intervention resolves, and Blossoming Defense gives the Giant hexproof against Swords to Plowshares.",
+    "life": {
+      "player": 2,
+      "opponent": 19
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      },
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "swords",
+        "card": "Swords to Plowshares",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "intervene",
+        "card": "Heroic Intervention",
+        "controller": "player"
+      },
+      {
+        "id": "counterspell",
+        "card": "Counterspell",
+        "controller": "opponent",
+        "targetId": "intervene"
+      },
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "cancel",
+        "card": "Cancel"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Heroic Intervention is already on the stack. Save it from the Counterspell and stop the earlier exile.",
+    "explanation": "Healing Salve saves you from Lightning Bolt, Cancel stops the opposing Counterspell so Heroic Intervention resolves, and Blossoming Defense gives the Giant hexproof against Swords to Plowshares.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-4",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-5",
+        "card": "Wastes",
+        "controller": "player"
+      }
+    ],
+    "par": 3
+  },
+  {
+    "id": "sb-23",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "The Double Ember",
+    "intro": "Gain three life and counter either Lightning Bolt or Shock.",
+    "life": {
+      "player": 2,
+      "opponent": 17
+    },
+    "mana": {},
+    "units": [],
+    "stack": [
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "shock",
+        "card": "Shock",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "counter",
+        "card": "Counterspell"
+      },
+      {
+        "id": "negate",
+        "card": "Negate"
+      }
+    ],
+    "objective": {
+      "type": "survive"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Healing Salve alone leaves you at zero after all damage. Stop one burn spell too.",
+    "explanation": "Gain three life and counter either Lightning Bolt or Shock. The remaining burn spell is survivable.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Plains",
+        "controller": "player"
+      }
+    ],
+    "par": 2
+  },
+  {
+    "id": "sb-24",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "The Rift Engine",
+    "intro": "Two Healing Salves, a Dispel on the enemy Counterspell, and another Dispel on one damaging spell let the original Bolt defeat your opponent.",
+    "life": {
+      "player": 1,
+      "opponent": 3
+    },
+    "mana": {},
+    "units": [],
+    "stack": [
+      {
+        "id": "yourbolt",
+        "card": "Lightning Bolt",
+        "controller": "player",
+        "targetId": "opponent"
+      },
+      {
+        "id": "enemycounter",
+        "card": "Counterspell",
+        "controller": "opponent",
+        "targetId": "yourbolt"
+      },
+      {
+        "id": "bolt1",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "bolt2",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "strike",
+        "card": "Lightning Strike",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "salve1",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "salve2",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "dispel1",
+        "card": "Dispel"
+      },
+      {
+        "id": "dispel2",
+        "card": "Dispel"
+      },
+      {
+        "id": "cancel",
+        "card": "Cancel"
+      }
+    ],
+    "objective": {
+      "type": "win"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Save your own Bolt by countering their counter, heal twice, then prevent one of the lethal spells from resolving.",
+    "explanation": "Two Healing Salves, a Dispel on the enemy Counterspell, and another Dispel on one damaging spell let the original Bolt defeat your opponent.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-4",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-5",
+        "card": "Wastes",
+        "controller": "player"
+      }
+    ],
+    "par": 4
+  },
+  {
+    "id": "sb-25",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "The Fortress Keeper",
+    "intro": "Sacrifice the Spirit to give your Bear indestructible, and use Blossoming Defense to make it an illegal target for Doom Blade.",
+    "life": {
+      "player": 8,
+      "opponent": 18
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "doom",
+        "card": "Doom Blade",
+        "controller": "opponent",
+        "targetId": "bear"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "bear"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "The board wipe and direct removal are two different threats. You need both defenses.",
+    "explanation": "Sacrifice the Spirit to give your Bear indestructible, and use Blossoming Defense to make it an illegal target for Doom Blade.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      }
+    ],
+    "par": 2
+  },
+  {
+    "id": "sb-26",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "Mercy at the Breach",
+    "intro": "Healing Salve raises your life above the burn threshold; Blossoming Defense grants the Giant hexproof and invalidates Swords to Plowshares.",
+    "life": {
+      "player": 2,
+      "opponent": 17
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "swords",
+        "card": "Swords to Plowshares",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "strike",
+        "card": "Lightning Strike",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "You cannot survive the damage or stop the exile with just one card.",
+    "explanation": "Healing Salve raises your life above the burn threshold; Blossoming Defense grants the Giant hexproof and invalidates Swords to Plowshares.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      }
+    ],
+    "par": 2
+  },
+  {
+    "id": "sb-27",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "Three Doors to Survival",
+    "intro": "Selfless Spirit prevents Wrath destroying the Giant, Dive Down gives it hexproof from Murder, and Healing Salve saves you from Shock.",
+    "life": {
+      "player": 1,
+      "opponent": 18
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "murder",
+        "card": "Murder",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "shock",
+        "card": "Shock",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "dive",
+        "card": "Dive Down"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "One creature can handle the wipe, but not the murder or your nearly empty life total.",
+    "explanation": "Selfless Spirit prevents Wrath destroying the Giant, Dive Down gives it hexproof from Murder, and Healing Salve saves you from Shock.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      }
+    ],
+    "par": 3
+  },
+  {
+    "id": "sb-28",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "The Final Channel",
+    "intro": "Save the Giant from Doom Blade using Blossoming Defense; gain life before Lightning Strike; counter the enemy Counterspell with Dispel so your lethal Bolt resolves.",
+    "life": {
+      "player": 2,
+      "opponent": 3
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "yourbolt",
+        "card": "Lightning Bolt",
+        "controller": "player",
+        "targetId": "opponent"
+      },
+      {
+        "id": "enemycounter",
+        "card": "Counterspell",
+        "controller": "opponent",
+        "targetId": "yourbolt"
+      },
+      {
+        "id": "strike",
+        "card": "Lightning Strike",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "doom",
+        "card": "Doom Blade",
+        "controller": "opponent",
+        "targetId": "giant"
+      }
+    ],
+    "hand": [
+      {
+        "id": "dispel",
+        "card": "Dispel"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      }
+    ],
+    "objective": {
+      "type": "winKeepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Winning the damage race is not enough; the Giant must also stay on the battlefield.",
+    "explanation": "Save the Giant from Doom Blade using Blossoming Defense; gain life before Lightning Strike; counter the enemy Counterspell with Dispel so your lethal Bolt resolves.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Forest",
+        "controller": "player"
+      }
+    ],
+    "par": 3
+  },
+  {
+    "id": "sb-29",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "Keep the Banner Standing",
+    "intro": "Sacrifice the Spirit, use Blossoming Defense on the Giant, gain life with Healing Salve, and Dispel the enemy Counterspell to win while keeping the Giant alive.",
+    "life": {
+      "player": 2,
+      "opponent": 3
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "yourbolt",
+        "card": "Lightning Bolt",
+        "controller": "player",
+        "targetId": "opponent"
+      },
+      {
+        "id": "enemycounter",
+        "card": "Counterspell",
+        "controller": "opponent",
+        "targetId": "yourbolt"
+      },
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "murder",
+        "card": "Murder",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "dispel",
+        "card": "Dispel"
+      }
+    ],
+    "objective": {
+      "type": "winKeepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "You need to protect the Giant, keep enough life, and preserve your own lethal spell.",
+    "explanation": "Sacrifice the Spirit, use Blossoming Defense on the Giant, gain life with Healing Salve, and Dispel the enemy Counterspell to win while keeping the Giant alive.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Island",
+        "controller": "player"
+      }
+    ],
+    "par": 4
+  },
+  {
+    "id": "sb-30",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "The Last Response",
+    "intro": "Give the Giant indestructible and hexproof, heal for three, counter one lethal burn spell and the opposing Counterspell.",
+    "life": {
+      "player": 2,
+      "opponent": 3
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "yourbolt",
+        "card": "Lightning Bolt",
+        "controller": "player",
+        "targetId": "opponent"
+      },
+      {
+        "id": "enemycounter",
+        "card": "Counterspell",
+        "controller": "opponent",
+        "targetId": "yourbolt"
+      },
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "swords",
+        "card": "Swords to Plowshares",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "strike",
+        "card": "Lightning Strike",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "dispel1",
+        "card": "Dispel"
+      },
+      {
+        "id": "dispel2",
+        "card": "Dispel"
+      }
+    ],
+    "objective": {
+      "type": "winKeepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Exactly five responses: preserve the Giant, outlive one burn spell, stop the other, and free your lethal Bolt.",
+    "explanation": "Give the Giant indestructible and hexproof, heal for three, counter one lethal burn spell and the opposing Counterspell. Resolve the original Bolt to finish the fifth chapter.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-4",
+        "card": "Island",
+        "controller": "player"
+      }
+    ],
+    "par": 5
+  }
+]
+;
+const scenarios=[...coreScenarios,...campaignExpansion];
+const chapters=[
+  {
+    "id": "w1",
+    "name": "The First Spark",
+    "subtitle": "Priority and your first response",
+    "icon": "\u2726",
+    "color": "#caa55d",
+    "terrain": "sunrise",
+    "start": 1,
+    "end": 6,
+    "boss": "The Final Exchange"
+  },
+  {
+    "id": "w2",
+    "name": "Shatterwood Trail",
+    "subtitle": "Protection, counters and survival",
+    "icon": "\u2667",
+    "color": "#77bf81",
+    "terrain": "forest",
+    "start": 7,
+    "end": 12,
+    "boss": "The Fractured Stack"
+  },
+  {
+    "id": "w3",
+    "name": "Spellwater Coast",
+    "subtitle": "Hexproof, toughness and targeted spells",
+    "icon": "\u2248",
+    "color": "#7fbfe0",
+    "terrain": "coast",
+    "start": 13,
+    "end": 18,
+    "boss": "The Three-Color Gate"
+  },
+  {
+    "id": "w4",
+    "name": "The Mana Rift",
+    "subtitle": "Multiple threats and precision timing",
+    "icon": "\u25c7",
+    "color": "#a996db",
+    "terrain": "rift",
+    "start": 19,
+    "end": 24,
+    "boss": "The Rift Engine"
+  },
+  {
+    "id": "w5",
+    "name": "Last Response Citadel",
+    "subtitle": "The toughest layered exchanges",
+    "icon": "\u265c",
+    "color": "#e2a579",
+    "terrain": "citadel",
+    "start": 25,
+    "end": 30,
+    "boss": "The Last Response"
+  }
+]
+;
+
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
 const glyph={W:'☀',U:'◆',B:'✦',R:'✹',G:'❀',C:'◇'};
@@ -1408,7 +2929,7 @@ document.addEventListener('click',e=>{
 });
 window.addEventListener('scroll',closeCardPreview,{passive:true});
 const progressKey='dc-stackbreaker-progress-v3';
-let index=0,game,history=[],hint=false,progress={},dragTouch=null,pendingPlay=null,armedCard=null,dragSession=null,artRefreshPending=false;
+let index=0,selectedWorld=0,returnMapFocus=null,game,history=[],hint=false,progress={},dragTouch=null,pendingPlay=null,armedCard=null,dragSession=null,artRefreshPending=false;
 try{progress=JSON.parse(localStorage.getItem(progressKey)||'{}')||{};}catch{}
 const save=()=>{try{localStorage.setItem(progressKey,JSON.stringify(progress))}catch{}};
 function pips(obj,raw=false){let out=[];for(const c of ['generic','W','U','B','R','G','C']){const n=obj?.[c]||0;
@@ -1416,12 +2937,12 @@ function pips(obj,raw=false){let out=[];for(const c of ['generic','W','U','B','R
  for(let j=0;j<n;j++)out.push(`<span class="mana-pip ${c}" title="${c} mana">${glyph[c]}</span>`);
  }return out.join('')||(raw?'':'<span class="empty-mana">EMPTY</span>');}
 function titleForTarget(id){return id==null?'No target':labelTarget(game,id)}
-function objectiveText(s){const o=s.objective;if(o.type==='survive')return'Survive with at least 1 life.';
+function objectiveText(s){const o=s.objective;if(o.type==='winKeepUnit')return`Defeat the opponent and keep ${s.units.find(u=>u.id===o.unitId)?.card||'the required creature'} on your battlefield.`;if(o.type==='survive')return'Survive with at least 1 life.';
  if(o.type==='win')return'Deal lethal damage to the opponent and survive.';
  if(o.type==='keepN')return`Keep at least ${o.count} friendly creatures alive.`;
  return`Keep ${s.units.find(u=>u.id===o.unitId)?.card||'the required creature'} ${o.type==='keepUnit'?'on the battlefield':'out of the graveyard'}.`;
 }
-function changeCase(n){clearDragFeedback();index=Math.max(0,Math.min(scenarios.length-1,n));game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;render();}
+function changeCase(n){closeWorldMap(false);clearDragFeedback();index=Math.max(0,Math.min(scenarios.length-1,n));selectedWorld=Math.floor(index/6);try{localStorage.setItem('dc-stackbreaker-last-level',String(index));}catch{}game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;render();}
 function shortCard(u){
  const gone=u.zone!=='battlefield';const ability=game.hand.find(a=>a.sourceId===u.id&&!game.used.includes(a.id));
  const active=ability&&game.status==='playing'&&legalActions(game).includes(ability.id);
@@ -1532,21 +3053,21 @@ function updateDragFeedback(element){
  }
  if(valid)valid.classList.add(cls);
 }
-function render(){closeCardPreview();const s=game,p=scenarios[index];$('missionTier').textContent=p.tier.toUpperCase();$('missionNum').textContent=String(index+1).padStart(2,'0')+' / 12';$('scenarioTitle').textContent=p.title;
- $('scenarioSelect').innerHTML=scenarios.map((o,i)=>`<option value="${i}" ${i===index?'selected':''}>${String(i+1).padStart(2,'0')} ${esc(o.title)}${progress[o.id]?' ★':''}</option>`).join('');
+function render(){closeCardPreview();const s=game,p=scenarios[index],worldIndex=Math.floor(index/6),localLevel=index%6+1; $('missionTier').textContent='WORLD '+(worldIndex+1)+' · '+chapters[worldIndex].name.toUpperCase();$('missionNum').textContent=(worldIndex+1)+'-'+localLevel;$('scenarioTitle').textContent=p.title;
+ $('scenarioSelect').innerHTML=scenarios.map((o,i)=>`<option value="${i}" ${i===index?'selected':''}>${Math.floor(i/6)+1}-${i%6+1} ${esc(o.title)}${progress[o.id]?' ★':''}</option>`).join('');
  $('playerLife').textContent=s.life.player;$('opponentLife').textContent=s.life.opponent;$('manaPool').innerHTML=pips(s.mana);
  $('priority').textContent=s.status==='playing'?'● PRIORITY: YOU':s.status==='won'?'✓ SURVIVED':'✕ DEFEATED';$('objective').textContent=objectiveText(s);$('objectiveShort').textContent=p.tier.toUpperCase();
  $('battlefield').innerHTML=s.units.filter(u=>u.zone==='battlefield').length?s.units.filter(u=>u.zone==='battlefield').map(shortCard).join(''):'<span class="empty-creatures">No creatures in this case</span>';
  $('lands').innerHTML=s.lands.length?s.lands.map(landCard).join(''):'<span class="empty-creatures">No lands needed — activate your creature’s ability</span>';
  $('stackCount').textContent=String(s.stack.length).padStart(2,'0');$('stack').innerHTML=s.stack.length?[...s.stack].reverse().map(stackCard).join(''):'<li class="stack-empty">Empty stack</li>';
  const remaining=s.hand.filter(a=>!a.sourceId&&!s.used.includes(a.id));$('handCount').textContent=remaining.length+' CARDS';$('hand').classList.toggle('many',remaining.length>3);$('hand').innerHTML=remaining.map(handCard).join('')||'<span class="empty-creatures">No spells in hand</span>';
- $('passButton').disabled=s.status!=='playing';$('undoButton').disabled=!history.length;$('nextButton').textContent=s.status==='won'?(index===11?'FIRST CASE ↻':'NEXT CASE →'):'NEXT →';
+ $('passButton').disabled=s.status!=='playing';$('undoButton').disabled=!history.length;$('prevButton').disabled=index===0;$('prevButton').textContent='← PREV';$('nextButton').disabled=index===scenarios.length-1;$('nextButton').textContent=index%6===5?'NEXT WORLD →':'NEXT →';$('mapButton').setAttribute('aria-label',`Open chapter map for ${chapters[worldIndex].name}`);
  $('resultMini').className='result-mini'+(s.status==='won'?' won':s.status==='lost'?' lost':'');$('resultEyebrow').textContent=s.status==='won'?'✓ CASE SOLVED':s.status==='lost'?'✕ TRY AGAIN':'YOUR MOVE';
- $('resultTitle').textContent=s.status==='won'?'Next case is ready':s.status==='lost'?'Reset or undo to retry':'Tap lands, drag a spell, or activate a creature';
+ $('resultTitle').textContent=s.status==='won'?(index%6===5?'★ Chapter completed — claim your flag on the map!':'Next case is ready'):s.status==='lost'?'Reset or undo to retry':'Tap lands, drag a spell, or activate a creature';
  $('scenarioIntro').textContent=p.intro;$('objectiveLong').textContent=objectiveText(s);$('hintText').hidden=!hint;$('hintText').textContent=p.hint;$('hintButton').setAttribute('aria-expanded',String(hint));
  $('resultExplanation').textContent=s.status==='playing'?'Complete the case to see the rules explanation.':p.explanation;
- if(s.status==='won'){const stars=s.used.length<=2?3:2;progress[p.id]=Math.max(progress[p.id]||0,stars);save();$('resultStars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);}else $('resultStars').textContent='';
- renderPlayPrompt();$('completed').textContent=Object.keys(progress).length+' / 12 SOLVED';$('log').innerHTML=s.log.slice(-14).reverse().map(x=>`<li>${esc(x)}</li>`).join('');$('version').textContent=RULES_VERSION;$('live').textContent=s.log.at(-1)||'Tap a land to produce mana.';
+ if(s.status==='won'){const par=p.par||2,stars=s.used.length<=par?3:s.used.length===par+1?2:1;progress[p.id]=Math.max(progress[p.id]||0,stars);save();$('resultStars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);}else $('resultStars').textContent='';
+ renderPlayPrompt();$('completed').textContent=Object.keys(progress).filter(id=>scenarios.some(s=>s.id===id)).length+' / '+scenarios.length+' SOLVED';$('log').innerHTML=s.log.slice(-14).reverse().map(x=>`<li>${esc(x)}</li>`).join('');$('version').textContent=RULES_VERSION;$('live').textContent=s.log.at(-1)||'Tap a land to produce mana.';
  if(dragSession)paintLegalDragTargets();
 }
 function notify(message){$('live').textContent=message;}
@@ -1597,7 +3118,50 @@ $('playPrompt').addEventListener('click',e=>{
  const t=e.target.closest('[data-choose-target]');if(t)chooseTarget(t.dataset.chooseTarget==='__none__'?null:t.dataset.chooseTarget);
  const p=e.target.closest('[data-choose-payment]');if(p)choosePayment(Number(p.dataset.choosePayment));
 });
-$('passButton').addEventListener('click',applyPass);$('undoButton').addEventListener('click',undo);$('restartButton').addEventListener('click',()=>changeCase(index));$('nextButton').addEventListener('click',()=>changeCase((index+1)%scenarios.length));
+// Five themed chapter maps retain access to old and new levels. Visiting a
+// stage never erases prior stars; chapter boss flags are earned on victory.
+function chapterForLevel(levelIndex){return chapters[Math.floor(levelIndex/6)];}
+function renderWorldMap(){
+ const world=chapters[selectedWorld];if(!world)return;
+ $('worldTabs').innerHTML=chapters.map((c,i)=>{
+  const solved=scenarios.slice(c.start-1,c.end).filter(p=>progress[p.id]>0).length;
+  return `<button type="button" class="world-tab ${i===selectedWorld?'current':''}" data-world-index="${i}" aria-current="${i===selectedWorld?'true':'false'}" style="--world-accent:${c.color}"><span>${c.icon}</span><b>W${i+1}</b><small>${solved}/6</small></button>`;
+ }).join('');
+ const cleared=scenarios.slice(world.start-1,world.end).filter(p=>progress[p.id]>0).length;
+ const levels=scenarios.slice(world.start-1,world.end);
+ const nodes=levels.map((p,i)=>{
+  const n=world.start-1+i,score=Math.max(0,Math.min(3,progress[p.id]||0)),boss=i===5;
+  return `<button type="button" class="map-level ${n===index?'active':''} ${score?'cleared':''} ${boss?'boss':''}" data-level-index="${n}" aria-label="World ${selectedWorld+1}, stage ${i+1}, ${esc(p.title)}${score?', cleared with '+score+' stars':''}" ${n===index?'aria-current="step"':''}><span class="map-node"><span>${boss?'♜':score?'⚑':String(i+1).padStart(2,'0')}</span></span><b>${selectedWorld+1}-${i+1}</b><span class="map-stars" aria-hidden="true">${score?'★'.repeat(score)+'☆'.repeat(3-score):boss?'BOSS':'OPEN'}</span></button>`;
+ }).join('');
+ $('worldStage').style.setProperty('--world-color',world.color);
+ $('worldStage').dataset.terrain=world.terrain;
+ $('worldStage').innerHTML=`<div class="world-sky" aria-hidden="true"><span>${world.icon}</span><i>✦</i><i>✧</i></div><div class="world-heading"><small>WORLD ${selectedWorld+1} OF ${chapters.length}</small><h3>${esc(world.name)}</h3><p>${esc(world.subtitle)}</p></div><div class="world-levels"><svg class="map-trail" aria-hidden="true" viewBox="0 0 920 150" preserveAspectRatio="none"><path d="M 55 105 Q 145 12 220 74 T 395 74 T 570 74 T 745 74 T 875 72" stroke="${world.color}" fill="none" stroke-width="5" stroke-dasharray="10 12" stroke-linecap="round"/></svg>${nodes}</div><div class="world-boss">${cleared===6?'★ WORLD COMPLETE':`⚑ ${cleared} / 6 FLAGS PLANTED`} · FINAL STAGE: ${esc(world.boss)}</div>`;
+ $('worldMapProgress').textContent=`${Object.keys(progress).filter(id=>scenarios.some(p=>p.id===id)).length} / ${scenarios.length} levels cleared`;
+}
+function openWorldMap(){
+ if(dragSession||dragTouch?.moved||pendingPlay)return;
+ returnMapFocus=document.activeElement;selectedWorld=Math.floor(index/6);
+ const map=$('worldMap');map.hidden=false;map.setAttribute('aria-hidden','false');
+ $('mapButton').setAttribute('aria-expanded','true');renderWorldMap();$('closeMapButton').focus();
+}
+function closeWorldMap(restoreFocus=true){
+ const map=$('worldMap');if(!map||map.hidden)return;
+ map.hidden=true;map.setAttribute('aria-hidden','true');$('mapButton').setAttribute('aria-expanded','false');
+ if(restoreFocus)(returnMapFocus?.isConnected?returnMapFocus:$('mapButton')).focus();
+}
+$('mapButton').addEventListener('click',openWorldMap);
+$('closeMapButton').addEventListener('click',()=>closeWorldMap());
+$('worldTabs').addEventListener('click',e=>{const node=e.target.closest('[data-world-index]');if(node){selectedWorld=Number(node.dataset.worldIndex);renderWorldMap();}});
+$('worldStage').addEventListener('click',e=>{const node=e.target.closest('[data-level-index]');if(node)changeCase(Number(node.dataset.levelIndex));});
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&!$('worldMap').hidden){e.preventDefault();closeWorldMap();return;}
+ if($('worldMap').hidden||e.key!=='Tab')return;
+ const focusable=[...$('worldMap').querySelectorAll('button:not([disabled])')];if(!focusable.length)return;
+ if(e.shiftKey&&document.activeElement===focusable[0]){e.preventDefault();focusable.at(-1).focus();}
+ else if(!e.shiftKey&&document.activeElement===focusable.at(-1)){e.preventDefault();focusable[0].focus();}
+});
+
+$('passButton').addEventListener('click',applyPass);$('undoButton').addEventListener('click',undo);$('restartButton').addEventListener('click',()=>changeCase(index));$('prevButton').addEventListener('click',()=>changeCase(index-1));$('nextButton').addEventListener('click',()=>{if(index<scenarios.length-1)changeCase(index+1)});
 $('scenarioSelect').addEventListener('change',e=>changeCase(Number(e.target.value)));
 $('hintButton').addEventListener('click',()=>{hint=!hint;render()});
 // Desktop: legal targets get a soft glow; the one under the dragged card
@@ -1645,6 +3209,7 @@ document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INP
  if(e.key===' '&&document.activeElement===document.body){e.preventDefault();applyPass();}
  else if(e.key.toLowerCase()==='z'&&document.activeElement===document.body)undo();
 });
-changeCase(0);
+let lastLevel=0;try{lastLevel=Number(localStorage.getItem('dc-stackbreaker-last-level')||'0')||0;}catch{}
+changeCase(lastLevel);
 fetchScryfallCatalog();
 </script></body></html>
