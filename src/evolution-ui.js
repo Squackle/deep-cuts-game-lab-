@@ -4,7 +4,7 @@
  */
 import {MUTATIONS,COLORS,activeEffects} from "./engine.js";
 const COLOR_NAMES={W:"WHITE",U:"BLUE",B:"BLACK",R:"RED",G:"GREEN"};
-const SELECTION_KEYS=["W / ↑ / 1","A / ← / 2","S / ↓ / 3"];
+const SELECTION_KEYS=["1","2","3"];
 const CLASSIC_COPY={
  U:"Slow your swarm for 28 movements so you can navigate tight corners.",
  R:"Move faster and earn double points from brood orbs for 24 movements.",
