@@ -428,3 +428,11 @@ body.game-only .encounter-hud .encounter-banner{padding:2px 5px;font-size:9px}
 #wardButton:not([hidden]){border-color:#6f976e;background:#1f392c;color:#d6e9bf;font-size:.78rem;letter-spacing:.04em}
 #wardButton:not([hidden]):hover{background:#294938}
 @media(max-width:420px){#wardButton:not([hidden]){width:100%;min-height:42px;font-size:.72rem}}
+
+/* Shared test-lab entry: minimal header action, Hive Run play surface unchanged. */
+.lab-header-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:9px 15px}
+.lab-all-games{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 12px;border:1px solid #c1a46e80;border-radius:5px;background:#263f2e;color:#f0d392;font:800 10px/1.4 ui-sans-serif,system-ui,sans-serif;letter-spacing:.06em;white-space:nowrap}
+.lab-all-games:hover{background:#335840;color:#ffe3a8;text-decoration:none}
+.lab-all-games:focus-visible{outline:3px solid #f4cf79;outline-offset:3px}
+@media(max-width:670px){.lab-header{flex-wrap:wrap}.lab-header-actions{margin-left:auto}.lab-all-games{font-size:9px;min-height:39px;padding:8px 9px}}
+@media(max-width:390px){.lab-header{gap:9px}.lab-header-actions{width:100%;justify-content:space-between}.lab-all-games{flex:1}.lab-badge{font-size:9px}}
