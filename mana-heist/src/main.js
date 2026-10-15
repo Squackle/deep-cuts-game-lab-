@@ -9,6 +9,7 @@ import {installLandDragging} from "./drag-lands.js";
 import {renderCardReferences,referenceFor} from "./card-references.js";
 import {installCardInspector} from "./card-inspector.js";
 import {cardImageUrl} from "./scryfall-cards.js";
+import {missingMana,failureText,flashWard} from "./ward-feedback.js";
 const el=id=>document.getElementById(id);
 const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"C"},N:{name:"Generic",color:"#bec5bd",icon:"◇"}};
 const storageKey="dc-mana-heist-landfall-v2";
@@ -54,11 +55,24 @@ function choices(title,help,moves){
  el("choices").innerHTML='<p class="muted small">'+help+'</p>'+moves.map((action,i)=>'<button class="choice-button" type="button" data-choice="'+i+'">'+desc(action)+'</button>').join("");
  if(!moves.length)el("choices").innerHTML='<p class="muted">'+help+'</p>';
 }
-function message(text,error=false){el("feedback").textContent=text;el("feedback").classList.toggle("bad",error);}
+function message(text,error=false){
+ const item=el("feedback");
+ item.textContent=text;
+ item.classList.toggle("bad",error);
+ if(error){
+  item.animate?.([{opacity:.55,transform:"translateX(-50%) translateY(8px)"},{opacity:1,transform:"translateX(-50%) translateY(0)"}],{duration:280,easing:"ease-out"});
+ }
+}
+function rejectCast(){
+ const stage=level.stages[state.stage];if(!stage)return;
+ const missing=missingMana(state.pool,stage.cost);
+ flashWard({vault:el("heist").querySelector(".vault-card"),ward:el("lockGlyph"),costRow:el("wardCost"),button:el("castButton"),pool:el("pool"),missing});
+ message(failureText(missing),true);
+}
 function perform(action){
  const sourceRect=action.type==="tap"?el("battlefield").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():null;
  const out=reduce(level,state,action);
- if(!out.ok){message(out.error,true);return;}
+ if(!out.ok){if(action?.type==="cast")rejectCast();else message(out.error,true);return;}
  history.push({state,orbs:manaOrbs.map(o=>({...o}))});
  state=out.state;
  manaOrbs=transitionOrbs(manaOrbs,action,state.pool);
@@ -100,7 +114,7 @@ function playLand(id){
 function castSpell(){
  const stage=level.stages[state.stage];if(!stage)return;
  const possible=actions(level,state).filter(a=>a.type==="cast");
- if(!possible.length){message("Insufficient mana for "+stage.name+". Tap lands, change colors, or end the turn.",true);return;}
+ if(!possible.length){rejectCast();return;}
  if(possible.length===1)perform(possible[0]);
  else choices("CHOOSE YOUR PAYMENT",stage.effect==="untap"?"Select your payment and which tapped land to untap.":"Colored costs are exact; generic mana may be paid from any remaining color.",possible);
 }
@@ -133,7 +147,7 @@ function render(pendingId=null){
  el("wardCounter").textContent=isWin?"VAULT OPEN":"WARD "+(state.stage+1)+" OF "+level.stages.length;
  el("wardName").textContent=isWin?"The seal is broken":stage.name;
  el("wardCost").innerHTML=isWin?"":costHtml(stage.cost);
- el("wardDescription").textContent=isWin?"The heist is complete. Your best route is preserved on this device.":stage.effect==="untap"?"Casting this heist spell also untaps one land you choose.":"Tap your lands to collect the exact colored mana. Gray diamond symbols are generic costs.";
+ el("wardDescription").textContent=isWin?"The heist is complete. Your best route is preserved on this device.":stage.effect==="untap"?"Casting this heist spell also untaps one land you choose.":"Colored mana symbols require that exact color. A gray diamond is generic: you may use any remaining mana.";
  el("castButton").disabled=isWin;
  el("castButton").classList.toggle("can-cast",!isWin&&actions(level,state).some(a=>a.type==="cast"));
  el("castButton").textContent=isWin?"VAULT CRACKED":stage.effect==="untap"?"CAST REWIND SPELL ↗":"CAST SPELL · BREAK WARD ↗";
