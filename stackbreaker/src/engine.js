@@ -108,7 +108,11 @@ export function legalTargets(s,action){const card=CARDS[action.card];if(!card)re
  return candidates.filter(targetId=>rule==='any'?targetId==='player'||targetId==='opponent'||legalCreatureTarget(s,{controller:'player'},targetId):legalTarget(s,{...action,controller:'player'},targetId));
 }
 export function legalActions(s){if(s.status!=='playing'||s.currentActor!=='player')return[];
- return s.hand.filter(a=>!s.used.includes(a.id)&&(a.sourceId?s.units.some(u=>u.id===a.sourceId&&u.zone==='battlefield'&&u.controller==='player'):paymentOptions(s,CARDS[a.card].cost).length>0)&&legalTargets(s,a).length>0).map(a=>a.id);
+ return s.hand.filter(a=>!s.used.includes(a.id)&&
+  (a.sourceId?s.units.some(u=>u.id===a.sourceId&&u.zone==='battlefield'&&u.controller==='player'):
+   paymentOptions(s,CARDS[a.card].cost).length>0 &&
+   (!(isCreature(a.card)||CARDS[a.card].type==='Sorcery')||(s.activeActor==='player'&&s.stack.length===0)))&&
+  legalTargets(s,a).length>0).map(a=>a.id);
 }
 export function activate(s0,actionId,targetId=null,genericSpend=null){if(!legalActions(s0).includes(actionId))fail('Illegal or unaffordable action');
  const s=clone(s0),a=s.hand.find(x=>x.id===actionId),c=CARDS[a.card],allowed=legalTargets(s,a);if(!allowed.some(x=>x===targetId))fail('Illegal target');
@@ -119,6 +123,7 @@ export function activate(s0,actionId,targetId=null,genericSpend=null){if(!legalA
 }
 export function labelTarget(s,id){if(id==='player')return'you';if(id==='opponent')return'opponent';return s.units.find(u=>u.id===id)?.card || s.stack.find(x=>x.id===id)?.card ||id;}
 function resolve(s,item){const c=CARDS[item.card],target=item.targetId;
+ if(item.spell&&isCreature(item.card)){s.units.push({id:'permanent-'+item.id,card:item.card,controller:item.controller,zone:'battlefield',damage:0,powerBoost:0,toughnessBoost:0,indestructible:false,hexproof:false});s.log.push(`${item.card} resolves and enters the battlefield.`);return;}
  if((c.targetRule||c.effect==='damage')&&!((c.effect==='damage')?(target==='player'||target==='opponent'||legalCreatureTarget(s,item,target)):legalTarget(s,item,target))){s.log.push(`${item.card}: all targets illegal on resolution; spell/ability does not resolve (608.2b).`);return;}
  switch(c.effect){
  case 'destroyAll':{let count=0,warded=0;for(const u of s.units)if(u.zone==='battlefield'){if(u.indestructible)warded++;else{u.zone='graveyard';count++}}s.log.push(`Wrath of God: ${count} creature(s) destroyed, ${warded} indestructible.`);break;}

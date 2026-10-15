@@ -30,14 +30,15 @@ with sync_playwright() as pw:
   for scene in (0,5,11):
    page.locator('#scenarioSelect').select_option(str(scene))
    assert page.locator('.land-card img.land-image').count()==page.locator('.land-card').count(),('land images',width,scene)
-   assert page.locator('.response-card img.response-image').count()==page.locator('.response-card').count(),('hand images',width,scene)
+   assert page.locator('.hand-card img.hand-image').count()==page.locator('.hand-card').count(),('hand images',width,scene)
+   assert page.locator('[data-cast],[data-target-for],.response-steps,.oracle-preview').count()==0,'Synthetic hand controls remain'
    assert page.locator('.stack-entry img.stack-art-image').count()==page.locator('.stack-entry').count(),('stack artwork',width,scene)
    assert page.locator('.battle-card img.battle-image').count()==page.locator('.battle-card').count(),('battlefield images',width,scene)
    text=page.locator('.stack-entry .stack-oracle').first.inner_text()
    assert 'Scryfall Oracle' in text,(width,scene,text)
    rect=page.evaluate('''()=>({bottom:document.querySelector('.game-screen').getBoundingClientRect().bottom,
      overflow:document.documentElement.scrollWidth-innerWidth,
-     items:[...document.querySelectorAll('.stack-art,.land-card,.response-card,.game-controls button')].map(e=>e.getBoundingClientRect().toJSON())})''')
+     items:[...document.querySelectorAll('.stack-art,.land-card,.hand-card,.game-controls button')].map(e=>e.getBoundingClientRect().toJSON())})''')
    assert rect['bottom']<=height+1 and rect['overflow']<=0,(width,scene,rect)
    for r in rect['items']:assert r['left']>=-1 and r['right']<=width+1 and r['top']>=0 and r['bottom']<=height+2,(width,scene,r)
   page.locator('#scenarioSelect').select_option('5')
