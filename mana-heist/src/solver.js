@@ -5,9 +5,9 @@ class Queue{
  take(){const h=this.heap;if(!h.length)return null;const top=h[0],last=h.pop();if(h.length){let i=0;while(true){let c=i*2+1;if(c>=h.length)break;if(c+1<h.length&&h[c+1].cost<h[c].cost)c++;if(h[c].cost>=last.cost)break;h[i]=h[c];i=c;}h[i]=last;}return top;}
  get length(){return this.heap.length;}
 }
-export function solve(level,{maxStates=200000}={}){
+export function solve(level,{maxStates=200000,startState=null}={}){
  validate(level);
- const start=initial(level),heap=new Queue(),best=new Map([[key(start),0]]);
+ const start=startState||initial(level),heap=new Queue(),best=new Map([[key(start),0]]);
  const nodes=[{state:start,parent:-1,action:null}];
  heap.add({index:0,cost:0});
  while(heap.length){

@@ -561,3 +561,88 @@
  .bar .lab-home-link{padding:7px 8px;min-height:38px;font-size:.62rem;letter-spacing:.025em}
  .bar .brand{font-size:.63rem;letter-spacing:.06em}
 }
+
+
+/* 1.0 — No sidebar and no mana ledger: full-width playtable. */
+.in-heist #heist{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr)!important;
+ grid-template-rows:minmax(0,1fr)!important;
+ gap:0!important;
+ flex:1;
+ min-height:0;
+}
+.in-heist #heist .play-column{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr)!important;
+ grid-template-rows:minmax(162px,.85fr) 42px minmax(176px,1.3fr) minmax(120px,1fr)!important;
+ gap:7px!important;
+ min-height:0;
+}
+.in-heist #heist .vault-card{grid-column:1!important;grid-row:1!important}
+.in-heist #heist .play-column>.controlbar{
+ grid-column:1!important;grid-row:2!important;
+ display:grid!important;
+ grid-template-columns:repeat(4,minmax(0,1fr))!important;
+ gap:7px!important;height:42px!important;margin:0!important;
+}
+.in-heist #heist .play-column>.controlbar button,
+.in-heist #heist .play-column>.controlbar button:not(.primary){
+ width:100%;height:42px;min-height:42px!important;
+ padding:5px 8px;font-size:.69rem!important;
+}
+.in-heist #heist .table-card:not(.hand-card){grid-column:1!important;grid-row:3!important}
+.in-heist #heist .table-card.hand-card{grid-column:1!important;grid-row:4!important}
+.in-heist #heist .play-column>.feedback{grid-column:1;grid-row:5}
+.in-heist #heist .action-box{z-index:60}
+.auto-cast-status{
+ display:flex;align-items:center;justify-content:center;gap:9px;
+ width:100%;margin-top:9px;
+ padding:9px 12px;min-height:37px;
+ border:1px solid #9bc8a16c;border-radius:6px;
+ background:linear-gradient(110deg,#24453f,#183733);
+ color:#c3ebce;font-size:.65rem;font-weight:900;letter-spacing:.08em;
+ box-shadow:inset 0 0 18px #97bd8826;
+}
+.auto-cast-pip{color:#bcefd2;font:normal 1.1rem Georgia,serif;text-shadow:0 0 10px #94efce}
+.lock-ring.auto-primed{
+ box-shadow:inset 0 0 45px #e5ba6980,0 0 0 4px #ecc67b80,0 0 28px #e8cd7f9c;
+ border-color:#ffe4a8;
+ animation:wardPrimePulse .56s ease-in-out infinite alternate;
+}
+.lock-ring.auto-primed .lock-glyph{color:#fff3cd;text-shadow:0 0 20px #f6d28c}
+@keyframes wardPrimePulse{
+ from{filter:brightness(1)}
+ to{filter:brightness(1.35)}
+}
+.in-heist .lock-ring.auto-primed+.ward-info .auto-cast-status{border-color:#edcc8c}
+@media(max-width:800px){
+ .in-heist #heist{grid-template-rows:minmax(0,1fr)!important}
+ .in-heist #heist .play-column{
+  grid-template-rows:minmax(150px,1.03fr) 39px minmax(130px,1fr) minmax(105px,.78fr)!important;
+  gap:5px!important;
+ }
+ .in-heist #heist .play-column>.controlbar{height:39px!important;gap:4px!important}
+ .in-heist #heist .play-column>.controlbar button,
+ .in-heist #heist .play-column>.controlbar button:not(.primary){
+  height:38px!important;min-height:38px!important;font-size:.59rem!important;padding:4px!important;
+ }
+ .in-heist .auto-cast-status{min-height:27px;padding:5px;font-size:.52rem;margin-top:4px;gap:5px}
+ .in-heist .auto-cast-pip{font-size:.8rem}
+}
+@media(max-width:390px){
+ .in-heist #heist .play-column>.controlbar button,
+ .in-heist #heist .play-column>.controlbar button:not(.primary){font-size:.5rem!important}
+}
+@media(max-width:800px) and (max-height:670px){
+ .in-heist #heist .play-column{
+  grid-template-rows:minmax(124px,1fr) 33px minmax(104px,1fr) minmax(75px,.73fr)!important;
+  gap:3px!important;
+ }
+ .in-heist #heist .play-column>.controlbar{height:33px!important}
+ .in-heist #heist .play-column>.controlbar button,
+ .in-heist #heist .play-column>.controlbar button:not(.primary){
+  min-height:32px!important;height:32px!important;
+ }
+}
+@media(prefers-reduced-motion:reduce){.lock-ring.auto-primed{animation:none!important}}

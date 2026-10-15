@@ -19,7 +19,7 @@ test("the always-visible legend is removed, and optional choices use a dialog",(
 test("all essential playable controls stay inside the playtable",()=>{
  const a=html.indexOf('id="gameScreen"'),b=html.indexOf('id="gameNotes"');
  const game=html.slice(a,b);
- for(const id of ["vaultName","wardCost","castButton","battlefield","hand","pool","endTurn","undo","reset","returnMap"]){
+ for(const id of ["vaultName","wardCost","autoCastStatus","battlefield","hand","endTurn","undo","reset","returnMap"]){
   assert.match(game,new RegExp('id="'+id+'"'),id);
  }
 });

@@ -10,7 +10,7 @@
 <a href="#campaignScreen" class="skip">Skip to campaign</a>
 <header class="bar">
  <a class="brand" href="/lab/" aria-label="Back to Game Test Lab home"><span class="emblem" aria-hidden="true">◇</span><span>DEEP CUTS <strong>GAME LAB</strong></span></a>
- <div class="bar-actions"><span class="test-stamp">WARD CHARGE · 0.9 PLAYTEST</span><a href="/lab/" class="back lab-home-link" aria-label="Back to Test Lab, choose another game">← ALL GAMES</a></div>
+ <div class="bar-actions"><span class="test-stamp">AUTO WARDS · 1.0 PLAYTEST</span><a href="/lab/" class="back lab-home-link" aria-label="Back to Test Lab, choose another game">← ALL GAMES</a></div>
 </header>
 <main class="shell">
  <section id="campaignScreen" class="campaign-screen" aria-labelledby="mapTitle">
@@ -43,12 +43,13 @@
       <div class="overline">CURRENT SECURITY WARD</div><h3 id="wardName">The First Lock</h3>
       <div id="wardCost" class="mana-cost" aria-label="Mana cost to cast current ward-breaking spell"></div>
       
-      <button id="castButton" class="primary" type="button">CAST SPELL · BREAK WARD <span>↗</span></button>
+      <div id="autoCastStatus" class="auto-cast-status" role="status" aria-live="polite"><span class="auto-cast-pip">✦</span><span id="autoCastLabel">WARD AUTO-CAST · CHANNEL MANA</span></div>
      </div>
     </div>
     <div id="stageList" class="stage-list" aria-label="Ward progress"></div>
     <div id="winPanel" class="win" hidden role="status"><span aria-hidden="true">✦</span><div><b id="winTitle">VAULT CRACKED</b><p id="winCopy"></p></div><button id="winNext" type="button">NEXT VAULT →</button></div>
    </section>
+   <div class="controlbar"><button type="button" id="endTurn" class="primary">END TURN <span>↗</span></button><button id="undo" type="button">↶ UNDO</button><button id="reset" type="button">⟲ RESTART</button><button id="skip" type="button">← MAP</button></div>
    <section class="table-card" aria-labelledby="battleTitle">
     <div class="section-label"><div><p class="overline">THE BATTLEFIELD</p><h2 id="battleTitle">Your lands <small>Tap for mana</small></h2></div><span id="battleCount" class="count">0 LANDS</span></div>
     <div id="battlefield" class="land-grid" tabindex="0" role="group" aria-label="Battlefield drop zone: drag lands here from your hand"></div>
@@ -60,24 +61,17 @@
    </section>
    <p class="feedback" id="feedback" role="status" aria-live="polite">Choose your first move.</p>
   </div>
-  <aside class="side">
-   <section class="side-box pool-box">
-    <div class="section-label"><div><p class="overline">MANA LEDGER</p><h2>Floating mana</h2></div><span id="poolTotal" class="count">0 IN POOL</span></div>
-    <div class="pool-console ledger-console"><div class="pool-console-top"><span>◉ MANA ON HAND</span><span>LAND → WARD</span></div><div id="pool" class="mana-ledger-grid" aria-label="Current available mana in two rows of colored and empty slots"></div></div>
-   </section>
-   <div class="controlbar"><button type="button" id="endTurn" class="primary">END TURN <span>↗</span></button><button id="undo" type="button">↶ UNDO</button><button id="reset" type="button">⟲ RESTART</button><button id="skip" type="button">← MAP</button></div>
    <section class="side-box action-box" id="actionBox" role="dialog" aria-modal="true" aria-labelledby="actionTitle" hidden>
     <div class="section-label"><div><p class="overline">DECISION POINT</p><h2 id="actionTitle">Your next choice</h2></div><button type="button" id="dismissChoices" class="choice-close" aria-label="Cancel selection">✕</button></div>
     <div id="choices" class="choices"><p class="muted">Play a land from your hand or tap an untapped land.</p></div>
    </section>
-  </aside>
  </div>
  </div>
  <section id="gameNotes" class="game-notes" hidden aria-labelledby="notesTitle">
   <div class="notes-heading"><p class="overline">BELOW THE TABLE</p><h2 id="notesTitle">The case file</h2><a href="#heist">↑ BACK TO GAME</a></div>
   <p class="muted" id="briefing"></p>
   <p id="wardDescription" class="muted">The current ward requires the mana shown in its cost.</p>
-  <div class="notes-grid"><div><h3>How it works</h3><p class="muted">Drag a land from your hand onto the battlefield to play it. Tap a land in your hand to inspect its matching real Magic card; use the MTG CARD button or press I when focused on a land. Tap a battlefield land to send its mana into the ward circle; your available mana stays listed in the ledger until you cast. Tapped lands rotate sideways. Multicolor lands offer a color choice. Play at most one land each turn, spend mana to cast the ward-breaking spells, and end the turn to untap your lands. You can undo freely.</p></div>
+  <div class="notes-grid"><div><h3>How it works</h3><p class="muted">Drag a land from your hand onto the battlefield to play it. Tap a land in your hand to inspect its matching real Magic card; use the MTG CARD button or press I when focused on a land. Tap a battlefield land to send mana into the ward circle. When its cost is met, the ward opens automatically; there is no Cast button. Tapped lands rotate sideways. Multicolor lands offer a color choice. Play at most one land each turn; wards automatically consume their required mana when charged, and end your turn to untap your lands. You can undo freely.</p></div>
   <div><h3>Three-star route</h3><p class="muted">The solver scores the fewest turns and least life lost, not the number of taps. Your floating mana expires at the end of each turn. Future chapters unlock sequentially.</p></div></div>
   <section id="realCardReference" aria-labelledby="cardReferenceHeading"><div class="notes-heading"><div><p class="overline">OFFICIAL CARDS · LEARNING REFERENCES</p><h2 id="cardReferenceHeading">Real Magic lands</h2></div><a href="https://scryfall.com/" target="_blank" rel="noopener noreferrer">VIEW SCRYFALL ↗</a></div>
   <p class="muted small">Genuine Magic land card images appear in the puzzle and here as larger study references. Mana Heist simulates a simplified subset of their rules. Some printed abilities—notably bounce land mana production—differ from the game model.</p>
