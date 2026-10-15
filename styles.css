@@ -422,14 +422,3 @@ body.game-only .encounter-hud{padding:2px 5px;gap:3px}
 body.game-only .encounter-hud .ability-panel canvas{width:34px;height:34px}
 body.game-only .encounter-hud .encounter-badge{min-height:30px;padding:1px 6px}
 body.game-only .encounter-hud .encounter-banner{padding:2px 5px;font-size:9px}
-
-/* Beacon: optional first-hunt coaching only, never a permanent player HUD. */
-.beacon-training-prompt[hidden],.beacon-training-button[hidden]{display:none!important}
-.beacon-training-prompt{position:absolute;z-index:4;bottom:5px;left:5px;right:5px;margin:0;padding:7px 9px;
- background:#172b22e8;border:1px solid #eac17e;color:#f9e5bc;font:900 clamp(9px,2.4vw,12px)/1.35 ui-monospace,monospace;
- text-align:center;pointer-events:none;letter-spacing:.03em}
-.beacon-training-button{display:block;margin:9px auto 0;min-height:39px;padding:7px 12px;
- border:1px solid #b5a16f;color:#eddbaf;background:#253c2d;font:850 11px ui-monospace,monospace;letter-spacing:.04em}
-.beacon-training-button:hover,.beacon-training-button:focus-visible{background:#3c5032;color:#fff2cc}
-body.game-only .beacon-training-prompt{bottom:3px;left:3px;right:3px;padding:5px 7px;font-size:clamp(8px,2.1vw,11px)}
-@media(prefers-reduced-motion:reduce){.beacon-training-prompt{transition:none}}
