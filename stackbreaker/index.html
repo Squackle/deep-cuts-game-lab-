@@ -1,20 +1,47 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0c1316"><meta name="description" content="Stackbreaker: the Last Response. Practice priority, the stack and actual Magic card interactions in 12 tactical scenarios."><title>Stackbreaker 0.2 — The Last Response · Game Lab</title><style>:root{--bg:#0a1215;--surface:#132125;--surface2:#182b2e;--line:#375251;--gold:#f5d79a;--light:#eaf2e9;--soft:#b1c6bc;--muted:#91a9a2;--cyan:#97cce0;--danger:#f6aa93;color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Arial,sans-serif}*{box-sizing:border-box}html{min-width:320px}body{margin:0;color:var(--light);min-height:100vh;background:radial-gradient(ellipse 50% 48% at 14% 12%,#1c3432bb,transparent),radial-gradient(ellipse 45% 48% at 100% 72%,#262b28a1,transparent),linear-gradient(180deg,#071014,#0a1317 85%)}a{color:var(--gold)}button,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.46;cursor:not-allowed}button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #fdde96;outline-offset:3px}[hidden]{display:none!important}.skip{position:absolute;top:-100px;left:20px;z-index:100;background:white;color:black;padding:12px}.skip:focus{top:12px}.mast{max-width:1380px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:21px 28px;border-bottom:1px solid #67897c32}.site-mark{text-decoration:none;color:#e8e9d4;letter-spacing:.13em;font-size:13px;display:flex;align-items:center;gap:13px}.site-mark>b,.site-mark b{color:var(--gold)}.release{font-size:11px;letter-spacing:.17em;color:var(--soft)}.signal{display:inline-block;width:8px;height:8px;border-radius:50%;background:#b4e4b2;box-shadow:0 0 10px #9ceeba;margin-right:6px}main{max-width:1380px;margin:0 auto;padding:24px 28px 55px}.intro{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:4px 0 32px}.eyebrow,.section-label,.field-heading,.mission-bar,.priority-tag,.objective b,.response-number,.result-flag,.progress-capsule{letter-spacing:.13em}h1{font-size:clamp(38px,6.4vw,74px);letter-spacing:-.075em;line-height:.96;margin:12px 0 16px;font-weight:900}h1 span{color:var(--gold)}.eyebrow{font-size:11px;color:var(--gold);margin:0}.intro-line{font-size:clamp(13px,1.5vw,16px);color:var(--soft);margin:0}.progress-capsule{border:1px solid #756c4e;background:#1e2d2b;padding:16px 25px;border-radius:8px;text-align:center;color:var(--gold);font-size:14px;font-weight:800;white-space:nowrap}.progress-capsule small{display:block;margin-top:7px;font-size:9px;color:var(--soft)}.mission-bar{display:flex;align-items:end;justify-content:space-between;background:#172628e0;border:1px solid var(--line);border-bottom:0;padding:15px 20px;gap:14px}.picker{min-width:min(100%,390px);display:flex;align-items:center;gap:16px}.picker label{font-size:10px;color:var(--gold);white-space:nowrap}.picker select{min-width:0;flex:1;background:#0f1d21;color:#f8ead0;border:1px solid #4d6c68;padding:12px 9px;border-radius:5px;font-size:12px}.meta{display:flex;align-items:center;gap:20px;font-size:11px;color:var(--soft)}.meta span:first-child{color:var(--gold)}.case-title{background:linear-gradient(110deg,#233a37,#172429);border:1px solid var(--line);border-bottom:0;padding:22px 26px;display:flex;justify-content:space-between;align-items:center;gap:14px}.case-title h2{font-family:Georgia,serif;font-weight:500;font-size:clamp(24px,2.65vw,38px);margin:0 0 7px}.case-title p{color:#d5d8c8;max-width:850px;margin:0;line-height:1.55;font-size:13px}.priority-tag{white-space:nowrap;font-size:10px;color:#aee4bd;background:#10251f;border:1px solid #477459;border-radius:50px;padding:10px 14px}.game-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(340px,.86fr);gap:12px;margin-bottom:12px}.field-zone,.stack-zone,.response-zone,.event-zone{border:1px solid var(--line);background:linear-gradient(170deg,#122327f2,#0d1b1eea);padding:20px;min-width:0}.section-label{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:10px;color:var(--gold);font-weight:800;margin-bottom:18px}.section-label span:last-child:not(:first-child),.section-label small,.rule-tag{color:var(--muted);font-size:9px;font-weight:600}.life-row{display:grid;grid-template-columns:1fr 1.55fr 1fr;gap:9px;margin-bottom:22px}.life-widget,.mana-widget{background:linear-gradient(#1f3031,#172528);border:1px solid #486061;padding:14px;min-height:105px;display:flex;flex-direction:column;justify-content:center}.life-widget.them{text-align:right}.life-widget small,.mana-widget small{font-size:10px;color:var(--soft);letter-spacing:.14em}.life-widget strong{font:700 42px Georgia,serif;color:#fceac4;margin:4px 0 0}.life-widget.them strong{color:#e7b6aa}.mana-widget{align-items:center;text-align:center;gap:14px}.mana-row{display:inline-flex;align-items:center;gap:3px;flex-wrap:wrap}.mana-pip{display:inline-flex;align-items:center;justify-content:center;border:1px solid #eee4c5a1;border-radius:50%;font-size:13px;width:24px;height:24px;flex:0 0 24px;font-weight:800;color:#1e2623;background:#e3ddd2;box-shadow:inset 0 1px 3px #2024283d}.mana-pip.W{background:#f8f0ce}.mana-pip.U{background:#85c6ec}.mana-pip.B{background:#bab0c1}.mana-pip.R{background:#e39b76}.mana-pip.G{background:#a4c59c}.mana-pip.C,.mana-pip.generic{background:#d0d3ca}.empty-mana{font-size:21px;color:var(--muted)}.field-heading{display:flex;justify-content:space-between;gap:10px;color:var(--soft);font-size:10px;font-weight:700;margin-bottom:15px}.field-heading small{letter-spacing:0;color:var(--muted);font-weight:400}.creature-row{display:flex;flex-wrap:wrap;gap:12px;min-height:225px;align-items:start}.battle-unit{width:clamp(145px,27%,196px);min-width:137px}.card-frame{position:relative;isolation:isolate;border:5px solid #6e6955;box-shadow:0 10px 18px #0008,inset 0 0 0 1px #dccd9e;border-radius:12px;background:#e4dbc2;color:#20302a;overflow:hidden;min-height:239px;display:flex;flex-direction:column}.card-frame.inactive{filter:grayscale(.7);opacity:.62}.card-head{background:#d3c8a8;border-bottom:2px solid #a49c84;padding:7px 6px;display:flex;justify-content:space-between;align-items:center;gap:5px;font-size:12px;line-height:1.2}.card-head strong{flex:1}.card-head .mana-pip{width:15px;height:15px;flex-basis:15px;font-size:9px;border-color:#b5ab93}.card-head .mana-row{max-width:60px;justify-content:end}.card-art{height:70px;flex:none;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;background:radial-gradient(ellipse at 52% 48%,#2a605b,#172b30 75%)}.card-art.W{background:radial-gradient(ellipse,#b6c4a5,#6f8276 50%,#293c3b)}.card-art.U{background:radial-gradient(ellipse,#4f9eb5,#23536e 50%,#172939)}.card-art.B{background:radial-gradient(ellipse,#74687c,#423644 50%,#181f2a)}.card-art.R{background:radial-gradient(ellipse,#aa6559,#623e40 50%,#202732)}.card-art.G{background:radial-gradient(ellipse,#7a9c76,#345b50 50%,#15262b)}.art-emblem{font:45px Georgia,serif;color:#f3deb0;text-shadow:0 4px 7px #10171788}.art-runes,.art-wisps{position:absolute;font:13px Georgia,serif;letter-spacing:.4em;color:#fff4}.art-runes{top:5px}.art-wisps{bottom:0}.card-type{background:#d4d1b8;padding:6px;font-size:10px;font-weight:700;border-block:1px solid #b9b29a;line-height:1.25}.oracle{font:11px/1.42 Georgia,serif;margin:0;padding:9px 7px;flex:1;min-height:53px}.oracle.note{min-height:0;padding-top:0;color:#745a44;font-size:10px}.card-base{display:flex;align-items:center;justify-content:space-between;padding:5px 6px;gap:4px;border-top:1px solid #b5aa92}.card-base a{font-size:8px;font-weight:800;letter-spacing:.025em;color:#435b55}.pt{background:#eee8ce;border:1px solid #aba28a;padding:2px 8px;font-size:13px;border-radius:6px;white-space:nowrap}.damage{background:#834437;color:#fff1dc;padding:3px 7px;text-align:center;font-size:10px;font-weight:800}.traits{display:flex;flex-wrap:wrap;gap:3px;padding:3px}.trait{color:#fef1ca;background:#315f46;padding:3px;font-size:8px}.zone-stamp{position:absolute;top:42%;left:4%;right:4%;transform:rotate(-20deg);border:2px solid #682c2c;background:#211918dd;color:#ffbdb3;text-align:center;text-transform:uppercase;padding:8px;font-weight:900}.empty-panel{font-size:13px;color:var(--soft);font-style:italic;align-self:center}.objective{display:flex;align-items:start;gap:13px;margin-top:18px;background:#22302d;border:1px solid #736443;padding:14px}.objective-icon{font-size:30px;color:var(--gold)}.objective b{font-size:10px;color:var(--gold)}.objective p{font-size:12px;margin:5px 0 0;color:#e4e8d9;line-height:1.45}.stack-zone{background:linear-gradient(180deg,#192b30,#101f24)}.stack-hint{font-size:12px;line-height:1.5;color:#a8c1c1;margin:-4px 0 18px}.stack-list{list-style:none;padding:0;margin:0 0 18px;display:flex;flex-direction:column;gap:9px;min-height:100px}.stack-entry{display:flex;gap:11px;align-items:center;border:1px solid #42615b;background:#1a3033;padding:12px}.stack-entry.on-top{border-color:#d4aa65;background:linear-gradient(90deg,#363a31,#223435)}.stack-rank{flex:0 0 36px;text-align:center;font-size:10px;font-weight:900;color:#1b2724;background:#b6c3b4;border-radius:3px;padding:8px 2px}.on-top .stack-rank{background:var(--gold)}.stack-info{flex:1;min-width:0}.stack-info strong{display:block;font-size:14px}.stack-info small,.target-line{display:block;color:var(--muted);font-size:10px;margin-top:4px}.target-line{color:#e5ccb0}.tiny-link{font-size:17px;text-decoration:none}.stack-empty{font-size:13px;color:var(--muted)}.pass-button{width:100%;min-height:56px;border:1px solid #ebd49e;background:linear-gradient(120deg,#bfa46c,#e4c991);color:#152727;font-weight:900;letter-spacing:.06em;font-size:12px}.pass-button span{font-size:21px;vertical-align:middle;margin-left:8px}.pass-button:hover:not(:disabled){filter:brightness(1.12)}.undo-row{display:flex;gap:6px;margin-top:8px}.undo-row button{flex:1;min-height:45px;background:#213536;color:#e2e6cf;border:1px solid #4d6157;font-size:11px;font-weight:750}.hint-reveal{border-left:3px solid #e0b973;background:#2a3029;color:#f3e0ae;padding:13px;font-size:13px;line-height:1.5}.response-zone{margin:0 0 12px}.hand-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:10px}.response{border:1px solid #75816d;background:linear-gradient(#273f3b,#1b3030);padding:15px;min-width:0}.response.unavailable{opacity:.52}.response-heading{display:flex;align-items:center;gap:8px}.response-heading strong{flex:1;font-family:Georgia,serif;font-size:19px;font-weight:600}.response-number{border:1px solid #7e957f;width:24px;height:24px;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:11px}.response p{font-size:13px;line-height:1.55;color:#e4e3d2;margin:13px 0}.response small{display:block;color:var(--gold);font-size:11px}.response-foot{display:flex;gap:10px;justify-content:space-between;align-items:end;flex-wrap:wrap}.target-caption,.select-label{font-size:10px;color:var(--gold);letter-spacing:.08em}.select-label{display:flex;flex-direction:column;gap:5px;flex:1}.select-label select{background:#152625;border:1px solid #65766b;color:#fff0d6;padding:11px 8px;border-radius:3px;min-width:125px;max-width:100%;min-height:44px}.cast-btn{background:#b7dac7;border:0;color:#102a23;min-height:44px;padding:0 14px;font-weight:850;font-size:10px;letter-spacing:.07em}.cast-btn:hover:not(:disabled){background:#e0f2d6}.cost-sac{font-size:8px;color:#f0bf9b}.event-zone{margin-bottom:24px}.event-zone ol{margin:0;padding:0 0 0 18px;columns:2;column-gap:28px}.event-zone li{color:var(--soft);font-size:11px;line-height:1.55;padding-bottom:8px;break-inside:avoid}.result{border:1px solid #d2ac70;background:#2b3834;padding:24px;display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:12px}.result-flag{font-size:11px;font-weight:900;color:var(--gold)}.result h2{font:32px Georgia,serif;margin:7px 0}.result p{color:#d7ded0;line-height:1.55;margin:0;max-width:760px;font-size:13px}.result-stars{color:#e8c788;font-size:22px;margin-top:13px}.result-actions{display:flex;gap:8px;flex-wrap:wrap}.result-actions button{min-height:46px;background:#dcbf86;color:#1d2927;border:0;padding:9px 16px;font-weight:800;font-size:11px}footer{border-top:1px solid #57736b55;padding:22px 0;display:flex;justify-content:space-between;gap:26px;color:var(--soft);font-size:11px}footer p{max-width:900px;line-height:1.65}footer a{white-space:nowrap}.visually-hidden{position:absolute!important;clip:rect(0,0,0,0);width:1px;height:1px;overflow:hidden;white-space:nowrap}@media(max-width:900px){.game-grid{grid-template-columns:1fr}.stack-zone{order:2}.field-zone{order:1}.creature-row{min-height:110px}.battle-unit{width:160px}.event-zone ol{columns:1}}@media(max-width:600px){.mast{padding:16px}.release{font-size:9px}.site-mark{font-size:10px}.site-mark>span{display:block}.intro{display:block;padding-bottom:18px}.progress-capsule{display:inline-block;margin-top:19px;font-size:11px;padding:12px 15px}.intro-line{font-size:13px}.eyebrow{font-size:9px}main{padding:15px 10px 36px}.mission-bar,.case-title{padding:14px}.mission-bar{align-items:stretch;flex-direction:column}.picker{width:100%;min-width:0;flex-direction:column;align-items:start;gap:8px}.picker select{width:100%;min-height:46px}.meta{font-size:10px}.case-title{align-items:start;flex-direction:column}.priority-tag{align-self:flex-start}.field-zone,.stack-zone,.response-zone,.event-zone{padding:14px}.life-row{gap:6px}.life-widget,.mana-widget{padding:9px;min-height:92px}.life-widget small,.mana-widget small{font-size:8px}.life-widget strong{font-size:30px}.mana-widget .mana-pip{width:20px;height:20px;flex-basis:20px}.field-heading small{display:none}.creature-row{gap:7px}.battle-unit{width:calc(50% - 4px);min-width:0}.card-frame{border-width:4px}.card-head{font-size:11px}.response-foot{align-items:stretch}.result{flex-direction:column;align-items:start}.result-actions{width:100%}.result-actions button{flex:1}footer{flex-direction:column}.section-label{font-size:9px}.section-label span:last-child:not(:first-child){font-size:8px}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#101c1c"><meta name="description" content="Stackbreaker — practice real Magic timing, priority, tapping lands for mana and casting spells onto the stack."><title>Stackbreaker 0.3 — The Last Response · Game Lab</title><style>:root{color-scheme:dark;--bg:#071214;--panel:#14292a;--panel2:#1c3333;--edge:#42675e;--gold:#edca81;--ivory:#f0ece0;--muted:#acbfb6;--mana:#a1d0a5;--bad:#e69b8e;--head-h:44px;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}*{box-sizing:border-box}body{margin:0;color:var(--ivory);background:radial-gradient(circle at 20% 25%,#263e3c,#071213 75%);min-width:320px}button,select{font:inherit;color:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}button:focus-visible,select:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid #f6d782;outline-offset:2px}a{color:var(--gold)}[hidden]{display:none!important}.skip{position:absolute;top:-60px;left:6px;z-index:99;background:white;color:#111}.skip:focus{top:5px}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}.mast{height:var(--head-h);padding:0 clamp(8px,2vw,25px);display:flex;align-items:center;justify-content:space-between;background:#0b1a1c;border-bottom:1px solid #37564d;gap:10px}.site-mark{text-decoration:none;font-size:11px;white-space:nowrap;letter-spacing:.1em}.site-title{font-size:15px;letter-spacing:.11em}.site-title small{font-weight:500;font-size:9px;letter-spacing:.08em;color:var(--muted);margin-left:7px}.site-home{font-size:10px;text-decoration:none;white-space:nowrap}main{max-width:1560px;margin:auto}.game-screen{height:calc(100dvh - var(--head-h));height:calc(100svh - var(--head-h));min-height:470px;display:grid;grid-template-rows:auto minmax(0,1fr) auto minmax(112px,.4fr) auto;gap:5px;padding:7px clamp(7px,1.1vw,16px) 8px;overflow:hidden}.mission-bar{display:flex;align-items:center;gap:12px;justify-content:space-between;min-height:46px;padding:5px 12px;border:1px solid var(--edge);background:linear-gradient(120deg,#274039,#13262a)}.mission-id{min-width:0;display:flex;align-items:center;gap:12px}.mission-id small{font-weight:800;color:var(--gold);font-size:10px;letter-spacing:.06em;white-space:nowrap}.mission-id strong{font:500 clamp(15px,1.6vw,25px) Georgia,serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mission-picker{display:flex;align-items:center;gap:6px;margin-left:auto;min-width:0}.mission-picker label{font-size:10px;white-space:nowrap;color:var(--gold)}.mission-picker select{width:clamp(115px,16vw,208px);min-width:0;min-height:29px;background:#102023;border:1px solid #628376;border-radius:3px;padding:3px;font-size:11px}.run-status{color:#a6f0bf;font-size:10px;white-space:nowrap;font-weight:700}.game-grid{min-height:0;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:5px}.field-zone,.stack-zone,.lands-zone,.hand-zone{background:linear-gradient(160deg,#1a3433,#102022);border:1px solid var(--edge);min-width:0;min-height:0;overflow:hidden;padding:8px 10px;position:relative}.stack-zone{transition:background .16s,border-color .16s}.stack-zone.drop-ready{border-color:#f7cd77;background:linear-gradient(#33443a,#182f2f);box-shadow:inset 0 0 0 2px #f3c06f55}.zone-top{display:flex;align-items:center;justify-content:space-between;gap:6px;color:var(--gold);font-size:10px;letter-spacing:.09em;font-weight:850;white-space:nowrap;min-height:21px}.zone-top em{font-style:normal;font-size:9px;letter-spacing:0;color:var(--muted);font-weight:500;margin-left:6px}.zone-top>span:last-child:not(:first-child){color:var(--muted);font-size:10px}.life-row{display:grid;grid-template-columns:56px minmax(0,1fr) 56px;gap:8px;align-items:center;height:calc(100% - 50px);min-height:65px}.life-widget{background:#0b1e20;border:1px solid #40615b;text-align:center;border-radius:4px;padding:5px 2px}.life-widget small{display:block;font-size:9px;letter-spacing:.05em;color:#aec8bd}.life-widget b{font:700 clamp(22px,3vw,40px) Georgia,serif;color:#f7d58f}.life-widget.enemy b{color:#f2bbb0}.creature-row{display:flex;gap:5px;justify-content:center;align-items:center;min-width:0;min-height:0;max-height:100%}.battle-unit{flex:1;min-width:0;max-width:135px;max-height:100%;display:grid;place-items:center}.battle-card{position:relative;border:2px solid #bca574;border-radius:5px;background:linear-gradient(170deg,#e2d8b4,#b4c8a8);color:#172c28;padding:5px 4px 4px;width:100%;height:100%;min-height:62px;max-height:145px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 2px 7px #0009}.battle-card.off{opacity:.37;filter:grayscale(1)}.battle-card header{font-weight:900;font-size:clamp(8px,.88vw,12px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.battle-card .sig{font:24px Georgia,serif;text-align:center;opacity:.56}.battle-card .pt{align-self:flex-end;border:1px solid #665f50;padding:1px 4px;border-radius:3px;font-weight:900;font-size:12px}.battle-card .flags{font-size:8px;line-height:1.1;color:#173f3c;font-weight:850;overflow:hidden}.empty-creatures{font-size:11px;color:var(--muted);font-style:italic;text-align:center}.objective{margin:0;color:#cfdbc8;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.stack-list{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:3px;max-height:calc(100% - 51px);min-height:0;overflow:hidden}.stack-entry{min-height:0;flex:1 1 0;display:flex;align-items:center;gap:7px;border:1px solid #3c655b;padding:3px 7px;background:#203b3b;border-radius:3px;line-height:1.13;overflow:hidden}.stack-entry.on-top{background:#494537;border-color:var(--gold)}.stack-rank{width:26px;text-align:center;flex-shrink:0;background:#9cac96;color:#101e1b;font-weight:900;font-size:9px;border-radius:2px;padding:5px 1px}.stack-entry.on-top .stack-rank{background:var(--gold)}.stack-entry b{font-size:clamp(10px,1vw,14px);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stack-entry small{color:#a9beb4;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}.stack-entry a{font-size:12px;margin-left:auto;text-decoration:none}.stack-empty{color:var(--muted);text-align:center;margin:auto;font-size:12px}.stack-drop-hint{position:absolute;bottom:2px;left:9px;right:9px;pointer-events:none;text-align:center;color:#879f95;font-size:9px}.lands-zone{display:flex;flex-direction:column;min-height:96px;max-height:128px}.lands-zone .zone-top{flex:0 0 19px}.land-row{min-height:0;flex:1;display:flex;gap:5px;align-items:stretch;justify-content:center}.land-card{min-width:0;width:clamp(44px,7vw,108px);max-width:108px;border:2px solid #9e966d;border-radius:5px;background:radial-gradient(circle at 60% 70%,#a1c6bb,#3e5c52 73%);position:relative;padding:2px 4px;color:#f4f2e0;display:flex;flex-direction:column;align-items:center;justify-content:space-between;transition:transform .16s,filter .16s;overflow:hidden}.land-card .land-name{font-size:clamp(9px,.85vw,12px);font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.land-card .land-sigil{font:clamp(17px,2.4vw,33px) Georgia,serif;text-shadow:0 2px 4px #0009}.land-card .tap-label{font-size:9px;font-weight:900;letter-spacing:.06em}.land-card.tapped{filter:brightness(.52) saturate(.65);transform:rotate(-8deg)}.land-card.tapped .tap-label{color:#f7d38e}.land-card:disabled{opacity:1;cursor:default}.land-card.W{background:linear-gradient(130deg,#706e55,#b1a572)}.land-card.U{background:linear-gradient(130deg,#1e425f,#4c81a0)}.land-card.B{background:linear-gradient(130deg,#393044,#6a506d)}.land-card.R{background:linear-gradient(130deg,#684034,#b76c43)}.land-card.G{background:linear-gradient(130deg,#264535,#618264)}.land-card.C{background:linear-gradient(130deg,#4d5860,#879399)}.pool-label{display:flex;align-items:center;gap:6px}.mana-row{display:inline-flex;gap:3px;align-items:center;flex-wrap:nowrap}.mana-pip{width:18px;height:18px;border:1px solid #eeebddbd;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:0 0 18px;font-size:11px;font-weight:900;color:#172322;background:#dae3d7}.mana-pip.W{background:#f4ebbe}.mana-pip.U{background:#a1ceec}.mana-pip.B{background:#d5b8d2}.mana-pip.R{background:#eba781}.mana-pip.G{background:#aaca96}.mana-pip.C,.mana-pip.generic{background:#d5dad4}.empty-mana{color:#8da399}.hand-zone{display:flex;flex-direction:column}.hand-row{flex:1;display:flex;align-items:stretch;justify-content:center;gap:5px;min-height:0}.response-card{flex:1;min-width:0;max-width:245px;border:2px solid #96815a;border-radius:5px;background:linear-gradient(135deg,#e1d9ba,#b7c6b7);color:#172d28;padding:5px 6px;position:relative;display:flex;flex-direction:column;gap:3px;cursor:grab;touch-action:none;user-select:none}.response-card.ability{border-color:#99bcb5}.response-card.unavailable{filter:saturate(.65);cursor:grab}.response-card.used{opacity:.37;cursor:default;filter:grayscale(1)}.response-card .response-head{display:flex;justify-content:space-between;align-items:start;gap:4px}.response-card strong{font-size:clamp(10px,1vw,14px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.response-card .response-head .mana-row{transform:scale(.83);transform-origin:right top}.response-card .oracle-preview{font:clamp(9px,.76vw,12px)/1.2 Georgia,serif;min-height:0;overflow:hidden;flex:1}.response-card .response-bottom{display:flex;align-items:center;justify-content:space-between;gap:5px;min-height:24px}.response-card label{font-size:9px;font-weight:900;max-width:63%}.response-card select{max-width:100%;min-width:0;display:block;border:1px solid #688078;background:#1c3736;color:#f5eccf;padding:2px;font-size:10px;height:23px}.response-card button{background:#294b43;border:1px solid #385f52;color:#f4e6be;font-size:10px;font-weight:850;border-radius:3px;min-height:25px;padding:2px 7px;white-space:nowrap}.response-card .response-steps{font-size:9px;color:#544b37}.response-card .response-steps .bad-mana{color:#993e25;font-weight:900}.response-card.dragging{opacity:.65}.drag-ghost{position:fixed;z-index:9999;width:148px;height:72px;border:2px solid #e5c683;background:#d0c8a7;color:#152c27;pointer-events:none;padding:7px;border-radius:6px;box-shadow:0 8px 24px #0009;transform:translate(-50%,-50%);font-weight:900;display:flex;align-items:center;justify-content:center;text-align:center}.game-controls{display:grid;grid-template-columns:minmax(140px,1fr) minmax(115px,1fr) repeat(2,minmax(65px,.45fr)) minmax(110px,.76fr);gap:5px;min-height:51px}.game-controls button{min-height:46px;padding:4px 8px;font-weight:850;letter-spacing:.04em;font-size:clamp(10px,.85vw,13px);border:1px solid #59746a}.result-mini{background:#182b2a;border:1px solid #3f5d50;padding:5px 9px;display:flex;flex-direction:column;justify-content:center;overflow:hidden}.result-mini b{color:var(--gold);font-size:10px;letter-spacing:.12em}.result-mini span{color:#cbd7ca;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.result-mini.won{background:#1d5039}.result-mini.lost{background:#5a322e}.pass-button{background:linear-gradient(120deg,#c7a769,#e2c994);color:#102926;border-color:#dfcc96!important}.minor-button{background:#28403c}.next-button{background:#3a5745;border-color:#a5bb7b!important;color:#f5e4b3}.study-notes{padding:26px clamp(16px,3vw,36px) 45px;background:#0e1a1c}.notes-head{display:flex;gap:20px;justify-content:space-between;align-items:center}.eyebrow{font-size:11px;letter-spacing:.17em;color:var(--gold)}.notes-head h1{font:500 clamp(25px,3vw,45px) Georgia,serif;margin:7px 0}.notes-head p{font-size:13px;color:var(--muted)}.progress{display:flex;flex-direction:column;text-align:right;color:var(--gold);white-space:nowrap}.progress span{font-size:10px;color:var(--muted)}.notes-grid{display:grid;grid-template-columns:1fr 1.3fr 1.5fr;gap:12px;margin-top:14px}.notes-box{border:1px solid var(--edge);background:#192829;padding:15px;min-width:0}.notes-box h2{color:var(--gold);font-size:14px;margin:0 0 10px}.notes-box p,.notes-box li{font-size:12px;line-height:1.6;color:#d3dbd4}.notes-box ol{padding-left:19px;max-height:220px;overflow:auto}.notes-box button{border:1px solid #a18b62;background:#223b37;padding:8px;color:var(--gold)}.result-stars{color:var(--gold)}footer{padding-top:18px;margin-top:26px;border-top:1px solid var(--edge);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:24px}footer p{max-width:850px;line-height:1.6}
+@media(max-width:840px){.site-title small{display:none}.game-grid{grid-template-columns:1fr;grid-template-rows:minmax(88px,.92fr) minmax(122px,1.08fr)}.life-row{grid-template-columns:48px minmax(0,1fr) 48px;gap:5px}.life-widget b{font-size:23px}.field-zone,.stack-zone,.lands-zone,.hand-zone{padding:4px 6px}.objective{font-size:9px}.battle-card{min-height:35px;padding:2px 3px}.battle-card .sig{font-size:14px}.battle-card .pt{font-size:10px}.stack-list{gap:1px;max-height:calc(100% - 39px)}.stack-entry{padding:0 4px;gap:5px}.stack-entry b{font-size:10px}.stack-entry small{font-size:8px}.stack-rank{font-size:8px;width:24px;padding:2px}.stack-drop-hint{font-size:8px}.zone-top{font-size:9px;min-height:17px}.zone-top em{font-size:8px}.response-card{padding:3px 4px}.response-card .oracle-preview{font-size:9px}.notes-grid{grid-template-columns:1fr}.game-controls{grid-template-columns:minmax(100px,1fr) repeat(4,minmax(0,.8fr));gap:3px}.game-controls button{font-size:10px}.result-mini span{font-size:10px}.lands-zone{min-height:75px}.mission-bar{min-height:39px}.run-status{font-size:9px}.site-home{font-size:9px}}
+@media(max-width:500px){:root{--head-h:37px}.mast{padding:0 8px}.site-mark{font-size:9px}.site-title{font-size:11px;letter-spacing:.03em}.site-home{display:none}.game-screen{padding:3px;gap:3px;grid-template-rows:auto minmax(0,1fr) auto minmax(124px,.49fr) auto}.mission-bar{padding:3px 5px;gap:5px}.mission-id{gap:4px;max-width:53%}.mission-id small{font-size:8px}.mission-id strong{font-size:13px}.mission-picker{gap:3px}.mission-picker label{font-size:8px}.mission-picker select{width:92px;min-height:26px;font-size:10px}.run-status{display:none}.game-grid{grid-template-rows:minmax(79px,.89fr) minmax(114px,1.11fr);gap:3px}.zone-top em{display:none}.life-row{height:calc(100% - 37px);min-height:38px}.land-row{gap:3px}.land-card{width:calc((100% - 18px)/5);max-width:75px}.land-card .land-name{font-size:9px}.land-card .land-sigil{font-size:20px}.land-card .tap-label{font-size:8px}.lands-zone{min-height:68px;max-height:94px}.hand-zone .zone-top{min-height:16px}.hand-row{gap:3px;flex-wrap:wrap;justify-content:center}.response-card{min-width:0;flex:1 1 29%;max-width:none;padding:3px;gap:1px}.response-card strong{font-size:10px}.response-card .oracle-preview{font-size:9px}.response-card .response-head .mana-row{transform:scale(.7);max-width:29px}.response-card label{max-width:60%;font-size:8px}.response-card select{font-size:8px;max-width:100%;height:20px}.response-card button{min-height:23px;font-size:9px;padding:1px 4px}.response-card .response-steps{font-size:8px}.response-card .response-bottom{min-height:20px}.game-controls{grid-template-columns:minmax(55px,1fr) minmax(83px,1.1fr) 48px 48px 70px;min-height:44px}.game-controls button{min-height:40px;font-size:9px;letter-spacing:0;padding:3px 2px}.result-mini{padding:2px 3px}.result-mini b{font-size:8px}.result-mini span{font-size:8px}.pool-label{gap:2px}.mana-pip{width:15px;height:15px;flex-basis:15px;font-size:9px}.notes-head{align-items:start}.progress{font-size:10px}}
+@media(max-height:710px){.game-screen{min-height:470px;grid-template-rows:34px minmax(0,1fr) 68px minmax(104px,.46fr) 40px}.mission-bar{min-height:34px}.land-card .land-sigil{font-size:14px}.game-controls{min-height:40px}.game-controls button{min-height:38px}.response-card .oracle-preview{line-height:1.05}.response-card .response-steps{display:none}.stack-list{max-height:calc(100% - 32px)}.stack-drop-hint{font-size:7px}.stack-entry small{display:none}.zone-top{min-height:15px}.land-row{min-height:0}.lands-zone{min-height:0}}
+@media(max-height:570px){.game-screen{min-height:435px;grid-template-rows:30px minmax(0,1fr) 61px minmax(100px,.48fr) 37px}.mast{height:32px}.game-controls{min-height:37px}.game-controls button{min-height:33px}.game-grid{grid-template-rows:minmax(69px,.8fr) minmax(95px,1.2fr)}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
+/* Stack items are always legible: no flex-basis collapse when the list has a fixed available height. */
+.stack-list{height:calc(100% - 49px)}
+.stack-entry{flex:0 1 43px;min-height:19px;border-left:4px solid #c8ab71}
+@media(max-width:840px){.stack-list{height:calc(100% - 35px)}.stack-entry{flex:0 1 34px;min-height:17px}}
+@media(max-height:710px){.stack-list{height:calc(100% - 30px)}.stack-entry{flex:0 1 28px;min-height:16px}}
+@media(max-width:500px){
+ .hand-row.many{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:3px}
+ .hand-row.many .response-card{max-width:none;min-height:0;min-width:0;overflow:hidden}
+ .hand-row.many .response-card .oracle-preview,.hand-row.many .response-steps{display:none}
+ .hand-row.many .response-card .response-head{min-height:13px}
+ .hand-row.many .response-card .response-head strong{font-size:9px}
+ .hand-row.many .response-card .response-bottom{align-items:end;flex:1;min-height:0}
+ .hand-row.many .response-card button{font-size:8px;min-height:20px;padding:1px 3px}
+ .hand-row.many .response-card label{font-size:7px}
+ .hand-row.many .response-card select{height:20px}
+ .response-card select{touch-action:auto}
+}
+@media(max-height:710px) and (max-width:500px){.game-screen{grid-template-rows:30px minmax(0,1fr) 61px 132px 37px}}
+@media(max-height:570px) and (max-width:500px){.game-screen{grid-template-rows:30px minmax(0,1fr) 54px 133px 37px}}
+@media(max-width:500px){.game-controls{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) 43px 43px 65px}}
+.game-screen{grid-template-columns:minmax(0,1fr)}
+@media(max-width:500px){.mission-id{max-width:none;min-width:0;flex:1 1 0}.mission-id strong{min-width:0;max-width:100%}.mission-picker{flex:0 0 auto}.mission-picker select{width:82px}}
 </style></head>
-<body><a class="skip" href="#main">Skip to training game</a>
-<header class="mast"><a href="/" class="site-mark" aria-label="Back to Deep Cuts Game Lab">◈ <span>DEEP CUTS <b>GAME LAB</b></span></a><span class="release"><span class="signal"></span> STACKBREAKER / PLAYTEST 0.2</span></header>
-<main id="main"><section class="intro"><div class="title-column"><p class="eyebrow">THE LAST RESPONSE · REAL CARD TRAINING</p><h1>STACK<span>BREAKER.</span></h1><p class="intro-line">One turn to live. Find the response that changes everything.</p></div><div class="progress-capsule"><span id="completed">0 / 12 SOLVED</span><small>SOLO FIELD TRAINING</small></div></section>
-<div class="mission-bar"><div class="picker"><label for="scenarioSelect">CHOOSE YOUR CASE</label><select id="scenarioSelect" aria-label="Choose training scenario"></select></div><div class="meta"><span id="missionTier">APPRENTICE</span><span id="missionNum">01 / 12</span></div></div>
-<section class="case-title"><div><h2 id="scenarioTitle">The Last Shelter</h2><p id="scenarioIntro"></p></div><div class="priority-tag" id="priority" aria-live="polite">● YOU HAVE PRIORITY</div></section>
-<div class="game-grid"><section class="field-zone" aria-label="Battlefield and players"><div class="section-label"><span>01 / THE BATTLEFIELD</span><span class="rule-tag">CURRENT PRIORITY WINDOW</span></div>
-<div class="life-row"><div class="life-widget you"><small>YOUR LIFE</small><strong id="playerLife">—</strong></div><div class="mana-widget"><small>YOUR AVAILABLE MANA</small><div id="manaPool" class="mana-row"></div></div><div class="life-widget them"><small>OPPONENT LIFE</small><strong id="opponentLife">—</strong></div></div>
-<div class="field-heading"><span>CREATURES IN PLAY</span><small>Real printed P/T · Damage &amp; status shown</small></div><div id="battlefield" class="creature-row"></div><div class="objective"><span class="objective-icon">◎</span><div><b>YOUR OBJECTIVE</b><p id="objective"></p></div></div></section>
-<section class="stack-zone" aria-label="Visible stack and available responses"><div class="section-label"><span>02 / PRIORITY &amp; THE STACK</span><span class="stack-count" id="stackCount">00</span></div><p class="stack-hint">TOP resolves first. Casting a response puts it above the existing spells.</p><ol id="stack" class="stack-list" aria-label="Stack in top-to-bottom resolution order"></ol><button id="passButton" type="button" class="pass-button">PASS PRIORITY / RESOLVE NEXT <span aria-hidden="true">→</span></button><div class="undo-row"><button type="button" id="undoButton">↶ UNDO</button><button type="button" id="restartButton">↻ RESTART</button><button type="button" id="hintButton" aria-expanded="false">◇ HINT</button></div><p id="hintText" class="hint-reveal" hidden></p></section></div>
-<section class="response-zone" aria-label="Available responses"><div class="section-label"><span>03 / YOUR RESPONSES</span><span>CLICK TO PLAY · 1–9 HOTKEYS</span></div><div id="hand" class="hand-row"></div></section>
-<section id="result" class="result" aria-live="polite" hidden><div><span class="result-flag" id="resultEyebrow"></span><h2 id="resultTitle"></h2><p id="resultExplanation"></p><div class="result-stars" id="resultStars"></div></div><div class="result-actions"><button id="retryButton" type="button">↻ RETRY</button><button id="nextButton" type="button">NEXT CASE →</button></div></section>
-<section class="event-zone"><div class="section-label"><span>04 / RESOLUTION LOG</span><small>Read why each action happened</small></div><ol id="log"></ol><div id="live" role="status" aria-live="polite" class="visually-hidden"></div></section>
-<footer><div><b>STACKBREAKER</b> · <span id="version"></span><p>Independent unofficial Magic training tool. Card names, characteristics and rules belong to their respective owners. No affiliation with or endorsement by Wizards of the Coast or Scryfall. Card artwork is intentionally not reproduced in this experimental release; links open Scryfall references. Restricted 2-player priority window: no full combat, continuous-effect layers, triggers or multiplayer stack simulation. Not a judge ruling.</p></div><a href="/">← GAME LAB HOME</a></footer></main><script>// Stackbreaker 0.2 — limited, curated MTG card-reference catalog.
+<body><a class="skip" href="#game">Skip to Stackbreaker game</a>
+<header class="mast"><a class="site-mark" href="/" aria-label="Back to Game Lab">◈ <b>DEEP CUTS</b> / GAME LAB</a><strong class="site-title">STACKBREAKER <small>0.3 · THE LAST RESPONSE</small></strong><a class="site-home" href="/">GAME LAB ↗</a></header>
+<main><section id="game" class="game-screen" aria-label="Playable Stackbreaker training game">
+<div class="mission-bar"><div class="mission-id"><small id="missionTier">APPRENTICE</small><strong id="scenarioTitle">Loading…</strong></div><div class="mission-picker"><label for="scenarioSelect">LEVEL <span id="missionNum">01 / 12</span></label><select id="scenarioSelect" aria-label="Choose level"></select></div><span class="run-status" id="priority" aria-live="polite">● PRIORITY: YOU</span></div>
+<div class="game-grid"><section class="field-zone" aria-label="Life and creature battlefield"><div class="zone-top"><span>◈ THE BATTLEFIELD</span><span id="objectiveShort">SURVIVE</span></div><div class="life-row"><div class="life-widget"><small>YOU</small><b id="playerLife">—</b></div><div class="creature-row" id="battlefield"></div><div class="life-widget enemy"><small>OPP</small><b id="opponentLife">—</b></div></div><p id="objective" class="objective"></p></section>
+<section class="stack-zone" id="stackDrop" aria-label="Drop spells here to cast onto the stack"><div class="zone-top"><span>⟠ THE STACK <em>DROP SPELL HERE</em></span><span id="stackCount">00</span></div><ol class="stack-list" id="stack" aria-label="Stack top-first"></ol><div class="stack-drop-hint">↑ Drop a spell here · top resolves first</div></section></div>
+<div class="lands-zone"><div class="zone-top"><span>◌ YOUR LANDS <em>TAP TO ADD MANA</em></span><span class="pool-label">POOL <span class="mana-row" id="manaPool"></span></span></div><div class="land-row" id="lands" aria-label="Land cards available for mana"></div></div>
+<div class="hand-zone"><div class="zone-top"><span>✧ YOUR HAND &amp; ABILITIES <em>DRAG TO STACK · OR TAP CAST</em></span><span id="handCount">0 CARDS</span></div><div class="hand-row" id="hand"></div></div>
+<div class="game-controls"><div class="result-mini" id="resultMini" aria-live="polite"><b id="resultEyebrow">YOUR MOVE</b><span id="resultTitle">Tap lands, then cast your response.</span></div><button type="button" class="pass-button" id="passButton">PASS / RESOLVE →</button><button type="button" class="minor-button" id="undoButton">↶ UNDO</button><button type="button" class="minor-button" id="restartButton">↻ RESET</button><button type="button" class="next-button" id="nextButton">NEXT CASE →</button></div>
+<div id="live" class="sr-only" role="status" aria-live="polite"></div>
+</section>
+<section class="study-notes" id="notes"><div class="notes-head"><div><p class="eyebrow">THE TRAINING FILE</p><h1>ONE TURN TO LIVE.</h1><p id="scenarioIntro"></p></div><div class="progress"><b id="completed">0 / 12 SOLVED</b><span>REAL-CARD TRAINING</span></div></div><div class="notes-grid"><div class="notes-box"><h2>Your objective</h2><p id="objectiveLong"></p><button type="button" id="hintButton" aria-expanded="false">◇ REVEAL HINT</button><p id="hintText" hidden></p></div><div class="notes-box"><h2>Why it worked</h2><p id="resultExplanation">Finish a case to reveal its rules explanation.</p><div id="resultStars" class="result-stars"></div></div><div class="notes-box"><h2>Resolution log</h2><ol id="log" aria-label="Action and stack resolution log"></ol></div></div>
+<footer><div><b>STACKBREAKER · <span id="version"></span></b><p>An unofficial educational Magic rules trainer; not affiliated with or endorsed by Wizards of the Coast or Scryfall. The illustrated frames are original, not reproduced official card art. Card-name links open Scryfall. Limited two-player training windows, not a complete MTG rules engine or judge ruling.</p></div><a href="/">← GAME LAB HOME</a></footer></section></main><script>// Stackbreaker 0.2 — limited, curated MTG card-reference catalog.
 // Card text and statistics are reference data, not a full executable card interpreter.
-const RULES_VERSION='sb-mtg-training-0.2.0';
+const RULES_VERSION='sb-mtg-training-0.3.0';
 const CARDS={
   'Selfless Spirit':{type:'Creature — Spirit Cleric',cost:{generic:1,W:1},power:2,toughness:1,colors:['W'],oracle:'Flying. Sacrifice Selfless Spirit: Creatures you control gain indestructible until end of turn.',effect:'ward',tags:['Flying']},
   'Grizzly Bears':{type:'Creature — Bear',cost:{generic:1,G:1},power:2,toughness:2,colors:['G'],oracle:'',effect:null,tags:[]},
@@ -42,6 +69,16 @@ const CARDS={
 const cardLink = name => 'https://scryfall.com/search?q='+encodeURIComponent('!"'+name+'"');
 const isCreature = name => CARDS[name]?.type.startsWith('Creature') || false;
 
+// Curated real land cards. The game models the listed basic mana abilities only.
+const LANDS={
+ 'Plains':{type:'Basic Land — Plains',mana:'W',oracle:'{T}: Add {W}.'},
+ 'Island':{type:'Basic Land — Island',mana:'U',oracle:'{T}: Add {U}.'},
+ 'Swamp':{type:'Basic Land — Swamp',mana:'B',oracle:'{T}: Add {B}.'},
+ 'Mountain':{type:'Basic Land — Mountain',mana:'R',oracle:'{T}: Add {R}.'},
+ 'Forest':{type:'Basic Land — Forest',mana:'G',oracle:'{T}: Add {G}.'},
+ 'Wastes':{type:'Basic Land',mana:'C',oracle:'{T}: Add {C}.'}
+};
+
 
 const clone=x=>structuredClone(x);
 const colors=['W','U','B','R','G','C'];
@@ -57,11 +94,14 @@ function validateScenario(p){
  say(['Apprentice','Investigator','Mastermind'].includes(p.tier),'invalid tier');
  say(Number.isInteger(p.life?.player)&&p.life.player>0,'invalid player life');say(Number.isInteger(p.life?.opponent)&&p.life.opponent>0,'invalid opponent life');
  say(p.mana&&colors.every(c=>Number.isInteger(p.mana[c]??0)&&(p.mana[c]??0)>=0),'invalid mana');
+ say(Array.isArray(p.lands),'missing real land cards');
  say(['player','opponent'].includes(p.activeActor),'invalid active actor');
  say(p.opponentPolicy==='alwaysPass','unsupported opponent policy');
  say(Array.isArray(p.units)&&Array.isArray(p.stack)&&p.stack.length>0&&Array.isArray(p.hand),'missing zones');
  const units=Array.isArray(p.units)?p.units:[],stack=Array.isArray(p.stack)?p.stack:[],hand=Array.isArray(p.hand)?p.hand:[];
- const ids=[...units,...stack,...hand].map(x=>x.id);say(ids.every(validId)&&unique(ids),'duplicate or bad object ids');
+ const lands=Array.isArray(p.lands)?p.lands:[];
+ const ids=[...units,...stack,...hand,...lands].map(x=>x.id);
+ for(const l of lands){say(!!LANDS[l.card],`unknown land ${l.card}`);say(l.controller==='player',`only player lands are supported`);say(l.tapped===undefined||typeof l.tapped==='boolean',`invalid tapped flag`);}say(ids.every(validId)&&unique(ids),'duplicate or bad object ids');
  for(const u of units){say(!!CARDS[u.card]&&isCreature(u.card),`unknown creature ${u.card}`);say(['player','opponent'].includes(u.controller),'bad unit controller');say(!u.zone||u.zone==='battlefield','bad starting zone');}
  for(const x of stack){say(!!CARDS[x.card],`unknown stack card ${x.card}`);say(['player','opponent'].includes(x.controller),'bad stack controller');say(!isCreature(x.card)||x.spell===true,'creature abilities need explicit support');}
  for(const a of hand){say(!!CARDS[a.card],`unknown hand card ${a.card}`);say(!isCreature(a.card)||!!a.sourceId,'only activated creature abilities in hand');if(a.sourceId)say(units.some(u=>u.id===a.sourceId&&u.card===a.card&&u.controller==='player'),'bad ability source');}
@@ -73,7 +113,7 @@ function validateScenario(p){
  return{valid:problems.length===0,errors:problems};
 }
 function createGame(p){let v=validateScenario(p);if(!v.valid)fail(`Invalid ${p?.id}: ${v.errors.join('; ')}`);
- const s=clone(p);s.units=s.units.map(u=>({zone:'battlefield',damage:0,powerBoost:0,toughnessBoost:0,hexproof:false,indestructible:false,...u}));
+ const s=clone(p);s.lands=s.lands.map(l=>({tapped:false,...l}));s.units=s.units.map(u=>({zone:'battlefield',damage:0,powerBoost:0,toughnessBoost:0,hexproof:false,indestructible:false,...u}));
  s.stack=s.stack.map(x=>({...x,spell:x.spell!==false}));s.used=[];s.passCount=1;s.currentActor='player';s.log=['Opponent passes priority to you.'];s.status='playing';s.step=0;return s;
 }
 const creaturePower=u=>CARDS[u.card].power+(u.powerBoost||0);
@@ -92,10 +132,41 @@ function sbas(s){for(const u of s.units){if(u.zone!=='battlefield')continue;
  }}
  if(s.life.player<=0||s.life.opponent<=0)finish(s);
 }
-function remainingMana(s,cost){const pool={...Object.fromEntries(colors.map(c=>[c,0])),...s.mana};
- for(const c of colors.filter(c=>c!=='C')){const needed=cost[c]||0;if(pool[c]<needed)return null;pool[c]-=needed;}
- let generic=cost.generic||0;for(const c of ['C','W','U','B','R','G']){let spent=Math.min(pool[c],generic);pool[c]-=spent;generic-=spent;}return generic===0?pool:null;
+// Colored and true colorless pips are mandatory; generic may use any unspent mana.
+function remainingMana(s,cost,spendGeneric=null){
+ const pool=Object.fromEntries(colors.map(c=>[c,s.mana[c]||0]));
+ for(const c of colors){const needed=cost[c]||0;if(pool[c]<needed)return null;pool[c]-=needed;}
+ let generic=cost.generic||0;
+ if(spendGeneric!==null){
+  if(!spendGeneric||colors.some(c=>!Number.isInteger(spendGeneric[c]||0)||(spendGeneric[c]||0)<0))return null;
+  if(colors.reduce((sum,c)=>sum+(spendGeneric[c]||0),0)!==generic)return null;
+  for(const c of colors){const qty=spendGeneric[c]||0;if(qty>pool[c])return null;pool[c]-=qty;}
+  return pool;
+ }
+ for(const c of ['C','W','U','B','R','G']){const spent=Math.min(pool[c],generic);pool[c]-=spent;generic-=spent;}
+ return generic===0?pool:null;
 }
+function paymentOptions(s,cost){
+ const left=Object.fromEntries(colors.map(c=>[c,(s.mana[c]||0)-(cost[c]||0)]));
+ if(colors.some(c=>left[c]<0))return [];
+ const options=[];const assign={};const order=['C','W','U','B','R','G'];
+ function choose(i,remaining){if(options.length>64)return;
+  if(i===order.length){if(remaining===0){const spend={...assign};const pool=remainingMana(s,cost,spend);if(pool)options.push({spend,pool,label:order.filter(c=>spend[c]).map(c=>`${spend[c]}${c}`).join(' + ')||'No generic'});}return;}
+  const color=order[i];for(let n=0;n<=Math.min(left[color],remaining);n++){assign[color]=n;choose(i+1,remaining-n);}
+ }
+ choose(0,cost.generic||0);
+ return options;
+}
+function tapLand(s0,landId){
+ if(s0.status!=='playing'||s0.currentActor!=='player')fail('You do not have priority');
+ const s=clone(s0),land=s.lands.find(l=>l.id===landId);
+ if(!land||land.controller!=='player'||land.tapped)fail('Land cannot be tapped for mana');
+ const color=LANDS[land.card]?.mana;if(!color)fail('Unsupported mana ability');
+ land.tapped=true;s.mana[color]=(s.mana[color]||0)+1;
+ s.log.push(`Tapped ${land.card} for {${color}}. Mana abilities do not use the stack (rule 605).`);
+ return s;
+}
+
 function legalTarget(s,item,targetId){const rule=CARDS[item.card].targetRule;
  if(!rule)return targetId==null;
  if(!targetId)return false;
@@ -118,11 +189,11 @@ function legalTargets(s,action){const card=CARDS[action.card];if(!card)return[];
  return candidates.filter(targetId=>rule==='any'?targetId==='player'||targetId==='opponent'||legalCreatureTarget(s,{controller:'player'},targetId):legalTarget(s,{...action,controller:'player'},targetId));
 }
 function legalActions(s){if(s.status!=='playing'||s.currentActor!=='player')return[];
- return s.hand.filter(a=>!s.used.includes(a.id)&&(a.sourceId?s.units.some(u=>u.id===a.sourceId&&u.zone==='battlefield'&&u.controller==='player'):remainingMana(s,CARDS[a.card].cost))&&legalTargets(s,a).length>0).map(a=>a.id);
+ return s.hand.filter(a=>!s.used.includes(a.id)&&(a.sourceId?s.units.some(u=>u.id===a.sourceId&&u.zone==='battlefield'&&u.controller==='player'):paymentOptions(s,CARDS[a.card].cost).length>0)&&legalTargets(s,a).length>0).map(a=>a.id);
 }
-function activate(s0,actionId,targetId=null){if(!legalActions(s0).includes(actionId))fail('Illegal or unaffordable action');
+function activate(s0,actionId,targetId=null,genericSpend=null){if(!legalActions(s0).includes(actionId))fail('Illegal or unaffordable action');
  const s=clone(s0),a=s.hand.find(x=>x.id===actionId),c=CARDS[a.card],allowed=legalTargets(s,a);if(!allowed.some(x=>x===targetId))fail('Illegal target');
- if(a.sourceId){const source=s.units.find(u=>u.id===a.sourceId);source.zone='graveyard';s.log.push(`${source.card} sacrificed as activation cost. (Rule 602)`);}else{s.mana=remainingMana(s,c.cost);if(!s.mana)fail('Cannot pay mana');}
+ if(a.sourceId){const source=s.units.find(u=>u.id===a.sourceId);source.zone='graveyard';s.log.push(`${source.card} sacrificed as activation cost. (Rule 602)`);}else{s.mana=remainingMana(s,c.cost,genericSpend);if(!s.mana)fail('Cannot pay mana');}
  s.stack.push({id:a.id,card:a.card,controller:'player',spell:!a.sourceId,sourceId:a.sourceId||null,targetId});s.used.push(a.id);s.passCount=0;s.step++;
  s.log.push(`${a.sourceId?'Activated':'Cast'} ${a.card}${targetId?' targeting '+labelTarget(s,targetId):''}. You retain priority.`);
  return s;
@@ -165,7 +236,7 @@ function autoplay(s0,max=120){let s=clone(s0);for(let i=0;i<max&&s.status==='pla
 const scenarios=[
   {
     "id": "sb-01",
-    "version": "sb-mtg-training-0.2.0",
+    "version": "sb-mtg-training-0.3.0",
     "tier": "Apprentice",
     "title": "The Last Shelter",
     "intro": "Wrath of God threatens your entire battlefield. Keep two creatures after it resolves.",
@@ -212,11 +283,12 @@ const scenarios=[
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "Activated abilities stay on the stack even when their source has been sacrificed.",
-    "explanation": "Sacrifice Selfless Spirit as a cost. Its ability gives your other creatures indestructible before Wrath of God destroys creatures. Sacrifice itself does not count as destruction."
+    "explanation": "Sacrifice Selfless Spirit as a cost. Its ability gives your other creatures indestructible before Wrath of God destroys creatures. Sacrifice itself does not count as destruction.",
+    "lands": []
   },
   {
     "id": "sb-02",
-    "version": "sb-mtg-training-0.2.0",
+    "version": "sb-mtg-training-0.3.0",
     "tier": "Apprentice",
     "title": "One Breath Left",
     "intro": "You are at 2 life. Lightning Bolt is targeting you for 3 damage.",
@@ -224,10 +296,7 @@ const scenarios=[
       "player": 2,
       "opponent": 16
     },
-    "mana": {
-      "U": 2,
-      "W": 1
-    },
+    "mana": {},
     "units": [],
     "stack": [
       {
@@ -253,11 +322,28 @@ const scenarios=[
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "You can stop the spell, or gain life before the damage resolves.",
-    "explanation": "Either Counterspell targeting Lightning Bolt or Healing Salve targeting yourself keeps you alive. Both resolve on top of Bolt."
+    "explanation": "Either Counterspell targeting Lightning Bolt or Healing Salve targeting yourself keeps you alive. Both resolve on top of Bolt.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Plains",
+        "controller": "player"
+      }
+    ]
   },
   {
     "id": "sb-03",
-    "version": "sb-mtg-training-0.2.0",
+    "version": "sb-mtg-training-0.3.0",
     "tier": "Apprentice",
     "title": "A Bear Against Lightning",
     "intro": "Your 2/2 Grizzly Bears is targeted by Lightning Bolt. Keep it on the battlefield.",
@@ -265,9 +351,7 @@ const scenarios=[
       "player": 8,
       "opponent": 16
     },
-    "mana": {
-      "G": 1
-    },
+    "mana": {},
     "units": [
       {
         "id": "bear",
@@ -296,11 +380,18 @@ const scenarios=[
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "Creature damage is compared to toughness when state-based actions are checked.",
-    "explanation": "Giant Growth makes Grizzly Bears 5/5 until end of turn. Three damage is marked, but less than five toughness, so it survives."
+    "explanation": "Giant Growth makes Grizzly Bears 5/5 until end of turn. Three damage is marked, but less than five toughness, so it survives.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      }
+    ]
   },
   {
     "id": "sb-04",
-    "version": "sb-mtg-training-0.2.0",
+    "version": "sb-mtg-training-0.3.0",
     "tier": "Apprentice",
     "title": "Spell or Creature?",
     "intro": "Wrath of God is on the stack. Which counter actually has a legal target?",
@@ -308,10 +399,7 @@ const scenarios=[
       "player": 9,
       "opponent": 16
     },
-    "mana": {
-      "U": 2,
-      "C": 1
-    },
+    "mana": {},
     "units": [
       {
         "id": "bear",
@@ -343,11 +431,28 @@ const scenarios=[
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "Read the targets: Wrath of God is a sorcery, not a creature spell.",
-    "explanation": "Negate counters the noncreature spell Wrath of God. Essence Scatter cannot target it. Casting requires both legal timing and a legal target."
+    "explanation": "Negate counters the noncreature spell Wrath of God. Essence Scatter cannot target it. Casting requires both legal timing and a legal target.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Wastes",
+        "controller": "player"
+      }
+    ]
   },
   {
     "id": "sb-05",
-    "version": "sb-mtg-training-0.2.0",
+    "version": "sb-mtg-training-0.3.0",
     "tier": "Investigator",
     "title": "Hexproof Arrives Late",
     "intro": "Murder targets your Hill Giant. Its target was legal when cast; can you change that?",
@@ -355,10 +460,7 @@ const scenarios=[
       "player": 7,
       "opponent": 16
     },
-    "mana": {
-      "G": 2,
-      "C": 1
-    },
+    "mana": {},
     "units": [
       {
         "id": "giant",
@@ -390,315 +492,42 @@ const scenarios=[
     },
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
-    "hint": "Increasing toughness cannot stop a spell that says \u201cdestroy.\u201d",
-    "explanation": "Heroic Intervention gives your Hill Giant hexproof. On resolution, Murder checks its target again, finds it illegal, and does not resolve. Giant Growth does not prevent destruction."
+    "hint": "Increasing toughness cannot stop a spell that says “destroy.”",
+    "explanation": "Heroic Intervention gives your Hill Giant hexproof. On resolution, Murder checks its target again, finds it illegal, and does not resolve. Giant Growth does not prevent destruction.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Wastes",
+        "controller": "player"
+      },
+      {
+        "id": "land-4",
+        "card": "Plains",
+        "controller": "player"
+      }
+    ]
   },
   {
     "id": "sb-06",
-    "version": "sb-mtg-training-0.2.0",
+    "version": "sb-mtg-training-0.3.0",
     "tier": "Investigator",
-    "title": "Protection Is Not Exile",
-    "intro": "Swords to Plowshares targets Grizzly Bears. Your Spirit can protect from destruction\u2014but this is exile.",
-    "life": {
-      "player": 8,
-      "opponent": 16
-    },
-    "mana": {
-      "G": 1,
-      "C": 1
-    },
-    "units": [
-      {
-        "id": "spirit",
-        "card": "Selfless Spirit",
-        "controller": "player"
-      },
-      {
-        "id": "bear",
-        "card": "Grizzly Bears",
-        "controller": "player"
-      }
-    ],
-    "stack": [
-      {
-        "id": "swords",
-        "card": "Swords to Plowshares",
-        "controller": "opponent",
-        "targetId": "bear"
-      }
-    ],
-    "hand": [
-      {
-        "id": "ward",
-        "card": "Selfless Spirit",
-        "sourceId": "spirit"
-      },
-      {
-        "id": "intervene",
-        "card": "Heroic Intervention"
-      }
-    ],
-    "objective": {
-      "type": "keepUnit",
-      "unitId": "bear"
-    },
-    "activeActor": "opponent",
-    "opponentPolicy": "alwaysPass",
-    "hint": "Indestructible only prevents destruction. Hexproof can make an already-targeting opponent spell illegal on resolution.",
-    "explanation": "Selfless Spirit cannot prevent exile. Heroic Intervention grants hexproof; Swords to Plowshares loses its target and fails to resolve."
-  },
-  {
-    "id": "sb-07",
-    "version": "sb-mtg-training-0.2.0",
-    "tier": "Investigator",
-    "title": "An Unavoidable Blade",
-    "intro": "Doom Blade is targeting your Grizzly Bears. You have a combat trick and a counter.",
-    "life": {
-      "player": 8,
-      "opponent": 16
-    },
-    "mana": {
-      "G": 1,
-      "U": 2
-    },
-    "units": [
-      {
-        "id": "bear",
-        "card": "Grizzly Bears",
-        "controller": "player"
-      }
-    ],
-    "stack": [
-      {
-        "id": "blade",
-        "card": "Doom Blade",
-        "controller": "opponent",
-        "targetId": "bear"
-      }
-    ],
-    "hand": [
-      {
-        "id": "growth",
-        "card": "Giant Growth"
-      },
-      {
-        "id": "counter",
-        "card": "Counterspell"
-      }
-    ],
-    "objective": {
-      "type": "keepUnit",
-      "unitId": "bear"
-    },
-    "activeActor": "opponent",
-    "opponentPolicy": "alwaysPass",
-    "hint": "Doom Blade destroys regardless of a creature\u2019s toughness.",
-    "explanation": "Giant Growth cannot prevent destruction. Counterspell can stop Doom Blade before it resolves. If the spell resolves, the bear dies."
-  },
-  {
-    "id": "sb-08",
-    "version": "sb-mtg-training-0.2.0",
-    "tier": "Investigator",
-    "title": "Into Your Hand",
-    "intro": "Murder targets Hill Giant. Your objective is to keep it out of the graveyard this turn.",
-    "life": {
-      "player": 7,
-      "opponent": 16
-    },
-    "mana": {
-      "U": 1,
-      "G": 1
-    },
-    "units": [
-      {
-        "id": "giant",
-        "card": "Hill Giant",
-        "controller": "player"
-      }
-    ],
-    "stack": [
-      {
-        "id": "murder",
-        "card": "Murder",
-        "controller": "opponent",
-        "targetId": "giant"
-      }
-    ],
-    "hand": [
-      {
-        "id": "bounce",
-        "card": "Unsummon"
-      },
-      {
-        "id": "growth",
-        "card": "Giant Growth"
-      }
-    ],
-    "objective": {
-      "type": "saveFromGraveyard",
-      "unitId": "giant"
-    },
-    "activeActor": "opponent",
-    "opponentPolicy": "alwaysPass",
-    "hint": "The creature need not remain on the battlefield to be saved.",
-    "explanation": "Unsummon moves Hill Giant into its owner\u2019s hand. Murder loses its target and does not resolve. Giant Growth cannot stop Murder."
-  },
-  {
-    "id": "sb-09",
-    "version": "sb-mtg-training-0.2.0",
-    "tier": "Mastermind",
-    "title": "The Counter War",
-    "intro": "Your Lightning Bolt would finish your opponent at 3 life\u2014but their Counterspell is on top.",
-    "life": {
-      "player": 12,
-      "opponent": 3
-    },
-    "mana": {
-      "U": 1,
-      "C": 1
-    },
-    "units": [],
-    "stack": [
-      {
-        "id": "yourbolt",
-        "card": "Lightning Bolt",
-        "controller": "player",
-        "targetId": "opponent"
-      },
-      {
-        "id": "theircounter",
-        "card": "Counterspell",
-        "controller": "opponent",
-        "targetId": "yourbolt"
-      }
-    ],
-    "hand": [
-      {
-        "id": "dispel",
-        "card": "Dispel"
-      },
-      {
-        "id": "scatter",
-        "card": "Essence Scatter"
-      }
-    ],
-    "objective": {
-      "type": "win"
-    },
-    "activeActor": "opponent",
-    "opponentPolicy": "alwaysPass",
-    "hint": "Dispel targets instant spells; Counterspell itself is an instant.",
-    "explanation": "Dispel counters the opposing Counterspell. Your Lightning Bolt remains on the stack and deals lethal damage to the opponent."
-  },
-  {
-    "id": "sb-10",
-    "version": "sb-mtg-training-0.2.0",
-    "tier": "Mastermind",
-    "title": "Two Bolts, Two Answers",
-    "intro": "You have 2 life. Lightning Bolt and Shock both target you. One answer is not enough.",
-    "life": {
-      "player": 2,
-      "opponent": 16
-    },
-    "mana": {
-      "U": 1,
-      "W": 1
-    },
-    "units": [],
-    "stack": [
-      {
-        "id": "bolt",
-        "card": "Lightning Bolt",
-        "controller": "opponent",
-        "targetId": "player"
-      },
-      {
-        "id": "shock",
-        "card": "Shock",
-        "controller": "opponent",
-        "targetId": "player"
-      }
-    ],
-    "hand": [
-      {
-        "id": "salve",
-        "card": "Healing Salve"
-      },
-      {
-        "id": "dispel",
-        "card": "Dispel"
-      }
-    ],
-    "objective": {
-      "type": "survive"
-    },
-    "activeActor": "opponent",
-    "opponentPolicy": "alwaysPass",
-    "hint": "Gaining three life alone leaves you at zero after both spells. Countering only one also leaves lethal damage.",
-    "explanation": "Use Healing Salve on yourself and Dispel on either instant. Five total incoming damage exceeds the life gain; countering one spell reduces the total enough to survive."
-  },
-  {
-    "id": "sb-11",
-    "version": "sb-mtg-training-0.2.0",
-    "tier": "Mastermind",
-    "title": "Not Even Six Toughness",
-    "intro": "Swords to Plowshares targets a 3/3 Hill Giant. Pumping it helps the opponent gain more life.",
-    "life": {
-      "player": 8,
-      "opponent": 16
-    },
-    "mana": {
-      "G": 1,
-      "U": 2
-    },
-    "units": [
-      {
-        "id": "giant",
-        "card": "Hill Giant",
-        "controller": "player"
-      }
-    ],
-    "stack": [
-      {
-        "id": "swords",
-        "card": "Swords to Plowshares",
-        "controller": "opponent",
-        "targetId": "giant"
-      }
-    ],
-    "hand": [
-      {
-        "id": "growth",
-        "card": "Giant Growth"
-      },
-      {
-        "id": "counter",
-        "card": "Counterspell"
-      }
-    ],
-    "objective": {
-      "type": "keepUnit",
-      "unitId": "giant"
-    },
-    "activeActor": "opponent",
-    "opponentPolicy": "alwaysPass",
-    "hint": "Exile ignores how much toughness a creature has.",
-    "explanation": "Giant Growth makes Hill Giant 6/6, but Swords still exiles it, and its controller gains 6 life. Counterspell is the reliable answer."
-  },
-  {
-    "id": "sb-12",
-    "version": "sb-mtg-training-0.2.0",
-    "tier": "Mastermind",
     "title": "The Final Exchange",
     "intro": "Your Bolt would win at 3 opponent life. Their Counterspell stops it; another Bolt threatens your 2 life.",
     "life": {
       "player": 2,
       "opponent": 3
     },
-    "mana": {
-      "U": 1,
-      "W": 1
-    },
+    "mana": {},
     "units": [],
     "stack": [
       {
@@ -736,83 +565,628 @@ const scenarios=[
     "activeActor": "opponent",
     "opponentPolicy": "alwaysPass",
     "hint": "You need BOTH survival and a clear path for your own lethal Bolt. Choose your Dispel target carefully.",
-    "explanation": "Gain 3 life with Healing Salve and use Dispel on the opposing Counterspell, not their Bolt. Their Bolt deals 3 but you survive; your Bolt then resolves and wins."
+    "explanation": "Gain 3 life with Healing Salve and use Dispel on the opposing Counterspell, not their Bolt. Their Bolt deals 3 but you survive; your Bolt then resolves and wins.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Forest",
+        "controller": "player"
+      }
+    ]
+  },
+  {
+    "id": "sb-07",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Investigator",
+    "title": "The Narrow Shelter",
+    "intro": "A destroy spell threatens your Giant. A board wipe waits beneath it. Rescue your Giant from BOTH effects.",
+    "life": {
+      "player": 8,
+      "opponent": 17
+    },
+    "mana": {},
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Forest",
+        "controller": "player"
+      }
+    ],
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      },
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "murder",
+        "card": "Murder",
+        "controller": "opponent",
+        "targetId": "giant"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "counter",
+        "card": "Counterspell"
+      },
+      {
+        "id": "growth",
+        "card": "Giant Growth"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Sacrifice the Spirit to defeat the board wipe. Counter the direct removal; a toughness pump cannot stop Murder.",
+    "explanation": "Selfless Spirit grants indestructible to the remaining team, blocking Wrath of God. Counterspell must stop Murder, because indestructible alone does not answer targeted exile or every removal effect."
+  },
+  {
+    "id": "sb-08",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Investigator",
+    "title": "Three Necessary Answers",
+    "intro": "A board wipe, lethal burn and targeted removal share the stack. Save the Giant and your life.",
+    "life": {
+      "player": 2,
+      "opponent": 17
+    },
+    "mana": {},
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-4",
+        "card": "Forest",
+        "controller": "player"
+      }
+    ],
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "murder",
+        "card": "Murder",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "counter",
+        "card": "Counterspell"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "You need all three different responses. Protection from destruction is not life gain.",
+    "explanation": "The Spirit must be sacrificed to protect the Giant from Wrath of God. Healing Salve raises your life before the Bolt, and Counterspell removes Murder before it can destroy the Giant."
+  },
+  {
+    "id": "sb-09",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "One Spell Too Many",
+    "intro": "Your lethal Bolt is countered, while two hostile burn spells threaten you. You have three responses and only three mana.",
+    "life": {
+      "player": 2,
+      "opponent": 3
+    },
+    "mana": {},
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Plains",
+        "controller": "player"
+      }
+    ],
+    "units": [],
+    "stack": [
+      {
+        "id": "yourbolt",
+        "card": "Lightning Bolt",
+        "controller": "player",
+        "targetId": "opponent"
+      },
+      {
+        "id": "theircounter",
+        "card": "Counterspell",
+        "controller": "opponent",
+        "targetId": "yourbolt"
+      },
+      {
+        "id": "theirbolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "theirshock",
+        "card": "Shock",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "dispel1",
+        "card": "Dispel"
+      },
+      {
+        "id": "dispel2",
+        "card": "Dispel"
+      }
+    ],
+    "objective": {
+      "type": "win"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "You must stop their Counterspell AND one burn spell, while gaining enough life to survive the other.",
+    "explanation": "Healing Salve raises you to five. One Dispel protects your winning Bolt and the other counters a damage spell, leaving enough life to survive and deliver lethal damage."
+  },
+  {
+    "id": "sb-10",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "Mana Under Fire",
+    "intro": "Two Lightning Bolts face you while a Counterspell guards against your lethal Bolt. Manage your lands and choose your line.",
+    "life": {
+      "player": 2,
+      "opponent": 3
+    },
+    "mana": {},
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-4",
+        "card": "Wastes",
+        "controller": "player"
+      }
+    ],
+    "units": [],
+    "stack": [
+      {
+        "id": "yourbolt",
+        "card": "Lightning Bolt",
+        "controller": "player",
+        "targetId": "opponent"
+      },
+      {
+        "id": "theircounter",
+        "card": "Counterspell",
+        "controller": "opponent",
+        "targetId": "yourbolt"
+      },
+      {
+        "id": "bolt1",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "bolt2",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "salve1",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "salve2",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "dispel",
+        "card": "Dispel"
+      },
+      {
+        "id": "negate",
+        "card": "Negate"
+      }
+    ],
+    "objective": {
+      "type": "win"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Two life-gain spells plus a counter for the opposing Counterspell is one solution. Or find another legal answer with your mana.",
+    "explanation": "Two Healing Salves allow you to take both Bolts, and a counterspell clears the path for your own Bolt. Different legal counter and mana allocations can also work."
+  },
+  {
+    "id": "sb-11",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "Protect the Protection",
+    "intro": "Your Heroic Intervention is ALREADY on the stack—an opponent is countering it. A lethal Bolt is on top, with Wrath and Swords waiting below.",
+    "life": {
+      "player": 2,
+      "opponent": 17
+    },
+    "mana": {},
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Forest",
+        "controller": "player"
+      }
+    ],
+    "units": [
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      },
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "swords",
+        "card": "Swords to Plowshares",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "intervene",
+        "card": "Heroic Intervention",
+        "controller": "player"
+      },
+      {
+        "id": "theircounter",
+        "card": "Counterspell",
+        "controller": "opponent",
+        "targetId": "intervene"
+      },
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "dispel",
+        "card": "Dispel"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "growth",
+        "card": "Giant Growth"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Heal to survive the Bolt. Counter the spell that would stop your already-cast Heroic Intervention.",
+    "explanation": "Healing Salve keeps you alive through Bolt. Dispel counters the opposing Counterspell, allowing your Heroic Intervention to resolve. Hexproof invalidates Swords to Plowshares and indestructible shields creatures from Wrath."
+  },
+  {
+    "id": "sb-12",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "The Fractured Stack",
+    "intro": "Three enemy Bolts threaten your single life. Their Counterspell stops your winning Bolt. Four precise responses are needed.",
+    "life": {
+      "player": 1,
+      "opponent": 3
+    },
+    "mana": {},
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-4",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-5",
+        "card": "Wastes",
+        "controller": "player"
+      }
+    ],
+    "units": [],
+    "stack": [
+      {
+        "id": "yourbolt",
+        "card": "Lightning Bolt",
+        "controller": "player",
+        "targetId": "opponent"
+      },
+      {
+        "id": "theircounter",
+        "card": "Counterspell",
+        "controller": "opponent",
+        "targetId": "yourbolt"
+      },
+      {
+        "id": "bolt1",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "bolt2",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "bolt3",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "salve1",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "salve2",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "dispel1",
+        "card": "Dispel"
+      },
+      {
+        "id": "dispel2",
+        "card": "Dispel"
+      },
+      {
+        "id": "negate",
+        "card": "Negate"
+      }
+    ],
+    "objective": {
+      "type": "win"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Gain six life, stop one of their Bolts, and counter their Counterspell; two damaging Bolts can then resolve safely.",
+    "explanation": "Both Healing Salves add six life, reaching seven. Use one Dispel to stop their Counterspell and another to stop any of their Bolts. Two Bolts still deal six, leaving you alive at one, and your Bolt wins."
   }
 ]
 ;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
-const sp='dc-stackbreaker-progress-v2';
-let current=0,game=null,history=[],hintVisible=false,detailsCard=null,selectedTargets={},progress={};
-try{progress=JSON.parse(localStorage.getItem(sp)||'{}')||{}}catch{}
-const save=()=>{try{localStorage.setItem(sp,JSON.stringify(progress));}catch{}};
-const manaGlyph={W:'☀',U:'◆',B:'✦',R:'✹',G:'❀',C:'◇'};
-const manaName={W:'White',U:'Blue',B:'Black',R:'Red',G:'Green',C:'Colorless'};
-function pips(obj){let r=[];for(const c of ['generic','W','U','B','R','G','C']){
- const n=obj?.[c]||0;if(c==='generic'){if(n)r.push(`<span class="mana-pip generic" title="${n} generic mana">${n}</span>`);continue;}
- for(let i=0;i<n;i++)r.push(`<span class="mana-pip ${c}" title="${manaName[c]} mana">${manaGlyph[c]}</span>`);
- }return r.join('')||'<span class="empty-mana">0</span>';}
-function spellName(item){return item.card+(item.spell===false?' · ability':'');}
-function signature(name){let c=CARDS[name],color=c.colors?.[0]||'C';return `<div class="card-art ${color}" aria-hidden="true"><span class="art-runes">⟡ ✦ ⟡</span><span class="art-emblem">${c.type.startsWith('Creature')?'♜':c.type==='Sorcery'?'✺':'✦'}</span><span class="art-wisps">⌁ ⌁ ⌁</span></div>`;}
-function card(name,opts={}){const c=CARDS[name],u=opts.unit,small=opts.small;
- let stat=u?`${creaturePower(u)}/${creatureToughness(u)}`:(c.power!=null?`${c.power}/${c.toughness}`:'');
- const damaged=u?.damage>0;const alt=u&&u.zone!=='battlefield'?`<span class="zone-stamp">${esc(u.zone)}</span>`:'';
- const tags=u&&u.zone==='battlefield'?`${u.hexproof?'<span class="trait">HEXPROOF</span>':''}${u.indestructible?'<span class="trait">INDESTRUCTIBLE</span>':''}`:'';
- return `<div class="card-frame ${small?'compact':''} ${u&&u.zone!=='battlefield'?'inactive':''}" role="group" aria-label="${esc(name)}${stat?' '+stat:''}${u?' '+u.zone:''}">
-  <div class="card-head"><strong>${esc(name)}</strong><span class="mana-row">${pips(c.cost)}</span></div>
-  ${signature(name)}<div class="card-type">${esc(c.type)}</div>
-  <p class="oracle">${esc(c.oracle||'No rules text.')}</p>${c.note?`<p class="oracle note">${esc(c.note)}</p>`:''}
-  <div class="card-base"><a href="${esc(cardLink(name))}" target="_blank" rel="noopener noreferrer" aria-label="See ${esc(name)} on Scryfall">CARD REFERENCE ↗</a>${stat?`<strong class="pt">${stat}</strong>`:''}</div>
-  ${damaged?`<div class="damage">${u.damage} damage marked</div>`:''}${tags?`<div class="traits">${tags}</div>`:''}${alt}</div>`;
-}
-function targetText(id){return id==null?'No target':labelTarget(game,id);}
-function setScenario(n){current=Math.max(0,Math.min(n,scenarios.length-1));game=createGame(scenarios[current]);history=[];hintVisible=false;detailsCard=null;selectedTargets={};render();}
-function render(){const s=game,p=scenarios[current];$('missionNum').textContent=String(current+1).padStart(2,'0')+' / '+String(scenarios.length).padStart(2,'0');$('missionTier').textContent=p.tier.toUpperCase();$('scenarioTitle').textContent=p.title;$('scenarioIntro').textContent=p.intro;$('version').textContent=RULES_VERSION;
- $('playerLife').textContent=s.life.player;$('opponentLife').textContent=s.life.opponent;$('manaPool').innerHTML=pips(s.mana);
- $('priority').textContent=s.status==='playing'?'● YOU HAVE PRIORITY':s.status==='won'?'◆ SURVIVED':'✖ DEFEATED';
- $('objective').textContent=objectiveText(p);$('stackCount').textContent=String(s.stack.length).padStart(2,'0');
- $('scenarioSelect').value=String(current);
- $('battlefield').innerHTML=s.units.length?s.units.map(u=>`<div class="battle-unit">${card(u.card,{unit:u,small:true})}</div>`).join(''):'<p class="empty-panel">No creatures on the battlefield. This problem is entirely about spells on the stack.</p>';
- $('stack').innerHTML=s.stack.length?[...s.stack].reverse().map((o,i)=>`<li class="stack-entry ${i===0?'on-top':''}"><div class="stack-rank">${i===0?'TOP':String(i+1).padStart(2,'0')}</div><div class="stack-info"><strong>${esc(spellName(o))}</strong><small>${esc(o.controller==='player'?'YOUR SPELL':'OPPONENT')} · ${esc(CARDS[o.card].type)}</small>${o.targetId?`<span class="target-line">↳ ${esc(labelTarget(s,o.targetId))}</span>`:''}</div><a href="${esc(cardLink(o.card))}" target="_blank" rel="noopener noreferrer" class="tiny-link" aria-label="View ${esc(o.card)} card reference">↗</a></li>`).join(''):'<li class="stack-entry stack-empty">The stack is empty</li>';
- const available=legalActions(s);
- $('hand').innerHTML=s.hand.map((a,index)=>{
- const c=CARDS[a.card],targets=legalTargets(s,a),good=available.includes(a.id),target=targets.includes(selectedTargets[a.id])?selectedTargets[a.id]:targets[0];selectedTargets[a.id]=target;
- const castLabel=a.sourceId?'ACTIVATE ABILITY':'CAST RESPONSE';
- return `<article class="response ${good?'':'unavailable'}"><div class="response-heading"><span class="response-number">${index+1}</span><strong>${esc(a.card)}</strong><span class="mana-row">${a.sourceId?'<span class="cost-sac">SACRIFICE</span>':pips(c.cost)}</span></div><p>${esc(c.oracle)}</p>${c.note?`<small>${esc(c.note)}</small>`:''}
- <div class="response-foot">${targets.length>1?`<label class="select-label">TARGET <select data-target-for="${esc(a.id)}" aria-label="Choose target for ${esc(a.card)}">${targets.map(t=>`<option value="${esc(t)}" ${t===target?'selected':''}>${esc(targetText(t))}</option>`).join('')}</select></label>`:(targets.length===1&&target!=null?`<span class="target-caption">TARGET · ${esc(targetText(target))}</span>`:'<span class="target-caption">NO TARGET REQUIRED</span>')}
- <button class="cast-btn" data-cast="${esc(a.id)}" type="button" ${!good?'disabled':''}>${castLabel} ↗</button></div></article>`;
- }).join('');
- $('passButton').disabled=s.status!=='playing';$('undoButton').disabled=!history.length;$('retryButton').disabled=false;
- $('hintText').textContent=p.hint;$('hintText').hidden=!hintVisible;$('hintButton').setAttribute('aria-expanded',String(hintVisible));
- $('log').innerHTML=s.log.slice(-9).reverse().map((line,i)=>`<li>${esc(line)}</li>`).join('');
- const result=$('result');result.hidden=s.status==='playing';if(s.status!=='playing'){
-  $('resultEyebrow').textContent=s.status==='won'?'✓ CASE SOLVED':'✕ RESPONSE FAILED';$('resultTitle').textContent=s.status==='won'?'The stack broke your way.':'The threat got through.';
-  $('resultExplanation').textContent=p.explanation;
-  if(s.status==='won'){const optimum=[10,12].includes(current+1)?2:1;const stars=s.used.length<=optimum?3:2;progress[p.id]=Math.max(progress[p.id]||0,stars);save();$('resultStars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);}else $('resultStars').textContent='';
-  $('nextButton').textContent=current===scenarios.length-1?'FIRST CASE ↻':'NEXT CASE →';
- }
- $('completed').textContent=Object.keys(progress).length+' / 12 SOLVED';
- $('scenarioSelect').innerHTML=scenarios.map((p,i)=>`<option value="${i}" ${i===current?'selected':''}>${String(i+1).padStart(2,'0')}. ${esc(p.title)} ${progress[p.id]?'★':''}</option>`).join('');
- $('live').textContent=s.log.at(-1)||'Choose a response or pass priority.';
-}
-function objectiveText(s){let o=s.objective;
- if(o.type==='survive')return'Survive the stack with at least 1 life.';
+const glyph={W:'☀',U:'◆',B:'✦',R:'✹',G:'❀',C:'◇'};
+const progressKey='dc-stackbreaker-progress-v3';
+let index=0,game,history=[],selectedTargets={},selectedPayments={},hint=false,progress={},dragTouch=null;
+try{progress=JSON.parse(localStorage.getItem(progressKey)||'{}')||{};}catch{}
+const save=()=>{try{localStorage.setItem(progressKey,JSON.stringify(progress))}catch{}};
+function pips(obj,raw=false){let out=[];for(const c of ['generic','W','U','B','R','G','C']){const n=obj?.[c]||0;
+ if(c==='generic'){if(n)out.push(`<span class="mana-pip generic" title="${n} generic">${n}</span>`);continue;}
+ for(let j=0;j<n;j++)out.push(`<span class="mana-pip ${c}" title="${c} mana">${glyph[c]}</span>`);
+ }return out.join('')||(raw?'':'<span class="empty-mana">EMPTY</span>');}
+function titleForTarget(id){return id==null?'No target':labelTarget(game,id)}
+function objectiveText(s){const o=s.objective;if(o.type==='survive')return'Survive with at least 1 life.';
  if(o.type==='win')return'Deal lethal damage to the opponent and survive.';
- if(o.type==='keepN')return`Keep at least ${o.count} friendly creatures on the battlefield.`;
- const unit=s.units.find(u=>u.id===o.unitId);
- if(o.type==='keepUnit')return`Keep ${unit?.card||o.unitId} on the battlefield.`;
- return`Keep ${unit?.card||o.unitId} out of the graveyard.`;
+ if(o.type==='keepN')return`Keep at least ${o.count} friendly creatures alive.`;
+ return`Keep ${s.units.find(u=>u.id===o.unitId)?.card||'the required creature'} ${o.type==='keepUnit'?'on the battlefield':'out of the graveyard'}.`;
 }
-function applyCast(id){try{const a=game.hand.find(x=>x.id===id),t=selectedTargets[id]??null;history.push(structuredClone(game));game=activate(game,id,t);render();}catch(e){history.pop();$('live').textContent=e.message;}}
-function applyPass(){if(game.status!=='playing')return;try{history.push(structuredClone(game));game=pass(game);render();}catch(e){history.pop();$('live').textContent=e.message;}}
-$('hand').addEventListener('change',e=>{const id=e.target?.dataset?.targetFor;if(id)selectedTargets[id]=e.target.value;});
-$('hand').addEventListener('click',e=>{const b=e.target.closest('[data-cast]');if(b)applyCast(b.dataset.cast);});
-$('passButton').addEventListener('click',applyPass);
-$('undoButton').addEventListener('click',()=>{if(history.length){game=history.pop();render();}});
-for(const n of ['restartButton','retryButton'])$(n).addEventListener('click',()=>setScenario(current));
-$('nextButton').addEventListener('click',()=>setScenario((current+1)%scenarios.length));
-$('hintButton').addEventListener('click',()=>{hintVisible=!hintVisible;render();});
-$('scenarioSelect').addEventListener('change',e=>setScenario(Number(e.target.value)));
-document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;if(e.key===' '){e.preventDefault();applyPass();}else if(e.key.toLowerCase()==='z'){if(history.length){game=history.pop();render();}}else if(/^[1-9]$/.test(e.key)){const a=game.hand[Number(e.key)-1];if(a)applyCast(a.id);}});
-setScenario(0);
+function changeCase(n){index=Math.max(0,Math.min(scenarios.length-1,n));game=createGame(scenarios[index]);history=[];hint=false;selectedTargets={};selectedPayments={};render();}
+function shortCard(u){const c=CARDS[u.card],gone=u.zone!=='battlefield';let flags=[u.indestructible?'INDESTRUCTIBLE':'',u.hexproof?'HEXPROOF':'',u.damage?`${u.damage} DAMAGE`:''].filter(Boolean).join(' · ');
+ return `<div class="battle-unit"><div class="battle-card ${gone?'off':''}" title="${esc(c.oracle||c.type)}" role="group" aria-label="${esc(u.card)}, ${creaturePower(u)}/${creatureToughness(u)}, ${gone?u.zone:'on battlefield'}"><header>${esc(u.card)}</header><span class="sig" aria-hidden="true">${c.colors.includes('G')?'❀':c.colors.includes('W')?'✧':'✦'}</span><div class="flags">${esc(gone?u.zone.toUpperCase():flags)}</div><strong class="pt">${creaturePower(u)}/${creatureToughness(u)}</strong></div></div>`;
+}
+function landCard(l){const c=LANDS[l.card],m=c.mana;return `<button class="land-card ${m} ${l.tapped?'tapped':''}" type="button" data-land="${esc(l.id)}" ${l.tapped||game.status!=='playing'?'disabled':''} title="${esc(l.card+' — '+c.oracle)}" aria-label="${l.tapped?'Tapped':'Tap'} ${esc(l.card)} for ${m} mana"><span class="land-name">${esc(l.card)}</span><span class="land-sigil" aria-hidden="true">${glyph[m]}</span><span class="tap-label">${l.tapped?'TAPPED':`TAP · ${m}`}</span></button>`;}
+function stackCard(item,i){const c=CARDS[item.card];return `<li class="stack-entry ${i===0?'on-top':''}"><span class="stack-rank">${i===0?'TOP':i+1}</span><div style="min-width:0;flex:1"><b>${esc(item.card)}${item.spell===false?' · ABILITY':''}</b><small>${item.controller==='player'?'YOU':'OPPONENT'}${item.targetId?' → '+esc(labelTarget(game,item.targetId)):''}</small></div><a href="${esc(cardLink(item.card))}" target="_blank" rel="noopener noreferrer" title="Card reference for ${esc(item.card)}" aria-label="View ${esc(item.card)} card">↗</a></li>`}
+function handCard(a,i,ready){const c=CARDS[a.card];const targets=legalTargets(game,a);let target=selectedTargets[a.id];if(!targets.includes(target))target=targets[0];selectedTargets[a.id]=target;
+ const payments=a.sourceId?[{spend:null,label:'Sacrifice'}]:paymentOptions(game,c.cost);const selected=selectedPayments[a.id]??0;
+ if(selected>=payments.length)selectedPayments[a.id]=0;
+ const can=ready.includes(a.id);
+ const selectors=targets.length>1?`<label>TARGET<select data-target-for="${esc(a.id)}" aria-label="Target for ${esc(a.card)}">${targets.map(t=>`<option value="${esc(t)}" ${target===t?'selected':''}>${esc(titleForTarget(t))}</option>`).join('')}</select></label>`:(targets.length===1&&target!=null?`<span class="response-steps">→ ${esc(titleForTarget(target))}</span>`:'<span class="response-steps">NO TARGET</span>');
+ const paySelect=payments.length>1?`<label>GENERIC<select data-payment-for="${esc(a.id)}" aria-label="Spend generic mana for ${esc(a.card)}">${payments.map((op,j)=>`<option value="${j}" ${j===(selectedPayments[a.id]??0)?'selected':''}>${esc(op.label)}</option>`).join('')}</select></label>`:'';
+ return `<article class="response-card ${a.sourceId?'ability':''} ${!can?'unavailable':''}" data-drag-card="${esc(a.id)}" draggable="true" tabindex="0" title="${esc(c.oracle)}" aria-label="${esc(a.card)}, drag onto stack or use the Cast button"><div class="response-head"><strong>${esc(a.card)}</strong><span class="mana-row">${a.sourceId?'SAC':pips(c.cost,true)}</span></div><div class="oracle-preview">${esc(c.oracle)}</div><div class="response-steps">${a.sourceId?'Sacrifice source to activate':can?'Ready · drag to stack':'Tap lands to pay'} · ${esc(c.type)}</div><div class="response-bottom">${selectors}${paySelect}<button type="button" data-cast="${esc(a.id)}" ${!can?'disabled':''}>${a.sourceId?'ACTIVATE':'CAST'} ↗</button></div></article>`;
+}
+function render(){const s=game,p=scenarios[index];$('missionTier').textContent=p.tier.toUpperCase();$('missionNum').textContent=String(index+1).padStart(2,'0')+' / 12';$('scenarioTitle').textContent=p.title;
+ $('scenarioSelect').innerHTML=scenarios.map((o,i)=>`<option value="${i}" ${i===index?'selected':''}>${String(i+1).padStart(2,'0')} ${esc(o.title)}${progress[o.id]?' ★':''}</option>`).join('');
+ $('playerLife').textContent=s.life.player;$('opponentLife').textContent=s.life.opponent;$('manaPool').innerHTML=pips(s.mana);
+ $('priority').textContent=s.status==='playing'?'● PRIORITY: YOU':s.status==='won'?'✓ SURVIVED':'✕ DEFEATED';$('objective').textContent=objectiveText(s);$('objectiveShort').textContent=p.tier.toUpperCase();
+ $('battlefield').innerHTML=s.units.length?s.units.map(shortCard).join(''):'<span class="empty-creatures">No creatures in this case</span>';
+ $('lands').innerHTML=s.lands.length?s.lands.map(landCard).join(''):'<span class="empty-creatures">No lands needed — activate your creature’s ability</span>';
+ $('stackCount').textContent=String(s.stack.length).padStart(2,'0');$('stack').innerHTML=s.stack.length?[...s.stack].reverse().map(stackCard).join(''):'<li class="stack-empty">Empty stack</li>';
+ const remaining=s.hand.filter(a=>!s.used.includes(a.id)),ready=legalActions(s);$('handCount').textContent=remaining.length+' AVAILABLE';$('hand').classList.toggle('many',remaining.length>3);$('hand').innerHTML=remaining.map((a,i)=>handCard(a,i,ready)).join('')||'<span class="empty-creatures">Hand empty — pass priority to resolve the stack</span>';
+ $('passButton').disabled=s.status!=='playing';$('undoButton').disabled=!history.length;$('nextButton').textContent=s.status==='won'?(index===11?'FIRST CASE ↻':'NEXT CASE →'):'NEXT →';
+ $('resultMini').className='result-mini'+(s.status==='won'?' won':s.status==='lost'?' lost':'');$('resultEyebrow').textContent=s.status==='won'?'✓ CASE SOLVED':s.status==='lost'?'✕ TRY AGAIN':'YOUR MOVE';
+ $('resultTitle').textContent=s.status==='won'?'Click NEXT to continue':s.status==='lost'?'Reset or undo to retry':'Tap lands, then cast responses';
+ $('scenarioIntro').textContent=p.intro;$('objectiveLong').textContent=objectiveText(s);$('hintText').hidden=!hint;$('hintText').textContent=p.hint;$('hintButton').setAttribute('aria-expanded',String(hint));
+ $('resultExplanation').textContent=s.status==='playing'?'Complete the case to see the rules explanation.':p.explanation;
+ if(s.status==='won'){const stars=s.used.length<=2?3:2;progress[p.id]=Math.max(progress[p.id]||0,stars);save();$('resultStars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);}else $('resultStars').textContent='';
+ $('completed').textContent=Object.keys(progress).length+' / 12 SOLVED';$('log').innerHTML=s.log.slice(-14).reverse().map(x=>`<li>${esc(x)}</li>`).join('');$('version').textContent=RULES_VERSION;$('live').textContent=s.log.at(-1)||'Tap a land to produce mana.';
+}
+function notify(message){$('live').textContent=message;}
+function pushState(s){history.push(structuredClone(game));game=s;render()}
+function applyLand(id){try{pushState(tapLand(game,id));}catch(e){notify(e.message)}}
+function applyCast(id){try{const a=game.hand.find(x=>x.id===id);if(!a)return;const payment=a.sourceId?null:paymentOptions(game,CARDS[a.card].cost)[selectedPayments[id]??0];
+ const target=selectedTargets[id]??null;pushState(activate(game,id,target,payment?.spend??null));}catch(e){notify(e.message+ ' — tap the required lands first.')}}
+function applyPass(){try{pushState(pass(game))}catch(e){notify(e.message)}}
+function undo(){if(!history.length)return;game=history.pop();render()}
+$('lands').addEventListener('click',e=>{const btn=e.target.closest('[data-land]');if(btn)applyLand(btn.dataset.land)});
+$('hand').addEventListener('change',e=>{if(e.target.dataset.targetFor)selectedTargets[e.target.dataset.targetFor]=e.target.value;if(e.target.dataset.paymentFor)selectedPayments[e.target.dataset.paymentFor]=Number(e.target.value)});
+$('hand').addEventListener('click',e=>{const btn=e.target.closest('[data-cast]');if(btn)applyCast(btn.dataset.cast)});
+$('passButton').addEventListener('click',applyPass);$('undoButton').addEventListener('click',undo);$('restartButton').addEventListener('click',()=>changeCase(index));$('nextButton').addEventListener('click',()=>changeCase((index+1)%scenarios.length));
+$('scenarioSelect').addEventListener('change',e=>changeCase(Number(e.target.value)));
+$('hintButton').addEventListener('click',()=>{hint=!hint;render()});
+// Desktop HTML drag/drop: cards can be physically placed on the stack.
+$('hand').addEventListener('dragstart',e=>{const source=e.target.closest('[data-drag-card]');if(!source||game.status!=='playing'){e.preventDefault();return;}e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',source.dataset.dragCard);source.classList.add('dragging')});
+$('hand').addEventListener('dragend',()=>{$('stackDrop').classList.remove('drop-ready');$('hand').querySelectorAll('.dragging').forEach(n=>n.classList.remove('dragging'))});
+$('stackDrop').addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';$('stackDrop').classList.add('drop-ready')});
+$('stackDrop').addEventListener('dragleave',e=>{if(!$('stackDrop').contains(e.relatedTarget))$('stackDrop').classList.remove('drop-ready')});
+$('stackDrop').addEventListener('drop',e=>{e.preventDefault();$('stackDrop').classList.remove('drop-ready');const id=e.dataTransfer.getData('text/plain');if(id)applyCast(id)});
+// Touch/pen drag with a floating ghost; tap-to-cast button remains an accessible fallback.
+$('hand').addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'||e.target.closest('button,select,label,a'))return;const card=e.target.closest('[data-drag-card]');if(!card)return;dragTouch={id:card.dataset.dragCard,x:e.clientX,y:e.clientY,moved:false,ghost:null};});
+document.addEventListener('pointermove',e=>{if(!dragTouch)return;const d=dragTouch;if(!d.moved&&Math.hypot(e.clientX-d.x,e.clientY-d.y)>9){d.moved=true;d.ghost=document.createElement('div');d.ghost.className='drag-ghost';d.ghost.textContent=game.hand.find(a=>a.id===d.id)?.card||'SPELL';document.body.append(d.ghost)}
+ if(!d.moved)return;e.preventDefault();d.ghost.style.left=e.clientX+'px';d.ghost.style.top=e.clientY+'px';$('stackDrop').classList.toggle('drop-ready',!!document.elementFromPoint(e.clientX,e.clientY)?.closest('#stackDrop'));
+},{passive:false});
+function finishTouch(e){if(!dragTouch)return;const d=dragTouch;dragTouch=null;const onStack=d.moved&&!!document.elementFromPoint(e.clientX,e.clientY)?.closest('#stackDrop');d.ghost?.remove();$('stackDrop').classList.remove('drop-ready');if(onStack)applyCast(d.id);}
+document.addEventListener('pointerup',finishTouch);document.addEventListener('pointercancel',()=>{dragTouch?.ghost?.remove();dragTouch=null;$('stackDrop').classList.remove('drop-ready')});
+document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;
+ if(e.key===' '){e.preventDefault();applyPass()}else if(e.key.toLowerCase()==='z')undo();else if(/^[1-9]$/.test(e.key)){const a=game.hand.filter(x=>!game.used.includes(x.id))[Number(e.key)-1];if(a)applyCast(a.id)}});
+changeCase(0);
 </script></body></html>

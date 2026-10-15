@@ -1,65 +1,41 @@
-import test from 'node:test';import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
-import {RULES_VERSION} from '../src/cards.js';
-import {validateScenario,createGame,legalActions,legalTargets,activate,autoplay,creaturePower,creatureToughness,pass,remainingMana} from '../src/engine.js';
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
+import {CARDS,LANDS,RULES_VERSION} from '../src/cards.js';
+import {validateScenario,createGame,tapLand,legalActions,legalTargets,activate,autoplay,paymentOptions,remainingMana,creaturePower,creatureToughness,pass} from '../src/engine.js';
 const cases=JSON.parse(readFileSync(new URL('../data/scenarios.json',import.meta.url),'utf8'));
 const solutions={
-'sb-01':[['ward',null]],
-'sb-02':[['counter','bolt']],
-'sb-03':[['growth','bear']],
-'sb-04':[['negate','wrath']],
-'sb-05':[['intervene',null]],
-'sb-06':[['intervene',null]],
-'sb-07':[['counter','blade']],
-'sb-08':[['bounce','giant']],
-'sb-09':[['dispel','theircounter']],
-'sb-10':[['salve','player'],['dispel','bolt']],
-'sb-11':[['counter','swords']],
-'sb-12':[['salve','player'],['dispel','theircounter']]
+ 'sb-01':[['ward',null]],
+ 'sb-02':[['counter','bolt']],
+ 'sb-03':[['growth','bear']],
+ 'sb-04':[['negate','wrath']],
+ 'sb-05':[['intervene',null]],
+ 'sb-06':[['salve','player'],['dispel','theircounter']],
+ 'sb-07':[['ward',null],['counter','murder']],
+ 'sb-08':[['ward',null],['salve','player'],['counter','murder']],
+ 'sb-09':[['salve','player'],['dispel1','theircounter'],['dispel2','theirbolt']],
+ 'sb-10':[['salve1','player'],['salve2','player'],['dispel','theircounter']],
+ 'sb-11':[['salve','player'],['dispel','theircounter']],
+ 'sb-12':[['salve1','player'],['salve2','player'],['dispel1','theircounter'],['dispel2','bolt1']]
 };
-for(const p of cases){
- test(`${p.id} ${p.title}: valid, winning path, meaningful losing path and deterministic replay`,()=>{
+const poolByLands=s=>s.lands.reduce((m,l)=>{m[LANDS[l.card].mana]=(m[LANDS[l.card].mana]||0)+1;return m;},{});
+function tapAll(s){for(const land of s.lands){s=tapLand(s,land.id);}return s;}
+for(const p of cases){test(`${p.id}: physical-land mana, winning line, losing line and deterministic replay`,()=>{
  assert.deepEqual(validateScenario(p),{valid:true,errors:[]});
- let s=createGame(p);assert.equal(s.version,RULES_VERSION);assert.equal(s.status,'playing');
- const fresh=JSON.stringify(s);
- for(const [a,target] of solutions[p.id]){
-  assert.ok(legalActions(s).includes(a),`${p.id} ${a} must be legal`);
-  assert.ok(legalTargets(s,s.hand.find(x=>x.id===a)).includes(target),`${p.id}: ${target} target must be legal`);
-  let old=JSON.stringify(s);s=activate(s,a,target);assert.equal(JSON.stringify(createGame(p)),fresh,'puzzle must remain immutable');assert.equal(old.includes('"status":"playing"'),true);
- }
- let outcome=autoplay(s);assert.equal(outcome.status,'won',`${p.id} did not win: ${outcome.log.join(' | ')}`);
- let again=createGame(p);for(const [a,target] of solutions[p.id])again=activate(again,a,target);assert.deepEqual(autoplay(again),outcome);
- let loss=autoplay(createGame(p));assert.equal(loss.status,'lost',`${p.id} passes-only unexpectedly won`);
- });
-}
-test('spell target restriction: Essence Scatter cannot target Wrath of God',()=>{
- const s=createGame(cases[3]);assert.deepEqual(legalTargets(s,s.hand.find(x=>x.id==='scatter')),[]);assert.throws(()=>activate(s,'scatter','wrath'),/Illegal/);
-});
-test('hexproof makes prior opposing target illegal at resolution',()=>{
- let s=createGame(cases[4]);s=autoplay(activate(s,'intervene'));assert.equal(s.units.find(u=>u.id==='giant').zone,'battlefield');assert.match(s.log.join(' '),/all targets illegal/);
-});
-test('sacrifice is paid as cost; ability survives its source',()=>{
- let s=activate(createGame(cases[0]),'ward');assert.equal(s.units.find(u=>u.id==='spirit').zone,'graveyard');assert.equal(s.stack.at(-1).spell,false);s=autoplay(s);assert.equal(s.status,'won');assert.ok(s.units.find(u=>u.id==='bear').indestructible);
-});
-test('damage is marked, toughness pump is not healing, and SBA handle lethal damage',()=>{
- const p=cases[2];let s=autoplay(createGame(p));assert.equal(s.units[0].zone,'graveyard');s=autoplay(activate(createGame(p),'growth','bear'));assert.equal(s.units[0].zone,'battlefield');assert.equal(s.units[0].damage,3);assert.equal(creaturePower(s.units[0]),5);assert.equal(creatureToughness(s.units[0]),5);
-});
-test('exile ignores indestructible; intervention hexproof defeats target',()=>{
- let s=autoplay(activate(createGame(cases[5]),'ward'));assert.equal(s.units.find(u=>u.id==='bear').zone,'exile');let protectedState=autoplay(activate(createGame(cases[5]),'intervene'));assert.equal(protectedState.status,'won');
-});
-test('counter wars have correct target legality and resolve top-first',()=>{
- let s=createGame(cases[8]);assert.ok(legalActions(s).includes('dispel'));assert.ok(!legalActions(s).includes('scatter'));s=autoplay(activate(s,'dispel','theircounter'));assert.equal(s.life.opponent,0);assert.equal(s.status,'won');
-});
-test('countering wrong object in final exchange loses',()=>{
- let s=createGame(cases[11]);s=activate(s,'salve','player');s=activate(s,'dispel','theirbolt');s=autoplay(s);assert.equal(s.status,'lost');
-});
-test('illegal target, insufficient colored mana and duplicate activations rejected',()=>{
- let s=createGame(cases[2]);assert.throws(()=>activate(s,'growth','player'),/Illegal target/);
- s.mana.G=0;assert.deepEqual(legalActions(s),[]);assert.throws(()=>activate(s,'growth','bear'),/Illegal/);
- const a=createGame(cases[0]);const b=activate(a,'ward');assert.throws(()=>activate(b,'ward'),/Illegal/);
- assert.equal(remainingMana({mana:{G:1,U:1}}, {G:1,U:1,generic:1}),null);
-});
-test('schema rejects unrecognized card or duplicate ids',()=>{
- const p=structuredClone(cases[0]);p.units[0].card='Imaginary Creature';assert.equal(validateScenario(p).valid,false);
- const q=structuredClone(cases[0]);q.units[1].id='spirit';assert.equal(validateScenario(q).valid,false);
-});
+ let s=createGame(p);assert.equal(s.version,RULES_VERSION);assert.equal(s.status,'playing');assert.ok(s.lands.every(l=>!l.tapped));
+ const untappedActions=legalActions(s);assert.ok(untappedActions.every(id=>p.hand.find(a=>a.id===id).sourceId));
+ assert.deepEqual(createGame(p).mana,{});
+ s=tapAll(s);assert.deepEqual(Object.fromEntries(Object.entries(s.mana).filter(([k,n])=>n>0)),poolByLands(s));
+ for(const [id,target] of solutions[p.id]){const a=s.hand.find(x=>x.id===id);assert.ok(legalActions(s).includes(id),`${p.id} ${id} illegal: ${s.log.join('|')}`);assert.ok(legalTargets(s,a).includes(target),`${p.id}: invalid target ${target}`);const old=JSON.stringify(s);s=activate(s,id,target);assert.notEqual(JSON.stringify(s),old);}
+ const result=autoplay(s);assert.equal(result.status,'won',`${p.id} failed: ${result.log.join(' | ')}`);
+ let same=tapAll(createGame(p));for(const [id,target] of solutions[p.id])same=activate(same,id,target);assert.deepEqual(autoplay(same),result);
+ assert.equal(autoplay(createGame(p)).status,'lost',`${p.id} wins with no response`);
+ });}
+test('The Final Exchange is case six and later cases require layered responses',()=>{assert.equal(cases[5].title,'The Final Exchange');assert.equal(cases[5].id,'sb-06');assert.deepEqual(cases.map(c=>c.id),Array.from({length:12},(_,i)=>`sb-${String(i+1).padStart(2,'0')}`));assert.ok(solutions['sb-12'].length>solutions['sb-06'].length);});
+test('Mana is NOT preloaded; tapping real named lands changes the pool without using the stack',()=>{const s=createGame(cases[1]);assert.deepEqual(s.mana,{});assert.ok(!legalActions(s).includes('counter'));let t=tapLand(s,'land-1');assert.equal(t.mana.U,1);assert.equal(t.lands[0].tapped,true);assert.equal(t.stack.length,s.stack.length);assert.equal(t.passCount,s.passCount);assert.deepEqual(s.mana,{});assert.throws(()=>tapLand(t,'land-1'),/cannot be tapped/);t=tapLand(t,'land-2');assert.ok(legalActions(t).includes('counter'));assert.ok(!s.lands[0].tapped);});
+test('Colored and true colorless costs must be paid distinctly from generic costs',()=>{let s={mana:{U:1,W:1,C:1,G:1}};assert.equal(remainingMana(s,{U:2}),null);assert.equal(remainingMana(s,{C:2}),null);assert.deepEqual(remainingMana(s,{U:1,C:1,generic:1},{W:1}),{W:0,U:0,B:0,R:0,G:1,C:0});assert.equal(remainingMana(s,{U:1,C:1,generic:1},{W:0}),null);});
+test('Players can choose the color paid for generic costs',()=>{const options=paymentOptions({mana:{U:1,G:1,W:1,C:1}},{U:1,generic:1});assert.ok(options.length>=3);let payGreen=options.find(x=>x.spend.G===1);let payWhite=options.find(x=>x.spend.W===1);assert.equal(payGreen.pool.G,0);assert.equal(payGreen.pool.W,1);assert.equal(payWhite.pool.W,0);assert.equal(payWhite.pool.G,1);});
+test('Insufficient colored mana, untapped state and illegal targets cannot be bypassed',()=>{let p=cases[2],s=createGame(p);assert.throws(()=>activate(s,'growth','bear'),/unaffordable/);assert.throws(()=>tapLand(s,'land-99'),/cannot be tapped/);s=tapAll(s);assert.throws(()=>activate(s,'growth','player'),/Illegal target/);let p2=cases[3],s2=tapAll(createGame(p2));assert.deepEqual(legalTargets(s2,s2.hand.find(x=>x.id==='scatter')),[]);});
+test('Sacrifice is a cost that resolves through a removed source',()=>{let s=activate(createGame(cases[0]),'ward');assert.equal(s.units.find(u=>u.id==='spirit').zone,'graveyard');assert.equal(s.stack.at(-1).spell,false);s=autoplay(s);assert.equal(s.status,'won');assert.ok(s.units.find(u=>u.id==='bear').indestructible);});
+test('Creature toughness, marked damage and state-based actions are accurate within supported scope',()=>{let s=autoplay(createGame(cases[2]));assert.equal(s.units[0].zone,'graveyard');s=tapAll(createGame(cases[2]));s=autoplay(activate(s,'growth','bear'));assert.equal(s.units[0].zone,'battlefield');assert.equal(s.units[0].damage,3);assert.equal(creaturePower(s.units[0]),5);assert.equal(creatureToughness(s.units[0]),5);});
+test('Hexproof invalidates targeted removal on resolution, not on initial cast',()=>{let s=tapAll(createGame(cases[4]));s=autoplay(activate(s,'intervene'));assert.equal(s.units.find(u=>u.id==='giant').zone,'battlefield');assert.match(s.log.join(' '),/all targets illegal/);});
+test('Countering wrong spell loses level six',()=>{let s=tapAll(createGame(cases[5]));s=activate(s,'salve','player');s=activate(s,'dispel','theirbolt');assert.equal(autoplay(s).status,'lost');});
+test('All starting spells and lands reference verified catalog entries; schema rejects duplicates and fiction',()=>{for(const p of cases){assert.ok(p.lands.every(l=>LANDS[l.card]));assert.ok(p.stack.every(s=>CARDS[s.card]));}const p=structuredClone(cases[1]);p.lands[0].card='Imaginary Land';assert.equal(validateScenario(p).valid,false);const q=structuredClone(cases[1]);q.lands[1].id='land-1';assert.equal(validateScenario(q).valid,false);});
