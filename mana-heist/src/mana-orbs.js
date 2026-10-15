@@ -21,22 +21,26 @@ export function transitionOrbs(existing,action,resultingPool){
 export function consistent(pool,orbs){
  return COLORS.every(c=>orbs.filter(o=>o.color===c).length===(pool[c]||0));
 }
-export function renderSockets(target,pool,orbs,{pendingId=null}={}){
- const capacity=Math.max(7,orbs.length+2);
+export function renderLedger(target,pool,orbs,{pendingId=null,pendingIds=[]}={}){
+ const capacity=Math.max(6,Math.ceil(orbs.length/3)*3);
  target.innerHTML=Array.from({length:capacity},(_,i)=>{
-  const orb=orbs[i],color=orb?.color;
-  const cls=orb?"mana-socket filled"+(orb.id===pendingId?" awaiting-orb":""):"mana-socket empty";
-  return '<span class="'+cls+'" '+(orb?'data-orb-id="'+orb.id+'" data-color="'+color+'"':'')+
-   ' role="img" aria-label="'+(orb?LABELS[color]+" mana stored":"Empty mana socket")+'">'+
-   (orb?'<span class="socket-glow" style="--mana-color:'+THEME[color]+'"><span class="socket-core">'+color+'</span></span>':'<span class="socket-outline">◇</span>')+'</span>';
+  const orb=orbs[i],name=orb?LABELS[orb.color]:"Empty",color=orb?.color;
+  return '<span class="mana-ledger-entry '+(orb?"occupied":"vacant")+(orb&&(orb.id===pendingId||pendingIds.includes(orb.id))?" in-flight":"")+'"'+
+   (orb?' data-orb-id="'+orb.id+'" data-color="'+color+'"':'')+' role="img" aria-label="'+(orb?name+" mana":"Empty mana slot")+'">'+
+   (orb?'<span class="ledger-dot" style="--mana-color:'+THEME[color]+'">'+color+'</span><span class="ledger-word">'+name.toUpperCase()+'</span>':
+     '<span class="ledger-dot ledger-blank">·</span><span class="ledger-word">EMPTY</span>')+'</span>';
  }).join("");
 }
-export function sendOrb({color,sourceRect,id,layer,target}){
- const socket=target.querySelector('[data-orb-id="'+id+'"]');
- if(!socket){return;}
- const settle=()=>{if(socket.isConnected)socket.classList.remove("awaiting-orb");};
+export function sendOrb({color,sourceRect,id,layer,target,destination,onArrival}){
+ const socket=target?.querySelector('[data-orb-id="'+id+'"]');
+ const landing=destination||socket;
+ const settle=()=>{
+  if(socket?.isConnected)socket.classList.remove("in-flight");
+  if(typeof onArrival==="function")onArrival();
+ };
+ if(!landing){settle();return;}
  if(!sourceRect||typeof window==="undefined"||window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){settle();return;}
- const dest=socket.getBoundingClientRect();
+ const dest=landing.getBoundingClientRect();
  const start={x:sourceRect.left+sourceRect.width/2,y:sourceRect.top+sourceRect.height/2};
  const end={x:dest.left+dest.width/2,y:dest.top+dest.height/2};
  if(!Number.isFinite(start.x+start.y+end.x+end.y)){settle();return;}
