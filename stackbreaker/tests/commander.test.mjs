@@ -9,25 +9,25 @@ const read=n=>JSON.parse(readFileSync(new URL('../data/'+n,import.meta.url),'utf
 const original=[...read('scenarios.json'),...read('campaign-expansion.json')];
 const raw=[...original,...generateStages(original)];
 const scenes=raw.map((p,i)=>commanderScenario(p,i));
-test('250 preserved scenario identities and meaningful seven-card Commander hands',()=>{
+test('250 stable singleton puzzles with varied realistic Commander hands',()=>{
  assert.equal(scenes.length,250);
  assert.equal(scenes[5].id,'sb-06');
  assert.equal(scenes[5].title,'The Final Exchange');
  for(const p of scenes){
   assert.deepEqual(validateScenario(p),{valid:true,errors:[]},p.id);
-  assert.equal(p.hand.filter(a=>!a.sourceId).length,HAND_SIZE,p.id+' hand');
+  assert.ok(p.hand.filter(a=>!a.sourceId).length>=HAND_SIZE,p.id+' hand is too small');
   assert.equal(p.commanderPractice,true);
   for(const owner of ['player','opponent']){
    const names=[...p.units.filter(x=>x.controller===owner),...p.stack.filter(x=>x.controller===owner),...(owner==='player'?p.hand.filter(a=>!a.sourceId):[])].map(x=>x.card);
    assert.equal(names.length,new Set(names).size,p.id+' duplicate '+owner+' nonbasic');
   }
   for(const l of p.lands)assert.ok(LANDS[l.card]&&l.controller==='player');
-  for(const a of p.hand)assert.ok(CARDS[a.card],a.card);
+  for(const a of p.hand)assert.ok(CARDS[a.card]||LANDS[a.card],a.card);
   // Abilities in the activation list refer to the one real battlefield copy.
   for(const a of p.hand.filter(a=>a.sourceId))assert.ok(p.units.some(u=>u.id===a.sourceId&&u.card===a.card));
  }
 });
-test('all 250 commander hands preserve deterministic winning lines, with multiple affordable decisions',()=>{
+test('all 250 mixed hands preserve deterministic winning lines and available responses',()=>{
  let alternateCount=0,anyPlayable=0;
  for(const p of scenes){
   let s=createGame(p);

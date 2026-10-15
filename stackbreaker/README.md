@@ -1,3 +1,5 @@
+# Stackbreaker 1.2 — Realistic Mixed Commander Hands
+
 # Stackbreaker 1.1 — Commander Singleton Choice Hands
 
 # Stackbreaker 1.0 — Five Galaxies · 25 Worlds · 250 Stages
@@ -35,3 +37,8 @@ Five galaxies × five worlds × ten levels each. Original thirty stages and loca
 
 ## Commander training mode
 Each live training window now has seven distinct physical spells in hand, including situational and decoy answers. Nonbasic card names do not repeat within either player's represented permanents, spells and hand; basic lands may repeat. Five original duplicate-hand lessons substitute relevant real cards (for example, Arcane Denial for repeated Dispel), while maintaining stable solution action IDs and previously earned stars. Each encounter has enough lands to cover its vetted solution and optional response decisions. Card choice is deliberate, never automatic. This is one-turn Commander-style singleton practice—not a simulated 100-card deck, color-identity check against a specific commander, or a four-player Commander rules engine.
+
+## Mixed Commander hands and timing
+Every puzzle now has a seven-card-or-larger singleton response hand with actual basic land cards, a real creature and an enchantment, plus interaction. Some hands have a Commander artifact or sorcery. Later boss levels that already require five responses may have eight cards; this is a tactical snapshot rather than a claim that every player starts with eight. Basic land cards in hand are NOT mana already on the battlefield. Unless it is your main phase with an empty stack, lands cannot be played. Ordinary creatures, artifacts, sorceries and enchantments cannot be cast during an opposing stack-response window; actual flash creatures may be cast if mana is available. Enchantments with ongoing triggers are reference choices only in these response puzzles, never assumed to auto-trigger without a complete engine. The interactive card art comes from Scryfall in chunks of at most 50 identifiers. The 250 scenario solutions and progress IDs remain stable.
+
+This still is not four-player Commander, a complete 100-card deck simulation, or commander color-identity enforcement.

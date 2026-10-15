@@ -1,5 +1,5 @@
 import {CARDS,LANDS,RULES_VERSION,cardLink} from './cards.js';
-import {createGame,tapLand,activate,pass,paymentOptions,legalActions,legalTargets,creaturePower,creatureToughness,labelTarget} from './engine.js';
+import {createGame,tapLand,playLand,activate,pass,paymentOptions,legalActions,legalTargets,creaturePower,creatureToughness,labelTarget} from './engine.js';
 import coreScenarios from '../data/scenarios.json' with {type:'json'};
 import campaignExpansion from '../data/campaign-expansion.json' with {type:'json'};
 import {GALAXIES,makeWorlds,generateStages} from './galaxies.js';
@@ -67,13 +67,20 @@ async function fetchScryfallCatalog(){
  }catch{}
  assetStatus('LOADING SCRYFALL…');
  try{
-  const res=await fetch('https://api.scryfall.com/cards/collection',{
-   method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},
-   body:JSON.stringify({identifiers:names.map(name=>({name}))})});
-  if(res.status===429||res.status===403){assetStatus('SCRYFALL TEMPORARILY UNAVAILABLE');return;}
-  if(!res.ok)throw Error('Scryfall collection HTTP '+res.status);
-  const doc=await res.json();if(!Array.isArray(doc.data))throw Error('Invalid card collection');
-  putScryfallCards(doc.data);
+  // Scryfall collection accepts at most 75 identifiers; use 50-card
+  // requests to accommodate creature/enchantment/artifact-heavy decks.
+  for(let i=0;i<names.length;i+=50){
+   const group=names.slice(i,i+50).filter(name=>!scryfallCatalog.has(name));
+   if(!group.length)continue;
+   const res=await fetch('https://api.scryfall.com/cards/collection',{
+    method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify({identifiers:group.map(name=>({name}))})});
+   if(res.status===429||res.status===403)throw Error('Scryfall temporarily unavailable');
+   if(!res.ok)throw Error('Scryfall collection HTTP '+res.status);
+   const doc=await res.json();if(!Array.isArray(doc.data))throw Error('Invalid card collection');
+   putScryfallCards(doc.data);
+   if(i+50<names.length)await new Promise(resolve=>setTimeout(resolve,120));
+  }
  }catch(error){
   // A few browser configurations block cross-origin POST. Fallback: Scryfall's
   // read-only named endpoint, sequential at <10 requests/s, without retry loops.
@@ -162,7 +169,10 @@ function stackCard(item,i){
  return `<li class="stack-entry ${i===0?'on-top':''}" data-stack-target="${esc(item.id)}"><span class="stack-rank">${i===0?'TOP':i+1}</span><span class="stack-art">${thumb(item.card,'art','stack-art-image')}</span><div class="stack-details"><b>${esc(item.card)}${item.spell===false?' · ABILITY':''}</b><span class="stack-oracle">${esc(ability)}</span><small>${item.controller==='player'?'YOU':'OPPONENT'}${item.targetId?' → '+esc(labelTarget(game,item.targetId)):''}</small></div></li>`;
 }
 function handCard(a){
- return `<div class="hand-card ${armedCard===a.id?'armed':''}" data-drag-card="${esc(a.id)}" draggable="true" role="button" tabindex="0" aria-label="${esc(a.card)}. Drag to stack or battlefield to cast. Press Enter to select a card, then Enter over the stack to play.">${thumb(a.card,'normal','hand-image')}</div>`;
+ const card=CARDS[a.card],land=!!LANDS[a.card];
+ const kind=land?'Land':card?.type||'Card';
+ const guidance=land?'Play on your main phase with an empty stack.':card?.flash||card?.type==='Instant'?'May be cast while responding.':'Normally requires your main phase and an empty stack.';
+ return `<div class="hand-card ${armedCard===a.id?'armed':''}" data-drag-card="${esc(a.id)}" draggable="true" role="button" tabindex="0" aria-label="${esc(a.card)}. ${esc(kind)}. ${guidance}">${thumb(a.card,'normal','hand-image')}</div>`;
 }
 function renderPlayPrompt(){
  const el=$('playPrompt');if(!el)return;
@@ -187,9 +197,20 @@ function chooseTarget(target){if(!pendingPlay||pendingPlay.phase!=='target'||!pe
 function choosePayment(i){const p=pendingPlay;if(!p||p.phase!=='payment'||!p.payments[i])return;
  pendingPlay=null;submitCast(p.id,p.target,p.payments[i].spend);
 }
-function beginPlay(id,dropTarget=null,requireDirectTarget=false){
- const action=game.hand.find(a=>a.id===id&&!a.sourceId&&!game.used.includes(a.id));if(!action){notify('Only spells in your hand can be dragged.');return;}
- if(!legalActions(game).includes(id)){notify('Tap enough lands to pay this card’s mana cost, or check its legal targets.');return;}
+function beginPlay(id,dropTarget=null,requireDirectTarget=false,dropZone=null){
+ const action=game.hand.find(a=>a.id===id&&!a.sourceId&&!game.used.includes(a.id));if(!action){notify('That card is unavailable.');return;}
+ if(LANDS[action.card]){
+  if(dropZone&&dropZone!=='fieldDrop'){notify('A land can only be played onto the battlefield, not onto the stack.');return;}
+  try{pushState(playLand(game,id));notify('Land played without using the stack.');}
+  catch(error){notify(error.message);}
+  return;
+ }
+ if(!legalActions(game).includes(id)){
+  const c=CARDS[action.card];
+  const mainOnly=c&&(c.type.startsWith('Creature')||c.type.startsWith('Enchantment')||c.type.startsWith('Artifact')||c.type.startsWith('Sorcery'))&&!c.flash;
+  notify(mainOnly?'That card cannot be cast while responding. Normally you must wait for your own main phase and an empty stack.':'This card needs enough mana, a legal target, and the correct timing.');
+  return;
+ }
  const targets=legalTargets(game,action),payments=paymentOptions(game,CARDS[action.card].cost);
  if(!targets.length||!payments.length){notify('No legal target or mana payment.');return;}
  const targeted=targets.some(target=>target!==null);
@@ -257,10 +278,11 @@ function render(){closeCardPreview();const s=game,p=scenarios[index],worldIndex=
  $('scenarioSelect').innerHTML=scenarios.map((o,i)=>`<option value="${i}" ${i===index?'selected':''}>${Math.floor(i/50)+1}.${Math.floor(i%50/10)+1}-${i%10+1} ${esc(o.title)}${progress[o.id]?' ★':''}</option>`).join('');
  $('playerLife').textContent=s.life.player;$('opponentLife').textContent=s.life.opponent;$('manaPool').innerHTML=pips(s.mana);
  $('priority').textContent=s.status==='playing'?'● PRIORITY: YOU':s.status==='won'?'✓ SURVIVED':'✕ DEFEATED';$('objective').textContent=objectiveText(s);$('objectiveShort').textContent=p.tier.toUpperCase();
- $('battlefield').innerHTML=s.units.filter(u=>u.zone==='battlefield').length?s.units.filter(u=>u.zone==='battlefield').map(shortCard).join(''):'<span class="empty-creatures">No creatures in this case</span>';
+ const activeCreatures=s.units.filter(u=>u.zone==='battlefield'),activeEnchantments=(s.enchantments||[]).filter(e=>e.zone==='battlefield');
+ $('battlefield').innerHTML=[...activeCreatures.map(shortCard),...activeEnchantments.map(e=>`<div class="battle-card" role="img" aria-label="${esc(e.card)}, enchantment on battlefield">${thumb(e.card,'normal','battle-image')}</div>`)].join('')||'<span class="empty-creatures">No permanents in this case</span>';
  $('lands').innerHTML=s.lands.length?s.lands.map(landCard).join(''):'<span class="empty-creatures">No lands needed — activate your creature’s ability</span>';
  $('stackCount').textContent=String(s.stack.length).padStart(2,'0');$('stack').innerHTML=s.stack.length?[...s.stack].reverse().map(stackCard).join(''):'<li class="stack-empty">Empty stack</li>';
- const remaining=s.hand.filter(a=>!a.sourceId&&!s.used.includes(a.id));$('handCount').textContent=remaining.length+' UNIQUE CARDS';$('hand').classList.toggle('many',remaining.length>3);$('hand').innerHTML=remaining.map(handCard).join('')||'<span class="empty-creatures">No spells in hand</span>';
+ const remaining=s.hand.filter(a=>!a.sourceId&&!s.used.includes(a.id));$('handCount').textContent=remaining.length+' CARDS';$('hand').classList.toggle('many',remaining.length>3);$('hand').innerHTML=remaining.map(handCard).join('')||'<span class="empty-creatures">Your hand is empty</span>';
  $('passButton').disabled=s.status!=='playing';$('undoButton').disabled=!history.length;$('prevButton').disabled=index===0;$('prevButton').textContent='← PREV';$('nextButton').disabled=index===scenarios.length-1;$('nextButton').textContent=index%10===9?'NEXT WORLD →':'NEXT →';$('mapButton').setAttribute('aria-label',`Open chapter map for ${chapters[worldIndex].name}`);
  $('resultMini').className='result-mini'+(s.status==='won'?' won':s.status==='lost'?' lost':'');$('resultEyebrow').textContent=s.status==='won'?'✓ CASE SOLVED':s.status==='lost'?'✕ TRY AGAIN':'YOUR MOVE';
  $('resultTitle').textContent=s.status==='won'?(index%10===9?'★ Chapter completed — claim your flag on the map!':'Next case is ready'):s.status==='lost'?'Reset or undo to retry':'Tap lands, drag a spell, or activate a creature';
@@ -391,7 +413,7 @@ for(const zone of [$('stackDrop'),$('fieldDrop')]){
  zone.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';updateDragFeedback(e.target);});
  zone.addEventListener('dragleave',e=>{if(!zone.contains(e.relatedTarget))updateDragFeedback(null);});
  zone.addEventListener('drop',e=>{e.preventDefault();const id=e.dataTransfer.getData('text/plain');const target=targetFromElement(e.target);
-  clearDragFeedback();if(id)beginPlay(id,target,true);});
+  clearDragFeedback();if(id)beginPlay(id,target,true,zone.id);});
 }
 // Touch/pen dragging uses pointer coordinates instead of unreliable native HTML
 // drag/drop. The dragged card is non-interactive so the target underneath glows.
@@ -407,7 +429,7 @@ function finishTouch(e){if(!dragTouch)return;const d=dragTouch;dragTouch=null;
  const el=d.moved?document.elementFromPoint(e.clientX,e.clientY):null;
  const zone=el?.closest?.('#stackDrop,#fieldDrop');const target=targetFromElement(el);
  d.ghost?.remove();clearDragFeedback();
- if(zone)beginPlay(d.id,target,true);
+ if(zone)beginPlay(d.id,target,true,zone.id);
  flushScryfallRefresh();
 }
 document.addEventListener('pointerup',finishTouch);
@@ -419,7 +441,7 @@ document.addEventListener('pointercancel',()=>{
 });
 // Accessible non-pointer alternative: focus a hand card, press Enter, focus battlefield/stack, press Enter.
 $('hand').addEventListener('keydown',e=>{const card=e.target.closest('[data-drag-card]');if(card&&['Enter',' '].includes(e.key)){e.preventDefault();armedCard=card.dataset.dragCard;render();notify('Card selected. Focus the battlefield or stack and press Enter to place it.');}});
-for(const zone of [$('stackDrop'),$('fieldDrop')])zone.addEventListener('keydown',e=>{if(armedCard&&['Enter',' '].includes(e.key)){e.preventDefault();beginPlay(armedCard);}});
+for(const zone of [$('stackDrop'),$('fieldDrop')])zone.addEventListener('keydown',e=>{if(armedCard&&['Enter',' '].includes(e.key)){e.preventDefault();beginPlay(armedCard,null,false,zone.id);}});
 document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;
  if(e.key==='Escape'&&pendingPlay){pendingPlay=null;render();return;}
  if(e.key===' '&&document.activeElement===document.body){e.preventDefault();applyPass();}

@@ -23,7 +23,7 @@ export function validateScenario(p){
  for(const l of lands){say(!!LANDS[l.card],`unknown land ${l.card}`);say(l.controller==='player',`only player lands are supported`);say(l.tapped===undefined||typeof l.tapped==='boolean',`invalid tapped flag`);}say(ids.every(validId)&&unique(ids),'duplicate or bad object ids');
  for(const u of units){say(!!CARDS[u.card]&&isCreature(u.card),`unknown creature ${u.card}`);say(['player','opponent'].includes(u.controller),'bad unit controller');say(!u.zone||u.zone==='battlefield','bad starting zone');}
  for(const x of stack){say(!!CARDS[x.card],`unknown stack card ${x.card}`);say(['player','opponent'].includes(x.controller),'bad stack controller');say(!isCreature(x.card)||x.spell===true,'creature abilities need explicit support');}
- for(const a of hand){say(!!CARDS[a.card],`unknown hand card ${a.card}`);say(!isCreature(a.card)||!!a.sourceId,'only activated creature abilities in hand');if(a.sourceId)say(units.some(u=>u.id===a.sourceId&&u.card===a.card&&u.controller==='player'),'bad ability source');}
+ for(const a of hand){say(!!(CARDS[a.card]||LANDS[a.card]),`unknown hand card ${a.card}`);if(a.sourceId)say(isCreature(a.card)&&units.some(u=>u.id===a.sourceId&&u.card===a.card&&u.controller==='player'),'bad ability source');}
  const allTargets=[...units.map(u=>u.id),...stack.map(x=>x.id),'player','opponent'];
  for(const x of stack)say(!CARDS[x.card]?.targetRule||allTargets.includes(x.targetId),`bad stack target ${x.id}`);
  say(['survive','keepN','keepUnit','win','winKeepUnit','saveFromGraveyard'].includes(p.objective?.type),'bad objective');
@@ -32,7 +32,7 @@ export function validateScenario(p){
  return{valid:problems.length===0,errors:problems};
 }
 export function createGame(p){let v=validateScenario(p);if(!v.valid)fail(`Invalid ${p?.id}: ${v.errors.join('; ')}`);
- const s=clone(p);s.lands=s.lands.map(l=>({tapped:false,...l}));s.units=s.units.map(u=>({zone:'battlefield',damage:0,powerBoost:0,toughnessBoost:0,hexproof:false,indestructible:false,...u}));
+ const s=clone(p);s.enchantments=s.enchantments||[];s.landPlayed=false;s.lands=s.lands.map(l=>({tapped:false,...l}));s.units=s.units.map(u=>({zone:'battlefield',damage:0,powerBoost:0,toughnessBoost:0,hexproof:false,indestructible:false,...u}));
  s.stack=s.stack.map(x=>({...x,spell:x.spell!==false}));s.used=[];s.passCount=1;s.currentActor='player';s.log=['Opponent passes priority to you.'];s.status='playing';s.step=0;return s;
 }
 export const creaturePower=u=>CARDS[u.card].power+(u.powerBoost||0);
@@ -87,6 +87,17 @@ export function tapLand(s0,landId){
  return s;
 }
 
+// Land plays are special actions, never spells or stack objects (rule 305).
+// Response snapshots have no main phase, so a land in hand is not a free mana source.
+export function playLand(s0,handId){
+ if(s0.status!=='playing'||s0.currentActor!=='player'||s0.activeActor!=='player'||
+    s0.phase!=='main'||s0.stack.length!==0||s0.landPlayed)fail('You can only play one land during your own main phase with an empty stack.');
+ const a=s0.hand.find(x=>x.id===handId&&!s0.used.includes(x.id));
+ if(!a||!LANDS[a.card]||a.sourceId)fail('This is not an available land card.');
+ const s=clone(s0);s.landPlayed=true;s.lands.push({id:'played-'+a.id,card:a.card,controller:'player',tapped:false});
+ s.used.push(a.id);s.log.push(`Played ${a.card} as a land for the turn. This does not use the stack.`);
+ return s;
+}
 function legalTarget(s,item,targetId){const rule=CARDS[item.card].targetRule;
  if(!rule)return targetId==null;
  if(!targetId)return false;
@@ -110,10 +121,12 @@ export function legalTargets(s,action){const card=CARDS[action.card];if(!card)re
  return candidates.filter(targetId=>rule==='any'?targetId==='player'||targetId==='opponent'||legalCreatureTarget(s,{controller:'player'},targetId):legalTarget(s,{...action,controller:'player'},targetId));
 }
 export function legalActions(s){if(s.status!=='playing'||s.currentActor!=='player')return[];
- return s.hand.filter(a=>!s.used.includes(a.id)&&
+ return s.hand.filter(a=>!s.used.includes(a.id)&&!!CARDS[a.card]&&
   (a.sourceId?s.units.some(u=>u.id===a.sourceId&&u.zone==='battlefield'&&u.controller==='player'):
    paymentOptions(s,CARDS[a.card].cost).length>0 &&
-   (!(isCreature(a.card)||CARDS[a.card].type==='Sorcery')||(s.activeActor==='player'&&s.stack.length===0)))&&
+   (CARDS[a.card].type==='Instant'||CARDS[a.card].flash===true||
+    (!(isCreature(a.card)||CARDS[a.card].type.startsWith('Sorcery')||CARDS[a.card].type.startsWith('Enchantment')||CARDS[a.card].type.startsWith('Artifact'))||
+    (s.activeActor==='player'&&s.stack.length===0&&s.phase==='main'))))&&
   legalTargets(s,a).length>0).map(a=>a.id);
 }
 export function activate(s0,actionId,targetId=null,genericSpend=null){if(!legalActions(s0).includes(actionId))fail('Illegal or unaffordable action');
@@ -125,6 +138,7 @@ export function activate(s0,actionId,targetId=null,genericSpend=null){if(!legalA
 }
 export function labelTarget(s,id){if(id==='player')return'you';if(id==='opponent')return'opponent';return s.units.find(u=>u.id===id)?.card || s.stack.find(x=>x.id===id)?.card ||id;}
 function resolve(s,item){const c=CARDS[item.card],target=item.targetId;
+ if(item.spell&&c.type==='Enchantment'){s.enchantments.push({id:'permanent-'+item.id,card:item.card,controller:item.controller,zone:'battlefield'});s.log.push(`${item.card} resolves and enters the battlefield as an enchantment.`);return;}
  if(item.spell&&isCreature(item.card)){s.units.push({id:'permanent-'+item.id,card:item.card,controller:item.controller,zone:'battlefield',damage:0,powerBoost:0,toughnessBoost:0,indestructible:false,hexproof:false});s.log.push(`${item.card} resolves and enters the battlefield.`);return;}
  if((c.targetRule||c.effect==='damage'||c.effect==='helix')&&!((c.effect==='damage'||c.effect==='helix')?(target==='player'||target==='opponent'||legalCreatureTarget(s,item,target)):legalTarget(s,item,target))){s.log.push(`${item.card}: all targets illegal on resolution; spell/ability does not resolve (608.2b).`);return;}
  switch(c.effect){
