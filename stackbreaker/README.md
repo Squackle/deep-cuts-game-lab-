@@ -1,4 +1,4 @@
-# Stackbreaker 0.3 — Tap. Cast. Survive.
+# Stackbreaker 0.4 — Tap. Cast. Survive.
 
 An **unofficial, limited Magic: The Gathering tactical training tool** on the independent Deep Cuts Game Lab site.
 
@@ -6,7 +6,7 @@ Permanent Lab URL: https://deep-cuts-game-lab.pages.dev/stackbreaker/
 
 **Core promise:** One turn to live. Find the response that changes everything.
 
-## New in 0.3
+## 0.3 gameplay carried forward
 
 - **Real named land cards:** Plains, Island, Swamp, Mountain, Forest and Wastes (curated basic mana abilities only). Tap an untapped land to add a specific color of mana to the pool; it becomes tapped and cannot be tapped again. The action is reversible through Undo, and mana abilities do not use the stack.
 - **Manual, rules-enforced mana payment:** Spells do not become affordable until the player taps sufficient lands; colored pips and explicit colorless costs are checked; alternate payments for generic costs appear in the spell's payment selector when relevant. Spent mana comes from the visible pool, and excess floating mana remains available within the priority window.
@@ -27,9 +27,16 @@ Permanent Lab URL: https://deep-cuts-game-lab.pages.dev/stackbreaker/
 - Engine suite: `node --test tests/engine.test.mjs` — 22 tests passing. Includes all 12 puzzle win/loss paths, deterministic replay, land tapping, color and generic payment, targeting, sacrifice, state-based damage, hexproof and countering.
 - Browser suite: `python tests/browser_smoke.py` — Chromium viewport checks at 320×568, 390×844, 768×900 and 1280×900; desktop HTML drag, touch-pointer drag, first real mana payment, complete level-six victory, Next Case, no clipped core controls, no JS exceptions.
 - Build: `python build.py` produces self-contained `index.html` from `template.html`, `styles.css`, `src/{cards,engine,ui}.js`, and `data/scenarios.json`. Static Cloudflare Pages hosting uses the compiled file directly. No account or storage service required; completion stars are local to the browser.
-- **Limited scope:** One scripted two-player priority window with a pass-only opponent. No full Magic game simulation, combat, complex layers, four-player priority, triggered abilities, official card art, judge rulings or user-supplied decks.
-- Card names/stats/rules are curated references. All frames, visual ornament and symbols are original stylized UI; card reference links open Scryfall. Do not describe this as an official Wizards or Scryfall product.
+- **Limited scope:** One scripted two-player priority window with a pass-only opponent. No full Magic game simulation, combat, complex layers, four-player priority, triggered abilities, judge rulings or user-supplied decks. Card artwork is now supplied dynamically by Scryfall in version 0.4.
+- Card names/stats/rules are curated references. The surrounding interface and ornament are original; Magic card artwork is provided by Scryfall (copyright Wizards of the Coast and respective artists); reference links open Scryfall. Do not describe this as an official Wizards or Scryfall product.
 
 ## Release boundary
 
-Only `stackbreaker/**` in `Squackle/deep-cuts-game-lab-`. Do not modify Hive Run, Mana Heist, the production `Squackle/deep-cuts-edh` Arcade, site accounts, D1, score stores or other games. Roll back by reverting the specific Stackbreaker 0.3 PR, preserving concurrent Lab work.
+Only `stackbreaker/**` in `Squackle/deep-cuts-game-lab-`. Do not modify Hive Run, Mana Heist, the production `Squackle/deep-cuts-edh` Arcade, site accounts, D1, score stores or other games. Roll back by reverting the specific Stackbreaker 0.4 PR, preserving concurrent Lab work.
+
+
+## Scryfall card imagery (0.4)
+
+Every supported card and basic land is looked up at startup using Scryfall’s `/cards/collection` endpoint (one batched request). The returned `image_uris.small` are shown for hand, battlefield and lands; `image_uris.art_crop` is shown in stack entries, with an immediate full `image_uris.normal` preview when hovering the artwork. Moving the pointer off the image dismisses the preview. Touch/keyboard alternatives are supported. Scryfall Oracle text appears under each stack card title. Images/metadata are cached in localStorage for 24 hours; the curated engine remains authoritative for rules simulation. If the collection endpoint is unavailable, the UI tries paced individual named lookups; when both are unreachable the game remains playable with placeholders and its existing rules-text catalog.
+
+Scryfall-supplied art crops have full-card hover previews and artist/copyright credit beside the full card. The full card scans are not cropped or distorted. This is unofficial fan-developed training content; official Magic images remain copyright of Wizards of the Coast and their artists. Do not claim any endorsement.

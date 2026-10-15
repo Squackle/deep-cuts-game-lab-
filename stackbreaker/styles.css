@@ -26,3 +26,46 @@
 @media(max-width:500px){.game-controls{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) 43px 43px 65px}}
 .game-screen{grid-template-columns:minmax(0,1fr)}
 @media(max-width:500px){.mission-id{max-width:none;min-width:0;flex:1 1 0}.mission-id strong{min-width:0;max-width:100%}.mission-picker{flex:0 0 auto}.mission-picker select{width:82px}}
+
+/* Scryfall card imagery: preserve original card images (no skew, text or copyright crop).
+ * The only artwork-only thumbnails are Scryfall-provided art_crop renditions. */
+.stack-meta{font-size:8px!important;letter-spacing:.02em;color:#9fc4b5!important}
+.stack-entry{gap:5px;overflow:hidden}
+.stack-rank{flex:0 0 auto}
+.stack-art{width:48px;min-width:48px;height:38px;display:flex;align-items:center;justify-content:center;background:#15282b;border:1px solid #647e77;border-radius:3px;overflow:hidden}
+.stack-art-image{width:100%;height:100%;object-fit:contain;cursor:zoom-in}
+.stack-details{display:flex;min-width:0;flex:1;flex-direction:column;gap:1px;justify-content:center}
+.stack-oracle{font:10px/1.14 Georgia,serif;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-clamp:2;overflow:hidden;color:#f3dcc2}
+.stack-entry small{font-size:8px}
+.stack-entry a{flex:0 0 auto}
+.image-pending{display:inline-flex;align-items:center;justify-content:center;color:#e9d9aa;background:#263c39;font-size:13px}
+.battle-card{position:relative;isolation:isolate}
+.battle-image{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;opacity:.95;z-index:-1}
+.battle-card header,.battle-card .flags,.battle-card .pt{position:relative;text-shadow:0 1px 2px #000,0 2px 5px #000,1px 0 4px #000,-1px 0 4px #000;color:#fff;background:#07171683;border-radius:2px}
+.battle-card header{padding:1px 2px}
+.battle-card .flags{max-width:100%}
+.land-card{isolation:isolate;background:#172a2b;padding:1px}
+.land-image{position:absolute;inset:1px;width:calc(100% - 2px);height:calc(100% - 2px);object-fit:contain;z-index:-1;opacity:1}
+.land-card .land-name,.land-card .tap-label{position:relative;background:#071b1cdb;text-shadow:0 1px 3px #000;padding:1px 2px;border-radius:2px;max-width:100%}
+.land-card.tapped{filter:brightness(.68) saturate(.6);transform:rotate(-6deg)}
+.response-card{isolation:isolate}
+.response-image{position:absolute;left:3px;top:3px;width:30%;height:calc(100% - 6px);object-fit:contain;object-position:center center;z-index:0;cursor:zoom-in}
+.response-card .response-head,.response-card .oracle-preview,.response-card .response-steps,.response-card .response-bottom{position:relative;margin-left:31%;min-width:0}
+.response-card .response-head{flex-wrap:wrap;gap:0}
+.response-card strong{font-size:clamp(9px,.95vw,13px)}
+.response-card .oracle-preview{line-height:1.14}
+.response-card .response-bottom{flex-wrap:wrap;justify-content:space-between}
+.card-preview{position:fixed;z-index:5000;width:min(230px,75vw);max-height:min(352px,92dvh);overflow:hidden;border:1px solid #d9c38c;background:#0d1c1e;border-radius:7px;box-shadow:0 12px 30px #000e;padding:5px;pointer-events:none;text-align:center}
+.card-preview img{width:100%;display:block;object-fit:contain;max-height:min(308px,75dvh);aspect-ratio:488/680}
+.card-preview-title{font-weight:700;font-size:10px;margin-top:2px}.card-preview small{color:#cfc5a9;font-size:8px;display:block}.card-preview a{display:none}
+@media(max-width:840px){.stack-art{width:35px;min-width:35px;height:29px}.stack-oracle{font-size:8px}.stack-entry small{font-size:7px}.stack-meta{font-size:7px!important}.response-card .oracle-preview{font-size:8px}.response-card .response-head .mana-row{transform:scale(.72)}}
+@media(max-width:500px){.stack-art{width:31px;min-width:31px;height:27px}.stack-oracle{font-size:7px;-webkit-line-clamp:2}.stack-entry b{font-size:9px}.stack-rank{width:21px}.stack-entry a{font-size:10px}.response-image{left:2px;width:24%;height:calc(100% - 4px)}.response-card .response-head,.response-card .oracle-preview,.response-card .response-steps,.response-card .response-bottom{margin-left:25%}.response-card strong{font-size:9px}.response-card .response-head{max-height:23px}.response-card .oracle-preview{font-size:8px}.response-card .response-bottom{min-height:0}.response-card .response-bottom button{margin-left:auto}.land-card .land-name{font-size:8px}.land-card .tap-label{font-size:7px}.stack-meta{font-size:6px!important}.hand-row.many .response-card .response-head strong{font-size:8px}}
+@media(max-height:710px){.stack-oracle{font-size:8px;-webkit-line-clamp:2}.stack-entry small{display:none}.stack-art{height:25px;width:32px;min-width:32px}.stack-entry{flex:0 1 29px}}
+/* Preserve each full card's printed artist/copyright line unobstructed. */
+.land-card:has(img.land-image) .land-name{display:none}
+.land-card img.land-image{top:0;bottom:auto;height:calc(100% - 16px);object-fit:contain}
+.land-card .tap-label{margin-top:auto;min-height:12px;z-index:1}
+.battle-card:has(img.battle-image) header{display:none}
+.battle-card img.battle-image{top:0;bottom:auto;height:calc(100% - 17px);object-fit:contain}
+.battle-card:has(img.battle-image) .flags,.battle-card:has(img.battle-image) .pt{z-index:1}
+.battle-card:has(img.battle-image) .flags{margin-top:auto}
