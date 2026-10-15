@@ -14,7 +14,7 @@ export const BRIEFINGS=Object.freeze({
   mechanics:Object.freeze(["BROOD SEAL · Every 10 active seconds, seals up to 3 nearby tiles.","Tiles warn for 1.4 seconds, then block your path for 3.5 seconds.","Three captures to win. The Warden predicts escape routes."]),
   tip:"Keep a retreat lane. The marked tiles are about to become solid."}),
  broodmother:Object.freeze({name:"BROODMOTHER",rank:"FULL BOSS",title:"MOTHER OF THE DEEP",tag:"ANCIENT HIVE SOVEREIGN",captures:3,accent:"#b8a47c",
-  mechanics:Object.freeze(["EGG BLOOM · Every 6.5 active seconds, marks up to four eggs.","After 1.4 seconds, safe eggs hatch into slow crawling obstacles.","Hatchlings move every 9 beats and disappear after 72 beats. The Broodmother moves more slowly; trap her three times."]),
+  mechanics:Object.freeze(["EGG BLOOM · Every 6.5 active seconds, marks up to four eggs.","After 1.4 seconds, safe eggs hatch into slow crawling obstacles.","Hatchlings crawl every 9 beats, then fade after 72. Trap the slower Broodmother three times."]),
   tip:"Watch the cracking eggs. Hatchlings move slowly and block your path, but will not jump onto your head."}),
  guardian:Object.freeze({name:"RIFT GUARDIAN",rank:"FULL BOSS",title:"THE FRACTURED DEPTH",tag:"VOID SENTINEL",captures:3,accent:"#bc9cc9",
   mechanics:Object.freeze(["RIFT PULSE · Every 4 active seconds, threatens up to 4 tiles.","Tiles warn for 1.4 seconds, then become rifts for 2.2 seconds.","Three captures to win. The Guardian plans ahead."]),
