@@ -4,7 +4,7 @@
 // The real <img> node is preserved across taps/plays/Undo so one printing
 // remains on a given physical card until the puzzle is restarted.
 import {referenceFor} from "./card-references.js";
-import {cardImageUrl} from "./scryfall-cards.js";
+import {cardNormalUrl} from "./scryfall-cards.js";
 
 let stageSerial=0;
 let selected=new Map();
@@ -14,7 +14,7 @@ export function randomPrintingUrl(name,token){
  // Distinct source URLs avoid accidentally reusing a browser-cached random
  // redirect across puzzle loads or between duplicate land instances.
  return "https://api.scryfall.com/cards/random?q="+encodeURIComponent(q)+
-   "&format=image&version=small&_="+encodeURIComponent(String(token));
+   "&format=image&version=normal&_="+encodeURIComponent(String(token));
 }
 export function startStagePrintings(level){
  stageSerial++;
@@ -33,6 +33,6 @@ export function printingFor(id){
  return url?{small:url,normal:url}:null;
 }
 export function imageFor(instanceId,cardKey){
- return selected.get(instanceId)||cardImageUrl(cardKey);
+ return selected.get(instanceId)||cardNormalUrl(cardKey);
 }
 export function invalidateStagePrintings(){stageSerial++;selected=new Map();}
