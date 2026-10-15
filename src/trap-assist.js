@@ -23,7 +23,12 @@ export function drawTrapHints(ctx,run,cell=20){
   ctx.setLineDash(hint.exits===0?[]:[3,2]);
   ctx.strokeRect(x+1,y+1,cell-2,cell-2);
   ctx.setLineDash([]);
+  // Highlight the only exit in the arena, with no added permanent HUD.
   if(hint.escape){
+   const [dx,dy]=VECTORS[hint.escape];
+   const px=(enemy.pos.x+dx)*cell,py=(enemy.pos.y+dy)*cell;
+   ctx.fillStyle="#bd893c";
+   ctx.globalAlpha=.32;ctx.fillRect(px+2,py+2,cell-4,cell-4);ctx.globalAlpha=1;
    const offset={up:[cell/2-1,1],down:[cell/2-1,cell-4],
     left:[1,cell/2-1],right:[cell-4,cell/2-1]}[hint.escape];
    ctx.fillStyle="#f4dcaa";
