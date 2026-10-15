@@ -83,6 +83,7 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
   available:false,sync:()=>{},clear:()=>{},pause:()=>{},resume:()=>{},
   isStirring:()=>false,lastStirAt:()=>0
  };
+ target.classList.add("fluid-enabled");
  const grid=makeFluidGrid(),off=document.createElement("canvas");
  off.width=N;off.height=N;
  const offctx=off.getContext("2d"),pixels=offctx.createImageData(N,N);
