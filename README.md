@@ -1,5 +1,7 @@
 # Deep Cuts Game Lab
 
+**One test site for three games:** [Unified playtest catalog](https://deep-cuts-game-lab.pages.dev/lab/). Hive Run remains at [the original root](https://deep-cuts-game-lab.pages.dev/), with [Stackbreaker](https://deep-cuts-game-lab.pages.dev/stackbreaker/) and [Mana Heist](https://deep-cuts-game-lab.pages.dev/mana-heist/) in isolated game folders. See [shared agent ownership and unified testing](docs/SHARED-GAME-LAB.md). The catalog is Lab-only, never a production Arcade deployment.
+
 **Current release candidate: 1.0 — Paths of the Hive.** Two modes (Predator Hunt / Brood Trail), four encounter types, biome progression, daily seeded challenges and independently ranked replays. See the latest DEVLOG entry for deployment verification. Earlier sections below are retained as release history.
 
 A separate GitHub repository for experimental browser games associated with Deep Cuts EDH. It is intentionally independent of the existing `Squackle/deep-cuts-edh` production website.

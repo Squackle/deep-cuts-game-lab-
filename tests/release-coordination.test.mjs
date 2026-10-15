@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {validatePR,findOverlaps} from "../scripts/release-coordination.mjs";
+import {validatePR,validateLabGameLane,findOverlaps} from "../scripts/release-coordination.mjs";
 const main="Squackle/deep-cuts-edh",lab="Squackle/deep-cuts-game-lab-";
 const fields=["Owner authorization: Explicit owner approval October 15","Files/Scope: Docs and workflow only","Concurrent work: no open PRs checked","Test plan: node --test","Rollback: revert release commit"].join("\n");
 test("Coordination touches documentation and CI only; runtime edits blocked",()=>{
@@ -34,4 +34,16 @@ test("Newer overlapping open PR waits; unrelated files never block",()=>{
  assert.deepEqual(findOverlaps(["library.js","styles.css"],theirs,12),[
   {number:11,title:"old",shared:["library.js"]}]);
  assert.deepEqual(findOverlaps(["styles.css"],theirs,12),[]);
+});
+
+test("Stackbreaker and Mana Heist source stays exclusive to matching agent branches",()=>{
+ assert.deepEqual(validateLabGameLane({repo:lab,branch:"game/stackbreaker-land-v05",files:["stackbreaker/src/engine.js","stackbreaker/tests/engine.test.mjs"]}),[]);
+ assert.deepEqual(validateLabGameLane({repo:lab,branch:"game/mana-heist-v06",files:["mana-heist/src/solver.js"]}),[]);
+ assert.ok(validateLabGameLane({repo:lab,branch:"game/stackbreaker-v05",files:["stackbreaker/src/ui.js","mana-heist/index.html"]})[0].includes("out-of-lane"));
+ assert.ok(validateLabGameLane({repo:lab,branch:"game/mana-heist-v06",files:["src/engine.js"]})[0].includes("out-of-lane"));
+ assert.ok(validateLabGameLane({repo:lab,branch:"game/matriarch-v15",files:["mana-heist/styles.css"]})[0].includes("require their own"));
+ assert.ok(validateLabGameLane({repo:lab,branch:"coord/unified-game-lab-hub",files:["stackbreaker/index.html"]}).length);
+ assert.deepEqual(validateLabGameLane({repo:lab,branch:"coord/unified-game-lab-hub",files:["lab/index.html","lab/lab.css","index.html","AGENTS.md"]}),[]);
+ assert.deepEqual(validateLabGameLane({repo:lab,branch:"game/matriarch-v15",files:["src/engine.js","styles.css"]}),[]);
+ assert.deepEqual(validateLabGameLane({repo:main,branch:"site/arcade",files:["games.html"]}),[]);
 });

@@ -1,0 +1,36 @@
+name: Unified Game Lab checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lab-catalog:
+    name: lab-catalog
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Verify shared game routes and ownership
+        run: |
+          node --test tests/lab-catalog.test.mjs
+          node --test tests/release-coordination.test.mjs
+      - name: Check all three independent game rule engines
+        run: |
+          node --test tests/*.test.mjs stackbreaker/tests/*.test.mjs mana-heist/tests/*.test.mjs
+      - name: Validate isolated game module syntax
+        run: |
+          node --check src/main.js
+          node --check src/engine.js
+          node --check stackbreaker/src/cards.js
+          node --check stackbreaker/src/engine.js
+          node --check stackbreaker/src/ui.js
+          node --check mana-heist/src/engine.js
+          node --check mana-heist/src/solver.js
+          node --check mana-heist/src/levels.js
+          node --check mana-heist/src/main.js
