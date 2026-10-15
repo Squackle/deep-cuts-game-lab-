@@ -45,6 +45,8 @@ test('advanced levels need distinct real stack targets and singleton response ca
   if(p.difficulty.addedThreats>=2)multi++;
  }
  assert.ok(multi>85,'far too few layered threat cases: '+multi);
+ const uncounterable=campaign.filter(p=>p.difficulty?.galaxy>=4&&p.solution.some(([id])=>p.hand.find(x=>x.id===id)?.card==='Hallow'));
+ assert.ok(uncounterable.length>=25,'too few real prevention-vs-counter traps: '+uncounterable.length);
 });
 test('all 220 escalating challenges have verified payable wins, and no-response failure',()=>{
  for(let n=31;n<=250;n++){
@@ -64,7 +66,10 @@ test('all added response cards represent actual counters and all added threats a
  for(const p of created){
   for(const [id,target] of p.solution.filter(([id])=>id.startsWith('answer-'))){
    const a=p.hand.find(x=>x.id===id),threat=p.stack.find(x=>x.id===target);
-   assert.equal(CARDS[a.card].effect,'counter',p.id+': '+a.card);
+   if(a.card==='Hallow'){
+    assert.equal(CARDS[a.card].effect,'preventSpellDamage');
+    assert.equal(CARDS[threat.card].uncounterable,true,p.id+' Hallow should answer an uncounterable threat');
+   }else assert.equal(CARDS[a.card].effect,'counter',p.id+': '+a.card);
    assert.equal(CARDS[threat.card].type,'Instant',p.id+': '+threat.card);
    assert.equal(CARDS[threat.card].effect,'damage',p.id);
    assert.equal(threat.targetId,'player',p.id);
