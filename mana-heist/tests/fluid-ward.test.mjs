@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {COLOR_RGB,PRELOADED_MIX_COUNT,countsFor,rgbForCounts,rgbForOrbs} from "../src/fluid-palette.js";
-import {makeFluidGrid,addDye,stirDye,advanceFluid,installFluidWard} from "../src/fluid-ward.js";
+import {makeFluidGrid,fillDyeProportions,addDye,stirDye,advanceFluid,installFluidWard} from "../src/fluid-ward.js";
 import {chargeAllocation,renderWardCharge} from "../src/ward-charge.js";
 
 const orbs=colors=>colors.map((color,i)=>({id:i+1,color}));
@@ -66,4 +66,30 @@ test("the game connects immediately injected dye to orb arrival and bounded opti
  assert.match(css,/\.lock-ring\.fluid-enabled \.ward-fluid-canvas/);
  assert.match(css,/touch-action:none/);
  assert.doesNotMatch(js,/id="castButton"/);
+});
+
+test("one mana colors the entire pool; mixed mana occupies proportional full-disk regions",()=>{
+ const grid=makeFluidGrid();
+ const activeCells=()=>Array.from(grid.active).reduce((a,b)=>a+b,0);
+ const visible=(c)=>grid.active.reduce((sum,on,i)=>sum+(on&&Math.abs(grid.r[i]-c[0])<.1&&Math.abs(grid.g[i]-c[1])<.1&&Math.abs(grid.b[i]-c[2])<.1?1:0),0);
+ const red=COLOR_RGB.R,blue=COLOR_RGB.U;
+ fillDyeProportions(grid,[{id:1,color:"R"}]);
+ assert.equal(visible(red),activeCells(),"one red mana makes every pixel red");
+ assert.equal(grid.mass.reduce((a,b)=>a+(b>0?1:0),0),activeCells(),"entire surface is occupied");
+ fillDyeProportions(grid,[{id:1,color:"R"},{id:2,color:"U"}]);
+ assert.ok(Math.abs(visible(red)/activeCells()-.5)<.035,"red has half of un-stirred water");
+ assert.ok(Math.abs(visible(blue)/activeCells()-.5)<.035,"blue has half of un-stirred water");
+ fillDyeProportions(grid,[{id:1,color:"R"},{id:2,color:"U"},{id:3,color:"R"}]);
+ assert.ok(Math.abs(visible(red)/activeCells()-2/3)<.04,"two red mana own two-thirds of water");
+ assert.ok(Math.abs(visible(blue)/activeCells()-1/3)<.04,"one blue owns one-third");
+ assert.equal(grid.mass[0],0,"color never leaks outside the circular pot");
+});
+test("moving through the water advects existing full-surface colors into blended streaks",()=>{
+ const grid=makeFluidGrid();
+ fillDyeProportions(grid,[{id:1,color:"R"},{id:2,color:"U"}]);
+ const before=grid.r.slice();
+ for(let i=0;i<8;i++){stirDye(grid,32+i*.8,25+i*.5,4,3);advanceFluid(grid);}
+ const shifted=grid.r.reduce((sum,value,i)=>sum+(grid.active[i]&&Math.abs(value-before[i])>10?1:0),0);
+ assert.ok(shifted>20,"stirring must visibly move/merge pigment across water");
+ assert.ok(grid.r.every(Number.isFinite));
 });
