@@ -54,7 +54,7 @@ test("colored pain-land mana costs one life, colorless does not",()=>{
 test("mana payment enumerates genuine alternatives for generic costs",()=>{
  const pool={W:1,U:2,B:0,R:1,G:0,C:0};
  const pays=payOptions(pool,{U:1,N:2});
- assert.equal(pays.length,2);
+ assert.equal(pays.length,3);
  for(const pay of pays)assert.equal(Object.values(pay).reduce((a,b)=>a+b,0),3);
 });
 test("fetch sacrifices source and searches only eligible land types",()=>{
