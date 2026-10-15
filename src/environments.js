@@ -11,7 +11,8 @@ export const terrainBlocks=(run,p)=>!!run.terrain?.some(t=>t.warningMs<=0&&same(
 export const reservedTerrain=(run,p)=>!!run.terrain?.some(t=>same(t.pos,p));
 function safeActivation(run,p){
  return !run.body.some(b=>same(b,p))&&!run.enemies.some(e=>same(e.pos,p))&&
-  !(run.food&&same(run.food,p))&&Math.abs(run.body[0].x-p.x)+Math.abs(run.body[0].y-p.y)>=4;
+  !(run.food&&same(run.food,p))&&!(run.hatchlings||[]).some(h=>same(h.pos,p))&&
+  Math.abs(run.body[0].x-p.x)+Math.abs(run.body[0].y-p.y)>=4;
 }
 export function setBiome(run){
  const next=biomeForEvolution(run.evolutionsChosen).id;
@@ -50,7 +51,15 @@ export function tickTerrain(run,dt){
 export function drawTerrain(ctx,run,cell){
  for(const t of run.terrain){
   const x=t.pos.x*cell,y=t.pos.y*cell,warn=t.warningMs>0;
-  ctx.fillStyle=warn?'#1d211d':t.kind==='rock'?'#615744':t.kind==='seal'?'#5c5536':t.kind==='egg'?'#465b31':'#584364';
+  if(t.kind==='egg'){
+   // Incubating egg: ochre shell and pale crack, not a solid terrain block.
+   ctx.fillStyle='#273327';ctx.fillRect(x+4,y+3,cell-8,cell-6);
+   ctx.fillStyle=warn?'#a5b883':'#d7c692';ctx.fillRect(x+7,y+4,cell-14,cell-8);
+   ctx.fillStyle='#e6dab0';ctx.fillRect(x+9,y+6,2,4);ctx.fillRect(x+10,y+10,3,2);
+   ctx.strokeStyle='#c2ba8a';ctx.lineWidth=1;ctx.strokeRect(x+4.5,y+3.5,cell-9,cell-7);
+   continue;
+  }
+  ctx.fillStyle=warn?'#1d211d':t.kind==='rock'?'#615744':t.kind==='seal'?'#5c5536':'#584364';
   ctx.fillRect(x+2,y+2,cell-4,cell-4);
   ctx.strokeStyle=warn?'#c1ad7e':t.kind==='rock'?'#b5a080':t.kind==='egg'?'#c8ce88':'#d8b4e5';ctx.lineWidth=1;
   ctx.setLineDash(warn?[3,3]:[]);ctx.strokeRect(x+2.5,y+2.5,cell-5,cell-5);ctx.setLineDash([]);
