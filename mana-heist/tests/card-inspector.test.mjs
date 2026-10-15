@@ -6,17 +6,17 @@ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
 const main=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
 const inspector=readFileSync(new URL("../src/card-inspector.js",import.meta.url),"utf8");
 const drag=readFileSync(new URL("../src/drag-lands.js",import.meta.url),"utf8");
-test("full original Magic card is a separate educational reference, not a playable piece",()=>{
+test("real Magic cards are playable images and have a full-size inspector",()=>{
  assert.match(html,/id="realCardInspector"/);
  assert.match(html,/role="dialog" aria-modal="true"/);
  assert.match(html,/id="inspectorImage"/);
  assert.match(html,/id="inspectorLink"/);
  assert.match(html,/id="inspectorGameCard"/);
  assert.match(html,/id="closeInspector"/);
- assert.match(html,/not playable game pieces/);
+ assert.match(html,/REAL MTG LANDS/);
  assert.match(inspector,/referenceFor\(cardKey\)/);
- assert.match(main,/landPainting\(card\)/);
- assert.doesNotMatch(main,/image:.*landHtml/);
+ assert.match(main,/cardImageUrl\(key\)/);
+ assert.match(main,/class="mtg-card-image"/);
 });
 test("hand pointer tap is now an inspection gesture, while drag still plays",()=>{
  assert.match(drag,/else onInspect\?\.\(id\)/);
@@ -36,5 +36,5 @@ test("references keep a full uncropped Magic card image and source link",()=>{
  }
  assert.match(inspector,/image\.src=real\.image/);
  assert.match(inspector,/image\.onerror/);
- assert.match(html,/owned by Wizards of the Coast/);
+ assert.match(html,/belong to Wizards of the Coast/);
 });
