@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="Original fantasy illustration of a spellcaster contesting a stack of enchanted cards with blue and violet magic">
+<defs>
+ <linearGradient id="bg" x2=".85" y2="1"><stop stop-color="#070d24"/><stop offset=".5" stop-color="#162746"/><stop offset="1" stop-color="#111527"/></linearGradient>
+ <radialGradient id="energy"><stop stop-color="#b5f1ff"/><stop offset=".2" stop-color="#65d8ff" stop-opacity=".75"/><stop offset="1" stop-color="#4c38c7" stop-opacity="0"/></radialGradient>
+ <linearGradient id="card" x2=".85" y2=".9"><stop stop-color="#2e4787"/><stop offset=".45" stop-color="#0d1630"/><stop offset="1" stop-color="#604c83"/></linearGradient>
+ <linearGradient id="cloak" x2=".75" y2=".8"><stop stop-color="#13182c"/><stop offset=".4" stop-color="#344674"/><stop offset="1" stop-color="#081125"/></linearGradient>
+ <filter id="shine"><feGaussianBlur stdDeviation="11"/></filter>
+ <filter id="shadow"><feDropShadow dx="0" dy="9" stdDeviation="10" flood-opacity=".7"/></filter>
+</defs>
+<rect width="960" height="540" fill="url(#bg)"/>
+<path d="M0 80h100l-22 310H0M160 0h80l34 447-98 1ZM694 0h102l27 469-102-24ZM863 44h97v383h-74Z" fill="#070e28"/>
+<path d="M130 0V540M262 0V540M707 0V540M830 0V540" stroke="#6382ab" stroke-width="4" opacity=".25"/>
+<ellipse cx="578" cy="284" rx="352" ry="260" fill="url(#energy)" opacity=".9"/>
+<g fill="none" stroke-linecap="round">
+ <path d="M218 324Q415 58 723 196T727 463Q553 588 351 395" stroke="#548fff" stroke-width="23" opacity=".22" filter="url(#shine)"/>
+ <path d="M207 350Q384 76 700 177T731 445Q554 573 351 411" stroke="#73e5ff" stroke-width="7"/>
+ <path d="M284 175Q526 31 830 309Q689 511 376 357" stroke="#bd8eff" stroke-width="7"/>
+ <path d="M315 454Q518 92 881 236" stroke="#7ab6ff" stroke-width="3"/>
+ <path d="M329 111 392 201 356 291 466 334M758 106 691 229 748 284 628 421" stroke="#a4f3ff" stroke-width="4"/>
+</g>
+<g filter="url(#shadow)" stroke="#dbc996" stroke-width="7" fill="url(#card)">
+ <g transform="translate(574 133) rotate(13)"><rect x="-76" y="-102" width="152" height="204" rx="10"/><rect x="-60" y="-84" width="120" height="166" rx="6" stroke="#526fd3" stroke-width="3"/><circle cy="-7" r="41" stroke="#b4a1e6" stroke-width="4"/><path d="M0-49 37-4 0 37-37-4Z" fill="#6ec6ff" stroke="none"/></g>
+ <g transform="translate(791 295) rotate(-18)"><rect x="-49" y="-72" width="98" height="144" rx="7"/><circle r="27" stroke="#b4a1e6" stroke-width="4"/><path d="M0-25 20 0 0 24-20 0Z" fill="#bc8df7" stroke="none"/></g>
+ <g transform="translate(481 393) rotate(21)"><rect x="-53" y="-73" width="106" height="146" rx="7"/><circle r="27" stroke="#b4a1e6" stroke-width="4"/><path d="M0-25 22 0 0 25-22 0Z" fill="#7bc7fe" stroke="none"/></g>
+</g>
+<g filter="url(#shadow)">
+ <path d="M-30 541Q70 349 139 269 170 207 234 189L294 218 274 314Q340 357 417 540Z" fill="url(#cloak)" stroke="#526c9a" stroke-width="7"/>
+ <path d="M119 270Q136 185 216 155Q271 180 266 252L201 273Z" fill="#0d142b"/>
+ <path d="M160 270Q242 262 302 302L386 260 431 217 475 211 503 230 448 240 426 264 398 300 318 350 223 348Z" fill="#232f58" stroke="#8193c5" stroke-width="5"/>
+ <path d="M416 231 444 172 469 169 451 219M432 240 487 202 515 207 468 241M433 247 488 244 515 261 459 264" fill="#42577c" stroke="#bdd7e5" stroke-width="4"/>
+</g>
+<g fill="#d8f5ff"><circle cx="345" cy="128" r="5"/><circle cx="770" cy="101" r="4"/><circle cx="882" cy="370" r="6"/><circle cx="531" cy="48" r="4"/><circle cx="625" cy="479" r="5"/></g>
+</svg>
