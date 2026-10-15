@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {makeFluidGrid,fillDyeProportions,stirDye,advanceFluid} from "../src/fluid-ward.js";
-import {pigmentStatistics} from "../src/pigment-mixer.js";
+import {pigmentStatistics,introducePigment} from "../src/pigment-mixer.js";
 import {COLOR_RGB} from "../src/fluid-palette.js";
 
 const mana=(colors)=>colors.map((color,i)=>({id:"mana-"+i,color}));
@@ -72,4 +72,22 @@ test("mixing is independent of clicking, no extra API lookups, and mobile can st
  assert.match(script,/mixPigments\(grid,dt\)/);
  assert.doesNotMatch(mixer,/\bfetch\s*\(/);
  assert.doesNotMatch(mixer,/XMLHttpRequest|WebSocket/);
+});
+
+test("new red mana joins already-stirred red-blue water without wiping the purple mixture",()=>{
+ const grid=makeFluidGrid();
+ const red={id:"red-1",color:"R"},blue={id:"blue-1",color:"U"},moreRed={id:"red-2",color:"R"};
+ fillDyeProportions(grid,[red]);
+ introducePigment(grid,blue,[red,blue]);
+ assert.ok(Math.abs(stats(grid).ratio.R-.5)<.045);
+ stirAcrossBoundary(grid,12);
+ const before=stats(grid);
+ assert.ok(before.blendedCells>100);
+ introducePigment(grid,moreRed,[red,blue,moreRed]);
+ const after=stats(grid);
+ assert.ok(Math.abs(after.ratio.R-2/3)<.045,"new red must restore 2/3 global pigment");
+ assert.ok(Math.abs(after.ratio.U-1/3)<.045,"blue pigment must remain 1/3");
+ assert.ok(after.blendedCells>before.blendedCells*.35,"prior purple should survive the injection");
+ stirAcrossBoundary(grid,6);
+ assert.ok(stats(grid).blendedCells>200,"new red mixes with the existing purple fluid");
 });
