@@ -8,6 +8,7 @@ import {landPainting} from "./land-art.js";
 import {installLandDragging} from "./drag-lands.js";
 import {renderCardReferences,referenceFor} from "./card-references.js";
 import {installCardInspector} from "./card-inspector.js";
+import {cardImageUrl,cardNormalUrl,primeCardImages,refreshVisibleCards,artistFor} from "./scryfall-cards.js";
 const el=id=>document.getElementById(id);
 const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"C"},N:{name:"Generic",color:"#bec5bd",icon:"◇"}};
 const storageKey="dc-mana-heist-landfall-v2";
@@ -105,14 +106,18 @@ function castSpell(){
 }
 function landHtml(instance,field){
  const card=getCard(level,instance.id),tapped=field&&instance.tapped;
- const realName=referenceFor(lookup(level,instance.id).card)?.name||"Magic land";
- // Original land art, with no network requests.
- return '<button type="button" draggable="false" class="land-card '+(tapped?"is-tapped":"")+'" data-cardid="'+instance.id+'" data-zone="'+(field?"field":"hand")+'" data-kind="'+card.kind+'" aria-label="'+(field?"Tap ":"Drag to battlefield: ")+card.name+(tapped?", tapped":"")+'" title="Magic reference: '+realName+' (press I to inspect)">'+
-  '<span class="land-name">'+card.name+'</span><span class="land-kind">'+card.kind.toUpperCase()+'</span>'+
-  '<span class="land-art" aria-hidden="true">'+landPainting(card)+'</span>'+
-  '<span class="type-line">'+card.flavor+'</span>'+
-  '<span class="mana-line">'+card.colors.map(c=>coin(c)).join("")+'</span>'+(tapped?'<span class="tap-stamp">TAPPED ↷</span>':"")+'</button>';
+ const key=lookup(level,instance.id).card;
+ const full=referenceFor(key);
+ const name=full?.name||card.name;
+ const src=cardImageUrl(key);
+ const fallback=landPainting(card);
+ const alt=name+" — Magic: The Gathering land card from Scryfall";
+ return '<button type="button" draggable="false" class="land-card mtg-real-land '+(tapped?"is-tapped":"")+'" data-cardid="'+instance.id+'" data-zone="'+(field?"field":"hand")+'" data-kind="'+card.kind+'" data-real-card="'+key+'" aria-label="'+(field?"Tap ":"Drag to battlefield: ")+name+(tapped?", tapped":"")+'" title="'+name+' · '+(field?"tap to produce mana":"drag to play · tap to inspect")+'">'+
+  '<img class="mtg-card-image" data-card-key="'+key+'" src="'+src+'" alt="'+alt+'" draggable="false" decoding="async" loading="eager">'+
+  '<span class="mtg-fallback" aria-hidden="true"><strong>'+name+'</strong>'+fallback+'</span>'+
+  '</button>';
 }
+
 function render(pendingId=null){
  const proof=proofs.get(level.id),isWin=completed(level,state),stage=level.stages[state.stage];
  el("stageLabel").textContent="STAGE "+stageCode(index);
@@ -208,6 +213,11 @@ el("inspectLand").addEventListener("inspect-current-land",()=>{
 });
 el("dismissChoices").addEventListener("click",()=>choices("YOUR NEXT CHOICE","Tap a land or play a land from your hand.",[]));
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!el("actionBox").hidden){choices("YOUR NEXT CHOICE","Selection canceled.",[]);}});
+for(const zone of ["hand","battlefield"]){
+ el(zone).addEventListener("error",e=>{
+  if(e.target.matches?.(".mtg-card-image"))e.target.closest(".land-card")?.classList.add("image-failed");
+ },true);
+}
 el("battlefield").addEventListener("click",e=>{
  const card=e.target.closest('[data-zone="field"][data-cardid]');
  if(card)tapLand(card.dataset.cardid);
@@ -232,3 +242,4 @@ el("skip").addEventListener("click",showMap);
 el("winNext").addEventListener("click",()=>{if(index+1<LEVELS.length&&unlocked(index+1,progress.bests))load(index+1,true);else showMap();});
 load(index);
 showMap();
+primeCardImages(()=>refreshVisibleCards());
