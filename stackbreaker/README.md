@@ -1,4 +1,4 @@
-# Stackbreaker 0.7 — Drag to target, readable cards
+# Stackbreaker 0.8 — Stable gold drag confirmation
 
 An **unofficial, limited Magic: The Gathering tactical training tool** on the independent Deep Cuts Game Lab site.
 
@@ -62,3 +62,11 @@ Scryfall-supplied art crops have full-card hover previews and artist/copyright c
 - Click/tap and keyboard accessibility survive: a focused hand card can be armed and played using the target picker with Enter, and battlefield activated abilities can still be clicked directly. A pointer never silently auto-selects a target.
 - **Larger, undistorted full Scryfall cards** in hand and on the battlefield. Desktop battlefield cards increase from the previous 145px maximum to approximately 256px tall at 1280×900. Mobile portrait cards adapt to available height, and hand cards get more space (including compact phones); all essential game controls remain on the same viewport at the QA screen sizes.
 - QA: 22 deterministic Node engine tests; `python tests/drag_targets.test.py` for legal-target glow, invalid no-op, explicit creature targeting, touch glow and drop, targeted life/stack spells, the full level-six solution, generic-mana decisions, enlarged card geometry and core control visibility at 320×568, 390×844, 768×900 and 1280×900. `python tests/physical_cards.test.py`, `python tests/printed_stats.test.py` and `python tests/scryfall_art.test.py` for backward compatibility. Network Scryfall calls are mocked during browser QA; real-phone testing remains pending.
+
+## 0.8 drag-highlight repair (October 15, 2026)
+
+- **Root cause of the reported screenshot:** Chromium emits `pointercancel` when a native HTML5 mouse drag starts. The touch-cancellation handler incorrectly erased the native drag session immediately. It now acts only when a touch/pointer drag actually exists, preserving mouse drag highlights.
+- Fixed disappearing target glows during real Chrome drags: an asynchronous Scryfall catalog update could call `render()` and replace all card elements midway through the drag. Catalog re-render is now postponed until drag completion. As a secondary guard, any other render restores legal-target highlights.
+- Legal creature targets receive a gold halo; the exact target under the pointer receives a bright gold outline, persistent inset border **above** the image, and a pulsing frame. Effects respect reduced-motion.
+- Repeated dragover events no longer restart the animation, preventing flicker. Other card zones (stack, life totals) receive matching gold indicators. Existing no-auto-target rules, touch casting, printed stats and large cards are unchanged.
+- New real-Chromium native mouse-drag tests assert that gold highlighting survives deferred Scryfall metadata refresh; prior synthetic events would have missed this bug. The test also measures visible CSS and verifies the drop outcome.

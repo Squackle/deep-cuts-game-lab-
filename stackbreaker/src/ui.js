@@ -32,6 +32,16 @@ function cardFromScryfall(c){
   oracle:c.oracle_text||face.oracle_text||'',artist:c.artist||face.artist||'',
   page:/^https:\/\/scryfall\.com\//.test(c.scryfall_uri||'')?c.scryfall_uri:cardLink(c.name)};
 }
+function refreshScryfallCards(){
+ // An async card-image refresh must never destroy the drag source or its
+ // highlighted creature while the player is choosing where to release.
+ if(dragSession||dragTouch?.moved){artRefreshPending=true;return;}
+ artRefreshPending=false;render();
+}
+function flushScryfallRefresh(){
+ if(!artRefreshPending||dragSession||dragTouch?.moved)return;
+ artRefreshPending=false;render();
+}
 function putScryfallCards(cards){let added=0;
  for(const c of cards||[]){if(!c?.name)continue;
   const record=cardFromScryfall(c);
@@ -46,7 +56,7 @@ async function fetchScryfallCatalog(){
  try{const saved=JSON.parse(localStorage.getItem(CARD_CACHE_KEY)||'null');
   if(saved?.at>Date.now()-CARD_CACHE_MS&&saved?.cards){
    for(const [name,c] of Object.entries(saved.cards))if(names.includes(name)&&c?.images)scryfallCatalog.set(name,c);
-   if(names.every(n=>scryfallCatalog.has(n))){assetStatus('SCRYFALL IMAGES');render();return;}
+   if(names.every(n=>scryfallCatalog.has(n))){assetStatus('SCRYFALL IMAGES');refreshScryfallCards();return;}
   }
  }catch{}
  assetStatus('LOADING SCRYFALL…');
@@ -71,7 +81,7 @@ async function fetchScryfallCatalog(){
  }
  try{localStorage.setItem(CARD_CACHE_KEY,JSON.stringify({at:Date.now(),cards:Object.fromEntries(scryfallCatalog)}));}catch{}
  assetStatus(scryfallCatalog.size===names.length?'SCRYFALL IMAGES':`SCRYFALL ${scryfallCatalog.size}/${names.length}`);
- render();
+ refreshScryfallCards();
 }
 let previewName='';
 function closeCardPreview(){previewName='';const el=$('cardPreview');if(el)el.hidden=true;}
@@ -113,7 +123,7 @@ document.addEventListener('click',e=>{
 });
 window.addEventListener('scroll',closeCardPreview,{passive:true});
 const progressKey='dc-stackbreaker-progress-v3';
-let index=0,game,history=[],hint=false,progress={},dragTouch=null,pendingPlay=null,armedCard=null,dragSession=null;
+let index=0,game,history=[],hint=false,progress={},dragTouch=null,pendingPlay=null,armedCard=null,dragSession=null,artRefreshPending=false;
 try{progress=JSON.parse(localStorage.getItem(progressKey)||'{}')||{};}catch{}
 const save=()=>{try{localStorage.setItem(progressKey,JSON.stringify(progress))}catch{}};
 function pips(obj,raw=false){let out=[];for(const c of ['generic','W','U','B','R','G','C']){const n=obj?.[c]||0;
@@ -208,6 +218,14 @@ function clearDragFeedback(){
   node.classList.remove('drop-ready','drop-target-legal','drop-target-hover');
  dragSession=null;
 }
+function paintLegalDragTargets(){
+ if(!dragSession?.available)return;
+ if(!dragSession.targeted){
+  for(const node of [$('fieldDrop'),$('stackDrop')])node?.classList.add('drop-target-legal');
+ }else for(const node of document.querySelectorAll('[data-unit],[data-stack-target],[data-target-person]')){
+  if(dragSession.targets.includes(targetFromElement(node)))node.classList.add('drop-target-legal');
+ }
+}
 function startDragFeedback(id){
  clearDragFeedback();closeCardPreview();
  const action=game.hand.find(a=>a.id===id&&!a.sourceId&&!game.used.includes(a.id));
@@ -215,23 +233,19 @@ function startDragFeedback(id){
  const available=legalActions(game).includes(id);
  const targets=legalTargets(game,action),targeted=targets.some(x=>x!==null);
  dragSession={id,available,targets,targeted};
- if(!available)return;
- if(!targeted){for(const node of [$('fieldDrop'),$('stackDrop')])node.classList.add('drop-target-legal');}
- else for(const node of document.querySelectorAll('[data-unit],[data-stack-target],[data-target-person]')){
-  if(targets.includes(targetFromElement(node)))node.classList.add('drop-target-legal');
- }
+ paintLegalDragTargets();
 }
 function updateDragFeedback(element){
  if(!dragSession)return;
- document.querySelectorAll('.drop-target-hover,.drop-ready').forEach(n=>n.classList.remove('drop-target-hover','drop-ready'));
- if(!dragSession.available)return;
- if(dragSession.targeted){
-  const node=targetNodeFromElement(element);
-  if(node&&dragSession.targets.includes(targetFromElement(node)))node.classList.add('drop-target-hover');
- }else{
-  const zone=element?.closest?.('#stackDrop,#fieldDrop');
-  if(zone)zone.classList.add('drop-ready');
+ const chosen=dragSession.available?(dragSession.targeted?targetNodeFromElement(element):element?.closest?.('#stackDrop,#fieldDrop')):null;
+ const valid=chosen&&(!dragSession.targeted||dragSession.targets.includes(targetFromElement(chosen)))?chosen:null;
+ const cls=dragSession.targeted?'drop-target-hover':'drop-ready';
+ // Retain the currently highlighted node between dragover events for a stable,
+ // unmistakable outline. It should only move when the actual target changes.
+ for(const node of document.querySelectorAll('.drop-target-hover,.drop-ready')){
+  if(node!==valid)node.classList.remove('drop-target-hover','drop-ready');
  }
+ if(valid)valid.classList.add(cls);
 }
 function render(){closeCardPreview();const s=game,p=scenarios[index];$('missionTier').textContent=p.tier.toUpperCase();$('missionNum').textContent=String(index+1).padStart(2,'0')+' / 12';$('scenarioTitle').textContent=p.title;
  $('scenarioSelect').innerHTML=scenarios.map((o,i)=>`<option value="${i}" ${i===index?'selected':''}>${String(i+1).padStart(2,'0')} ${esc(o.title)}${progress[o.id]?' ★':''}</option>`).join('');
@@ -248,6 +262,7 @@ function render(){closeCardPreview();const s=game,p=scenarios[index];$('missionT
  $('resultExplanation').textContent=s.status==='playing'?'Complete the case to see the rules explanation.':p.explanation;
  if(s.status==='won'){const stars=s.used.length<=2?3:2;progress[p.id]=Math.max(progress[p.id]||0,stars);save();$('resultStars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);}else $('resultStars').textContent='';
  renderPlayPrompt();$('completed').textContent=Object.keys(progress).length+' / 12 SOLVED';$('log').innerHTML=s.log.slice(-14).reverse().map(x=>`<li>${esc(x)}</li>`).join('');$('version').textContent=RULES_VERSION;$('live').textContent=s.log.at(-1)||'Tap a land to produce mana.';
+ if(dragSession)paintLegalDragTargets();
 }
 function notify(message){$('live').textContent=message;}
 function pushState(s){clearDragFeedback();history.push(structuredClone(game));game=s;pendingPlay=null;armedCard=null;render()}
@@ -306,7 +321,7 @@ $('hand').addEventListener('dragstart',e=>{const source=e.target.closest('[data-
  e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',source.dataset.dragCard);
  source.classList.add('dragging');startDragFeedback(source.dataset.dragCard);
 });
-$('hand').addEventListener('dragend',()=>{clearDragFeedback();document.querySelectorAll('.dragging').forEach(n=>n.classList.remove('dragging'));});
+$('hand').addEventListener('dragend',()=>{clearDragFeedback();document.querySelectorAll('.dragging').forEach(n=>n.classList.remove('dragging'));flushScryfallRefresh();});
 for(const zone of [$('stackDrop'),$('fieldDrop')]){
  zone.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';updateDragFeedback(e.target);});
  zone.addEventListener('dragleave',e=>{if(!zone.contains(e.relatedTarget))updateDragFeedback(null);});
@@ -328,9 +343,15 @@ function finishTouch(e){if(!dragTouch)return;const d=dragTouch;dragTouch=null;
  const zone=el?.closest?.('#stackDrop,#fieldDrop');const target=targetFromElement(el);
  d.ghost?.remove();clearDragFeedback();
  if(zone)beginPlay(d.id,target,true);
+ flushScryfallRefresh();
 }
 document.addEventListener('pointerup',finishTouch);
-document.addEventListener('pointercancel',()=>{dragTouch?.ghost?.remove();dragTouch=null;clearDragFeedback();});
+document.addEventListener('pointercancel',()=>{
+ // Browsers fire pointercancel when a native mouse HTML5 drag begins.
+ // That is not a touch-drag cancellation: preserve native drag target glow.
+ if(!dragTouch)return;
+ dragTouch.ghost?.remove();dragTouch=null;clearDragFeedback();flushScryfallRefresh();
+});
 // Accessible non-pointer alternative: focus a hand card, press Enter, focus battlefield/stack, press Enter.
 $('hand').addEventListener('keydown',e=>{const card=e.target.closest('[data-drag-card]');if(card&&['Enter',' '].includes(e.key)){e.preventDefault();armedCard=card.dataset.dragCard;render();notify('Card selected. Focus the battlefield or stack and press Enter to place it.');}});
 for(const zone of [$('stackDrop'),$('fieldDrop')])zone.addEventListener('keydown',e=>{if(armedCard&&['Enter',' '].includes(e.key)){e.preventDefault();beginPlay(armedCard);}});
