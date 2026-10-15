@@ -126,10 +126,10 @@ test("pixel art symbols are exactly 20x20, centered in the ring and weathered oc
  assert.equal(zero.filter(p=>p.filled).length,0);
  assert.ok(half.filter(p=>p.filled).length>60);
  assert.ok(full.every(p=>p.filled));
- let centerPlaced=false;
- const mock={width:64,height:64,getContext(){return {clearRect(){},fillRect(x,y,w,h){if(x===30&&y===14&&w===2&&h===2)centerPlaced=true},save(){},restore(){},set imageSmoothingEnabled(v){},set fillStyle(v){}}}};
+ let centeredArtPixels=0;
+ const mock={width:64,height:64,getContext(){return {clearRect(){},fillRect(x,y,w,h){if(x>=12&&y>=12&&x+w<=52&&y+h<=52)centeredArtPixels++},save(){},restore(){},set imageSmoothingEnabled(v){},set fillStyle(v){}}}};
  drawAbilityMeter(mock,"stalker",.5);
- assert.ok(centerPlaced,"pixel emblem drawn in exact central 40x40 box");
+ assert.ok(centeredArtPixels>55,"approved detailed pixel-art portrait occupies the centered 40x40 display box");
 });
 test("leaderboard replay rejects fabricated boss-score in existing version",()=>{
  const seed=103,r=newRun({seed});start(r);
