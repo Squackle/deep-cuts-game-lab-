@@ -5,6 +5,7 @@ import {highestUnlocked,unlocked,chapterIndex,stageCode,normalizedBests,chapterA
 import {renderOverworld} from "./overworld.js";
 import {reconstruct,transitionOrbs,consistent,renderSockets,sendOrb} from "./mana-orbs.js";
 import {landPainting} from "./land-art.js";
+import {renderCardReferences} from "./card-references.js";
 const el=id=>document.getElementById(id);
 const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"C"},N:{name:"Generic",color:"#bec5bd",icon:"◇"}};
 const storageKey="dc-mana-heist-landfall-v2";
@@ -38,6 +39,7 @@ function desc(action){
 }
 function choices(title,help,moves){
  choiceActions=moves;
+ el("actionBox").hidden=moves.length===0;
  el("actionTitle").textContent=title;
  el("choices").innerHTML='<p class="muted small">'+help+'</p>'+moves.map((action,i)=>'<button class="choice-button" type="button" data-choice="'+i+'">'+desc(action)+'</button>').join("");
  if(!moves.length)el("choices").innerHTML='<p class="muted">'+help+'</p>';
@@ -133,13 +135,16 @@ function render(pendingId=null){
   el("winTitle").textContent="★".repeat(score)+" VAULT CRACKED";
   el("winCopy").textContent="Solved turn "+state.turn+" · "+state.spentLife+" life spent · perfect line: turn "+proof.turn+" / "+proof.spentLife+" life spent";
  }
- el("skip").textContent=index===LEVELS.length-1?"FIRST VAULT ↶":"NEXT VAULT →";
+ el("skip").textContent="← MAP";
  el("winNext").textContent=index===LEVELS.length-1?"REPLAY CAMPAIGN →":"NEXT VAULT →";
  renderOverworld({world,bests:progress.bests,index,proofs,medal});
  choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap a battlefield land, or play a land from your hand.",[]);
  selectedMessage="";
 }
 function showMap(){
+ document.body.classList.remove("in-heist");
+ el("gameNotes").hidden=true;
+ el("actionBox").hidden=true;
  el("manaTravelLayer").replaceChildren();
  el("pool").querySelectorAll(".awaiting-orb").forEach(x=>x.classList.remove("awaiting-orb"));
  el("gameScreen").hidden=true;el("campaignScreen").hidden=false;
@@ -147,7 +152,10 @@ function showMap(){
  el("campaignScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
 function showGame(){
+ document.body.classList.add("in-heist");
  el("campaignScreen").hidden=true;el("gameScreen").hidden=false;
+ el("gameNotes").hidden=false;
+ renderCardReferences(el("cardGallery"),level);
  el("gameScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
 function load(i,enter=false){
@@ -156,6 +164,7 @@ function load(i,enter=false){
  level=LEVELS[index];state=initial(level);history=[];selectedMessage="";
  manaOrbs=reconstruct(state.pool);el("manaTravelLayer").replaceChildren();
  progress.index=index;persist();render();
+ if(!el("gameNotes").hidden)renderCardReferences(el("cardGallery"),level);
  message("Stage "+stageCode(index)+" ready. Tap a land or play one from your hand.");
  if(enter)showGame();
  return true;
@@ -175,6 +184,8 @@ el("worldPips").addEventListener("click",e=>{
  if(button&&!button.disabled){world=Number(button.dataset.world);renderOverworld({world,bests:progress.bests,index,proofs,medal});}
 });
 el("returnMap").addEventListener("click",showMap);
+el("dismissChoices").addEventListener("click",()=>choices("YOUR NEXT CHOICE","Tap a land or play a land from your hand.",[]));
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!el("actionBox").hidden){choices("YOUR NEXT CHOICE","Selection canceled.",[]);}});
 for(const id of ["battlefield","hand"])el(id).addEventListener("click",e=>{const b=e.target.closest("[data-cardid]");if(!b)return;if(b.dataset.zone==="field")tapLand(b.dataset.cardid);else playLand(b.dataset.cardid);});
 el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a)perform(a);});
 el("castButton").addEventListener("click",castSpell);
