@@ -38,9 +38,9 @@ function sectorPath(i,total){
  const a=polar(start),b=polar(end),large=end-start>180?1:0;
  return "M 60 60 L "+a.join(" ")+" A "+radius+" "+radius+" 0 "+large+" 1 "+b.join(" ")+" Z";
 }
-export function renderWardCharge({svg,count,cost,orbs,pendingId=null,animateId=null,open=false}){
+export function renderWardCharge({svg,count,cost,orbs,pendingId=null,pendingIds=[],animateId=null,open=false}){
  if(!svg)return {total:0,charged:[]};
- const included=orbs.filter(orb=>orb.id!==pendingId);
+ const included=orbs.filter(orb=>orb.id!==pendingId&&!pendingIds.includes(orb.id));
  const result=chargeAllocation(cost,included);
  const {total,charged}=result;
  const circle=2*Math.PI*48;
