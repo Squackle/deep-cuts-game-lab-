@@ -585,6 +585,7 @@ function loop(time){
    const nextTrack=musicForRun();
    if(soundtrack.trackId!==nextTrack&&state.run.status==="running")setEncounterMusic(nextTrack);
    if(state.run.status==="over"||state.run.status==="won"){
+    if(training)$("trainingPrompt").hidden=true;
     soundtrack.stop();
     saveBest();syncUI();
     playTone(state.run.status==="won"?720:135,.2,.03);
