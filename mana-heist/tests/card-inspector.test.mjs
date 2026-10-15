@@ -36,5 +36,5 @@ test("references keep a full uncropped Magic card image and source link",()=>{
  }
  assert.match(inspector,/image\.src=real\.image/);
  assert.match(inspector,/image\.onerror/);
- assert.match(html,/owned by Wizards of the Coast/);
+ assert.match(html,/belong to Wizards of the Coast/);
 });
