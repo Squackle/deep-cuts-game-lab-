@@ -46,9 +46,16 @@ function queueAutoCast(){
   if(elapsed<AUTO_SETTLE_MS||(stirring&&elapsed<AUTO_STIR_MAX_MS)){
    autoTimer=setTimeout(tryCast,140);return;
   }
-  autoTimer=null;
   const legal=chooseAutomaticCast(level,state);
-  if(legal)perform(legal);
+  if(!legal){autoTimer=null;return;}
+  fluid.burst();
+  el("autoCastLabel").textContent="CHROMATIC WARD BREAKING";
+  autoTimer=setTimeout(()=>{
+   autoTimer=null;
+   if(epoch!==viewEpoch||pendingFlights.size||completed(level,state))return;
+   const stillLegal=chooseAutomaticCast(level,state);
+   if(stillLegal)perform(stillLegal);
+  },250);
  }
  autoTimer=setTimeout(tryCast,140);
 }
