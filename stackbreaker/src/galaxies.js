@@ -89,6 +89,43 @@ const MOTIFS=[
  {label:'Winning the Race',unit:[],stack:['Lightning Helix','player'],hand:[['answer','Lightning Helix']],objective:{type:'win'},line:[['answer','opponent']],intro:'Both players are one burn spell from defeat. Win before theirs resolves.',hint:'Your spell will resolve first when placed on top of the stack.',explanation:'Your Lightning Helix deals lethal to the opponent before their spell resolves.'},
  {label:'False Shield',unit:[['bear','Grizzly Bears']],stack:['Languish',null],hand:[['intervene','Heroic Intervention'],['titan','Titanic Growth']],objective:{type:'keepUnit',unitId:'bear'},line:[['titan','bear']],intro:'Choose the right protection from a -4/-4 sweeper.',hint:'Indestructible cannot help zero toughness; choose the pump spell.',explanation:'Titanic Growth offsets the negative toughness from Languish.'}
 ];
+// Real strategy pivots: a creature can be the expendable resource, not the
+// objective. Unlike counter-wars these puzzles can be won while it dies.
+const SACRIFICE_LESSONS=[
+ {title:'The Creature Is Not Your Life',
+  intro:'Two threats: one to your creature and one to you. Saving the board may be a fatal distraction.',
+  hint:'Decide which loss you can survive, not which permanent you value most.',
+  explanation:'Healing Salve keeps you alive through the Bolt. Murder still destroys your creature. You win because surviving matters more than keeping it.',
+  life:2,units:[{id:'guardian',card:'Grizzly Bears',controller:'player'}],
+  stack:[{id:'doomed',card:'Murder',controller:'opponent',targetId:'guardian'},{id:'burn',card:'Lightning Bolt',controller:'opponent',targetId:'player'}],
+  hand:[{id:'heal',card:'Healing Salve'},{id:'protect',card:'Blossoming Defense'}],
+  solution:[['heal','player']],objective:{type:'survive'},kind:'letDie',casualty:'guardian'},
+ {title:'One Last Meal',
+  intro:'Brindle Boar can save a life only if you give it up before the damage arrives.',
+  hint:'Read the ability printed on your own creature, including its cost.',
+  explanation:'Sacrificing Brindle Boar is the activation cost; its ability still gains you four life after the creature is gone.',
+  life:2,units:[{id:'boar',card:'Brindle Boar',controller:'player'}],
+  stack:[{id:'burn',card:'Lightning Bolt',controller:'opponent',targetId:'player'}],
+  hand:[{id:'boar-life',card:'Brindle Boar',sourceId:'boar'}],
+  solution:[['boar-life',null]],objective:{type:'survive'},kind:'sacrifice'},
+ {title:'Gnomes Before Glory',
+  intro:'Let the opponent destroy your guardian while your Gnomes buy the life that actually matters.',
+  hint:'A sacrifice for life can be worth more than a protected creature.',
+  explanation:'Bottle Gnomes are sacrificed to gain three life. The defender still dies to Murder, but you survive the incoming three damage.',
+  life:2,units:[{id:'gnomes',card:'Bottle Gnomes',controller:'player'},{id:'guardian',card:'Silvercoat Lion',controller:'player'}],
+  stack:[{id:'doomed',card:'Murder',controller:'opponent',targetId:'guardian'},{id:'burn',card:'Lightning Bolt',controller:'opponent',targetId:'player'}],
+  hand:[{id:'gnomes-life',card:'Bottle Gnomes',sourceId:'gnomes'}],
+  solution:[['gnomes-life',null]],objective:{type:'survive'},kind:'sacrificeAndLetDie',casualty:'guardian'}
+];
+function sacrificeLesson(index,gi){
+ const m=SACRIFICE_LESSONS[index%SACRIFICE_LESSONS.length];
+ return {id:'life-pivot-'+index,version:RULES_VERSION,tier:gi===0?'Investigator':'Mastermind',title:m.title,
+ intro:m.intro,hint:m.hint,explanation:m.explanation,
+ life:{player:m.life,opponent:20},mana:{},units:structuredClone(m.units),
+ stack:structuredClone(m.stack),hand:structuredClone(m.hand),lands:[],opponentPolicy:'alwaysPass',
+ activeActor:'opponent',objective:structuredClone(m.objective),solution:structuredClone(m.solution),
+ par:m.solution.length,lessonKind:m.kind,...(m.casualty?{expectedCasualty:m.casualty}:{})};
+}
 function motif(m,i){return{
  id:'template-'+i,version:RULES_VERSION,tier:'Mastermind',title:m.label,intro:m.intro,hint:m.hint,explanation:m.explanation,
  life:{player:i===3?2:8,opponent:i===8?3:19},mana:{},
@@ -122,7 +159,7 @@ const GRADES=[
 const COUNTER_ANSWERS=['Dispel','Negate','Arcane Denial','Counterspell','Cancel','Stoic Rebuttal',"Dovin's Veto"];
 const BURN_THREATS=['Lightning Bolt','Lightning Strike','Searing Spear','Incinerate','Open Fire','Fiery Temper'];
 function galaxyTarget(gi,stage){
- return [2,3,4,5,6][gi]+(gi===4&&stage===9?1:0);
+ return [2,3,3,4,4][gi]+(gi===4&&stage===9?1:0);
 }
 function graduate(s,line,gi,stage){
  const target=galaxyTarget(gi,stage);
@@ -159,19 +196,23 @@ export function generateStages(existing){
  const pool=[...existing,...MOTIFS.map(motif)],added=[];
  for(let n=31;n<=250;n++){
   const ix=n-31,gi=Math.floor((n-1)/50),wi=Math.floor(((n-1)%50)/10),stage=(n-1)%10;
-  // Never regress to one-response exercises in the final galaxies.
-  const minBase=gi<3?1:gi===3?2:3;
-  const maxBase=gi===0?2:gi===1?3:gi===2?4:gi===3?5:5;
+  // A seven-card Commander hand reserves three physical slots for a land,
+  // creature and enchantment. Thus only four *cast* responses can be in hand.
+  // Battlefield activated abilities can add tactics without occupying a slot.
+  const quota=galaxyTarget(gi,stage);
   const eligible=pool.filter(p=>{
-   const length=(p.solution||SOLUTIONS[p.id])?.length||0;
-   return length>=minBase&&length<=maxBase&&p.objective.type!=='win';
+   const line=p.solution||SOLUTIONS[p.id];if(!line||p.objective.type==='win'||line.length>quota)return false;
+   const mandatory=line.filter(([id])=>!p.hand.find(a=>a.id===id)?.sourceId).length;
+   return mandatory+(quota-line.length)<=4;
   });
-  const chosen=(ix*13+Math.floor(ix/10)*7+gi*11)%eligible.length;
-  const source=eligible[chosen],s=structuredClone(source),line=structuredClone(source.solution||SOLUTIONS[source.id]);
+  const pivots=(gi>=1&&[2,7].includes(stage))||(gi===0&&stage===7);
+  const source=pivots?sacrificeLesson(ix+gi,gi):
+   eligible[(ix*13+Math.floor(ix/10)*7+gi*11)%eligible.length];
+  const s=structuredClone(source),line=structuredClone(source.solution||SOLUTIONS[source.id]);
   if(!line)throw Error('Untested template '+source.id);
   const rename={};const originals=[...s.units,...s.stack,...s.hand].map(a=>a.card);
   for(let k=0;k<originals.length;k++){const name=originals[k];
-   if(!(name in rename))rename[name]=ALIAS[name]?.[(n+k*3)%ALIAS[name].length]||name;
+   if(!(name in rename))rename[name]=s.lessonKind?name:ALIAS[name]?.[(n+k*3)%ALIAS[name].length]||name;
   }
   for(const a of [...s.units,...s.stack,...s.hand])a.card=rename[a.card]||a.card;
   for(const [name,newName] of Object.entries(rename))if(name!==newName)
