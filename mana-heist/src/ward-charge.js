@@ -30,6 +30,14 @@ export function chargeAllocation(cost,orbs){
  return {total,charged:charged.slice(0,total).sort((a,b)=>orbs.findIndex(x=>x.id===a.id)-orbs.findIndex(x=>x.id===b.id))};
 }
 const esc=s=>String(s).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+function sectorPath(i,total){
+ const mid=60,radius=44;
+ if(total===1)return "M "+(mid-radius)+" "+mid+" a "+radius+" "+radius+" 0 1 0 "+(radius*2)+" 0 a "+radius+" "+radius+" 0 1 0 -"+(radius*2)+" 0";
+ const pad=Math.min(1.2,360/total*.025),start=-90+i*360/total+pad,end=-90+(i+1)*360/total-pad;
+ const polar=a=>[mid+radius*Math.cos(a*Math.PI/180),mid+radius*Math.sin(a*Math.PI/180)].map(v=>v.toFixed(3));
+ const a=polar(start),b=polar(end),large=end-start>180?1:0;
+ return "M 60 60 L "+a.join(" ")+" A "+radius+" "+radius+" 0 "+large+" 1 "+b.join(" ")+" Z";
+}
 export function renderWardCharge({svg,count,cost,orbs,pendingId=null,animateId=null,open=false}){
  if(!svg)return {total:0,charged:[]};
  const included=orbs.filter(orb=>orb.id!==pendingId);
@@ -42,18 +50,28 @@ export function renderWardCharge({svg,count,cost,orbs,pendingId=null,animateId=n
  const track=Array.from({length:total},(_,i)=>
   '<circle class="ward-charge-track" cx="60" cy="60" r="48" transform="rotate(-90 60 60)"'+
   ' stroke-dasharray="'+arc.toFixed(3)+' '+circle.toFixed(3)+'" stroke-dashoffset="'+(-i*step-gap/2).toFixed(3)+'"/>').join("");
+ const sectors=charged.map((item,i)=>
+  '<path class="ward-mana-sector" data-sector-id="'+item.id+'" data-color="'+item.color+'"'+
+  ' d="'+sectorPath(i,total)+'" fill="'+MANA_HUES[item.color]+'"/>').join("");
  const lights=charged.map((item,i)=>
   '<circle class="ward-charge-arc'+(item.id===animateId?" charged-new":"")+'" data-charge-id="'+item.id+'" data-color="'+item.color+'"'+
   ' cx="60" cy="60" r="48" transform="rotate(-90 60 60)" stroke="'+MANA_HUES[item.color]+'"'+
   ' stroke-dasharray="'+arc.toFixed(3)+' '+circle.toFixed(3)+'" stroke-dashoffset="'+(-i*step-gap/2).toFixed(3)+'"'+
   ' style="--arc-length:'+arc.toFixed(3)+';--arc-circumference:'+circle.toFixed(3)+'"/>' ).join("");
- svg.innerHTML='<circle class="ward-charge-back" cx="60" cy="60" r="48"/>'+track+lights;
+ svg.innerHTML='<circle class="ward-charge-back" cx="60" cy="60" r="48"/>'+sectors+track+lights;
  svg.setAttribute("aria-label",open?"Vault opened":charged.length+" of "+total+" mana charged toward the ward");
  if(count)count.textContent=open?"OPEN":charged.length+" / "+total;
  if(animateId!=null&&typeof svg.querySelector==="function"){
   const added=svg.querySelector('[data-charge-id="'+animateId+'"]');
   if(added&&typeof added.animate==="function"&&!globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){
    added.animate([{opacity:.1,filter:"brightness(3)",strokeWidth:4},{opacity:1,filter:"brightness(1.6)",strokeWidth:12,offset:.45},{opacity:1,filter:"brightness(1)",strokeWidth:9}],{duration:510,easing:"cubic-bezier(.18,.86,.22,1)"});
+  }
+ }
+  if(animateId!=null&&typeof svg.querySelector==="function"){
+  const slice=svg.querySelector('[data-sector-id="'+animateId+'"]');
+  if(slice&&typeof slice.animate==="function"&&!globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){
+   slice.animate([{opacity:0,transform:"scale(.25)"},{opacity:.62,transform:"scale(1.07)",offset:.68},{opacity:.43,transform:"scale(1)"}],{duration:590,easing:"cubic-bezier(.2,.85,.25,1)"});
+   svg.animate?.([{filter:"drop-shadow(0 0 1px #fff1)"},{filter:"drop-shadow(0 0 18px #e5e5d4)",offset:.42},{filter:"drop-shadow(0 0 0px #fff0)"}],{duration:680,easing:"ease-out"});
   }
  }
  return result;
