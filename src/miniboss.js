@@ -4,7 +4,8 @@ import {reservedTerrain,warnTerrain} from "./environments.js";
  * Only simulation milliseconds advance timers, never Date.now or animation frames.
  * HUD-only presentation is isolated in boss-art.js.
  */
-import {spawnPrey,same,inside,reachableArea,HEADINGS,VECTORS} from "./enemies.js";
+import {spawnPrey,same,inside,reachableArea,HEADINGS,VECTORS,PREY} from "./enemies.js";
+import {availableHatchlingSlots,EGG_INCUBATION_MS,BROODMOTHER_PERIOD,isHatchlingAt} from "./broodmother-hatchlings.js";
 
 export const ABILITIES=Object.freeze({
  warden:Object.freeze({name:"HATCHERY WARDEN",ability:"BROOD SEAL",cooldownMs:10000,phases:3,icon:"seal"}),
@@ -23,7 +24,7 @@ export const MAX_WEBS=3;
 const distance=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
 const occupied=(run,p,id=null)=>run.body.some(b=>same(p,b))||
  run.enemies.some(e=>e.id!==id&&same(p,e.pos))||
- !!run.food&&same(p,run.food);
+ !!run.food&&same(p,run.food)||isHatchlingAt(run,p);
 const available=(run,p,id=null)=>inside(run,p)&&!reservedTerrain(run,p)&&!isEnemyWeb(run,p)&&!occupied(run,p,id);
 export function encounterKind(evolutions){
  if(evolutions===12)return "broodmother"; // Fifth boss at a new full-boss milestone.
@@ -47,7 +48,7 @@ export function spawnNextPhase(run){
  run.enemies=[];
  const enemy=spawnPrey(run,encounter.kind);
  if(!enemy)return false;
- enemy.period=4; // All bosses share the same movement cadence in every phase.
+ enemy.period=PREY[encounter.kind].period; // Respect Broodmother slow movement through every phase.
  run.enemies=[enemy];
  encounter.abilityMs=0;
  encounter.introMs=INTRO_MS;
@@ -146,7 +147,8 @@ export function tickMiniboss(run,dt){
  if(e.kind==="broodmother"){
   const x=enemy.pos.x,y=enemy.pos.y;
   const petals=[{x:x-2,y},{x:x+2,y},{x,y:y-2},{x,y:y+2}];
-  warnTerrain(run,petals,"egg",900,3200);
+  const slots=availableHatchlingSlots(run);
+  if(slots>0)warnTerrain(run,petals.slice(0,slots),"egg",EGG_INCUBATION_MS,null);
   e.abilityMs=0;e.lastAbility={type:"boss-power",at:{...enemy.pos},tick:run.runTicks};
   return e.lastAbility;
  }

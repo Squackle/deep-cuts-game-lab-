@@ -6,6 +6,7 @@ import {setBiome,tickTerrain,terrainBlocks,reservedTerrain} from "./environments
 import {PREY,spawnPrey,advancePrey,same,inside,VECTORS} from "./enemies.js";
 import {encounterKind,spawnMiniboss,spawnNextPhase,tickMiniboss,triggerWeb,consumeEncounterFreeze,ABILITIES} from "./miniboss.js";
 import {ageHatchlingWards} from "./hatchling-ward.js";
+import {isHatchlingAt,hatchMatureEggs,tickHatchlings,clearBroodmotherHatchlings} from "./broodmother-hatchlings.js";
 import {compostMoltCost,driftRushMultiplier} from "./mutation-synergies.js";
 export const DIRECTIONS=Object.freeze(Object.fromEntries(Object.entries(VECTORS).map(([k,v])=>[k,{x:v[0],y:v[1]}])));
 export const COLORS=Object.freeze(["W","U","B","R","G"]);
@@ -14,7 +15,7 @@ export const OPENING_GRACE_MS=9000;
 export const OPENING_EVOLUTIONS=2;
 export const OPENING_ORB_MIN=70;
 export const OPENING_ORB_SPREAD=35;
-export const RULES_VERSION="hive-1.5";
+export const RULES_VERSION="hive-1.5.1";
 // Player speed is set in milliseconds per grid step (larger = easier).
 // Playtest adjustment: about 10% less movement per second at every stage.
 export const PLAYER_BASE_TICK_MS=150;
@@ -54,7 +55,7 @@ export function newRun({cols=18,rows=22,random,seed,mode="hunt"}={}){
   score:0,brood:0,kills:0,energy:0,earnedEnergy:0,stage:1,tickMs:PLAYER_BASE_TICK_MS,
   evolutionsChosen:0,draftCount:0,draftOptions:[],mutations:{W:0,U:0,B:0,R:0,G:0},
   effects:{shield:0,molt:0,blueTicks:0,redTicks:0,greenPickups:0},growthDebt:0,
-  enemies:[],enemySerial:0,respawnIn:0,runTicks:0,moves:0,saves:0,wards:[],
+  enemies:[],enemySerial:0,respawnIn:0,runTicks:0,moves:0,saves:0,wards:[],hatchlings:[],hatchlingSerial:0,
   encounter:null,queuedEncounter:null,minibossWins:0,lastEncounter:null,
   status:"ready",endReason:"",lastMutation:null,event:null,eventSerial:0};
  if(mode==="hunt"){const prey=spawnPrey(run);if(prey)run.enemies.push(prey)}
@@ -111,7 +112,7 @@ function target(run,heading){
  const d=DIRECTIONS[heading],head=run.body[0],next={x:head.x+d.x,y:head.y+d.y};
  const wall=!inside(run,next)||terrainBlocks(run,next),eating=!!run.food&&same(next,run.food);
  const occupied=eating||run.growthDebt>0?run.body:run.body.slice(0,-1);
- return {next,wall,body:occupied.some(p=>same(p,next)),enemy:run.enemies.some(e=>same(e.pos,next)),eating};
+ return {next,wall,body:occupied.some(p=>same(p,next)),enemy:run.enemies.some(e=>same(e.pos,next)),hatchling:isHatchlingAt(run,next),eating};
 }
 function recover(run,failed,freePreyDodge=false){
  const e=run.effects;
@@ -128,7 +129,7 @@ function recover(run,failed,freePreyDodge=false){
  else {
   // Teleport only as defensive emergency fallback, selecting a genuinely
   // unoccupied triple instead of blindly occupying the board center.
-  const occupied=[...run.body,...run.enemies.map(e=>e.pos),...run.terrain.map(t=>t.pos),...(run.encounter?.webs||[]).map(w=>w.pos)];
+  const occupied=[...run.body,...run.enemies.map(e=>e.pos),...run.hatchlings.map(h=>h.pos),...run.terrain.map(t=>t.pos),...(run.encounter?.webs||[]).map(w=>w.pos)];
   if(run.food)occupied.push(run.food);
   let found=null;
   for(let y=2;y<run.rows-1&&!found;y++)for(let x=3;x<run.cols-1&&!found;x++){
@@ -174,7 +175,7 @@ export function orbInterval(run){
 function spawnOrb(run){
  if(run.food)return;
  if(run.mode!=="classic"&&--run.orbIn>0)return;
- const exclusions=[...run.body,...run.terrain.map(t=>t.pos),...run.enemies.map(e=>e.pos),...(run.encounter?.webs||[]).map(w=>w.pos)];
+ const exclusions=[...run.body,...run.terrain.map(t=>t.pos),...run.enemies.map(e=>e.pos),...run.hatchlings.map(h=>h.pos),...(run.encounter?.webs||[]).map(w=>w.pos)];
  run.food=emptyTile(exclusions,run.cols,run.rows,run.random);
  if(!run.food&&run.mode==="classic"){run.status="won";run.endReason="Every open tile belongs to your brood."}
  run.orbIn=orbInterval(run); // early hunt: ~10–15s; later: ~20–31s
@@ -213,7 +214,7 @@ export function step(run){
  tickTerrain(run,elapsed);
  if(!webbed){
  const heading=run.turnQueue.shift()??run.direction,t=target(run,heading);
- if(t.wall||t.body||t.enemy){
+ if(t.wall||t.body||t.enemy||t.hatchling){
   run.direction=heading;
   // Beginner's one-use instinct evades only ordinary prey, never a boss,
   // terrain wall, or the player's own body. Keep defenses for boss contact.
@@ -221,7 +222,7 @@ export function step(run){
    run.enemies.some(e=>(e.kind==="skitter"||e.kind==="runner")&&same(e.pos,t.next));
   if(recover(run,heading,ordinary&&run.mercy>0))return run;
   run.status="over";
-  run.endReason=t.enemy?"A hunter collided with you.":t.wall?"You hit the arena wall.":"You crossed your own swarm.";
+  run.endReason=t.hatchling?"A hatchling blocked your path.":t.enemy?"A hunter collided with you.":t.wall?"You hit the arena wall.":"You crossed your own swarm.";
   emit(run,{type:"death",name:run.endReason});return run;
  }
  run.direction=heading;
@@ -243,6 +244,10 @@ export function step(run){
  // Opening grace advances only when the player can move.
  if(!webbed)run.openingGraceMs=Math.max(0,run.openingGraceMs-elapsed);
  const abilityEvent=tickMiniboss(run,elapsed);
+ if(run.encounter?.kind==="broodmother"){
+  hatchMatureEggs(run);
+  tickHatchlings(run);
+ }
  if(abilityEvent?.type==="burrow-warning"||abilityEvent?.type==="burrow"||abilityEvent?.type==="web")
   emit(run,abilityEvent);
  // The body is a moving wall: prey avoid it until forced into collision.
@@ -255,6 +260,7 @@ export function step(run){
    {type:"waiting"}:advancePrey(run,enemy);
   if(result.type==="captured"){
    if(encounter&&enemy.kind===encounter.kind){
+    if(encounter.kind==="broodmother")clearBroodmotherHatchlings(run);
     if(encounter.phase<encounter.phases){
      encounter.phase++;
      run.lastEncounter={kind:encounter.kind,type:"phase",phase:encounter.phase,at:{...enemy.pos},tick:run.runTicks};

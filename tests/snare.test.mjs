@@ -7,21 +7,20 @@ import {PREY} from "../src/enemies.js";
 import {LAIR_BOSSES,createLairRun} from "../src/lair.js";
 import {boardKey} from "../src/modes.js";
 test("Snare creates an independent, versioned and deterministic replay ruleset",()=>{
- assert.equal(RULES_VERSION,"hive-1.5");
+ assert.equal(RULES_VERSION,"hive-1.5.1");
  assert.equal(boardKey("classic"),"classic|arcade");
  assert.equal(boardKey("hunt"),"hunt|arcade");
 });
-test("all five bosses keep one uniform movement period and fixed practice-time cadence",()=>{
+test("Matriarch moves much slower than the other four bosses at every practice depth",()=>{
  for(const spec of LAIR_BOSSES){
   const run=createLairRun(spec.id);
-  assert.equal(PREY[spec.id].period,4);
-  assert.equal(run.enemies[0].period,4);
+  const speed=spec.id==="broodmother"?7:4;
+  assert.equal(PREY[spec.id].period,speed);
+  assert.equal(run.enemies[0].period,speed);
   assert.equal(run.tickMs,PLAYER_BASE_TICK_MS);
   const after=run.encounter;
-  after.phase=after.phases;
-  after.introMs=0;
-  // Final-phase speed must never accelerate relative to the other bosses.
-  assert.equal(PREY[spec.id].period,4);
+  after.phase=after.phases;after.introMs=0;
+  assert.equal(PREY[spec.id].period,speed);
  }
 });
 test("Weaver web freezes the swarm but continues enemy movement, web expiry and casting",()=>{

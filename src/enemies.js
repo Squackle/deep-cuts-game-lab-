@@ -1,5 +1,6 @@
 import {terrainBlocks,reservedTerrain} from "./environments.js";
 import {wardDeters,wardOccupies} from "./hatchling-ward.js";
+import {BROODMOTHER_PERIOD,isHatchlingAt} from "./broodmother-hatchlings.js";
 /**
  * Two tiers of deterministic, always-moving prey:
  * ordinary Skitters/Runners make simple, short-sighted decisions and can be
@@ -11,7 +12,7 @@ export const VECTORS=Object.freeze({up:[0,-1],right:[1,0],down:[0,1],left:[-1,0]
 export const HEADINGS=Object.freeze(Object.keys(VECTORS));
 export const PREY=Object.freeze({
  warden:Object.freeze({name:"HATCHERY WARDEN",period:4,accent:"#c2a56a"}),
- broodmother:Object.freeze({name:"BROODMOTHER",period:4,accent:"#bba576"}),
+ broodmother:Object.freeze({name:"BROODMOTHER",period:BROODMOTHER_PERIOD,accent:"#bba576"}),
  guardian:Object.freeze({name:"RIFT GUARDIAN",period:4,accent:"#b19ac2"}),
  skitter:Object.freeze({name:"SKITTER",period:4,accent:"#ffaf75",icon:"◆"}),
  runner:Object.freeze({name:"BURROW RUNNER",period:4,accent:"#e399f5",icon:"◇"}),
@@ -33,13 +34,14 @@ export function ownAbilityHazard(run,p){
 }
 export function safePreyTile(run,p,id=null){
  return inside(run,p)&&!terrainBlocks(run,p)&&!ownAbilityHazard(run,p)&&!run.body.some(b=>same(b,p))&&
-  !run.enemies.some(e=>e.id!==id&&same(e.pos,p));
+  !run.enemies.some(e=>e.id!==id&&same(e.pos,p))&&!isHatchlingAt(run,p);
 }
 export function reachableArea(run,start,id,cap=run.cols*run.rows){
  if(!safePreyTile(run,start,id))return 0;
  const total=run.cols*run.rows,blocked=new Uint8Array(total),seen=new Uint8Array(total);
  for(const p of run.body)if(inside(run,p))blocked[p.y*run.cols+p.x]=1;
  for(const e of run.enemies)if(e.id!==id)blocked[e.pos.y*run.cols+e.pos.x]=1;
+ for(const h of run.hatchlings||[])if(inside(run,h.pos))blocked[h.pos.y*run.cols+h.pos.x]=1;
  for(const t of run.terrain||[])if(t.warningMs<=0||
  (run.encounter?.kind==="guardian"&&t.kind==="rift")||
  (run.encounter?.kind==="warden"&&t.kind==="seal"))
@@ -137,7 +139,7 @@ export function advancePrey(run,enemy){
  const id=enemy.id;
  if(bodyImpact)return {type:"captured",id,kind:enemy.kind};
  // An enemy boxed in by its own temporary powers must not vanish.
- if(run.encounter?.kind===enemy.kind&&candidates.some(p=>ownAbilityHazard(run,p)))
+ if(run.encounter?.kind===enemy.kind&&candidates.some(p=>ownAbilityHazard(run,p)||enemy.kind==="broodmother"&&isHatchlingAt(run,p)))
   return {type:"waiting",id,kind:enemy.kind};
  return {type:"escaped",id,kind:enemy.kind};
 }
