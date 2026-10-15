@@ -880,7 +880,11 @@ function chooseCommanderPermanent(p,index,role,seen){
  const list=role==='creature'?COMMANDER_CREATURES:role==='enchantment'?COMMANDER_ENCHANTMENTS:COMMANDER_SUPPORT;
  const candidates=list.filter(n=>!seen.has(n)&&fitCommanderCard(n,ids));
  if(!candidates.length)throw Error('No Commander-compatible '+role+' for '+p.id);
- const chosen=candidates[commanderRand(index*31+role.length)%candidates.length];seen.add(chosen);return chosen;
+ // Intentionally distribute ramp/sorceries alongside artifacts instead of
+ // letting a seeded modulo picker accidentally select only artifacts.
+ const sorceries=role==='support'?candidates.filter(n=>CARDS[n].type.startsWith('Sorcery')):[];
+ const options=sorceries.length&&index%3!==0?sorceries:candidates;
+ const chosen=options[commanderRand(index*31+role.length)%options.length];seen.add(chosen);return chosen;
 }
 function chooseCommanderLand(p,index){
  const allowed=[...new Set(p.lands.map(l=>LANDS[l.card]?.mana).filter(Boolean))];
