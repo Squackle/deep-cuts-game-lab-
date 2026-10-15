@@ -139,7 +139,7 @@ export function advancePrey(run,enemy){
  const id=enemy.id;
  if(bodyImpact)return {type:"captured",id,kind:enemy.kind};
  // An enemy boxed in by its own temporary powers must not vanish.
- if(run.encounter?.kind===enemy.kind&&candidates.some(p=>ownAbilityHazard(run,p)))
+ if(run.encounter?.kind===enemy.kind&&candidates.some(p=>ownAbilityHazard(run,p)||enemy.kind==="broodmother"&&isHatchlingAt(run,p)))
   return {type:"waiting",id,kind:enemy.kind};
  return {type:"escaped",id,kind:enemy.kind};
 }
