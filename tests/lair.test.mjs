@@ -106,5 +106,5 @@ test("both page variants offer four accessible boss buttons and clear unranked s
  assert.match(js,/showBossBriefing\(\)/);
  assert.match(js,/RETRY BOSS/);
  assert.match(css,/\.lair-choices/);
- assert.match(html,/1\.3 · SPINDLE/);
+ assert.match(html,/1\.4 · BEACON/);
 });

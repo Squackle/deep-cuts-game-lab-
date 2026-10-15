@@ -8,6 +8,8 @@ import {HatcherySoundtrack,TRACKS,trackForEncounter} from "./soundtrack.js";
 import {canPlayMusic,resumeFromGesture} from "./audio-activation.js";
 import {drawPlayerLocator,drawQueuedTurn} from "./player-visibility.js";
 import {drawTrapHints} from "./trap-assist.js";
+import {newTraining,trainingProgress} from "./beacon-training.js";
+import {captureFlash,drawCaptureFlash} from "./beacon-feedback.js";
 import {KEY_DIRECTIONS,keyboardDirection,mutationSelectionIndex,isTouchMutationSelection,resumeHeading,swipeHeading,SWIPE_RESUME_KEYS} from "./input-controls.js";
 import {showMutationDraft,hideMutationDraft,drawMutationHud} from "./evolution-ui.js";
 import {renderMutationEffects} from "./evolution-visuals.js";
@@ -32,6 +34,7 @@ let creatureArt=null;
 let arenaBackground=null;
 let visualBurst=null,lastCapture=null,startingRun=false,lastEncounterSeen=null;
 let lairBurst=null,selectedLairBoss="stalker";
+let training=null,beaconCapture=null;
 const lairActive=()=>isLairChallenge(selectedMode,selectedChallenge);
 function showLairPicker(){
  const active=lairActive();
@@ -130,7 +133,7 @@ function announce(message){
  }
 }
 function saveBest(){
- if(lairActive())return;
+ if(lairActive()||training)return;
  state.sessionBest=sessionBests.record(bestKey(),state.run.score);
  if(state.run.score<=state.best)return;
  state.best=state.run.score;
@@ -193,6 +196,7 @@ function showOverlay(title,description,buttonLabel){
  $("primaryButton").textContent=buttonLabel;
  $("gameOverlay").hidden=false;
  $("modeMenu").hidden=state.run.status==="paused";
+ $("trainingButton").hidden=state.run.status==="paused"||state.run.status==="won"||selectedMode!=="hunt"||lairActive();
 }
 function hideOverlay(){$("gameOverlay").hidden=true}
 /** Once per encounter, not per phase: a presentation-only pause. */
@@ -284,10 +288,33 @@ function resumeMutationByKey(key){
  announce("Swarm moving. Keep an escape route open.");
  return true;
 }
+function syncTrainingPrompt(turned=false){
+ if(!training)return "";
+ const message=trainingProgress(training,state.run,{turned});
+ if(message&&$("trainingPrompt").textContent!==message)$("trainingPrompt").textContent=message;
+ return message;
+}
+function beginTraining(){
+ if(startingRun||selectedMode!=="hunt"||lairActive())return;
+ wakeAudio();resetBossBriefing();clearMutationResume();
+ training=newTraining();beaconCapture=null;
+ state.run=newRun({cols:COLS,rows:ROWS,seed:402014,mode:"hunt"});
+ // Solo tutorial difficulty aids cannot affect score validation or leaderboard records.
+ state.run.openingGraceMs=60000;state.run.mercy=3;state.run.orbIn=1000000;
+ state.day="";lastCapture=null;lastEncounterSeen=null;visualBurst=null;lairBurst=null;
+ state.accumulator=0;state.lastFrame=0;state.pointer=null;
+ start(state.run);hideOverlay();hideMutationDraft($("mutationOverlay"));
+ $("trainingPrompt").hidden=false;syncTrainingPrompt();
+ $("rankedNotice").textContent="FIRST HUNT · TRAINING ONLY · NO RECORDS";
+ setEncounterMusic(musicForRun());syncUI();draw();canvas.focus({preventScroll:true});
+ announce("First Hunt training. Swipe to turn, block the Skitter's exits with your trail, and capture it.");
+}
 function begin(){
  if(startingRun||bossGate.blocking||awaitingMutationResume)return;
+ if(training&&state.run.status==="over"){beginTraining();return;}
  wakeAudio();
  if(["ready","over","won"].includes(state.run.status)){
+  training=null;$("trainingPrompt").hidden=true;beaconCapture=null;
   resetBossBriefing();
   if(lairActive()){
    state.day="";loadBest();
@@ -311,6 +338,7 @@ function begin(){
 }
 function reset(){
  if(startingRun)return;
+ training=null;$("trainingPrompt").hidden=true;beaconCapture=null;
  resetBossBriefing();clearMutationResume();
  state.run=lairActive()?createLairRun(selectedLairBoss,COLS,ROWS):newRun({cols:COLS,rows:ROWS,mode:selectedMode});
  state.day="";loadBest();
@@ -339,6 +367,7 @@ function togglePause(){
 function handleDirection(direction){
  if(bossGate.blocking||awaitingMutationResume||state.run.status!=="running")return false;
  if(!turn(state.run,direction))return false;
+ if(training)syncTrainingPrompt(true);
  // Draw in the same keydown/pointer event: players see their buffered turn
  // immediately rather than waiting for a movement tick or animation frame.
  draw();
@@ -464,6 +493,7 @@ function draw(){
  renderMutationEffects(context,run,CELLS,performance.now(),visualBurst,prefersReducedMotion());
  drawLairEffects(context,run,CELLS,performance.now(),lairBurst,prefersReducedMotion());
  if(lastCapture)drawCapture(context,lastCapture.pos,CELLS,performance.now(),lastCapture.until,prefersReducedMotion());
+ drawCaptureFlash(context,beaconCapture,CELLS,performance.now(),prefersReducedMotion());
  if(run.status==="over"){
   context.fillStyle="#dcb78b";
   const head=run.body[0];context.fillRect(head.x*CELLS+5,head.y*CELLS+5,10,10);
@@ -501,7 +531,7 @@ function loop(time){
   let catchUps=0;
   while(state.accumulator>=effectiveTickMs(state.run)&&catchUps<3&&state.run.status==="running"){
    const currentTick=effectiveTickMs(state.run);
-   const prevBrood=state.run.brood,prevEvent=state.run.eventSerial,prevKills=state.run.kills;
+   const prevBrood=state.run.brood,prevEvent=state.run.eventSerial,prevKills=state.run.kills,prevScore=state.run.score;
    const enemyBefore=state.run.enemies.map(e=>({id:e.id,pos:{...e.pos}}));
    step(state.run);
    if(lairActive())completeLairRun(state.run);
@@ -532,13 +562,20 @@ function loop(time){
    }
    if(state.run.kills>prevKills){
     const removed=enemyBefore.find(e=>!state.run.enemies.some(now=>now.id===e.id));
-    if(removed)lastCapture={pos:removed.pos,until:performance.now()+620};
+    if(removed){lastCapture={pos:removed.pos,until:performance.now()+620};
+     beaconCapture=captureFlash(removed.pos,state.run.score-prevScore,performance.now());}
     playTone(740,.13,.04);saveBest();
     if(!encounterMoment||encounterMoment.type!=="defeat"||encounterMoment.tick!==state.run.runTicks)
      announce("Enemy captured! +3 evolution energy. Total captures "+state.run.kills+".");
    }else if(state.run.brood>prevBrood){
     playTone(480,.09,.028);saveBest();
     announce("Brood collected! +1 evolution energy.");
+   }
+   if(training){
+    syncTrainingPrompt();
+    if(training.complete){
+     state.run.status="won";state.run.endReason="You trapped your first Skitter.";
+    }
    }
    if(state.run.status==="draft")showDraftScreen();
    // A queued boss can spawn from an engine step rather than mutation choice.
@@ -552,10 +589,11 @@ function loop(time){
     saveBest();syncUI();
     playTone(state.run.status==="won"?720:135,.2,.03);
     const final=state.run.status==="won";
-    showOverlay(lairActive()?(final?"LAIR CONQUERED":"ENCOUNTER LOST"):(final?"HIVE COMPLETE!":"GAME OVER"),
+    showOverlay(training?(final?"FIRST HUNT COMPLETE":"FIRST HUNT FAILED"):lairActive()?(final?"LAIR CONQUERED":"ENCOUNTER LOST"):(final?"HIVE COMPLETE!":"GAME OVER"),
+     training?(final?"First capture complete! You are ready for Predator Hunt.":"Try again: steer the Skitter against your trail. This lesson is unranked."):
      lairActive()?state.run.endReason+" Practice is unranked. Select another boss or retry.":
       state.run.endReason+" Final score: "+state.run.score.toLocaleString()+". Session best: "+state.sessionBest.toLocaleString()+".",
-     lairActive()?"RETRY BOSS ↺":"PLAY AGAIN ↺");
+     training?(final?"START HUNT ▶":"RETRY TRAINING ↺"):lairActive()?"RETRY BOSS ↺":"PLAY AGAIN ↺");
     announce((final?"Win! ":"Game over. ")+state.run.endReason+" Final score "+state.run.score+". Saved on this device only.");
    }
   }
@@ -568,6 +606,7 @@ function loop(time){
 // Unlock on direct interaction; an async score request is too late for autoplay rules.
 document.addEventListener("pointerdown",wakeAudio,{capture:true,passive:true});
 $("primaryButton").addEventListener("click",begin);
+$("trainingButton").addEventListener("click",beginTraining);
 $("pauseButton").addEventListener("click",togglePause);
 $("restartButton").addEventListener("click",reset);
 $("soundButton").addEventListener("click",()=>{
@@ -677,6 +716,7 @@ function syncExpeditionChoice(){
  }
  $("gameChallenge").hidden=selectedMode==="classic";
  $("gameChallengeLabel").hidden=selectedMode==="classic";
+ $("trainingButton").hidden=selectedMode==="classic"||selectedChallenge!=="arcade";
 }
 $("gameMode").addEventListener("change",()=>{
  selectedMode=$("gameMode").value;
