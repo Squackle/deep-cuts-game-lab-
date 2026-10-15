@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {newRun,RULES_VERSION} from "../src/engine.js";
-import {captureFlash,drawCaptureFlash,isScoreFlashVisible,SCORE_FLASH_DURATION_MS} from "../src/beacon-feedback.js";
+import {captureFlash,drawCaptureFlash,isScoreFlashVisible,SCORE_FLASH_DURATION_MS,scoreStampPosition} from "../src/beacon-feedback.js";
 import {codexEntry,CODEX_ORDER} from "../src/codex-preview.js";
 import {trapSignal,drawTrapHints} from "../src/trap-assist.js";
 
@@ -22,7 +22,7 @@ test("Beacon scores blink three times, fixed at the capture tile, then vanish",(
  assert.deepEqual(flash.pos,{x:4,y:7});assert.equal(flash.score,300);
  assert.equal(flash.until-flash.started,SCORE_FLASH_DURATION_MS);
  const drawn=[],ctx={save(){},restore(){},strokeRect(...a){drawn.push(["stroke",...a])},
- fillText(...a){drawn.push(["text",...a])},globalAlpha:1};
+ fillText(...a){drawn.push(["text",...a])},measureText:()=>({width:32}),canvas:{width:360},globalAlpha:1};
  for(const time of [100,380,660]){
   assert.equal(isScoreFlashVisible(flash,time),true);
   drawCaptureFlash(ctx,flash,20,time);
@@ -31,8 +31,9 @@ test("Beacon scores blink three times, fixed at the capture tile, then vanish",(
  assert.equal(stamps.length,3,"a single score remains in place across all three flashes");
  for(const [,label,x,y] of stamps){
   assert.equal(label,"+300");
-  assert.equal(x,90,"fixed X at center of captured tile");
-  assert.equal(y,154,"fixed Y at center of captured tile");
+  assert.equal(x,90,"fixed X near captured tile");
+  assert.equal(y,136,"fixed baseline four pixels ABOVE captured square");
+  assert.ok(y<7*20,"number must not sit inside the captured square");
  }
  for(const time of [240,520,800,940]){
   const prev=drawn.length;
@@ -70,4 +71,21 @@ test("Hive Codex stays in profile preview, never on game HUD, pending account in
  assert.match(main,/if\(lairActive\(\)\)return;/);
  assert.match(policy,/All future Hive Run updates must deploy/);
  assert.match(policy,/owner uses an explicit/);
+});
+test("score stamp stays readable at top and side edges without covering its tile",()=>{
+ const nearTop=scoreStampPosition({x:4,y:0},20,360,32);
+ assert.deepEqual(nearTop,{x:90,y:34},"top-row capture appears below its square");
+ assert.ok(nearTop.y-11>=20,"top-row text does not overlap its captured square");
+ const nearRight=scoreStampPosition({x:17,y:7},20,360,32);
+ assert.deepEqual(nearRight,{x:342,y:136},"text stays inside 360px board at right side");
+ assert.ok(nearRight.x+16<=360);
+ const nearLeft=scoreStampPosition({x:0,y:7},20,360,32);
+ assert.deepEqual(nearLeft,{x:18,y:136});
+ const stamp=captureFlash({x:4,y:0},300,100);
+ const calls=[],ctx={save(){},restore(){},strokeRect(){},fillText(...args){calls.push(args)},
+ measureText:()=>({width:32}),canvas:{width:360}};
+ drawCaptureFlash(ctx,stamp,20,100);
+ drawCaptureFlash(ctx,stamp,20,380);
+ drawCaptureFlash(ctx,stamp,20,660);
+ assert.deepEqual(calls,[["+300",90,34],["+300",90,34],["+300",90,34]]);
 });
