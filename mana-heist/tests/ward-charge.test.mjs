@@ -18,7 +18,7 @@ test("three mana charge equal ring thirds in precise tap order",()=>{
  assert.equal(count.textContent,"3 / 3");
  assert.equal((target.innerHTML.match(/class="ward-charge-arc/g)||[]).length,3);
  assert.equal((target.innerHTML.match(/class="ward-charge-track/g)||[]).length,3);
- assert.deepEqual([...target.innerHTML.matchAll(/data-color="([A-Z])"/g)].map(m=>m[1]),["R","U","R"]);
+ assert.deepEqual([...target.innerHTML.matchAll(/class="ward-charge-arc[^"]*"[^>]*data-color="([A-Z])"/g)].map(m=>m[1]),["R","U","R"]);
 });
 test("blue contributes to generic only, not a required red mana",()=>{
  const cost={R:1,N:1};
