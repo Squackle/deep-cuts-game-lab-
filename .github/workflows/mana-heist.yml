@@ -1,0 +1,32 @@
+name: Mana Heist prototype checks
+on:
+  push:
+    paths:
+      - "mana-heist/**"
+      - ".github/workflows/mana-heist.yml"
+  pull_request:
+    paths:
+      - "mana-heist/**"
+      - ".github/workflows/mana-heist.yml"
+jobs:
+  mana-heist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Verify puzzle engine and authored levels
+        run: node --test mana-heist/tests/*.test.mjs
+      - name: Check browser modules for syntax errors
+        run: |
+          node --check mana-heist/src/engine.js
+          node --check mana-heist/src/solver.js
+          node --check mana-heist/src/levels.js
+          node --check mana-heist/src/main.js
+      - name: Assert independence from public APIs
+        run: |
+          if grep -REn '(fetch\(|/api/leaderboard|HIVE_DB|window\.location\.replace)' mana-heist/src; then
+            echo 'Unexpected integration detected in solo playtest'
+            exit 1
+          fi
