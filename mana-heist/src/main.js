@@ -106,7 +106,7 @@ function perform(action){
  if(!out.ok){if(action?.type==="cast")rejectCast();else message(out.error,true);return;}
  cancelAuto();
  if(action.type!=="tap"){viewEpoch++;pendingFlights.clear();el("manaTravelLayer").replaceChildren();}
- history.push({state,orbs:manaOrbs.map(o=>({...o}))});
+ history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type});
  state=out.state;
  manaOrbs=transitionOrbs(manaOrbs,action,state.pool);
  if(!consistent(state.pool,manaOrbs))manaOrbs=reconstruct(state.pool);
@@ -286,7 +286,17 @@ landDrag=installLandDragging({
 });
 el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a)perform(a);});
 el("endTurn").addEventListener("click",()=>{const a=actions(level,state).find(a=>a.type==="end");if(a)perform(a);else message("No turns remain. Undo or restart to try another line.",true);});
-el("undo").addEventListener("click",()=>{if(!history.length)return;cancelAuto();viewEpoch++;pendingFlights.clear();const prev=history.pop();state=prev.state;manaOrbs=prev.orbs;el("manaTravelLayer").replaceChildren();render();message("Previous move undone. Land drops, life and mana are restored.");});
+el("undo").addEventListener("click",()=>{
+ if(!history.length)return;
+ cancelAuto();viewEpoch++;pendingFlights.clear();
+ let prev=history.pop();
+ // An automatic cast is a consequence of the previous manual move.
+ // Undo that move and every automatically resolved ward after it together.
+ while(prev.actionType==="cast"&&history.length)prev=history.pop();
+ state=prev.state;manaOrbs=prev.orbs;
+ el("manaTravelLayer").replaceChildren();render();
+ message("Previous move undone, including any automatically cast wards.");
+});
 el("reset").addEventListener("click",()=>load(index));
 el("skip").addEventListener("click",showMap);
 el("winNext").addEventListener("click",()=>{if(index+1<LEVELS.length&&unlocked(index+1,progress.bests))load(index+1,true);else showMap();});
