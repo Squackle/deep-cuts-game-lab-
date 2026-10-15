@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {newRun,start} from "../src/engine.js";
 import {PREY,ORDINARY_PREY,spawnPrey,decidePrey,advancePrey,reachableArea} from "../src/enemies.js";
-test("all prey and two miniboss types have distinct defined AI identities",()=>{
- assert.deepEqual(Object.keys(PREY),["warden","guardian","skitter","runner","stalker","weaver"]);
- assert.ok(PREY.stalker.period>0&&PREY.weaver.period>0);
+test("ordinary prey and all five bosses have distinct defined AI identities",()=>{
+ assert.deepEqual(Object.keys(PREY),["warden","broodmother","guardian","skitter","runner","stalker","weaver"]);
+ assert.ok(PREY.stalker.period>0&&PREY.weaver.period>0&&PREY.broodmother.period>0);
  assert.notEqual(PREY.skitter.accent,PREY.runner.accent);
 });
 test("a normal enemy spawns well clear of head and stays off the moving body",()=>{
