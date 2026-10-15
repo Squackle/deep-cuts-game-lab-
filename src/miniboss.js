@@ -10,7 +10,8 @@ export const ABILITIES=Object.freeze({
  warden:Object.freeze({name:"HATCHERY WARDEN",ability:"BROOD SEAL",cooldownMs:10000,phases:3,icon:"seal"}),
  guardian:Object.freeze({name:"RIFT GUARDIAN",ability:"RIFT PULSE",cooldownMs:4000,phases:3,icon:"rift"}),
  stalker:Object.freeze({name:"BURROW STALKER",ability:"BURROW DASH",cooldownMs:10000,phases:2,icon:"burrow"}),
- weaver:Object.freeze({name:"TUNNEL WEAVER",ability:"WEB SNARE",cooldownMs:5000,phases:2,icon:"web"})
+ weaver:Object.freeze({name:"TUNNEL WEAVER",ability:"WEB SNARE",cooldownMs:5000,phases:2,icon:"web"}),
+ broodmother:Object.freeze({name:"BROODMOTHER",ability:"EGG BLOOM",cooldownMs:6500,phases:3,icon:"egg"})
 });
 export const WEB_LIFETIME_MS=15000;
 export const WEB_STUN_MS=2000;
@@ -25,6 +26,7 @@ const occupied=(run,p,id=null)=>run.body.some(b=>same(p,b))||
  !!run.food&&same(p,run.food);
 const available=(run,p,id=null)=>inside(run,p)&&!reservedTerrain(run,p)&&!isEnemyWeb(run,p)&&!occupied(run,p,id);
 export function encounterKind(evolutions){
+ if(evolutions===12)return "broodmother"; // Fifth boss at a new full-boss milestone.
  if(evolutions>=2&&evolutions%4===2)return evolutions%8===2?"stalker":"weaver";
  if(evolutions>=4&&evolutions%4===0)return evolutions%8===4?"warden":"guardian";
  return null;
@@ -140,6 +142,13 @@ export function tickMiniboss(run,dt){
   if(!candidate)return null;
   e.telegraph={pos:candidate.pos,from:{...enemy.pos},remainingMs:TELEGRAPH_MS};
   return {type:"burrow-warning",at:candidate.pos};
+ }
+ if(e.kind==="broodmother"){
+  const x=enemy.pos.x,y=enemy.pos.y;
+  const petals=[{x:x-2,y},{x:x+2,y},{x,y:y-2},{x,y:y+2}];
+  warnTerrain(run,petals,"egg",900,3200);
+  e.abilityMs=0;e.lastAbility={type:"boss-power",at:{...enemy.pos},tick:run.runTicks};
+  return e.lastAbility;
  }
  if(e.kind==="warden"||e.kind==="guardian"){
   const x=enemy.pos.x,y=enemy.pos.y;
