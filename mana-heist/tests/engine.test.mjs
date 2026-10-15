@@ -1,94 +1,84 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {LEVELS} from "../src/levels.js";
-import {ENGINE_VERSION,initialState,validateLevel,applyAction,reachableIds,legalActions,stateKey} from "../src/engine.js";
+import {CARDS,COLORS,VERSION,validate,initial,actions,reduce,key,payOptions,completed,medal} from "../src/engine.js";
 import {solve,replay} from "../src/solver.js";
-
-test("all six handcrafted vaults have proven optimal completions",()=>{
-  assert.equal(LEVELS.length,6);
-  for(const [i,level] of LEVELS.entries()){
-    assert.equal(level.engineVersion,ENGINE_VERSION);
-    assert.equal(validateLevel(level),true);
-    const answer=solve(level);
-    assert.equal(answer.status,"solved",level.id+" "+JSON.stringify(answer));
-    assert.equal(answer.moves,[2,3,4,3,5,5][i],level.id);
-    assert.ok(answer.moves<=level.moveBudget,level.id);
-    const played=replay(level,answer.actions);
-    assert.equal(played.ok,true,level.id);
-    assert.equal(played.state.moves,answer.moves);
-    assert.ok(Object.values(played.state.energy).every(n=>n>=0));
-  }
+test("every authored stage is valid, solvable, and replayable", {timeout:110000},()=>{
+ assert.equal(LEVELS.length,18);
+ let previous=0;
+ for(const [i,l] of LEVELS.entries()){
+  assert.equal(l.version,VERSION);assert.equal(validate(l),true);
+  const r=solve(l,{maxStates:400000});
+  assert.equal(r.status,"solved",l.id+" "+JSON.stringify(r));
+  assert.ok(r.turn<=l.turnLimit,l.id);
+  assert.ok(r.actions.length>0);
+  const sim=replay(l,r.actions);
+  assert.equal(sim.ok,true,l.id);
+  assert.equal(sim.state.turn,r.turn);
+  assert.equal(sim.state.spentLife,r.spentLife);
+  assert.equal(medal(l,sim.state,r),3);
+  if(i===2)assert.ok(r.turn>=2);
+  if(i>=10)assert.ok(r.actions.length>=3);
+  previous+=r.explored;
+  console.log(l.id,l.title,"turn",r.turn,"life cost",r.spentLife,"actions",r.steps,"states",r.explored);
+ }
+ console.log("Total expanded distinct states:",previous);
 });
-test("illegal activation cannot mutate original state",()=>{
-  const level=LEVELS[3],before=initialState(level),snapshot=JSON.stringify(before);
-  const attempt=applyAction(level,before,{type:"activate",id:"sunwell",choice:0});
-  assert.equal(attempt.ok,false);
-  assert.match(attempt.error,/connected/i);
-  assert.equal(JSON.stringify(before),snapshot);
+test("tapping lands is exclusive until end turn; mana empties between turns",()=>{
+ const l=LEVELS[0],s=initial(l);
+ const tap=actions(l,s).find(a=>a.type==="tap");
+ const next=reduce(l,s,tap).state;
+ assert.equal(next.pool.U,1);assert.ok(!actions(l,next).some(a=>a.type==="tap"));
+ const t=initial(LEVELS[2]);
+ const play=actions(LEVELS[2],t).find(a=>a.type==="play"&&a.id==="a");
+ const withLand=reduce(LEVELS[2],t,play).state;
+ assert.equal(withLand.played,1);
+ assert.ok(!actions(LEVELS[2],withLand).some(a=>a.type==="play"));
+ const t2=reduce(LEVELS[2],withLand,{type:"end"}).state;
+ assert.equal(t2.played,0);assert.equal(t2.pool.U,0);
 });
-test("relay rotation establishes actual bidirectional reachability",()=>{
-  const level=LEVELS[3],start=initialState(level);
-  assert.equal(reachableIds(level,start).has("sunwell"),false);
-  const rotated=applyAction(level,start,{type:"rotate",id:"bridge"});
-  assert.equal(rotated.ok,true);
-  assert.equal(reachableIds(level,rotated.state).has("sunwell"),true);
-  assert.equal(rotated.state.turns.bridge,0);
-  assert.equal(applyAction(level,rotated.state,{type:"rotate",id:"bridge"}).ok,false);
+test("shock lands cost life only for an untapped entry",()=>{
+ const l=LEVELS[5],s=initial(l);
+ const tapped=reduce(l,s,{type:"play",id:"a",shock:false}).state;
+ assert.equal(tapped.life,4);assert.equal(tapped.field[0].tapped,true);
+ const fast=reduce(l,s,{type:"play",id:"a",shock:true}).state;
+ assert.equal(fast.life,2);assert.equal(fast.field[0].tapped,false);
+ assert.notEqual(key(tapped),key(fast));
 });
-test("conversion spends input instead of duplicating it",()=>{
-  const level=LEVELS[2];
-  let state=initialState(level);
-  state=applyAction(level,state,{type:"activate",id:"sunwell",choice:0}).state;
-  state=applyAction(level,state,{type:"convert",id:"prism"}).state;
-  assert.equal(state.energy.sun,0);
-  assert.equal(state.energy.ember,1);
-  assert.equal(applyAction(level,state,{type:"convert",id:"prism"}).ok,false);
-  assert.equal(applyAction(level,state,{type:"open"}).ok,false);
+test("colored pain-land mana costs one life, colorless does not",()=>{
+ const l=LEVELS[7],s=initial(l);
+ const played=reduce(l,s,{type:"play",id:"a",shock:false}).state;
+ assert.equal(reduce(l,played,{type:"tap",id:"a",color:"B"}).state.life,1);
+ assert.equal(reduce(l,played,{type:"tap",id:"a",color:"C"}).state.life,2);
 });
-test("dual source choices are distinct and the vault consumes its goal",()=>{
-  const level=LEVELS[5];
-  let state=initialState(level);
-  state=applyAction(level,state,{type:"rotate",id:"bridge"}).state;
-  state=applyAction(level,state,{type:"activate",id:"twinfont",choice:0}).state;
-  state=applyAction(level,state,{type:"activate",id:"twinfont",choice:1}).state;
-  assert.equal(state.energy.sun,1);
-  assert.equal(state.energy.tide,1);
-  state=applyAction(level,state,{type:"convert",id:"prism"}).state;
-  const result=applyAction(level,state,{type:"open"});
-  assert.equal(result.ok,true);
-  assert.equal(result.state.opened,true);
-  assert.equal(result.state.energy.sun,0);
-  assert.equal(result.state.energy.ember,0);
-  assert.equal(result.state.energy.tide,0);
-  assert.deepEqual(legalActions(level,result.state),[]);
+test("mana payment enumerates genuine alternatives for generic costs",()=>{
+ const pool={W:1,U:2,B:0,R:1,G:0,C:0};
+ const pays=payOptions(pool,{U:1,N:2});
+ assert.equal(pays.length,2);
+ for(const pay of pays)assert.equal(Object.values(pay).reduce((a,b)=>a+b,0),3);
 });
-test("state keys distinguish energy, relay orientation and exhausted uses",()=>{
-  const level=LEVELS[3];
-  const a=initialState(level),b=applyAction(level,a,{type:"rotate",id:"bridge"}).state;
-  assert.notEqual(stateKey(a),stateKey(b));
+test("fetch sacrifices source and searches only eligible land types",()=>{
+ const l=LEVELS[11],s=initial(l);
+ const played=reduce(l,s,{type:"play",id:"a",shock:false}).state;
+ const options=actions(l,played).filter(a=>a.type==="fetch");
+ assert.equal(options.length,2);
+ const got=reduce(l,played,options.find(a=>a.targetId==="c")).state;
+ assert.equal(got.life,2);
+ assert.deepEqual(got.field,[{id:"c",tapped:false}]);
 });
-test("bad level data is rejected explicitly",()=>{
-  const original=LEVELS[0];
-  const malformed=[
-    {...original,engineVersion:"other"},
-    {...original,width:0},
-    {...original,goal:{sun:-1}},
-    {...original,goal:{unknown:1}},
-    {...original,components:[...original.components,{...original.components[0]}]},
-    {...original,components:[...original.components,{...original.components[0],id:"overlap"}]},
-    {...original,components:original.components.filter(c=>c.type!=="vault")}
-  ];
-  for(const bad of malformed)assert.throws(()=>validateLevel(bad));
+test("failures do not mutate the previous state",()=>{
+ const l=LEVELS[0],s=initial(l),before=JSON.stringify(s);
+ const error=reduce(l,s,{type:"tap",id:"nobody",color:"U"});
+ assert.equal(error.ok,false);
+ assert.equal(JSON.stringify(s),before);
 });
-test("bounded solver does not call an unfinished search unsolvable",()=>{
-  const answer=solve(LEVELS[5],{maxStates:1});
-  assert.equal(answer.status,"inconclusive");
+test("bad cards, duplicate IDs and invalid costs fail validation",()=>{
+ const l=LEVELS[0];
+ assert.throws(()=>validate({...l,version:"bad"}));
+ assert.throws(()=>validate({...l,hand:[{id:"a",card:"mountain"}]}));
+ assert.throws(()=>validate({...l,stages:[{name:"Bad",cost:{U:-1}}]}));
+ assert.throws(()=>validate({...l,stages:[{name:"Bad",cost:{X:1}}]}));
 });
-test("undo is exact because prior immutable state was not changed",()=>{
-  const level=LEVELS[0],initial=initialState(level);
-  const after=applyAction(level,initial,{type:"activate",id:"sunwell",choice:0}).state;
-  assert.equal(initial.energy.sun,0);
-  assert.equal(initial.uses.sunwell,1);
-  assert.equal(after.energy.sun,1);
-  assert.equal(after.uses.sunwell,0);
+test("solver hitting a small search bound is inconclusive, never unsolvable",()=>{
+ assert.equal(solve(LEVELS[17],{maxStates:2}).status,"inconclusive");
 });
