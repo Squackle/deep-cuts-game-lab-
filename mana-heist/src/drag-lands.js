@@ -12,7 +12,32 @@ export function installLandDragging({hand,battlefield,onDrop,onHint,onInspect}) 
  const zone=battlefield.closest(".table-card");
  let active=null,keyboardId=null;
  const hit=(x,y)=>withinDropZone(x,y,zone.getBoundingClientRect());
+ // On short phones the full-size cards can be below the visible fold.
+ // Let a held card scroll the DOCUMENT as the finger approaches the screen
+ // edge, so dragging into the battlefield below remains possible.
+ let scrollFrame=0;
+ function stopAutoScroll(){if(scrollFrame){cancelAnimationFrame(scrollFrame);scrollFrame=0;}}
+ function autoScroll(){
+  scrollFrame=0;
+  if(!active||!active.dragging)return;
+  const edge=75,height=window.innerHeight||document.documentElement.clientHeight;
+  const y=active.clientY??active.y;
+  let delta=0;
+  if(y>height-edge)delta=2+(y-(height-edge))/edge*10;
+  else if(y<edge)delta=-(2+(edge-y)/edge*10);
+  if(delta){
+   const el=document.scrollingElement||document.documentElement;
+   const previous=el.scrollTop;
+   window.scrollBy(0,delta);
+   if(el.scrollTop!==previous){
+    active.ghost.style.top=y+"px";
+    zone.classList.toggle("drop-target",hit(active.clientX??active.x,y));
+   }
+  }
+  scrollFrame=requestAnimationFrame(autoScroll);
+ }
  function restore(){
+  stopAutoScroll();
   if(!active)return;
   active.ghost?.remove();
   active.source.classList.remove("drag-origin");
@@ -39,6 +64,8 @@ export function installLandDragging({hand,battlefield,onDrop,onHint,onInspect}) 
    active.source.classList.add("drag-origin");
   }
   if(!active.dragging)return;
+  active.clientX=x;active.clientY=y;
+  if(!scrollFrame)scrollFrame=requestAnimationFrame(autoScroll);
   active.ghost.style.left=x+"px";
   active.ghost.style.top=y+"px";
   zone.classList.toggle("drop-target",hit(x,y));
