@@ -103,8 +103,9 @@ function landAllocation(p,line,seed){
   if(action.sourceId)continue;
   for(const key of Object.keys(c))c[key]+=(CARDS[action.card]?.cost?.[key]||0);
  }
- const primary=COLORS.find(x=>c[x])||COLORS[seed%COLORS.length];
- for(let i=0;i<c.generic;i++)c[COLORS[(COLORS.indexOf(primary)+seed+i)%COLORS.length]]++;
+ // Reserve true colorless for generic payments so automated solution lines
+ // never accidentally spend a later colored spell's mandatory mana.
+ c.C+=c.generic;
  return COLORS.flatMap(color=>Array.from({length:c[color]},()=>({card:BASICS[color],controller:'player'})))
  .map((v,j)=>({id:'land-'+(j+1),...v}));
 }
