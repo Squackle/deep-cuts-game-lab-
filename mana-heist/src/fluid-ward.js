@@ -37,6 +37,46 @@ export function addDye(grid,color,x=MID,y=MID,amount=1){
   }
  }
 }
+// Full-disk proportional composition: each distinct mana color initially owns
+// count/total of the WATER, rather than making a tiny splat in empty water.
+// New mana rebalances the entire pot immediately; stirring then advects dye.
+// Edges use a little deterministic waviness, not isolated pie-shape overlays.
+export function fillDyeProportions(grid,orbs){
+ const list=orbs||[];
+ const groups=[];
+ for(const o of list){
+  const color=o?.color;
+  if(!COLOR_RGB[color])continue;
+  const existing=groups.find(g=>g.color===color);
+  if(existing)existing.count++;
+  else groups.push({color,count:1});
+ }
+ if(!groups.length){
+  for(const k of ["mass","r","g","b"])grid[k].fill(0);
+  return {total:0,groups:[]};
+ }
+ const total=groups.reduce((sum,g)=>sum+g.count,0);
+ let sum=0;
+ const limits=groups.map(g=>{sum+=g.count/total;return sum;});
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+  const i=INDEX(x,y);
+  if(!grid.active[i]){
+   grid.mass[i]=grid.r[i]=grid.g[i]=grid.b[i]=0;
+   continue;
+  }
+  const dx=x-MID,dy=y-MID,dist=Math.hypot(dx,dy);
+  // Conserve colored area while softening rigid radial boundaries.
+  const angle=(Math.atan2(dy,dx)/(Math.PI*2)+1)%1;
+  const wobble=groups.length===1?0:.007*Math.sin(dist*.28+angle*19)+.004*Math.sin(y*.19+x*.11);
+  const position=(angle+wobble+1)%1;
+  let group=0;
+  while(group<limits.length-1&&position>=limits[group])group++;
+  const rgb=COLOR_RGB[groups[group].color];
+  grid.mass[i]=1;
+  grid.r[i]=rgb[0];grid.g[i]=rgb[1];grid.b[i]=rgb[2];
+ }
+ return {total,groups};
+}
 export function stirDye(grid,x,y,dx,dy){
  const speed=clamp(Math.hypot(dx,dy),0,10);
  if(!speed)return;
@@ -93,7 +133,7 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
  off.width=N;off.height=N;
  const offctx=off.getContext("2d"),pixels=offctx.createImageData(N,N);
  canvas.width=192;canvas.height=192;
- let active=false,raf=0,lastFrame=0,motionStart=0,lastStir=0,drag=null;
+ let active=false,raf=0,lastFrame=0,lastStir=0,drag=null,hover=null;
  let charged=[],appliedIds=new Set(),ripples=[],pulse=0;
  const reduced=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches===true;
  function clearGrid(){
@@ -110,12 +150,13 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
   for(let i=0;i<COUNT;i++){
    const offset=i*4;
    if(!grid.active[i]){data[offset+3]=0;continue;}
-   const mass=grid.mass[i],opacity=clamp(1-Math.exp(-mass*1.55),0,.94);
+   const mass=grid.mass[i];
    const inv=1/Math.max(mass,.0001);
-   const r=mass?grid.r[i]*inv:21,g=mass?grid.g[i]*inv:53,b=mass?grid.b[i]*inv:64;
-   data[offset]=Math.round(21*(1-opacity)+r*opacity);
-   data[offset+1]=Math.round(53*(1-opacity)+g*opacity);
-   data[offset+2]=Math.round(64*(1-opacity)+b*opacity);
+   // Entire pot is occupied once any mana arrives. The dye itself supplies
+   // the water color, not a nearly invisible layer on dark teal water.
+   data[offset]=Math.round(clamp(mass?grid.r[i]*inv:21,0,255));
+   data[offset+1]=Math.round(clamp(mass?grid.g[i]*inv:53,0,255));
+   data[offset+2]=Math.round(clamp(mass?grid.b[i]*inv:64,0,255));
    data[offset+3]=255;
   }
   offctx.putImageData(pixels,0,0);
@@ -155,7 +196,7 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
   render();
   if(!reduced())raf=requestAnimationFrame(frame);
  }
- function pause(){active=false;cancelAnimationFrame(raf);raf=0;drag=null;}
+ function pause(){active=false;cancelAnimationFrame(raf);raf=0;drag=null;hover=null;target.classList.remove("is-stirring");}
  function inject(orb){
   // Every drop lands in the INTERIOR. Color-specific angles separate freshly
   // injected dyes so the player's stirring creates real overlapping plumes.
@@ -163,42 +204,79 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
   const dir=({R:.1,U:2.2,G:4.05,B:3.3,W:5.2,C:1.15}[orb.color]||0)+n*.13;
   const radius=N*(.09+(n%4)*.028);
   const x=MID+Math.cos(dir)*radius,y=MID+Math.sin(dir)*radius;
-  addDye(grid,orb.color,x,y,1.2);
+  // Tiny impulse produces the injection ripple. Color coverage is set by
+  // fillDyeProportions after the full accepted set is known.
+  addDye(grid,orb.color,x,y,.08);
   ripples.push({x:x/N*canvas.width,y:y/N*canvas.height,age:0});
   pulse=1;
  }
  function sync(next,{reset=false}={}){
   const list=next||[],ids=new Set(list.map(o=>o.id));
   if(reset||charged.some(o=>!ids.has(o.id)||!list.find(p=>p.id===o.id&&p.color===o.color)))clearGrid();
-  for(const orb of list)if(!appliedIds.has(orb.id)){inject(orb);appliedIds.add(orb.id);}
+  let changed=false;
+  for(const orb of list)if(!appliedIds.has(orb.id)){inject(orb);appliedIds.add(orb.id);changed=true;}
+  if(changed||reset||charged.length!==list.length)fillDyeProportions(grid,list);
   charged=list.map(o=>({...o}));
   target.style.setProperty("--fusion-color",cssForOrbs(charged));
   target.dataset.fusionCount=String(charged.length);
   if(!active||reduced())render();
  }
+ // Mouse: simply entering and MOVING stirs — no button press.
+ canvas.addEventListener("pointerenter",e=>{
+  if(e.pointerType==="touch")return;
+  const c=coord(e);
+  hover=inside(c.x,c.y)?c:null;
+ });
+ canvas.addEventListener("pointerleave",e=>{
+  if(e.pointerType!=="touch")hover=null;
+ });
  canvas.addEventListener("pointerdown",e=>{
   const c=coord(e);if(!inside(c.x,c.y))return;
-  e.preventDefault();try{canvas.setPointerCapture?.(e.pointerId);}catch{}
-  drag={id:e.pointerId,x:c.x,y:c.y};motionStart=performance.now();lastStir=motionStart;
+  e.preventDefault();
+  try{canvas.setPointerCapture?.(e.pointerId);}catch{}
+  drag={id:e.pointerId,x:c.x,y:c.y};
+  lastStir=performance.now();
+  // A tap adds a surface ripple. An actual drag moves pigment.
+  stirDye(grid,c.x,c.y,.45,.45);
+  ripples.push({x:c.x/(N-1)*canvas.width,y:c.y/(N-1)*canvas.height,age:0});
   target.classList.add("is-stirring");onInteract();
+  if(reduced())render();
  });
  canvas.addEventListener("pointermove",e=>{
-  if(!drag||drag.id!==e.pointerId)return;
-  const c=coord(e),dx=c.x-drag.x,dy=c.y-drag.y;
-  stirDye(grid,c.x,c.y,dx,dy);
-  drag.x=c.x;drag.y=c.y;lastStir=performance.now();onInteract();
-  if(reduced())render();
+  const c=coord(e);
+  if(drag&&drag.id===e.pointerId){
+   const dx=c.x-drag.x,dy=c.y-drag.y;
+   stirDye(grid,c.x,c.y,dx,dy);
+   drag.x=c.x;drag.y=c.y;lastStir=performance.now();onInteract();
+   if(reduced())render();
+   return;
+  }
+  if(e.pointerType==="touch")return;
+  if(!inside(c.x,c.y)){hover=null;return;}
+  if(hover){
+   const dx=c.x-hover.x,dy=c.y-hover.y;
+   if(Math.hypot(dx,dy)>.14){
+    stirDye(grid,c.x,c.y,dx,dy);
+    lastStir=performance.now();
+    onInteract();
+    if(reduced())render();
+   }
+  }
+  hover=c;
  });
  function release(e){
   if(!drag||e?.pointerId!=null&&e.pointerId!==drag.id)return;
   drag=null;lastStir=performance.now();target.classList.remove("is-stirring");onInteract();
  }
  for(const type of ["pointerup","pointercancel","lostpointercapture"])canvas.addEventListener(type,release);
+
  return {
   available:true,sync,clear(){clearGrid();target.style.setProperty("--fusion-color","#32616d");render();},
   pause,resume,isStirring:()=>!!drag,lastStirAt:()=>lastStir,
   getColor:()=>cssForOrbs(charged),getCount:()=>charged.length,
   // Exposed for direct browser QA, does not affect authoritative puzzle rules.
-  debugCellMass:()=>grid.mass.reduce((sum,v)=>sum+v,0)
+  debugCellMass:()=>grid.mass.reduce((sum,v)=>sum+v,0),
+  debugColorAt:(x,y)=>{const i=INDEX(Math.max(0,Math.min(N-1,Math.round(x))),Math.max(0,Math.min(N-1,Math.round(y))));const m=grid.mass[i]||1;return [grid.r[i]/m,grid.g[i]/m,grid.b[i]/m]},
+  debugProportions:()=>charged.reduce((a,o)=>(a[o.color]=(a[o.color]||0)+1,a),{})
  };
 }
