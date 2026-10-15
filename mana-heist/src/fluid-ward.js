@@ -6,14 +6,20 @@ import {COLOR_RGB,cssForOrbs} from "./fluid-palette.js";
 
 const N=64,COUNT=N*N,MID=(N-1)/2,RADIUS=N*.465;
 const INDEX=(x,y)=>y*N+x;
+const FIELDS=["mass","r","g","b","vx","vy"];
 const inside=(x,y)=>Math.hypot(x-MID,y-MID)<RADIUS;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 export function makeFluidGrid(){
- const active=new Uint8Array(COUNT);
- for(let y=0;y<N;y++)for(let x=0;x<N;x++)active[INDEX(x,y)]=inside(x,y)?1:0;
- const grid={active,n:N,mass:new Float32Array(COUNT),r:new Float32Array(COUNT),g:new Float32Array(COUNT),b:new Float32Array(COUNT),vx:new Float32Array(COUNT),vy:new Float32Array(COUNT)};
- grid.tmp=Object.fromEntries(["mass","r","g","b","vx","vy"].map(k=>[k,new Float32Array(COUNT)]));
+ const active=new Uint8Array(COUNT),drag=new Float32Array(COUNT);
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+  const i=INDEX(x,y),dist=Math.hypot(x-MID,y-MID);
+  active[i]=dist<RADIUS?1:0;
+  const wall=clamp((RADIUS-dist)/5,0,1);
+  drag[i]=wall>.01?.987*(.17+.83*wall):0;
+ }
+ const grid={active,drag,n:N,mass:new Float32Array(COUNT),r:new Float32Array(COUNT),g:new Float32Array(COUNT),b:new Float32Array(COUNT),vx:new Float32Array(COUNT),vy:new Float32Array(COUNT)};
+ grid.tmp=Object.fromEntries(FIELDS.map(k=>[k,new Float32Array(COUNT)]));
  return grid;
 }
 export function addDye(grid,color,x=MID,y=MID,amount=1){
@@ -49,32 +55,31 @@ function sample(grid,field,x,y){
  x=clamp(x,0,N-1.001);y=clamp(y,0,N-1.001);
  const x0=Math.floor(x),y0=Math.floor(y),fx=x-x0,fy=y-y0;
  const a=INDEX(x0,y0),b=INDEX(x0+1,y0),c=INDEX(x0,y0+1),d=INDEX(x0+1,y0+1);
- const safe=i=>grid.active[i]?field[i]:field[INDEX(clamp(Math.round(x),0,N-1),clamp(Math.round(y),0,N-1))]||0;
- return ((safe(a)*(1-fx)+safe(b)*fx)*(1-fy)+(safe(c)*(1-fx)+safe(d)*fx)*fy);
+ const fallback=field[INDEX(Math.round(x),Math.round(y))]||0;
+ const av=grid.active[a]?field[a]:fallback,bv=grid.active[b]?field[b]:fallback;
+ const cv=grid.active[c]?field[c]:fallback,dv=grid.active[d]?field[d]:fallback;
+ return ((av*(1-fx)+bv*fx)*(1-fy)+(cv*(1-fx)+dv*fx)*fy);
 }
+
 export function advanceFluid(grid,dt=1){
  const {tmp}=grid;
  dt=clamp(dt,.05,1.8);
  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
   const i=INDEX(x,y);
-  if(!grid.active[i]){for(const k of ["mass","r","g","b","vx","vy"])tmp[k][i]=0;continue;}
+  if(!grid.active[i]){for(const k of FIELDS)tmp[k][i]=0;continue;}
   const sx=x-grid.vx[i]*dt*.72,sy=y-grid.vy[i]*dt*.72;
-  for(const k of ["mass","r","g","b","vx","vy"])tmp[k][i]=sample(grid,grid[k],sx,sy);
+  for(const k of FIELDS)tmp[k][i]=sample(grid,grid[k],sx,sy);
  }
  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
   const i=INDEX(x,y);if(!grid.active[i])continue;
-  const dist=Math.hypot(x-MID,y-MID);
-  const wall=clamp((RADIUS-dist)/5,0,1);
+  const left=i-1,right=i+1,up=i-N,down=i+N;
+  const neighbors=(grid.active[left]?1:0)+(grid.active[right]?1:0)+(grid.active[up]?1:0)+(grid.active[down]?1:0);
   for(const k of ["mass","r","g","b"]){
-   let sum=0,count=0;
-   for(const p of [i-1,i+1,i-N,i+N])if(grid.active[p]){sum+=tmp[k][p];count++;}
-   const mixed=count?sum/count:tmp[k][i];
-   grid[k][i]=Math.max(0,(tmp[k][i]*.96+mixed*.04)*.9998);
+   const average=neighbors?((grid.active[left]?tmp[k][left]:0)+(grid.active[right]?tmp[k][right]:0)+(grid.active[up]?tmp[k][up]:0)+(grid.active[down]?tmp[k][down]:0))/neighbors:tmp[k][i];
+   grid[k][i]=Math.max(0,(tmp[k][i]*.96+average*.04)*.9998);
   }
-  // Near the wall, reduce inertia instead of bouncing or forcing circular motion.
-  grid.vx[i]=tmp.vx[i]*(.987*(.17+.83*wall));
-  grid.vy[i]=tmp.vy[i]*(.987*(.17+.83*wall));
-  if(!wall){grid.vx[i]=0;grid.vy[i]=0;}
+  grid.vx[i]=tmp.vx[i]*grid.drag[i];
+  grid.vy[i]=tmp.vy[i]*grid.drag[i];
  }
 }
 export function installFluidWard({canvas,target,onInteract=()=>{}}){
@@ -92,7 +97,7 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
  let charged=[],appliedIds=new Set(),ripples=[],pulse=0;
  const reduced=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches===true;
  function clearGrid(){
-  for(const k of ["mass","r","g","b","vx","vy"])grid[k].fill(0);
+  for(const k of FIELDS)grid[k].fill(0);
   appliedIds.clear();charged=[];ripples=[];pulse=0;
  }
  const coord=event=>{
@@ -139,7 +144,7 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
  }
  function frame(now){
   if(!active)return;
-  if(document.hidden){raf=requestAnimationFrame(frame);return;}
+  if(document.hidden||(!charged.length&&!drag&&!ripples.length)){raf=requestAnimationFrame(frame);return;}
   const dt=Math.min((now-lastFrame)/16.67||1,1.7);lastFrame=now;
   if(!reduced()){advanceFluid(grid,dt);for(const ripple of ripples)ripple.age+=dt*.09;}
   ripples=ripples.filter(r=>r.age<2);pulse=Math.max(0,pulse-.025*dt);
