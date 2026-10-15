@@ -53,11 +53,11 @@ export function drawTerrain(ctx,run,cell){
   const x=t.pos.x*cell,y=t.pos.y*cell,warn=t.warningMs>0;
   if(t.kind==="egg"){
    // Warm marbled shell cracks before a spider breaks free.
-   ctx.fillStyle="#24191a";ctx.fillRect(x+4,y+3,cell-8,cell-6);
-   ctx.fillStyle=warn?"#c29873":"#d9b18d";ctx.fillRect(x+6,y+3,cell-12,cell-7);
-   ctx.fillStyle="#9a4252";ctx.fillRect(x+8,y+6,2,3);ctx.fillRect(x+12,y+10,2,3);
-   ctx.fillStyle="#f9d9a1";ctx.fillRect(x+10,y+5,2,4);ctx.fillRect(x+11,y+9,2,2);
-   ctx.strokeStyle="#cc9176";ctx.lineWidth=1;ctx.strokeRect(x+4.5,y+3.5,cell-9,cell-7);
+   ctx.fillStyle="#2b1720";ctx.fillRect(x+4,y+3,cell-8,cell-6);
+   ctx.fillStyle=warn?"#ffe6ad":"#ffcf87";ctx.fillRect(x+6,y+3,cell-12,cell-7);
+   ctx.fillStyle="#99394a";ctx.fillRect(x+8,y+6,2,3);ctx.fillRect(x+12,y+10,2,3);
+   ctx.fillStyle="#fff4cd";ctx.fillRect(x+10,y+5,2,4);ctx.fillRect(x+11,y+9,2,2);
+   ctx.strokeStyle="#fff0c0";ctx.lineWidth=1;ctx.strokeRect(x+3.5,y+2.5,cell-7,cell-5);
    continue;
   }
   if(t.kind==="seal"){
@@ -70,11 +70,12 @@ export function drawTerrain(ctx,run,cell){
    continue;
   }
   if(t.kind==="rift"){
-   ctx.fillStyle=warn?"#342044":"#190d32";ctx.fillRect(x+2,y+2,cell-4,cell-4);
-   ctx.fillStyle="#633898";ctx.fillRect(x+5,y+4,10,12);
-   ctx.fillStyle="#21103d";ctx.fillRect(x+7,y+5,6,10);
-   ctx.fillStyle="#c77cea";ctx.fillRect(x+9,y+3,2,4);ctx.fillRect(x+9,y+13,2,4);
-   if(warn){ctx.strokeStyle="#c77cea";ctx.lineWidth=1;ctx.strokeRect(x+2.5,y+2.5,cell-5,cell-5)}
+   ctx.fillStyle=warn?"#4b286f":"#27183f";ctx.fillRect(x+2,y+2,cell-4,cell-4);
+   ctx.fillStyle="#bd7eec";ctx.fillRect(x+5,y+4,10,12);
+   ctx.fillStyle="#462065";ctx.fillRect(x+7,y+5,6,10);
+   ctx.fillStyle="#f3d6ff";ctx.fillRect(x+9,y+3,2,4);ctx.fillRect(x+9,y+13,2,4);
+   ctx.strokeStyle=warn?"#fff0ff":"#daa9ff";ctx.lineWidth=1;
+   ctx.strokeRect(x+2.5,y+2.5,cell-5,cell-5);
    continue;
   }
   ctx.fillStyle=warn?'#1d211d':t.kind==='rock'?'#615744':t.kind==='seal'?'#5c5536':'#584364';
