@@ -350,3 +350,97 @@
 @media(prefers-reduced-motion:reduce){
  .land-card.mtg-real-land{transition:none!important}
 }
+
+
+/* v0.8 — Larger legible Scryfall land cards.
+   A sideways card gets a landscape hitbox, with the scan rotated INSIDE it:
+   the full copyright/artist frame stays visible and never clips at the edge.
+   Hand and battlefield scale independently to stay in the one-screen table. */
+.in-heist #battlefield{--mh-land-width:clamp(128px,13vw,168px)}
+.in-heist #hand{--mh-land-width:clamp(105px,11vw,140px)}
+.in-heist #battlefield .land-card.mtg-real-land:not(.is-tapped),
+.in-heist #hand .land-card.mtg-real-land:not(.is-tapped){
+ width:var(--mh-land-width)!important;
+ height:calc(var(--mh-land-width) * 680 / 488)!important;
+ min-width:0!important;
+ max-width:none!important;
+ flex:0 0 auto!important;
+ aspect-ratio:488/680!important;
+ margin:0 2px!important;
+}
+.in-heist #battlefield .land-card.mtg-real-land.is-tapped{
+ width:calc(var(--mh-land-width) * 680 / 488)!important;
+ height:var(--mh-land-width)!important;
+ min-width:0!important;
+ max-width:none!important;
+ flex:0 0 auto!important;
+ aspect-ratio:680/488!important;
+ margin:0 3px!important;
+ transform:none!important;
+ overflow:hidden!important;
+ filter:none!important;
+}
+.in-heist #battlefield .land-card.mtg-real-land.is-tapped .mtg-card-image{
+ inset:auto!important;
+ top:50%!important;
+ left:50%!important;
+ width:var(--mh-land-width)!important;
+ height:calc(var(--mh-land-width) * 680 / 488)!important;
+ max-height:none!important;
+ transform:translate(-50%,-50%) rotate(90deg)!important;
+ transform-origin:center!important;
+ object-fit:contain!important;
+ filter:none!important;
+}
+.in-heist #battlefield .land-card.mtg-real-land.is-tapped .mtg-fallback{
+ width:var(--mh-land-width)!important;
+ height:calc(var(--mh-land-width) * 680 / 488)!important;
+ position:absolute!important;
+ top:50%!important;
+ left:50%!important;
+ transform:translate(-50%,-50%) rotate(90deg)!important;
+}
+.in-heist #battlefield .land-card.mtg-real-land{
+ flex-shrink:0!important;
+}
+.in-heist #battlefield .land-card.mtg-real-land:hover,
+.in-heist #hand .land-card.mtg-real-land:hover{
+ box-shadow:0 0 0 2px #e7d59d,0 0 23px #d9c28d77!important;
+}
+.in-heist .land-grid{scrollbar-width:thin}
+.in-heist #battlefield,.in-heist #hand{
+ align-items:center!important;
+ justify-content:flex-start!important;
+}
+
+/* Ward denial: temporary red aura, tremor and glowing missing mana glyphs.
+   JS applies/restarts animation on each invalid cast, including repeat attempts. */
+.in-heist #wardCost .mana-glyph.mana-error-glyph{
+ border-color:#ff6174!important;
+ color:#fff!important;
+ background:#bc293d!important;
+ text-shadow:0 1px 7px #fff;
+}
+.in-heist .feedback.bad{
+ background:linear-gradient(100deg,#521b28ee,#852938ee,#481e2bee)!important;
+ border:1px solid #ff6d82!important;
+ color:#ffe4e3!important;
+ box-shadow:0 0 18px #ed445480,0 6px 25px #000a!important;
+ font-weight:800;
+}
+.in-heist .vault-card{isolation:isolate}
+@media(max-width:800px){
+ .in-heist #battlefield{--mh-land-width:clamp(67px,11.7dvh,102px)}
+ .in-heist #hand{--mh-land-width:clamp(59px,10.5dvh,94px)}
+ .in-heist #battlefield,.in-heist #hand{gap:8px!important}
+}
+@media(max-height:670px) and (max-width:800px){
+ .in-heist #battlefield{--mh-land-width:clamp(58px,10.6dvh,75px)}
+ .in-heist #hand{--mh-land-width:clamp(52px,9.2dvh,65px)}
+ .in-heist #battlefield,.in-heist #hand{gap:5px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .in-heist #battlefield .land-card.mtg-real-land.is-tapped .mtg-card-image{
+  transform:translate(-50%,-50%) rotate(90deg)!important;
+ }
+}
