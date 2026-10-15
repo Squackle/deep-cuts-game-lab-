@@ -3,7 +3,7 @@
 // workers, texture downloads, or per-mana setup. Mouse and touch impart velocity.
 // Visual state never changes the Magic rules, mana pool, or solver state.
 import {COLOR_RGB,cssForOrbs} from "./fluid-palette.js";
-import {initializePigments,mixPigments,stirPigmentWake,pigmentStatistics} from "./pigment-mixer.js";
+import {initializePigments,mixPigments,stirPigmentWake,pigmentStatistics,introducePigment} from "./pigment-mixer.js";
 
 const N=64,COUNT=N*N,MID=(N-1)/2,RADIUS=N*.465;
 const INDEX=(x,y)=>y*N+x;
@@ -198,9 +198,17 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
  function sync(next,{reset=false}={}){
   const list=next||[],ids=new Set(list.map(o=>o.id));
   if(reset||charged.some(o=>!ids.has(o.id)||!list.find(p=>p.id===o.id&&p.color===o.color)))clearGrid();
-  let changed=false;
-  for(const orb of list)if(!appliedIds.has(orb.id)){inject(orb);appliedIds.add(orb.id);changed=true;}
-  if(changed||reset||charged.length!==list.length)fillDyeProportions(grid,list);
+  const newMana=list.filter(o=>!appliedIds.has(o.id));
+  for(const orb of newMana){inject(orb);appliedIds.add(orb.id);}
+  if(reset||!grid.pigmentLive){
+   fillDyeProportions(grid,list);
+  }else if(newMana.length){
+   const known=charged.slice();
+   for(const orb of newMana){
+    known.push(orb);
+    introducePigment(grid,orb,known);
+   }
+  }
   charged=list.map(o=>({...o}));
   target.style.setProperty("--fusion-color",cssForOrbs(charged));
   target.dataset.fusionCount=String(charged.length);
