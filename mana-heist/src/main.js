@@ -139,17 +139,49 @@ function render(pendingId=null){
  choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap a battlefield land, or play a land from your hand.",[]);
  selectedMessage="";
 }
-function load(i){
- index=(i+LEVELS.length)%LEVELS.length;level=LEVELS[index];state=initial(level);history=[];selectedMessage="";progress.index=index;persist();render();
- message("Vault "+String(index+1).padStart(2,"0")+" ready. Tap a land or play one from your hand.");
+function showMap(){
+ el("manaTravelLayer").replaceChildren();
+ el("pool").querySelectorAll(".awaiting-orb").forEach(x=>x.classList.remove("awaiting-orb"));
+ el("gameScreen").hidden=true;el("campaignScreen").hidden=false;
+ renderOverworld({world,bests:progress.bests,index,proofs,medal});
+ el("campaignScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
-el("chapterPicker").addEventListener("click",e=>{const x=e.target.closest("[data-level]");if(x)load(Number(x.dataset.level));});
+function showGame(){
+ el("campaignScreen").hidden=true;el("gameScreen").hidden=false;
+ el("gameScreen").scrollIntoView({block:"start",behavior:"instant"});
+}
+function load(i,enter=false){
+ if(!unlocked(i,progress.bests)){message("That vault is sealed. Crack the previous stage to unlock it.",true);return false;}
+ index=i;world=chapterIndex(index);
+ level=LEVELS[index];state=initial(level);history=[];selectedMessage="";
+ manaOrbs=reconstruct(state.pool);el("manaTravelLayer").replaceChildren();
+ progress.index=index;persist();render();
+ message("Stage "+stageCode(index)+" ready. Tap a land or play one from your hand.");
+ if(enter)showGame();
+ return true;
+}
+el("chapterPicker").addEventListener("click",e=>{
+ const x=e.target.closest("[data-level]");
+ if(x)load(Number(x.dataset.level),true);
+});
+el("previousWorld").addEventListener("click",()=>{
+ if(world>0){world--;renderOverworld({world,bests:progress.bests,index,proofs,medal});}
+});
+el("nextWorld").addEventListener("click",()=>{
+ if(world<CHAPTERS.length-1&&chapterAccessible(world+1,progress.bests)){world++;renderOverworld({world,bests:progress.bests,index,proofs,medal});}
+});
+el("worldPips").addEventListener("click",e=>{
+ const button=e.target.closest("[data-world]");
+ if(button&&!button.disabled){world=Number(button.dataset.world);renderOverworld({world,bests:progress.bests,index,proofs,medal});}
+});
+el("returnMap").addEventListener("click",showMap);
 for(const id of ["battlefield","hand"])el(id).addEventListener("click",e=>{const b=e.target.closest("[data-cardid]");if(!b)return;if(b.dataset.zone==="field")tapLand(b.dataset.cardid);else playLand(b.dataset.cardid);});
 el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a)perform(a);});
 el("castButton").addEventListener("click",castSpell);
 el("endTurn").addEventListener("click",()=>{const a=actions(level,state).find(a=>a.type==="end");if(a)perform(a);else message("No turns remain. Undo or restart to try another line.",true);});
-el("undo").addEventListener("click",()=>{if(!history.length)return;state=history.pop();render();message("Previous move undone. Land drops, life and mana are restored.");});
+el("undo").addEventListener("click",()=>{if(!history.length)return;const prev=history.pop();state=prev.state;manaOrbs=prev.orbs;el("manaTravelLayer").replaceChildren();render();message("Previous move undone. Land drops, life and mana are restored.");});
 el("reset").addEventListener("click",()=>load(index));
-el("skip").addEventListener("click",()=>load(index+1));
-el("winNext").addEventListener("click",()=>load(index+1));
+el("skip").addEventListener("click",showMap);
+el("winNext").addEventListener("click",()=>{if(index+1<LEVELS.length&&unlocked(index+1,progress.bests))load(index+1,true);else showMap();});
 load(index);
+showMap();
