@@ -1,3 +1,5 @@
+# Stackbreaker 1.1 — Commander Singleton Choice Hands
+
 # Stackbreaker 1.0 — Five Galaxies · 25 Worlds · 250 Stages
 
 # Stackbreaker 0.9 — Five Worlds Campaign
@@ -30,3 +32,6 @@ All code and content edits for this playtest belong to `stackbreaker/**` in the 
 The 12 original scenarios stay in `data/scenarios.json` (preserving the shared Lab catalog contract). The 18 additional campaign stages live in `data/campaign-expansion.json` and are concatenated by the Stackbreaker controller and standalone build; other game CI scripts and shared site files are unchanged.
 ## Galaxy atlas and authored limits
 Five galaxies × five worlds × ten levels each. Original thirty stages and local progress IDs are preserved. The additional 220 stages are deterministic, tested variants of thirty earlier tactical encounters plus ten newly authored tactical motifs; they are *not* 220 wholly different mechanics. Around two dozen additional curated real card identities are supported, with a restricted, explicit simulation of their relevant rules. The 250-level atlas supports free stage selection, five galaxy tabs, five world tabs per galaxy, previous/next navigation, retained stars, and boss-stage flags. This remains a limited two-player MTG training tool—not a comprehensive card-rules parser.
+
+## Commander training mode
+Each live training window now has seven distinct physical spells in hand, including situational and decoy answers. Nonbasic card names do not repeat within either player's represented permanents, spells and hand; basic lands may repeat. Five original duplicate-hand lessons substitute relevant real cards (for example, Arcane Denial for repeated Dispel), while maintaining stable solution action IDs and previously earned stars. Each encounter has enough lands to cover its vetted solution and optional response decisions. Card choice is deliberate, never automatic. This is one-turn Commander-style singleton practice—not a simulated 100-card deck, color-identity check against a specific commander, or a four-player Commander rules engine.
