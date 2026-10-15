@@ -2,8 +2,10 @@ import {CARDS,LANDS,RULES_VERSION,cardLink} from './cards.js';
 import {createGame,tapLand,activate,pass,paymentOptions,legalActions,legalTargets,creaturePower,creatureToughness,labelTarget} from './engine.js';
 import coreScenarios from '../data/scenarios.json' with {type:'json'};
 import campaignExpansion from '../data/campaign-expansion.json' with {type:'json'};
-const scenarios=[...coreScenarios,...campaignExpansion];
-import chapters from '../data/chapters.json' with {type:'json'};
+import {GALAXIES,makeWorlds,generateStages} from './galaxies.js';
+const extraStages=generateStages([...coreScenarios,...campaignExpansion]);
+const scenarios=[...coreScenarios,...campaignExpansion,...extraStages];
+const chapters=makeWorlds();
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
@@ -126,7 +128,7 @@ document.addEventListener('click',e=>{
 });
 window.addEventListener('scroll',closeCardPreview,{passive:true});
 const progressKey='dc-stackbreaker-progress-v3';
-let index=0,selectedWorld=0,returnMapFocus=null,game,history=[],hint=false,progress={},dragTouch=null,pendingPlay=null,armedCard=null,dragSession=null,artRefreshPending=false;
+let index=0,selectedGalaxy=0,selectedWorld=0,returnMapFocus=null,game,history=[],hint=false,progress={},dragTouch=null,pendingPlay=null,armedCard=null,dragSession=null,artRefreshPending=false;
 try{progress=JSON.parse(localStorage.getItem(progressKey)||'{}')||{};}catch{}
 const save=()=>{try{localStorage.setItem(progressKey,JSON.stringify(progress))}catch{}};
 function pips(obj,raw=false){let out=[];for(const c of ['generic','W','U','B','R','G','C']){const n=obj?.[c]||0;
@@ -139,7 +141,7 @@ function objectiveText(s){const o=s.objective;if(o.type==='winKeepUnit')return`D
  if(o.type==='keepN')return`Keep at least ${o.count} friendly creatures alive.`;
  return`Keep ${s.units.find(u=>u.id===o.unitId)?.card||'the required creature'} ${o.type==='keepUnit'?'on the battlefield':'out of the graveyard'}.`;
 }
-function changeCase(n){closeWorldMap(false);clearDragFeedback();index=Math.max(0,Math.min(scenarios.length-1,n));selectedWorld=Math.floor(index/6);try{localStorage.setItem('dc-stackbreaker-last-level',String(index));}catch{}game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;render();}
+function changeCase(n){closeWorldMap(false);clearDragFeedback();index=Math.max(0,Math.min(scenarios.length-1,n));selectedWorld=Math.floor(index/10);selectedGalaxy=Math.floor(index/50);try{localStorage.setItem('dc-stackbreaker-last-level',String(index));}catch{}game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;render();}
 function shortCard(u){
  const gone=u.zone!=='battlefield';const ability=game.hand.find(a=>a.sourceId===u.id&&!game.used.includes(a.id));
  const active=ability&&game.status==='playing'&&legalActions(game).includes(ability.id);
@@ -250,17 +252,17 @@ function updateDragFeedback(element){
  }
  if(valid)valid.classList.add(cls);
 }
-function render(){closeCardPreview();const s=game,p=scenarios[index],worldIndex=Math.floor(index/6),localLevel=index%6+1; $('missionTier').textContent='WORLD '+(worldIndex+1)+' · '+chapters[worldIndex].name.toUpperCase();$('missionNum').textContent=(worldIndex+1)+'-'+localLevel;$('scenarioTitle').textContent=p.title;
- $('scenarioSelect').innerHTML=scenarios.map((o,i)=>`<option value="${i}" ${i===index?'selected':''}>${Math.floor(i/6)+1}-${i%6+1} ${esc(o.title)}${progress[o.id]?' ★':''}</option>`).join('');
+function render(){closeCardPreview();const s=game,p=scenarios[index],worldIndex=Math.floor(index/10),galaxyIndex=Math.floor(index/50),localLevel=index%10+1; $('missionTier').textContent='GALAXY '+(galaxyIndex+1)+' · WORLD '+(worldIndex%5+1);$('missionNum').textContent=(galaxyIndex+1)+'.'+(worldIndex%5+1)+'-'+localLevel;$('scenarioTitle').textContent=p.title;
+ $('scenarioSelect').innerHTML=scenarios.map((o,i)=>`<option value="${i}" ${i===index?'selected':''}>${Math.floor(i/50)+1}.${Math.floor(i%50/10)+1}-${i%10+1} ${esc(o.title)}${progress[o.id]?' ★':''}</option>`).join('');
  $('playerLife').textContent=s.life.player;$('opponentLife').textContent=s.life.opponent;$('manaPool').innerHTML=pips(s.mana);
  $('priority').textContent=s.status==='playing'?'● PRIORITY: YOU':s.status==='won'?'✓ SURVIVED':'✕ DEFEATED';$('objective').textContent=objectiveText(s);$('objectiveShort').textContent=p.tier.toUpperCase();
  $('battlefield').innerHTML=s.units.filter(u=>u.zone==='battlefield').length?s.units.filter(u=>u.zone==='battlefield').map(shortCard).join(''):'<span class="empty-creatures">No creatures in this case</span>';
  $('lands').innerHTML=s.lands.length?s.lands.map(landCard).join(''):'<span class="empty-creatures">No lands needed — activate your creature’s ability</span>';
  $('stackCount').textContent=String(s.stack.length).padStart(2,'0');$('stack').innerHTML=s.stack.length?[...s.stack].reverse().map(stackCard).join(''):'<li class="stack-empty">Empty stack</li>';
  const remaining=s.hand.filter(a=>!a.sourceId&&!s.used.includes(a.id));$('handCount').textContent=remaining.length+' CARDS';$('hand').classList.toggle('many',remaining.length>3);$('hand').innerHTML=remaining.map(handCard).join('')||'<span class="empty-creatures">No spells in hand</span>';
- $('passButton').disabled=s.status!=='playing';$('undoButton').disabled=!history.length;$('prevButton').disabled=index===0;$('prevButton').textContent='← PREV';$('nextButton').disabled=index===scenarios.length-1;$('nextButton').textContent=index%6===5?'NEXT WORLD →':'NEXT →';$('mapButton').setAttribute('aria-label',`Open chapter map for ${chapters[worldIndex].name}`);
+ $('passButton').disabled=s.status!=='playing';$('undoButton').disabled=!history.length;$('prevButton').disabled=index===0;$('prevButton').textContent='← PREV';$('nextButton').disabled=index===scenarios.length-1;$('nextButton').textContent=index%10===9?'NEXT WORLD →':'NEXT →';$('mapButton').setAttribute('aria-label',`Open chapter map for ${chapters[worldIndex].name}`);
  $('resultMini').className='result-mini'+(s.status==='won'?' won':s.status==='lost'?' lost':'');$('resultEyebrow').textContent=s.status==='won'?'✓ CASE SOLVED':s.status==='lost'?'✕ TRY AGAIN':'YOUR MOVE';
- $('resultTitle').textContent=s.status==='won'?(index%6===5?'★ Chapter completed — claim your flag on the map!':'Next case is ready'):s.status==='lost'?'Reset or undo to retry':'Tap lands, drag a spell, or activate a creature';
+ $('resultTitle').textContent=s.status==='won'?(index%10===9?'★ Chapter completed — claim your flag on the map!':'Next case is ready'):s.status==='lost'?'Reset or undo to retry':'Tap lands, drag a spell, or activate a creature';
  $('scenarioIntro').textContent=p.intro;$('objectiveLong').textContent=objectiveText(s);$('hintText').hidden=!hint;$('hintText').textContent=p.hint;$('hintButton').setAttribute('aria-expanded',String(hint));
  $('resultExplanation').textContent=s.status==='playing'?'Complete the case to see the rules explanation.':p.explanation;
  if(s.status==='won'){const par=p.par||2,stars=s.used.length<=par?3:s.used.length===par+1?2:1;progress[p.id]=Math.max(progress[p.id]||0,stars);save();$('resultStars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);}else $('resultStars').textContent='';
@@ -319,25 +321,27 @@ $('playPrompt').addEventListener('click',e=>{
 // stage never erases prior stars; chapter boss flags are earned on victory.
 function chapterForLevel(levelIndex){return chapters[Math.floor(levelIndex/6)];}
 function renderWorldMap(){
- const world=chapters[selectedWorld];if(!world)return;
- $('worldTabs').innerHTML=chapters.map((c,i)=>{
-  const solved=scenarios.slice(c.start-1,c.end).filter(p=>progress[p.id]>0).length;
-  return `<button type="button" class="world-tab ${i===selectedWorld?'current':''}" data-world-index="${i}" aria-current="${i===selectedWorld?'true':'false'}" style="--world-accent:${c.color}"><span>${c.icon}</span><b>W${i+1}</b><small>${solved}/6</small></button>`;
+ const galaxy=GALAXIES[selectedGalaxy],world=chapters[selectedWorld];if(!galaxy||!world)return;
+ $('galaxyTabs').innerHTML=GALAXIES.map((g,i)=>{
+ const cleared=scenarios.slice(i*50,(i+1)*50).filter(p=>progress[p.id]>0).length;
+ return `<button type="button" class="galaxy-tab ${i===selectedGalaxy?'current':''}" data-galaxy-index="${i}" aria-current="${i===selectedGalaxy?'true':'false'}" style="--galaxy-accent:${g.color}"><span>${g.icon}</span><b>G${i+1}</b><small>${cleared}/50</small></button>`;
+ }).join('');
+ $('worldTabs').innerHTML=chapters.slice(selectedGalaxy*5,selectedGalaxy*5+5).map((w,i)=>{
+ const wi=selectedGalaxy*5+i,cleared=scenarios.slice(w.start-1,w.end).filter(p=>progress[p.id]>0).length;
+ return `<button type="button" class="world-tab ${wi===selectedWorld?'current':''}" data-world-index="${wi}" aria-current="${wi===selectedWorld?'true':'false'}" style="--world-accent:${w.color}"><span>${w.icon}</span><b>W${i+1}</b><small>${cleared}/10</small></button>`;
  }).join('');
  const cleared=scenarios.slice(world.start-1,world.end).filter(p=>progress[p.id]>0).length;
- const levels=scenarios.slice(world.start-1,world.end);
- const nodes=levels.map((p,i)=>{
-  const n=world.start-1+i,score=Math.max(0,Math.min(3,progress[p.id]||0)),boss=i===5;
-  return `<button type="button" class="map-level ${n===index?'active':''} ${score?'cleared':''} ${boss?'boss':''}" data-level-index="${n}" aria-label="World ${selectedWorld+1}, stage ${i+1}, ${esc(p.title)}${score?', cleared with '+score+' stars':''}" ${n===index?'aria-current="step"':''}><span class="map-node"><span>${boss?'♜':score?'⚑':String(i+1).padStart(2,'0')}</span></span><b>${selectedWorld+1}-${i+1}</b><span class="map-stars" aria-hidden="true">${score?'★'.repeat(score)+'☆'.repeat(3-score):boss?'BOSS':'OPEN'}</span></button>`;
+ const nodes=scenarios.slice(world.start-1,world.end).map((p,i)=>{
+ const n=world.start-1,absolute=n+i,score=Math.max(0,Math.min(3,progress[p.id]||0)),boss=i===9;
+ return `<button type="button" class="map-level ${absolute===index?'active':''} ${score?'cleared':''} ${boss?'boss':''}" data-level-index="${absolute}" aria-label="Galaxy ${selectedGalaxy+1} World ${selectedWorld%5+1} level ${i+1}: ${esc(p.title)}" ${absolute===index?'aria-current="step"':''}><span class="map-node"><span>${boss?'♜':score?'⚑':i+1}</span></span><b>${selectedGalaxy+1}.${selectedWorld%5+1}-${i+1}</b><span class="map-stars">${score?'★'.repeat(score)+'☆'.repeat(3-score):boss?'BOSS':'OPEN'}</span></button>`;
  }).join('');
- $('worldStage').style.setProperty('--world-color',world.color);
- $('worldStage').dataset.terrain=world.terrain;
- $('worldStage').innerHTML=`<div class="world-sky" aria-hidden="true"><span>${world.icon}</span><i>✦</i><i>✧</i></div><div class="world-heading"><small>WORLD ${selectedWorld+1} OF ${chapters.length}</small><h3>${esc(world.name)}</h3><p>${esc(world.subtitle)}</p></div><div class="world-levels"><svg class="map-trail" aria-hidden="true" viewBox="0 0 920 150" preserveAspectRatio="none"><path d="M 55 105 Q 145 12 220 74 T 395 74 T 570 74 T 745 74 T 875 72" stroke="${world.color}" fill="none" stroke-width="5" stroke-dasharray="10 12" stroke-linecap="round"/></svg>${nodes}</div><div class="world-boss">${cleared===6?'★ WORLD COMPLETE':`⚑ ${cleared} / 6 FLAGS PLANTED`} · FINAL STAGE: ${esc(world.boss)}</div>`;
- $('worldMapProgress').textContent=`${Object.keys(progress).filter(id=>scenarios.some(p=>p.id===id)).length} / ${scenarios.length} levels cleared`;
+ $('worldStage').style.setProperty('--world-color',world.color);$('worldStage').dataset.terrain=world.terrain;
+ $('worldStage').innerHTML=`<div class="world-sky" aria-hidden="true"><span>${galaxy.icon}</span><i>✦</i><i>✧</i></div><div class="world-heading"><small>GALAXY ${selectedGalaxy+1}/5 · WORLD ${selectedWorld%5+1}/5</small><h3>${esc(world.name)}</h3><p>${esc(galaxy.subtitle)} · ${esc(world.subtitle)}</p></div><div class="world-levels">${nodes}</div><div class="world-boss">${cleared===10?'★ WORLD COMPLETE':'⚑ '+cleared+' / 10 FLAGS PLANTED'} · ${esc(world.boss)}</div>`;
+ $('worldMapProgress').textContent=Object.keys(progress).filter(id=>scenarios.some(p=>p.id===id)).length+' / '+scenarios.length+' levels cleared';
 }
 function openWorldMap(){
  if(dragSession||dragTouch?.moved||pendingPlay)return;
- returnMapFocus=document.activeElement;selectedWorld=Math.floor(index/6);
+ returnMapFocus=document.activeElement;selectedGalaxy=Math.floor(index/50);selectedWorld=Math.floor(index/10);
  const map=$('worldMap');map.hidden=false;map.setAttribute('aria-hidden','false');
  $('mapButton').setAttribute('aria-expanded','true');renderWorldMap();$('closeMapButton').focus();
 }
@@ -348,6 +352,7 @@ function closeWorldMap(restoreFocus=true){
 }
 $('mapButton').addEventListener('click',openWorldMap);
 $('closeMapButton').addEventListener('click',()=>closeWorldMap());
+$('galaxyTabs').addEventListener('click',e=>{const node=e.target.closest('[data-galaxy-index]');if(node){selectedGalaxy=Number(node.dataset.galaxyIndex);selectedWorld=selectedGalaxy*5;renderWorldMap();}});
 $('worldTabs').addEventListener('click',e=>{const node=e.target.closest('[data-world-index]');if(node){selectedWorld=Number(node.dataset.worldIndex);renderWorldMap();}});
 $('worldStage').addEventListener('click',e=>{const node=e.target.closest('[data-level-index]');if(node)changeCase(Number(node.dataset.levelIndex));});
 document.addEventListener('keydown',e=>{
