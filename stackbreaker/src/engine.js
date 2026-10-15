@@ -126,7 +126,7 @@ export function activate(s0,actionId,targetId=null,genericSpend=null){if(!legalA
 export function labelTarget(s,id){if(id==='player')return'you';if(id==='opponent')return'opponent';return s.units.find(u=>u.id===id)?.card || s.stack.find(x=>x.id===id)?.card ||id;}
 function resolve(s,item){const c=CARDS[item.card],target=item.targetId;
  if(item.spell&&isCreature(item.card)){s.units.push({id:'permanent-'+item.id,card:item.card,controller:item.controller,zone:'battlefield',damage:0,powerBoost:0,toughnessBoost:0,indestructible:false,hexproof:false});s.log.push(`${item.card} resolves and enters the battlefield.`);return;}
- if((c.targetRule||c.effect==='damage')&&!((c.effect==='damage')?(target==='player'||target==='opponent'||legalCreatureTarget(s,item,target)):legalTarget(s,item,target))){s.log.push(`${item.card}: all targets illegal on resolution; spell/ability does not resolve (608.2b).`);return;}
+ if((c.targetRule||c.effect==='damage'||c.effect==='helix')&&!((c.effect==='damage'||c.effect==='helix')?(target==='player'||target==='opponent'||legalCreatureTarget(s,item,target)):legalTarget(s,item,target))){s.log.push(`${item.card}: all targets illegal on resolution; spell/ability does not resolve (608.2b).`);return;}
  switch(c.effect){
  case 'destroyAll':{let count=0,warded=0;for(const u of s.units)if(u.zone==='battlefield'){if(u.indestructible)warded++;else{u.zone='graveyard';count++}}s.log.push(`Wrath of God: ${count} creature(s) destroyed, ${warded} indestructible.`);break;}
  case 'ward':{let count=0;for(const u of s.units)if(u.zone==='battlefield'&&u.controller===item.controller){u.indestructible=true;count++}s.log.push(`Selfless Spirit's ability resolved after its source left: ${count} creature(s) gain indestructible.`);break;}
@@ -136,6 +136,12 @@ function resolve(s,item){const c=CARDS[item.card],target=item.targetId;
  case 'counter':{let idx=s.stack.findIndex(x=>x.id===target);if(idx>=0){const x=s.stack.splice(idx,1)[0];s.log.push(`${item.card} counters ${x.card}.`);}break;}
  case 'blossom':{const u=s.units.find(x=>x.id===target);u.powerBoost+=2;u.toughnessBoost+=2;u.hexproof=true;s.log.push(`${u.card} gets +2/+2 and gains hexproof until end of turn.`);break;}
  case 'dive':{const u=s.units.find(x=>x.id===target);u.toughnessBoost+=3;u.hexproof=true;s.log.push(`${u.card} gets +0/+3 and gains hexproof until end of turn.`);break;}
+ case 'sweepDamage':{for(const u of s.units)if(u.zone==='battlefield')u.damage+=c.amount;s.log.push(`${item.card}: ${c.amount} damage to each creature.`);break;}
+ case 'weakenAll':{for(const u of s.units)if(u.zone==='battlefield'){u.powerBoost-=c.amount;u.toughnessBoost-=c.amount;}s.log.push(`${item.card}: all creatures get -${c.amount}/-${c.amount}. Indestructible does not prevent zero toughness.`);break;}
+ case 'shrink':{const u=s.units.find(x=>x.id===target);u.powerBoost-=c.amount;u.toughnessBoost-=c.amount;s.log.push(`${u.card} gets -${c.amount}/-${c.amount}.`);break;}
+ case 'safekeeping':{const u=s.units.find(x=>x.id===target);u.hexproof=true;u.indestructible=true;s.life[item.controller]+=2;s.log.push(`${u.card} gains hexproof/indestructible; ${item.controller} gains 2 life.`);break;}
+ case 'helix':{if(target==='player'||target==='opponent')s.life[target]-=3;else s.units.find(x=>x.id===target).damage+=3;s.life[item.controller]+=3;s.log.push(`Lightning Helix deals 3 to ${labelTarget(s,target)}; ${item.controller} gains 3 life.`);break;}
+ case 'vapor':{const u=s.units.find(x=>x.id===target);u.zone='hand';s.life[u.controller]-=1;s.log.push(`Vapor Snag returns ${u.card}; its controller loses 1 life.`);break;}
  case 'pump':{const u=s.units.find(x=>x.id===target);u.powerBoost+=c.amount;u.toughnessBoost+=c.amount;s.log.push(`${u.card} gets +${c.amount}/+${c.amount} until end of turn.`);break;}
  case 'destroy':{const u=s.units.find(x=>x.id===target);if(u.indestructible)s.log.push(`${u.card} cannot be destroyed (indestructible).`);else{u.zone='graveyard';s.log.push(`${item.card} destroys ${u.card}.`);}break;}
  case 'exile':{const u=s.units.find(x=>x.id===target),p=creaturePower(u);u.zone='exile';s.life[u.controller]+=p;s.log.push(`Swords to Plowshares exiles ${u.card}; its controller gains ${p} life.`);break;}
