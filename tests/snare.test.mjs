@@ -7,11 +7,11 @@ import {PREY} from "../src/enemies.js";
 import {LAIR_BOSSES,createLairRun} from "../src/lair.js";
 import {boardKey} from "../src/modes.js";
 test("Snare creates an independent, versioned and deterministic replay ruleset",()=>{
- assert.equal(RULES_VERSION,"hive-1.3");
+ assert.equal(RULES_VERSION,"hive-1.5");
  assert.equal(boardKey("classic"),"classic|arcade");
  assert.equal(boardKey("hunt"),"hunt|arcade");
 });
-test("all four bosses keep one uniform movement period and fixed practice-time cadence",()=>{
+test("all five bosses keep one uniform movement period and fixed practice-time cadence",()=>{
  for(const spec of LAIR_BOSSES){
   const run=createLairRun(spec.id);
   assert.equal(PREY[spec.id].period,4);
@@ -88,7 +88,7 @@ test("Brood Trail has no expedition control; neither game page exposes Daily Rit
  const main=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
  const css=readFileSync(new URL("../styles.css",import.meta.url),"utf8");
  assert.doesNotMatch(html,/value="daily"|DAILY RITUAL|DAILY TEST SEED/i);
- assert.match(html,/1\.4 · BEACON/);
+ assert.match(html,/1\.5 · MATRIARCH/);
  assert.match(main,/function syncExpeditionChoice\(/);
  assert.match(main,/\$\("gameChallenge"\)\.hidden=selectedMode==="classic"/);
  assert.match(main,/\$\("gameChallengeLabel"\)\.hidden=selectedMode==="classic"/);

@@ -8,6 +8,7 @@ import {HatcherySoundtrack,TRACKS,trackForEncounter} from "./soundtrack.js";
 import {canPlayMusic,resumeFromGesture} from "./audio-activation.js";
 import {drawPlayerLocator,drawQueuedTurn} from "./player-visibility.js";
 import {drawTrapHints} from "./trap-assist.js";
+import {canPlaceWard,placeHatchlingWard,drawHatchlingWards} from "./hatchling-ward.js";
 import {captureFlash,drawCaptureFlash} from "./beacon-feedback.js";
 import {KEY_DIRECTIONS,keyboardDirection,mutationSelectionIndex,isTouchMutationSelection,resumeHeading,swipeHeading,SWIPE_RESUME_KEYS} from "./input-controls.js";
 import {showMutationDraft,hideMutationDraft,drawMutationHud} from "./evolution-ui.js";
@@ -100,6 +101,7 @@ function syncUI(){
   ({ready:"AWAITING PLAYER",running:"IN MOTION",paused:"PAUSED",draft:"EVOLVING",over:"RUN ENDED",won:"HIVE COMPLETE"})[run.status];
  const playable=run.status==="running";
  $("pauseButton").disabled=!playable||bossGate.blocking||awaitingMutationResume;
+ $("wardButton").hidden=!canPlaceWard(run)||bossGate.blocking||awaitingMutationResume;
  $("pauseButton").textContent="Ⅱ PAUSE";
  $("soundButton").textContent=state.audio?"♪ SOUND ON":"♪ SOUND OFF";
  $("soundButton").setAttribute("aria-pressed",String(state.audio));
@@ -441,6 +443,7 @@ function draw(){
  const run=state.run;
  drawLevelBackground(context,canvas,arenaBackground,COLS,ROWS,CELLS,run.biome);
  drawTerrain(context,run,CELLS);
+ drawHatchlingWards(context,run,CELLS);
  // The brood is a gameplay target; keep it conspicuous over busy art.
  if(run.food)drawBroodPickup(context,run.food,CELLS,performance.now());
  if(run.encounter)drawWebs(context,run.encounter.webs,CELLS);
@@ -575,6 +578,12 @@ function loop(time){
 document.addEventListener("pointerdown",wakeAudio,{capture:true,passive:true});
 $("primaryButton").addEventListener("click",begin);
 $("pauseButton").addEventListener("click",togglePause);
+function activateWard(){
+ if(!placeHatchlingWard(state.run))return false;
+ announce("Hatchling Ward placed. Ordinary prey avoid its surrounding nine tiles.");
+ playTone(565,.13,.03);syncUI();draw();return true;
+}
+$("wardButton").addEventListener("click",activateWard);
 $("restartButton").addEventListener("click",reset);
 $("soundButton").addEventListener("click",()=>{
  state.audio=!state.audio;
@@ -613,6 +622,9 @@ document.addEventListener("keydown",event=>{
    if(!event.repeat)resumeMutationByKey(event.key);
   }
   return;
+ }
+ if((event.key==="q"||event.key==="Q")&&state.run.status==="running"&&!bossGate.blocking){
+  event.preventDefault();if(!event.repeat)activateWard();return;
  }
  if(Object.hasOwn(KEY_DIRECTIONS,event.key)&&state.run.status==="running"){
   event.preventDefault(); // Stop page scroll, including repeated arrow presses.

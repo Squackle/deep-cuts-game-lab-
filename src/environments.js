@@ -50,9 +50,9 @@ export function tickTerrain(run,dt){
 export function drawTerrain(ctx,run,cell){
  for(const t of run.terrain){
   const x=t.pos.x*cell,y=t.pos.y*cell,warn=t.warningMs>0;
-  ctx.fillStyle=warn?'#1d211d':t.kind==='rock'?'#615744':t.kind==='seal'?'#5c5536':'#584364';
+  ctx.fillStyle=warn?'#1d211d':t.kind==='rock'?'#615744':t.kind==='seal'?'#5c5536':t.kind==='egg'?'#465b31':'#584364';
   ctx.fillRect(x+2,y+2,cell-4,cell-4);
-  ctx.strokeStyle=warn?'#c1ad7e':t.kind==='rock'?'#b5a080':'#d8b4e5';ctx.lineWidth=1;
+  ctx.strokeStyle=warn?'#c1ad7e':t.kind==='rock'?'#b5a080':t.kind==='egg'?'#c8ce88':'#d8b4e5';ctx.lineWidth=1;
   ctx.setLineDash(warn?[3,3]:[]);ctx.strokeRect(x+2.5,y+2.5,cell-5,cell-5);ctx.setLineDash([]);
   ctx.fillStyle=warn?'#d8c08d':'#22231e';
   if(warn){ctx.fillRect(x+9,y+5,2,6);ctx.fillRect(x+9,y+13,2,2)}

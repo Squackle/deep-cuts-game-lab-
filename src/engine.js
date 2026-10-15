@@ -5,6 +5,8 @@ import {setBiome,tickTerrain,terrainBlocks,reservedTerrain} from "./environments
  */
 import {PREY,spawnPrey,advancePrey,same,inside,VECTORS} from "./enemies.js";
 import {encounterKind,spawnMiniboss,spawnNextPhase,tickMiniboss,triggerWeb,consumeEncounterFreeze,ABILITIES} from "./miniboss.js";
+import {ageHatchlingWards} from "./hatchling-ward.js";
+import {compostMoltCost,driftRushMultiplier} from "./mutation-synergies.js";
 export const DIRECTIONS=Object.freeze(Object.fromEntries(Object.entries(VECTORS).map(([k,v])=>[k,{x:v[0],y:v[1]}])));
 export const COLORS=Object.freeze(["W","U","B","R","G"]);
 export const EVOLUTION_COST=5;
@@ -12,7 +14,7 @@ export const OPENING_GRACE_MS=9000;
 export const OPENING_EVOLUTIONS=2;
 export const OPENING_ORB_MIN=70;
 export const OPENING_ORB_SPREAD=35;
-export const RULES_VERSION="hive-1.3";
+export const RULES_VERSION="hive-1.5";
 // Player speed is set in milliseconds per grid step (larger = easier).
 // Playtest adjustment: about 10% less movement per second at every stage.
 export const PLAYER_BASE_TICK_MS=150;
@@ -52,7 +54,7 @@ export function newRun({cols=18,rows=22,random,seed,mode="hunt"}={}){
   score:0,brood:0,kills:0,energy:0,earnedEnergy:0,stage:1,tickMs:PLAYER_BASE_TICK_MS,
   evolutionsChosen:0,draftCount:0,draftOptions:[],mutations:{W:0,U:0,B:0,R:0,G:0},
   effects:{shield:0,molt:0,blueTicks:0,redTicks:0,greenPickups:0},growthDebt:0,
-  enemies:[],enemySerial:0,respawnIn:0,runTicks:0,moves:0,saves:0,
+  enemies:[],enemySerial:0,respawnIn:0,runTicks:0,moves:0,saves:0,wards:[],
   encounter:null,queuedEncounter:null,minibossWins:0,lastEncounter:null,
   status:"ready",endReason:"",lastMutation:null,event:null,eventSerial:0};
  if(mode==="hunt"){const prey=spawnPrey(run);if(prey)run.enemies.push(prey)}
@@ -101,7 +103,7 @@ export function chooseMutation(run,color){
  return true;
 }
 export function effectiveTickMs(run){
- return Math.max(65,Math.round(run.tickMs*(run.effects.blueTicks>0?1.35:1)*(run.effects.redTicks>0?.78:1)));
+ return Math.max(65,Math.round(run.tickMs*(run.effects.blueTicks>0?driftRushMultiplier(run):1)*(run.effects.redTicks>0?.78:1)));
 }
 const emit=(run,event)=>{run.event=event;run.eventSerial++};
 function decay(run){if(run.effects.blueTicks>0)run.effects.blueTicks--;if(run.effects.redTicks>0)run.effects.redTicks--}
@@ -116,7 +118,7 @@ function recover(run,failed,freePreyDodge=false){
  let color=null;
  if(freePreyDodge&&run.mercy>0){run.mercy--;color="G"}
  else if(e.shield>0){e.shield--;color="W"}
- else if(e.molt>0&&run.body.length>=5){e.molt--;color="B";run.body.splice(run.body.length-3,3)}
+ else if(e.molt>0&&run.body.length>=5){e.molt--;color="B";const shed=compostMoltCost(run);if(shed===2)e.greenPickups--;run.body.splice(run.body.length-shed,shed)}
  if(!color)return false;
  const compass=["up","right","down","left"],i=compass.indexOf(failed);
  const bend=[compass[(i+3)%4],compass[(i+1)%4]].find(h=>{
@@ -137,7 +139,7 @@ function recover(run,failed,freePreyDodge=false){
   else{run.status="over";run.endReason="No safe recovery tile.";return false}
  }
  run.saves++;emit(run,{type:"rescue",color,name:freePreyDodge?"Brood Instinct":MUTATIONS[color].name});
- decay(run);run.moves++;run.runTicks++;
+ decay(run);ageHatchlingWards(run);run.moves++;run.runTicks++;
  return true;
 }
 function reward(run,{energy,score,growth,type,at}){
@@ -226,7 +228,7 @@ export function step(run){
  run.body.unshift(t.next);
  if(t.eating)run.food=null;
  if(run.growthDebt>0)run.growthDebt--;else run.body.pop();
- decay(run);run.moves++;run.runTicks++;
+ decay(run);ageHatchlingWards(run);run.moves++;run.runTicks++;
  if(t.eating){
   run.brood++;reward(run,{energy:1,score:100,growth:1,type:"orb",at:t.next});
   run.orbIn=orbInterval(run);

@@ -422,3 +422,9 @@ body.game-only .encounter-hud{padding:2px 5px;gap:3px}
 body.game-only .encounter-hud .ability-panel canvas{width:34px;height:34px}
 body.game-only .encounter-hud .encounter-badge{min-height:30px;padding:1px 6px}
 body.game-only .encounter-hud .encounter-banner{padding:2px 5px;font-size:9px}
+
+/* Matriarch Lab: contextual hatchling action belongs outside the arena HUD. */
+#wardButton[hidden]{display:none!important}
+#wardButton:not([hidden]){border-color:#6f976e;background:#1f392c;color:#d6e9bf;font-size:.78rem;letter-spacing:.04em}
+#wardButton:not([hidden]):hover{background:#294938}
+@media(max-width:420px){#wardButton:not([hidden]){width:100%;min-height:42px;font-size:.72rem}}

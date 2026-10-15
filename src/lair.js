@@ -7,7 +7,8 @@ export const LAIR_BOSSES=Object.freeze([
  Object.freeze({id:"stalker",evolution:2,seed:401821}),
  Object.freeze({id:"warden",evolution:4,seed:401822}),
  Object.freeze({id:"weaver",evolution:6,seed:401823}),
- Object.freeze({id:"guardian",evolution:8,seed:401824})
+ Object.freeze({id:"guardian",evolution:8,seed:401824}),
+ Object.freeze({id:"broodmother",evolution:12,seed:401825})
 ]);
 export const isLairChallenge=(mode,challenge)=>mode==="hunt"&&challenge==="practice";
 export const lairBossSpec=kind=>LAIR_BOSSES.find(boss=>boss.id===kind)||null;
@@ -17,7 +18,7 @@ export function createLairRun(kind,cols=18,rows=22){
  const run=newRun({cols,rows,seed:spec.seed,mode:"hunt"});
  run.enemies=[];run.food=null;run.orbIn=10000000;run.respawnIn=0;
  run.energy=0;run.earnedEnergy=0;run.evolutionsChosen=spec.evolution;run.stage=spec.evolution+1;
- run.tickMs=PLAYER_BASE_TICK_MS; // Identical real-time movement cadence across all four Lair bosses.
+ run.tickMs=PLAYER_BASE_TICK_MS; // Identical real-time movement cadence across all five Lair bosses.
  run.openingGraceMs=0;run.mercy=0;
  setBiome(run);run.biomeNoticeMs=0;
  if(!spawnMiniboss(run,kind))throw Error("No safe spawn for Lair boss");
