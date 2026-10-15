@@ -126,7 +126,7 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
  const ctx=canvas?.getContext?.("2d",{alpha:true,desynchronized:true});
  if(!ctx||!target)return {
   available:false,sync:()=>{},clear:()=>{},pause:()=>{},resume:()=>{},
-  isStirring:()=>false,lastStirAt:()=>0
+  isStirring:()=>false,lastStirAt:()=>0,burst:()=>{}
  };
  target.classList.add("fluid-enabled");
  const grid=makeFluidGrid(),off=document.createElement("canvas");
@@ -137,6 +137,7 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
  let charged=[],appliedIds=new Set(),ripples=[],pulse=0;
  const reduced=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches===true;
  function clearGrid(){
+  target.classList.remove("ward-breaking");
   for(const k of FIELDS)grid[k].fill(0);
   appliedIds.clear();charged=[];ripples=[];pulse=0;
  }
@@ -269,10 +270,26 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
   drag=null;lastStir=performance.now();target.classList.remove("is-stirring");onInteract();
  }
  for(const type of ["pointerup","pointercancel","lostpointercapture"])canvas.addEventListener(type,release);
+ function burst(){
+  // The finishing spell pulls pigment inward and sends a surface shockwave.
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+   const i=INDEX(x,y);
+   if(!grid.active[i])continue;
+   const dx=MID-x,dy=MID-y;
+   grid.vx[i]+=dx*.017-dy*.005;
+   grid.vy[i]+=dy*.017+dx*.005;
+  }
+  ripples.push({x:canvas.width/2,y:canvas.height/2,age:0});
+  pulse=1;
+  target.classList.remove("ward-breaking");
+  void target.offsetWidth;
+  target.classList.add("ward-breaking");
+  if(reduced())render();
+ }
 
  return {
   available:true,sync,clear(){clearGrid();target.style.setProperty("--fusion-color","#32616d");render();},
-  pause,resume,isStirring:()=>!!drag,lastStirAt:()=>lastStir,
+  pause,resume,burst,isStirring:()=>!!drag,lastStirAt:()=>lastStir,
   getColor:()=>cssForOrbs(charged),getCount:()=>charged.length,
   // Exposed for direct browser QA, does not affect authoritative puzzle rules.
   debugCellMass:()=>grid.mass.reduce((sum,v)=>sum+v,0),
