@@ -1,5 +1,6 @@
 /* Regression-only deterministic replay, not an online leaderboard. */
 import {newRun,start,step,turn,chooseMutation} from "./engine.js";
+import {placeHatchlingWard} from "./hatchling-ward.js";
 const MAX_EVENTS=14000,MAX_TICKS=6000;
 function validEvents(events){
  if(!Array.isArray(events)||events.length>MAX_EVENTS)return false;
@@ -8,7 +9,8 @@ function validEvents(events){
   if(!Array.isArray(ev)||ev.length!==3||!Number.isInteger(ev[0])||ev[0]<last||ev[0]>MAX_TICKS)return false;
   if(ev[1]==="turn"&&!["up","down","left","right"].includes(ev[2]))return false;
   if(ev[1]==="choose"&&!["W","U","B","R","G"].includes(ev[2]))return false;
-  if(ev[1]!=="turn"&&ev[1]!=="choose")return false;
+  if(ev[1]==="ward"&&ev[2]!==null)return false;
+  if(ev[1]!=="turn"&&ev[1]!=="choose"&&ev[1]!=="ward")return false;
   last=ev[0];
  }
  return true;
@@ -23,6 +25,7 @@ export function replayScore(seed,events,expected,mode="hunt"){
   while(index<events.length&&events[index][0]===run.runTicks){
    const [at,kind,value]=events[index++];
    if(kind==="turn"){if(!turn(run,value))return {ok:false,reason:"Invalid turn in replay."}}
+   else if(kind==="ward"){if(!placeHatchlingWard(run))return {ok:false,reason:"Invalid Hatchling Ward placement."}}
    else if(!chooseMutation(run,value))return {ok:false,reason:"Invalid mutation selection."};
   }
   if(run.status==="draft")return {ok:false,reason:"Missing mutation choice."};
