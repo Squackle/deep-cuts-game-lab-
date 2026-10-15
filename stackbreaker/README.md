@@ -1,3 +1,5 @@
+# Stackbreaker 1.0 — Five Galaxies · 25 Worlds · 250 Stages
+
 # Stackbreaker 0.9 — Five Worlds Campaign
 
 Game Lab URL: https://deep-cuts-game-lab.pages.dev/stackbreaker/
@@ -26,3 +28,5 @@ The current rules subset supports two players and scripted always-pass opponent 
 All code and content edits for this playtest belong to `stackbreaker/**` in the Game Lab repository. Do not edit other games' code, the main Deep Cuts EDH website, its public Arcade, databases, login or scores. Keep a protected PR and SHA-matched Cloudflare preview/production deployment with source tests; revert the Stackbreaker PR alone if rollback is needed.
 
 The 12 original scenarios stay in `data/scenarios.json` (preserving the shared Lab catalog contract). The 18 additional campaign stages live in `data/campaign-expansion.json` and are concatenated by the Stackbreaker controller and standalone build; other game CI scripts and shared site files are unchanged.
+## Galaxy atlas and authored limits
+Five galaxies × five worlds × ten levels each. Original thirty stages and local progress IDs are preserved. The additional 220 stages are deterministic, tested variants of thirty earlier tactical encounters plus ten newly authored tactical motifs; they are *not* 220 wholly different mechanics. Around two dozen additional curated real card identities are supported, with a restricted, explicit simulation of their relevant rules. The 250-level atlas supports free stage selection, five galaxy tabs, five world tabs per galaxy, previous/next navigation, retained stars, and boss-stage flags. This remains a limited two-player MTG training tool—not a comprehensive card-rules parser.
