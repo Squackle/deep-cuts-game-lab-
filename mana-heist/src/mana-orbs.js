@@ -21,11 +21,11 @@ export function transitionOrbs(existing,action,resultingPool){
 export function consistent(pool,orbs){
  return COLORS.every(c=>orbs.filter(o=>o.color===c).length===(pool[c]||0));
 }
-export function renderLedger(target,pool,orbs,{pendingId=null}={}){
+export function renderLedger(target,pool,orbs,{pendingId=null,pendingIds=[]}={}){
  const capacity=Math.max(6,Math.ceil(orbs.length/3)*3);
  target.innerHTML=Array.from({length:capacity},(_,i)=>{
   const orb=orbs[i],name=orb?LABELS[orb.color]:"Empty",color=orb?.color;
-  return '<span class="mana-ledger-entry '+(orb?"occupied":"vacant")+(orb?.id===pendingId?" in-flight":"")+'"'+
+  return '<span class="mana-ledger-entry '+(orb?"occupied":"vacant")+(orb&&(orb.id===pendingId||pendingIds.includes(orb.id))?" in-flight":"")+'"'+
    (orb?' data-orb-id="'+orb.id+'" data-color="'+color+'"':'')+' role="img" aria-label="'+(orb?name+" mana":"Empty mana slot")+'">'+
    (orb?'<span class="ledger-dot" style="--mana-color:'+THEME[color]+'">'+color+'</span><span class="ledger-word">'+name.toUpperCase()+'</span>':
      '<span class="ledger-dot ledger-blank">·</span><span class="ledger-word">EMPTY</span>')+'</span>';
