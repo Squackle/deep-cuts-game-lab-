@@ -8,11 +8,8 @@ export function keyboardDirection(key,repeat=false){
  return repeat?null:(KEY_DIRECTIONS[key]??null);
 }
 
-export const MUTATION_SELECTION_KEYS=Object.freeze({
- "1":0,"w":0,"W":0,"ArrowUp":0,
- "2":1,"a":1,"A":1,"ArrowLeft":1,
- "3":2,"s":2,"S":2,"ArrowDown":2
-});
+/** Selection keys NEVER overlap movement. Rapid turns after an orb are harmless. */
+export const MUTATION_SELECTION_KEYS=Object.freeze({"1":0,"2":1,"3":2});
 export function mutationSelectionIndex(key,repeat=false){
  return repeat?null:(Object.hasOwn(MUTATION_SELECTION_KEYS,key)?MUTATION_SELECTION_KEYS[key]:null);
 }
