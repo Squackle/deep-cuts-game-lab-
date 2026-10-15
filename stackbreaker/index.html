@@ -281,6 +281,13 @@
 .hand-row,.hand-row.many{display:flex!important;flex:1!important;align-items:center;justify-content:flex-start!important;flex-wrap:nowrap!important;min-width:0;overflow-x:auto;overflow-y:hidden;gap:6px;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:#bd9f6580 transparent}
 .hand-card,.hand-row.many .hand-card{flex:0 0 clamp(88px,10.5vw,152px)!important;width:clamp(88px,10.5vw,152px)!important;max-width:none!important;min-width:0;scroll-snap-align:center}
 @media(max-width:600px){.hand-nav{flex-basis:20px;font-size:20px}.hand-row,.hand-row.many{gap:5px}.hand-card,.hand-row.many .hand-card{flex-basis:clamp(88px,27vw,118px)!important;width:clamp(88px,27vw,118px)!important}}
+
+/* Keep the scrolled hand at the actual available panel height.
+   Percentage-height cards otherwise collapse to text-line height on narrow Chrome. */
+.hand-scroller{align-items:stretch;height:100%;min-height:0}
+.hand-row,.hand-row.many{height:100%!important;align-self:stretch!important;align-items:stretch!important;min-height:0}
+.hand-card,.hand-row.many .hand-card{height:100%!important;max-height:100%!important;align-self:stretch!important}
+.hand-card img.hand-image,.hand-card .image-pending{height:100%!important;max-height:100%;object-fit:contain}
 </style></head>
 <body><a class="skip" href="#game">Skip to Stackbreaker game</a>
 <header class="mast"><a class="site-mark" href="/lab/" aria-label="Back to Game Test Lab home">◈ <b>DEEP CUTS</b> / GAME LAB</a><strong class="site-title">STACKBREAKER <small>1.1 · COMMANDER TRAINING</small></strong><a class="site-home" href="/lab/" aria-label="Back to Test Lab, choose another game">GAME LAB ↗</a></header>
