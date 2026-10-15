@@ -6,6 +6,8 @@ This repository `Squackle/deep-cuts-game-lab-` is a **separate solo prototype en
 - **Website developer** owns production website, authenticated profiles, scored/replay-verified leaderboards, APIs, and **promotion** of tested gameplay into `deep-cuts-edh`.
 - **Project assistant** documents requirements/QA, maintains GitHub issue #14, reviews work, and does not silently change game code.
 
+**Permanent owner release rule (Oct 15, 2026): TEST SERVER FIRST for every Hive Run update.** Follow [the test-first release policy](docs/TEST-FIRST-RELEASE-POLICY.md). Deploy and verify this Lab, then provide an explicit user-triggered promotion control. Do not touch the public game until the owner activates promotion in a subsequent turn. The Codex must live on authenticated My Profile, not in the gameplay HUD; no local Lab preview may be represented as a saved public profile.
+
 Before editing, inspect both repository `main` SHAs and open PRs. Never reuse someone else's working branch. Prefer `game/<topic>` or `coord/<topic>` from latest main and fill the PR template. Test each rules change against deterministic playback/versioning. If paths overlap an older open PR, wait and coordinate.
 
 **Isolation is mandatory:** This lab does not issue authoritative player identities, submit public scores or connect to production D1. Its intentionally retired leaderboard API remains disabled. Lair is unranked; past verified public scores remain on the main site. Never revive retired Daily Ritual competition accidentally.
