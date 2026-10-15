@@ -84,14 +84,12 @@ export function mixPigments(grid,dt=1){
  // trails. This is a diffusion of *pigment fractions*, not a color override.
  for(let y=0;y<n;y++)for(let x=0;x<n;x++){
   const i=idx(x,y,n);if(!active[i])continue;
-  const near=[i-1,i+1,i-n,i+n];
+  const left=i-1,right=i+1,up=i-n,down=i+n;
   const mixing=clamp(.013+turbulence[i]*.060,.013,.32);
-  let count=0;
-  for(let k=0;k<4;k++)if(active[near[k]])count++;
+  const count=(active[left]?1:0)+(active[right]?1:0)+(active[up]?1:0)+(active[down]?1:0);
   let cellSum=0;
   for(let c=0;c<C;c++){
-   let neighboring=0;
-   for(let k=0;k<4;k++)if(active[near[k]])neighboring+=next[c][near[k]];
+   const neighboring=(active[left]?next[c][left]:0)+(active[right]?next[c][right]:0)+(active[up]?next[c][up]:0)+(active[down]?next[c][down]:0);
    const avg=count?neighboring/count:next[c][i];
    const value=next[c][i]*(1-mixing)+avg*mixing;
    colors[c][i]=Math.max(0,value);
@@ -106,13 +104,13 @@ export function mixPigments(grid,dt=1){
  // Correct transport drift through bounded iterative proportional fitting.
  // This preserves each individual mana color even after very long stirring.
  rebalancePigments(grid,3);
- updateRgbFromPigments(grid);
 }
 
 export function rebalancePigments(grid,passes=3){
  if(!grid.pigmentLive)return;
  const {active,pigments:colors,pigmentTargets:target}=grid;
-  const totals=new Float64Array(C),factors=new Float64Array(C);
+  const totals=grid._colorTotals||(grid._colorTotals=new Float64Array(C));
+  const factors=grid._colorFactors||(grid._colorFactors=new Float64Array(C));
   for(let iteration=0;iteration<passes;iteration++){
    totals.fill(0);
    for(let i=0;i<active.length;i++)if(active[i]){
