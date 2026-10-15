@@ -63,3 +63,21 @@ This is a simplified *original* mana-base strategy game; it does **not** impleme
 - Consider original licensed illustrations/audio and improved keyboard-first controls.
 
 The **Game Lab** may be updated with owner authorization and its own CI/preview. **Do not deploy the public Deep Cuts EDH Arcade** without a separate owner-authorized integration PR and website developer review. Hive Run's systems remain separate.
+
+## 0.3 — Overworld & Mana FX (2026-10-15)
+
+The live Lab-only playtest now opens on a **chapter-based campaign map**, not an exposed 18-stage grid. Each of five acts shows only its own three or four stage nodes as `1:1`, `1:2`, `1:3`, `2:1`, etc. Future acts are represented by locked numbered pips with names hidden. The first uncracked stage is highlighted; only stage 1:1 is available for brand-new players. Clearing a stage permanently unlocks exactly the next stage; previous completed stages remain replayable. The game screen and campaign map are separate. The "Next" shortcut in an active game was replaced with "Map" to prevent skipping.
+
+Guest progression continues using **the existing v2 browser storage** `dc-mana-heist-landfall-v2`, so returning players keep completed stages and best scores. Malformed best entries are ignored, and an out-of-sequence v2 save does not permit skipping locked gaps. No profile or server access.
+
+The mana ledger is now an illustrated **mana reservoir of circular sockets**. Each legal land tap (i) rotates the land sideways, (ii) produces a typed orb in the deterministic reducer-backed pool, (iii) animates a colored bubble from the tapped card's last screen position to a pending empty socket, and (iv) lights that socket when the bubble arrives. Spells remove exactly the colors actually paid. End turn clears orbs; Undo restores the prior socket inventory. Color identity is conveyed by both letter and hue. Reduced-motion settings bypass the animation without blocking game state.
+
+Land art panels now use **self-contained original SVG painted landscapes**, uniquely seeded from land identities, instead of the previous generic card glyph. Official MTG card images, Wizards branding and copied mana symbols remain intentionally excluded; no new remote image, license or API dependency is introduced.
+
+### v0.3 acceptance checks
+
+- Node regression coverage in `mana-heist/tests/campaign.test.mjs` proves stage numbering and sequential unlocking across all 18 vaults, old-save sanitization, out-of-order best behavior, and orb-to-pool bookkeeping. Existing 18-level solver tests remain unchanged.
+- Browser-rendered Cloudflare preview at 390px: fresh player saw only 3 Act I stages, with 1:2 locked; entering 1:1 rendered original SVG card art; tapping the blue land visibly rotated the card, launched an orb toward the reservoir and filled the blue socket; casting opened the vault, then the map unlocked 1:2 while retaining lock on 1:3.
+- At 320px both the campaign screen and gameplay screen rendered without horizontal overflow; the orb animation and 7 visible sockets were present.
+- Browser/device interaction, multi-stage QA, reduced-motion visual spot checks and physical touch testing can be deepened in subsequent releases.
+- Scope limited to `mana-heist/**`; **public Deep Cuts EDH Arcade, Hive Run, membership and score APIs remain untouched**.
