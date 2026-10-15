@@ -48,6 +48,18 @@ test("pending mana orb fills the ward only after reaching the center",()=>{
  assert.equal(res.charged.length,3);
  assert.equal(count.textContent,"3 / 3");
 });
+test("two concurrently traveling orbs charge only after each arrival",()=>{
+ const svg={innerHTML:"",setAttribute(){},querySelector(){return null}};
+ const count={textContent:""};
+ const orbs=mana(["R","U","R"]);
+ renderWardCharge({svg,count,cost:{R:2,U:1},orbs,pendingIds:[1,3]});
+ assert.equal(count.textContent,"1 / 3");
+ renderWardCharge({svg,count,cost:{R:2,U:1},orbs,pendingIds:[3],animateId:1});
+ assert.equal(count.textContent,"2 / 3");
+ renderWardCharge({svg,count,cost:{R:2,U:1},orbs,pendingIds:[],animateId:3});
+ assert.equal(count.textContent,"3 / 3");
+ assert.equal((svg.innerHTML.match(/class="ward-mana-sector/g)||[]).length,3);
+});
 test("every authored mana cost builds the intended number of proportional slices",()=>{
  for(const level of LEVELS){
   for(const stage of level.stages){
