@@ -93,8 +93,13 @@ function ensureMana(p,line){
  // Small, varied mana reserves make alternative one-mana responses playable;
  // no infinite mana or auto-casting is introduced.
  const colors=commanderPalette(p),first=colors[0]||'G',second=colors[1]||(first==='U'?'W':'U');
- if(p.lands.length<6)appendLand(p,first);
- if(p.lands.length<6)appendLand(p,second);
+ // Intro worlds get a forgiving spare land. Advanced worlds only receive
+ // their vetted solution budget: a plausible but wasteful cast can strand
+ // the colored mana needed for the true winning line.
+ if((p.difficulty?.galaxy||1)<=2){
+  if(p.lands.length<6)appendLand(p,first);
+  if(p.lands.length<6)appendLand(p,second);
+ }
 }
 function normalizeOwner(p,owner){
  const items=[...p.units.filter(x=>x.controller===owner),...p.stack.filter(x=>x.controller===owner),...(owner==='player'?p.hand.filter(x=>!x.sourceId):[])];
@@ -190,6 +195,20 @@ export function commanderScenario(input,index=0){
   if(!next)throw Error('Insufficient distinct response spells for '+p.id);
   p.hand.push({id:'choice-'+choiceIndex++,card:next.name});seen.add(next.name);
  }
+ // Higher galaxies conceal the required response sequence among live,
+ // affordable alternative instants; casting one spends scarce solution mana.
+ // A large high-galaxy hand is intentional: a midgame draw-heavy snapshot.
+ const galaxy=p.difficulty?.galaxy||1;
+ const wrongOptions=galaxy<3?0:galaxy===3?1:galaxy===4?2:2;
+ let extraChoice=0;
+ while(extraChoice<wrongOptions){
+  const next=pool.find(x=>!seen.has(x.name)&&x.score>=100);
+  if(!next)break;
+  p.hand.push({id:'misdirection-'+(extraChoice+1),card:next.name});
+  seen.add(next.name);extraChoice++;
+ }
+ p.difficulty??={galaxy};
+ p.difficulty.liveDecoys=extraChoice;
  p.commanderPractice=true;p.format='singleton-realistic-hand';
  p.solution=commanderClone(solution);p.companionColors=commanderPalette(p);
  return p;
