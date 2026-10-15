@@ -888,3 +888,138 @@
 @media(prefers-reduced-motion:reduce){
  .in-heist .lock-ring.fluid-enabled:hover{transform:none!important}
 }
+
+
+/* Mana Heist 2.2 — the cauldron is the focal point, not a tiny status icon.
+   Preserve the one-screen play table with battlefield and hand beneath it. */
+.in-heist #heist .play-column{
+ grid-template-rows:minmax(0,1fr) 40px minmax(85px,.28fr) minmax(78px,.23fr)!important;
+ gap:6px!important;
+}
+.in-heist #heist .vault-card{
+ display:flex!important;flex-direction:column!important;align-items:center!important;
+ gap:0!important;padding:8px 14px!important;overflow:hidden!important;
+}
+.in-heist #heist .vault-topline,
+.in-heist #heist .vault-card>h2,
+.in-heist #heist .stats{width:100%;flex:0 0 auto!important}
+.in-heist #heist .vault-card>h2{margin:2px 0!important;text-align:center;font-size:clamp(1rem,1.75vw,1.45rem)}
+.in-heist #heist .stats{padding:3px 0!important;margin:2px 0 4px!important;max-width:540px}
+.in-heist #heist .stats>div{padding:2px 8px!important;text-align:center}
+.in-heist #heist .stats small{font-size:.46rem!important;margin-bottom:1px}
+.in-heist #heist .stats strong{font-size:.71rem!important}
+.in-heist #heist .vault-stage{
+ flex:1 1 0!important;display:flex!important;flex-direction:column!important;
+ align-items:center!important;justify-content:center!important;
+ width:100%!important;min-height:0!important;
+ gap:7px!important;padding:5px 8px!important;margin:2px 0!important;
+ background:radial-gradient(ellipse at 50% 40%,#31524c 0%,#192f34 42%,#0b2026 100%);
+ border-color:#c3a77650;overflow:hidden!important;
+}
+.in-heist #heist #wardTarget.lock-ring{
+ width:min(35dvh,360px)!important;height:min(35dvh,360px)!important;
+ min-width:0!important;min-height:0!important;max-width:100%!important;
+ aspect-ratio:1!important;flex:0 1 auto!important;transform:none!important;
+ border-width:3px!important;border-color:#d8ba7d!important;
+ box-shadow:0 0 0 7px #d6b87c17,0 0 40px var(--fusion-color),inset 0 0 19px #0008!important;
+ transition:box-shadow .24s ease,filter .24s ease!important;
+}
+.in-heist #heist #wardTarget.lock-ring:hover,
+.in-heist #heist #wardTarget.lock-ring.is-stirring{
+ transform:none!important;
+ box-shadow:0 0 0 8px #d6b87c23,0 0 53px var(--fusion-color),inset 0 0 14px #0007!important;
+}
+.in-heist #heist #wardTarget.lock-ring .lock-glyph{
+ font-size:clamp(1.6rem,3.2dvh,2.3rem)!important;
+ opacity:.65;text-shadow:0 2px 8px #06141f;
+}
+.in-heist #heist #wardTarget.lock-ring .ward-charge-count{
+ font-size:clamp(.61rem,1.15dvh,.81rem)!important;
+ padding:2px 8px!important;border:1px solid #fff5;
+}
+.in-heist #heist #wardTarget.lock-ring .ring-text{
+ font-size:clamp(.42rem,.83dvh,.61rem)!important;letter-spacing:.09em!important;
+}
+.in-heist #heist .ward-info{
+ flex:0 0 auto!important;display:flex!important;flex-direction:row!important;
+ justify-content:center!important;align-items:center!important;
+ width:100%!important;gap:6px 14px!important;min-height:0!important;
+ text-align:center!important;
+}
+.in-heist #heist .ward-info>.overline{display:none!important}
+.in-heist #heist .ward-info h3{font-size:clamp(.85rem,1.45vw,1.12rem)!important;margin:0!important}
+.in-heist #heist .ward-info .mana-cost{margin:0!important}
+.in-heist #heist .ward-info .auto-cast-status{
+ width:auto!important;min-height:27px!important;padding:5px 12px!important;
+ margin:0!important;font-size:.54rem!important;
+}
+.in-heist #heist .table-card{padding:5px 11px!important}
+.in-heist #heist .table-card .section-label{margin-bottom:2px!important}
+.in-heist #heist .table-card .section-label h2{font-size:.92rem!important}
+.in-heist #battlefield{--mh-land-width:clamp(80px,12.3dvh,150px)}
+.in-heist #hand{--mh-land-width:clamp(72px,10.7dvh,131px)}
+.in-heist #heist #wardTarget .ward-fluid-canvas{cursor:crosshair!important}
+.in-heist #heist #wardTarget.is-stirring .ward-fluid-canvas{cursor:grabbing!important}
+@media(max-width:800px){
+ .in-heist #heist .play-column{
+  grid-template-rows:minmax(0,1fr) 36px minmax(69px,.25fr) minmax(63px,.22fr)!important;
+  gap:4px!important;
+ }
+ .in-heist #heist .vault-card{padding:5px 8px!important}
+ .in-heist #heist .vault-card>h2{font-size:1.05rem!important}
+ .in-heist #heist .stats{margin:1px 0 2px!important;padding:1px 0!important}
+ .in-heist #heist .stats strong{font-size:.65rem!important}
+ .in-heist #heist .stats small{font-size:.40rem!important}
+ .in-heist #heist .vault-stage{gap:5px!important;padding:3px!important}
+ .in-heist #heist #wardTarget.lock-ring{
+  width:min(34dvh,262px)!important;height:min(34dvh,262px)!important;
+ }
+ .in-heist #heist .ward-info{gap:4px 8px!important}
+ .in-heist #heist .ward-info h3{font-size:.78rem!important}
+ .in-heist #heist .ward-info .auto-cast-status{font-size:.47rem!important;padding:3px 7px!important;min-height:23px!important}
+ .in-heist #heist .play-column>.controlbar{height:36px!important}
+ .in-heist #heist .play-column>.controlbar button,
+ .in-heist #heist .play-column>.controlbar button:not(.primary){height:35px!important;min-height:35px!important}
+ .in-heist #battlefield{--mh-land-width:clamp(56px,10.5dvh,94px)}
+ .in-heist #hand{--mh-land-width:clamp(52px,9dvh,83px)}
+}
+@media(max-width:800px) and (max-height:670px){
+ .in-heist #heist .play-column{
+  grid-template-rows:minmax(0,1fr) 32px minmax(59px,.22fr) minmax(57px,.20fr)!important;
+  gap:3px!important;
+ }
+ .in-heist #heist #wardTarget.lock-ring{
+  width:min(30dvh,215px)!important;height:min(30dvh,215px)!important;
+ }
+ .in-heist #heist .vault-topline .overline{font-size:.44rem!important}
+ .in-heist #heist .vault-card>h2{font-size:.90rem!important}
+ .in-heist #heist .stats{margin:0!important}
+ .in-heist #heist .stats strong{font-size:.57rem!important}
+ .in-heist #heist .stats small{font-size:.36rem!important}
+ .in-heist #heist .ward-info .auto-cast-status{font-size:.39rem!important;min-height:19px!important}
+ .in-heist #heist .ward-info h3{font-size:.72rem!important}
+ .in-heist #heist .play-column>.controlbar{height:32px!important}
+ .in-heist #heist .play-column>.controlbar button,
+ .in-heist #heist .play-column>.controlbar button:not(.primary){height:31px!important;min-height:31px!important}
+ .in-heist #battlefield{--mh-land-width:clamp(52px,10dvh,74px)}
+ .in-heist #hand{--mh-land-width:clamp(48px,8.9dvh,65px)}
+}
+@media(prefers-reduced-motion:reduce){
+ .in-heist #heist #wardTarget.lock-ring{transition:none!important}
+}
+
+/* Finale: a quick expanding magical shockwave after the inward swirl. */
+.in-heist #heist #wardTarget.ward-breaking::after{
+ content:"";position:absolute;inset:8%;z-index:5;
+ border:3px solid #fff4d4;pointer-events:none;border-radius:50%;
+ box-shadow:0 0 24px #fff7c9,0 0 50px var(--fusion-color);
+ animation:chromaticBreak .57s cubic-bezier(.11,.75,.3,1) both;
+}
+@keyframes chromaticBreak{
+ 0%{transform:scale(.12);opacity:1}
+ 55%{transform:scale(1.2);opacity:.95}
+ 100%{transform:scale(1.5);opacity:0}
+}
+@media(prefers-reduced-motion:reduce){
+ .in-heist #heist #wardTarget.ward-breaking::after{animation:none;opacity:0}
+}

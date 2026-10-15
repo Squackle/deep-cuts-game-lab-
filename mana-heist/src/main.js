@@ -32,12 +32,12 @@ function cancelAuto(){
 }
 // The water is optional to stir: leave a short window after charging, let
 // stirring postpone the finish, but NEVER let interaction block a puzzle.
-const AUTO_SETTLE_MS=1400,AUTO_STIR_MAX_MS=5100;
+const AUTO_SETTLE_MS=2000,AUTO_STIR_MAX_MS=5100;
 function queueAutoCast(){
  if(pendingFlights.size||completed(level,state))return;
  if(!chooseAutomaticCast(level,state)||autoTimer!==null)return;
  el("wardTarget").classList.add("auto-primed");
- el("autoCastLabel").textContent="WARD READY · STIR TO MIX · AUTO CAST";
+ el("autoCastLabel").textContent="WARD READY · MOVE MOUSE TO STIR";
  const epoch=viewEpoch,primedAt=performance.now();
  function tryCast(){
   if(epoch!==viewEpoch||pendingFlights.size||completed(level,state)){autoTimer=null;return;}
@@ -46,9 +46,16 @@ function queueAutoCast(){
   if(elapsed<AUTO_SETTLE_MS||(stirring&&elapsed<AUTO_STIR_MAX_MS)){
    autoTimer=setTimeout(tryCast,140);return;
   }
-  autoTimer=null;
   const legal=chooseAutomaticCast(level,state);
-  if(legal)perform(legal);
+  if(!legal){autoTimer=null;return;}
+  fluid.burst();
+  el("autoCastLabel").textContent="CHROMATIC WARD BREAKING";
+  autoTimer=setTimeout(()=>{
+   autoTimer=null;
+   if(epoch!==viewEpoch||pendingFlights.size||completed(level,state))return;
+   const stillLegal=chooseAutomaticCast(level,state);
+   if(stillLegal)perform(stillLegal);
+  },250);
  }
  autoTimer=setTimeout(tryCast,140);
 }
@@ -56,7 +63,7 @@ function queueAutoCast(){
 const pendingFlights=new Set();
 const fluid=installFluidWard({
  canvas:el("wardFluidCanvas"),target:el("wardTarget"),
- onInteract:()=>{if(autoTimer!==null)el("autoCastLabel").textContent="STIRRING MANA · AUTO CAST ON RELEASE";}
+ onInteract:()=>{if(autoTimer!==null)el("autoCastLabel").textContent="STIR THE WATER · AUTO-CAST WHEN IT SETTLES";}
 });
 el("wardTarget").dataset.preloadedMixes=String(PRELOADED_MIX_COUNT);
 let currentFluidStage="";
@@ -261,7 +268,7 @@ function render(pendingId=null){
  el("wardName").textContent=isWin?"The seal is broken":stage.name;
  el("wardCost").innerHTML=isWin?"":costHtml(stage.cost);
  el("wardDescription").textContent=isWin?"The heist is complete. Your best route is preserved on this device.":stage.effect==="untap"?"Casting this heist spell also untaps one land you choose.":"Colored mana symbols require that exact color. A gray diamond is generic: you may use any remaining mana.";
- el("autoCastLabel").textContent=isWin?"ALL WARDS OPEN":stage.effect==="untap"?"AUTO REWIND · SWIRL THE WATER":"SWIRL THE MANA · AUTO-CAST ENABLED";
+ el("autoCastLabel").textContent=isWin?"ALL WARDS OPEN":stage.effect==="untap"?"AUTO REWIND · MOVE TO STIR":"MOVE TO STIR · TOUCH AND DRAG";
  el("stageList").innerHTML=level.stages.map((spell,i)=>'<span class="stage-marker '+(i<state.stage?"done":i===state.stage?"active":"")+'">'+(i<state.stage?"✓":String(i+1).padStart(2,"0"))+" "+spell.name+"</span>").join("");
  el("battleCount").textContent=state.field.length+" LAND"+(state.field.length===1?"":"S");
  syncLandRows();
