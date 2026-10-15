@@ -173,7 +173,7 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
  }
  canvas.addEventListener("pointerdown",e=>{
   const c=coord(e);if(!inside(c.x,c.y))return;
-  e.preventDefault();canvas.setPointerCapture?.(e.pointerId);
+  e.preventDefault();try{canvas.setPointerCapture?.(e.pointerId);}catch{}
   drag={id:e.pointerId,x:c.x,y:c.y};motionStart=performance.now();lastStir=motionStart;
   target.classList.add("is-stirring");onInteract();
  });
