@@ -273,3 +273,18 @@
  .world-heading h3{font-size:clamp(14px,3.5vw,22px)}.world-heading p{font-size:9px}
  .world-levels{gap:1px}.map-level{font-size:8px}.map-level .map-node{transform:scale(.85)}.map-level>b{font-size:8px}
 }
+
+/* Singleton response selection: seven readable, swipeable Scryfall cards. */
+.hand-scroller{display:flex;align-items:center;min-height:0;min-width:0;flex:1;gap:4px;position:relative}
+.hand-nav{flex:0 0 24px;height:62%;min-height:36px;padding:0;border:1px solid #bda4708c;border-radius:7px;background:#263c3b;color:#ffe4ac;font:900 24px/1 Georgia,serif;cursor:pointer}
+.hand-nav:disabled{opacity:.25;cursor:default}.hand-nav:not(:disabled):hover{background:#345449;box-shadow:0 0 9px #f4cb6988}
+.hand-row,.hand-row.many{display:flex!important;flex:1!important;align-items:center;justify-content:flex-start!important;flex-wrap:nowrap!important;min-width:0;overflow-x:auto;overflow-y:hidden;gap:6px;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:#bd9f6580 transparent}
+.hand-card,.hand-row.many .hand-card{flex:0 0 clamp(88px,10.5vw,152px)!important;width:clamp(88px,10.5vw,152px)!important;max-width:none!important;min-width:0;scroll-snap-align:center}
+@media(max-width:600px){.hand-nav{flex-basis:20px;font-size:20px}.hand-row,.hand-row.many{gap:5px}.hand-card,.hand-row.many .hand-card{flex-basis:clamp(88px,27vw,118px)!important;width:clamp(88px,27vw,118px)!important}}
+
+/* Keep the scrolled hand at the actual available panel height.
+   Percentage-height cards otherwise collapse to text-line height on narrow Chrome. */
+.hand-scroller{align-items:stretch;height:100%;min-height:0}
+.hand-row,.hand-row.many{height:100%!important;align-self:stretch!important;align-items:stretch!important;min-height:0}
+.hand-card,.hand-row.many .hand-card{height:100%!important;max-height:100%!important;align-self:stretch!important}
+.hand-card img.hand-image,.hand-card .image-pending{height:100%!important;max-height:100%;object-fit:contain}
