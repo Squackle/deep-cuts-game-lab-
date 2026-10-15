@@ -3,8 +3,9 @@ import {COLORS,CARDS,initial,actions,reduce,completed,getCard,lookup,medal} from
 import {solve} from "./solver.js";
 import {highestUnlocked,unlocked,chapterIndex,stageCode,normalizedBests,chapterAccessible} from "./campaign.js";
 import {renderOverworld} from "./overworld.js";
-import {reconstruct,transitionOrbs,consistent,renderLedger,sendOrb} from "./mana-orbs.js";
+import {reconstruct,transitionOrbs,consistent,sendOrb} from "./mana-orbs.js";
 import {renderWardCharge} from "./ward-charge.js";
+import {chooseAutomaticCast} from "./auto-cast.js";
 import {landPainting} from "./land-art.js";
 import {installLandDragging} from "./drag-lands.js";
 import {renderCardReferences,referenceFor} from "./card-references.js";
@@ -21,6 +22,26 @@ function readProgress(){
 let progress=readProgress(),index=Math.min(progress.index,highestUnlocked(progress.bests)),level=LEVELS[index],state=initial(level),history=[],choiceActions=[],selectedMessage="";
 let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null;
 let viewEpoch=0;
+let autoTimer=null;
+function cancelAuto(){
+ if(autoTimer!==null){clearTimeout(autoTimer);autoTimer=null;}
+ el("wardTarget")?.classList.remove("auto-primed");
+}
+function queueAutoCast(){
+ if(pendingFlights.size||completed(level,state))return;
+ const payment=chooseAutomaticCast(level,state);
+ if(!payment||autoTimer!==null)return;
+ el("wardTarget").classList.add("auto-primed");
+ el("autoCastLabel").textContent="WARD PRIMED · CASTING AUTOMATICALLY";
+ const epoch=viewEpoch;
+ autoTimer=setTimeout(()=>{
+  autoTimer=null;
+  if(epoch!==viewEpoch||pendingFlights.size||completed(level,state))return;
+  const legal=chooseAutomaticCast(level,state);
+  if(legal)perform(legal);
+ },520);
+}
+
 const pendingFlights=new Set();
 function chargeWard({pendingId=null,animateId=null}={}){
  return renderWardCharge({
@@ -76,13 +97,14 @@ function message(text,error=false){
 function rejectCast(){
  const stage=level.stages[state.stage];if(!stage)return;
  const missing=missingMana(state.pool,stage.cost);
- flashWard({vault:el("heist").querySelector(".vault-card"),ward:el("lockGlyph"),costRow:el("wardCost"),button:el("castButton"),pool:el("pool"),missing});
+ flashWard({vault:el("heist").querySelector(".vault-card"),ward:el("lockGlyph"),costRow:el("wardCost"),button:null,pool:null,missing});
  message(failureText(missing),true);
 }
 function perform(action){
  const sourceRect=action.type==="tap"?el("battlefield").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():null;
  const out=reduce(level,state,action);
  if(!out.ok){if(action?.type==="cast")rejectCast();else message(out.error,true);return;}
+ cancelAuto();
  if(action.type!=="tap"){viewEpoch++;pendingFlights.clear();el("manaTravelLayer").replaceChildren();}
  history.push({state,orbs:manaOrbs.map(o=>({...o}))});
  state=out.state;
@@ -105,7 +127,7 @@ function perform(action){
   const epoch=viewEpoch;
   sendOrb({
    color:action.color,sourceRect,id:pendingId,layer:el("manaTravelLayer"),
-   target:el("pool"),destination:el("wardTarget"),
+   target:null,destination:el("wardTarget"),
    onArrival:()=>{if(epoch===viewEpoch){
     pendingFlights.delete(pendingId);
     el("pool").querySelector('[data-orb-id="'+pendingId+'"]')?.classList.remove("in-flight");
