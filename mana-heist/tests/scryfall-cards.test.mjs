@@ -29,7 +29,7 @@ test("all campaign stages only use real supported land cards",()=>{
 });
 test("playable land renders a complete Magic card scan, not original fantasy art",()=>{
  assert.match(js,/class="mtg-card-image"/);
- assert.match(js,/cardImageUrl\(key\)/);
+ assert.match(js,/imageFor\(instance.id,key\)/);
  assert.match(js,/data-card-key/);
  assert.match(css,/object-fit:contain!important/);
  assert.match(css,/filter:none!important/);
