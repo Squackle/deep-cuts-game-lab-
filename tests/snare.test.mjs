@@ -7,7 +7,7 @@ import {PREY} from "../src/enemies.js";
 import {LAIR_BOSSES,createLairRun} from "../src/lair.js";
 import {boardKey} from "../src/modes.js";
 test("Snare creates an independent, versioned and deterministic replay ruleset",()=>{
- assert.equal(RULES_VERSION,"hive-1.5.1");
+ assert.equal(RULES_VERSION,"hive-1.5.2");
  assert.equal(boardKey("classic"),"classic|arcade");
  assert.equal(boardKey("hunt"),"hunt|arcade");
 });
