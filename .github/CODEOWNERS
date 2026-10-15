@@ -1,0 +1,6 @@
+# Accountable repository owner; not independent bot/agent identity.
+* @Squackle
+/src/ @Squackle
+/functions/ @Squackle
+/tests/ @Squackle
+/.github/ @Squackle
