@@ -44,7 +44,7 @@ test('all 250 commander hands preserve deterministic winning lines, with multipl
   const result=autoplay(s);
   assert.equal(result.status,'won',p.id+' loss: '+result.log.join(' | '));
  }
- assert.equal(anyPlayable,scenes.length-1,'all cases except ability-only puzzles should have payable hand cards');
+ assert.equal(anyPlayable,scenes.length,'all 250 scenarios now offer castable spells in hand');
  assert.ok(alternateCount>=200,'too many forced-choice hands: '+alternateCount);
 });
 test('singleton substitutes distinct cards for legacy duplicate Dispel/Salve and repeated enemy bolts',()=>{
