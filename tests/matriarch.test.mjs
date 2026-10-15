@@ -18,7 +18,7 @@ function wardReady(){
 }
 
 test("Matriarch 1.5 is a new isolated engine ruleset and has exactly five WUBRG mutations",()=>{
- assert.equal(RULES_VERSION,"hive-1.5");
+ assert.equal(RULES_VERSION,"hive-1.5.1");
  assert.equal(Object.keys(newRun({seed:1}).mutations).length,5);
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  assert.match(html,/1\.5 · MATRIARCH/);
@@ -94,7 +94,7 @@ test("Broodmother is the fifth Lair boss, arrives at evolution 12, and has three
  assert.equal(ICON_PIXELS.broodmother.length,20);
  assert.equal(validateIcons(),true);
 });
-test("Egg Bloom is telegraphed, avoids spawning on bodies and expires by active simulation time",()=>{
+test("Egg Bloom is telegraphed and incubates eggs safely before they hatch",()=>{
  const run=createLairRun("broodmother");start(run);
  run.encounter.introMs=0;
  const old=run.terrain.length;
@@ -105,8 +105,8 @@ test("Egg Bloom is telegraphed, avoids spawning on bodies and expires by active 
  assert.ok(eggs.length>0,"Matriarch should create at least one safe egg on seeded Lair fixture");
  assert.ok(eggs.length<=4);
  for(const egg of eggs){
-  assert.equal(egg.warningMs,900);
-  assert.equal(egg.lifeMs,3200);
+  assert.equal(egg.warningMs,1400);
+  assert.equal(egg.lifeMs,null);
   assert.ok(!run.body.some(p=>p.x===egg.pos.x&&p.y===egg.pos.y));
  }
  assert.equal(run.encounter.abilityMs,0);
