@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
 import {CARDS,LANDS,RULES_VERSION} from '../src/cards.js';
 import {validateScenario,createGame,tapLand,legalActions,legalTargets,activate,autoplay,paymentOptions,remainingMana,creaturePower,creatureToughness,pass} from '../src/engine.js';
-const cases=JSON.parse(readFileSync(new URL('../data/scenarios.json',import.meta.url),'utf8'));
+const cases=[...JSON.parse(readFileSync(new URL('../data/scenarios.json',import.meta.url),'utf8')),...JSON.parse(readFileSync(new URL('../data/campaign-expansion.json',import.meta.url),'utf8'))];
 const solutions={
  'sb-01':[['ward',null]],
  'sb-02':[['counter','bolt']],

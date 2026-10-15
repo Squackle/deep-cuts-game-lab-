@@ -24,3 +24,5 @@ The current rules subset supports two players and scripted always-pass opponent 
 ## Rollback / release limits
 
 All code and content edits for this playtest belong to `stackbreaker/**` in the Game Lab repository. Do not edit other games' code, the main Deep Cuts EDH website, its public Arcade, databases, login or scores. Keep a protected PR and SHA-matched Cloudflare preview/production deployment with source tests; revert the Stackbreaker PR alone if rollback is needed.
+
+The 12 original scenarios stay in `data/scenarios.json` (preserving the shared Lab catalog contract). The 18 additional campaign stages live in `data/campaign-expansion.json` and are concatenated by the Stackbreaker controller and standalone build; other game CI scripts and shared site files are unchanged.

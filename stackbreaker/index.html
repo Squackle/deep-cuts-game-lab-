@@ -478,7 +478,7 @@ function autoplay(s0,max=120){let s=clone(s0);for(let i=0;i<max&&s.status==='pla
 
 
 
-const scenarios=[
+const coreScenarios=[
   {
     "id": "sb-01",
     "version": "sb-mtg-training-0.3.0",
@@ -1367,7 +1367,10 @@ const scenarios=[
     "hint": "Gain six life, stop one of their Bolts, and counter their Counterspell; two damaging Bolts can then resolve safely.",
     "explanation": "Both Healing Salves add six life, reaching seven. Use one Dispel to stop their Counterspell and another to stop any of their Bolts. Two Bolts still deal six, leaving you alive at one, and your Bolt wins.",
     "par": 4
-  },
+  }
+]
+;
+const campaignExpansion=[
   {
     "id": "sb-13",
     "version": "sb-mtg-training-0.3.0",
@@ -2745,6 +2748,7 @@ const scenarios=[
   }
 ]
 ;
+const scenarios=[...coreScenarios,...campaignExpansion];
 const chapters=[
   {
     "id": "w1",
@@ -2803,6 +2807,7 @@ const chapters=[
   }
 ]
 ;
+
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
 const glyph={W:'☀',U:'◆',B:'✦',R:'✹',G:'❀',C:'◇'};

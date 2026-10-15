@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {CARDS,LANDS} from '../src/cards.js';
 import {createGame,validateScenario,autoplay,tapLand,activate,legalActions,legalTargets,objectiveMet} from '../src/engine.js';
 const root = new URL('../data/',import.meta.url);
-const all=JSON.parse(readFileSync(new URL('scenarios.json',root),'utf8'));
+const all=[...JSON.parse(readFileSync(new URL('scenarios.json',root),'utf8')),...JSON.parse(readFileSync(new URL('campaign-expansion.json',root),'utf8'))];
 const chapters=JSON.parse(readFileSync(new URL('chapters.json',root),'utf8'));
 test('five complete chapters, six unique puzzle nodes each, boss at stage six',()=>{
  assert.equal(chapters.length,5);assert.equal(all.length,30);

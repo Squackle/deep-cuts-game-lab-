@@ -1,6 +1,8 @@
 import {CARDS,LANDS,RULES_VERSION,cardLink} from './cards.js';
 import {createGame,tapLand,activate,pass,paymentOptions,legalActions,legalTargets,creaturePower,creatureToughness,labelTarget} from './engine.js';
-import scenarios from '../data/scenarios.json' with {type:'json'};
+import coreScenarios from '../data/scenarios.json' with {type:'json'};
+import campaignExpansion from '../data/campaign-expansion.json' with {type:'json'};
+const scenarios=[...coreScenarios,...campaignExpansion];
 import chapters from '../data/chapters.json' with {type:'json'};
 
 const $=id=>document.getElementById(id);

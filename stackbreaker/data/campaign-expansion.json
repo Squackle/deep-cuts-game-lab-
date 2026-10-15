@@ -1,0 +1,1377 @@
+[
+  {
+    "id": "sb-13",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Investigator",
+    "title": "The Seedling Shield",
+    "intro": "Blossoming Defense increases Grizzly Bears to 4/4; three damage does not destroy it.",
+    "life": {
+      "player": 8,
+      "opponent": 18
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "bear"
+      }
+    ],
+    "hand": [
+      {
+        "id": "defend",
+        "card": "Blossoming Defense"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "bear"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Hexproof alone cannot undo marked damage, but increasing toughness can save the creature.",
+    "explanation": "Blossoming Defense increases Grizzly Bears to 4/4; three damage does not destroy it. Hexproof and a toughness increase are different tools.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      }
+    ],
+    "par": 1
+  },
+  {
+    "id": "sb-14",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Investigator",
+    "title": "A Thorn in the Blade",
+    "intro": "Cast Blossoming Defense onto Savannah Lions.",
+    "life": {
+      "player": 7,
+      "opponent": 17
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "lion",
+        "card": "Savannah Lions",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "murder",
+        "card": "Murder",
+        "controller": "opponent",
+        "targetId": "lion"
+      }
+    ],
+    "hand": [
+      {
+        "id": "defend",
+        "card": "Blossoming Defense"
+      },
+      {
+        "id": "grow",
+        "card": "Giant Growth"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "lion"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Murder cares about destroy, not toughness. You need the ability that also grants hexproof.",
+    "explanation": "Cast Blossoming Defense onto Savannah Lions. Once it gains hexproof, the opposing Murder has an illegal target on resolution.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      }
+    ],
+    "par": 1
+  },
+  {
+    "id": "sb-15",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Investigator",
+    "title": "Dive Beneath the Spell",
+    "intro": "Dive Down makes your Hill Giant hexproof and increases its toughness by three; Murder cannot resolve against it.",
+    "life": {
+      "player": 6,
+      "opponent": 18
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "murder",
+        "card": "Murder",
+        "controller": "opponent",
+        "targetId": "giant"
+      }
+    ],
+    "hand": [
+      {
+        "id": "dive",
+        "card": "Dive Down"
+      },
+      {
+        "id": "growth",
+        "card": "Giant Growth"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Choose a card you can actually cast. Dive Down grants hexproof, not just toughness.",
+    "explanation": "Dive Down makes your Hill Giant hexproof and increases its toughness by three; Murder cannot resolve against it.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      }
+    ],
+    "par": 1
+  },
+  {
+    "id": "sb-16",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Investigator",
+    "title": "A Wall of Lightning",
+    "intro": "Cast Titanic Growth on the Bear and Blossoming Defense on Savannah Lions to keep both creatures alive through their individual damage spells.",
+    "life": {
+      "player": 8,
+      "opponent": 19
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      },
+      {
+        "id": "lion",
+        "card": "Savannah Lions",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "bear"
+      },
+      {
+        "id": "shock",
+        "card": "Shock",
+        "controller": "opponent",
+        "targetId": "lion"
+      }
+    ],
+    "hand": [
+      {
+        "id": "titan",
+        "card": "Titanic Growth"
+      },
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      }
+    ],
+    "objective": {
+      "type": "keepN",
+      "count": 2
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Each creature must live through a different damage spell. Two green responses and three mana.",
+    "explanation": "Cast Titanic Growth on the Bear and Blossoming Defense on Savannah Lions to keep both creatures alive through their individual damage spells.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Wastes",
+        "controller": "player"
+      }
+    ],
+    "par": 2
+  },
+  {
+    "id": "sb-17",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Investigator",
+    "title": "Blackwater Crossing",
+    "intro": "Blossoming Defense saves Grizzly Bears through the Bolt; Dive Down grants hexproof to the Giant so Swords to Plowshares cannot exile it.",
+    "life": {
+      "player": 8,
+      "opponent": 16
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "swords",
+        "card": "Swords to Plowshares",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "bear"
+      }
+    ],
+    "hand": [
+      {
+        "id": "dive",
+        "card": "Dive Down"
+      },
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      }
+    ],
+    "objective": {
+      "type": "keepN",
+      "count": 2
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Indestructible does not stop exile. Hexproof can make an existing target illegal.",
+    "explanation": "Blossoming Defense saves Grizzly Bears through the Bolt; Dive Down grants hexproof to the Giant so Swords to Plowshares cannot exile it.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Forest",
+        "controller": "player"
+      }
+    ],
+    "par": 2
+  },
+  {
+    "id": "sb-18",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Investigator",
+    "title": "The Three-Color Gate",
+    "intro": "Titanic Growth raises Grizzly Bears toughness above Bolt damage; Cancel counters Wrath of God.",
+    "life": {
+      "player": 8,
+      "opponent": 18
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "bear"
+      }
+    ],
+    "hand": [
+      {
+        "id": "cancel",
+        "card": "Cancel"
+      },
+      {
+        "id": "titan",
+        "card": "Titanic Growth"
+      },
+      {
+        "id": "scatter",
+        "card": "Essence Scatter"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "bear"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "You must prevent the wipe and the damage. A creature-only counter cannot stop Wrath of God.",
+    "explanation": "Titanic Growth raises Grizzly Bears toughness above Bolt damage; Cancel counters Wrath of God. Essence Scatter cannot counter a sorcery.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-4",
+        "card": "Wastes",
+        "controller": "player"
+      },
+      {
+        "id": "land-5",
+        "card": "Wastes",
+        "controller": "player"
+      }
+    ],
+    "par": 2
+  },
+  {
+    "id": "sb-19",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "Two Blades, Two Defenses",
+    "intro": "Grant Grizzly Bears hexproof with Blossoming Defense and Hill Giant hexproof with Dive Down.",
+    "life": {
+      "player": 8,
+      "opponent": 19
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "doom",
+        "card": "Doom Blade",
+        "controller": "opponent",
+        "targetId": "bear"
+      },
+      {
+        "id": "murder",
+        "card": "Murder",
+        "controller": "opponent",
+        "targetId": "giant"
+      }
+    ],
+    "hand": [
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      },
+      {
+        "id": "dive",
+        "card": "Dive Down"
+      },
+      {
+        "id": "growth",
+        "card": "Giant Growth"
+      }
+    ],
+    "objective": {
+      "type": "keepN",
+      "count": 2
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Both targeted removal spells must lose their legal target. Pure toughness is not enough.",
+    "explanation": "Grant Grizzly Bears hexproof with Blossoming Defense and Hill Giant hexproof with Dive Down. Both black removal spells then fail on resolution.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Island",
+        "controller": "player"
+      }
+    ],
+    "par": 2
+  },
+  {
+    "id": "sb-20",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "Ward the Pack",
+    "intro": "Sacrifice Selfless Spirit to protect the Giant from Wrath and cast Dive Down on the Giant so Doom Blade has an illegal target.",
+    "life": {
+      "player": 8,
+      "opponent": 18
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "doom",
+        "card": "Doom Blade",
+        "controller": "opponent",
+        "targetId": "giant"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "dive",
+        "card": "Dive Down"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "One ability handles the board wipe; another response blanks the targeted removal.",
+    "explanation": "Sacrifice Selfless Spirit to protect the Giant from Wrath and cast Dive Down on the Giant so Doom Blade has an illegal target.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      }
+    ],
+    "par": 2
+  },
+  {
+    "id": "sb-21",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "The Triple Firewall",
+    "intro": "Gain life with Healing Salve, give the Giant hexproof with Dive Down, and sacrifice Selfless Spirit to survive the Wrath.",
+    "life": {
+      "player": 2,
+      "opponent": 18
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "murder",
+        "card": "Murder",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "dive",
+        "card": "Dive Down"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "You have three different problems: lethal damage, targeted removal, and a mass destroy effect.",
+    "explanation": "Gain life with Healing Salve, give the Giant hexproof with Dive Down, and sacrifice Selfless Spirit to survive the Wrath. Every response matters.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      }
+    ],
+    "par": 3
+  },
+  {
+    "id": "sb-22",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "Unbroken Intervention",
+    "intro": "Healing Salve saves you from Lightning Bolt, Cancel stops the opposing Counterspell so Heroic Intervention resolves, and Blossoming Defense gives the Giant hexproof against Swords to Plowshares.",
+    "life": {
+      "player": 2,
+      "opponent": 19
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      },
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "swords",
+        "card": "Swords to Plowshares",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "intervene",
+        "card": "Heroic Intervention",
+        "controller": "player"
+      },
+      {
+        "id": "counterspell",
+        "card": "Counterspell",
+        "controller": "opponent",
+        "targetId": "intervene"
+      },
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "cancel",
+        "card": "Cancel"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Heroic Intervention is already on the stack. Save it from the Counterspell and stop the earlier exile.",
+    "explanation": "Healing Salve saves you from Lightning Bolt, Cancel stops the opposing Counterspell so Heroic Intervention resolves, and Blossoming Defense gives the Giant hexproof against Swords to Plowshares.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-4",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-5",
+        "card": "Wastes",
+        "controller": "player"
+      }
+    ],
+    "par": 3
+  },
+  {
+    "id": "sb-23",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "The Double Ember",
+    "intro": "Gain three life and counter either Lightning Bolt or Shock.",
+    "life": {
+      "player": 2,
+      "opponent": 17
+    },
+    "mana": {},
+    "units": [],
+    "stack": [
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "shock",
+        "card": "Shock",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "counter",
+        "card": "Counterspell"
+      },
+      {
+        "id": "negate",
+        "card": "Negate"
+      }
+    ],
+    "objective": {
+      "type": "survive"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Healing Salve alone leaves you at zero after all damage. Stop one burn spell too.",
+    "explanation": "Gain three life and counter either Lightning Bolt or Shock. The remaining burn spell is survivable.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Plains",
+        "controller": "player"
+      }
+    ],
+    "par": 2
+  },
+  {
+    "id": "sb-24",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "The Rift Engine",
+    "intro": "Two Healing Salves, a Dispel on the enemy Counterspell, and another Dispel on one damaging spell let the original Bolt defeat your opponent.",
+    "life": {
+      "player": 1,
+      "opponent": 3
+    },
+    "mana": {},
+    "units": [],
+    "stack": [
+      {
+        "id": "yourbolt",
+        "card": "Lightning Bolt",
+        "controller": "player",
+        "targetId": "opponent"
+      },
+      {
+        "id": "enemycounter",
+        "card": "Counterspell",
+        "controller": "opponent",
+        "targetId": "yourbolt"
+      },
+      {
+        "id": "bolt1",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "bolt2",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "strike",
+        "card": "Lightning Strike",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "salve1",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "salve2",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "dispel1",
+        "card": "Dispel"
+      },
+      {
+        "id": "dispel2",
+        "card": "Dispel"
+      },
+      {
+        "id": "cancel",
+        "card": "Cancel"
+      }
+    ],
+    "objective": {
+      "type": "win"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Save your own Bolt by countering their counter, heal twice, then prevent one of the lethal spells from resolving.",
+    "explanation": "Two Healing Salves, a Dispel on the enemy Counterspell, and another Dispel on one damaging spell let the original Bolt defeat your opponent.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-4",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-5",
+        "card": "Wastes",
+        "controller": "player"
+      }
+    ],
+    "par": 4
+  },
+  {
+    "id": "sb-25",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "The Fortress Keeper",
+    "intro": "Sacrifice the Spirit to give your Bear indestructible, and use Blossoming Defense to make it an illegal target for Doom Blade.",
+    "life": {
+      "player": 8,
+      "opponent": 18
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "doom",
+        "card": "Doom Blade",
+        "controller": "opponent",
+        "targetId": "bear"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "bear"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "The board wipe and direct removal are two different threats. You need both defenses.",
+    "explanation": "Sacrifice the Spirit to give your Bear indestructible, and use Blossoming Defense to make it an illegal target for Doom Blade.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      }
+    ],
+    "par": 2
+  },
+  {
+    "id": "sb-26",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "Mercy at the Breach",
+    "intro": "Healing Salve raises your life above the burn threshold; Blossoming Defense grants the Giant hexproof and invalidates Swords to Plowshares.",
+    "life": {
+      "player": 2,
+      "opponent": 17
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "swords",
+        "card": "Swords to Plowshares",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "strike",
+        "card": "Lightning Strike",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "You cannot survive the damage or stop the exile with just one card.",
+    "explanation": "Healing Salve raises your life above the burn threshold; Blossoming Defense grants the Giant hexproof and invalidates Swords to Plowshares.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      }
+    ],
+    "par": 2
+  },
+  {
+    "id": "sb-27",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "Three Doors to Survival",
+    "intro": "Selfless Spirit prevents Wrath destroying the Giant, Dive Down gives it hexproof from Murder, and Healing Salve saves you from Shock.",
+    "life": {
+      "player": 1,
+      "opponent": 18
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "murder",
+        "card": "Murder",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "shock",
+        "card": "Shock",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "dive",
+        "card": "Dive Down"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "One creature can handle the wipe, but not the murder or your nearly empty life total.",
+    "explanation": "Selfless Spirit prevents Wrath destroying the Giant, Dive Down gives it hexproof from Murder, and Healing Salve saves you from Shock.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      }
+    ],
+    "par": 3
+  },
+  {
+    "id": "sb-28",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "The Final Channel",
+    "intro": "Save the Giant from Doom Blade using Blossoming Defense; gain life before Lightning Strike; counter the enemy Counterspell with Dispel so your lethal Bolt resolves.",
+    "life": {
+      "player": 2,
+      "opponent": 3
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "yourbolt",
+        "card": "Lightning Bolt",
+        "controller": "player",
+        "targetId": "opponent"
+      },
+      {
+        "id": "enemycounter",
+        "card": "Counterspell",
+        "controller": "opponent",
+        "targetId": "yourbolt"
+      },
+      {
+        "id": "strike",
+        "card": "Lightning Strike",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "doom",
+        "card": "Doom Blade",
+        "controller": "opponent",
+        "targetId": "giant"
+      }
+    ],
+    "hand": [
+      {
+        "id": "dispel",
+        "card": "Dispel"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      }
+    ],
+    "objective": {
+      "type": "winKeepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Winning the damage race is not enough; the Giant must also stay on the battlefield.",
+    "explanation": "Save the Giant from Doom Blade using Blossoming Defense; gain life before Lightning Strike; counter the enemy Counterspell with Dispel so your lethal Bolt resolves.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Forest",
+        "controller": "player"
+      }
+    ],
+    "par": 3
+  },
+  {
+    "id": "sb-29",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "Keep the Banner Standing",
+    "intro": "Sacrifice the Spirit, use Blossoming Defense on the Giant, gain life with Healing Salve, and Dispel the enemy Counterspell to win while keeping the Giant alive.",
+    "life": {
+      "player": 2,
+      "opponent": 3
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "yourbolt",
+        "card": "Lightning Bolt",
+        "controller": "player",
+        "targetId": "opponent"
+      },
+      {
+        "id": "enemycounter",
+        "card": "Counterspell",
+        "controller": "opponent",
+        "targetId": "yourbolt"
+      },
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "murder",
+        "card": "Murder",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "dispel",
+        "card": "Dispel"
+      }
+    ],
+    "objective": {
+      "type": "winKeepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "You need to protect the Giant, keep enough life, and preserve your own lethal spell.",
+    "explanation": "Sacrifice the Spirit, use Blossoming Defense on the Giant, gain life with Healing Salve, and Dispel the enemy Counterspell to win while keeping the Giant alive.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Island",
+        "controller": "player"
+      }
+    ],
+    "par": 4
+  },
+  {
+    "id": "sb-30",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "The Last Response",
+    "intro": "Give the Giant indestructible and hexproof, heal for three, counter one lethal burn spell and the opposing Counterspell.",
+    "life": {
+      "player": 2,
+      "opponent": 3
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "yourbolt",
+        "card": "Lightning Bolt",
+        "controller": "player",
+        "targetId": "opponent"
+      },
+      {
+        "id": "enemycounter",
+        "card": "Counterspell",
+        "controller": "opponent",
+        "targetId": "yourbolt"
+      },
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "swords",
+        "card": "Swords to Plowshares",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "strike",
+        "card": "Lightning Strike",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "blossom",
+        "card": "Blossoming Defense"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "dispel1",
+        "card": "Dispel"
+      },
+      {
+        "id": "dispel2",
+        "card": "Dispel"
+      }
+    ],
+    "objective": {
+      "type": "winKeepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Exactly five responses: preserve the Giant, outlive one burn spell, stop the other, and free your lethal Bolt.",
+    "explanation": "Give the Giant indestructible and hexproof, heal for three, counter one lethal burn spell and the opposing Counterspell. Resolve the original Bolt to finish the fifth chapter.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Forest",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-4",
+        "card": "Island",
+        "controller": "player"
+      }
+    ],
+    "par": 5
+  }
+]
