@@ -1,77 +1,84 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#101a20">
-<meta name="description" content="Mana Heist, a solo resource-routing puzzle playtest in the Deep Cuts Game Lab.">
-<title>MANA HEIST — Game Lab Playtest</title>
-<link rel="stylesheet" href="./styles.css">
-<script type="module" src="./src/main.js"></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111b19"><meta name="description" content="Mana Heist: Landfall. Tap lands, manage your mana, crack 18 escalating vault puzzles. Solo Game Lab playtest.">
+<title>MANA HEIST · LANDFALL — Deep Cuts Game Lab</title>
+<link rel="stylesheet" href="./styles.css"><script type="module" src="./src/main.js"></script>
 </head>
 <body>
-<a class="skip" href="#puzzle">Skip to puzzle</a>
-<header class="site-bar">
- <a class="brand" href="../"><span aria-hidden="true" class="brand-mark">◇</span><span>DEEP CUTS <strong>GAME LAB</strong></span></a>
- <nav aria-label="Game Lab navigation"><a href="../">← HIVE RUN LAB</a><span class="pill">SOLO PLAYTEST · v0.1</span></nav>
+<a href="#heist" class="skip">Skip to Mana Heist</a>
+<header class="bar">
+ <a class="brand" href="../"><span class="emblem" aria-hidden="true">◇</span><span>DEEP CUTS <strong>GAME LAB</strong></span></a>
+ <div class="bar-actions"><span class="test-stamp">LANDFALL · 0.2 PLAYTEST</span><a href="../" class="back">← HIVE RUN LAB</a></div>
 </header>
 <main class="shell">
  <section class="hero">
-  <div class="hero-copy">
-   <p class="eyebrow">FIELD TEST / THE FIRST SIX VAULTS</p>
-   <h1>MANA <em>HEIST.</em></h1>
-   <p class="tagline">Route the energy. Break the seal. Leave nothing behind.</p>
-   <p class="subline">A handcrafted puzzle of scarce charges, shifting conduits, and one impossible-looking lock. No timer. No accounts. Just the perfect heist.</p>
+  <div><p class="overline">AN ORIGINAL LAND-BASED LOGIC HEIST</p><h1>MANA <em>HEIST.</em></h1><p class="tagline">Tap the land. Find the line. Crack the vault.</p><p class="muted">Eighteen handcrafted puzzles. Five escalating chapters. No clock, no accounts, no public scores. Every decision has a cost.</p></div>
+  <div class="crest" aria-hidden="true"><span>✶</span></div>
+ </section>
+ <div class="chapter-top"><div><p class="overline">YOUR CASE FILES</p><h2>THE VAULTS <small>01—18</small></h2></div><div class="campaign-total" id="campaignTotal" aria-live="polite">0 / 18 CRACKED</div></div>
+ <div id="chapterPicker" class="chapter-picker" aria-label="Choose a vault"></div>
+ <div class="play-grid" id="heist">
+  <div class="play-column">
+   <section class="vault-card" aria-labelledby="vaultName">
+    <div class="vault-topline"><span class="overline" id="chapterName">I · THE FIRST KEY</span><span class="difficulty" id="difficulty">INITIATE</span></div>
+    <h2 id="vaultName">First Charge</h2><p id="briefing" class="briefing"></p>
+    <div class="stats" aria-label="Heist status">
+     <div><small>TURN</small><strong id="turnNumber">1 / 1</strong></div>
+     <div><small>LIFE</small><strong id="lifeTotal">20</strong></div>
+     <div><small>LAND DROP</small><strong id="landDrop">AVAILABLE</strong></div>
+     <div><small>PAR</small><strong id="parScore">TURN 1</strong></div>
+    </div>
+    <div class="vault-stage">
+     <div class="lock-ring"><span class="lock-glyph" id="lockGlyph">◇</span><span class="ring-text" id="wardCounter">WARD 1 OF 1</span></div>
+     <div class="ward-info">
+      <div class="overline">CURRENT SECURITY WARD</div><h3 id="wardName">The First Lock</h3>
+      <div id="wardCost" class="mana-cost" aria-label="Mana cost to cast current ward-breaking spell"></div>
+      <p id="wardDescription" class="muted small">Pay the colored mana shown to break this ward.</p>
+      <button id="castButton" class="primary" type="button">CAST SPELL · BREAK WARD <span>↗</span></button>
+     </div>
+    </div>
+    <div id="stageList" class="stage-list" aria-label="Ward progress"></div>
+    <div id="winPanel" class="win" hidden role="status"><span aria-hidden="true">✦</span><div><b id="winTitle">VAULT CRACKED</b><p id="winCopy"></p></div><button id="winNext" type="button">NEXT VAULT →</button></div>
+   </section>
+   <section class="table-card" aria-labelledby="battleTitle">
+    <div class="section-label"><div><p class="overline">THE BATTLEFIELD</p><h2 id="battleTitle">Your lands <small>Tap for mana</small></h2></div><span id="battleCount" class="count">0 LANDS</span></div>
+    <p class="hint-line">Tap a land directly below. It rotates sideways when tapped. Multicolor lands let you choose one color.</p>
+    <div id="battlefield" class="land-grid" aria-label="Lands in play"></div>
+   </section>
+   <section class="table-card hand-card" aria-labelledby="handTitle">
+    <div class="section-label"><div><p class="overline">YOUR HAND</p><h2 id="handTitle">Land options</h2></div><span class="count">ONE LAND DROP PER TURN</span></div>
+    <div id="hand" class="land-grid" aria-label="Lands available to play"></div>
+    <div id="libraryPanel" class="library-panel" hidden></div>
+   </section>
+   <div class="controlbar"><button type="button" id="endTurn" class="primary">END TURN <span>↗</span></button><button id="undo" type="button">↶ UNDO</button><button id="reset" type="button">⟲ RESTART</button><button id="skip" type="button">NEXT VAULT →</button></div>
+   <p class="feedback" id="feedback" role="status" aria-live="polite">Choose your first move.</p>
   </div>
-  <div class="sigil" aria-hidden="true"><span>✦</span><span class="sigil-ring"></span></div>
- </section>
-
- <section class="vault-select" aria-labelledby="chooseTitle">
-  <div class="section-head"><div><p class="eyebrow">THE HEIST FILES</p><h2 id="chooseTitle">Choose a vault</h2></div><span class="section-note">ALL SIX AVAILABLE TO TEST</span></div>
-  <div id="levelPicker" class="level-picker" role="group" aria-label="Choose a vault"></div>
- </section>
-
- <div class="game-layout" id="puzzle">
-  <section class="game-card" aria-labelledby="vaultTitle">
-   <div class="panel-head"><div><p id="chapter" class="eyebrow">VAULT I / SPARK</p><h2 id="vaultTitle">First Light</h2></div><div class="moves-box"><span>MOVES</span><strong id="moves">0 <small>/ 2 PAR</small></strong></div></div>
-   <p class="briefing" id="briefing">Activate the source and open the vault.</p>
-   <div class="board-frame">
-    <div class="board-ornament"><span>◇</span> THE VAULT GRID <span>◇</span></div>
-    <div class="board" id="board" aria-label="Puzzle board"></div>
-    <p class="board-caption" id="routingText">OPEN CIRCUIT · ENERGY IS GLOBALLY ACCESSIBLE</p>
-   </div>
-   <div class="toolbar" role="group" aria-label="Puzzle controls">
-    <button id="undo" type="button" title="Undo the previous move" disabled>↶ UNDO</button>
-    <button id="reset" type="button" title="Restart this vault">↻ RESET</button>
-    <button id="next" type="button" title="Go to the next puzzle">NEXT VAULT →</button>
-   </div>
-   <p class="status" id="status" role="status" aria-live="polite">Select a device to begin.</p>
-  </section>
-  <aside class="side-stack">
-   <section class="side-card ledger" aria-labelledby="ledgerTitle">
-    <div class="section-head compact"><div><p class="eyebrow">EVIDENCE 01</p><h2 id="ledgerTitle">Energy ledger</h2></div><span class="mini-icon" aria-hidden="true">✧</span></div>
-    <p class="side-description">Only energy in your satchel can pay for the seal. Conversions spend their input.</p>
-    <div class="energy-list" id="energyList"></div>
-    <div class="ledger-key"><span>HAVE</span><span>NEED</span></div>
+  <aside class="side">
+   <section class="side-box pool-box">
+    <div class="section-label"><div><p class="overline">MANA LEDGER</p><h2>Floating mana</h2></div><span id="poolTotal" class="count">0 IN POOL</span></div>
+    <div id="pool" class="pool" aria-label="Mana currently available"></div>
+    <p class="muted small">Mana stays in your pool until spent. Unspent mana empties when you end your turn.</p>
    </section>
-   <section class="side-card" aria-labelledby="deviceTitle">
-    <div class="section-head compact"><div><p class="eyebrow">EVIDENCE 02</p><h2 id="deviceTitle">Device dossier</h2></div></div>
-    <div id="devicePanel" class="device-panel"><p>Tap any device to read its action. Sources grant energy, prisms convert it, and relays rotate clockwise.</p></div>
+   <section class="side-box action-box" id="actionBox">
+    <div class="section-label"><div><p class="overline">DECISION POINT</p><h2 id="actionTitle">Your next choice</h2></div><span class="flourish">✧</span></div>
+    <div id="choices" class="choices"><p class="muted">Play a land from your hand or tap an untapped land.</p></div>
    </section>
-   <section class="side-card field-guide" aria-labelledby="guideTitle">
-    <div class="section-head compact"><div><p class="eyebrow">FIELD GUIDE</p><h2 id="guideTitle">How to play</h2></div></div>
-    <p><strong>ACTIVATE</strong> wells to gather limited energy. <strong>CONVERT</strong> it with prisms. <strong>ROTATE</strong> wires until a device can reach the seal. <strong>OPEN</strong> the vault when you have every required resource.</p>
-    <p>Every activation, rotation, conversion, and seal opening costs <strong>one move</strong>. Undo and Reset are free. A solved vault never becomes a loss; the move target is for the three-star medal.</p>
-    <p class="smallprint">Guest-only experiment. Progress stays in this browser. No external score submission.</p>
+   <section class="side-box guide">
+    <div class="section-label"><div><p class="overline">FIELD MANUAL</p><h2>Read the land</h2></div></div>
+    <div class="legend"><span class="dot basic"></span><b>BASIC</b><span class="muted">One color; untapped.</span></div>
+    <div class="legend"><span class="dot dual"></span><b>DUAL</b><span class="muted">Choose either color.</span></div>
+    <div class="legend"><span class="dot shock"></span><b>SHOCK</b><span class="muted">Pay 2 life or enter tapped.</span></div>
+    <div class="legend"><span class="dot pain"></span><b>PAIN</b><span class="muted">Pay 1 life for color; colorless is free.</span></div>
+    <div class="legend"><span class="dot check"></span><b>CHECK</b><span class="muted">Needs a matching typed land to enter ready.</span></div>
+    <div class="legend"><span class="dot fetch"></span><b>FETCH</b><span class="muted">Pay 1 life to search a land.</span></div>
+    <div class="legend"><span class="dot bounce"></span><b>BOUNCE</b><span class="muted">Enters tapped and returns a land.</span></div>
+    <hr><p class="muted small">For this puzzle system, each spell has a fixed cost, tap abilities make mana, and an end-turn action refreshes lands. You may Undo without penalty.</p>
+    <details><summary>HELP · SCORING &amp; RULES</summary><p class="muted small">All stages must be cast in order. The deadline is the last permitted turn. Your three-star medal uses the proven fewest turns and least life loss; extra clicks do not lower your medal. There are no time penalties or hidden randomness. Mana and land statuses are deterministic. This is a simplified original heist puzzle, not an MTG rules engine.</p></details>
    </section>
   </aside>
  </div>
- <section id="winPanel" class="win-panel" role="region" aria-labelledby="winTitle" hidden>
-  <span class="victory-mark" aria-hidden="true">✦</span>
-  <div><p class="eyebrow">CASE CLOSED</p><h2 id="winTitle">THE VAULT IS OPEN</h2><p id="winCopy"></p></div>
-  <button id="winNext" type="button">CONTINUE THE HEIST →</button>
- </section>
 </main>
-<footer class="footer"><span>MANA HEIST / ORIGINAL PUZZLE PROTOTYPE</span><a href="../">BACK TO GAME LAB</a></footer>
-</body>
-</html>
+<footer class="footer"><span>MANA HEIST · AN UNOFFICIAL ORIGINAL PUZZLE PROTOTYPE</span><span>Original card designs and art · no Wizards card images, names or symbols · no production profiles</span><a href="../">GAME LAB ↑</a></footer>
+</body></html>
