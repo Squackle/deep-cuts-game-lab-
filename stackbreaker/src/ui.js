@@ -197,10 +197,11 @@ function chooseTarget(target){if(!pendingPlay||pendingPlay.phase!=='target'||!pe
 function choosePayment(i){const p=pendingPlay;if(!p||p.phase!=='payment'||!p.payments[i])return;
  pendingPlay=null;submitCast(p.id,p.target,p.payments[i].spend);
 }
-function beginPlay(id,dropTarget=null,requireDirectTarget=false){
+function beginPlay(id,dropTarget=null,requireDirectTarget=false,dropZone=null){
  const action=game.hand.find(a=>a.id===id&&!a.sourceId&&!game.used.includes(a.id));if(!action){notify('That card is unavailable.');return;}
  if(LANDS[action.card]){
-  try{if(requireDirectTarget&&!document.querySelector('#fieldDrop'))return;pushState(playLand(game,id));notify('Land played without using the stack.');}
+  if(dropZone&&dropZone!=='fieldDrop'){notify('A land can only be played onto the battlefield, not onto the stack.');return;}
+  try{pushState(playLand(game,id));notify('Land played without using the stack.');}
   catch(error){notify(error.message);}
   return;
  }
@@ -412,7 +413,7 @@ for(const zone of [$('stackDrop'),$('fieldDrop')]){
  zone.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';updateDragFeedback(e.target);});
  zone.addEventListener('dragleave',e=>{if(!zone.contains(e.relatedTarget))updateDragFeedback(null);});
  zone.addEventListener('drop',e=>{e.preventDefault();const id=e.dataTransfer.getData('text/plain');const target=targetFromElement(e.target);
-  clearDragFeedback();if(id)beginPlay(id,target,true);});
+  clearDragFeedback();if(id)beginPlay(id,target,true,zone.id);});
 }
 // Touch/pen dragging uses pointer coordinates instead of unreliable native HTML
 // drag/drop. The dragged card is non-interactive so the target underneath glows.
@@ -428,7 +429,7 @@ function finishTouch(e){if(!dragTouch)return;const d=dragTouch;dragTouch=null;
  const el=d.moved?document.elementFromPoint(e.clientX,e.clientY):null;
  const zone=el?.closest?.('#stackDrop,#fieldDrop');const target=targetFromElement(el);
  d.ghost?.remove();clearDragFeedback();
- if(zone)beginPlay(d.id,target,true);
+ if(zone)beginPlay(d.id,target,true,zone.id);
  flushScryfallRefresh();
 }
 document.addEventListener('pointerup',finishTouch);
@@ -440,7 +441,7 @@ document.addEventListener('pointercancel',()=>{
 });
 // Accessible non-pointer alternative: focus a hand card, press Enter, focus battlefield/stack, press Enter.
 $('hand').addEventListener('keydown',e=>{const card=e.target.closest('[data-drag-card]');if(card&&['Enter',' '].includes(e.key)){e.preventDefault();armedCard=card.dataset.dragCard;render();notify('Card selected. Focus the battlefield or stack and press Enter to place it.');}});
-for(const zone of [$('stackDrop'),$('fieldDrop')])zone.addEventListener('keydown',e=>{if(armedCard&&['Enter',' '].includes(e.key)){e.preventDefault();beginPlay(armedCard);}});
+for(const zone of [$('stackDrop'),$('fieldDrop')])zone.addEventListener('keydown',e=>{if(armedCard&&['Enter',' '].includes(e.key)){e.preventDefault();beginPlay(armedCard,null,false,zone.id);}});
 document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;
  if(e.key==='Escape'&&pendingPlay){pendingPlay=null;render();return;}
  if(e.key===' '&&document.activeElement===document.body){e.preventDefault();applyPass();}
