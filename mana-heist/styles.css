@@ -835,7 +835,7 @@
  outline:2px solid #f4dfad!important;outline-offset:2px;
  box-shadow:0 0 0 3px #d6b57966,0 0 20px #d3b37966!important;
 }
-@media(hover:none){.card-magnifier{display:none!important}}
+@media(hover:none) and (pointer:coarse){.card-magnifier{display:none!important}}
 @media(prefers-reduced-motion:reduce){
  .galaxy-tab{transition:none}
 }
