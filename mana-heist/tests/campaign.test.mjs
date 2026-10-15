@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {LEVELS,CHAPTERS} from "../src/levels.js";
 import {highestUnlocked,unlocked,chapterIndex,stageCode,chapterAccessible,normalizedBests} from "../src/campaign.js";
-import {consistent,reconstruct,renderSockets,transitionOrbs} from "../src/mana-orbs.js";
+import {consistent,reconstruct,renderLedger,transitionOrbs} from "../src/mana-orbs.js";
 const win=(i)=>({[LEVELS[i].id]:{turn:1,spentLife:0}});
 test("first vault is the only unlocked stage for a new player",()=>{
  assert.equal(highestUnlocked({}),0);
@@ -56,13 +56,18 @@ test("mana orbs track taps, casts, end-turn, and rebuilds without affecting redu
  assert.equal(consistent({...empty,R:1},spent),true);
  assert.deepEqual(transitionOrbs(spent,{type:"end"},empty),[]);
 });
-test("empty sockets and populated sockets are labeled, with a pending arrival gate",()=>{
+test("mana ledger shows three columns, two rows of stored colors and blanks",()=>{
  const target={innerHTML:""};
- const pool={W:0,U:1,B:0,R:0,G:0,C:0};
- const orbs=reconstruct(pool);
- renderSockets(target,pool,orbs,{pendingId:orbs[0].id});
- assert.match(target.innerHTML,/data-color="U"/);
- assert.match(target.innerHTML,/awaiting-orb/);
- assert.match(target.innerHTML,/Empty mana socket/);
- assert.equal((target.innerHTML.match(/class="mana-socket/g)||[]).length,7);
+ const pool={W:0,U:1,B:0,R:2,G:0,C:0};
+ const orbs=[
+  {id:1,color:"R"},{id:2,color:"R"},{id:3,color:"U"}
+ ];
+ renderLedger(target,pool,orbs,{pendingId:3});
+ assert.equal((target.innerHTML.match(/class="mana-ledger-entry/g)||[]).length,6);
+ assert.deepEqual([...target.innerHTML.matchAll(/data-color="([A-Z])"/g)].map(m=>m[1]),["R","R","U"]);
+ assert.match(target.innerHTML,/RED/);
+ assert.match(target.innerHTML,/BLUE/);
+ assert.match(target.innerHTML,/in-flight/);
+ assert.equal((target.innerHTML.match(/Empty mana slot/g)||[]).length,3);
+ assert.doesNotMatch(target.innerHTML,/mana-socket/);
 });
