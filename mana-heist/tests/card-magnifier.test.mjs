@@ -19,7 +19,7 @@ test("hover card magnifier canvas is a fixed overlay that does not block draggin
  assert.match(html,/id="magnifierCanvas"/);
  assert.match(css,/\.card-magnifier\{[\s\S]*?pointer-events:none/);
  assert.match(css,/\.card-magnifier canvas\{/);
- assert.match(css,/@media\(hover:none\)/);
+ assert.match(css,/@media\(hover:none\) and \(pointer:coarse\)/);
 });
 test("zoom controller rejects missing elements",()=>{
  assert.throws(()=>installCardMagnifier({battlefield:null,hand:null,panel:null,canvas:null,title:null}));
