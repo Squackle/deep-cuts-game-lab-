@@ -18,7 +18,7 @@ function wardReady(){
 }
 
 test("Matriarch 1.5 is a new isolated engine ruleset and has exactly five WUBRG mutations",()=>{
- assert.equal(RULES_VERSION,"hive-1.5.1");
+ assert.equal(RULES_VERSION,"hive-1.5.2");
  assert.equal(Object.keys(newRun({seed:1}).mutations).length,5);
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  assert.match(html,/1\.5 · MATRIARCH/);

@@ -15,7 +15,7 @@ export const OPENING_GRACE_MS=9000;
 export const OPENING_EVOLUTIONS=2;
 export const OPENING_ORB_MIN=70;
 export const OPENING_ORB_SPREAD=35;
-export const RULES_VERSION="hive-1.5.1";
+export const RULES_VERSION="hive-1.5.2";
 // Player speed is set in milliseconds per grid step (larger = easier).
 // Playtest adjustment: about 10% less movement per second at every stage.
 export const PLAYER_BASE_TICK_MS=150;
@@ -123,7 +123,7 @@ function recover(run,failed,freePreyDodge=false){
  if(!color)return false;
  const compass=["up","right","down","left"],i=compass.indexOf(failed);
  const bend=[compass[(i+3)%4],compass[(i+1)%4]].find(h=>{
-  const t=target(run,h);return !t.wall&&!t.body&&!t.enemy;
+  const t=target(run,h);return !t.wall&&!t.body&&!t.enemy&&!t.hatchling;
  });
  if(bend){run.direction=bend;run.turnQueue=[]}
  else {
@@ -246,7 +246,16 @@ export function step(run){
  const abilityEvent=tickMiniboss(run,elapsed);
  if(run.encounter?.kind==="broodmother"){
   hatchMatureEggs(run);
-  tickHatchlings(run);
+  const contact=tickHatchlings(run,elapsed);
+  if(contact){
+   // A baby spider blindly ran into the head. Normal defenses may still save it.
+   run.hatchlings=run.hatchlings.filter(h=>h.id!==contact.id);
+   if(recover(run,run.direction,false))return run;
+   run.status="over";
+   run.endReason="A blind hatchling struck your swarm.";
+   emit(run,{type:"death",name:run.endReason,at:contact.pos});
+   return run;
+  }
  }
  if(abilityEvent?.type==="burrow-warning"||abilityEvent?.type==="burrow"||abilityEvent?.type==="web")
   emit(run,abilityEvent);

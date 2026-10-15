@@ -449,7 +449,7 @@ function draw(){
  if(run.food)drawBroodPickup(context,run.food,CELLS,performance.now());
  if(run.encounter)drawWebs(context,run.encounter.webs,CELLS);
  drawPrey(context,run.enemies,CELLS,performance.now(),prefersReducedMotion());
- drawBroodmotherHatchlings(context,run,CELLS);
+ drawBroodmotherHatchlings(context,run,CELLS,performance.now());
  drawTrapHints(context,run,CELLS);
  if(run.encounter){
   drawMiniboss(context,run.enemies,CELLS,run.encounter.phase);

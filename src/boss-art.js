@@ -1,3 +1,4 @@
+import {drawApprovedCreature,hasApprovedSprite} from "./approved-creature-art.js";
 /**
  * Original hand-pixelled gothic burrow minibosses and charge symbols.
  * 20x20 source art, 64x64 display, zero smoothing, mathematically centered.
@@ -69,6 +70,7 @@ export function chargePixels(charge){
  return out;
 }
 export function drawBossPixelIcon(ctx,kind,x,y,size=20){
+ if(hasApprovedSprite(kind)){drawApprovedCreature(ctx,kind,x,y,size);return}
  const rows=ICON_PIXELS[kind];if(!ctx||!rows)return;
  const scale=size/20;
  ctx.save();ctx.imageSmoothingEnabled=false;
@@ -99,29 +101,32 @@ export function drawAbilityMeter(canvas,kind,charge){
 export function drawMiniboss(ctx,enemies,cell,phase=1){
  for(const enemy of enemies){
   if(!ICON_PIXELS[enemy.kind])continue;
-  const box=24,x=enemy.pos.x*cell+(cell-box)/2,y=enemy.pos.y*cell+(cell-box)/2;
-  ctx.fillStyle="#0b1410";ctx.fillRect(x,y,box,box);
-  ctx.strokeStyle=phase>=2?"#b19a5a":"#746d56";ctx.lineWidth=1;ctx.strokeRect(x+.5,y+.5,box-1,box-1);
-  drawBossPixelIcon(ctx,enemy.kind,x+2,y+2,20);
+  const box=30,x=enemy.pos.x*cell+(cell-box)/2,y=enemy.pos.y*cell+(cell-box)/2;
+  // Detailed original creature silhouette: don't bury the model under a tile-sized frame.
+  ctx.fillStyle="#11191a";ctx.fillRect(x+4,y+box-4,box-8,2);
+  drawBossPixelIcon(ctx,enemy.kind,x,y,box);
+  if(phase>=2){ctx.fillStyle="#d2a269";ctx.fillRect(x+box/2-1,y-2,2,2)}
  }
 }
 export function drawWebs(ctx,webs,cell){
  for(const web of webs||[]){
   const x=web.pos.x*cell,y=web.pos.y*cell;
-  ctx.fillStyle="#15201b";ctx.fillRect(x+2,y+2,cell-4,cell-4);
-  ctx.strokeStyle=web.lifeMs<3500?"#65674f":"#afa68f";ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(x+2,y+3);ctx.lineTo(x+cell-3,y+cell-2);
-  ctx.moveTo(x+cell-3,y+3);ctx.lineTo(x+3,y+cell-3);
-  ctx.moveTo(x+cell/2,y+2);ctx.lineTo(x+cell/2,y+cell-2);
-  ctx.moveTo(x+2,y+cell/2);ctx.lineTo(x+cell-2,y+cell/2);ctx.stroke();
-  ctx.fillStyle="#877d62";ctx.fillRect(x+cell/2-1,y+cell/2-1,2,2);
+  ctx.strokeStyle=web.lifeMs<3500?"#85728b":"#ddd6dd";ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(x+2,y+2);ctx.lineTo(x+cell-2,y+cell-2);
+  ctx.moveTo(x+cell-2,y+2);ctx.lineTo(x+2,y+cell-2);
+  ctx.moveTo(x+cell/2,y+1);ctx.lineTo(x+cell/2,y+cell-1);
+  ctx.moveTo(x+1,y+cell/2);ctx.lineTo(x+cell-1,y+cell/2);
+  ctx.moveTo(x+5,y+5);ctx.lineTo(x+cell-5,y+5);ctx.lineTo(x+cell-5,y+cell-5);
+  ctx.lineTo(x+5,y+cell-5);ctx.closePath();ctx.stroke();
+  ctx.fillStyle="#ac73cc";ctx.fillRect(x+cell/2-1,y+cell/2-1,2,2);
  }
 }
 export function drawBurrowWarning(ctx,warning,cell){
  if(!warning)return;
  const p=warning.pos,x=p.x*cell,y=p.y*cell;
- ctx.fillStyle="#171a13";ctx.fillRect(x+1,y+1,cell-2,cell-2);
- ctx.strokeStyle="#a28a58";ctx.lineWidth=2;ctx.setLineDash([3,2]);
+ ctx.strokeStyle="#e3a65a";ctx.lineWidth=1;ctx.setLineDash([3,2]);
  ctx.strokeRect(x+2,y+2,cell-4,cell-4);ctx.setLineDash([]);
- ctx.fillStyle="#756747";ctx.fillRect(x+8,y+8,4,4);
+ ctx.fillStyle="#86532b";ctx.fillRect(x+5,y+9,10,2);
+ ctx.fillRect(x+9,y+5,2,10);
+ ctx.fillStyle="#eec484";ctx.fillRect(x+9,y+9,2,2);
 }

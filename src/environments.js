@@ -51,12 +51,30 @@ export function tickTerrain(run,dt){
 export function drawTerrain(ctx,run,cell){
  for(const t of run.terrain){
   const x=t.pos.x*cell,y=t.pos.y*cell,warn=t.warningMs>0;
-  if(t.kind==='egg'){
-   // Incubating egg: ochre shell and pale crack, not a solid terrain block.
-   ctx.fillStyle='#273327';ctx.fillRect(x+4,y+3,cell-8,cell-6);
-   ctx.fillStyle=warn?'#a5b883':'#d7c692';ctx.fillRect(x+7,y+4,cell-14,cell-8);
-   ctx.fillStyle='#e6dab0';ctx.fillRect(x+9,y+6,2,4);ctx.fillRect(x+10,y+10,3,2);
-   ctx.strokeStyle='#c2ba8a';ctx.lineWidth=1;ctx.strokeRect(x+4.5,y+3.5,cell-9,cell-7);
+  if(t.kind==="egg"){
+   // Warm marbled shell cracks before a spider breaks free.
+   ctx.fillStyle="#24191a";ctx.fillRect(x+4,y+3,cell-8,cell-6);
+   ctx.fillStyle=warn?"#c29873":"#d9b18d";ctx.fillRect(x+6,y+3,cell-12,cell-7);
+   ctx.fillStyle="#9a4252";ctx.fillRect(x+8,y+6,2,3);ctx.fillRect(x+12,y+10,2,3);
+   ctx.fillStyle="#f9d9a1";ctx.fillRect(x+10,y+5,2,4);ctx.fillRect(x+11,y+9,2,2);
+   ctx.strokeStyle="#cc9176";ctx.lineWidth=1;ctx.strokeRect(x+4.5,y+3.5,cell-9,cell-7);
+   continue;
+  }
+  if(t.kind==="seal"){
+   ctx.fillStyle=warn?"#443521":"#492919";
+   ctx.fillRect(x+3,y+3,cell-6,cell-6);
+   ctx.fillStyle="#dc8a3f";ctx.fillRect(x+8,y+4,4,12);
+   ctx.fillRect(x+4,y+8,12,4);
+   ctx.fillStyle="#f6c879";ctx.fillRect(x+9,y+7,2,6);
+   if(warn){ctx.strokeStyle="#f5bf73";ctx.lineWidth=1;ctx.strokeRect(x+2.5,y+2.5,cell-5,cell-5)}
+   continue;
+  }
+  if(t.kind==="rift"){
+   ctx.fillStyle=warn?"#342044":"#190d32";ctx.fillRect(x+2,y+2,cell-4,cell-4);
+   ctx.fillStyle="#633898";ctx.fillRect(x+5,y+4,10,12);
+   ctx.fillStyle="#21103d";ctx.fillRect(x+7,y+5,6,10);
+   ctx.fillStyle="#c77cea";ctx.fillRect(x+9,y+3,2,4);ctx.fillRect(x+9,y+13,2,4);
+   if(warn){ctx.strokeStyle="#c77cea";ctx.lineWidth=1;ctx.strokeRect(x+2.5,y+2.5,cell-5,cell-5)}
    continue;
   }
   ctx.fillStyle=warn?'#1d211d':t.kind==='rock'?'#615744':t.kind==='seal'?'#5c5536':'#584364';
