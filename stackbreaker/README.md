@@ -1,4 +1,4 @@
-# Stackbreaker 0.6 — Printed Card Stats
+# Stackbreaker 0.7 — Drag to target, readable cards
 
 An **unofficial, limited Magic: The Gathering tactical training tool** on the independent Deep Cuts Game Lab site.
 
@@ -10,7 +10,7 @@ Permanent Lab URL: https://deep-cuts-game-lab.pages.dev/stackbreaker/
 
 - **Real named land cards:** Plains, Island, Swamp, Mountain, Forest and Wastes (curated basic mana abilities only). Tap an untapped land to add a specific color of mana to the pool; it becomes tapped and cannot be tapped again. The action is reversible through Undo, and mana abilities do not use the stack.
 - **Manual, rules-enforced mana payment:** Spells do not become affordable until the player taps sufficient lands; colored pips and explicit colorless costs are checked; alternate payments for generic costs appear in the spell's payment selector when relevant. Spent mana comes from the visible pool, and excess floating mana remains available within the priority window.
-- **Drag spells onto the stack:** Desktop HTML5 drag-and-drop, mobile touch/pen pointer drag, and accessible click-to-cast/target-selector controls. The selected spell leaves the hand, appears on the LIFO stack and obeys the scripted rules engine.
+- **Drag spells directly onto targets:** Desktop HTML5 drag-and-drop, mobile touch/pen pointer drag, and keyboard-accessible target-selection alternatives. The selected spell leaves the hand, appears on the LIFO stack and obeys the scripted rules engine.
 - **The Final Exchange is level 06:** Five intro cases lead to the original Final Exchange puzzle; levels 07–12 are new and require multiple answers, more priority sequencing and harder mana/target decisions. 12 total cases.
 - **Single-screen gameplay:** Game controls, battlefield, lands, mana pool, hand, stack, Undo, Restart, Pass/Resolve and Next Case fit within the browser viewport; at 320×568, 390×844, 768×900 and 1280×900 all actionable pieces were verified inside the screen. Objectives, hints, result explanations and resolution log continue below the game, as optional educational content.
 
@@ -18,7 +18,7 @@ Permanent Lab URL: https://deep-cuts-game-lab.pages.dev/stackbreaker/
 
 1. Select a case. Evaluate the stack from **top to bottom** and your objective.
 2. Tap named land cards to add mana to the pool. Check the color pips on the spells in your hand.
-3. Drag a spell card from your hand onto the **Stack** or **Battlefield**. Choose a target and generic mana payment after dropping, only when needed. Permanent spells still use the stack before entering play. Activate battlefield abilities by tapping their real card.
+3. For targeted spells, drag your card directly onto the glowing **creature**, **player life total**, or **stack card** you intend to target. For spells without targets, drop on the Stack or Battlefield. Only ambiguous generic mana payments open a follow-up picker. Permanent spells still use the stack before entering play. Activate battlefield abilities by tapping their real card.
 4. Use **Pass / Resolve** to pass priority; the scripted opponent passes and the stack resolves in last-in-first-out order.
 5. Click **Next Case** or **Reset** from the control strip without scrolling.
 
@@ -45,7 +45,7 @@ Scryfall-supplied art crops have full-card hover previews and artist/copyright c
 - No synthetic ability cards or Cast buttons in hand. Each hand entry is only the actual Scryfall card image; hover/tap art to inspect.
 - Tap real land images to put colored mana into the pool. Drag a card onto the battlefield or stack. Spells cast by dragging to the battlefield are still placed onto the rules stack before resolving, per MTG rules.
 - Activate Selfless Spirit by clicking/tapping the real battlefield permanent; sacrifice is an activation cost, not a hand spell. Hold on touch to inspect its full card without activating.
-- If a spell has multiple legal targets, a small in-game target picker appears; choose by tapping a valid permanent/stack entry/life total or by accessible choices. Generic mana selection appears only when genuinely ambiguous.
+- For pointer casting, you must release on an eligible creature, player, or stack card (shown with a green confirmation glow). The generic target picker remains for keyboard accessibility only. Generic mana selection appears only when genuinely ambiguous.
 - Keyboard equivalent: Enter on hand card, then Enter on battlefield or stack. No Cast button. All game controls remain within viewport.
 
 ## v0.6 printed power/toughness
@@ -53,5 +53,12 @@ Scryfall-supplied art crops have full-card hover previews and artist/copyright c
 - Battlefield creatures render as unobstructed portrait Scryfall cards. The normal printed P/T on the card is the only visible P/T: there are **no duplicated numeric badges**.
 - An effect that changes effective power or toughness (for example, Giant Growth) creates a small parchment P/T replacement positioned **directly on the image's printed bottom-right P/T box**, showing the current effective value. The replacement disappears if the creature returns to its printed characteristics.
 - Damage marked on a creature is tracked separately by the rules engine; it does **not** reduce toughness or create a P/T replacement. Other conditional game-state indicators remain conditional, not printed P/T duplicates.
-- Portrait-shaped clickable battlefield cards use all available battlefield height (up to 145px) while the full interactive game stays inside its viewport. Existing click-to-activate and drag-to-target behavior remains intact.
+- Portrait-shaped clickable battlefield cards use available battlefield height (expanded in 0.7) while the full interactive game stays inside its viewport. Existing click-to-activate and drag-to-target behavior remains intact.
 - Regression checks: `python tests/printed_stats.test.py` validates unmodified stats, marked damage, Giant Growth's 5/5 replacement, correct image-relative positioning, and no runtime errors at 320/390/768/1280 viewport widths.
+
+## v0.7 direct targeting and larger cards
+
+- **Choose your target by dragging.** Starting a hand-card drag softly outlines only valid destinations for that spell; moving over a valid permanent, life total, or stack object makes it glow brighter with an animated green confirmation ring. Releasing there casts with that exact target. There is **no auto-targeting** and no target modal when dropping a targeted spell on empty board or a generic stack area. Invalid drops consume neither the card nor mana. Non-targeted spells may be dropped on either zone normally.
+- Click/tap and keyboard accessibility survive: a focused hand card can be armed and played using the target picker with Enter, and battlefield activated abilities can still be clicked directly. A pointer never silently auto-selects a target.
+- **Larger, undistorted full Scryfall cards** in hand and on the battlefield. Desktop battlefield cards increase from the previous 145px maximum to approximately 256px tall at 1280×900. Mobile portrait cards adapt to available height, and hand cards get more space (including compact phones); all essential game controls remain on the same viewport at the QA screen sizes.
+- QA: 22 deterministic Node engine tests; `python tests/drag_targets.test.py` for legal-target glow, invalid no-op, explicit creature targeting, touch glow and drop, targeted life/stack spells, the full level-six solution, generic-mana decisions, enlarged card geometry and core control visibility at 320×568, 390×844, 768×900 and 1280×900. `python tests/physical_cards.test.py`, `python tests/printed_stats.test.py` and `python tests/scryfall_art.test.py` for backward compatibility. Network Scryfall calls are mocked during browser QA; real-phone testing remains pending.

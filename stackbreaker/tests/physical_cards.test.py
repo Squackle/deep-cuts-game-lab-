@@ -31,35 +31,33 @@ with sync_playwright() as pw:
   page.screenshot(path=str(Path(__file__).parents[1]/f'hand-qa-{width}.png'))
   print('Viewport',width,height,'no extra UI, all cards/controls in viewport, ability activated')
   page.close()
- # The Final Exchange: choose target AFTER dragging salve onto stack.
+ # The Final Exchange: every targeted spell is dragged directly onto its target.
  page=browser.new_page(viewport={'width':1280,'height':900});page.set_content(html)
  page.locator('#scenarioSelect').select_option('5')
  page.locator('[data-land="land-1"]').click();page.locator('[data-land="land-2"]').click()
- page.locator('[data-drag-card="salve"]').drag_to(page.locator('#stackDrop'))
- assert page.locator('#playPrompt').is_visible(),'Target prompt not open'
- page.locator('[data-choose-target="player"]').click()
+ page.locator('[data-drag-card="salve"]').drag_to(page.locator('[data-target-person="player"]'))
+ assert page.locator('#playPrompt').is_hidden(),'Direct life drop must not show target prompt' 
  assert page.locator('.stack-entry').count()==4
- page.locator('[data-drag-card="dispel"]').drag_to(page.locator('#stackDrop'),force=True)
- assert page.locator('#playPrompt').is_visible()
- page.locator('[data-choose-target="theircounter"]').click()
+ page.locator('[data-drag-card="dispel"]').drag_to(page.locator('[data-stack-target="theircounter"]'),force=True)
+ assert page.locator('#playPrompt').is_hidden(),'Direct spell drop must not show target prompt' 
  assert page.locator('.stack-entry').count()==5
  for _ in range(15):
   if 'CASE SOLVED' in page.locator('#resultEyebrow').inner_text():break
   page.locator('#passButton').click()
  assert 'CASE SOLVED' in page.locator('#resultEyebrow').inner_text()
  page.locator('#nextButton').click();assert page.locator('#missionNum').inner_text().startswith('07')
- print('Final Exchange: drag onto stack, choose target after drop, solve and next case: passed')
+ print('Final Exchange: drag directly to life and stack spell target, solve and next case: passed')
  # Generic mana is chosen AFTER dropping when multiple pools can legally pay.
  page.locator('#scenarioSelect').select_option('3')
  for land in ('land-1','land-2','land-3'):page.locator(f'[data-land="{land}"]').click()
- page.locator('[data-drag-card="negate"]').drag_to(page.locator('#stackDrop'),force=True)
+ page.locator('[data-drag-card="negate"]').drag_to(page.locator('[data-stack-target="wrath"]'),force=True)
  assert page.locator('#playPrompt').is_visible()
  assert 'generic' in page.locator('.prompt-header').inner_text().lower()
  assert page.locator('[data-choose-payment]').count()==2
  page.locator('[data-choose-payment]').first.click()
  assert page.locator('.stack-entry').count()==2
  assert page.locator('#playPrompt').is_hidden()
- print('Generic mana payment selected after dragging: passed')
+ print('Generic mana payment selected after dragging onto valid target: passed')
  # Target via direct battlefield drop on creature, no separate target picker required.
  page.locator('#scenarioSelect').select_option('2')
  page.locator('[data-land="land-1"]').click()
@@ -71,7 +69,7 @@ with sync_playwright() as pw:
  # Touch simulated pointer drag and target picking.
  page=browser.new_page(viewport={'width':390,'height':844},has_touch=True,is_mobile=True);page.set_content(html)
  page.locator('#scenarioSelect').select_option('1');page.locator('[data-land="land-1"]').click();page.locator('[data-land="land-2"]').click()
- outcome=page.evaluate('''()=>{const source=document.querySelector('[data-drag-card="counter"]'),zone=document.querySelector('#stackDrop');const a=source.getBoundingClientRect(),b=zone.getBoundingClientRect();const sx=a.left+a.width/2,sy=a.top+a.height/2,tx=b.left+b.width/2,ty=b.top+b.height/2;const emit=(to,name,x,y)=>to.dispatchEvent(new PointerEvent(name,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:22,clientX:x,clientY:y}));emit(source,'pointerdown',sx,sy);emit(document,'pointermove',sx+16,sy-10);emit(document,'pointermove',tx,ty);emit(document,'pointerup',tx,ty);return {stack:document.querySelectorAll('.stack-entry').length,prompt:document.querySelector('#playPrompt').hidden};}''')
+ outcome=page.evaluate('''()=>{const source=document.querySelector('[data-drag-card="counter"]'),zone=document.querySelector('[data-stack-target="bolt"]');const a=source.getBoundingClientRect(),b=zone.getBoundingClientRect();const sx=a.left+a.width/2,sy=a.top+a.height/2,tx=b.left+b.width/2,ty=b.top+b.height/2;const emit=(to,name,x,y)=>to.dispatchEvent(new PointerEvent(name,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:22,clientX:x,clientY:y}));emit(source,'pointerdown',sx,sy);emit(document,'pointermove',sx+16,sy-10);emit(document,'pointermove',tx,ty);emit(document,'pointerup',tx,ty);return {stack:document.querySelectorAll('.stack-entry').length,prompt:document.querySelector('#playPrompt').hidden};}''')
  assert outcome['stack']==2,outcome
  print('Touch drag a real card on stack: passed')
  page.close();browser.close()
