@@ -185,9 +185,19 @@
 }
 /* Keep full card images unwarped even when the battlefield row is tall. */
 .battle-card{height:min(100%,256px);width:auto;aspect-ratio:488 / 680}
+
+/* Persistent Game Lab return link: visible in the 320px single-screen puzzle. */
+.mast .site-home{display:inline-flex;justify-content:center;align-items:center;flex:0 0 auto;min-height:32px;padding:5px 8px;border:1px solid #7b947e80;border-radius:4px;color:#eed19c;font-weight:800;letter-spacing:.025em}
+.mast .site-home:hover{background:#294740;text-decoration:none}
+@media(max-width:500px){
+ .mast .site-home{display:inline-flex;font-size:8px;min-height:29px;padding:3px 5px}
+ .mast .site-mark{font-size:8px;letter-spacing:0}
+ .mast .site-title{font-size:10px;overflow:hidden;text-overflow:ellipsis;min-width:0}
+}
+@media(max-width:370px){.mast{gap:4px}.mast .site-mark{font-size:7px}.mast .site-title{font-size:9px}.mast .site-home{font-size:7px;padding:3px 4px}}
 </style></head>
 <body><a class="skip" href="#game">Skip to Stackbreaker game</a>
-<header class="mast"><a class="site-mark" href="/" aria-label="Back to Game Lab">◈ <b>DEEP CUTS</b> / GAME LAB</a><strong class="site-title">STACKBREAKER <small>0.8 · THE LAST RESPONSE</small></strong><a class="site-home" href="/">GAME LAB ↗</a></header>
+<header class="mast"><a class="site-mark" href="/lab/" aria-label="Back to Game Test Lab home">◈ <b>DEEP CUTS</b> / GAME LAB</a><strong class="site-title">STACKBREAKER <small>0.8 · THE LAST RESPONSE</small></strong><a class="site-home" href="/lab/" aria-label="Back to Test Lab, choose another game">← ALL GAMES</a></header>
 <main><section id="game" class="game-screen" aria-label="Playable Stackbreaker training game">
 <div class="mission-bar"><div class="mission-id"><small id="missionTier">APPRENTICE</small><strong id="scenarioTitle">Loading…</strong></div><div class="mission-picker"><label for="scenarioSelect">LEVEL <span id="missionNum">01 / 12</span></label><select id="scenarioSelect" aria-label="Choose level"></select></div><span class="run-status" id="priority" aria-live="polite">● PRIORITY: YOU</span></div>
 <div class="game-grid"><section class="field-zone" id="fieldDrop" tabindex="0" aria-label="Battlefield drop area; drag a spell here to cast it onto the stack"><div class="zone-top"><span>◈ THE BATTLEFIELD <em>DROP A SPELL OR ACTIVATE A CREATURE</em></span><span id="objectiveShort">SURVIVE</span></div><div class="life-row"><div class="life-widget" data-target-person="player" role="button" tabindex="0" aria-label="Your life total; choose as spell target"><small>YOU</small><b id="playerLife">—</b></div><div class="creature-row" id="battlefield"></div><div class="life-widget enemy" data-target-person="opponent" role="button" tabindex="0" aria-label="Opponent life total; choose as spell target"><small>OPP</small><b id="opponentLife">—</b></div></div><p id="objective" class="objective"></p></section>

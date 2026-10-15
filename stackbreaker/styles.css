@@ -185,3 +185,12 @@
 }
 /* Keep full card images unwarped even when the battlefield row is tall. */
 .battle-card{height:min(100%,256px);width:auto;aspect-ratio:488 / 680}
+/* Persistent Game Lab return link: visible in the 320px single-screen puzzle. */
+.mast .site-home{display:inline-flex;justify-content:center;align-items:center;flex:0 0 auto;min-height:32px;padding:5px 8px;border:1px solid #7b947e80;border-radius:4px;color:#eed19c;font-weight:800;letter-spacing:.025em}
+.mast .site-home:hover{background:#294740;text-decoration:none}
+@media(max-width:500px){
+ .mast .site-home{display:inline-flex;font-size:8px;min-height:29px;padding:3px 5px}
+ .mast .site-mark{font-size:8px;letter-spacing:0}
+ .mast .site-title{font-size:10px;overflow:hidden;text-overflow:ellipsis;min-width:0}
+}
+@media(max-width:370px){.mast{gap:4px}.mast .site-mark{font-size:7px}.mast .site-title{font-size:9px}.mast .site-home{font-size:7px;padding:3px 4px}}
