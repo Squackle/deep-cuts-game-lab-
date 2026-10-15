@@ -22,7 +22,7 @@ function forcedBossCapture(r){
  step(r);
 }
 test("Alpha 0.4 evolution milestones 2/6 and 10/14 repeat with full bosses on 4/8",()=>{
- assert.equal(RULES_VERSION,"hive-1.3");
+ assert.equal(RULES_VERSION,"hive-1.5");
  assert.deepEqual([0,1,2,3,4,5,6,7,8,9,10,14].map(encounterKind),
   [null,null,"stalker",null,"warden",null,"weaver",null,"guardian",null,"stalker","weaver"]);
  const r=newRun({seed:42});start(r);evolve(r,2);
@@ -141,7 +141,7 @@ test("leaderboard replay rejects fabricated boss-score in existing version",()=>
 });
 
 test("enemy-exclusive powers: ordinary prey and the player cannot use boss signature abilities",()=>{
- assert.deepEqual(Object.keys(ABILITIES).sort(),["guardian","stalker","warden","weaver"]);
+ assert.deepEqual(Object.keys(ABILITIES).sort(),["broodmother","guardian","stalker","warden","weaver"]);
  assert.equal(ABILITIES.skitter,undefined);
  assert.equal(ABILITIES.runner,undefined);
  const ordinary=newRun({seed:66});start(ordinary);
