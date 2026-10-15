@@ -5,7 +5,6 @@ export function installCardMagnifier({battlefield,hand,panel,canvas,title}){
  if(!battlefield||!hand||!panel||!canvas||!title)throw Error("Missing magnifier elements");
  const ctx=canvas.getContext("2d");
  let current=null,serial=0;
- const isTouch=()=>globalThis.matchMedia?.("(hover: none)")?.matches;
  function hide(){current=null;serial++;panel.hidden=true;panel.setAttribute("aria-hidden","true");}
  function paint(card){
   const image=card.querySelector(".mtg-card-image");
@@ -30,7 +29,7 @@ export function installCardMagnifier({battlefield,hand,panel,canvas,title}){
   panel.style.left=x+"px";panel.style.top=y+"px";
  }
  function show(card){
-  if(!card||isTouch()||panel.hidden===false&&current===card)return;
+  if(!card||(panel.hidden===false&&current===card))return;
   const id=card.dataset.cardid;if(!id)return;
   current=card;serial++;
   title.textContent=card.dataset.zone==="field"?"LAND IN PLAY":"LAND IN HAND";
