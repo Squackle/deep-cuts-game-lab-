@@ -1,4 +1,5 @@
 import {terrainBlocks,reservedTerrain} from "./environments.js";
+import {wardDeters,wardOccupies} from "./hatchling-ward.js";
 /**
  * Two tiers of deterministic, always-moving prey:
  * ordinary Skitters/Runners make simple, short-sighted decisions and can be
@@ -10,6 +11,7 @@ export const VECTORS=Object.freeze({up:[0,-1],right:[1,0],down:[0,1],left:[-1,0]
 export const HEADINGS=Object.freeze(Object.keys(VECTORS));
 export const PREY=Object.freeze({
  warden:Object.freeze({name:"HATCHERY WARDEN",period:4,accent:"#c2a56a"}),
+ broodmother:Object.freeze({name:"BROODMOTHER",period:4,accent:"#bba576"}),
  guardian:Object.freeze({name:"RIFT GUARDIAN",period:4,accent:"#b19ac2"}),
  skitter:Object.freeze({name:"SKITTER",period:4,accent:"#ffaf75",icon:"◆"}),
  runner:Object.freeze({name:"BURROW RUNNER",period:4,accent:"#e399f5",icon:"◇"}),
@@ -26,7 +28,7 @@ export function ownAbilityHazard(run,p){
  const encounter=run.encounter;
  if(!encounter)return false;
  if(encounter.kind==="weaver")return !!encounter.webs?.some(w=>same(w.pos,p));
- const tileKind=encounter.kind==="guardian"?"rift":encounter.kind==="warden"?"seal":null;
+ const tileKind=encounter.kind==="guardian"?"rift":encounter.kind==="warden"?"seal":encounter.kind==="broodmother"?"egg":null;
  return !!tileKind&&!!run.terrain?.some(t=>t.kind===tileKind&&same(t.pos,p));
 }
 export function safePreyTile(run,p,id=null){
@@ -78,7 +80,7 @@ export function decidePrey(run,enemy){
  for(const dir of HEADINGS){
   if(dir===inverse[enemy.dir])continue;
   const dest=point(enemy.pos,dir);
-  if(safePreyTile(run,dest,enemy.id))viable.push({dir,dest});
+  if(safePreyTile(run,dest,enemy.id)&&!(ORDINARY_PREY.includes(enemy.kind)&&wardOccupies(run,dest)))viable.push({dir,dest});
  }
  if(!viable.length)return null;
  // Ordinary prey are prey, not strategic hunters: they only inspect the next
@@ -86,12 +88,14 @@ export function decidePrey(run,enemy){
  // They do not calculate reachable area, avoid future dead ends, or react to
  // the player's distant body. All randomness comes from the seeded run RNG.
  if(ORDINARY_PREY.includes(enemy.kind)){
-  const forward=viable.find(candidate=>candidate.dir===enemy.dir);
+  const safe=viable.filter(candidate=>!wardDeters(run,candidate.dest));
+  const options=safe.length?safe:viable;
+  const forward=options.find(candidate=>candidate.dir===enemy.dir);
   const forwardChance=enemy.kind==="runner"?.85:.65;
   if(forward&&run.random()<forwardChance)return forward;
-  const turns=viable.filter(candidate=>candidate.dir!==enemy.dir);
+  const turns=options.filter(candidate=>candidate.dir!==enemy.dir);
   if(turns.length)return turns[Math.floor(run.random()*turns.length)];
-  return forward||viable[0];
+  return forward||options[0];
  }
  // Bosses retain long-range route evaluation, making them a distinct threat.
  const head=run.body[0];
