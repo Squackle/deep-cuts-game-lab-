@@ -10,7 +10,7 @@ import {landPainting} from "./land-art.js";
 import {installLandDragging} from "./drag-lands.js";
 import {renderCardReferences,referenceFor} from "./card-references.js";
 import {installCardInspector} from "./card-inspector.js";
-import {cardImageUrl} from "./scryfall-cards.js";
+import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
 import {missingMana,failureText,flashWard} from "./ward-feedback.js";
 const el=id=>document.getElementById(id);
 const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"C"},N:{name:"Generic",color:"#bec5bd",icon:"◇"}};
@@ -50,12 +50,24 @@ function chargeWard({pendingId=null,animateId=null}={}){
   pendingId,pendingIds:[...pendingFlights],animateId,open:completed(level,state)
  });
 }
-const cardInspector=installCardInspector({dialog:el("realCardInspector"),trigger:el("inspectLand"),closeButton:el("closeInspector")});
+const cardInspector=installCardInspector({dialog:el("realCardInspector"),closeButton:el("closeInspector")});
+function updateVisiblePrints(ids){
+ const allowed=new Set(ids);
+ for(const button of document.querySelectorAll('.land-card.mtg-real-land[data-cardid]')){
+  if(!allowed.has(button.dataset.cardid))continue;
+  const img=button.querySelector(".mtg-card-image");
+  const art=imageFor(button.dataset.cardid,button.dataset.realCard);
+  if(img&&art&&img.getAttribute("src")!==art){
+   img.src=art;
+   button.classList.remove("image-failed");
+  }
+ }
+}
 function inspectById(id){
  const record=lookup(level,id);
  if(!record)return false;
  lastCardId=id;
- return cardInspector.show(record.card,getCard(level,id).name);
+ return cardInspector.show(record.card,getCard(level,id).name,printingFor(id,record.card));
 }
 const proofs=new Map();
 for(const puzzle of LEVELS){
@@ -161,7 +173,7 @@ function landHtml(instance,field){
  const key=lookup(level,instance.id).card;
  const full=referenceFor(key);
  const name=full?.name||card.name;
- const src=cardImageUrl(key);
+ const src=imageFor(instance.id,key);
  const fallback=landPainting(card);
  const alt=name+" — Magic: The Gathering land card from Scryfall";
  return '<button type="button" draggable="false" class="land-card mtg-real-land '+(tapped?"is-tapped":"")+'" data-cardid="'+instance.id+'" data-zone="'+(field?"field":"hand")+'" data-kind="'+card.kind+'" data-real-card="'+key+'" aria-label="'+(field?"Tap ":"Drag to battlefield: ")+name+(tapped?", tapped":"")+'" title="'+name+' · '+(field?"tap to produce mana":"drag to play · tap to inspect")+'">'+
@@ -210,6 +222,7 @@ function render(pendingId=null){
  selectedMessage="";
 }
 function showMap(){
+ invalidateStagePrintings();
  cancelAuto();viewEpoch++;pendingFlights.clear();
  cardInspector.hide({restore:false});
  landDrag?.cancel();
@@ -236,6 +249,7 @@ function load(i,enter=false){
  if(!unlocked(i,progress.bests)){message("That vault is sealed. Crack the previous stage to unlock it.",true);return false;}
  index=i;world=chapterIndex(index);
  level=LEVELS[index];state=initial(level);history=[];selectedMessage="";
+ startStagePrintings(level,updateVisiblePrints);
  manaOrbs=reconstruct(state.pool);el("manaTravelLayer").replaceChildren();
  progress.index=index;persist();render();
  if(!el("gameNotes").hidden)renderCardReferences(el("cardGallery"),level);
@@ -258,10 +272,6 @@ el("worldPips").addEventListener("click",e=>{
  if(button&&!button.disabled){world=Number(button.dataset.world);renderOverworld({world,bests:progress.bests,index,proofs,medal});}
 });
 el("returnMap").addEventListener("click",showMap);
-el("inspectLand").addEventListener("inspect-current-land",()=>{
- const id=lastCardId&&lookup(level,lastCardId)?lastCardId:(state.field[0]?.id||state.hand[0]);
- if(id)inspectById(id);
-});
 el("dismissChoices").addEventListener("click",()=>choices("YOUR NEXT CHOICE","Tap a land or play a land from your hand.",[]));
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!el("actionBox").hidden){choices("YOUR NEXT CHOICE","Selection canceled.",[]);}});
 for(const zone of ["hand","battlefield"]){
