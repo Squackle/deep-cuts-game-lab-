@@ -51,7 +51,16 @@ export const CARDS={
   "Disfigure":{"type":"Instant","cost":{"B":1},"colors":["B"],"oracle":"Target creature gets -2/-2 until end of turn.","effect":"shrink","amount":2,"targetRule":"creature"},
   "Tamiyo's Safekeeping":{"type":"Instant","cost":{"G":1},"colors":["G"],"oracle":"Target permanent you control gains hexproof and indestructible until end of turn. You gain 2 life.","effect":"safekeeping","targetRule":"creature:own"},
   "Lightning Helix":{"type":"Instant","cost":{"R":1,"W":1},"colors":["R","W"],"oracle":"Lightning Helix deals 3 damage to any target and you gain 3 life.","effect":"helix","amount":3,"targetRule":"any"},
-  "Vapor Snag":{"type":"Instant","cost":{"U":1},"colors":["U"],"oracle":"Return target creature to its owner's hand. Its controller loses 1 life.","effect":"vapor","targetRule":"creature"}
+  "Vapor Snag":{"type":"Instant","cost":{"U":1},"colors":["U"],"oracle":"Return target creature to its owner's hand. Its controller loses 1 life.","effect":"vapor","targetRule":"creature"},
+  "Soothing Balm":{"type":"Instant","cost":{"generic":1,"W":1},"colors":["W"],"oracle":"Target player gains 5 life.","effect":"heal","amount":5,"targetRule":"player"},
+  "Arcane Denial":{"type":"Instant","cost":{"generic":1,"U":1},"colors":["U"],"oracle":"Counter target spell. Its controller may draw up to two cards at the beginning of the next turn's upkeep. You draw a card at the beginning of the next turn's upkeep.","effect":"counter","targetRule":"stack:spell","note":"Delayed next-upkeep card draws are outside this one-turn training window."},
+  "Incinerate":{"type":"Instant","cost":{"generic":1,"R":1},"colors":["R"],"oracle":"Incinerate deals 3 damage to any target. A creature dealt damage this way can't be regenerated this turn.","effect":"damage","amount":3,"targetRule":"any","note":"Regeneration does not occur in curated training windows."},
+  "Ranger's Guile":{"type":"Instant","cost":{"G":1},"colors":["G"],"oracle":"Target creature you control gets +1/+1 and gains hexproof until end of turn.","effect":"boostHexproof","amount":1,"targetRule":"creature:own"},
+  "Snakeskin Veil":{"type":"Instant","cost":{"G":1},"colors":["G"],"oracle":"Put a +1/+1 counter on target creature you control. It gains hexproof until end of turn.","effect":"boostHexproof","amount":1,"targetRule":"creature:own","note":"Permanent +1/+1 counter has the same stats within this single-turn training window."},
+  "Mortify":{"type":"Instant","cost":{"generic":1,"W":1,"B":1},"colors":["W","B"],"oracle":"Destroy target creature or enchantment.","effect":"destroy","targetRule":"creature","note":"Only creature targets are represented in this training engine."},
+  "Terminate":{"type":"Instant","cost":{"B":1,"R":1},"colors":["B","R"],"oracle":"Destroy target creature. It can't be regenerated.","effect":"destroy","targetRule":"creature"},
+  "Abrade":{"type":"Instant","cost":{"generic":1,"R":1},"colors":["R"],"oracle":"Choose one — Abrade deals 3 damage to target creature; or destroy target artifact.","effect":"damage","amount":3,"targetRule":"creature","note":"Only the three-damage-to-creature mode is represented."},
+  "Dovin's Veto":{"type":"Instant","cost":{"W":1,"U":1},"colors":["W","U"],"oracle":"This spell can't be countered. Counter target noncreature spell.","effect":"counter","targetRule":"stack:noncreature","uncounterable":true}
 };
 export const cardLink = name => 'https://scryfall.com/search?q='+encodeURIComponent('!"'+name+'"');
 export const isCreature = name => CARDS[name]?.type.startsWith('Creature') || false;
