@@ -217,3 +217,7 @@
 /* Keep the entire interactive table exactly one visual viewport; the reading section begins after the fold. */
 .in-heist #gameScreen{height:100dvh}
 @media(max-width:800px){.in-heist #gameScreen{height:100dvh}}
+
+.in-heist .game-titlebar{justify-content:space-between}
+.in-heist .game-titlebar .info-link{font-size:.65rem;color:var(--gold);letter-spacing:.04em;font-weight:800;border:1px solid var(--line);border-radius:7px;padding:8px}
+@media(max-width:390px){.in-heist .game-titlebar .info-link{font-size:.55rem;padding:7px 4px}}
