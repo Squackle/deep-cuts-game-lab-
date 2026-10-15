@@ -58,6 +58,11 @@ const BROODMOTHER=[
 ].map(r=>r.padEnd(20,'.').slice(0,20));
 export const ICON_PIXELS=Object.freeze({stalker:BURROW,weaver:WEB,warden:WARDEN,guardian:GUARDIAN,broodmother:BROODMOTHER});
 export const OCHRE=Object.freeze({track:"#414335",fill:"#98824b",ready:"#b19a5a",stone:"#b2ab8f"});
+// Legible against both painted fracture backgrounds. Presentation only.
+export const HIGH_VISIBILITY_BOSSES=Object.freeze({
+ guardian:Object.freeze({locator:"#e4c2ff",ring:"#cb91f5",ready:"#f2dbff",background:"#251633"}),
+ broodmother:Object.freeze({locator:"#ffe4a1",ring:"#eeb46d",ready:"#fff0ba",background:"#2d1b20"})
+});
 export function validateIcons(){return Object.values(ICON_PIXELS).every(a=>a.length===20&&a.every(row=>row.length===20&&[...row].every(c=>Object.hasOwn(PALETTE,c))))}
 export function chargePixels(charge){
  const c=Math.max(0,Math.min(1,Number.isFinite(charge)?charge:0)),out=[];
@@ -89,9 +94,10 @@ export function drawAbilityMeter(canvas,kind,charge){
  if(canvas.width!==64)canvas.width=64;
  if(canvas.height!==64)canvas.height=64;
  ctx.clearRect(0,0,64,64);ctx.imageSmoothingEnabled=false;
- ctx.fillStyle="#132019";ctx.fillRect(8,8,48,48);
+ const high=HIGH_VISIBILITY_BOSSES[kind];
+ ctx.fillStyle=high?.background||"#132019";ctx.fillRect(8,8,48,48);
  for(const pixel of chargePixels(charge)){
-  ctx.fillStyle=pixel.filled?(charge>=1?OCHRE.ready:OCHRE.fill):OCHRE.track;
+  ctx.fillStyle=pixel.filled?(high?(charge>=1?high.ready:high.ring):(charge>=1?OCHRE.ready:OCHRE.fill)):OCHRE.track;
   ctx.fillRect(pixel.x*2,pixel.y*2,2,2);
  }
  // An exact 40 x 40 centered bounding box at (12,12) inside 64 x 64.
@@ -101,11 +107,27 @@ export function drawAbilityMeter(canvas,kind,charge){
 export function drawMiniboss(ctx,enemies,cell,phase=1){
  for(const enemy of enemies){
   if(!ICON_PIXELS[enemy.kind])continue;
-  const box=30,x=enemy.pos.x*cell+(cell-box)/2,y=enemy.pos.y*cell+(cell-box)/2;
-  // Detailed original creature silhouette: don't bury the model under a tile-sized frame.
-  ctx.fillStyle="#11191a";ctx.fillRect(x+4,y+box-4,box-8,2);
+  const high=HIGH_VISIBILITY_BOSSES[enemy.kind];
+  const box=high?36:30,x=enemy.pos.x*cell+(cell-box)/2,y=enemy.pos.y*cell+(cell-box)/2;
+  if(high){
+   const tileX=enemy.pos.x*cell,tileY=enemy.pos.y*cell;
+   // A thin grounded position cue, behind the model. No opaque square over art.
+   ctx.save();
+   ctx.fillStyle="rgba(8,10,16,.46)";
+   ctx.fillRect(tileX+2,tileY+2,cell-4,cell-4);
+   ctx.strokeStyle=high.locator;ctx.lineWidth=1;
+   ctx.strokeRect(tileX+1.5,tileY+1.5,cell-3,cell-3);
+   ctx.restore();
+  }else{
+   ctx.fillStyle="#11191a";ctx.fillRect(x+4,y+box-4,box-8,2);
+  }
   drawBossPixelIcon(ctx,enemy.kind,x,y,box);
-  if(phase>=2){ctx.fillStyle="#d2a269";ctx.fillRect(x+box/2-1,y-2,2,2)}
+  if(high){
+   // Small pin above the sprite remains visible when it overlaps darker terrain.
+   ctx.fillStyle=high.locator;ctx.fillRect(enemy.pos.x*cell+cell/2-2,y-5,4,3);
+  }else if(phase>=2){
+   ctx.fillStyle="#d2a269";ctx.fillRect(x+box/2-1,y-2,2,2);
+  }
  }
 }
 export function drawWebs(ctx,webs,cell){
