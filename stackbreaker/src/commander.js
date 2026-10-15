@@ -61,7 +61,7 @@ const INSTANT_OPTIONS=[
  'Unsummon','Vapor Snag','Doom Blade','Murder',"Hero's Downfall",'Mortify','Terminate',
  'Dispel','Negate','Counterspell','Arcane Denial',"Dovin's Veto",'Cancel',
  'Essence Scatter','Remove Soul','Dissipate','Brute Force','Titanic Growth',
- 'Dawn's Reflex'
+ 'Dissipate'
 ].filter(name=>CARDS[name]?.type==='Instant');
 export const HAND_SIZE=7;
 const commanderClone=v=>structuredClone(v);
