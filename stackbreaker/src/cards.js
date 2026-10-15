@@ -28,7 +28,30 @@ export const CARDS={
   'Dive Down':{type:'Instant',cost:{U:1},colors:['U'],oracle:'Target creature you control gets +0/+3 and gains hexproof until end of turn.',effect:'dive',amount:3,targetRule:'creature:own'},
   'Lightning Strike':{type:'Instant',cost:{generic:1,R:1},colors:['R'],oracle:'Lightning Strike deals 3 damage to any target.',effect:'damage',amount:3,targetRule:'any'},
   'Cancel':{type:'Instant',cost:{generic:1,U:2},colors:['U'],oracle:'Counter target spell.',effect:'counter',targetRule:'stack:spell'},
-  'Unsummon':{type:'Instant',cost:{U:1},colors:['U'],oracle:'Return target creature to its owner’s hand.',effect:'bounce',targetRule:'creature'}
+  'Unsummon':{type:'Instant',cost:{U:1},colors:['U'],oracle:'Return target creature to its owner’s hand.',effect:'bounce',targetRule:'creature'},
+  "Glory Seeker":{"type":"Creature — Human Soldier","cost":{"generic":1,"W":1},"power":2,"toughness":2,"colors":["W"],"oracle":"","effect":null,"tags":[]},
+  "Goblin Chariot":{"type":"Creature — Goblin Warrior","cost":{"generic":2,"R":1},"power":2,"toughness":2,"colors":["R"],"oracle":"Haste","effect":null,"tags":["Haste"]},
+  "Elite Vanguard":{"type":"Creature — Human Soldier","cost":{"W":1},"power":2,"toughness":1,"colors":["W"],"oracle":"","effect":null,"tags":[]},
+  "Coral Merfolk":{"type":"Creature — Merfolk","cost":{"generic":1,"U":1},"power":2,"toughness":1,"colors":["U"],"oracle":"","effect":null,"tags":[]},
+  "Goblin Piker":{"type":"Creature — Goblin Warrior","cost":{"generic":1,"R":1},"power":2,"toughness":1,"colors":["R"],"oracle":"","effect":null,"tags":[]},
+  "Trained Armodon":{"type":"Creature — Elephant","cost":{"generic":1,"G":2},"power":3,"toughness":3,"colors":["G"],"oracle":"","effect":null,"tags":[]},
+  "War Mammoth":{"type":"Creature — Elephant","cost":{"generic":3,"G":1},"power":3,"toughness":3,"colors":["G"],"oracle":"Trample","effect":null,"tags":["Trample"]},
+  "Searing Spear":{"type":"Instant","cost":{"generic":1,"R":1},"colors":["R"],"oracle":"Searing Spear deals 3 damage to any target.","effect":"damage","amount":3,"targetRule":"any"},
+  "Open Fire":{"type":"Instant","cost":{"generic":2,"R":1},"colors":["R"],"oracle":"Open Fire deals 3 damage to any target.","effect":"damage","amount":3,"targetRule":"any"},
+  "Fiery Temper":{"type":"Instant","cost":{"generic":1,"R":2},"colors":["R"],"oracle":"Fiery Temper deals 3 damage to any target. Madness {R}.","effect":"damage","amount":3,"targetRule":"any","note":"Normal casting cost only, madness not simulated."},
+  "Stoic Rebuttal":{"type":"Instant","cost":{"generic":1,"U":2},"colors":["U"],"oracle":"Metalcraft — This spell costs {1} less to cast if you control three or more artifacts. Counter target spell.","effect":"counter","targetRule":"stack:spell","note":"Metalcraft not active in supported board states."},
+  "Hero's Downfall":{"type":"Instant","cost":{"generic":1,"B":2},"colors":["B"],"oracle":"Destroy target creature or planeswalker.","effect":"destroy","targetRule":"creature"},
+  "Dark Banishing":{"type":"Instant","cost":{"generic":2,"B":1},"colors":["B"],"oracle":"Destroy target nonblack creature. It can't be regenerated.","effect":"destroy","targetRule":"creature:nonblack"},
+  "Blink of an Eye":{"type":"Instant","cost":{"generic":1,"U":1},"colors":["U"],"oracle":"Kicker {1}{U}. Return target nonland permanent to its owner's hand. If this spell was kicked, draw a card.","effect":"bounce","targetRule":"creature","note":"Only non-kicked cast mode and creature targets supported."},
+  "Day of Judgment":{"type":"Sorcery","cost":{"generic":2,"W":2},"colors":["W"],"oracle":"Destroy all creatures.","effect":"destroyAll"},
+  "Brute Force":{"type":"Instant","cost":{"R":1},"colors":["R"],"oracle":"Target creature gets +3/+3 until end of turn.","effect":"pump","amount":3,"targetRule":"creature"},
+  "Remove Soul":{"type":"Instant","cost":{"generic":1,"U":1},"colors":["U"],"oracle":"Counter target creature spell.","effect":"counter","targetRule":"stack:creature"},
+  "Pyroclasm":{"type":"Sorcery","cost":{"generic":1,"R":1},"colors":["R"],"oracle":"Pyroclasm deals 2 damage to each creature.","effect":"sweepDamage","amount":2},
+  "Languish":{"type":"Sorcery","cost":{"generic":2,"B":2},"colors":["B"],"oracle":"All creatures get -4/-4 until end of turn.","effect":"weakenAll","amount":4},
+  "Disfigure":{"type":"Instant","cost":{"B":1},"colors":["B"],"oracle":"Target creature gets -2/-2 until end of turn.","effect":"shrink","amount":2,"targetRule":"creature"},
+  "Tamiyo's Safekeeping":{"type":"Instant","cost":{"G":1},"colors":["G"],"oracle":"Target permanent you control gains hexproof and indestructible until end of turn. You gain 2 life.","effect":"safekeeping","targetRule":"creature:own"},
+  "Lightning Helix":{"type":"Instant","cost":{"R":1,"W":1},"colors":["R","W"],"oracle":"Lightning Helix deals 3 damage to any target and you gain 3 life.","effect":"helix","amount":3,"targetRule":"any"},
+  "Vapor Snag":{"type":"Instant","cost":{"U":1},"colors":["U"],"oracle":"Return target creature to its owner's hand. Its controller loses 1 life.","effect":"vapor","targetRule":"creature"}
 };
 export const cardLink = name => 'https://scryfall.com/search?q='+encodeURIComponent('!"'+name+'"');
 export const isCreature = name => CARDS[name]?.type.startsWith('Creature') || false;
