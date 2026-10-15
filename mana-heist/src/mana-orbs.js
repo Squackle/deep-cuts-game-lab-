@@ -49,7 +49,7 @@ export function sendOrb({color,sourceRect,id,layer,target}){
  const dx=end.x-start.x,dy=end.y-start.y;
  const animation=bubble.animate([
   {transform:"translate(-50%,-50%) scale(.45)",opacity:0,filter:"blur(4px)"},
-  {transform:"translate("+(-50+dx*.18)+"%,calc(-50% - 38px)) scale(1.18)",opacity:1,filter:"blur(0px)",offset:.25},
+  {transform:"translate(calc(-50% + "+(dx*.18)+"px),calc(-50% - 38px)) scale(1.18)",opacity:1,filter:"blur(0px)",offset:.25},
   {transform:"translate(calc(-50% + "+dx+"px),calc(-50% + "+dy+"px)) scale(.8)",opacity:1,filter:"blur(0px)"}
  ],{duration:670,easing:"cubic-bezier(.16,.75,.2,1)",fill:"forwards"});
  animation.finished.then(()=>{bubble.remove();settle();}).catch(()=>{bubble.remove();settle();});
