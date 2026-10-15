@@ -113,7 +113,7 @@ document.addEventListener('click',e=>{
 });
 window.addEventListener('scroll',closeCardPreview,{passive:true});
 const progressKey='dc-stackbreaker-progress-v3';
-let index=0,game,history=[],selectedTargets={},selectedPayments={},hint=false,progress={},dragTouch=null;
+let index=0,game,history=[],hint=false,progress={},dragTouch=null,pendingPlay=null,armedCard=null;
 try{progress=JSON.parse(localStorage.getItem(progressKey)||'{}')||{};}catch{}
 const save=()=>{try{localStorage.setItem(progressKey,JSON.stringify(progress))}catch{}};
 function pips(obj,raw=false){let out=[];for(const c of ['generic','W','U','B','R','G','C']){const n=obj?.[c]||0;
@@ -126,64 +126,170 @@ function objectiveText(s){const o=s.objective;if(o.type==='survive')return'Survi
  if(o.type==='keepN')return`Keep at least ${o.count} friendly creatures alive.`;
  return`Keep ${s.units.find(u=>u.id===o.unitId)?.card||'the required creature'} ${o.type==='keepUnit'?'on the battlefield':'out of the graveyard'}.`;
 }
-function changeCase(n){index=Math.max(0,Math.min(scenarios.length-1,n));game=createGame(scenarios[index]);history=[];hint=false;selectedTargets={};selectedPayments={};render();}
-function shortCard(u){const c=CARDS[u.card],gone=u.zone!=='battlefield';let flags=[u.indestructible?'INDESTRUCTIBLE':'',u.hexproof?'HEXPROOF':'',u.damage?`${u.damage} DAMAGE`:''].filter(Boolean).join(' · ');
- return `<div class="battle-unit"><div class="battle-card ${gone?'off':''}" role="group" aria-label="${esc(u.card)}, ${creaturePower(u)}/${creatureToughness(u)}, ${gone?u.zone:'on battlefield'}">${thumb(u.card,'small','battle-image')}<header>${esc(u.card)}</header><div class="flags">${esc(gone?u.zone.toUpperCase():flags)}</div><strong class="pt">${creaturePower(u)}/${creatureToughness(u)}</strong></div></div>`;
+function changeCase(n){index=Math.max(0,Math.min(scenarios.length-1,n));game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;render();}
+function shortCard(u){
+ const gone=u.zone!=='battlefield';const ability=game.hand.find(a=>a.sourceId===u.id&&!game.used.includes(a.id));
+ const active=ability&&game.status==='playing'&&legalActions(game).includes(ability.id);
+ const flags=[u.indestructible?'INDESTRUCTIBLE':'',u.hexproof?'HEXPROOF':'',u.damage?`${u.damage} DAMAGE`:''].filter(Boolean).join(' · ');
+ return `<div class="battle-unit"><button type="button" class="battle-card ${gone?'off':''} ${ability?'has-ability':''} ${active?'can-activate':''}" data-unit="${esc(u.id)}" ${ability?'data-activate-source="'+esc(ability.id)+'"':''} aria-label="${esc(u.card)}, ${creaturePower(u)}/${creatureToughness(u)}. ${active?'Activate its printed ability.':'View or target this card.'}">${thumb(u.card,'normal','battle-image')}<span class="flags">${esc(gone?u.zone.toUpperCase():flags)}</span><strong class="pt">${creaturePower(u)}/${creatureToughness(u)}</strong></button></div>`;
 }
-function landCard(l){const c=LANDS[l.card],m=c.mana;return `<button class="land-card ${m} ${l.tapped?'tapped':''}" type="button" data-land="${esc(l.id)}" ${l.tapped||game.status!=='playing'?'disabled':''} title="${esc(l.card+' — '+c.oracle)}" aria-label="${l.tapped?'Tapped':'Tap'} ${esc(l.card)} for ${m} mana">${thumb(l.card,'small','land-image')}<span class="land-name">${esc(l.card)}</span><span class="tap-label">${l.tapped?'TAPPED':`TAP · ${m}`}</span></button>`;}
-function stackCard(item,i){const c=CARDS[item.card];const ability=printedText(item.card)||'No rules text.';
- return `<li class="stack-entry ${i===0?'on-top':''}"><span class="stack-rank">${i===0?'TOP':i+1}</span><span class="stack-art">${thumb(item.card,'art','stack-art-image')}</span><div class="stack-details"><b>${esc(item.card)}${item.spell===false?' · ABILITY':''}</b><span class="stack-oracle">${esc(ability)}</span><small>${item.controller==='player'?'YOU':'OPPONENT'}${item.targetId?' → '+esc(labelTarget(game,item.targetId)):''}</small></div><a href="${esc(linkToCard(item.card))}" target="_blank" rel="noopener noreferrer" title="Card reference for ${esc(item.card)}" aria-label="View ${esc(item.card)} card">↗</a></li>`}
-function handCard(a,i,ready){const c=CARDS[a.card];const targets=legalTargets(game,a);let target=selectedTargets[a.id];if(!targets.includes(target))target=targets[0];selectedTargets[a.id]=target;
- const payments=a.sourceId?[{spend:null,label:'Sacrifice'}]:paymentOptions(game,c.cost);const selected=selectedPayments[a.id]??0;
- if(selected>=payments.length)selectedPayments[a.id]=0;
- const can=ready.includes(a.id);
- const selectors=targets.length>1?`<label>TARGET<select data-target-for="${esc(a.id)}" aria-label="Target for ${esc(a.card)}">${targets.map(t=>`<option value="${esc(t)}" ${target===t?'selected':''}>${esc(titleForTarget(t))}</option>`).join('')}</select></label>`:(targets.length===1&&target!=null?`<span class="response-steps">→ ${esc(titleForTarget(target))}</span>`:'<span class="response-steps">NO TARGET</span>');
- const paySelect=payments.length>1?`<label>GENERIC<select data-payment-for="${esc(a.id)}" aria-label="Spend generic mana for ${esc(a.card)}">${payments.map((op,j)=>`<option value="${j}" ${j===(selectedPayments[a.id]??0)?'selected':''}>${esc(op.label)}</option>`).join('')}</select></label>`:'';
- return `<article class="response-card ${a.sourceId?'ability':''} ${!can?'unavailable':''}" data-drag-card="${esc(a.id)}" draggable="true" tabindex="0" aria-label="${esc(a.card)}, drag onto stack or use the Cast button">${thumb(a.card,'small','response-image')}<div class="response-head"><strong>${esc(a.card)}</strong><span class="mana-row">${a.sourceId?'SAC':pips(c.cost,true)}</span></div><div class="oracle-preview">${esc(printedText(a.card))}</div><div class="response-steps">${a.sourceId?'Sacrifice source to activate':can?'Ready · drag to stack':'Tap lands to pay'} · ${esc(c.type)}</div><div class="response-bottom">${selectors}${paySelect}<button type="button" data-cast="${esc(a.id)}" ${!can?'disabled':''}>${a.sourceId?'ACTIVATE':'CAST'} ↗</button></div></article>`;
+function landCard(l){const c=LANDS[l.card],m=c.mana;return `<button class="land-card ${m} ${l.tapped?'tapped':''}" type="button" data-land="${esc(l.id)}" ${l.tapped||game.status!=='playing'?'disabled':''} title="${esc(l.card+' — '+c.oracle)}" aria-label="${l.tapped?'Tapped':'Tap'} ${esc(l.card)} for ${m} mana">${thumb(l.card,'normal','land-image')}<span class="tap-label">${l.tapped?'TAPPED':`TAP · ${m}`}</span></button>`;}
+function stackCard(item,i){
+ const ability=printedText(item.card)||'';
+ return `<li class="stack-entry ${i===0?'on-top':''}" data-stack-target="${esc(item.id)}"><span class="stack-rank">${i===0?'TOP':i+1}</span><span class="stack-art">${thumb(item.card,'art','stack-art-image')}</span><div class="stack-details"><b>${esc(item.card)}${item.spell===false?' · ABILITY':''}</b><span class="stack-oracle">${esc(ability)}</span><small>${item.controller==='player'?'YOU':'OPPONENT'}${item.targetId?' → '+esc(labelTarget(game,item.targetId)):''}</small></div></li>`;
+}
+function handCard(a){
+ return `<div class="hand-card ${armedCard===a.id?'armed':''}" data-drag-card="${esc(a.id)}" draggable="true" role="button" tabindex="0" aria-label="${esc(a.card)}. Drag to stack or battlefield to cast. Press Enter to select a card, then Enter over the stack to play.">${thumb(a.card,'normal','hand-image')}</div>`;
+}
+function renderPlayPrompt(){
+ const el=$('playPrompt');if(!el)return;
+ if(!pendingPlay){el.hidden=true;el.innerHTML='';return;}
+ const p=pendingPlay;el.hidden=false;
+ if(p.phase==='target'){
+  el.innerHTML=`<div class="prompt-header"><b>Choose a target</b><button type="button" data-cancel-play aria-label="Cancel casting">✕</button></div><div class="prompt-options">${p.targets.map(t=>`<button type="button" data-choose-target="${esc(t??'__none__')}">${esc(t==null?'No target':labelTarget(game,t))}</button>`).join('')}</div><small>Or tap a highlighted card or life total.</small>`;
+ }else{
+  el.innerHTML=`<div class="prompt-header"><b>Choose mana for the generic cost</b><button type="button" data-cancel-play aria-label="Cancel casting">✕</button></div><div class="prompt-options">${p.payments.map((op,i)=>`<button type="button" data-choose-payment="${i}">${esc(op.label)}</button>`).join('')}</div>`;
+ }
+ document.querySelectorAll('[data-unit],[data-stack-target],[data-target-person]').forEach(node=>{
+   const id=node.dataset.unit??node.dataset.stackTarget??node.dataset.targetPerson;
+   node.classList.toggle('targetable',p.phase==='target'&&p.targets.includes(id));
+ });
+}
+function submitCast(id,target,spend){try{pushState(activate(game,id,target,spend));notify('Spell or ability placed on the stack.');}catch(error){pendingPlay=null;render();notify(error.message);}}
+function chooseTarget(target){if(!pendingPlay||pendingPlay.phase!=='target'||!pendingPlay.targets.includes(target))return;
+ pendingPlay.target=target;const p=pendingPlay;
+ if(p.payments.length>1){p.phase='payment';renderPlayPrompt();return;}
+ pendingPlay=null;submitCast(p.id,target,p.payments[0]?.spend??null);
+}
+function choosePayment(i){const p=pendingPlay;if(!p||p.phase!=='payment'||!p.payments[i])return;
+ pendingPlay=null;submitCast(p.id,p.target,p.payments[i].spend);
+}
+function beginPlay(id,dropTarget=null){
+ const action=game.hand.find(a=>a.id===id&&!a.sourceId&&!game.used.includes(a.id));if(!action){notify('Only spells in your hand can be dragged.');return;}
+ if(!legalActions(game).includes(id)){notify('Tap enough lands to pay this card’s mana cost, or check its legal targets.');return;}
+ const targets=legalTargets(game,action),payments=paymentOptions(game,CARDS[action.card].cost);
+ if(!targets.length||!payments.length){notify('No legal target or mana payment.');return;}
+ const chosen=targets.includes(dropTarget)?dropTarget:targets.length===1?targets[0]:undefined;
+ pendingPlay={id,targets,payments,target:chosen,phase:chosen===undefined?'target':payments.length>1?'payment':'done'};
+ armedCard=null;
+ if(pendingPlay.phase==='done'){const p=pendingPlay;pendingPlay=null;submitCast(id,chosen,payments[0]?.spend??null);}
+ else{render();renderPlayPrompt();notify(chosen===undefined?'Choose a legal target.':'Choose which mana to spend.');}
+}
+function activateFromBattlefield(id){
+ const a=game.hand.find(x=>x.id===id&&x.sourceId);
+ if(!a||!legalActions(game).includes(id)){notify('This card does not have an available activated ability.');return;}
+ const targets=legalTargets(game,a);
+ if(targets.length===1){submitCast(id,targets[0],null);return;}
+ pendingPlay={id,targets,payments:[{spend:null,label:'Ability'}],target:undefined,phase:'target'};render();renderPlayPrompt();
+}
+function targetFromElement(element){
+ // A generic drop on the stack zone should prompt for a target; only drop on the actual art to target that spell.
+ if(element?.closest?.('[data-stack-target]')&&!element.closest?.('.stack-art'))return null;
+ const target=element?.closest?.('[data-unit],[data-stack-target],[data-target-person]');
+ return target?.dataset.unit??target?.dataset.stackTarget??target?.dataset.targetPerson??null;
 }
 function render(){closeCardPreview();const s=game,p=scenarios[index];$('missionTier').textContent=p.tier.toUpperCase();$('missionNum').textContent=String(index+1).padStart(2,'0')+' / 12';$('scenarioTitle').textContent=p.title;
  $('scenarioSelect').innerHTML=scenarios.map((o,i)=>`<option value="${i}" ${i===index?'selected':''}>${String(i+1).padStart(2,'0')} ${esc(o.title)}${progress[o.id]?' ★':''}</option>`).join('');
  $('playerLife').textContent=s.life.player;$('opponentLife').textContent=s.life.opponent;$('manaPool').innerHTML=pips(s.mana);
  $('priority').textContent=s.status==='playing'?'● PRIORITY: YOU':s.status==='won'?'✓ SURVIVED':'✕ DEFEATED';$('objective').textContent=objectiveText(s);$('objectiveShort').textContent=p.tier.toUpperCase();
- $('battlefield').innerHTML=s.units.length?s.units.map(shortCard).join(''):'<span class="empty-creatures">No creatures in this case</span>';
+ $('battlefield').innerHTML=s.units.filter(u=>u.zone==='battlefield').length?s.units.filter(u=>u.zone==='battlefield').map(shortCard).join(''):'<span class="empty-creatures">No creatures in this case</span>';
  $('lands').innerHTML=s.lands.length?s.lands.map(landCard).join(''):'<span class="empty-creatures">No lands needed — activate your creature’s ability</span>';
  $('stackCount').textContent=String(s.stack.length).padStart(2,'0');$('stack').innerHTML=s.stack.length?[...s.stack].reverse().map(stackCard).join(''):'<li class="stack-empty">Empty stack</li>';
- const remaining=s.hand.filter(a=>!s.used.includes(a.id)),ready=legalActions(s);$('handCount').textContent=remaining.length+' AVAILABLE';$('hand').classList.toggle('many',remaining.length>3);$('hand').innerHTML=remaining.map((a,i)=>handCard(a,i,ready)).join('')||'<span class="empty-creatures">Hand empty — pass priority to resolve the stack</span>';
+ const remaining=s.hand.filter(a=>!a.sourceId&&!s.used.includes(a.id));$('handCount').textContent=remaining.length+' CARDS';$('hand').classList.toggle('many',remaining.length>3);$('hand').innerHTML=remaining.map(handCard).join('')||'<span class="empty-creatures">No spells in hand</span>';
  $('passButton').disabled=s.status!=='playing';$('undoButton').disabled=!history.length;$('nextButton').textContent=s.status==='won'?(index===11?'FIRST CASE ↻':'NEXT CASE →'):'NEXT →';
  $('resultMini').className='result-mini'+(s.status==='won'?' won':s.status==='lost'?' lost':'');$('resultEyebrow').textContent=s.status==='won'?'✓ CASE SOLVED':s.status==='lost'?'✕ TRY AGAIN':'YOUR MOVE';
- $('resultTitle').textContent=s.status==='won'?'Click NEXT to continue':s.status==='lost'?'Reset or undo to retry':'Tap lands, then cast responses';
+ $('resultTitle').textContent=s.status==='won'?'Next case is ready':s.status==='lost'?'Reset or undo to retry':'Tap lands, drag a spell, or activate a creature';
  $('scenarioIntro').textContent=p.intro;$('objectiveLong').textContent=objectiveText(s);$('hintText').hidden=!hint;$('hintText').textContent=p.hint;$('hintButton').setAttribute('aria-expanded',String(hint));
  $('resultExplanation').textContent=s.status==='playing'?'Complete the case to see the rules explanation.':p.explanation;
  if(s.status==='won'){const stars=s.used.length<=2?3:2;progress[p.id]=Math.max(progress[p.id]||0,stars);save();$('resultStars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);}else $('resultStars').textContent='';
- $('completed').textContent=Object.keys(progress).length+' / 12 SOLVED';$('log').innerHTML=s.log.slice(-14).reverse().map(x=>`<li>${esc(x)}</li>`).join('');$('version').textContent=RULES_VERSION;$('live').textContent=s.log.at(-1)||'Tap a land to produce mana.';
+ renderPlayPrompt();$('completed').textContent=Object.keys(progress).length+' / 12 SOLVED';$('log').innerHTML=s.log.slice(-14).reverse().map(x=>`<li>${esc(x)}</li>`).join('');$('version').textContent=RULES_VERSION;$('live').textContent=s.log.at(-1)||'Tap a land to produce mana.';
 }
 function notify(message){$('live').textContent=message;}
-function pushState(s){history.push(structuredClone(game));game=s;render()}
+function pushState(s){history.push(structuredClone(game));game=s;pendingPlay=null;armedCard=null;render()}
 function applyLand(id){try{pushState(tapLand(game,id));}catch(e){notify(e.message)}}
-function applyCast(id){try{const a=game.hand.find(x=>x.id===id);if(!a)return;const payment=a.sourceId?null:paymentOptions(game,CARDS[a.card].cost)[selectedPayments[id]??0];
- const target=selectedTargets[id]??null;pushState(activate(game,id,target,payment?.spend??null));}catch(e){notify(e.message+ ' — tap the required lands first.')}}
-function applyPass(){try{pushState(pass(game))}catch(e){notify(e.message)}}
-function undo(){if(!history.length)return;game=history.pop();render()}
+function applyPass(){pendingPlay=null;try{pushState(pass(game))}catch(e){notify(e.message)}}
+function undo(){pendingPlay=null;armedCard=null;if(!history.length){render();return;}game=history.pop();render()}
 $('lands').addEventListener('click',e=>{const btn=e.target.closest('[data-land]');if(btn)applyLand(btn.dataset.land)});
-$('hand').addEventListener('change',e=>{if(e.target.dataset.targetFor)selectedTargets[e.target.dataset.targetFor]=e.target.value;if(e.target.dataset.paymentFor)selectedPayments[e.target.dataset.paymentFor]=Number(e.target.value)});
-$('hand').addEventListener('click',e=>{const btn=e.target.closest('[data-cast]');if(btn)applyCast(btn.dataset.cast)});
+$('battlefield').addEventListener('click',e=>{
+ const unit=e.target.closest('[data-unit]');if(!unit)return;
+ if(previewLongPress){previewLongPress=false;return;}
+ if(pendingPlay?.phase==='target'&&pendingPlay.targets.includes(unit.dataset.unit)){chooseTarget(unit.dataset.unit);return;}
+ if(unit.dataset.activateSource)activateFromBattlefield(unit.dataset.activateSource);
+});
+// Mobile: tap an ability-bearing card to activate it, or hold to read the full Scryfall card.
+let previewLongPress=false,previewHold=null;
+$('battlefield').addEventListener('pointerdown',e=>{
+ if(e.pointerType!=='touch')return;
+ const card=e.target.closest('[data-unit]');if(!card?.dataset.activateSource)return;
+ const unit=game.units.find(u=>u.id===card.dataset.unit);if(!unit)return;
+ previewLongPress=false;
+ const startX=e.clientX,startY=e.clientY;
+ previewHold={x:startX,y:startY,alarm:setTimeout(()=>{
+  if(!previewHold)return;
+  showCardPreview(unit.card,startX,startY);
+  previewLongPress=true;
+ },500)};
+});
+$('battlefield').addEventListener('pointermove',e=>{
+ if(previewHold&&Math.hypot(e.clientX-previewHold.x,e.clientY-previewHold.y)>9){clearTimeout(previewHold.alarm);previewHold=null;}
+});
+for(const event of ['pointerup','pointercancel'])$('battlefield').addEventListener(event,()=>{
+ if(previewHold){clearTimeout(previewHold.alarm);previewHold=null;}
+});
+$('stack').addEventListener('click',e=>{
+ const item=e.target.closest('[data-stack-target]');if(item&&pendingPlay?.phase==='target')chooseTarget(item.dataset.stackTarget);
+});
+for(const life of document.querySelectorAll('[data-target-person]'))life.addEventListener('click',()=>{
+ if(pendingPlay?.phase==='target')chooseTarget(life.dataset.targetPerson);
+});
+$('hand').addEventListener('click',e=>{
+ if(dragTouch?.moved)return;
+ const c=e.target.closest('[data-drag-card]');if(!c||!matchMedia('(hover:none)').matches)return;
+ // On touch a short tap previews the printed card; only drag/drop casts.
+});
+$('playPrompt').addEventListener('click',e=>{
+ if(e.target.closest('[data-cancel-play]')){pendingPlay=null;render();return;}
+ const t=e.target.closest('[data-choose-target]');if(t)chooseTarget(t.dataset.chooseTarget==='__none__'?null:t.dataset.chooseTarget);
+ const p=e.target.closest('[data-choose-payment]');if(p)choosePayment(Number(p.dataset.choosePayment));
+});
 $('passButton').addEventListener('click',applyPass);$('undoButton').addEventListener('click',undo);$('restartButton').addEventListener('click',()=>changeCase(index));$('nextButton').addEventListener('click',()=>changeCase((index+1)%scenarios.length));
 $('scenarioSelect').addEventListener('change',e=>changeCase(Number(e.target.value)));
 $('hintButton').addEventListener('click',()=>{hint=!hint;render()});
-// Desktop HTML drag/drop: cards can be physically placed on the stack.
-$('hand').addEventListener('dragstart',e=>{const source=e.target.closest('[data-drag-card]');if(!source||game.status!=='playing'){e.preventDefault();return;}e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',source.dataset.dragCard);source.classList.add('dragging')});
-$('hand').addEventListener('dragend',()=>{$('stackDrop').classList.remove('drop-ready');$('hand').querySelectorAll('.dragging').forEach(n=>n.classList.remove('dragging'))});
-$('stackDrop').addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';$('stackDrop').classList.add('drop-ready')});
-$('stackDrop').addEventListener('dragleave',e=>{if(!$('stackDrop').contains(e.relatedTarget))$('stackDrop').classList.remove('drop-ready')});
-$('stackDrop').addEventListener('drop',e=>{e.preventDefault();$('stackDrop').classList.remove('drop-ready');const id=e.dataTransfer.getData('text/plain');if(id)applyCast(id)});
-// Touch/pen drag with a floating ghost; tap-to-cast button remains an accessible fallback.
-$('hand').addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'||e.target.closest('button,select,label,a'))return;const card=e.target.closest('[data-drag-card]');if(!card)return;dragTouch={id:card.dataset.dragCard,x:e.clientX,y:e.clientY,moved:false,ghost:null};});
-document.addEventListener('pointermove',e=>{if(!dragTouch)return;const d=dragTouch;if(!d.moved&&Math.hypot(e.clientX-d.x,e.clientY-d.y)>9){d.moved=true;d.ghost=document.createElement('div');d.ghost.className='drag-ghost';d.ghost.textContent=game.hand.find(a=>a.id===d.id)?.card||'SPELL';document.body.append(d.ghost)}
- if(!d.moved)return;e.preventDefault();d.ghost.style.left=e.clientX+'px';d.ghost.style.top=e.clientY+'px';$('stackDrop').classList.toggle('drop-ready',!!document.elementFromPoint(e.clientX,e.clientY)?.closest('#stackDrop'));
+// Desktop HTML drag/drop: drag the printed card onto the stack or battlefield.
+$('hand').addEventListener('dragstart',e=>{const source=e.target.closest('[data-drag-card]');if(!source||game.status!=='playing'){e.preventDefault();return;}
+ e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',source.dataset.dragCard);source.classList.add('dragging');
+});
+$('hand').addEventListener('dragend',()=>{document.querySelectorAll('.drop-ready').forEach(n=>n.classList.remove('drop-ready'));document.querySelectorAll('.dragging').forEach(n=>n.classList.remove('dragging'))});
+for(const zone of [$('stackDrop'),$('fieldDrop')]){
+ zone.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';zone.classList.add('drop-ready')});
+ zone.addEventListener('dragleave',e=>{if(!zone.contains(e.relatedTarget))zone.classList.remove('drop-ready')});
+ zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drop-ready');const id=e.dataTransfer.getData('text/plain');if(id)beginPlay(id,targetFromElement(e.target));});
+}
+// Touch/pen drag with a translucent card ghost. Dropping does not require a Cast button.
+$('hand').addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')return;const card=e.target.closest('[data-drag-card]');if(!card)return;
+ dragTouch={id:card.dataset.dragCard,x:e.clientX,y:e.clientY,moved:false,ghost:null};});
+document.addEventListener('pointermove',e=>{if(!dragTouch)return;const d=dragTouch;
+ if(!d.moved&&Math.hypot(e.clientX-d.x,e.clientY-d.y)>9){d.moved=true;d.ghost=document.createElement('div');d.ghost.className='drag-ghost';
+ const a=game.hand.find(x=>x.id===d.id);d.ghost.innerHTML=thumb(a.card,'small','drag-card-image');document.body.append(d.ghost);}
+ if(!d.moved)return;e.preventDefault();d.ghost.style.left=e.clientX+'px';d.ghost.style.top=e.clientY+'px';
+ document.querySelectorAll('.drop-ready').forEach(n=>n.classList.remove('drop-ready'));
+ const point=document.elementFromPoint(e.clientX,e.clientY)?.closest('#stackDrop,#fieldDrop');if(point)point.classList.add('drop-ready');
 },{passive:false});
-function finishTouch(e){if(!dragTouch)return;const d=dragTouch;dragTouch=null;const onStack=d.moved&&!!document.elementFromPoint(e.clientX,e.clientY)?.closest('#stackDrop');d.ghost?.remove();$('stackDrop').classList.remove('drop-ready');if(onStack)applyCast(d.id);}
-document.addEventListener('pointerup',finishTouch);document.addEventListener('pointercancel',()=>{dragTouch?.ghost?.remove();dragTouch=null;$('stackDrop').classList.remove('drop-ready')});
+function finishTouch(e){if(!dragTouch)return;const d=dragTouch;dragTouch=null;
+ const el=d.moved?document.elementFromPoint(e.clientX,e.clientY):null;
+ const zone=el?.closest?.('#stackDrop,#fieldDrop');const target=targetFromElement(el);
+ d.ghost?.remove();document.querySelectorAll('.drop-ready').forEach(n=>n.classList.remove('drop-ready'));
+ if(zone)beginPlay(d.id,target);
+}
+document.addEventListener('pointerup',finishTouch);
+document.addEventListener('pointercancel',()=>{dragTouch?.ghost?.remove();dragTouch=null;document.querySelectorAll('.drop-ready').forEach(n=>n.classList.remove('drop-ready'))});
+// Accessible non-pointer alternative: focus a hand card, press Enter, focus battlefield/stack, press Enter.
+$('hand').addEventListener('keydown',e=>{const card=e.target.closest('[data-drag-card]');if(card&&['Enter',' '].includes(e.key)){e.preventDefault();armedCard=card.dataset.dragCard;render();notify('Card selected. Focus the battlefield or stack and press Enter to place it.');}});
+for(const zone of [$('stackDrop'),$('fieldDrop')])zone.addEventListener('keydown',e=>{if(armedCard&&['Enter',' '].includes(e.key)){e.preventDefault();beginPlay(armedCard);}});
 document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;
- if(e.key===' '){e.preventDefault();applyPass()}else if(e.key.toLowerCase()==='z')undo();else if(/^[1-9]$/.test(e.key)){const a=game.hand.filter(x=>!game.used.includes(x.id))[Number(e.key)-1];if(a)applyCast(a.id)}});
+ if(e.key==='Escape'&&pendingPlay){pendingPlay=null;render();return;}
+ if(e.key===' '&&document.activeElement===document.body){e.preventDefault();applyPass();}
+ else if(e.key.toLowerCase()==='z'&&document.activeElement===document.body)undo();
+});
 changeCase(0);
 fetchScryfallCatalog();

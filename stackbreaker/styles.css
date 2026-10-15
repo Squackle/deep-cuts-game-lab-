@@ -69,3 +69,35 @@
 .battle-card img.battle-image{top:0;bottom:auto;height:calc(100% - 17px);object-fit:contain}
 .battle-card:has(img.battle-image) .flags,.battle-card:has(img.battle-image) .pt{z-index:1}
 .battle-card:has(img.battle-image) .flags{margin-top:auto}
+/* v0.5: authentic tabletop interaction, actual card images instead of faux hand controls. */
+.game-screen{position:relative}
+.hand-zone{padding:4px 6px;overflow:hidden}
+.hand-row,.hand-row.many{display:flex!important;flex-wrap:nowrap!important;align-items:center;justify-content:center;gap:clamp(2px,.5vw,7px);min-height:0;min-width:0;grid-template-columns:none!important;grid-template-rows:none!important}
+.hand-card,.hand-row.many .hand-card{height:100%;max-height:100%;flex:0 1 116px;min-width:0;max-width:clamp(70px,8vw,124px);position:relative;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;cursor:grab;filter:drop-shadow(0 2px 3px #000b);transition:transform .12s,filter .12s}
+.hand-card:hover,.hand-card:focus-visible,.hand-card.armed{transform:translateY(-4px);filter:drop-shadow(0 4px 7px #000b) drop-shadow(0 0 2px #f1d38c)}
+.hand-card.dragging{opacity:.45;transform:translateY(-5px)}
+.hand-card .hand-image,.hand-card .image-pending{display:block;height:100%;width:100%;object-fit:contain;object-position:center;border-radius:5px;user-select:none}
+.hand-card .image-pending{display:flex;width:90%;max-height:90%;border:1px solid #ac9870}
+.hand-card .hand-image{cursor:grab}
+.hand-row.many .hand-card{flex-basis:calc((100% - 4 * 4px)/5);max-width:116px}
+.battle-card{padding:0;cursor:zoom-in;align-items:stretch;overflow:hidden;isolation:isolate}
+.battle-card .battle-image{position:relative;inset:auto;width:100%;height:100%;max-height:100%;object-fit:contain;z-index:0;opacity:1}
+.battle-card .flags,.battle-card .pt{position:absolute;bottom:0;text-shadow:0 1px 4px #000;background:#142b27e6;z-index:2}
+.battle-card .pt{right:1px}.battle-card .flags{left:1px;right:auto;bottom:1px;max-width:75%;font-size:8px}
+.battle-card.has-ability{cursor:pointer}.battle-card.can-activate{border-color:#f0c16b;box-shadow:0 0 0 1px #ffd78899,0 0 12px #fdcf7d40}
+.battle-card.can-activate:focus-visible,.battle-card.can-activate:hover{box-shadow:0 0 0 2px #f9d884,0 0 15px #f4c56c88}
+.land-card{cursor:pointer}.land-card img.land-image{height:calc(100% - 13px);object-fit:contain}
+.land-card .tap-label{z-index:2}
+.field-zone.drop-ready{border-color:#f7cd77;background:linear-gradient(#33443a,#182f2f);box-shadow:inset 0 0 0 2px #f3c06f55}
+.targetable{outline:2px solid #f7d17a!important;outline-offset:-2px!important;box-shadow:0 0 8px #f5c86599!important;cursor:crosshair!important}
+.life-widget.targetable{background:#514e32}
+.play-prompt{position:absolute;z-index:44;left:50%;transform:translateX(-50%);bottom:clamp(47px,6vw,62px);width:min(640px,calc(100% - 14px));max-height:min(45vh,270px);overflow:auto;padding:9px 12px;background:#102c2ceF;border:2px solid #edd094;box-shadow:0 6px 30px #000e;border-radius:8px}
+.prompt-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;color:#f1dbb0}.prompt-header button{background:#27413d;color:#f5dfb2;border:1px solid #627c71;border-radius:4px;min-width:30px;min-height:29px}
+.prompt-options{display:flex;justify-content:center;flex-wrap:wrap;gap:5px}
+.prompt-options button{background:#253f3c;color:#f9e4b6;border:1px solid #c6ad72;border-radius:5px;min-height:34px;padding:6px 11px;font-weight:750;font-size:12px}
+.play-prompt small{display:block;color:#c7d7cc;text-align:center;margin-top:6px}
+.drag-ghost{pointer-events:none!important;background:transparent!important;border:0!important;width:92px!important;height:125px!important;display:grid;place-items:center;transform:translate(-50%,-50%)}
+.drag-ghost .drag-card-image{width:100%;height:100%;object-fit:contain;border-radius:5px;box-shadow:0 6px 18px #000d}
+@media(max-width:840px){.hand-card,.hand-row.many .hand-card{max-width:115px}.play-prompt{bottom:51px}.battle-card .flags{font-size:7px}}
+@media(max-width:500px){.hand-zone{padding:2px 3px}.hand-row,.hand-row.many{gap:2px!important}.hand-card,.hand-row.many .hand-card{max-width:94px;flex:0 1 94px}.hand-row.many .hand-card{flex:0 1 calc((100% - 8px)/5)}.hand-card .hand-image{width:100%;height:100%;max-height:100%}.play-prompt{bottom:42px;padding:7px;max-height:42vh}.prompt-options button{min-height:29px;font-size:10px;padding:3px 6px}.battle-card .flags{max-width:63%;font-size:6px}}
+@media(max-height:570px){.play-prompt{bottom:36px}.hand-card:hover{transform:none}}
