@@ -52,8 +52,8 @@ const REPLACEMENTS={
  'Giant Growth':['Brute Force','Titanic Growth'],
  'Wrath of God':['Day of Judgment']
 };
-const BASICS={W:'Plains',U:'Island',B:'Swamp',R:'Mountain',G:'Forest',C:'Wastes'};
-const COLORS=['W','U','B','R','G','C'];
+const COMMANDER_BASICS={W:'Plains',U:'Island',B:'Swamp',R:'Mountain',G:'Forest',C:'Wastes'};
+const COMMANDER_COLORS=['W','U','B','R','G','C'];
 const INSTANT_OPTIONS=[
  'Giant Growth',"Ranger's Guile",'Snakeskin Veil','Blossoming Defense','Dive Down',
  'Healing Salve','Soothing Balm','Swords to Plowshares',"Tamiyo's Safekeeping",
@@ -64,25 +64,25 @@ const INSTANT_OPTIONS=[
  'Dawn's Reflex'
 ].filter(name=>CARDS[name]?.type==='Instant');
 export const HAND_SIZE=7;
-const clone=v=>structuredClone(v);
-const rand=n=>{n|=0;n=Math.imul(n^n>>>16,0x7feb352d);n=Math.imul(n^n>>>15,0x846ca68b);return (n^n>>>16)>>>0;};
-const palette=(p)=>COLORS.filter(color=>color!=='C'&&
+const commanderClone=v=>structuredClone(v);
+const commanderRand=n=>{n|=0;n=Math.imul(n^n>>>16,0x7feb352d);n=Math.imul(n^n>>>15,0x846ca68b);return (n^n>>>16)>>>0;};
+const commanderPalette=(p)=>COMMANDER_COLORS.filter(color=>color!=='C'&&
  [...p.units,...p.hand,...p.stack].some(x=>x.controller==='player'||p.hand.includes(x)?
   CARDS[x.card]?.colors?.includes(color):false));
-function appendLand(p,color){p.lands.push({id:'commander-land-'+(p.lands.length+1),card:BASICS[color],controller:'player'});}
+function appendLand(p,color){p.lands.push({id:'commander-land-'+(p.lands.length+1),card:COMMANDER_BASICS[color],controller:'player'});}
 function ensureMana(p,line){
- const required=Object.fromEntries(COLORS.map(c=>[c,0]));let generic=0;
+ const required=Object.fromEntries(COMMANDER_COLORS.map(c=>[c,0]));let generic=0;
  for(const [id] of line){
   const a=p.hand.find(x=>x.id===id);if(!a||a.sourceId)continue;
-  const cost=CARDS[a.card]?.cost||{};for(const c of COLORS)required[c]+=cost[c]||0;generic+=cost.generic||0;
+  const cost=CARDS[a.card]?.cost||{};for(const c of COMMANDER_COLORS)required[c]+=cost[c]||0;generic+=cost.generic||0;
  }
- const supplied=Object.fromEntries(COLORS.map(c=>[c,p.lands.filter(l=>LANDS[l.card]?.mana===c).length]));
- for(const c of COLORS)while(supplied[c]<required[c]){appendLand(p,c);supplied[c]++;}
- const total=COLORS.reduce((s,c)=>s+supplied[c],0),mandatory=COLORS.reduce((s,c)=>s+required[c],0);
+ const supplied=Object.fromEntries(COMMANDER_COLORS.map(c=>[c,p.lands.filter(l=>LANDS[l.card]?.mana===c).length]));
+ for(const c of COMMANDER_COLORS)while(supplied[c]<required[c]){appendLand(p,c);supplied[c]++;}
+ const total=COMMANDER_COLORS.reduce((s,c)=>s+supplied[c],0),mandatory=COMMANDER_COLORS.reduce((s,c)=>s+required[c],0);
  for(let n=total-mandatory;n<generic;n++)appendLand(p,'C');
  // Small, varied mana reserves make alternative one-mana responses playable;
  // no infinite mana or auto-casting is introduced.
- const colors=palette(p),first=colors[0]||'G',second=colors[1]||(first==='U'?'W':'U');
+ const colors=commanderPalette(p),first=colors[0]||'G',second=colors[1]||(first==='U'?'W':'U');
  if(p.lands.length<6)appendLand(p,first);
  if(p.lands.length<6)appendLand(p,second);
 }
@@ -100,7 +100,7 @@ function normalizeOwner(p,owner){
   p.singletonSubstitutions.push({owner,from:before,to:substitute,id:x.id});
  }
 }
-function currentPool(p){return Object.fromEntries(COLORS.map(c=>[c,p.lands.filter(l=>LANDS[l.card]?.mana===c).length]));}
+function currentPool(p){return Object.fromEntries(COMMANDER_COLORS.map(c=>[c,p.lands.filter(l=>LANDS[l.card]?.mana===c).length]));}
 function candidateScore(p,name,seed){
  const cost=CARDS[name]?.cost;if(!cost)return -9999;
  const pool=currentPool(p);
@@ -109,10 +109,10 @@ function candidateScore(p,name,seed){
  const possibleTargets=legalTargets(sample,{id:'commander-candidate',card:name});
  // Playable alternate answers appear first, followed by deliberately less
  // useful or unaffordable options—recognizing that distinction is the exercise.
- return (affordable?100:0)+(possibleTargets.length?40:0)+rand(seed+name.length*97+name.charCodeAt(0))%25;
+ return (affordable?100:0)+(possibleTargets.length?40:0)+commanderRand(seed+name.length*97+name.charCodeAt(0))%25;
 }
 export function commanderScenario(input,index=0){
- const p=clone(input);const solution=p.solution||CORE_LINES[p.id];
+ const p=commanderClone(input);const solution=p.solution||CORE_LINES[p.id];
  if(!solution)throw Error('No vetted solution for '+p.id);
  normalizeOwner(p,'player');normalizeOwner(p,'opponent');
  ensureMana(p,solution);
@@ -128,7 +128,7 @@ export function commanderScenario(input,index=0){
  }
  p.commanderPractice=true;
  p.format='singleton-response-training';
- p.solution=clone(solution);
- p.companionColors=palette(p);
+ p.solution=commanderClone(solution);
+ p.companionColors=commanderPalette(p);
  return p;
 }
