@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {createLairRun} from "../src/lair.js";
 import {start,step,RULES_VERSION} from "../src/engine.js";
-import {PREY,safePreyTile} from "../src/enemies.js";
+import {PREY,safePreyTile,advancePrey} from "../src/enemies.js";
 import {spawnNextPhase,tickMiniboss} from "../src/miniboss.js";
 import {tickTerrain} from "../src/environments.js";
 import {
@@ -112,4 +112,18 @@ test("Drawn hatchlings have original sprite details and do not add another persi
  drawBroodmotherHatchlings(ctx,run,20);
  assert.ok(rects.length>=5);
  assert.ok(rects.every(([x,y,w,h])=>x>=4*20&&y>=4*20&&w<=20&&h<=20));
+});
+
+test("Boss waits instead of vanishing when surrounded by its own hatchlings",()=>{
+ const run=activeMother(),boss=run.enemies[0];
+ boss.pos={x:8,y:8};boss.dir="right";boss.period=1;boss.clock=0;
+ run.hatchlings=[
+  {id:1,pos:{x:8,y:7},dir:0,clock:0,life:20},
+  {id:2,pos:{x:9,y:8},dir:0,clock:0,life:20},
+  {id:3,pos:{x:8,y:9},dir:0,clock:0,life:20}
+ ];
+ const before={...boss.pos};
+ const outcome=advancePrey(run,boss);
+ assert.equal(outcome.type,"waiting","not an uncredited boss escape from its own minions");
+ assert.deepEqual(boss.pos,before);
 });
