@@ -81,3 +81,17 @@ Land art panels now use **self-contained original SVG painted landscapes**, uniq
 - At 320px both the campaign screen and gameplay screen rendered without horizontal overflow; the orb animation and 7 visible sockets were present.
 - Browser/device interaction, multi-stage QA, reduced-motion visual spot checks and physical touch testing can be deepened in subsequent releases.
 - Scope limited to `mana-heist/**`; **public Deep Cuts EDH Arcade, Hive Run, membership and score APIs remain untouched**.
+
+## 0.4 — One-screen heist table and genuine Magic card references (2026-10-15)
+
+The campaign still opens on a chapter map, but **entering a vault now uses one fixed visual viewport** instead of a tall page with several competing panels. The heist HUD packs the active ward, land battlefield, hand, floating mana sockets, life, turn and Undo/End Turn controls into one screen. Long-form explanatory content begins below the fold, reachable via `ⓘ INFO ↓` and ordinary page scrolling. The legend was removed. Dialog-only decisions (shock entries, mana color choices, fetch targets, payment choices) appear in a dismissible overlay, so the main game never permanently reserves screen space for a decision panel. Mobile card rows scroll **horizontally** if too many land cards are visible; the page is not expected to need vertical scrolling to play.
+
+The land *game pieces* remain original artwork and have original names; no Wizards intellectual property is incorporated as an independently played game component. Wizards' Fan Content Policy (https://company.wizards.com/en/legal/fancontentpolicy) explicitly restricts using its IP in other games, so embedding official card faces directly into our game pieces requires permission.
+
+However, the reading area below the game now includes a clearly separated **“Real Magic lands” reference gallery**. It names the actual cards that inspire each available land class — including Steam Vents, Volcanic Island, Shivan Reef, Scalding Tarn, and others — with an external Scryfall link and a **full, intact official card image** served on demand using Scryfall's named-card image endpoint. Card artist and copyright markings remain visible; images are never copied to the project, cropped or overlayed. The reference gallery is not interactive game content and is explicitly labeled as an educational comparison (some official abilities, particularly bounce-land outputs, differ from the simplified Mana Heist rules). If images cannot load, the user still has links and names. Scryfall: https://scryfall.com. Fan Content Policy: https://company.wizards.com/en/legal/fancontentpolicy.
+
+### v0.4 release checks
+
+- Node suite still tests all 18 solvable heists, older save migration, sequential progression, mana-orb consistency; additional tests in `tests/card-references.test.mjs` validate genuine Magic reference-name mappings, full-card image URL format and fallbacks.
+- Cloudflare **preview browser** prior to final viewport adjustment at 390×844 and 320×568 confirmed the compact board and controls were visible together without horizontal page overflow; tapping a land rotated it, filled the orb, and casting completed Stage 1:1. The last viewport tweak sets the game height to exactly `100dvh` so the explanation section begins below the visual fold; run final production verification after merge.
+- Only `mana-heist/**` paths modified; **no public Deep Cuts site, Hive Run paths, user profiles, scores or D1**.
