@@ -1,6 +1,5 @@
-// An educational Magic card inspection overlay, deliberately separate from
-// Mana Heist's original, independently played lands and rules engine.
-// Never fetch cards as game objects or put Wizards scans on playable pieces.
+// Full-size view for a real Magic land used by Mana Heist.
+// The puzzle reducer remains authoritative for simplified land actions.
 import {referenceFor} from "./card-references.js";
 export function installCardInspector({dialog,trigger,closeButton}){
  if(!dialog||!trigger||!closeButton)throw Error("Inspector controls missing");
@@ -20,7 +19,7 @@ export function installCardInspector({dialog,trigger,closeButton}){
   if(!real)return false;
   previousFocus=document.activeElement;
   heading.textContent=real.name;
-  caption.textContent="Magic counterpart to Mana Heist land: "+gameName;
+  caption.textContent=gameName+" · the full-size card currently used in this puzzle";
   link.href=real.page;
   link.textContent="View "+real.name+" on Scryfall ↗";
   image.hidden=false;fallback.hidden=true;
