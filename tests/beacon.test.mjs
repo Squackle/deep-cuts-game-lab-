@@ -1,20 +1,20 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {newRun,start,RULES_VERSION} from "../src/engine.js";
-import {newTraining,trainingProgress} from "../src/beacon-training.js";
+import {newRun,RULES_VERSION} from "../src/engine.js";
 import {captureFlash,drawCaptureFlash} from "../src/beacon-feedback.js";
 import {codexEntry,CODEX_ORDER} from "../src/codex-preview.js";
 import {trapSignal,drawTrapHints} from "../src/trap-assist.js";
 
-test("Beacon First Hunt trains steering, amber traps and capture without changing ranked rules",()=>{
- const run=newRun({seed:402014,mode:"hunt"});start(run);const coach=newTraining();
- assert.match(trainingProgress(coach,run),/SWIPE/);
- assert.match(trainingProgress(coach,run,{turned:true}),/TRAP/);
- run.kills=1;
- assert.match(trainingProgress(coach,run),/CAPTURE/);
- assert.equal(coach.complete,true);
- assert.equal(trainingProgress(newTraining(),newRun({seed:2,mode:"classic"})),null);
+test("Beacon is ordinary arcade without tutorial gates; replay rules remain unchanged",()=>{
+ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const main=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
+ const css=readFileSync(new URL("../styles.css",import.meta.url),"utf8");
+ assert.doesNotMatch(html,/trainingButton|trainingPrompt|FIRST HUNT · OPTIONAL TRAINING/);
+ assert.doesNotMatch(main,/beginTraining|syncTrainingPrompt|beacon-training|trainingButton|trainingPrompt/);
+ assert.doesNotMatch(css,/beacon-training-(prompt|button)/);
+ assert.match(main,/function begin\(\)/);
+ assert.match(main,/if\(lairActive\(\)\)return;/);
  assert.equal(RULES_VERSION,"hive-1.3");
 });
 test("Beacon popup uses actual awarded score and never changes the score",()=>{
@@ -43,11 +43,11 @@ test("Hive Codex stays in profile preview, never on game HUD, pending account in
  const profile=readFileSync(new URL("../profile-preview.html",import.meta.url),"utf8");
  const main=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
  const policy=readFileSync(new URL("../docs/TEST-FIRST-RELEASE-POLICY.md",import.meta.url),"utf8");
- assert.match(html,/id="trainingButton"/);assert.match(html,/id="trainingPrompt"/);
+ assert.doesNotMatch(html,/id="trainingButton"|id="trainingPrompt"/);
  assert.doesNotMatch(html,/id="codexList"/);
  assert.match(profile,/id="codexList"/);assert.match(profile,/no player login or production profile access/);
- assert.match(main,/beginTraining/);assert.match(main,/captureFlash/);
- assert.match(main,/if\(lairActive\(\)\|\|training\)return;/);
+ assert.doesNotMatch(main,/beginTraining/);assert.match(main,/captureFlash/);
+ assert.match(main,/if\(lairActive\(\)\)return;/);
  assert.match(policy,/All future Hive Run updates must deploy/);
  assert.match(policy,/owner uses an explicit/);
 });
