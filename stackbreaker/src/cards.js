@@ -1,6 +1,6 @@
 // Stackbreaker 0.2 — limited, curated MTG card-reference catalog.
 // Card text and statistics are reference data, not a full executable card interpreter.
-export const RULES_VERSION='sb-mtg-training-0.2.0';
+export const RULES_VERSION='sb-mtg-training-0.3.0';
 export const CARDS={
   'Selfless Spirit':{type:'Creature — Spirit Cleric',cost:{generic:1,W:1},power:2,toughness:1,colors:['W'],oracle:'Flying. Sacrifice Selfless Spirit: Creatures you control gain indestructible until end of turn.',effect:'ward',tags:['Flying']},
   'Grizzly Bears':{type:'Creature — Bear',cost:{generic:1,G:1},power:2,toughness:2,colors:['G'],oracle:'',effect:null,tags:[]},
@@ -27,3 +27,13 @@ export const CARDS={
 };
 export const cardLink = name => 'https://scryfall.com/search?q='+encodeURIComponent('!"'+name+'"');
 export const isCreature = name => CARDS[name]?.type.startsWith('Creature') || false;
+
+// Curated real land cards. The game models the listed basic mana abilities only.
+export const LANDS={
+ 'Plains':{type:'Basic Land — Plains',mana:'W',oracle:'{T}: Add {W}.'},
+ 'Island':{type:'Basic Land — Island',mana:'U',oracle:'{T}: Add {U}.'},
+ 'Swamp':{type:'Basic Land — Swamp',mana:'B',oracle:'{T}: Add {B}.'},
+ 'Mountain':{type:'Basic Land — Mountain',mana:'R',oracle:'{T}: Add {R}.'},
+ 'Forest':{type:'Basic Land — Forest',mana:'G',oracle:'{T}: Add {G}.'},
+ 'Wastes':{type:'Basic Land',mana:'C',oracle:'{T}: Add {C}.'}
+};
