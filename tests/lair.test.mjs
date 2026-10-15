@@ -41,7 +41,7 @@ test("practice is deterministic, repeatable and never treated as ranked",()=>{
  assert.equal(isLairChallenge("hunt","practice"),true);
  assert.equal(isLairChallenge("classic","practice"),false);
  assert.equal(isLairChallenge("hunt","daily"),false);
- assert.equal(RULES_VERSION,"hive-1.5.1","solo Matriarch mechanics require a fresh replay rules version");
+ assert.equal(RULES_VERSION,"hive-1.5.2","solo Matriarch mechanics require a fresh replay rules version");
 });
 test("practicing a boss ends in a dedicated victory instead of a mutation draft",()=>{
  const run=createLairRun("weaver");
