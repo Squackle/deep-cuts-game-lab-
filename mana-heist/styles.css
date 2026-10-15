@@ -213,3 +213,7 @@
  .in-heist .controlbar button,.in-heist .controlbar button:not(.primary){min-height:31px}
 }
 @media(prefers-reduced-motion:reduce){.in-heist .land-card.is-tapped{animation:none}}
+
+/* Keep the entire interactive table exactly one visual viewport; the reading section begins after the fold. */
+.in-heist #gameScreen{height:100dvh}
+@media(max-width:800px){.in-heist #gameScreen{height:100dvh}}
