@@ -13,7 +13,7 @@ test("real Magic cards are playable images and have a full-size inspector",()=>{
  assert.match(html,/id="inspectorLink"/);
  assert.match(html,/id="inspectorGameCard"/);
  assert.match(html,/id="closeInspector"/);
- assert.match(html,/REAL MTG LANDS/);
+ assert.match(html,/WARD CHARGE/);
  assert.match(inspector,/referenceFor\(cardKey\)/);
  assert.match(main,/cardImageUrl\(key\)/);
  assert.match(main,/class="mtg-card-image"/);

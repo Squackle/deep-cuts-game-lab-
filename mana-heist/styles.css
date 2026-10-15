@@ -456,7 +456,101 @@
  .in-heist #hand{--mh-land-width:clamp(96px,9.6vw,122px)}
 }
 
-/* One consistent path home from the standalone Mana Heist playtest. */
+
+/* 0.9 · A ward that physically charges as mana flies into it. */
+.lock-ring{isolation:isolate}
+.ward-mana-ring{
+ position:absolute;inset:0;width:100%;height:100%;z-index:2;
+ overflow:visible;pointer-events:none;
+ filter:drop-shadow(0 0 5px #203d39);
+}
+.ward-charge-back{fill:none;stroke:rgba(207,184,123,.1);stroke-width:11}
+.ward-charge-track{fill:none;stroke:rgba(185,200,185,.17);stroke-width:9;stroke-linecap:round}
+.ward-charge-arc{
+ fill:none;stroke-width:9;stroke-linecap:round;
+ filter:drop-shadow(0 0 3px currentColor);
+ transition:filter .16s ease;
+}
+.lock-ring .lock-glyph{position:relative;z-index:3;line-height:.9}
+.lock-ring .ward-charge-count{
+ position:relative;z-index:3;margin-top:3px;
+ font:bold clamp(.45rem,.8vw,.63rem) system-ui,sans-serif;
+ color:#e9d6a8;letter-spacing:.1em;
+ text-shadow:0 2px 9px #051215;
+}
+.lock-ring .ring-text{position:relative;z-index:3}
+.lock-ring:has(.ward-charge-arc) .lock-glyph{text-shadow:0 0 15px #c8d7bcbb}
+.pool-console.ledger-console{
+ padding:11px 12px;border-radius:10px;
+ background:linear-gradient(165deg,#162a2c,#0f1c20);
+ box-shadow:inset 0 0 14px #07191c,0 6px 16px #0005;
+}
+.mana-ledger-grid{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ grid-auto-rows:minmax(54px,1fr);
+ gap:7px;align-items:center;justify-items:stretch;
+ min-height:121px;
+}
+.mana-ledger-entry{
+ min-width:0;min-height:53px;
+ display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;
+ border:1px solid #889e8a35;border-radius:7px;
+ background:linear-gradient(180deg,#1b3131,#142327);
+ font-weight:850;letter-spacing:.055em;color:#d6ddd3;
+}
+.mana-ledger-entry.vacant{opacity:.35;background:#112227;border-style:dashed}
+.mana-ledger-entry .ledger-dot{
+ display:grid;place-items:center;
+ width:27px;height:27px;flex-shrink:0;border-radius:50%;
+ font:bold .78rem Georgia,serif;
+ color:#172227;text-shadow:0 1px 2px #fff8;
+ border:1.5px solid #f6f4dc77;
+ background:radial-gradient(circle at 30% 25%,#fff,var(--mana-color) 55%,#233438);
+ box-shadow:0 0 10px color-mix(in srgb,var(--mana-color),transparent 48%);
+}
+.mana-ledger-entry .ledger-dot.ledger-blank{
+ color:#8fa6a2;background:#23343a;border:1px dashed #859a9966;
+ box-shadow:none;text-shadow:none;
+}
+.mana-ledger-entry .ledger-word{font-size:.57rem;line-height:1;color:#c6d5cd}
+.mana-ledger-entry.occupied.in-flight{opacity:.56}
+.mana-ledger-entry.occupied:not(.in-flight){animation:ledgerManaAppear .28s ease-out}
+@keyframes ledgerManaAppear{from{filter:brightness(1.7);transform:scale(.88)}to{filter:brightness(1);transform:scale(1)}}
+.mana-flight{border:2px solid #ffffff8c;z-index:999}
+@media(max-width:800px){
+ .pool-console.ledger-console{padding:3px 6px}
+ .mana-ledger-grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(29px,1fr);min-height:51px;gap:3px}
+ .mana-ledger-entry{min-height:27px;flex-direction:row;gap:3px;padding:2px}
+ .mana-ledger-entry .ledger-dot{width:18px;height:18px;font-size:.58rem}
+ .mana-ledger-entry .ledger-word{font-size:.44rem;letter-spacing:0}
+ .lock-ring .ward-charge-count{font-size:.43rem;margin-top:1px}
+ .lock-ring .ring-text{font-size:.35rem}
+}
+@media(max-height:670px) and (max-width:800px){
+ .mana-ledger-grid{grid-auto-rows:minmax(20px,1fr);min-height:39px;gap:2px}
+ .mana-ledger-entry{min-height:19px;padding:0}
+ .mana-ledger-entry .ledger-dot{width:15px;height:15px;font-size:.45rem}
+ .mana-ledger-entry .ledger-word{font-size:.39rem}
+}
+@media(prefers-reduced-motion:reduce){
+ .ward-charge-arc{transition:none}
+ .mana-ledger-entry.occupied:not(.in-flight){animation:none}
+}
+
+/* Translucent pie slices fill the *inside* of the ward circle in equal thirds. */
+.ward-mana-sector{
+ opacity:.43;stroke:none;
+ transform-box:fill-box;transform-origin:center;
+ filter:drop-shadow(0 0 3px #f5e8e777);
+}
+.lock-ring:has(.ward-mana-sector) .lock-glyph{
+ color:#fff4d9;text-shadow:0 0 12px #050f12,0 0 5px #030707;
+}
+.ward-charge-arc{stroke-width:9}
+@media(prefers-reduced-motion:reduce){.ward-mana-sector{animation:none;transition:none}}
+
+
+/* Shared Lab navigation, preserved from the concurrent standalone-games release. */
 .bar .lab-home-link{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 11px;border:1px solid #c7ac7255;border-radius:5px;background:#243c39;color:#edce92;white-space:nowrap;line-height:1.4}
 .bar .lab-home-link:hover{background:#2f5049;color:#ffe6ab}
 .bar .lab-home-link:focus-visible{outline:3px solid #e7ca90;outline-offset:2px}
