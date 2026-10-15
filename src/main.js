@@ -8,7 +8,7 @@ import {HatcherySoundtrack,TRACKS,trackForEncounter} from "./soundtrack.js";
 import {canPlayMusic,resumeFromGesture} from "./audio-activation.js";
 import {drawPlayerLocator,drawQueuedTurn} from "./player-visibility.js";
 import {drawTrapHints} from "./trap-assist.js";
-import {KEY_DIRECTIONS,keyboardDirection,mutationSelectionIndex,isTouchMutationSelection,resumeHeading} from "./input-controls.js";
+import {KEY_DIRECTIONS,keyboardDirection,mutationSelectionIndex,isTouchMutationSelection,resumeHeading,swipeHeading,SWIPE_RESUME_KEYS} from "./input-controls.js";
 import {showMutationDraft,hideMutationDraft,drawMutationHud} from "./evolution-ui.js";
 import {renderMutationEffects} from "./evolution-visuals.js";
 import {drawPrey,drawCapture} from "./enemy-render.js";
@@ -266,7 +266,7 @@ function selectMutation(color,inputEvent){
    awaitingMutationResume=true;
    $("mutationResume").hidden=false;
    soundtrack.stop();
-   announce("Mutation chosen. Press an arrow key or W A S D to resume. Your swarm is frozen.");
+   announce("Mutation chosen. Swipe the arena or press arrow keys or W A S D to resume. Your swarm is frozen.");
   }
   syncUI();canvas.focus({preventScroll:true});
  }
@@ -625,9 +625,10 @@ function swipeDirection(event){
  const pointer=state.pointer;
  if(!pointer||pointer.id!==event.pointerId||pointer.triggered||state.run.status!=="running")return;
  const dx=event.clientX-pointer.x,dy=event.clientY-pointer.y;
- if(Math.max(Math.abs(dx),Math.abs(dy))<12)return;
- const heading=Math.abs(dx)>Math.abs(dy)?(dx>0?"right":"left"):(dy>0?"down":"up");
- if(handleDirection(heading))pointer.triggered=true;
+ const heading=swipeHeading(dx,dy);
+ if(!heading)return;
+ // Instinct Ready remains frozen until a safe direction is deliberately chosen.
+ if(awaitingMutationResume?resumeMutationByKey(SWIPE_RESUME_KEYS[heading]):handleDirection(heading))pointer.triggered=true;
 }
 canvas.addEventListener("pointerdown",event=>{
  if(state.run.status!=="running"||state.pointer)return;
