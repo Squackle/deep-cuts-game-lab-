@@ -1,0 +1,577 @@
+[
+  {
+    "id": "sb-01",
+    "version": "sb-mtg-training-0.2.0",
+    "tier": "Apprentice",
+    "title": "The Last Shelter",
+    "intro": "Wrath of God threatens your entire battlefield. Keep two creatures after it resolves.",
+    "life": {
+      "player": 8,
+      "opponent": 16
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      },
+      {
+        "id": "lion",
+        "card": "Savannah Lions",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      }
+    ],
+    "objective": {
+      "type": "keepN",
+      "count": 2
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Activated abilities stay on the stack even when their source has been sacrificed.",
+    "explanation": "Sacrifice Selfless Spirit as a cost. Its ability gives your other creatures indestructible before Wrath of God destroys creatures. Sacrifice itself does not count as destruction."
+  },
+  {
+    "id": "sb-02",
+    "version": "sb-mtg-training-0.2.0",
+    "tier": "Apprentice",
+    "title": "One Breath Left",
+    "intro": "You are at 2 life. Lightning Bolt is targeting you for 3 damage.",
+    "life": {
+      "player": 2,
+      "opponent": 16
+    },
+    "mana": {
+      "U": 2,
+      "W": 1
+    },
+    "units": [],
+    "stack": [
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "counter",
+        "card": "Counterspell"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      }
+    ],
+    "objective": {
+      "type": "survive"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "You can stop the spell, or gain life before the damage resolves.",
+    "explanation": "Either Counterspell targeting Lightning Bolt or Healing Salve targeting yourself keeps you alive. Both resolve on top of Bolt."
+  },
+  {
+    "id": "sb-03",
+    "version": "sb-mtg-training-0.2.0",
+    "tier": "Apprentice",
+    "title": "A Bear Against Lightning",
+    "intro": "Your 2/2 Grizzly Bears is targeted by Lightning Bolt. Keep it on the battlefield.",
+    "life": {
+      "player": 8,
+      "opponent": 16
+    },
+    "mana": {
+      "G": 1
+    },
+    "units": [
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "bear"
+      }
+    ],
+    "hand": [
+      {
+        "id": "growth",
+        "card": "Giant Growth"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "bear"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Creature damage is compared to toughness when state-based actions are checked.",
+    "explanation": "Giant Growth makes Grizzly Bears 5/5 until end of turn. Three damage is marked, but less than five toughness, so it survives."
+  },
+  {
+    "id": "sb-04",
+    "version": "sb-mtg-training-0.2.0",
+    "tier": "Apprentice",
+    "title": "Spell or Creature?",
+    "intro": "Wrath of God is on the stack. Which counter actually has a legal target?",
+    "life": {
+      "player": 9,
+      "opponent": 16
+    },
+    "mana": {
+      "U": 2,
+      "C": 1
+    },
+    "units": [
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      }
+    ],
+    "hand": [
+      {
+        "id": "negate",
+        "card": "Negate"
+      },
+      {
+        "id": "scatter",
+        "card": "Essence Scatter"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "bear"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Read the targets: Wrath of God is a sorcery, not a creature spell.",
+    "explanation": "Negate counters the noncreature spell Wrath of God. Essence Scatter cannot target it. Casting requires both legal timing and a legal target."
+  },
+  {
+    "id": "sb-05",
+    "version": "sb-mtg-training-0.2.0",
+    "tier": "Investigator",
+    "title": "Hexproof Arrives Late",
+    "intro": "Murder targets your Hill Giant. Its target was legal when cast; can you change that?",
+    "life": {
+      "player": 7,
+      "opponent": 16
+    },
+    "mana": {
+      "G": 2,
+      "C": 1
+    },
+    "units": [
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "murder",
+        "card": "Murder",
+        "controller": "opponent",
+        "targetId": "giant"
+      }
+    ],
+    "hand": [
+      {
+        "id": "intervene",
+        "card": "Heroic Intervention"
+      },
+      {
+        "id": "growth",
+        "card": "Giant Growth"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Increasing toughness cannot stop a spell that says \u201cdestroy.\u201d",
+    "explanation": "Heroic Intervention gives your Hill Giant hexproof. On resolution, Murder checks its target again, finds it illegal, and does not resolve. Giant Growth does not prevent destruction."
+  },
+  {
+    "id": "sb-06",
+    "version": "sb-mtg-training-0.2.0",
+    "tier": "Investigator",
+    "title": "Protection Is Not Exile",
+    "intro": "Swords to Plowshares targets Grizzly Bears. Your Spirit can protect from destruction\u2014but this is exile.",
+    "life": {
+      "player": 8,
+      "opponent": 16
+    },
+    "mana": {
+      "G": 1,
+      "C": 1
+    },
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "swords",
+        "card": "Swords to Plowshares",
+        "controller": "opponent",
+        "targetId": "bear"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "intervene",
+        "card": "Heroic Intervention"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "bear"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Indestructible only prevents destruction. Hexproof can make an already-targeting opponent spell illegal on resolution.",
+    "explanation": "Selfless Spirit cannot prevent exile. Heroic Intervention grants hexproof; Swords to Plowshares loses its target and fails to resolve."
+  },
+  {
+    "id": "sb-07",
+    "version": "sb-mtg-training-0.2.0",
+    "tier": "Investigator",
+    "title": "An Unavoidable Blade",
+    "intro": "Doom Blade is targeting your Grizzly Bears. You have a combat trick and a counter.",
+    "life": {
+      "player": 8,
+      "opponent": 16
+    },
+    "mana": {
+      "G": 1,
+      "U": 2
+    },
+    "units": [
+      {
+        "id": "bear",
+        "card": "Grizzly Bears",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "blade",
+        "card": "Doom Blade",
+        "controller": "opponent",
+        "targetId": "bear"
+      }
+    ],
+    "hand": [
+      {
+        "id": "growth",
+        "card": "Giant Growth"
+      },
+      {
+        "id": "counter",
+        "card": "Counterspell"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "bear"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Doom Blade destroys regardless of a creature\u2019s toughness.",
+    "explanation": "Giant Growth cannot prevent destruction. Counterspell can stop Doom Blade before it resolves. If the spell resolves, the bear dies."
+  },
+  {
+    "id": "sb-08",
+    "version": "sb-mtg-training-0.2.0",
+    "tier": "Investigator",
+    "title": "Into Your Hand",
+    "intro": "Murder targets Hill Giant. Your objective is to keep it out of the graveyard this turn.",
+    "life": {
+      "player": 7,
+      "opponent": 16
+    },
+    "mana": {
+      "U": 1,
+      "G": 1
+    },
+    "units": [
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "murder",
+        "card": "Murder",
+        "controller": "opponent",
+        "targetId": "giant"
+      }
+    ],
+    "hand": [
+      {
+        "id": "bounce",
+        "card": "Unsummon"
+      },
+      {
+        "id": "growth",
+        "card": "Giant Growth"
+      }
+    ],
+    "objective": {
+      "type": "saveFromGraveyard",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "The creature need not remain on the battlefield to be saved.",
+    "explanation": "Unsummon moves Hill Giant into its owner\u2019s hand. Murder loses its target and does not resolve. Giant Growth cannot stop Murder."
+  },
+  {
+    "id": "sb-09",
+    "version": "sb-mtg-training-0.2.0",
+    "tier": "Mastermind",
+    "title": "The Counter War",
+    "intro": "Your Lightning Bolt would finish your opponent at 3 life\u2014but their Counterspell is on top.",
+    "life": {
+      "player": 12,
+      "opponent": 3
+    },
+    "mana": {
+      "U": 1,
+      "C": 1
+    },
+    "units": [],
+    "stack": [
+      {
+        "id": "yourbolt",
+        "card": "Lightning Bolt",
+        "controller": "player",
+        "targetId": "opponent"
+      },
+      {
+        "id": "theircounter",
+        "card": "Counterspell",
+        "controller": "opponent",
+        "targetId": "yourbolt"
+      }
+    ],
+    "hand": [
+      {
+        "id": "dispel",
+        "card": "Dispel"
+      },
+      {
+        "id": "scatter",
+        "card": "Essence Scatter"
+      }
+    ],
+    "objective": {
+      "type": "win"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Dispel targets instant spells; Counterspell itself is an instant.",
+    "explanation": "Dispel counters the opposing Counterspell. Your Lightning Bolt remains on the stack and deals lethal damage to the opponent."
+  },
+  {
+    "id": "sb-10",
+    "version": "sb-mtg-training-0.2.0",
+    "tier": "Mastermind",
+    "title": "Two Bolts, Two Answers",
+    "intro": "You have 2 life. Lightning Bolt and Shock both target you. One answer is not enough.",
+    "life": {
+      "player": 2,
+      "opponent": 16
+    },
+    "mana": {
+      "U": 1,
+      "W": 1
+    },
+    "units": [],
+    "stack": [
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "shock",
+        "card": "Shock",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "dispel",
+        "card": "Dispel"
+      }
+    ],
+    "objective": {
+      "type": "survive"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Gaining three life alone leaves you at zero after both spells. Countering only one also leaves lethal damage.",
+    "explanation": "Use Healing Salve on yourself and Dispel on either instant. Five total incoming damage exceeds the life gain; countering one spell reduces the total enough to survive."
+  },
+  {
+    "id": "sb-11",
+    "version": "sb-mtg-training-0.2.0",
+    "tier": "Mastermind",
+    "title": "Not Even Six Toughness",
+    "intro": "Swords to Plowshares targets a 3/3 Hill Giant. Pumping it helps the opponent gain more life.",
+    "life": {
+      "player": 8,
+      "opponent": 16
+    },
+    "mana": {
+      "G": 1,
+      "U": 2
+    },
+    "units": [
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "swords",
+        "card": "Swords to Plowshares",
+        "controller": "opponent",
+        "targetId": "giant"
+      }
+    ],
+    "hand": [
+      {
+        "id": "growth",
+        "card": "Giant Growth"
+      },
+      {
+        "id": "counter",
+        "card": "Counterspell"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Exile ignores how much toughness a creature has.",
+    "explanation": "Giant Growth makes Hill Giant 6/6, but Swords still exiles it, and its controller gains 6 life. Counterspell is the reliable answer."
+  },
+  {
+    "id": "sb-12",
+    "version": "sb-mtg-training-0.2.0",
+    "tier": "Mastermind",
+    "title": "The Final Exchange",
+    "intro": "Your Bolt would win at 3 opponent life. Their Counterspell stops it; another Bolt threatens your 2 life.",
+    "life": {
+      "player": 2,
+      "opponent": 3
+    },
+    "mana": {
+      "U": 1,
+      "W": 1
+    },
+    "units": [],
+    "stack": [
+      {
+        "id": "yourbolt",
+        "card": "Lightning Bolt",
+        "controller": "player",
+        "targetId": "opponent"
+      },
+      {
+        "id": "theircounter",
+        "card": "Counterspell",
+        "controller": "opponent",
+        "targetId": "yourbolt"
+      },
+      {
+        "id": "theirbolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      },
+      {
+        "id": "dispel",
+        "card": "Dispel"
+      }
+    ],
+    "objective": {
+      "type": "win"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "You need BOTH survival and a clear path for your own lethal Bolt. Choose your Dispel target carefully.",
+    "explanation": "Gain 3 life with Healing Salve and use Dispel on the opposing Counterspell, not their Bolt. Their Bolt deals 3 but you survive; your Bolt then resolves and wins."
+  }
+]

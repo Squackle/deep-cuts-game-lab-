@@ -1,25 +1,30 @@
-# Stackbreaker — Live Game Lab playtest 0.1
+# Stackbreaker 0.2 — The Last Response · Game Lab
 
-**URL after approved merge:** https://deep-cuts-game-lab.pages.dev/stackbreaker/
+**Game Lab URL:** https://deep-cuts-game-lab.pages.dev/stackbreaker/
 
-**Preview:** Open the commit-specific Cloudflare Pages preview shown in the corresponding deployment record.
+Stackbreaker is an independent unofficial MTG *priority and stack training tool*, not a full rules engine, and is neither affiliated with nor endorsed by Wizards of the Coast or Scryfall.
 
-## Scope
-- Solo, guest-playable experimental tactical stack-and-priority trainer (restricted, original ruleset `sb-core-0.1.0`).
-- Two authored one-turn survival cases: **The Last Shelter** and **One Breath Left**.
-- Select a response, pay costs, pass priority, and observe deterministic last-in-first-out stack resolution. Undo, restart, keyboard shortcuts and accessibility narration are included.
-- The opponent uses a predefined always-pass policy. No full Magic rules engine, combat, live accounts, real scores, D1, external services, or payments.
-- This is **not the main Deep Cuts EDH Arcade**, and the independent Stackbreaker incubator source remains at `Squackle/deep-cuts-edh` branch `game/stackbreaker-incubator-20261015` for further development.
+## What's new in 0.2
 
-## How to play
-Open `/stackbreaker/` and choose a puzzle. Select a legal response (buttons or number keys), then use **Pass priority** to advance the stack. Stack objects resolve top-first after consecutive player/opponent passes. Try passing without a response to see the failure explanation. Undo and restart are available.
+- Twelve deterministic hand-authored scenarios: four Apprentice, four Investigator, four Mastermind.
+- Real MTG card names, rules text, printed power/toughness, card types and mana costs from a limited curated catalog, with an external Scryfall lookup for every displayed creature/spell. No MTG artwork is copied into the game. Printed names/text/characteristics are manually curated and should be checked against updated Oracle data before expanded distribution.
+- Functional mana-pool payment, stack targeting, casting/activating abilities, Selfless Spirit sacrificing as cost, stat boosts, indestructible, hexproof target legality on resolution, Swords exile/life, creature damage/state-based actions and multi-spell counter wars.
+- Redesigned mobile-first battlefield with original CSS-only fantasy card glyphs and presentation, selectable targets, accessible priority controls, keyboard shortcuts (1–9, Space, Z), hints, undo, restart, resolution log and local-only stars.
+- All code and scenario data are bundled into `stackbreaker/index.html` and isolated from Hive Run, Mana Heist, public game scores, profiles and any APIs.
 
-## Testing / limitations
-- Reference source engine/schema suite: 12/12 local Node.js tests passed on October 15, 2026 (`npm test` in the stand-alone `stackbreaker-m0` source package).
-- JavaScript syntax checks passed for the engine/controller/schema modules and the self-contained HTML module bundle.
-- Cloudflare preview deployment was confirmed successful for the test branch; run-time gameplay in a real remote browser and physical-device testing are **not independently verified** in this release conversation because browser navigation was blocked by the local environment.
-- No main-site gameplay, verified scores, user identities, or storage bindings changed.
-- No content or API route outside this `stackbreaker/` directory should change as part of this PR.
+## How to test / development source
 
-## Rollback
-Revert the Stackbreaker PR / remove only `stackbreaker/`. Do not revert or overwrite other Game Lab releases (including Hive Run / Matriarch) to remove this isolated page.
+The HTML in `/stackbreaker/` is a self-contained artifact of this source package. Generate with `python build.py`. Source files: `src/cards.js`, `src/engine.js`, `src/ui.js`, `data/scenarios.json`, `styles.css`. Run `npm test` (Node 22+) and `python tests/browser_smoke.py` (Playwright/Chromium, no external network). All scenario outcomes are deterministic and scripted; the opponent passes and does not make independent decisions.
+
+## Known exclusions / rules caveats
+
+A two-player, limited priority window with prefilled mana and spells. No full turn-structure, triggers, optional replacement effects, unrestricted target types, continuous-effect layers, combat system, permanent spell casting or multiplayer priority. P/T boosts last for the puzzle window only, not a simulated full cleanup step. Spell abilities and paid mana costs are modeled only for 21 curated cards, and Healing Salve deliberately offers only its 3-life gain mode. The engine makes no claim to judge accuracy for interactions outside the shipped puzzles.
+
+Card artwork is not reproduced in this release. Linkouts are the supported way to view real printed cards. Scryfall and Wizards IP policies require a separate review before any card-image import, user-submitted deck content or monetized game use.
+
+## Release / tests
+
+- Local Node engine regression tests: 21 passed / 0 failed (12 solved/failed-path/determinism cases plus 9 targeted assertions).
+- Local Chromium/Playwright interaction checks: 320, 390, 768, 1280 px; no scroll overflow or JS errors; first and last scenario victory flows completed using UI inputs. These checks use `page.set_content` because file/HTTP navigation is blocked by container browser policy.
+- Mandatory final release gates: independent GitHub PR release-coordination CI; successful Cloudflare production deployment SHA for `main`; standalone `/stackbreaker/` content serves correctly. Physical Android/iOS interaction not yet verified by owner.
+- Rollback: revert the two Stackbreaker directory files only; preserve all other game deployments and data.
