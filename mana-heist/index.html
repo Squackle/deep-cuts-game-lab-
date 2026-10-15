@@ -10,7 +10,7 @@
 <a href="#campaignScreen" class="skip">Skip to campaign</a>
 <header class="bar">
  <a class="brand" href="../"><span class="emblem" aria-hidden="true">◇</span><span>DEEP CUTS <strong>GAME LAB</strong></span></a>
- <div class="bar-actions"><span class="test-stamp">COMPACT TABLE · 0.4 PLAYTEST</span><a href="../" class="back">← HIVE RUN LAB</a></div>
+ <div class="bar-actions"><span class="test-stamp">REAL CARD REFERENCE · 0.6 PLAYTEST</span><a href="../" class="back">← HIVE RUN LAB</a></div>
 </header>
 <main class="shell">
  <section id="campaignScreen" class="campaign-screen" aria-labelledby="mapTitle">
@@ -20,7 +20,7 @@
   <div class="overworld-footer"><p id="mapHint" role="status" class="muted">Select an unlocked stage to begin.</p><div id="worldPips" class="world-pips" aria-label="Chapter progress"></div></div>
  </section>
  <div id="gameScreen" hidden>
-  <div class="game-titlebar"><button type="button" id="returnMap">← MAP</button><span id="stageLabel" class="stage-label">STAGE 1:1</span><a class="info-link" href="#gameNotes" aria-label="Scroll down to the case file and real Magic card references">ⓘ INFO ↓</a></div>
+  <div class="game-titlebar"><button type="button" id="returnMap">← MAP</button><span id="stageLabel" class="stage-label">STAGE 1:1</span><button type="button" id="inspectLand" class="info-link" aria-haspopup="dialog" aria-controls="realCardInspector">ⓘ MTG CARD</button><a class="info-link" href="#gameNotes" aria-label="Scroll down to the case file and real Magic card references">ⓘ INFO ↓</a></div>
  <div class="play-grid" id="heist">
   <div class="play-column">
    <section class="vault-card" aria-labelledby="vaultName">
@@ -49,7 +49,7 @@
     <div id="battlefield" class="land-grid" tabindex="0" role="group" aria-label="Battlefield drop zone: drag lands here from your hand"></div>
    </section>
    <section class="table-card hand-card" aria-labelledby="handTitle">
-    <div class="section-label"><div><p class="overline">YOUR HAND</p><h2 id="handTitle">Your hand <small>Drag to battlefield ↑</small></h2></div><span class="count">ONE LAND DROP PER TURN</span></div>
+    <div class="section-label"><div><p class="overline">YOUR HAND</p><h2 id="handTitle">Your hand <small>Drag to battlefield ↑</small></h2></div><span class="count">DRAG TO PLAY · TAP TO INSPECT</span></div>
     <div id="hand" class="land-grid" aria-label="Drag land cards from hand onto the battlefield"></div>
     <div id="libraryPanel" class="library-panel" hidden></div>
    </section>
@@ -72,7 +72,7 @@
   <div class="notes-heading"><p class="overline">BELOW THE TABLE</p><h2 id="notesTitle">The case file</h2><a href="#heist">↑ BACK TO GAME</a></div>
   <p class="muted" id="briefing"></p>
   <p id="wardDescription" class="muted">The current ward requires the mana shown in its cost.</p>
-  <div class="notes-grid"><div><h3>How it works</h3><p class="muted">Drag a land from your hand onto the battlefield to play it. Tap a land already on the battlefield to add mana. Tapped lands rotate sideways. Multicolor lands offer a color choice. Play at most one land each turn, spend mana to cast the ward-breaking spells, and end the turn to untap your lands. You can undo freely.</p></div>
+  <div class="notes-grid"><div><h3>How it works</h3><p class="muted">Drag a land from your hand onto the battlefield to play it. Tap a land in your hand to inspect its matching real Magic card; use the MTG CARD button or press I when focused on a land. Tap a land already on the battlefield to add mana. Tapped lands rotate sideways. Multicolor lands offer a color choice. Play at most one land each turn, spend mana to cast the ward-breaking spells, and end the turn to untap your lands. You can undo freely.</p></div>
   <div><h3>Three-star route</h3><p class="muted">The solver scores the fewest turns and least life lost, not the number of taps. Your floating mana expires at the end of each turn. Future chapters unlock sequentially.</p></div></div>
   <section id="realCardReference" aria-labelledby="cardReferenceHeading"><div class="notes-heading"><div><p class="overline">OFFICIAL CARDS · LEARNING REFERENCES</p><h2 id="cardReferenceHeading">Real Magic lands</h2></div><a href="https://scryfall.com/" target="_blank" rel="noopener noreferrer">VIEW SCRYFALL ↗</a></div>
   <p class="muted small">See the real Magic: The Gathering cards behind these mana-base ideas. These are educational references, not playable game pieces. Their exact Oracle abilities can differ from the simplified heist rules.</p>
@@ -81,5 +81,18 @@
  </section>
 </main>
 <div id="manaTravelLayer" class="mana-travel-layer" aria-hidden="true"></div>
+<div id="realCardInspector" class="reference-inspector" role="dialog" aria-modal="true" aria-labelledby="inspectorTitle" hidden>
+ <div class="reference-inspector-panel">
+  <div class="reference-inspector-header">
+   <div><p class="overline">MAGIC CARD · SCRYFALL REFERENCE</p><h2 id="inspectorTitle">Real Magic land</h2></div>
+   <button type="button" id="closeInspector" class="choice-close" aria-label="Close real Magic card reference">✕</button>
+  </div>
+  <p id="inspectorGameCard" class="muted small"></p>
+  <img id="inspectorImage" class="inspector-full-card" alt="" width="244" height="340" decoding="async" loading="lazy"/>
+  <p id="inspectorImageFallback" class="muted small" hidden>Card image unavailable. You can still view the official card on Scryfall.</p>
+  <a id="inspectorLink" class="inspector-link" target="_blank" rel="noopener noreferrer" href="https://scryfall.com/">View the card on Scryfall ↗</a>
+  <p class="inspector-legal">Official card shown as a learning reference only. Mana Heist uses original playable lands. Artwork and card designs are owned by Wizards of the Coast and credited artists. Scryfall is not affiliated with Mana Heist.</p>
+ </div>
+</div>
 <footer class="footer"><span>MANA HEIST · AN UNOFFICIAL ORIGINAL PUZZLE PROTOTYPE</span><span>Original playable lands · official Magic cards linked as study references below · no production profiles</span><a href="../">GAME LAB ↑</a></footer>
 </body></html>
