@@ -1007,3 +1007,19 @@
 @media(prefers-reduced-motion:reduce){
  .in-heist #heist #wardTarget.lock-ring{transition:none!important}
 }
+
+/* Finale: a quick expanding magical shockwave after the inward swirl. */
+.in-heist #heist #wardTarget.ward-breaking::after{
+ content:"";position:absolute;inset:8%;z-index:5;
+ border:3px solid #fff4d4;pointer-events:none;border-radius:50%;
+ box-shadow:0 0 24px #fff7c9,0 0 50px var(--fusion-color);
+ animation:chromaticBreak .57s cubic-bezier(.11,.75,.3,1) both;
+}
+@keyframes chromaticBreak{
+ 0%{transform:scale(.12);opacity:1}
+ 55%{transform:scale(1.2);opacity:.95}
+ 100%{transform:scale(1.5);opacity:0}
+}
+@media(prefers-reduced-motion:reduce){
+ .in-heist #heist #wardTarget.ward-breaking::after{animation:none;opacity:0}
+}
