@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {newRun,RULES_VERSION} from "../src/engine.js";
-import {captureFlash,drawCaptureFlash} from "../src/beacon-feedback.js";
+import {captureFlash,drawCaptureFlash,isScoreFlashVisible,SCORE_FLASH_DURATION_MS} from "../src/beacon-feedback.js";
 import {codexEntry,CODEX_ORDER} from "../src/codex-preview.js";
 import {trapSignal,drawTrapHints} from "../src/trap-assist.js";
 
@@ -17,15 +17,35 @@ test("Beacon is ordinary arcade without tutorial gates; replay rules remain unch
  assert.match(main,/if\(lairActive\(\)\)return;/);
  assert.equal(RULES_VERSION,"hive-1.3");
 });
-test("Beacon popup uses actual awarded score and never changes the score",()=>{
+test("Beacon scores blink three times, fixed at the capture tile, then vanish",()=>{
  const flash=captureFlash({x:4,y:7},300,100);
  assert.deepEqual(flash.pos,{x:4,y:7});assert.equal(flash.score,300);
- const calls=[],ctx={save(){},restore(){},strokeRect(...a){calls.push(["stroke",...a])},
- fillText(...a){calls.push(["text",...a])},globalAlpha:1};
- drawCaptureFlash(ctx,flash,20,350,false);
- assert.ok(calls.some(a=>a[0]==="text"&&a[1]==="+300"));
- assert.equal(drawCaptureFlash(ctx,flash,20,960,false),undefined);
+ assert.equal(flash.until-flash.started,SCORE_FLASH_DURATION_MS);
+ const drawn=[],ctx={save(){},restore(){},strokeRect(...a){drawn.push(["stroke",...a])},
+ fillText(...a){drawn.push(["text",...a])},globalAlpha:1};
+ for(const time of [100,380,660]){
+  assert.equal(isScoreFlashVisible(flash,time),true);
+  drawCaptureFlash(ctx,flash,20,time);
+ }
+ const stamps=drawn.filter(a=>a[0]==="text");
+ assert.equal(stamps.length,3,"a single score remains in place across all three flashes");
+ for(const [,label,x,y] of stamps){
+  assert.equal(label,"+300");
+  assert.equal(x,90,"fixed X at center of captured tile");
+  assert.equal(y,154,"fixed Y at center of captured tile");
+ }
+ for(const time of [240,520,800,940]){
+  const prev=drawn.length;
+  assert.equal(isScoreFlashVisible(flash,time),false,"between flashes or expired");
+  drawCaptureFlash(ctx,flash,20,time);
+  assert.equal(drawn.length,prev,"no visible score in the dark phase");
+ }
+ const prev=drawn.length;
+ drawCaptureFlash(ctx,flash,20,240,true);
+ assert.equal(drawn.length,prev+2,"reduced-motion players see one steady stamp");
+ assert.equal(isScoreFlashVisible(flash,80,true),false);
  assert.equal(captureFlash({x:NaN,y:0},5),null);
+ assert.equal(RULES_VERSION,"hive-1.3","presentation-only; replay scoring unchanged");
 });
 test("amber feedback marks the last open escape without an added global HUD",()=>{
  const run=newRun({seed:5,mode:"hunt"});
