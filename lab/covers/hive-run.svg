@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="Original fantasy illustration of an evolving alien hive and glowing green brood">
+<defs>
+ <linearGradient id="sky" x2=".2" y2="1"><stop stop-color="#07171a"/><stop offset=".46" stop-color="#153d32"/><stop offset="1" stop-color="#07190f"/></linearGradient>
+ <radialGradient id="glow"><stop stop-color="#d9ff9e"/><stop offset=".25" stop-color="#7bfc6b" stop-opacity=".75"/><stop offset="1" stop-color="#57e480" stop-opacity="0"/></radialGradient>
+ <radialGradient id="shell" cx=".35" cy=".22"><stop stop-color="#567e57"/><stop offset=".47" stop-color="#273b34"/><stop offset="1" stop-color="#091414"/></radialGradient>
+ <linearGradient id="claw" x2="1" y2="1"><stop stop-color="#95bb79"/><stop offset=".5" stop-color="#31513b"/><stop offset="1" stop-color="#0b1818"/></linearGradient>
+ <filter id="blur"><feGaussianBlur stdDeviation="17"/></filter>
+ <filter id="shadow"><feDropShadow dx="0" dy="7" stdDeviation="13" flood-color="#000" flood-opacity=".7"/></filter>
+</defs>
+<rect width="960" height="540" fill="url(#sky)"/>
+<path d="M0 230 110 76 170 244 284 18 366 249 469 85 558 230 663 41 738 222 865 76 960 232V540H0Z" fill="#061b1b"/>
+<path d="M0 354 100 252 210 312 330 160 432 331 544 198 650 323 783 169 880 330 960 244V540H0Z" fill="#0c2b27"/>
+<path d="M0 492 122 385 201 463 351 331 454 453 616 346 710 444 852 327 960 437V540H0Z" fill="#09241a"/>
+<ellipse cx="510" cy="344" rx="385" ry="228" fill="url(#glow)" opacity=".68"/>
+<g stroke="#7cce75" stroke-width="3" fill="none" opacity=".34">
+ <path d="M11 540Q80 342 221 294T380 89M960 530Q865 338 755 298T685 31"/>
+ <path d="M132 539Q161 410 279 383M840 540Q826 404 686 380"/>
+</g>
+<g fill="#8af88d">
+ <ellipse cx="180" cy="370" rx="65" ry="92" opacity=".12" filter="url(#blur)"/>
+ <ellipse cx="800" cy="376" rx="59" ry="86" opacity=".16" filter="url(#blur)"/>
+</g>
+<g stroke="#132820" stroke-width="9" stroke-linecap="round" filter="url(#shadow)">
+ <path d="M440 270Q310 197 217 102L272 184 330 286M550 274Q650 164 757 87L719 194 621 305" fill="none"/>
+ <path d="M430 317Q251 286 128 217L201 319 343 380M580 308Q720 281 857 191L777 326 653 391" fill="none"/>
+ <path d="M431 385Q281 423 172 514L258 468 382 434M573 386Q741 429 844 521L768 474 621 438" fill="none"/>
+</g>
+<g filter="url(#shadow)">
+ <path d="M419 162Q477 105 554 162L607 227 576 386 519 463 454 443 387 367 370 232Z" fill="url(#shell)" stroke="#97bc78" stroke-width="6"/>
+ <path d="M456 173 481 125 508 183 534 123 564 177" fill="url(#claw)" stroke="#aac784" stroke-width="6"/>
+ <path d="M411 236Q487 212 587 229M401 286Q488 273 590 284M409 337Q480 333 580 345M444 384Q493 379 554 395" stroke="#b1d28a" stroke-opacity=".55" fill="none" stroke-width="12"/>
+ <path d="M441 215Q485 191 537 213L561 273 533 311 449 309 422 267Z" fill="#142721" stroke="#789773" stroke-width="4"/>
+ <path d="M444 233 481 250 473 270 437 260M554 233 519 251 526 270 559 258" fill="#bcf369"/>
+ <path d="M467 298 485 330 501 292 517 330 538 296" fill="#ddfbad"/>
+ <path d="M489 463Q501 490 473 535M526 455Q531 495 569 531" fill="none" stroke="#233a2b" stroke-width="19"/>
+</g>
+<g fill="#d5ffa6" stroke="#6fd986" stroke-width="5">
+ <ellipse cx="143" cy="417" rx="37" ry="56"/><ellipse cx="823" cy="399" rx="40" ry="60"/>
+ <ellipse cx="283" cy="488" rx="25" ry="35"/><ellipse cx="696" cy="479" rx="29" ry="37"/>
+</g>
+<g fill="#afff8c" opacity=".7">
+ <circle cx="112" cy="173" r="5"/><circle cx="258" cy="94" r="3"/><circle cx="733" cy="151" r="5"/><circle cx="809" cy="229" r="4"/><circle cx="370" cy="121" r="3"/><circle cx="634" cy="104" r="4"/><circle cx="916" cy="296" r="5"/>
+</g>
+<rect width="960" height="540" fill="url(#sky)" opacity=".08"/>
+</svg>

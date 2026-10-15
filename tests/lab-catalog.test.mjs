@@ -27,7 +27,9 @@ test("Hive Run remains root game and links to all three games, without moving it
  assert.match(root,/id="gameCanvas"/);
  assert.match(root,/src="\.\/src\/main\.js"/);
  assert.match(root,/href="\/lab\/"/);
- assert.match(root,/ALL THREE GAMES/);
+ assert.match(root,/← ALL GAMES/);
+ assert.match(root,/class="brand" href="\/lab\/"/);
+ assert.match(root,/Back to Test Lab, choose another game/);
  assert.ok(fs.existsSync("src/main.js"));
 });
 
@@ -68,4 +70,26 @@ test("Unified catalog paths are local, existing and free from traversal",()=>{
   const file=href.endsWith("/")?dest+"/index.html":dest;
   assert.ok(fs.existsSync(file),"Missing local link "+href);
  }
+});
+
+test("three original themed covers are first-party, meaningful, and do not depend on external images",()=>{
+ const cards=[
+  ["hive-run","alien","game-hive"],
+  ["stackbreaker","spellcaster","game-stack"],
+  ["mana-heist","Stone vault","game-mana"]
+ ];
+ const css=read("lab/lab.css");
+ assert.equal((hub.match(/class="game-cover"/g)||[]).length,3);
+ for(const [name,subject,card] of cards){
+  assert.match(hub,new RegExp('class="game-card '+card+'"'));
+  assert.ok(hub.includes('src="./covers/'+name+'.svg"'),name+" image path");
+  assert.ok(hub.includes(subject),"Alternative text should describe "+name);
+  const svg=read("lab/covers/"+name+".svg");
+  assert.match(svg,/<svg\s[^>]*viewBox="0 0 960 540"/);
+  assert.match(svg,/role="img" aria-label=/);
+  assert.doesNotMatch(svg,/<script|<foreignObject|onload=|<image|href="https?:/i);
+ }
+ assert.match(css,/\.game-cover\{display:block/);
+ assert.match(css,/\.game-card:hover \.game-cover/);
+ assert.match(css,/prefers-reduced-motion:reduce/);
 });

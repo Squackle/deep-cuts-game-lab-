@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="Original fantasy illustration of a stone vault unlocked by five glowing magical energy seals">
+<defs>
+ <linearGradient id="bg" x2=".45" y2="1"><stop stop-color="#0f1425"/><stop offset=".52" stop-color="#30384c"/><stop offset="1" stop-color="#171d28"/></linearGradient>
+ <radialGradient id="light"><stop stop-color="#d8edff"/><stop offset=".3" stop-color="#82bcf9" stop-opacity=".65"/><stop offset="1" stop-color="#82bcf9" stop-opacity="0"/></radialGradient>
+ <linearGradient id="stone" x2="1" y2="1"><stop stop-color="#737b87"/><stop offset=".45" stop-color="#383f4d"/><stop offset="1" stop-color="#101723"/></linearGradient>
+ <linearGradient id="floor" x2=".5" y2="1"><stop stop-color="#6d6c68"/><stop offset="1" stop-color="#0c131b"/></linearGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="12"/></filter><filter id="shadow"><feDropShadow dx="0" dy="9" stdDeviation="12" flood-opacity=".7"/></filter>
+</defs>
+<rect width="960" height="540" fill="url(#bg)"/>
+<path d="M0 540V92L120 30 220 136V540M960 540V92L830 32 731 137V540" fill="#0c1723"/>
+<path d="M118 0V540M242 0V540M734 0V540M852 0V540" stroke="#6d8390" stroke-width="9" opacity=".24"/>
+<path d="M0 415 160 361 334 420 480 382 630 420 799 368 960 415V540H0Z" fill="url(#floor)"/>
+<path d="M453 375 325 540H635L507 375Z" fill="#a7b0b5" opacity=".25"/>
+<path d="M471 371 416 540M489 372 543 540" stroke="#d9b981" stroke-width="4" opacity=".55"/>
+<ellipse cx="482" cy="246" rx="316" ry="305" fill="url(#light)" opacity=".38"/>
+<g filter="url(#shadow)">
+ <circle cx="480" cy="252" r="210" fill="url(#stone)" stroke="#c4b696" stroke-width="15"/>
+ <circle cx="480" cy="252" r="176" fill="#15212e" stroke="#6f8496" stroke-width="12"/>
+ <circle cx="480" cy="252" r="141" fill="#263545" stroke="#baad87" stroke-width="5"/>
+ <circle cx="480" cy="252" r="93" fill="#091927" stroke="#d5bb87" stroke-width="10"/>
+</g>
+<g stroke="#c7b27c" fill="none" opacity=".5"><circle cx="480" cy="252" r="162" stroke-dasharray="4 15" stroke-width="3"/><path d="M480 61V152M480 354V446M270 252H386M574 252H689" stroke-width="5"/></g>
+<ellipse cx="480" cy="252" rx="85" ry="81" fill="url(#light)" opacity=".9"/>
+<path d="M480 188 532 248 480 318 429 248Z" fill="#7acbf5" stroke="#dcfaff" stroke-width="8"/>
+<path d="M480 214 502 246 480 290 458 246Z" fill="#dffaff"/>
+<g stroke="#e9e6c9" stroke-width="5">
+ <circle cx="480" cy="80" r="31" fill="#7dbbe6"/>
+ <circle cx="317" cy="199" r="32" fill="#e0dba9"/>
+ <circle cx="643" cy="199" r="32" fill="#c989cb"/>
+ <circle cx="375" cy="389" r="32" fill="#df8777"/>
+ <circle cx="584" cy="389" r="32" fill="#94c985"/>
+</g>
+<g fill="#fff6d2" opacity=".9">
+ <path d="M480 60 489 79 480 100 471 79Z"/>
+ <path d="M317 178 325 195 317 214 308 195Z"/>
+ <path d="M643 177 653 196 643 220 635 197Z"/>
+ <path d="M375 369 383 388 375 405 366 386Z"/>
+ <path d="M584 369 594 386 584 410 574 387Z"/>
+</g>
+<g fill="none" stroke="#f9da9e" stroke-width="3" opacity=".48"><path d="M0 110 115 85 225 133M960 117 849 83 741 133M0 286 114 249 241 291M960 289 844 249 716 289"/></g>
+<g fill="#d9e7ff"><circle cx="214" cy="133" r="4"/><circle cx="777" cy="154" r="4"/><circle cx="710" cy="445" r="5"/><circle cx="241" cy="461" r="3"/></g>
+</svg>

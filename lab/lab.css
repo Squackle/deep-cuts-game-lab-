@@ -26,20 +26,13 @@ h1 em,h3 em{color:var(--gold);font-style:italic}
 .game-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px}
 .game-card{border:1px solid #55725c;background:linear-gradient(160deg,#244335,#152b22);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;min-width:0;transition:transform .18s ease,border-color .18s ease}
 .game-card:hover{transform:translateY(-2px);border-color:#baa473}
-.game-art{height:147px;position:relative;overflow:hidden;display:grid;place-items:center;background:radial-gradient(circle at 48% 33%,#537c60 0%,#1a342b 75%);border-bottom:1px solid #63826355}
-.game-glyph{color:#edcd88;font:80px Georgia,serif;text-shadow:0 0 28px #f3c67a52;z-index:2;line-height:1}
-.game-stack .game-art{background:radial-gradient(circle at 50% 35%,#47676c,#182b34 78%)}
-.game-mana .game-art{background:radial-gradient(circle at 50% 42%,#615c4a,#2c322b 75%)}
-.hive-orb{position:absolute;background:#a8d29d;border-radius:50%;height:12px;width:12px;box-shadow:0 0 22px #a0e7b8}
-.hive-orb-one{left:24%;top:37%}.hive-orb-two{right:21%;top:65%}.hive-orb-three{right:31%;top:18%}
-.hive-trail{width:205px;height:85px;position:absolute;border:10px dotted #b1dbaa55;border-radius:55%;transform:rotate(-23deg)}
-.cardback{width:76px;height:102px;border-radius:7px;border:2px solid #b8b59a;background:linear-gradient(145deg,#43635b,#1a3032);box-shadow:0 8px 22px #0006;position:absolute;top:20px}
-.cardback-left{transform:rotate(-17deg) translate(-45px,8px)}.cardback-center{transform:translateY(1px)}.cardback-right{transform:rotate(17deg) translate(45px,8px)}
-.game-stack .game-glyph{font-size:40px}
-.mana-ring{border:5px solid #d8bb7e99;border-radius:50%;position:absolute;width:126px;height:126px;box-shadow:inset 0 0 23px #dbc77755,0 0 26px #dbc77744}
-.mana-stone{width:22px;height:22px;border-radius:50%;position:absolute;box-shadow:0 0 16px currentColor}
-.stone-a{color:#72bcde;background:#72bcde;left:26%;top:32%}.stone-b{color:#d98a7c;background:#d98a7c;right:28%;top:31%}.stone-c{color:#a5d28e;background:#a5d28e;top:72%;left:47%}
-.game-mana .game-glyph{font-size:62px}
+.game-art{height:188px;position:relative;overflow:hidden;background:#172823;border-bottom:1px solid #71826e6b}
+.game-cover{display:block;width:100%;height:100%;object-fit:cover;object-position:center 44%;transition:transform .35s ease,filter .35s ease}
+.game-art::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#101e1a87 0%,transparent 42%);pointer-events:none}
+.game-hive .game-art{background:#102c20}
+.game-stack .game-art{background:#19283f}
+.game-mana .game-art{background:#292d31}
+.game-card:hover .game-cover{transform:scale(1.025);filter:saturate(1.09)}
 .game-body{padding:22px 21px 20px;display:flex;flex-direction:column;gap:11px;flex:1}
 .card-top{display:flex;justify-content:space-between;gap:10px;align-items:center}
 .game-index{color:#d1d6c2;font:700 10px/1.35 ui-monospace,monospace;letter-spacing:.075em}
@@ -56,6 +49,6 @@ h1 em,h3 em{color:var(--gold);font-style:italic}
 .lab-footer-note p{font-size:12px;color:#bcd0bf;line-height:1.65;margin:6px 0 0;max-width:700px}
 .lab-footer-note a{font-size:11px;color:#edcf90;font-weight:800;white-space:nowrap;text-decoration:underline;text-underline-offset:4px}
 .lab-footer{border-top:1px solid #5a74583f;padding:18px 0 29px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:#9bb3a0;font-size:10px;letter-spacing:.025em}
-@media(max-width:950px){.game-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.game-card:last-child{grid-column:1/-1}.game-card:last-child .game-art{height:133px}}
-@media(max-width:620px){.lab-bar{min-height:66px}.lab-logo{font-size:11px}.lab-logo>span:first-child{font-size:29px}.lab-site-link{font-size:9px}.game-grid{grid-template-columns:1fr;gap:13px}.game-card:last-child{grid-column:auto}.game-art,.game-card:last-child .game-art{height:117px}.game-body{padding:17px}.lab-intro{padding:34px 0 28px}h1{margin-bottom:19px}.section-bar h2{font-size:10px}.section-bar>span{font-size:9px}.lab-footer-note{flex-direction:column;align-items:flex-start;padding:18px}.lab-footer{font-size:9px}}
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.game-card,.play-link{transition:none}.game-card:hover{transform:none}}
+@media(max-width:950px){.game-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.game-card:last-child{grid-column:1/-1}.game-card:last-child .game-art{height:175px}}
+@media(max-width:620px){.lab-bar{min-height:66px}.lab-logo{font-size:11px}.lab-logo>span:first-child{font-size:29px}.lab-site-link{font-size:9px}.game-grid{grid-template-columns:1fr;gap:13px}.game-card:last-child{grid-column:auto}.game-art,.game-card:last-child .game-art{height:157px}.game-body{padding:17px}.lab-intro{padding:34px 0 28px}h1{margin-bottom:19px}.section-bar h2{font-size:10px}.section-bar>span{font-size:9px}.lab-footer-note{flex-direction:column;align-items:flex-start;padding:18px}.lab-footer{font-size:9px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.game-card,.play-link,.game-cover{transition:none}.game-card:hover,.game-card:hover .game-cover{transform:none}}
