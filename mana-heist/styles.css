@@ -1193,3 +1193,16 @@
  }
  .in-heist #heist .table-card.hand-card{min-height:244px!important}
 }
+
+/* No misleading "start here" banner on puzzles without a hand. */
+.in-heist #heist .hand-guide[hidden]{display:none!important}
+@media(max-width:600px){
+ .in-heist #heist .table-card.hand-card.hand-empty{
+  min-height:95px!important;
+  border-color:#d6b77e66!important;
+  box-shadow:none!important;
+ }
+ .in-heist #heist .hand-card.hand-empty #hand{
+  height:44px!important;min-height:44px!important;
+ }
+}
