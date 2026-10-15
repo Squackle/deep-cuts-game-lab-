@@ -15,6 +15,7 @@ import {installCardInspector} from "./card-inspector.js";
 import {installCardMagnifier} from "./card-magnifier.js";
 import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
 import {missingMana,failureText,flashWard} from "./ward-feedback.js";
+import {isFinalTurn,requiredManaText,finalTurnMessage,tappedLandMessage} from "./turn-guidance.js";
 const el=id=>document.getElementById(id);
 const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"C"},N:{name:"Generic",color:"#bec5bd",icon:"◇"}};
 const storageKey="dc-mana-heist-landfall-v2";
@@ -195,7 +196,8 @@ function tapLand(id){
  lastCardId=id;
  if(completed(level,state))return;
  const onField=state.field.find(f=>f.id===id);
- if(!onField||onField.tapped){message("This land is tapped. End your turn to untap it.",true);return;}
+ if(!onField){message("This land is not on the battlefield.",true);return;}
+ if(onField.tapped){message(tappedLandMessage(level,state),true);return;}
  const card=getCard(level,id),possible=actions(level,state).filter(a=>(a.type==="tap"||a.type==="fetch")&&a.id===id);
  if(card.kind==="fetch"){
   if(!possible.length)message("This fetch land has no legal target, or you cannot pay the life cost.",true);
@@ -272,7 +274,11 @@ function render(pendingId=null){
  el("wardName").textContent=isWin?"The seal is broken":stage.name;
  el("wardCost").innerHTML=isWin?"":costHtml(stage.cost);
  el("wardDescription").textContent=isWin?"The heist is complete. Your best route is preserved on this device.":stage.effect==="untap"?"Casting this heist spell also untaps one land you choose.":"Colored mana symbols require that exact color. A gray diamond is generic: you may use any remaining mana.";
- el("autoCastLabel").textContent=isWin?"ALL WARDS OPEN":stage.effect==="untap"?"AUTO REWIND · MOVE TO STIR":"MOVE TO STIR · TOUCH AND DRAG";
+ const finalTurn=!isWin&&isFinalTurn(level,state);
+ const neededMana=isWin?"":requiredManaText(level,state);
+ el("autoCastLabel").textContent=isWin?"ALL WARDS OPEN":
+  finalTurn?(neededMana?"FINAL TURN · NEED "+neededMana.toUpperCase():"FINAL TURN · WARD READY"):
+  stage.effect==="untap"?"AUTO REWIND · MOVE TO STIR":"MOVE TO STIR · TOUCH AND DRAG";
  el("stageList").innerHTML=level.stages.map((spell,i)=>'<span class="stage-marker '+(i<state.stage?"done":i===state.stage?"active":"")+'">'+(i<state.stage?"✓":String(i+1).padStart(2,"0"))+" "+spell.name+"</span>").join("");
  el("battleCount").textContent=state.field.length+" LAND"+(state.field.length===1?"":"S");
  syncLandRows();
@@ -283,7 +289,14 @@ function render(pendingId=null){
 
  chargeWard({pendingId});
  el("undo").disabled=history.length===0;
- el("endTurn").disabled=isWin||state.turn===level.turnLimit;
+ // Keep Final Turn clickable to explain the puzzle limit. A disabled button
+ // would be silently unresponsive precisely when players most need guidance.
+ const endButton=el("endTurn");
+ endButton.disabled=isWin;
+ endButton.classList.toggle("turn-limit",finalTurn);
+ endButton.innerHTML=finalTurn?'FINAL TURN <span aria-hidden="true">✕</span>':'END TURN <span aria-hidden="true">↗</span>';
+ endButton.title=finalTurn?"No more turns. Tap for advice on this puzzle.":"End turn and untap your lands";
+ endButton.setAttribute("aria-label",finalTurn?"Final turn. No further turns allowed. Tap for Undo or Restart advice.":"End turn and untap lands");
  el("winPanel").hidden=!isWin;
  if(isWin){
   const score=medal(level,state,proof);
@@ -387,7 +400,7 @@ landDrag=installLandDragging({
  onHint:(text,error=false)=>message(text,error)
 });
 el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a)perform(a);});
-el("endTurn").addEventListener("click",()=>{const a=actions(level,state).find(a=>a.type==="end");if(a)perform(a);else message("No turns remain. Undo or restart to try another line.",true);});
+el("endTurn").addEventListener("click",()=>{const a=actions(level,state).find(a=>a.type==="end");if(a)perform(a);else message(finalTurnMessage(level,state),true);});
 el("undo").addEventListener("click",()=>{
  if(!history.length)return;
  cancelAuto();viewEpoch++;pendingFlights.clear();
