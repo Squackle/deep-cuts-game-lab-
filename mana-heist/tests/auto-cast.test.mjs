@@ -21,7 +21,7 @@ test("a ward automatically resolves on the first sufficient mana without a Cast 
 
 test("all 18 puzzles remain beatable when casting is automatic and never optional",()=>{
  const outcomes=[];
- for(const level of LEVELS){
+ for(const level of LEVELS.slice(0,18)){
   const start=resolveAutomaticCasts(level,initial(level));
   const queue=[start.state],seen=new Set([key(start.state)]);
   let solved=completed(level,start.state),checked=0;

@@ -3,14 +3,14 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {LEVELS} from "../src/levels.js";
 import {randomPrintingUrl,startStagePrintings,imageFor,printingFor,invalidateStagePrintings} from "../src/printing-art.js";
-import {cardImageUrl} from "../src/scryfall-cards.js";
+import {cardNormalUrl} from "../src/scryfall-cards.js";
 
 test("Scryfall random printing image redirects are exact-name, English, full-card and cache-distinct",()=>{
  const url=new URL(randomPrintingUrl("Steam Vents","instance-A-42"));
  assert.equal(url.pathname,"/cards/random");
  assert.equal(url.searchParams.get("q"),'!"Steam Vents" lang:en');
  assert.equal(url.searchParams.get("format"),"image");
- assert.equal(url.searchParams.get("version"),"small");
+ assert.equal(url.searchParams.get("version"),"normal");
  assert.equal(url.searchParams.get("_"),"instance-A-42");
  assert.ok(!url.href.includes("art_crop"));
 });
@@ -27,7 +27,7 @@ test("every card gets a distinct stable genuine printing URL during a stage",()=
  const next=instances.map(instance=>imageFor(instance.id,instance.card));
  assert.ok(next.every((url,i)=>url!==urls[i]),"restart should request fresh printings");
  invalidateStagePrintings();
- assert.equal(imageFor("unknown","mountain"),cardImageUrl("mountain"));
+ assert.equal(imageFor("unknown","mountain"),cardNormalUrl("mountain"));
 });
 test("all campaign lands can use Scryfall randomized reprints without altering identities",()=>{
  for(const level of LEVELS){

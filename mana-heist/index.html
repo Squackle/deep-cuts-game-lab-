@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#111b19"><meta name="description" content="Mana Heist: Landfall. Tap lands, manage your mana, crack 18 escalating vault puzzles. Solo Game Lab playtest.">
+<meta name="theme-color" content="#111b19"><meta name="description" content="Mana Heist: Landfall. Solve 250 land-and-mana vault puzzles across five galaxies and 25 worlds. Solo Game Lab playtest.">
 <title>MANA HEIST · LANDFALL — Deep Cuts Game Lab</title>
 <link rel="stylesheet" href="./styles.css"><script type="module" src="./src/main.js"></script>
 </head>
@@ -14,10 +14,11 @@
 </header>
 <main class="shell">
  <section id="campaignScreen" class="campaign-screen" aria-labelledby="mapTitle">
-  <div class="campaign-top"><div><p class="overline">THE HEIST CAMPAIGN</p><h2 id="mapTitle">MANA HEIST <em>· THE VAULTS</em></h2><p class="muted">Crack each vault to reveal the next. Earlier stages stay replayable.</p></div><span id="campaignTotal" class="campaign-total" aria-live="polite">0 / 18 CRACKED</span></div>
-  <div class="world-navigation"><button type="button" id="previousWorld" aria-label="Previous chapter">← PREVIOUS ACT</button><div class="world-nameplate"><p class="overline" id="worldNumber">ACT I</p><h3 id="worldName">THE FIRST KEY</h3><p id="worldSubtitle" class="muted"></p></div><button type="button" id="nextWorld" aria-label="Next unlocked chapter">NEXT ACT →</button></div>
+  <div class="campaign-top"><div><p class="overline">THE HEIST CAMPAIGN</p><h2 id="mapTitle">MANA HEIST <em>· THE VAULTS</em></h2><p class="muted">Five galaxies. Twenty-five worlds. Two hundred fifty vaults. Only your current path is revealed.</p></div><span id="campaignTotal" class="campaign-total" aria-live="polite">0 / 250 CRACKED</span></div>
+  <div class="galaxy-navigation" id="galaxyPicker" role="group" aria-label="Choose an unlocked galaxy"></div>
+  <div class="world-navigation"><button type="button" id="previousWorld" aria-label="Previous world">← PREVIOUS WORLD</button><div class="world-nameplate"><p class="overline" id="worldNumber">GALAXY 1 · WORLD 1</p><h3 id="worldName">THE FIRST KEY</h3><p id="worldSubtitle" class="muted"></p></div><button type="button" id="nextWorld" aria-label="Next unlocked world">NEXT WORLD →</button></div>
   <div class="campaign-track" aria-label="Campaign map"><div class="path-line" aria-hidden="true"></div><div id="chapterPicker" class="chapter-picker" role="group" aria-label="Stages in the current chapter"></div></div>
-  <div class="overworld-footer"><p id="mapHint" role="status" class="muted">Select an unlocked stage to begin.</p><div id="worldPips" class="world-pips" aria-label="Chapter progress"></div></div>
+  <div class="overworld-footer"><p id="mapHint" role="status" class="muted">Select an unlocked stage to begin.</p><div id="worldPips" class="world-pips" aria-label="Worlds in the current galaxy"></div></div>
  </section>
  <div id="gameScreen" hidden>
   <div class="game-titlebar"><button type="button" id="returnMap">← MAP</button><span id="stageLabel" class="stage-label">STAGE 1:1</span><a class="info-link" href="#gameNotes" aria-label="Scroll down to the case file and real Magic card references">ⓘ INFO ↓</a></div>
@@ -80,6 +81,11 @@
  </section>
 </main>
 <div id="manaTravelLayer" class="mana-travel-layer" aria-hidden="true"></div>
+<div id="cardMagnifier" class="card-magnifier" role="tooltip" aria-hidden="true" hidden>
+ <div class="magnifier-header"><strong id="magnifierTitle">CARD DETAIL</strong><span>SCROLL / DRAG TO PLAY</span></div>
+ <canvas id="magnifierCanvas" width="488" height="680" aria-label="Enlarged Magic card preview"></canvas>
+ <p id="magnifierHint">Full-size preview of the same printing · move away to close</p>
+</div>
 <div id="realCardInspector" class="reference-inspector" role="dialog" aria-modal="true" aria-labelledby="inspectorTitle" hidden>
  <div class="reference-inspector-panel">
   <div class="reference-inspector-header">

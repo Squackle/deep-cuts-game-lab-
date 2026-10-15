@@ -740,3 +740,102 @@
 @media(prefers-reduced-motion:reduce){
  .in-heist .game-titlebar .stage-label{animation:none}
 }
+
+
+/* 2.0: five galaxies, five worlds each, ten challenge nodes per world. */
+.galaxy-navigation{
+ position:relative;z-index:2;
+ display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+ gap:8px;margin:22px 0 4px;
+}
+.galaxy-tab{
+ display:flex;align-items:center;gap:10px;min-width:0;
+ border:1px solid #c7b47a44;border-radius:10px;
+ background:linear-gradient(150deg,#233934,#14282d);
+ padding:12px 9px;color:#cddbd1;cursor:pointer;text-align:left;
+ transition:background .18s,border-color .18s,transform .18s;
+}
+.galaxy-tab .galaxy-symbol{
+ flex:0 0 34px;width:34px;height:34px;border:1px solid #c8b87f65;
+ display:grid;place-items:center;border-radius:50%;
+ color:#eed39a;font:normal 1.6rem Georgia,serif;
+ background:radial-gradient(circle,#69735448,#122626);
+}
+.galaxy-tab span:nth-child(2){display:flex;flex-direction:column;gap:4px;min-width:0}
+.galaxy-tab b{font-size:.62rem;letter-spacing:.08em;color:#eed6a7}
+.galaxy-tab small{font-size:.54rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#b9c7b9}
+.galaxy-tab em{font:normal .57rem system-ui;color:#c7ad77}
+.galaxy-tab.active{background:linear-gradient(135deg,#436659,#2b4547);border-color:#efce8f;box-shadow:0 0 22px #c4aa6734}
+.galaxy-tab:not(:disabled):hover{transform:translateY(-2px);border-color:#e6c78e}
+.galaxy-tab:disabled{opacity:.38;cursor:not-allowed}
+.campaign-track .chapter-picker{
+ display:grid!important;
+ grid-template-columns:repeat(5,minmax(0,1fr))!important;
+ gap:10px!important;align-items:stretch!important;
+ justify-content:stretch!important;
+}
+.campaign-track .overworld-stage{
+ width:100%!important;min-width:0!important;max-width:none!important;
+ min-height:135px!important;padding:11px 7px!important;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.campaign-track .path-line{top:50%;left:4%;right:4%;opacity:.45}
+.campaign-top .campaign-total{white-space:nowrap}
+@media(max-width:840px){
+ .galaxy-navigation{gap:5px;margin-top:14px}
+ .galaxy-tab{padding:8px 5px;gap:4px;justify-content:center}
+ .galaxy-tab .galaxy-symbol{display:none}
+ .galaxy-tab b{font-size:.53rem}
+ .galaxy-tab small{font-size:.44rem}
+ .galaxy-tab em{font-size:.49rem}
+ .campaign-track .chapter-picker{gap:6px!important}
+ .campaign-track .overworld-stage{min-height:120px!important;padding:7px 3px!important}
+ .campaign-track .overworld-stage strong{font-size:.57rem}
+ .campaign-track .overworld-stage .stage-node{width:30px;height:30px;font-size:1rem}
+}
+@media(max-width:520px){
+ .galaxy-navigation{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
+ .galaxy-tab{padding:7px 2px;border-radius:6px}
+ .galaxy-tab b{font-size:.47rem;letter-spacing:0}
+ .galaxy-tab small{display:none}
+ .galaxy-tab em{font-size:.44rem}
+ .campaign-track .chapter-picker{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+ .campaign-track .overworld-stage{min-height:105px!important}
+ .campaign-track .overworld-stage .stage-detail{font-size:.51rem}
+ .campaign-track{padding:15px 8px!important}
+ .world-navigation{grid-template-columns:75px minmax(0,1fr) 75px}
+ .world-navigation>button{font-size:.48rem}
+}
+/* Full-card hover/focus magnifier shows the SAME image (canvas drawing),
+   so a random reprint cannot change or trigger another network request. */
+.card-magnifier{
+ position:fixed;z-index:450;pointer-events:none;
+ width:min(320px,calc(100vw - 24px));
+ padding:9px 11px 11px;
+ border:2px solid #dbbf81;border-radius:12px;
+ background:linear-gradient(160deg,#223a37,#0a1b21);
+ box-shadow:0 28px 80px #000e,0 0 30px #d8ae6350;
+ color:#eadab4;
+}
+.card-magnifier[hidden]{display:none}
+.card-magnifier .magnifier-header{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:8px;margin-bottom:7px;font-size:.59rem;letter-spacing:.08em;
+}
+.card-magnifier .magnifier-header span{font-size:.5rem;color:#a9b7b0}
+.card-magnifier canvas{
+ display:block;width:100%;height:auto;
+ max-height:calc(100dvh - 91px);
+ aspect-ratio:488/680;object-fit:contain;
+ border:1px solid #c8c0a666;border-radius:9px;
+}
+.card-magnifier p{margin:8px 2px 0;font-size:.57rem;color:#b4cac1}
+.in-heist .land-card.mtg-real-land:hover,
+.in-heist .land-card.mtg-real-land:focus-visible{
+ outline:2px solid #f4dfad!important;outline-offset:2px;
+ box-shadow:0 0 0 3px #d6b57966,0 0 20px #d3b37966!important;
+}
+@media(hover:none) and (pointer:coarse){.card-magnifier{display:none!important}}
+@media(prefers-reduced-motion:reduce){
+ .galaxy-tab{transition:none}
+}

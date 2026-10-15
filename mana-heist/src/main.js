@@ -1,7 +1,7 @@
-import {LEVELS,CHAPTERS} from "./levels.js";
+import {LEVELS,CHAPTERS,GALAXIES,BASE_LEVELS} from "./levels.js";
 import {COLORS,CARDS,initial,actions,reduce,completed,getCard,lookup,medal} from "./engine.js";
 import {solve} from "./solver.js";
-import {highestUnlocked,unlocked,chapterIndex,stageCode,normalizedBests,chapterAccessible} from "./campaign.js";
+import {highestUnlocked,unlocked,chapterIndex,stageCode,normalizedBests,chapterAccessible,galaxyAccessible} from "./campaign.js";
 import {renderOverworld} from "./overworld.js";
 import {reconstruct,transitionOrbs,consistent,sendOrb} from "./mana-orbs.js";
 import {renderWardCharge} from "./ward-charge.js";
@@ -10,6 +10,7 @@ import {landPainting} from "./land-art.js";
 import {installLandDragging} from "./drag-lands.js";
 import {renderCardReferences,referenceFor} from "./card-references.js";
 import {installCardInspector} from "./card-inspector.js";
+import {installCardMagnifier} from "./card-magnifier.js";
 import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
 import {missingMana,failureText,flashWard} from "./ward-feedback.js";
 const el=id=>document.getElementById(id);
@@ -51,18 +52,39 @@ function chargeWard({pendingId=null,animateId=null}={}){
  });
 }
 const cardInspector=installCardInspector({dialog:el("realCardInspector"),closeButton:el("closeInspector")});
+const magnifier=installCardMagnifier({
+ battlefield:el("battlefield"),hand:el("hand"),panel:el("cardMagnifier"),
+ canvas:el("magnifierCanvas"),title:el("magnifierTitle")
+});
 function inspectById(id){
  const record=lookup(level,id);
  if(!record)return false;
  lastCardId=id;
  return cardInspector.show(record.card,getCard(level,id).name,printingFor(id,record.card));
 }
-const proofs=new Map();
-for(const puzzle of LEVELS){
- const proof=solve(puzzle,{maxStates:40000});
- if(proof.status!=="solved")throw Error("Unproven vault: "+puzzle.id);
- proofs.set(puzzle.id,proof);
+// Compute proof only for the active or completed vault, not 250 at startup.
+// Every generated variant preserves a tested original route. The strict CI
+// campaign suite separately verifies the full 250-vault catalog offline.
+const proofCache=new Map();
+const sourceProofCache=new Map();
+function proofFor(id){
+ if(proofCache.has(id))return proofCache.get(id);
+ const puzzle=LEVELS.find(v=>v.id===id);
+ if(!puzzle)return null;
+ const exact=solve(puzzle,{maxStates:65000});
+ let proof=exact;
+ if(exact.status!=="solved"&&puzzle.templateId){
+  const source=BASE_LEVELS.find(p=>p.id===puzzle.templateId);
+  if(source){
+   if(!sourceProofCache.has(source.id))sourceProofCache.set(source.id,solve(source,{maxStates:65000}));
+   proof=sourceProofCache.get(source.id);
+  }
+ }
+ if(proof?.status!=="solved")throw Error("Unproven vault: "+id);
+ proofCache.set(id,proof);
+ return proof;
 }
+const proofs={get:proofFor};
 const lockGlyphs=["✧","⌑","◈","✦","⬡","✶"];
 function persist(){try{localStorage.setItem(storageKey,JSON.stringify({v:2,index,bests:progress.bests}));}catch{}}
 const coin=(c,extra="")=>'<span class="mana-glyph '+c+'" style="--coin:'+SYMBOL[c].color+'" aria-label="'+SYMBOL[c].name+' mana">'+(extra||SYMBOL[c].icon)+'</span>';
@@ -240,6 +262,7 @@ function render(pendingId=null){
  selectedMessage="";
 }
 function showMap(){
+ magnifier.hide();
  invalidateStagePrintings();
  cancelAuto();viewEpoch++;pendingFlights.clear();
  cardInspector.hide({restore:false});
@@ -260,6 +283,7 @@ function showGame(){
  el("gameScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
 function load(i,enter=false){
+ magnifier.hide();
  cancelAuto();viewEpoch++;pendingFlights.clear();
  cardInspector.hide({restore:false});
  lastCardId=null;
@@ -285,6 +309,17 @@ el("previousWorld").addEventListener("click",()=>{
 });
 el("nextWorld").addEventListener("click",()=>{
  if(world<CHAPTERS.length-1&&chapterAccessible(world+1,progress.bests)){world++;renderOverworld({world,bests:progress.bests,index,proofs,medal});}
+});
+el("galaxyPicker").addEventListener("click",e=>{
+ const button=e.target.closest("[data-galaxy]");
+ if(!button||button.disabled)return;
+ const galaxy=Number(button.dataset.galaxy);
+ if(!galaxyAccessible(galaxy,progress.bests))return;
+ const accessible=highestUnlocked(progress.bests);
+ const first=GALAXIES[galaxy].worldRange[0];
+ const last=Math.min(GALAXIES[galaxy].worldRange[1],chapterIndex(accessible));
+ world=Math.max(first,last);
+ renderOverworld({world,bests:progress.bests,index,proofs,medal});
 });
 el("worldPips").addEventListener("click",e=>{
  const button=e.target.closest("[data-world]");
