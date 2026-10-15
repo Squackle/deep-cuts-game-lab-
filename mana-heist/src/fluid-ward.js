@@ -3,6 +3,7 @@
 // workers, texture downloads, or per-mana setup. Mouse and touch impart velocity.
 // Visual state never changes the Magic rules, mana pool, or solver state.
 import {COLOR_RGB,cssForOrbs} from "./fluid-palette.js";
+import {initializePigments,mixPigments,stirPigmentWake,pigmentStatistics} from "./pigment-mixer.js";
 
 const N=64,COUNT=N*N,MID=(N-1)/2,RADIUS=N*.465;
 const INDEX=(x,y)=>y*N+x;
@@ -42,44 +43,19 @@ export function addDye(grid,color,x=MID,y=MID,amount=1){
 // New mana rebalances the entire pot immediately; stirring then advects dye.
 // Edges use a little deterministic waviness, not isolated pie-shape overlays.
 export function fillDyeProportions(grid,orbs){
- const list=orbs||[];
- const groups=[];
- for(const o of list){
-  const color=o?.color;
-  if(!COLOR_RGB[color])continue;
-  const existing=groups.find(g=>g.color===color);
-  if(existing)existing.count++;
-  else groups.push({color,count:1});
- }
- if(!groups.length){
+ const result=initializePigments(grid,orbs||[]);
+ if(!result.total){
   for(const k of ["mass","r","g","b"])grid[k].fill(0);
-  return {total:0,groups:[]};
  }
- const total=groups.reduce((sum,g)=>sum+g.count,0);
- let sum=0;
- const limits=groups.map(g=>{sum+=g.count/total;return sum;});
- for(let y=0;y<N;y++)for(let x=0;x<N;x++){
-  const i=INDEX(x,y);
-  if(!grid.active[i]){
-   grid.mass[i]=grid.r[i]=grid.g[i]=grid.b[i]=0;
-   continue;
-  }
-  const dx=x-MID,dy=y-MID,dist=Math.hypot(dx,dy);
-  // Conserve colored area while softening rigid radial boundaries.
-  const angle=(Math.atan2(dy,dx)/(Math.PI*2)+1)%1;
-  const wobble=groups.length===1?0:.007*Math.sin(dist*.28+angle*19)+.004*Math.sin(y*.19+x*.11);
-  const position=(angle+wobble+1)%1;
-  let group=0;
-  while(group<limits.length-1&&position>=limits[group])group++;
-  const rgb=COLOR_RGB[groups[group].color];
-  grid.mass[i]=1;
-  grid.r[i]=rgb[0];grid.g[i]=rgb[1];grid.b[i]=rgb[2];
- }
- return {total,groups};
+ return {total:result.total,groups:result.group.map(g=>({
+  color:["W","U","B","R","G","C"][g.color],count:g.count
+ }))};
 }
+
 export function stirDye(grid,x,y,dx,dy){
  const speed=clamp(Math.hypot(dx,dy),0,10);
  if(!speed)return;
+ stirPigmentWake(grid,x,y,dx,dy);
  const radius2=105;
  for(let j=Math.max(1,Math.floor(y-11));j<Math.min(N-1,Math.ceil(y+11));j++){
   for(let i=Math.max(1,Math.floor(x-11));i<Math.min(N-1,Math.ceil(x+11));i++){
@@ -104,24 +80,31 @@ function sample(grid,field,x,y){
 export function advanceFluid(grid,dt=1){
  const {tmp}=grid;
  dt=clamp(dt,.05,1.8);
+ // When the pot holds mana, only advect the physical velocity here.
+ // Each color is transported separately, mixed and rebalanced afterwards.
+ const fields=grid.pigmentLive?["vx","vy"]:FIELDS;
  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
   const i=INDEX(x,y);
-  if(!grid.active[i]){for(const k of FIELDS)tmp[k][i]=0;continue;}
+  if(!grid.active[i]){for(const k of fields)tmp[k][i]=0;continue;}
   const sx=x-grid.vx[i]*dt*.72,sy=y-grid.vy[i]*dt*.72;
-  for(const k of FIELDS)tmp[k][i]=sample(grid,grid[k],sx,sy);
+  for(const k of fields)tmp[k][i]=sample(grid,grid[k],sx,sy);
  }
  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
   const i=INDEX(x,y);if(!grid.active[i])continue;
-  const left=i-1,right=i+1,up=i-N,down=i+N;
-  const neighbors=(grid.active[left]?1:0)+(grid.active[right]?1:0)+(grid.active[up]?1:0)+(grid.active[down]?1:0);
-  for(const k of ["mass","r","g","b"]){
-   const average=neighbors?((grid.active[left]?tmp[k][left]:0)+(grid.active[right]?tmp[k][right]:0)+(grid.active[up]?tmp[k][up]:0)+(grid.active[down]?tmp[k][down]:0))/neighbors:tmp[k][i];
-   grid[k][i]=Math.max(0,(tmp[k][i]*.96+average*.04)*.9998);
+  if(!grid.pigmentLive){
+   const left=i-1,right=i+1,up=i-N,down=i+N;
+   const neighbors=(grid.active[left]?1:0)+(grid.active[right]?1:0)+(grid.active[up]?1:0)+(grid.active[down]?1:0);
+   for(const k of ["mass","r","g","b"]){
+    const average=neighbors?((grid.active[left]?tmp[k][left]:0)+(grid.active[right]?tmp[k][right]:0)+(grid.active[up]?tmp[k][up]:0)+(grid.active[down]?tmp[k][down]:0))/neighbors:tmp[k][i];
+    grid[k][i]=Math.max(0,(tmp[k][i]*.96+average*.04)*.9998);
+   }
   }
   grid.vx[i]=tmp.vx[i]*grid.drag[i];
   grid.vy[i]=tmp.vy[i]*grid.drag[i];
  }
+ if(grid.pigmentLive)mixPigments(grid,dt);
 }
+
 export function installFluidWard({canvas,target,onInteract=()=>{}}){
  const ctx=canvas?.getContext?.("2d",{alpha:true,desynchronized:true});
  if(!ctx||!target)return {
@@ -187,6 +170,7 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
  function frame(now){
   if(!active)return;
   if(document.hidden||(!charged.length&&!drag&&!ripples.length)){raf=requestAnimationFrame(frame);return;}
+  if(lastFrame&&window.innerWidth<=700&&now-lastFrame<28){raf=requestAnimationFrame(frame);return;}
   const dt=Math.min((now-lastFrame)/16.67||1,1.7);lastFrame=now;
   if(!reduced()){advanceFluid(grid,dt);for(const ripple of ripples)ripple.age+=dt*.09;}
   ripples=ripples.filter(r=>r.age<2);pulse=Math.max(0,pulse-.025*dt);
@@ -294,6 +278,7 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
   // Exposed for direct browser QA, does not affect authoritative puzzle rules.
   debugCellMass:()=>grid.mass.reduce((sum,v)=>sum+v,0),
   debugColorAt:(x,y)=>{const i=INDEX(Math.max(0,Math.min(N-1,Math.round(x))),Math.max(0,Math.min(N-1,Math.round(y))));const m=grid.mass[i]||1;return [grid.r[i]/m,grid.g[i]/m,grid.b[i]/m]},
-  debugProportions:()=>charged.reduce((a,o)=>(a[o.color]=(a[o.color]||0)+1,a),{})
+  debugProportions:()=>charged.reduce((a,o)=>(a[o.color]=(a[o.color]||0)+1,a),{}),
+  debugMixerStats:()=>pigmentStatistics(grid)
  };
 }
