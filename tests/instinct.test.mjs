@@ -7,13 +7,25 @@ import {newRun,start,chooseMutation,turn,step,RULES_VERSION} from "../src/engine
 import {createSessionBest} from "../src/session-best.js";
 import {boardKey} from "../src/modes.js";
 
-test("mutation choices map to W/up/1, A/left/2, S/down/3 without a movement turn",()=>{
- for(const keys of [["w","W","ArrowUp","1"],["a","A","ArrowLeft","2"],["s","S","ArrowDown","3"]]){
-  const n=[["w","a","s"].indexOf(keys[0])][0];
-  for(const key of keys){assert.equal(mutationSelectionIndex(key),n);assert.equal(mutationSelectionIndex(key,true),null);}
+test("mutation keys are numeric only; two rapid movement inputs cannot choose a mutation",()=>{
+ for(const [key,index] of [["1",0],["2",1],["3",2]]){
+  assert.equal(mutationSelectionIndex(key),index);
+  assert.equal(mutationSelectionIndex(key,true),null,"held number key does not repeat");
  }
- for(const key of ["d","D","ArrowRight","Escape","4",null])assert.equal(mutationSelectionIndex(key),null);
+ for(const key of [...Object.keys(KEY_DIRECTIONS),"Escape","4",null])
+  assert.equal(mutationSelectionIndex(key),null,"movement and non-choice keys must be safe at the draft boundary");
  assert.equal(KEY_DIRECTIONS.ArrowRight,"right");
+ const run=newRun({seed:42,mode:"classic"});start(run);
+ run.status="draft";run.draftOptions=["U","G","W"];
+ const previous=run.evolutionsChosen;
+ for(const key of ["ArrowUp","ArrowRight","w","a","ArrowDown","s"]){
+  const choice=mutationSelectionIndex(key,false);
+  if(choice!==null)chooseMutation(run,run.draftOptions[choice]);
+  assert.equal(run.status,"draft","rapid direction input must not dismiss draft");
+  assert.equal(run.evolutionsChosen,previous);
+ }
+ assert.equal(chooseMutation(run,run.draftOptions[mutationSelectionIndex("2")]),true);
+ assert.equal(run.evolutionsChosen,previous+1);
 });
 test("desktop mouse and keyboard selections wait; real touch taps resume immediately",()=>{
  assert.equal(isTouchMutationSelection({pointerType:"touch",detail:1}),true);
@@ -65,16 +77,16 @@ function fake(tag="span"){
  };
  return o;
 }
-test("mutation cards show new shortcuts and only mention Brood Trail rewards",()=>{
+test("mutation cards show only number shortcuts, and describe Brood Trail rewards",()=>{
  const doc={createElement:tag=>fake(tag)};
  const root=fake("section");root.ownerDocument=doc;
  const overlay={hidden:true};const selected=[];
  showMutationDraft(overlay,root,["G","R","U"],(color,event)=>selected.push([color,event]),"classic");
  assert.equal(overlay.hidden,false);
  assert.equal(root.children.length,3);
- assert.equal(root.children[0].children[0].textContent,"W / ↑ / 1");
- assert.equal(root.children[1].children[0].textContent,"A / ← / 2");
- assert.equal(root.children[2].children[0].textContent,"S / ↓ / 3");
+ assert.equal(root.children[0].children[0].textContent,"1");
+ assert.equal(root.children[1].children[0].textContent,"2");
+ assert.equal(root.children[2].children[0].textContent,"3");
  for(const card of root.children)assert.doesNotMatch(card.attributes["aria-label"],/capture|kill/i);
  const event={pointerType:"touch",detail:1};
  root.children[0].listeners.click(event);
@@ -102,6 +114,8 @@ test("browser gate freezes the frame loop and retains replay-rules version",()=>
  assert.match(main,/showMutationDraft\([^\n]*state\.run\.mode\)/);
  assert.match(html,/id="mutationResume"[^>]*hidden/);
  assert.match(html,/SESSION BEST/);
+ assert.match(html,/KEYBOARD 1 \/ 2 \/ 3 · MOVEMENT KEYS IGNORE THIS MENU/);
+ assert.doesNotMatch(html,/TAP TO SELECT · W \/ A \/ S/);
  assert.match(html,/1\.4 · BEACON/);
  assert.equal(RULES_VERSION,"hive-1.3","UI-only release does not alter replay rules");
 });
