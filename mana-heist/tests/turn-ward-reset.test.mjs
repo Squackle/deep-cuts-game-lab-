@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {installFluidWard} from "../src/fluid-ward.js";
 import {BASE_LEVELS} from "../src/levels.js";
-import {initial,reduce} from "../src/engine.js";
+import {initial,actions,reduce} from "../src/engine.js";
 import {reconstruct,transitionOrbs} from "../src/mana-orbs.js";
 
 function mockWard(){
@@ -82,7 +82,9 @@ test("ending a legal turn zeroes authoritative mana while leaving land for the n
  const level=BASE_LEVELS[2]; // Paired Sigils, two turns
  let state=initial(level);
  let visual=reconstruct(state.pool);
- for(const action of [{type:"play",id:"a"},{type:"tap",id:"a",color:"U"}]){
+ for(const move of [{type:"play",id:"a"},{type:"tap",id:"a",color:"U"}]){
+  const action=actions(level,state).find(a=>a.type===move.type&&a.id===move.id&&(move.color==null||a.color===move.color));
+  assert.ok(action,"expected legal action "+JSON.stringify(move));
   const out=reduce(level,state,action);
   assert.equal(out.ok,true,JSON.stringify(action));
   state=out.state;
