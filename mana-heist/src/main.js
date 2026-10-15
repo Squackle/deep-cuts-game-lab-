@@ -51,18 +51,6 @@ function chargeWard({pendingId=null,animateId=null}={}){
  });
 }
 const cardInspector=installCardInspector({dialog:el("realCardInspector"),closeButton:el("closeInspector")});
-function updateVisiblePrints(ids){
- const allowed=new Set(ids);
- for(const button of document.querySelectorAll('.land-card.mtg-real-land[data-cardid]')){
-  if(!allowed.has(button.dataset.cardid))continue;
-  const img=button.querySelector(".mtg-card-image");
-  const art=imageFor(button.dataset.cardid,button.dataset.realCard);
-  if(img&&art&&img.getAttribute("src")!==art){
-   img.src=art;
-   button.classList.remove("image-failed");
-  }
- }
-}
 function inspectById(id){
  const record=lookup(level,id);
  if(!record)return false;
@@ -182,6 +170,37 @@ function landHtml(instance,field){
   '</button>';
 }
 
+// Keep image DOM nodes alive: a Scryfall /cards/random redirect must NEVER
+// reload on tap, play, Undo, automatic casting or cost updates.
+function syncLandRows(){
+ const existing=new Map(
+  [...document.querySelectorAll('#battlefield .land-card[data-cardid],#hand .land-card[data-cardid]')]
+   .map(node=>[node.dataset.cardid,node])
+ );
+ const make=(instance,field)=>{
+  const id=instance.id,card=getCard(level,id),tapped=field&&instance.tapped;
+  let node=existing.get(id);
+  if(!node){
+   const wrapper=document.createElement("template");
+   wrapper.innerHTML=landHtml(instance,field);
+   node=wrapper.content.firstElementChild;
+  }
+  node.classList.toggle("is-tapped",!!tapped);
+  node.dataset.zone=field?"field":"hand";
+  const name=card.name;
+  node.setAttribute("aria-label",(field?"Tap ":"Drag to battlefield: ")+name+(tapped?", tapped":""));
+  node.title=name+" · "+(field?"tap to produce mana":"drag to play · tap to inspect");
+  return node;
+ };
+ const fieldNodes=state.field.map(f=>make(f,true));
+ const handNodes=state.hand.map(id=>make({id},false));
+ const empty=text=>{
+  const item=document.createElement("span");
+  item.className="empty";item.textContent=text;return item;
+ };
+ el("battlefield").replaceChildren(...(fieldNodes.length?fieldNodes:[empty("No lands in play yet. Play one from your hand.")]));
+ el("hand").replaceChildren(...(handNodes.length?handNodes:[empty("No land cards remain in hand.")]));
+}
 function render(pendingId=null){
  const proof=proofs.get(level.id),isWin=completed(level,state),stage=level.stages[state.stage];
  el("stageLabel").textContent="STAGE "+stageCode(index);
@@ -201,8 +220,7 @@ function render(pendingId=null){
  el("autoCastLabel").textContent=isWin?"ALL WARDS OPEN":stage.effect==="untap"?"AUTO REWIND · CHANNEL MANA":"AUTO-CAST ENABLED · CHANNEL MANA";
  el("stageList").innerHTML=level.stages.map((spell,i)=>'<span class="stage-marker '+(i<state.stage?"done":i===state.stage?"active":"")+'">'+(i<state.stage?"✓":String(i+1).padStart(2,"0"))+" "+spell.name+"</span>").join("");
  el("battleCount").textContent=state.field.length+" LAND"+(state.field.length===1?"":"S");
- el("battlefield").innerHTML=state.field.length?state.field.map(f=>landHtml(f,true)).join(""):'<span class="empty">No lands in play yet. Play one from your hand.</span>';
- el("hand").innerHTML=state.hand.length?state.hand.map(id=>landHtml({id},false)).join(""):'<span class="empty">No land cards remain in hand.</span>';
+ syncLandRows();
  el("libraryPanel").hidden=level.library.length===0;
  el("libraryPanel").textContent=level.library.length?"RESERVE / FETCH TARGETS: "+level.library.map(x=>CARDS[x.card].name).join(" · "):"";
 
@@ -249,7 +267,8 @@ function load(i,enter=false){
  if(!unlocked(i,progress.bests)){message("That vault is sealed. Crack the previous stage to unlock it.",true);return false;}
  index=i;world=chapterIndex(index);
  level=LEVELS[index];state=initial(level);history=[];selectedMessage="";
- startStagePrintings(level,updateVisiblePrints);
+ startStagePrintings(level);
+ el("battlefield").replaceChildren();el("hand").replaceChildren();
  manaOrbs=reconstruct(state.pool);el("manaTravelLayer").replaceChildren();
  progress.index=index;persist();render();
  if(!el("gameNotes").hidden)renderCardReferences(el("cardGallery"),level);
