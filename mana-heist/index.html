@@ -46,14 +46,13 @@
    </section>
    <section class="table-card" aria-labelledby="battleTitle">
     <div class="section-label"><div><p class="overline">THE BATTLEFIELD</p><h2 id="battleTitle">Your lands <small>Tap for mana</small></h2></div><span id="battleCount" class="count">0 LANDS</span></div>
-    <div id="battlefield" class="land-grid" aria-label="Lands in play"></div>
+    <div id="battlefield" class="land-grid" tabindex="0" role="group" aria-label="Battlefield drop zone: drag lands here from your hand"></div>
    </section>
    <section class="table-card hand-card" aria-labelledby="handTitle">
-    <div class="section-label"><div><p class="overline">YOUR HAND</p><h2 id="handTitle">Land options</h2></div><span class="count">ONE LAND DROP PER TURN</span></div>
-    <div id="hand" class="land-grid" aria-label="Lands available to play"></div>
+    <div class="section-label"><div><p class="overline">YOUR HAND</p><h2 id="handTitle">Your hand <small>Drag to battlefield ↑</small></h2></div><span class="count">ONE LAND DROP PER TURN</span></div>
+    <div id="hand" class="land-grid" aria-label="Drag land cards from hand onto the battlefield"></div>
     <div id="libraryPanel" class="library-panel" hidden></div>
    </section>
-   <div class="controlbar"><button type="button" id="endTurn" class="primary">END TURN <span>↗</span></button><button id="undo" type="button">↶ UNDO</button><button id="reset" type="button">⟲ RESTART</button><button id="skip" type="button">← MAP</button></div>
    <p class="feedback" id="feedback" role="status" aria-live="polite">Choose your first move.</p>
   </div>
   <aside class="side">
@@ -61,6 +60,7 @@
     <div class="section-label"><div><p class="overline">MANA LEDGER</p><h2>Floating mana</h2></div><span id="poolTotal" class="count">0 IN POOL</span></div>
     <div class="pool-console"><div class="pool-console-top"><span>◉ THE RESERVOIR</span><span>LAND → SOCKET</span></div><div id="pool" class="pool mana-sockets" aria-label="Mana sockets, filled by tapping lands"></div></div>
    </section>
+   <div class="controlbar"><button type="button" id="endTurn" class="primary">END TURN <span>↗</span></button><button id="undo" type="button">↶ UNDO</button><button id="reset" type="button">⟲ RESTART</button><button id="skip" type="button">← MAP</button></div>
    <section class="side-box action-box" id="actionBox" role="dialog" aria-modal="true" aria-labelledby="actionTitle" hidden>
     <div class="section-label"><div><p class="overline">DECISION POINT</p><h2 id="actionTitle">Your next choice</h2></div><button type="button" id="dismissChoices" class="choice-close" aria-label="Cancel selection">✕</button></div>
     <div id="choices" class="choices"><p class="muted">Play a land from your hand or tap an untapped land.</p></div>
@@ -72,7 +72,7 @@
   <div class="notes-heading"><p class="overline">BELOW THE TABLE</p><h2 id="notesTitle">The case file</h2><a href="#heist">↑ BACK TO GAME</a></div>
   <p class="muted" id="briefing"></p>
   <p id="wardDescription" class="muted">The current ward requires the mana shown in its cost.</p>
-  <div class="notes-grid"><div><h3>How it works</h3><p class="muted">Tap a land to add mana. Tapped lands rotate sideways. Multicolor lands offer a color choice. Play at most one land each turn, spend mana to cast the ward-breaking spells, and end the turn to untap your lands. You can undo freely.</p></div>
+  <div class="notes-grid"><div><h3>How it works</h3><p class="muted">Drag a land from your hand onto the battlefield to play it. Tap a land already on the battlefield to add mana. Tapped lands rotate sideways. Multicolor lands offer a color choice. Play at most one land each turn, spend mana to cast the ward-breaking spells, and end the turn to untap your lands. You can undo freely.</p></div>
   <div><h3>Three-star route</h3><p class="muted">The solver scores the fewest turns and least life lost, not the number of taps. Your floating mana expires at the end of each turn. Future chapters unlock sequentially.</p></div></div>
   <section id="realCardReference" aria-labelledby="cardReferenceHeading"><div class="notes-heading"><div><p class="overline">OFFICIAL CARDS · LEARNING REFERENCES</p><h2 id="cardReferenceHeading">Real Magic lands</h2></div><a href="https://scryfall.com/" target="_blank" rel="noopener noreferrer">VIEW SCRYFALL ↗</a></div>
   <p class="muted small">See the real Magic: The Gathering cards behind these mana-base ideas. These are educational references, not playable game pieces. Their exact Oracle abilities can differ from the simplified heist rules.</p>
