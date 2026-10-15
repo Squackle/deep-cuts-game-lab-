@@ -58,6 +58,7 @@ const fluid=installFluidWard({
  canvas:el("wardFluidCanvas"),target:el("wardTarget"),
  onInteract:()=>{if(autoTimer!==null)el("autoCastLabel").textContent="STIRRING MANA · AUTO CAST ON RELEASE";}
 });
+el("wardTarget").dataset.preloadedMixes=String(PRELOADED_MIX_COUNT);
 let currentFluidStage="";
 function chargeWard({pendingId=null,animateId=null}={}){
  const stageKey=level.id+":"+state.stage;
