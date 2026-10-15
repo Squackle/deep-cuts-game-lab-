@@ -120,7 +120,8 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
  let charged=[],appliedIds=new Set(),ripples=[],pulse=0;
  const reduced=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches===true;
  function clearGrid(){
-  target.classList.remove("ward-breaking");
+  target.classList.remove("ward-breaking","is-stirring");
+  drag=null;hover=null;lastStir=0;
   for(const k of FIELDS)grid[k].fill(0);
   // Undo, a new ward, or Map must not retain pigment from an old state.
   grid.pigmentLive=false;
@@ -201,7 +202,8 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
  }
  function sync(next,{reset=false}={}){
   const list=next||[],ids=new Set(list.map(o=>o.id));
-  if(reset||charged.some(o=>!ids.has(o.id)||!list.find(p=>p.id===o.id&&p.color===o.color)))clearGrid();
+  const removed=charged.some(o=>!ids.has(o.id)||!list.find(p=>p.id===o.id&&p.color===o.color));
+  if(reset||removed)clearGrid();
   const newMana=list.filter(o=>!appliedIds.has(o.id));
   for(const orb of newMana){inject(orb);appliedIds.add(orb.id);}
   if(reset||!grid.pigmentLive){
@@ -216,7 +218,10 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
   charged=list.map(o=>({...o}));
   target.style.setProperty("--fusion-color",cssForOrbs(charged));
   target.dataset.fusionCount=String(charged.length);
-  if(!active||reduced())render();
+  // A running frame loop sleeps when no mana remains. Always repaint once
+  // when the last orb disappears; otherwise its previous colored Canvas
+  // bitmap remains visible indefinitely despite a cleared simulation grid.
+  if(reset||removed||!list.length||!active||reduced())render();
  }
  // Mouse: simply entering and MOVING stirs — no button press.
  canvas.addEventListener("pointerenter",e=>{
@@ -284,7 +289,12 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
  }
 
  return {
-  available:true,sync,clear(){clearGrid();target.style.setProperty("--fusion-color","#32616d");render();},
+  available:true,sync,clear(){
+   clearGrid();
+   target.style.setProperty("--fusion-color",cssForOrbs([]));
+   target.dataset.fusionCount="0";
+   render();
+  },
   pause,resume,burst,isStirring:()=>!!drag,lastStirAt:()=>lastStir,
   getColor:()=>cssForOrbs(charged),getCount:()=>charged.length,
   // Exposed for direct browser QA, does not affect authoritative puzzle rules.

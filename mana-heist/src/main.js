@@ -161,6 +161,10 @@ function perform(action){
  state=out.state;
  manaOrbs=transitionOrbs(manaOrbs,action,state.pool);
  if(!consistent(state.pool,manaOrbs))manaOrbs=reconstruct(state.pool);
+ // Floating mana expires at the turn boundary. Reset ALL visual pigment,
+ // currents, ripples and glow immediately, even while Canvas is animating.
+ // This does not change the reducer, spell costs or playable land state.
+ if(action.type==="end"){fluid.clear();currentFluidStage="";}
  const pendingId=action.type==="tap"?manaOrbs[manaOrbs.length-1]?.id:null;
  if(pendingId!=null)pendingFlights.add(pendingId);
  if(completed(level,state)){
