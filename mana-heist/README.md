@@ -110,3 +110,18 @@ The Mana Heist playtable now treats the hand like a card game: **drag a land fro
 - Browser at 320×568: full game fits without horizontal overflow; keyboard pickup and drop plays a land and controls remain visible.
 - Browser at 1440×900: simulated **mouse pointer** drag plays a land, sidebar controls remain under the ledger, full game fits the viewport with no horizontal overflow.
 - Hardware-specific touchscreen gesture testing remains a useful follow-up. Lab-only scope, no production Arcade changes and no other game paths modified.
+
+## 0.6 — Scryfall Magic card inspector in the playtable
+
+**Reason for scope:** The owner requested real MTG cards in the playable land game using Scryfall. Wizards' Fan Content Policy prohibits using Wizards IP as components in other independently created games without prior authorization, and Scryfall's API/image usage guidelines prohibit using its content to create a new game. Thus the *playable pieces* remain original cards; the new feature is a direct, full-image **educational card inspection overlay** within the heist, not a substitute for or a licensed game component. This is a best-effort alternative pending rights-holder approval; no assertion of authorization.
+
+In the main single-screen game, tapping (not dragging) a card in the **hand** opens its real Magic analog as a full, uncropped Scryfall card image, with its actual card name, Scryfall link, and Wizards/artist credit notice. The existing drag interaction still plays the original land card, and tapping battlefield lands still makes mana. A new `ⓘ MTG CARD` button in the playtable title bar shows the most recently interacted land's reference (defaulting to the first land in play/hand), and focus on either hand or battlefield card followed by `I` also opens the inspector. Escape, close button, or backdrop click dismisses it without changing game state. The inspector defers its image request until opened; the full card image is not cached or bundled in the project. If Scryfall image retrieval fails or is blocked, the card's real name and Scryfall link remain accessible. The original below-fold reference gallery remains.
+
+Scryfall docs and Wizards policy: https://scryfall.com/docs/api and https://company.wizards.com/en/legal/fancontentpolicy. The official images and notices stay intact; none are overlaid/cropped/recolored or distributed in this repository.
+
+### Validation
+
+- Added `tests/card-inspector.test.mjs` validating real-card mapping to Scryfall image endpoint, dedicated non-playable overlay markup, inspect-vs-drag separation and intact art notices.
+- Existing 18 solver-replayed puzzles, single-screen layout, mobile controls, mouse/touch drag-and-drop, and orb tracker are unchanged.
+- Browser smoke on Cloudflare preview at 390x844: clicking `MTG CARD` opened the Island reference with full-image Scryfall URL; closing left the mana untouched; tapping the battlefield produced mana and casting opened Vault 1; hand tap in Vault 2 opened the Mountain reference without consuming a land drop. At 320x568: no page overflow, both header buttons visible, inspector fit viewport, and dragging the Mountain into play still worked without opening the inspector.
+- This does not satisfy a requirement to use official Wizards card imagery *as a playable game asset*; doing so requires authorization outside this Lab release.
