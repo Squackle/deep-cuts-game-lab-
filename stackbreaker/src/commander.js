@@ -170,13 +170,13 @@ export function commanderScenario(input,index=0){
  p.hand.push({id:'real-hand-enchantment',card:chooseCommanderPermanent(p,index+7,'enchantment',seen)});
  const pool=INSTANT_OPTIONS.filter(n=>!seen.has(n)).map(name=>({name,score:candidateScore(p,name,index*101+37)}))
   .sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name));
- let choiceIndex=0;
+ let choiceIndex=0,supportAdded=false;
  while(p.hand.filter(x=>!x.sourceId).length<minimum){
   const remaining=minimum-p.hand.filter(x=>!x.sourceId).length;
   // Some hands also contain a Commander staple or a sorcery-speed ramp spell.
-  if(remaining>2&&index%4===0){
+  if(remaining>2&&index%4===0&&!supportAdded){
    const other=chooseCommanderPermanent(p,index+choiceIndex+19,'support',seen);
-   p.hand.push({id:'real-hand-support',card:other});continue;
+   p.hand.push({id:'real-hand-support',card:other});supportAdded=true;continue;
   }
   const next=pool.find(x=>!seen.has(x.name));
   if(!next)throw Error('Insufficient distinct response spells for '+p.id);
