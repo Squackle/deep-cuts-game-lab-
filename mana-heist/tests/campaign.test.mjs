@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {LEVELS,CHAPTERS} from "../src/levels.js";
-import {highestUnlocked,unlocked,chapterIndex,stageCode,chapterAccessible,normalizedBests} from "../src/campaign.js";
+import {LEVELS,CHAPTERS,GALAXIES} from "../src/levels.js";
+import {highestUnlocked,unlocked,chapterIndex,stageCode,chapterAccessible,galaxyAccessible,normalizedBests} from "../src/campaign.js";
 import {consistent,reconstruct,renderLedger,transitionOrbs} from "../src/mana-orbs.js";
 const win=(i)=>({[LEVELS[i].id]:{turn:1,spentLife:0}});
 test("first vault is the only unlocked stage for a new player",()=>{
@@ -10,12 +10,16 @@ test("first vault is the only unlocked stage for a new player",()=>{
  assert.equal(unlocked(1,{}),false);
  assert.equal(chapterAccessible(0,{}),true);
  assert.equal(chapterAccessible(1,{}),false);
- assert.equal(stageCode(0),"1:1");
- assert.equal(stageCode(2),"1:3");
- assert.equal(stageCode(3),"2:1");
- assert.equal(stageCode(6),"2:4");
- assert.equal(stageCode(7),"3:1");
- assert.equal(stageCode(17),"5:3");
+ assert.equal(stageCode(0),"1:1:1");
+ assert.equal(stageCode(2),"1:1:3");
+ assert.equal(stageCode(3),"1:1:4");
+ assert.equal(stageCode(6),"1:1:7");
+ assert.equal(stageCode(7),"1:1:8");
+ assert.equal(stageCode(17),"1:2:8");
+ assert.equal(stageCode(50),"2:1:1");
+ assert.equal(stageCode(249),"5:5:10");
+ assert.equal(CHAPTERS.length,25);
+ assert.equal(GALAXIES.length,5);
 });
 test("sequential wins unlock exactly the next vault and acts stay closed until then",()=>{
  const best={};
@@ -27,7 +31,8 @@ test("sequential wins unlock exactly the next vault and acts stay closed until t
   assert.equal(chapterIndex(i+1)>=chapterIndex(i),true);
  }
  assert.equal(highestUnlocked(best),LEVELS.length-1);
- assert.equal(chapterAccessible(4,best),true);
+ assert.equal(chapterAccessible(24,best),true);
+ assert.equal(galaxyAccessible(4,best),true);
 });
 test("out-of-order legacy wins never unlock skipped stages",()=>{
  const best={...win(4),...win(12),...win(0)};
