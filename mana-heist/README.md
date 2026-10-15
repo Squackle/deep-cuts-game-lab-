@@ -95,3 +95,18 @@ However, the reading area below the game now includes a clearly separated **“R
 - Node suite still tests all 18 solvable heists, older save migration, sequential progression, mana-orb consistency; additional tests in `tests/card-references.test.mjs` validate genuine Magic reference-name mappings, full-card image URL format and fallbacks.
 - Cloudflare **preview browser** prior to final viewport adjustment at 390×844 and 320×568 confirmed the compact board and controls were visible together without horizontal page overflow; tapping a land rotated it, filled the orb, and casting completed Stage 1:1. The last viewport tweak sets the game height to exactly `100dvh` so the explanation section begins below the visual fold; run final production verification after merge.
 - Only `mana-heist/**` paths modified; **no public Deep Cuts site, Hive Run paths, user profiles, scores or D1**.
+
+## 0.5 — Drag lands to the battlefield; actions beneath mana ledger
+
+The Mana Heist playtable now treats the hand like a card game: **drag a land from your hand up onto the battlefield to play it**. Mouse, pen, and touch are handled by a single pointer-gesture controller (`src/drag-lands.js`). Hand clicks intentionally **do not play lands**. The source card dims while moving, a floating card preview follows the pointer, the battlefield highlights on a valid drop, and releasing anywhere else cancels without changing resources. The engine still enforces one land play per turn and preserves shock/bounce choices after a valid drop. Tapping already-played lands for mana is unchanged. Keyboard accessibility: focus a hand card, press Enter or Space to pick it up, and press Enter or Space on the focused battlefield to play; Escape cancels.
+
+**End Turn, Undo, Restart, and Map** are grouped directly under the floating mana ledger on desktop and in the immediate next row after the reservoir on mobile. On mobile the vertical order is ward → reservoir → actions → battlefield → hand; the full playable table remains within one viewport. Instructions and official Magic card reference gallery remain below the fold, and no legend returns.
+
+### Tests
+
+- `mana-heist/tests/drag-lands.test.mjs` validates droppable-area hit testing, gesture movement threshold, the real control placement in the HTML sidebar, disabled click-to-play wiring and keyboard/pointer drop controllers.
+- All 18 authored puzzles still use the same previously proven reducer/solver and local best-state storage.
+- Cloudflare preview browser proof at 390×844: tap and cast Stage 1:1, enter Stage 1:2; a hand click leaves the land drop available; synthetic **touch pointer** drag highlights the battlefield and successfully plays the red land, removing it from hand; four controls are visible beneath mana ledger without overflow.
+- Browser at 320×568: full game fits without horizontal overflow; keyboard pickup and drop plays a land and controls remain visible.
+- Browser at 1440×900: simulated **mouse pointer** drag plays a land, sidebar controls remain under the ledger, full game fits the viewport with no horizontal overflow.
+- Hardware-specific touchscreen gesture testing remains a useful follow-up. Lab-only scope, no production Arcade changes and no other game paths modified.
