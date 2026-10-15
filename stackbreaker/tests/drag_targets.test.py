@@ -62,7 +62,7 @@ with sync_playwright() as pw:
   if 'CASE SOLVED' in page.locator('#resultEyebrow').inner_text():break
   page.locator('#passButton').click()
  assert 'CASE SOLVED' in page.locator('#resultEyebrow').inner_text()
- page.locator('#nextButton').click();assert page.locator('#missionNum').inner_text().startswith('2-1')
+ page.locator('#nextButton').click();assert page.locator('#missionNum').inner_text().startswith('1.1-7')
  print('PASS level 6: direct-life and direct-stack drop, solve puzzle, next case')
  page.locator('#scenarioSelect').select_option('3')
  for id in ('land-1','land-2','land-3'):page.locator(f'[data-land="{id}"]').click()
