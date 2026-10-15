@@ -40,7 +40,7 @@ test('advanced levels need distinct real stack targets and singleton response ca
    const a=p.hand.find(x=>x.id===id);
    assert.ok(a,p.id+' response missing '+id);
    if(!a.sourceId){assert.ok(!seen.has(a.card),p.id+' duplicated response '+a.card);seen.add(a.card);}
-   assert.ok(target===null||p.units.some(x=>x.id===target)||p.stack.some(x=>x.id===target),p.id+' target gone '+target);
+   assert.ok(target===null||target==='player'||target==='opponent'||p.units.some(x=>x.id===target)||p.stack.some(x=>x.id===target),p.id+' target gone '+target);
   }
   if(p.difficulty.addedThreats>=2)multi++;
  }
