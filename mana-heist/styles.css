@@ -536,3 +536,15 @@
  .ward-charge-arc{transition:none}
  .mana-ledger-entry.occupied:not(.in-flight){animation:none}
 }
+
+/* Translucent pie slices fill the *inside* of the ward circle in equal thirds. */
+.ward-mana-sector{
+ opacity:.43;stroke:none;
+ transform-box:fill-box;transform-origin:center;
+ filter:drop-shadow(0 0 3px #f5e8e777);
+}
+.lock-ring:has(.ward-mana-sector) .lock-glyph{
+ color:#fff4d9;text-shadow:0 0 12px #050f12,0 0 5px #030707;
+}
+.ward-charge-arc{stroke-width:9}
+@media(prefers-reduced-motion:reduce){.ward-mana-sector{animation:none;transition:none}}
