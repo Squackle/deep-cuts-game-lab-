@@ -90,12 +90,12 @@ function showCardPreview(name,x,y){
 // Hover is deliberately scoped to the artwork, not the whole stack item.
 // The overlay ignores mouse events, so leaving the thumbnail closes it instantly.
 document.addEventListener('pointerover',e=>{
- const art=e.target.closest?.('[data-preview]');if(!art||e.pointerType==='touch')return;
+ const art=e.target.closest?.('[data-preview]');if(!art||dragSession||e.pointerType==='touch')return;
  if(art.contains(e.relatedTarget))return;
  showCardPreview(art.dataset.preview,e.clientX,e.clientY);
 });
 document.addEventListener('pointermove',e=>{
- if(!previewName||e.pointerType==='touch')return;
+ if(!previewName||dragSession||e.pointerType==='touch')return;
  if(!e.target.closest?.('[data-preview]'))closeCardPreview();
 });
 document.addEventListener('pointerout',e=>{
@@ -113,7 +113,7 @@ document.addEventListener('click',e=>{
 });
 window.addEventListener('scroll',closeCardPreview,{passive:true});
 const progressKey='dc-stackbreaker-progress-v3';
-let index=0,game,history=[],hint=false,progress={},dragTouch=null,pendingPlay=null,armedCard=null;
+let index=0,game,history=[],hint=false,progress={},dragTouch=null,pendingPlay=null,armedCard=null,dragSession=null;
 try{progress=JSON.parse(localStorage.getItem(progressKey)||'{}')||{};}catch{}
 const save=()=>{try{localStorage.setItem(progressKey,JSON.stringify(progress))}catch{}};
 function pips(obj,raw=false){let out=[];for(const c of ['generic','W','U','B','R','G','C']){const n=obj?.[c]||0;
@@ -126,7 +126,7 @@ function objectiveText(s){const o=s.objective;if(o.type==='survive')return'Survi
  if(o.type==='keepN')return`Keep at least ${o.count} friendly creatures alive.`;
  return`Keep ${s.units.find(u=>u.id===o.unitId)?.card||'the required creature'} ${o.type==='keepUnit'?'on the battlefield':'out of the graveyard'}.`;
 }
-function changeCase(n){index=Math.max(0,Math.min(scenarios.length-1,n));game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;render();}
+function changeCase(n){clearDragFeedback();index=Math.max(0,Math.min(scenarios.length-1,n));game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;render();}
 function shortCard(u){
  const gone=u.zone!=='battlefield';const ability=game.hand.find(a=>a.sourceId===u.id&&!game.used.includes(a.id));
  const active=ability&&game.status==='playing'&&legalActions(game).includes(ability.id);
@@ -171,15 +171,24 @@ function chooseTarget(target){if(!pendingPlay||pendingPlay.phase!=='target'||!pe
 function choosePayment(i){const p=pendingPlay;if(!p||p.phase!=='payment'||!p.payments[i])return;
  pendingPlay=null;submitCast(p.id,p.target,p.payments[i].spend);
 }
-function beginPlay(id,dropTarget=null){
+function beginPlay(id,dropTarget=null,requireDirectTarget=false){
  const action=game.hand.find(a=>a.id===id&&!a.sourceId&&!game.used.includes(a.id));if(!action){notify('Only spells in your hand can be dragged.');return;}
  if(!legalActions(game).includes(id)){notify('Tap enough lands to pay this card’s mana cost, or check its legal targets.');return;}
  const targets=legalTargets(game,action),payments=paymentOptions(game,CARDS[action.card].cost);
  if(!targets.length||!payments.length){notify('No legal target or mana payment.');return;}
- const chosen=targets.includes(dropTarget)?dropTarget:targets.length===1?targets[0]:undefined;
+ const targeted=targets.some(target=>target!==null);
+ // Pointer casting: choosing a target IS the drop; a generic zone must never
+ // silently choose the only creature or display a catch-all target picker.
+ if(requireDirectTarget&&targeted&&!targets.includes(dropTarget)){
+  const rule=CARDS[action.card].targetRule||'';
+  notify(rule.startsWith('creature')?'Drop the spell directly onto a glowing legal creature.':
+   rule.startsWith('stack:')?'Drop the spell directly onto the glowing spell on the stack.':
+   'Drop the spell directly onto a glowing legal target.');return;
+ }
+ const chosen=targets.includes(dropTarget)?dropTarget:requireDirectTarget?null:targets.length===1?targets[0]:undefined;
  pendingPlay={id,targets,payments,target:chosen,phase:chosen===undefined?'target':payments.length>1?'payment':'done'};
  armedCard=null;
- if(pendingPlay.phase==='done'){const p=pendingPlay;pendingPlay=null;submitCast(id,chosen,payments[0]?.spend??null);}
+ if(pendingPlay.phase==='done'){pendingPlay=null;submitCast(id,chosen,payments[0]?.spend??null);}
  else{render();renderPlayPrompt();notify(chosen===undefined?'Choose a legal target.':'Choose which mana to spend.');}
 }
 function activateFromBattlefield(id){
@@ -190,10 +199,39 @@ function activateFromBattlefield(id){
  pendingPlay={id,targets,payments:[{spend:null,label:'Ability'}],target:undefined,phase:'target'};render();renderPlayPrompt();
 }
 function targetFromElement(element){
- // A generic drop on the stack zone should prompt for a target; only drop on the actual art to target that spell.
- if(element?.closest?.('[data-stack-target]')&&!element.closest?.('.stack-art'))return null;
  const target=element?.closest?.('[data-unit],[data-stack-target],[data-target-person]');
  return target?.dataset.unit??target?.dataset.stackTarget??target?.dataset.targetPerson??null;
+}
+function targetNodeFromElement(element){return element?.closest?.('[data-unit],[data-stack-target],[data-target-person]')??null;}
+function clearDragFeedback(){
+ for(const node of document.querySelectorAll('.drop-ready,.drop-target-legal,.drop-target-hover'))
+  node.classList.remove('drop-ready','drop-target-legal','drop-target-hover');
+ dragSession=null;
+}
+function startDragFeedback(id){
+ clearDragFeedback();closeCardPreview();
+ const action=game.hand.find(a=>a.id===id&&!a.sourceId&&!game.used.includes(a.id));
+ if(!action)return;
+ const available=legalActions(game).includes(id);
+ const targets=legalTargets(game,action),targeted=targets.some(x=>x!==null);
+ dragSession={id,available,targets,targeted};
+ if(!available)return;
+ if(!targeted){for(const node of [$('fieldDrop'),$('stackDrop')])node.classList.add('drop-target-legal');}
+ else for(const node of document.querySelectorAll('[data-unit],[data-stack-target],[data-target-person]')){
+  if(targets.includes(targetFromElement(node)))node.classList.add('drop-target-legal');
+ }
+}
+function updateDragFeedback(element){
+ if(!dragSession)return;
+ document.querySelectorAll('.drop-target-hover,.drop-ready').forEach(n=>n.classList.remove('drop-target-hover','drop-ready'));
+ if(!dragSession.available)return;
+ if(dragSession.targeted){
+  const node=targetNodeFromElement(element);
+  if(node&&dragSession.targets.includes(targetFromElement(node)))node.classList.add('drop-target-hover');
+ }else{
+  const zone=element?.closest?.('#stackDrop,#fieldDrop');
+  if(zone)zone.classList.add('drop-ready');
+ }
 }
 function render(){closeCardPreview();const s=game,p=scenarios[index];$('missionTier').textContent=p.tier.toUpperCase();$('missionNum').textContent=String(index+1).padStart(2,'0')+' / 12';$('scenarioTitle').textContent=p.title;
  $('scenarioSelect').innerHTML=scenarios.map((o,i)=>`<option value="${i}" ${i===index?'selected':''}>${String(i+1).padStart(2,'0')} ${esc(o.title)}${progress[o.id]?' ★':''}</option>`).join('');
@@ -212,7 +250,7 @@ function render(){closeCardPreview();const s=game,p=scenarios[index];$('missionT
  renderPlayPrompt();$('completed').textContent=Object.keys(progress).length+' / 12 SOLVED';$('log').innerHTML=s.log.slice(-14).reverse().map(x=>`<li>${esc(x)}</li>`).join('');$('version').textContent=RULES_VERSION;$('live').textContent=s.log.at(-1)||'Tap a land to produce mana.';
 }
 function notify(message){$('live').textContent=message;}
-function pushState(s){history.push(structuredClone(game));game=s;pendingPlay=null;armedCard=null;render()}
+function pushState(s){clearDragFeedback();history.push(structuredClone(game));game=s;pendingPlay=null;armedCard=null;render()}
 function applyLand(id){try{pushState(tapLand(game,id));}catch(e){notify(e.message)}}
 function applyPass(){pendingPlay=null;try{pushState(pass(game))}catch(e){notify(e.message)}}
 function undo(){pendingPlay=null;armedCard=null;if(!history.length){render();return;}game=history.pop();render()}
@@ -262,34 +300,37 @@ $('playPrompt').addEventListener('click',e=>{
 $('passButton').addEventListener('click',applyPass);$('undoButton').addEventListener('click',undo);$('restartButton').addEventListener('click',()=>changeCase(index));$('nextButton').addEventListener('click',()=>changeCase((index+1)%scenarios.length));
 $('scenarioSelect').addEventListener('change',e=>changeCase(Number(e.target.value)));
 $('hintButton').addEventListener('click',()=>{hint=!hint;render()});
-// Desktop HTML drag/drop: drag the printed card onto the stack or battlefield.
+// Desktop: legal targets get a soft glow; the one under the dragged card
+// brightens to confirm that releasing here will cast the spell at it.
 $('hand').addEventListener('dragstart',e=>{const source=e.target.closest('[data-drag-card]');if(!source||game.status!=='playing'){e.preventDefault();return;}
- e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',source.dataset.dragCard);source.classList.add('dragging');
+ e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',source.dataset.dragCard);
+ source.classList.add('dragging');startDragFeedback(source.dataset.dragCard);
 });
-$('hand').addEventListener('dragend',()=>{document.querySelectorAll('.drop-ready').forEach(n=>n.classList.remove('drop-ready'));document.querySelectorAll('.dragging').forEach(n=>n.classList.remove('dragging'))});
+$('hand').addEventListener('dragend',()=>{clearDragFeedback();document.querySelectorAll('.dragging').forEach(n=>n.classList.remove('dragging'));});
 for(const zone of [$('stackDrop'),$('fieldDrop')]){
- zone.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';zone.classList.add('drop-ready')});
- zone.addEventListener('dragleave',e=>{if(!zone.contains(e.relatedTarget))zone.classList.remove('drop-ready')});
- zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drop-ready');const id=e.dataTransfer.getData('text/plain');if(id)beginPlay(id,targetFromElement(e.target));});
+ zone.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';updateDragFeedback(e.target);});
+ zone.addEventListener('dragleave',e=>{if(!zone.contains(e.relatedTarget))updateDragFeedback(null);});
+ zone.addEventListener('drop',e=>{e.preventDefault();const id=e.dataTransfer.getData('text/plain');const target=targetFromElement(e.target);
+  clearDragFeedback();if(id)beginPlay(id,target,true);});
 }
-// Touch/pen drag with a translucent card ghost. Dropping does not require a Cast button.
+// Touch/pen dragging uses pointer coordinates instead of unreliable native HTML
+// drag/drop. The dragged card is non-interactive so the target underneath glows.
 $('hand').addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')return;const card=e.target.closest('[data-drag-card]');if(!card)return;
  dragTouch={id:card.dataset.dragCard,x:e.clientX,y:e.clientY,moved:false,ghost:null};});
 document.addEventListener('pointermove',e=>{if(!dragTouch)return;const d=dragTouch;
- if(!d.moved&&Math.hypot(e.clientX-d.x,e.clientY-d.y)>9){d.moved=true;d.ghost=document.createElement('div');d.ghost.className='drag-ghost';
+ if(!d.moved&&Math.hypot(e.clientX-d.x,e.clientY-d.y)>9){d.moved=true;startDragFeedback(d.id);d.ghost=document.createElement('div');d.ghost.className='drag-ghost';
  const a=game.hand.find(x=>x.id===d.id);d.ghost.innerHTML=thumb(a.card,'small','drag-card-image');document.body.append(d.ghost);}
  if(!d.moved)return;e.preventDefault();d.ghost.style.left=e.clientX+'px';d.ghost.style.top=e.clientY+'px';
- document.querySelectorAll('.drop-ready').forEach(n=>n.classList.remove('drop-ready'));
- const point=document.elementFromPoint(e.clientX,e.clientY)?.closest('#stackDrop,#fieldDrop');if(point)point.classList.add('drop-ready');
+ updateDragFeedback(document.elementFromPoint(e.clientX,e.clientY));
 },{passive:false});
 function finishTouch(e){if(!dragTouch)return;const d=dragTouch;dragTouch=null;
  const el=d.moved?document.elementFromPoint(e.clientX,e.clientY):null;
  const zone=el?.closest?.('#stackDrop,#fieldDrop');const target=targetFromElement(el);
- d.ghost?.remove();document.querySelectorAll('.drop-ready').forEach(n=>n.classList.remove('drop-ready'));
- if(zone)beginPlay(d.id,target);
+ d.ghost?.remove();clearDragFeedback();
+ if(zone)beginPlay(d.id,target,true);
 }
 document.addEventListener('pointerup',finishTouch);
-document.addEventListener('pointercancel',()=>{dragTouch?.ghost?.remove();dragTouch=null;document.querySelectorAll('.drop-ready').forEach(n=>n.classList.remove('drop-ready'))});
+document.addEventListener('pointercancel',()=>{dragTouch?.ghost?.remove();dragTouch=null;clearDragFeedback();});
 // Accessible non-pointer alternative: focus a hand card, press Enter, focus battlefield/stack, press Enter.
 $('hand').addEventListener('keydown',e=>{const card=e.target.closest('[data-drag-card]');if(card&&['Enter',' '].includes(e.key)){e.preventDefault();armedCard=card.dataset.dragCard;render();notify('Card selected. Focus the battlefield or stack and press Enter to place it.');}});
 for(const zone of [$('stackDrop'),$('fieldDrop')])zone.addEventListener('keydown',e=>{if(armedCard&&['Enter',' '].includes(e.key)){e.preventDefault();beginPlay(armedCard);}});
