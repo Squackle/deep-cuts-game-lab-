@@ -15,7 +15,7 @@ test("Beacon is ordinary arcade without tutorial gates; replay rules remain unch
  assert.doesNotMatch(css,/beacon-training-(prompt|button)/);
  assert.match(main,/function begin\(\)/);
  assert.match(main,/if\(lairActive\(\)\)return;/);
- assert.equal(RULES_VERSION,"hive-1.3");
+ assert.equal(RULES_VERSION,"hive-1.5");
 });
 test("Beacon scores blink three times, fixed at the capture tile, then vanish",()=>{
  const flash=captureFlash({x:4,y:7},300,100);
@@ -46,7 +46,7 @@ test("Beacon scores blink three times, fixed at the capture tile, then vanish",(
  assert.equal(drawn.length,prev+2,"reduced-motion players see one steady stamp");
  assert.equal(isScoreFlashVisible(flash,80,true),false);
  assert.equal(captureFlash({x:NaN,y:0},5),null);
- assert.equal(RULES_VERSION,"hive-1.3","presentation-only; replay scoring unchanged");
+ assert.equal(RULES_VERSION,"hive-1.5","UI-only Beacon behavior remains correct in the standalone 1.5 gameplay build");
 });
 test("amber feedback marks the last open escape without an added global HUD",()=>{
  const run=newRun({seed:5,mode:"hunt"});
