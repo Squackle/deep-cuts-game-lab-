@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {KEY_DIRECTIONS,mutationSelectionIndex,isTouchMutationSelection,resumeHeading} from "../src/input-controls.js";
+import {KEY_DIRECTIONS,mutationSelectionIndex,isTouchMutationSelection,resumeHeading,swipeHeading,SWIPE_RESUME_KEYS} from "../src/input-controls.js";
 import {createMutationButton,mutationDescription,showMutationDraft} from "../src/evolution-ui.js";
 import {newRun,start,chooseMutation,turn,step,RULES_VERSION} from "../src/engine.js";
 import {createSessionBest} from "../src/session-best.js";
@@ -110,4 +110,32 @@ test("permanent release naming instruction is kept in source control",()=>{
  assert.match(naming,/single-word|exactly one/i);
  assert.match(naming,/thematic/i);
  assert.match(naming,/Instinct/);
+});
+
+test("Instinct Ready can resume with a safe mobile swipe, not a reverse or tap",()=>{
+ for(const mode of ["hunt","classic"]){
+  const run=newRun({seed:77,mode});start(run);
+  run.status="draft";run.draftOptions=["W","G","U"];
+  assert.equal(chooseMutation(run,"W"),true);
+  const ticks=run.runTicks,head={...run.body[0]};
+  const trySwipe=(dx,dy)=>{
+   const heading=swipeHeading(dx,dy);
+   return heading===null?false:resumeHeading(run,SWIPE_RESUME_KEYS[heading],direction=>turn(run,direction));
+  };
+  assert.equal(trySwipe(2,3),false,"a tap cannot resume");
+  assert.equal(trySwipe(-50,0),false,"reversing into the trail stays blocked");
+  assert.equal(run.runTicks,ticks);assert.deepEqual(run.body[0],head);
+  assert.equal(trySwipe(0,-35),true,"swipe upward queues a safe turn");
+  assert.equal(run.runTicks,ticks,"resume must not advance simulation time");
+  assert.equal(run.turnQueue[0],"up");
+ }
+ for(const [dx,dy,heading] of [[20,0,"right"],[-20,0,"left"],[0,20,"down"],[0,-20,"up"]]){
+  assert.equal(swipeHeading(dx,dy),heading);
+  assert.ok(SWIPE_RESUME_KEYS[heading]);
+ }
+ assert.equal(swipeHeading(NaN,25),null);
+ const main=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ assert.match(main,/awaitingMutationResume\s*\?\s*resumeMutationByKey\(SWIPE_RESUME_KEYS\[heading\]\)\s*:\s*handleDirection\(heading\)/);
+ assert.match(html,/SWIPE OR PRESS A MOVEMENT KEY TO RESUME/);
 });
