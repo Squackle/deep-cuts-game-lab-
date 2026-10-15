@@ -42,6 +42,23 @@ export function validatePR({repo,body,files}){
  }
  return problems;
 }
+// Protect concurrent Stackbreaker and Mana Heist agents from cross-game edits.
+// The Hive Run game continues to use its existing root/src paths and workstream.
+export function validateLabGameLane({repo,branch,files}){
+ if(repo!==LAB)return [];
+ const lanes=[
+  {prefix:"game/stackbreaker",folder:"stackbreaker/"},
+  {prefix:"game/mana-heist",folder:"mana-heist/"}
+ ];
+ const own=lanes.find(x=>branch===x.prefix||branch.startsWith(x.prefix+"-")||branch.startsWith(x.prefix+"/"));
+ if(own){
+  const extra=files.filter(file=>!file.startsWith(own.folder));
+  return extra.length?["Game agent branch "+branch+" can only change "+own.folder+"; out-of-lane: "+extra.join(", ")]:[];
+ }
+ const gameFiles=files.filter(file=>lanes.some(x=>file.startsWith(x.folder)));
+ if(gameFiles.length)return ["Game source changes require their own game/stackbreaker-* or game/mana-heist-* branches: "+gameFiles.join(", ")];
+ return [];
+}
 export function findOverlaps(thisFiles,otherPRs,currentNumber){
  const ours=new Set(thisFiles);
  return otherPRs
@@ -77,6 +94,7 @@ export async function checkCurrentPullRequest(env=process.env){
  if(repo!==MAIN&&repo!==LAB)throw new Error("Unknown repository");
  const ours=(await pages(repo,"/pulls/"+pr.number+"/files",token)).map(x=>x.filename);
  const failures=validatePR({repo,body:pr.body,files:ours});
+ failures.push(...validateLabGameLane({repo,branch:pr.head.ref,files:ours}));
  const open=await pages(repo,"/pulls?state=open",token);
  const older=open.filter(p=>p.number<pr.number);
  const peers=await Promise.all(older.map(async p=>({
