@@ -10,7 +10,7 @@
 <a href="#campaignScreen" class="skip">Skip to campaign</a>
 <header class="bar">
  <a class="brand" href="../"><span class="emblem" aria-hidden="true">◇</span><span>DEEP CUTS <strong>GAME LAB</strong></span></a>
- <div class="bar-actions"><span class="test-stamp">REAL MTG LANDS · 0.7 PLAYTEST</span><a href="../" class="back">← HIVE RUN LAB</a></div>
+ <div class="bar-actions"><span class="test-stamp">WARD CHARGE · 0.9 PLAYTEST</span><a href="../" class="back">← HIVE RUN LAB</a></div>
 </header>
 <main class="shell">
  <section id="campaignScreen" class="campaign-screen" aria-labelledby="mapTitle">
@@ -33,7 +33,12 @@
      <div><small>PAR</small><strong id="parScore">TURN 1</strong></div>
     </div>
     <div class="vault-stage">
-     <div class="lock-ring"><span class="lock-glyph" id="lockGlyph">◇</span><span class="ring-text" id="wardCounter">WARD 1 OF 1</span></div>
+     <div class="lock-ring" id="wardTarget">
+       <svg id="wardManaRing" class="ward-mana-ring" viewBox="0 0 120 120" role="img" aria-label="No mana charged toward ward yet" focusable="false"></svg>
+       <span class="lock-glyph" id="lockGlyph">◇</span>
+       <span class="ward-charge-count" id="wardChargeCount">0 / 1</span>
+       <span class="ring-text" id="wardCounter">WARD 1 OF 1</span>
+      </div>
      <div class="ward-info">
       <div class="overline">CURRENT SECURITY WARD</div><h3 id="wardName">The First Lock</h3>
       <div id="wardCost" class="mana-cost" aria-label="Mana cost to cast current ward-breaking spell"></div>
@@ -58,7 +63,7 @@
   <aside class="side">
    <section class="side-box pool-box">
     <div class="section-label"><div><p class="overline">MANA LEDGER</p><h2>Floating mana</h2></div><span id="poolTotal" class="count">0 IN POOL</span></div>
-    <div class="pool-console"><div class="pool-console-top"><span>◉ THE RESERVOIR</span><span>LAND → SOCKET</span></div><div id="pool" class="pool mana-sockets" aria-label="Mana sockets, filled by tapping lands"></div></div>
+    <div class="pool-console ledger-console"><div class="pool-console-top"><span>◉ MANA ON HAND</span><span>LAND → WARD</span></div><div id="pool" class="mana-ledger-grid" aria-label="Current available mana in two rows of colored and empty slots"></div></div>
    </section>
    <div class="controlbar"><button type="button" id="endTurn" class="primary">END TURN <span>↗</span></button><button id="undo" type="button">↶ UNDO</button><button id="reset" type="button">⟲ RESTART</button><button id="skip" type="button">← MAP</button></div>
    <section class="side-box action-box" id="actionBox" role="dialog" aria-modal="true" aria-labelledby="actionTitle" hidden>
@@ -72,7 +77,7 @@
   <div class="notes-heading"><p class="overline">BELOW THE TABLE</p><h2 id="notesTitle">The case file</h2><a href="#heist">↑ BACK TO GAME</a></div>
   <p class="muted" id="briefing"></p>
   <p id="wardDescription" class="muted">The current ward requires the mana shown in its cost.</p>
-  <div class="notes-grid"><div><h3>How it works</h3><p class="muted">Drag a land from your hand onto the battlefield to play it. Tap a land in your hand to inspect its matching real Magic card; use the MTG CARD button or press I when focused on a land. Tap a land already on the battlefield to add mana. Tapped lands rotate sideways. Multicolor lands offer a color choice. Play at most one land each turn, spend mana to cast the ward-breaking spells, and end the turn to untap your lands. You can undo freely.</p></div>
+  <div class="notes-grid"><div><h3>How it works</h3><p class="muted">Drag a land from your hand onto the battlefield to play it. Tap a land in your hand to inspect its matching real Magic card; use the MTG CARD button or press I when focused on a land. Tap a battlefield land to send its mana into the ward circle; your available mana stays listed in the ledger until you cast. Tapped lands rotate sideways. Multicolor lands offer a color choice. Play at most one land each turn, spend mana to cast the ward-breaking spells, and end the turn to untap your lands. You can undo freely.</p></div>
   <div><h3>Three-star route</h3><p class="muted">The solver scores the fewest turns and least life lost, not the number of taps. Your floating mana expires at the end of each turn. Future chapters unlock sequentially.</p></div></div>
   <section id="realCardReference" aria-labelledby="cardReferenceHeading"><div class="notes-heading"><div><p class="overline">OFFICIAL CARDS · LEARNING REFERENCES</p><h2 id="cardReferenceHeading">Real Magic lands</h2></div><a href="https://scryfall.com/" target="_blank" rel="noopener noreferrer">VIEW SCRYFALL ↗</a></div>
   <p class="muted small">Genuine Magic land card images appear in the puzzle and here as larger study references. Mana Heist simulates a simplified subset of their rules. Some printed abilities—notably bounce land mana production—differ from the game model.</p>
