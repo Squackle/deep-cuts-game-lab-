@@ -43,3 +43,10 @@ Six handcrafted tutorials only. No Endless generator, reservoir mechanic, sound,
 
 ## Release
 Promote to public `/games/mana-heist` only via new user authorization, separate Website Developer integration, explicit source SHA and reviewed QA. Keep Hive Run's prototype page, source modules, solo scores and retired `410 Gone` API unchanged.
+
+## Observed preview QA — 2026-10-15
+- Cloudflare deployment `d164f17e-fb84-42a4-9ab9-0ed35e8240e1`: preview stage success for SHA `6c9f166de01d940887dfb6b49375d87b8c07020d`.
+- Browser Rendering content request at 390 × 844 loaded six vault picker buttons and the dynamic board (JavaScript initialized).
+- Scripted interaction on preview Vault 1: activate Sunwell, select vault, open seal; 2 / 2 par, 3 stars and visible victory panel.
+- 390px preview test reported no document horizontal overflow.
+- Physical-device tapping, cross-browser testing and full interaction replay on all six levels not independently verified; solver-driven unit tests cover the six levels.
