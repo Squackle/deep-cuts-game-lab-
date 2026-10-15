@@ -21,7 +21,7 @@ test("four authentic encounter dossiers match actual boss types and captures",()
  assert.equal(TELEGRAPH_MS,500);
  assert.equal(WEB_LIFETIME_MS,15000);
  assert.equal(WEB_STUN_MS,2000);
- for(const [kind,info] of Object.entries(ABILITIES))assert.equal(info.cooldownMs,kind==="guardian"?4000:kind==="weaver"?5000:10000);
+ for(const [kind,info] of Object.entries(ABILITIES))assert.equal(info.cooldownMs,kind==="guardian"?4000:kind==="weaver"?5000:kind==="broodmother"?6500:10000);
 });
 test("the full encounter pauses once and not again for later capture phases",()=>{
  const gate=new BossBriefingGate();
