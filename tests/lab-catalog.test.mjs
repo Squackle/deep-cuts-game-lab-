@@ -63,7 +63,7 @@ test("Unified catalog paths are local, existing and free from traversal",()=>{
   if(href.startsWith("https://")||href.startsWith("data:")||href.startsWith("#"))continue;
   if(href==="/"){assert.ok(fs.existsSync("index.html"));continue}
   const clean=href.replace(/^\//,"").replace(/\/$/,"");
-  const dest=path.normalize(clean);
+  const dest=path.normalize(href.startsWith("/")?clean:path.join("lab",clean));
   assert.ok(!dest.startsWith(".."),"Invalid path "+href);
   const file=href.endsWith("/")?dest+"/index.html":dest;
   assert.ok(fs.existsSync(file),"Missing local link "+href);
