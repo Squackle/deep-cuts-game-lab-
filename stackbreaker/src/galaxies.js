@@ -131,8 +131,11 @@ function graduate(s,line,gi,stage){
  const own=new Set([...s.hand.filter(x=>!x.sourceId),...s.units.filter(x=>x.controller==='player'),...s.stack.filter(x=>x.controller==='player')].map(x=>x.card));
  const theirs=new Set(s.stack.filter(x=>x.controller==='opponent').map(x=>x.card));
  for(let k=0;k<extra;k++){
-  const threat=BURN_THREATS.find(x=>!theirs.has(x));
-  const answer=COUNTER_ANSWERS.find(x=>!own.has(x));
+  // Some late cases present an uncounterable spell. Hallow prevents its
+  // damage and gains life; simply firing another counterspell cannot help.
+  const prevention=gi>=3&&stage%3===0&&k===0&&!own.has('Hallow')&&!theirs.has("Urza's Rage");
+  const threat=prevention?"Urza's Rage":BURN_THREATS.find(x=>!theirs.has(x));
+  const answer=prevention?'Hallow':COUNTER_ANSWERS.find(x=>!own.has(x));
   if(!threat||!answer)throw Error('No singleton-safe graduate '+s.id);
   theirs.add(threat);own.add(answer);
   const spellId='peril-'+(k+1),responseId='answer-'+(k+1);
@@ -149,7 +152,7 @@ function graduate(s,line,gi,stage){
  s.difficulty={galaxy:gi+1,requiredResponses:line.length,addedThreats:extra,discipline:GRADES[gi].name};
  s.intro+=' '+extra+' additional incoming stack '+(extra===1?'threat demands':'threats demand')+' exact responses. '+(gi>=3?'Every colored mana and target matters.':'Find the response to each threat.');
  s.hint=gi>=3?'Read every opposing stack object and plan how the entire stack will resolve. Protect colored mana for later replies.':gi===2?'Solve the full stack, not just the top threat.':s.hint;
- s.explanation+=' Also, '+extra+' additional lethal burn '+(extra===1?'spell was':'spells were')+' stopped before resolution.';
+ s.explanation+=' Also, '+extra+' extra burn '+(extra===1?'threat was':'threats were')+' answered before they could defeat you.'+(gi>=3&&stage%3===0?' The uncounterable Urza\'s Rage required Hallow to prevent damage, not a counterspell.':'');
 }
 export function generateStages(existing){
  if(existing.length!==30)throw Error('Expected the 30 approved core levels');
