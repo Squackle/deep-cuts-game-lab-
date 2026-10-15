@@ -172,49 +172,40 @@ function chooseCommanderLand(p,index){
 export function commanderScenario(input,index=0){
  const p=commanderClone(input);const solution=p.solution||CORE_LINES[p.id];
  if(!solution)throw Error('No vetted solution for '+p.id);
+ // Preserve *every* required response. The original 12th and 24th cases
+ // included a fifth non-solution card; remove it rather than breaking their
+ // puzzle solutions or exceeding seven physical cards.
+ const necessary=new Set(solution.map(([id])=>id));
+ while(p.hand.filter(a=>!a.sourceId).length>HAND_SIZE-3){
+  const remove=p.hand.findIndex(a=>!a.sourceId&&!necessary.has(a.id));
+  if(remove<0)throw Error('Seven-card layout requires a redesigned answer line: '+p.id);
+  p.hand.splice(remove,1);
+ }
  normalizeOwner(p,'player');normalizeOwner(p,'opponent');
  ensureMana(p,solution);
  const seen=new Set([...p.units.filter(x=>x.controller==='player'),...p.stack.filter(x=>x.controller==='player'),...p.hand.filter(x=>!x.sourceId&&!LANDS[x.card])].map(x=>x.card));
- const existing=p.hand.filter(x=>!x.sourceId).length;
- const minimum=Math.max(HAND_SIZE,existing+3);
- // Physical basics may repeat; one land card in hand is not a new mana source.
+ // Three actual non-response card types remain in every *physical* hand,
+ // not faux card buttons or out-of-hand labels.
  p.hand.push({id:'real-hand-land',card:chooseCommanderLand(p,index)});
  p.hand.push({id:'real-hand-creature',card:chooseCommanderPermanent(p,index,'creature',seen)});
  p.hand.push({id:'real-hand-enchantment',card:chooseCommanderPermanent(p,index+7,'enchantment',seen)});
- const pool=INSTANT_OPTIONS.filter(n=>!seen.has(n)).map(name=>({name,score:candidateScore(p,name,index*101+37)}))
+ if(p.hand.filter(x=>!x.sourceId).length>HAND_SIZE)throw Error('Too many mandatory spells: '+p.id);
+ const pool=INSTANT_OPTIONS.filter(n=>!seen.has(n))
+  .map(name=>({name,score:candidateScore(p,name,index*101+37)}))
   .sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name));
- let choiceIndex=0,supportAdded=false;
- // A full reaction hand still contains actual Commander support cards.
- // Add them on some turns even when the response chain already fills the hand.
- if(index%4===0){
+ let added=0;
+ if(index%4===0&&p.hand.filter(a=>!a.sourceId).length<HAND_SIZE){
   const support=chooseCommanderPermanent(p,index+19,'support',seen);
-  p.hand.push({id:'real-hand-support',card:support});supportAdded=true;
+  p.hand.push({id:'real-hand-support',card:support});
  }
- while(p.hand.filter(x=>!x.sourceId).length<minimum){
-  const remaining=minimum-p.hand.filter(x=>!x.sourceId).length;
-  // Some hands also contain a Commander staple or a sorcery-speed ramp spell.
-  if(remaining>2&&index%4===0&&!supportAdded){
-   const other=chooseCommanderPermanent(p,index+choiceIndex+19,'support',seen);
-   p.hand.push({id:'real-hand-support',card:other});supportAdded=true;continue;
-  }
+ while(p.hand.filter(x=>!x.sourceId).length<HAND_SIZE){
   const next=pool.find(x=>!seen.has(x.name));
-  if(!next)throw Error('Insufficient distinct response spells for '+p.id);
-  p.hand.push({id:'choice-'+choiceIndex++,card:next.name});seen.add(next.name);
+  if(!next)throw Error('Insufficient singleton response alternatives for '+p.id);
+  p.hand.push({id:'choice-'+added++,card:next.name});seen.add(next.name);
  }
- // Higher galaxies conceal the required response sequence among live,
- // affordable alternative instants; casting one spends scarce solution mana.
- // A large high-galaxy hand is intentional: a midgame draw-heavy snapshot.
- const galaxy=p.difficulty?.galaxy||1;
- const wrongOptions=galaxy<3?0:galaxy===3?1:galaxy===4?2:2;
- let extraChoice=0;
- while(extraChoice<wrongOptions){
-  const next=pool.find(x=>!seen.has(x.name)&&x.score>=100);
-  if(!next)break;
-  p.hand.push({id:'misdirection-'+(extraChoice+1),card:next.name});
-  seen.add(next.name);extraChoice++;
- }
- p.difficulty??={galaxy};
- p.difficulty.liveDecoys=extraChoice;
+ if(p.hand.filter(x=>!x.sourceId).length!==HAND_SIZE)throw Error('Not exactly seven cards: '+p.id);
+ p.difficulty??={galaxy:Math.floor(index/50)+1};
+ p.difficulty.liveDecoys=added;
  p.commanderPractice=true;p.format='singleton-realistic-hand';
  p.solution=commanderClone(solution);p.companionColors=commanderPalette(p);
  return p;
