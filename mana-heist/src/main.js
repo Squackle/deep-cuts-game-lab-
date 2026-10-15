@@ -130,11 +130,11 @@ function perform(action){
    target:null,destination:el("wardTarget"),
    onArrival:()=>{if(epoch===viewEpoch){
     pendingFlights.delete(pendingId);
-    el("pool").querySelector('[data-orb-id="'+pendingId+'"]')?.classList.remove("in-flight");
     chargeWard({animateId:pendingId});
+    queueAutoCast();
    }}
   });
- }
+ }else queueAutoCast();
 }
 function tapLand(id){
  lastCardId=id;
@@ -155,13 +155,6 @@ function playLand(id){
  if(!possible.length){message(state.played?"You have already played a land this turn.":"This land cannot be played right now.",true);return;}
  if(possible.length===1)perform(possible[0]);
  else choices(card.kind==="shock"?"SHOCK OR SAVE LIFE":card.kind==="bounce"?"RETURN A LAND":"PLAY YOUR LAND",card.kind==="shock"?"Pay 2 life to enter untapped, or enter tapped at no life cost.":card.kind==="bounce"?"This land enters tapped and sends a battlefield land back to your hand.":"Select how to play this land.",possible);
-}
-function castSpell(){
- const stage=level.stages[state.stage];if(!stage)return;
- const possible=actions(level,state).filter(a=>a.type==="cast");
- if(!possible.length){rejectCast();return;}
- if(possible.length===1)perform(possible[0]);
- else choices("CHOOSE YOUR PAYMENT",stage.effect==="untap"?"Select your payment and which tapped land to untap.":"Colored costs are exact; generic mana may be paid from any remaining color.",possible);
 }
 function landHtml(instance,field){
  const card=getCard(level,instance.id),tapped=field&&instance.tapped;
@@ -193,17 +186,14 @@ function render(pendingId=null){
  el("wardName").textContent=isWin?"The seal is broken":stage.name;
  el("wardCost").innerHTML=isWin?"":costHtml(stage.cost);
  el("wardDescription").textContent=isWin?"The heist is complete. Your best route is preserved on this device.":stage.effect==="untap"?"Casting this heist spell also untaps one land you choose.":"Colored mana symbols require that exact color. A gray diamond is generic: you may use any remaining mana.";
- el("castButton").disabled=isWin;
- el("castButton").classList.toggle("can-cast",!isWin&&actions(level,state).some(a=>a.type==="cast"));
- el("castButton").textContent=isWin?"VAULT CRACKED":stage.effect==="untap"?"CAST REWIND SPELL ↗":"CAST SPELL · BREAK WARD ↗";
+ el("autoCastLabel").textContent=isWin?"ALL WARDS OPEN":stage.effect==="untap"?"AUTO REWIND · CHANNEL MANA":"AUTO-CAST ENABLED · CHANNEL MANA";
  el("stageList").innerHTML=level.stages.map((spell,i)=>'<span class="stage-marker '+(i<state.stage?"done":i===state.stage?"active":"")+'">'+(i<state.stage?"✓":String(i+1).padStart(2,"0"))+" "+spell.name+"</span>").join("");
  el("battleCount").textContent=state.field.length+" LAND"+(state.field.length===1?"":"S");
  el("battlefield").innerHTML=state.field.length?state.field.map(f=>landHtml(f,true)).join(""):'<span class="empty">No lands in play yet. Play one from your hand.</span>';
  el("hand").innerHTML=state.hand.length?state.hand.map(id=>landHtml({id},false)).join(""):'<span class="empty">No land cards remain in hand.</span>';
  el("libraryPanel").hidden=level.library.length===0;
  el("libraryPanel").textContent=level.library.length?"RESERVE / FETCH TARGETS: "+level.library.map(x=>CARDS[x.card].name).join(" · "):"";
- el("poolTotal").textContent=Object.values(state.pool).reduce((a,b)=>a+b,0)+" IN POOL";
- renderLedger(el("pool"),state.pool,manaOrbs,{pendingId,pendingIds:[...pendingFlights]});
+
  chargeWard({pendingId});
  el("undo").disabled=history.length===0;
  el("endTurn").disabled=isWin||state.turn===level.turnLimit;
@@ -220,14 +210,13 @@ function render(pendingId=null){
  selectedMessage="";
 }
 function showMap(){
- viewEpoch++;pendingFlights.clear();
+ cancelAuto();viewEpoch++;pendingFlights.clear();
  cardInspector.hide({restore:false});
  landDrag?.cancel();
  document.body.classList.remove("in-heist");
  el("gameNotes").hidden=true;
  el("actionBox").hidden=true;
  el("manaTravelLayer").replaceChildren();
- el("pool").querySelectorAll(".in-flight").forEach(x=>x.classList.remove("in-flight"));
  el("gameScreen").hidden=true;el("campaignScreen").hidden=false;
  renderOverworld({world,bests:progress.bests,index,proofs,medal});
  el("campaignScreen").scrollIntoView({block:"start",behavior:"instant"});
@@ -240,7 +229,7 @@ function showGame(){
  el("gameScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
 function load(i,enter=false){
- viewEpoch++;pendingFlights.clear();
+ cancelAuto();viewEpoch++;pendingFlights.clear();
  cardInspector.hide({restore:false});
  lastCardId=null;
  landDrag?.cancel();
@@ -296,9 +285,8 @@ landDrag=installLandDragging({
  onHint:(text,error=false)=>message(text,error)
 });
 el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a)perform(a);});
-el("castButton").addEventListener("click",castSpell);
 el("endTurn").addEventListener("click",()=>{const a=actions(level,state).find(a=>a.type==="end");if(a)perform(a);else message("No turns remain. Undo or restart to try another line.",true);});
-el("undo").addEventListener("click",()=>{if(!history.length)return;viewEpoch++;pendingFlights.clear();const prev=history.pop();state=prev.state;manaOrbs=prev.orbs;el("manaTravelLayer").replaceChildren();render();message("Previous move undone. Land drops, life and mana are restored.");});
+el("undo").addEventListener("click",()=>{if(!history.length)return;cancelAuto();viewEpoch++;pendingFlights.clear();const prev=history.pop();state=prev.state;manaOrbs=prev.orbs;el("manaTravelLayer").replaceChildren();render();message("Previous move undone. Land drops, life and mana are restored.");});
 el("reset").addEventListener("click",()=>load(index));
 el("skip").addEventListener("click",showMap);
 el("winNext").addEventListener("click",()=>{if(index+1<LEVELS.length&&unlocked(index+1,progress.bests))load(index+1,true);else showMap();});
