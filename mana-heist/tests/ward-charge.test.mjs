@@ -74,7 +74,7 @@ test("markup wires ring animation to land-to-ward flight without old socket mech
  assert.match(html,/id="wardManaRing"/);
  assert.match(html,/id="wardTarget"/);
  assert.match(html,/id="wardChargeCount"/);
- assert.match(html,/class="mana-ledger-grid"/);
+ assert.doesNotMatch(html,/class="mana-ledger-grid"/);
  assert.doesNotMatch(html,/class="pool mana-sockets"/);
  assert.match(js,/destination:el\("wardTarget"\)/);
  assert.match(js,/onArrival:/);
