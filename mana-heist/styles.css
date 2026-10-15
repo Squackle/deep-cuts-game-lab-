@@ -1023,3 +1023,186 @@
 @media(prefers-reduced-motion:reduce){
  .in-heist #heist #wardTarget.ward-breaking::after{animation:none;opacity:0}
 }
+
+
+/* 2.4 — PHONE GAMEPLAY: keep the REAL CARDS readable.
+   The previous 100dvh fractional grid shrank a complete MTG scan to ~20px.
+   Phones get a naturally scrolling playtable rather than tiny cards, with the
+   HAND FIRST so players discover and can play it before the battlefield. */
+@media (max-width:600px){
+ .in-heist #gameScreen{
+  height:auto!important;min-height:100dvh!important;max-height:none!important;
+  overflow:visible!important;display:block!important;
+  padding-bottom:max(14px,env(safe-area-inset-bottom))!important;
+ }
+ .in-heist #gameScreen .game-titlebar{
+  display:flex!important;height:34px!important;min-height:34px!important;
+  margin-bottom:7px!important;
+ }
+ .in-heist #heist{
+  display:block!important;height:auto!important;min-height:0!important;
+  overflow:visible!important;flex:none!important;
+ }
+ .in-heist #heist .play-column{
+  display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:auto 38px auto auto auto!important;
+  gap:8px!important;height:auto!important;min-height:0!important;
+  align-items:stretch!important;overflow:visible!important;
+ }
+ .in-heist #heist .vault-card{
+  grid-column:1!important;grid-row:1!important;
+  min-height:0!important;height:auto!important;overflow:visible!important;
+  padding:6px 8px!important;
+ }
+ .in-heist #heist .vault-topline{min-height:12px!important}
+ .in-heist #heist .vault-card>h2{margin:2px 0!important;font-size:1.04rem!important}
+ .in-heist #heist .stats{margin:2px 0!important;min-height:0!important}
+ .in-heist #heist .stats>div{padding:2px 5px!important}
+ .in-heist #heist .vault-stage{
+  flex:0 0 auto!important;min-height:0!important;height:auto!important;
+  padding:9px 4px 8px!important;gap:7px!important;
+  overflow:visible!important;
+ }
+ .in-heist #heist #wardTarget.lock-ring{
+  width:clamp(157px,49vw,202px)!important;
+  height:clamp(157px,49vw,202px)!important;
+  flex:0 0 auto!important;max-width:80vw!important;
+ }
+ .in-heist #heist .ward-info{
+  display:flex!important;flex-wrap:wrap!important;align-items:center!important;
+  justify-content:center!important;gap:5px 9px!important;
+  width:100%!important;min-height:0!important;
+ }
+ .in-heist #heist .ward-info .auto-cast-status{
+  min-height:24px!important;max-width:100%!important;
+  font-size:.52rem!important;line-height:1.25!important;
+  padding:4px 7px!important;white-space:normal!important;
+ }
+ .in-heist #heist .play-column>.controlbar{
+  grid-column:1!important;grid-row:2!important;
+  height:38px!important;min-height:38px!important;
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:4px!important;margin:0!important;
+ }
+ .in-heist #heist .play-column>.controlbar button,
+ .in-heist #heist .play-column>.controlbar button:not(.primary){
+  min-height:37px!important;height:37px!important;
+  padding:4px 2px!important;font-size:.57rem!important;
+ }
+ /* Discoverable HAND immediately under the controls; drag DOWN into lands. */
+ .in-heist #heist .table-card.hand-card{
+  grid-column:1!important;grid-row:3!important;
+  display:flex!important;flex-direction:column!important;
+  min-height:209px!important;height:auto!important;max-height:none!important;
+  overflow:visible!important;padding:10px 10px 8px!important;
+  border:2px solid #d6b77e!important;
+  background:linear-gradient(160deg,#244039,#10252a)!important;
+  box-shadow:inset 0 0 23px #d8b36a16,0 0 14px #d6aa5630!important;
+ }
+ .in-heist #heist .table-card:not(.hand-card){
+  grid-column:1!important;grid-row:4!important;
+  display:flex!important;flex-direction:column!important;
+  min-height:184px!important;height:auto!important;max-height:none!important;
+  overflow:visible!important;padding:9px 10px 8px!important;
+ }
+ .in-heist #heist .play-column>.feedback{
+  grid-column:1!important;grid-row:5!important;
+  min-height:0!important;max-height:none!important;
+  padding:7px 10px!important;margin:0!important;
+ }
+ .in-heist #heist .table-card .section-label{
+  flex:0 0 auto!important;display:flex!important;
+  justify-content:space-between!important;align-items:center!important;
+  flex-wrap:wrap!important;gap:2px 8px!important;
+  margin-bottom:6px!important;min-height:30px!important;
+ }
+ .in-heist #heist .table-card .section-label h2{
+  font-size:1.12rem!important;line-height:1.12!important;
+ }
+ .in-heist #heist .table-card .section-label h2 small{
+  display:inline!important;font-size:.62rem!important;line-height:1.1!important;
+ }
+ .in-heist #heist .hand-card .section-label>.count{
+  flex:0 0 auto!important;white-space:normal!important;
+  color:#ffe1a3!important;font-size:.57rem!important;
+  letter-spacing:.07em!important;
+ }
+ .in-heist #heist .table-card .land-grid{
+  display:flex!important;align-items:center!important;
+  flex:0 0 auto!important;overflow-x:auto!important;
+  overflow-y:hidden!important;max-height:none!important;
+  min-width:0!important;width:100%!important;
+  gap:12px!important;padding:4px 5px!important;
+  scroll-snap-type:x proximity;
+ }
+ .in-heist #heist #hand{
+  height:157px!important;min-height:157px!important;
+ }
+ .in-heist #heist #battlefield{
+  height:132px!important;min-height:132px!important;
+ }
+ .in-heist #heist #hand .land-card.mtg-real-land:not(.is-tapped){
+  display:block!important;
+  width:107px!important;height:149px!important;
+  min-width:107px!important;max-width:107px!important;
+  max-height:none!important;flex:0 0 107px!important;
+  aspect-ratio:488/680!important;
+  scroll-snap-align:start;
+ }
+ .in-heist #heist #battlefield .land-card.mtg-real-land:not(.is-tapped){
+  display:block!important;width:88px!important;height:123px!important;
+  min-width:88px!important;max-width:88px!important;
+  max-height:none!important;flex:0 0 88px!important;
+  aspect-ratio:488/680!important;
+ }
+ .in-heist #heist #battlefield .land-card.mtg-real-land.is-tapped{
+  width:119px!important;height:86px!important;
+  min-width:119px!important;max-width:119px!important;
+  max-height:none!important;flex:0 0 119px!important;
+  aspect-ratio:680/488!important;
+ }
+ .in-heist #heist #battlefield .land-card.mtg-real-land.is-tapped .mtg-card-image{
+  width:86px!important;height:120px!important;
+ }
+ .in-heist #heist #hand .land-card .mtg-card-image,
+ .in-heist #heist #battlefield .land-card .mtg-card-image{
+  object-fit:contain!important;
+ }
+}
+@media (max-width:360px){
+ .in-heist #heist .table-card.hand-card{min-height:205px!important}
+ .in-heist #heist #wardTarget.lock-ring{
+  width:157px!important;height:157px!important;
+ }
+}
+
+
+/* Mobile hand onboarding: clear instructions without stealing the card area. */
+.hand-guide{display:none}
+@media(max-width:600px){
+ .in-heist #heist .hand-guide{
+  display:block!important;flex:0 0 auto!important;
+  margin:0 0 6px!important;padding:5px 7px!important;
+  border-radius:5px;border:1px solid #d3ac6f63;
+  background:#b8934b1c;color:#f6e9c9;
+  font:500 .68rem/1.35 system-ui,sans-serif!important;
+ }
+ .in-heist #heist .hand-guide strong{
+  color:#ffdc90;font-weight:900;letter-spacing:.07em;
+  margin-right:5px;
+ }
+ .in-heist #heist .table-card.hand-card{min-height:244px!important}
+}
+
+/* No misleading "start here" banner on puzzles without a hand. */
+.in-heist #heist .hand-guide[hidden]{display:none!important}
+@media(max-width:600px){
+ .in-heist #heist .table-card.hand-card.hand-empty{
+  min-height:95px!important;
+  border-color:#d6b77e66!important;
+  box-shadow:none!important;
+ }
+ .in-heist #heist .hand-card.hand-empty #hand{
+  height:44px!important;min-height:44px!important;
+ }
+}
