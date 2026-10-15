@@ -34,7 +34,7 @@ test("rendering keeps intact Scryfall scans but scales both zones up with a land
  assert.match(css,/#battlefield \.land-card\.mtg-real-land\.is-tapped/);
  assert.match(css,/transform:translate\(-50%,-50%\) rotate\(90deg\)!important/);
  assert.match(css,/object-fit:contain!important/);
- assert.match(js,/cardImageUrl\(key\)/);
+ assert.match(js,/imageFor\(instance.id,key\)/);
  assert.match(js,/flashWard\(/);
  assert.match(js,/rejectCast\(\)/);
  assert.match(js,/failureText\(missing\)/);
