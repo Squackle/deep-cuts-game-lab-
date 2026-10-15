@@ -5,6 +5,113 @@ import scenarios from '../data/scenarios.json' with {type:'json'};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
 const glyph={W:'☀',U:'◆',B:'✦',R:'✹',G:'❀',C:'◇'};
+// Images, card rules text and links are hydrated from a single Scryfall collection
+// request. The training engine remains curated and deterministic; card metadata is
+// display-only. Scryfall permits hotlinking its card-image CDN; artist/copyright
+// information is presented with each cropped artwork via the hover full-card view.
+const scryfallCatalog=new Map();
+const CARD_CACHE_KEY='dc-stackbreaker-scryfall-cards-v1';
+const CARD_CACHE_MS=24*60*60*1000;
+const imageUrl=(name,size='small')=>{
+ const card=scryfallCatalog.get(name);
+ const url=card?.images?.[size]||'';
+ return /^https:\/\/(?:cards\.scryfall\.io|img\.scryfall\.com)\//.test(url)?url:'';
+};
+const printedText=(name)=>scryfallCatalog.get(name)?.oracle||CARDS[name]?.oracle||LANDS[name]?.oracle||'';
+const linkToCard=(name)=>scryfallCatalog.get(name)?.page||cardLink(name);
+const thumb=(name,kind='small',className='')=>{
+ const url=imageUrl(name,kind);
+ return url?`<img class="${className}" data-preview="${esc(name)}" src="${esc(url)}" alt="${esc(name)} card image from Scryfall" loading="eager" draggable="false">`:
+ `<span class="image-pending ${className}" data-preview="${esc(name)}" aria-label="Preview ${esc(name)} card">${kind==='art'?'◈':'✧'}</span>`;
+};
+function cardFromScryfall(c){
+ const face=c.card_faces?.[0]||c;
+ const image=c.image_uris||face.image_uris||{};
+ const copy=key=>typeof image[key]==='string'?image[key]:'';
+ return {name:c.name,images:{small:copy('small'),normal:copy('normal')||copy('large'),art:copy('art_crop')},
+  oracle:c.oracle_text||face.oracle_text||'',artist:c.artist||face.artist||'',
+  page:/^https:\/\/scryfall\.com\//.test(c.scryfall_uri||'')?c.scryfall_uri:cardLink(c.name)};
+}
+function putScryfallCards(cards){let added=0;
+ for(const c of cards||[]){if(!c?.name)continue;
+  const record=cardFromScryfall(c);
+  if(!record.images.small&&!record.images.normal)continue;
+  if(CARDS[record.name]||LANDS[record.name]){scryfallCatalog.set(record.name,record);added++;}
+ }
+ return added;
+}
+function assetStatus(message){const el=$('artStatus');if(el)el.textContent=message;}
+async function fetchScryfallCatalog(){
+ const names=[...Object.keys(CARDS),...Object.keys(LANDS)];
+ try{const saved=JSON.parse(localStorage.getItem(CARD_CACHE_KEY)||'null');
+  if(saved?.at>Date.now()-CARD_CACHE_MS&&saved?.cards){
+   for(const [name,c] of Object.entries(saved.cards))if(names.includes(name)&&c?.images)scryfallCatalog.set(name,c);
+   if(names.every(n=>scryfallCatalog.has(n))){assetStatus('SCRYFALL IMAGES');render();return;}
+  }
+ }catch{}
+ assetStatus('LOADING SCRYFALL…');
+ try{
+  const res=await fetch('https://api.scryfall.com/cards/collection',{
+   method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},
+   body:JSON.stringify({identifiers:names.map(name=>({name}))})});
+  if(res.status===429||res.status===403){assetStatus('SCRYFALL TEMPORARILY UNAVAILABLE');return;}
+  if(!res.ok)throw Error('Scryfall collection HTTP '+res.status);
+  const doc=await res.json();if(!Array.isArray(doc.data))throw Error('Invalid card collection');
+  putScryfallCards(doc.data);
+ }catch(error){
+  // A few browser configurations block cross-origin POST. Fallback: Scryfall's
+  // read-only named endpoint, sequential at <10 requests/s, without retry loops.
+  for(const name of names){
+   if(scryfallCatalog.has(name))continue;
+   try{const response=await fetch('https://api.scryfall.com/cards/named?exact='+encodeURIComponent(name),{headers:{Accept:'application/json'}});
+    if(response.ok)putScryfallCards([await response.json()]);
+   }catch{}
+   await new Promise(resolve=>setTimeout(resolve,150));
+  }
+ }
+ try{localStorage.setItem(CARD_CACHE_KEY,JSON.stringify({at:Date.now(),cards:Object.fromEntries(scryfallCatalog)}));}catch{}
+ assetStatus(scryfallCatalog.size===names.length?'SCRYFALL IMAGES':`SCRYFALL ${scryfallCatalog.size}/${names.length}`);
+ render();
+}
+let previewName='';
+function closeCardPreview(){previewName='';const el=$('cardPreview');if(el)el.hidden=true;}
+function showCardPreview(name,x,y){
+ const src=imageUrl(name,'normal')||imageUrl(name,'small');if(!src)return;
+ const box=$('cardPreview');if(!box)return;
+ if(previewName!==name){$('cardPreviewImage').src=src;$('cardPreviewImage').alt=name+' full Magic card';
+  $('cardPreviewLabel').textContent=name;const artist=scryfallCatalog.get(name)?.artist;
+  $('cardPreviewCredit').textContent=(artist?'Illustration: '+artist+' · ':'')+'© Wizards of the Coast · via Scryfall';
+  $('cardPreviewLink').href=linkToCard(name);previewName=name;}
+ box.hidden=false;
+ const w=Math.min(230,innerWidth-20),h=Math.min(352,innerHeight-20);
+ box.style.left=Math.max(8,Math.min(innerWidth-w-8,(x||innerWidth/2)+22))+'px';
+ box.style.top=Math.max(8,Math.min(innerHeight-h-8,(y||innerHeight/2)-h/2))+'px';
+}
+// Hover is deliberately scoped to the artwork, not the whole stack item.
+// The overlay ignores mouse events, so leaving the thumbnail closes it instantly.
+document.addEventListener('pointerover',e=>{
+ const art=e.target.closest?.('[data-preview]');if(!art||e.pointerType==='touch')return;
+ if(art.contains(e.relatedTarget))return;
+ showCardPreview(art.dataset.preview,e.clientX,e.clientY);
+});
+document.addEventListener('pointermove',e=>{
+ if(!previewName||e.pointerType==='touch')return;
+ if(!e.target.closest?.('[data-preview]'))closeCardPreview();
+});
+document.addEventListener('pointerout',e=>{
+ const art=e.target.closest?.('[data-preview]');if(art&&!art.contains(e.relatedTarget))closeCardPreview();
+});
+document.addEventListener('focusin',e=>{const art=e.target.closest?.('[data-preview]');if(art){const r=art.getBoundingClientRect();showCardPreview(art.dataset.preview,r.right,r.top);}});
+document.addEventListener('focusout',e=>{if(e.target.closest?.('[data-preview]'))closeCardPreview();});
+document.addEventListener('click',e=>{
+ if(e.pointerType==='touch'||matchMedia('(hover:none)').matches){
+  const el=e.target.closest?.('[data-preview]');if(el){
+   if(previewName===el.dataset.preview)closeCardPreview();
+   else showCardPreview(el.dataset.preview,e.clientX||innerWidth/2,e.clientY||innerHeight/2);
+  }else closeCardPreview();
+ }
+});
+window.addEventListener('scroll',closeCardPreview,{passive:true});
 const progressKey='dc-stackbreaker-progress-v3';
 let index=0,game,history=[],selectedTargets={},selectedPayments={},hint=false,progress={},dragTouch=null;
 try{progress=JSON.parse(localStorage.getItem(progressKey)||'{}')||{};}catch{}
@@ -21,19 +128,20 @@ function objectiveText(s){const o=s.objective;if(o.type==='survive')return'Survi
 }
 function changeCase(n){index=Math.max(0,Math.min(scenarios.length-1,n));game=createGame(scenarios[index]);history=[];hint=false;selectedTargets={};selectedPayments={};render();}
 function shortCard(u){const c=CARDS[u.card],gone=u.zone!=='battlefield';let flags=[u.indestructible?'INDESTRUCTIBLE':'',u.hexproof?'HEXPROOF':'',u.damage?`${u.damage} DAMAGE`:''].filter(Boolean).join(' · ');
- return `<div class="battle-unit"><div class="battle-card ${gone?'off':''}" title="${esc(c.oracle||c.type)}" role="group" aria-label="${esc(u.card)}, ${creaturePower(u)}/${creatureToughness(u)}, ${gone?u.zone:'on battlefield'}"><header>${esc(u.card)}</header><span class="sig" aria-hidden="true">${c.colors.includes('G')?'❀':c.colors.includes('W')?'✧':'✦'}</span><div class="flags">${esc(gone?u.zone.toUpperCase():flags)}</div><strong class="pt">${creaturePower(u)}/${creatureToughness(u)}</strong></div></div>`;
+ return `<div class="battle-unit"><div class="battle-card ${gone?'off':''}" role="group" aria-label="${esc(u.card)}, ${creaturePower(u)}/${creatureToughness(u)}, ${gone?u.zone:'on battlefield'}">${thumb(u.card,'small','battle-image')}<header>${esc(u.card)}</header><div class="flags">${esc(gone?u.zone.toUpperCase():flags)}</div><strong class="pt">${creaturePower(u)}/${creatureToughness(u)}</strong></div></div>`;
 }
-function landCard(l){const c=LANDS[l.card],m=c.mana;return `<button class="land-card ${m} ${l.tapped?'tapped':''}" type="button" data-land="${esc(l.id)}" ${l.tapped||game.status!=='playing'?'disabled':''} title="${esc(l.card+' — '+c.oracle)}" aria-label="${l.tapped?'Tapped':'Tap'} ${esc(l.card)} for ${m} mana"><span class="land-name">${esc(l.card)}</span><span class="land-sigil" aria-hidden="true">${glyph[m]}</span><span class="tap-label">${l.tapped?'TAPPED':`TAP · ${m}`}</span></button>`;}
-function stackCard(item,i){const c=CARDS[item.card];return `<li class="stack-entry ${i===0?'on-top':''}"><span class="stack-rank">${i===0?'TOP':i+1}</span><div style="min-width:0;flex:1"><b>${esc(item.card)}${item.spell===false?' · ABILITY':''}</b><small>${item.controller==='player'?'YOU':'OPPONENT'}${item.targetId?' → '+esc(labelTarget(game,item.targetId)):''}</small></div><a href="${esc(cardLink(item.card))}" target="_blank" rel="noopener noreferrer" title="Card reference for ${esc(item.card)}" aria-label="View ${esc(item.card)} card">↗</a></li>`}
+function landCard(l){const c=LANDS[l.card],m=c.mana;return `<button class="land-card ${m} ${l.tapped?'tapped':''}" type="button" data-land="${esc(l.id)}" ${l.tapped||game.status!=='playing'?'disabled':''} title="${esc(l.card+' — '+c.oracle)}" aria-label="${l.tapped?'Tapped':'Tap'} ${esc(l.card)} for ${m} mana">${thumb(l.card,'small','land-image')}<span class="land-name">${esc(l.card)}</span><span class="tap-label">${l.tapped?'TAPPED':`TAP · ${m}`}</span></button>`;}
+function stackCard(item,i){const c=CARDS[item.card];const ability=printedText(item.card)||'No rules text.';
+ return `<li class="stack-entry ${i===0?'on-top':''}"><span class="stack-rank">${i===0?'TOP':i+1}</span><span class="stack-art">${thumb(item.card,'art','stack-art-image')}</span><div class="stack-details"><b>${esc(item.card)}${item.spell===false?' · ABILITY':''}</b><span class="stack-oracle">${esc(ability)}</span><small>${item.controller==='player'?'YOU':'OPPONENT'}${item.targetId?' → '+esc(labelTarget(game,item.targetId)):''}</small></div><a href="${esc(linkToCard(item.card))}" target="_blank" rel="noopener noreferrer" title="Card reference for ${esc(item.card)}" aria-label="View ${esc(item.card)} card">↗</a></li>`}
 function handCard(a,i,ready){const c=CARDS[a.card];const targets=legalTargets(game,a);let target=selectedTargets[a.id];if(!targets.includes(target))target=targets[0];selectedTargets[a.id]=target;
  const payments=a.sourceId?[{spend:null,label:'Sacrifice'}]:paymentOptions(game,c.cost);const selected=selectedPayments[a.id]??0;
  if(selected>=payments.length)selectedPayments[a.id]=0;
  const can=ready.includes(a.id);
  const selectors=targets.length>1?`<label>TARGET<select data-target-for="${esc(a.id)}" aria-label="Target for ${esc(a.card)}">${targets.map(t=>`<option value="${esc(t)}" ${target===t?'selected':''}>${esc(titleForTarget(t))}</option>`).join('')}</select></label>`:(targets.length===1&&target!=null?`<span class="response-steps">→ ${esc(titleForTarget(target))}</span>`:'<span class="response-steps">NO TARGET</span>');
  const paySelect=payments.length>1?`<label>GENERIC<select data-payment-for="${esc(a.id)}" aria-label="Spend generic mana for ${esc(a.card)}">${payments.map((op,j)=>`<option value="${j}" ${j===(selectedPayments[a.id]??0)?'selected':''}>${esc(op.label)}</option>`).join('')}</select></label>`:'';
- return `<article class="response-card ${a.sourceId?'ability':''} ${!can?'unavailable':''}" data-drag-card="${esc(a.id)}" draggable="true" tabindex="0" title="${esc(c.oracle)}" aria-label="${esc(a.card)}, drag onto stack or use the Cast button"><div class="response-head"><strong>${esc(a.card)}</strong><span class="mana-row">${a.sourceId?'SAC':pips(c.cost,true)}</span></div><div class="oracle-preview">${esc(c.oracle)}</div><div class="response-steps">${a.sourceId?'Sacrifice source to activate':can?'Ready · drag to stack':'Tap lands to pay'} · ${esc(c.type)}</div><div class="response-bottom">${selectors}${paySelect}<button type="button" data-cast="${esc(a.id)}" ${!can?'disabled':''}>${a.sourceId?'ACTIVATE':'CAST'} ↗</button></div></article>`;
+ return `<article class="response-card ${a.sourceId?'ability':''} ${!can?'unavailable':''}" data-drag-card="${esc(a.id)}" draggable="true" tabindex="0" aria-label="${esc(a.card)}, drag onto stack or use the Cast button">${thumb(a.card,'small','response-image')}<div class="response-head"><strong>${esc(a.card)}</strong><span class="mana-row">${a.sourceId?'SAC':pips(c.cost,true)}</span></div><div class="oracle-preview">${esc(printedText(a.card))}</div><div class="response-steps">${a.sourceId?'Sacrifice source to activate':can?'Ready · drag to stack':'Tap lands to pay'} · ${esc(c.type)}</div><div class="response-bottom">${selectors}${paySelect}<button type="button" data-cast="${esc(a.id)}" ${!can?'disabled':''}>${a.sourceId?'ACTIVATE':'CAST'} ↗</button></div></article>`;
 }
-function render(){const s=game,p=scenarios[index];$('missionTier').textContent=p.tier.toUpperCase();$('missionNum').textContent=String(index+1).padStart(2,'0')+' / 12';$('scenarioTitle').textContent=p.title;
+function render(){closeCardPreview();const s=game,p=scenarios[index];$('missionTier').textContent=p.tier.toUpperCase();$('missionNum').textContent=String(index+1).padStart(2,'0')+' / 12';$('scenarioTitle').textContent=p.title;
  $('scenarioSelect').innerHTML=scenarios.map((o,i)=>`<option value="${i}" ${i===index?'selected':''}>${String(i+1).padStart(2,'0')} ${esc(o.title)}${progress[o.id]?' ★':''}</option>`).join('');
  $('playerLife').textContent=s.life.player;$('opponentLife').textContent=s.life.opponent;$('manaPool').innerHTML=pips(s.mana);
  $('priority').textContent=s.status==='playing'?'● PRIORITY: YOU':s.status==='won'?'✓ SURVIVED':'✕ DEFEATED';$('objective').textContent=objectiveText(s);$('objectiveShort').textContent=p.tier.toUpperCase();
@@ -78,3 +186,4 @@ document.addEventListener('pointerup',finishTouch);document.addEventListener('po
 document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;
  if(e.key===' '){e.preventDefault();applyPass()}else if(e.key.toLowerCase()==='z')undo();else if(/^[1-9]$/.test(e.key)){const a=game.hand.filter(x=>!game.used.includes(x.id))[Number(e.key)-1];if(a)applyCast(a.id)}});
 changeCase(0);
+fetchScryfallCatalog();
