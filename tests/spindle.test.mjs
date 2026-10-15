@@ -74,7 +74,7 @@ test("encounter HUD is outside the full 18x22 arena, including Game Only",()=>{
  assert.match(css,/\.encounter-hud\[hidden\]/);
  assert.match(css,/body\.game-only \.arcade-frame\{grid-template-rows:auto auto auto minmax\(0,1fr\) auto\}/);
  assert.match(main,/\$\("encounterHud"\)\.hidden=!ability&&banner\.hidden/);
- assert.match(html,/1\.3 · SPINDLE/);
+ assert.match(html,/1\.4 · BEACON/);
 });
 
 test("Weaver can spin three distinct snares within 15 seconds; a fourth is capped",()=>{
