@@ -100,7 +100,10 @@ export const CARDS={
   "Harmonize":{"type":"Sorcery","cost":{"generic":2,"G":2},"colors":["G"],"oracle":"Draw three cards.","effect":null},
   "Read the Bones":{"type":"Sorcery","cost":{"generic":2,"B":1},"colors":["B"],"oracle":"Scry 2, then draw two cards. You lose 2 life.","effect":null},
   "Urza's Rage":{"type":"Instant","cost":{"generic":2,"R":1},"colors":["R"],"oracle":"Kicker {8}{R}\nThis spell can't be countered.\nUrza's Rage deals 3 damage to any target. If this spell was kicked, instead it deals 10 damage to that permanent or player and the damage can't be prevented.","effect":"damage","amount":3,"targetRule":"any","uncounterable":true,"note":"Unkicked mode only. Three damage can be prevented but the spell cannot be countered."},
-  "Hallow":{"type":"Instant","cost":{"W":1},"colors":["W"],"oracle":"Prevent all damage target spell would deal this turn. You gain life equal to the damage prevented this way.","effect":"preventSpellDamage","targetRule":"stack:spell"}
+  "Hallow":{"type":"Instant","cost":{"W":1},"colors":["W"],"oracle":"Prevent all damage target spell would deal this turn. You gain life equal to the damage prevented this way.","effect":"preventSpellDamage","targetRule":"stack:spell"},
+  "Brindle Boar":{"type":"Creature — Boar","cost":{"generic":2,"G":1},"colors":["G"],"power":2,"toughness":2,"oracle":"Sacrifice Brindle Boar: You gain 4 life.","effect":"sacGain","amount":4,"tags":[]},
+  "Bottle Gnomes":{"type":"Artifact Creature — Gnome","cost":{"generic":3},"colors":[],"power":1,"toughness":3,"oracle":"Sacrifice Bottle Gnomes: You gain 3 life.","effect":"sacGain","amount":3,"tags":[]},
+  "Daring Apprentice":{"type":"Creature — Human Wizard","cost":{"generic":1,"U":2},"colors":["U"],"power":1,"toughness":1,"oracle":"{T}, Sacrifice Daring Apprentice: Counter target spell.","effect":"counter","targetRule":"stack:spell","tags":[]}
 };
 export const cardLink = name => 'https://scryfall.com/search?q='+encodeURIComponent('!"'+name+'"');
 export const isCreature = name => CARDS[name]?.type.startsWith('Creature') || false;
