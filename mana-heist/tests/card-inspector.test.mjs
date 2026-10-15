@@ -13,9 +13,10 @@ test("real Magic cards are playable images and have a full-size inspector",()=>{
  assert.match(html,/id="inspectorLink"/);
  assert.match(html,/id="inspectorGameCard"/);
  assert.match(html,/id="closeInspector"/);
- assert.match(html,/AUTO WARDS/);
+ assert.match(html,/VARIANT ART/);
+ assert.doesNotMatch(html,/id="inspectLand"/);
  assert.match(inspector,/referenceFor\(cardKey\)/);
- assert.match(main,/cardImageUrl\(key\)/);
+ assert.match(main,/imageFor\(instance.id,key\)/);
  assert.match(main,/class="mtg-card-image"/);
 });
 test("hand pointer tap is now an inspection gesture, while drag still plays",()=>{
@@ -23,7 +24,7 @@ test("hand pointer tap is now an inspection gesture, while drag still plays",()=
  assert.match(main,/onInspect:id=>inspectById\(id\)/);
  assert.match(main,/onDrop:id=>playLand\(id\)/);
  assert.match(main,/onDrop:id=>playLand\(id\)/);
- assert.match(main,/inspectLand.*inspect-current-land/);
+ assert.doesNotMatch(main,/inspectLand.*inspect-current-land/);
  assert.match(main,/e\.key\.toLowerCase\(\)!=="i"/);
 });
 test("references keep a full uncropped Magic card image and source link",()=>{
@@ -34,7 +35,7 @@ test("references keep a full uncropped Magic card image and source link",()=>{
   assert.ok(data?.page.startsWith("https://scryfall.com/"));
   assert.ok(data.image.startsWith("https://api.scryfall.com/cards/named?"));
  }
- assert.match(inspector,/image\.src=real\.image/);
+ assert.match(inspector,/image\.src=printing\?\.normal\|\|real\.image/);
  assert.match(inspector,/image\.onerror/);
  assert.match(html,/belong to Wizards of the Coast/);
 });
