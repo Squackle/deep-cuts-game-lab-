@@ -14,7 +14,7 @@ test('all 250 puzzles show actual lands, creatures, enchantments and nontrivial 
  let artifacts=0,sorceries=0,flash=0;
  for(const p of scenes){
   const hand=p.hand.filter(a=>!a.sourceId),names=hand.map(a=>a.card),kinds=hand.map(a=>LANDS[a.card]?'Land':CARDS[a.card]?.type||'?');
-  assert.ok(hand.length>=7&&hand.length<=13,p.id+': '+hand.length);
+  assert.equal(hand.length,7,p.id+' must have exactly seven physical cards');
   assert.ok(kinds.some(x=>x==='Land'),p.id+' no land');
   assert.ok(kinds.some(x=>x.startsWith('Creature')),p.id+' no creature');
   assert.ok(kinds.some(x=>x.startsWith('Enchantment')),p.id+' no enchantment');

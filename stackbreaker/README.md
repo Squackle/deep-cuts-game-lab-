@@ -1,3 +1,5 @@
+# Stackbreaker 1.4 — Seven-Card Hands, Survival Decisions
+
 # Stackbreaker 1.3 — A True Galaxy Difficulty Climb
 
 # Stackbreaker 1.2 — Realistic Mixed Commander Hands
@@ -47,3 +49,10 @@ This still is not four-player Commander, a complete 100-card deck simulation, or
 
 ## Difficulty design
 The earliest thirty legacy puzzle IDs and stars remain unchanged. The 220 later stages now use explicit graduated solution lengths, real legal multi-object stack threats, singleton responses, calibrated starting life, progressively smaller safety mana margins and payable false leads. New stages in galaxies 1 through 5 require respectively 2, 3, 4, 5 and 6 responses, with 7 on final-galaxy boss nodes. The original first thirty stages are preserved and therefore aren't perfectly monotone in difficulty; revising them will require separately migrating their progress and authored tutorials. Added challenge tests verify real card identities, timing, stack targets, unique cards, mana, losses if unanswered and a legal deterministic winning line for all 250 levels. These are tactical stress tests of a limited rules engine, not a complete Commander simulation or independently human-playtested difficulty ratings.
+
+## Seven-card training hands and hard choices
+Every level begins with exactly seven physical cards in hand: a real land, creature, enchantment and necessary response spells. Battlefield activated abilities are used by tapping/clicking the actual creature and do not occupy hand slots. Real Magic can temporarily have more than seven cards; this is an intentionally fixed training-hand rule, not a statement about Magic's maximum hand size. Original level IDs and progress remain intact. The 12th and 24th legacy tutorials shed one unused physical spell while preserving their intended winning line.
+
+Galaxy difficulty is no longer measured by casting seven different spells from hand (impossible alongside other card types). Generated galaxies use 2, 3, 3, 4 and 4 response steps, with five in the Galaxy 5 final boss when an existing battlefield ability supplies the extra move. Threat sequencing, intentional non-response, color-constrained mana and correct targets remain core difficulty axes.
+
+A minority of later puzzles now require allowing a creature to die while saving the player, or activating real sacrifice abilities on Brindle Boar and Bottle Gnomes to gain life. These strategic pivots are interspersed with removal, indestructibility, counterspells, Hallow, flash, and other curated mechanics. The engine is still an intentionally limited one-turn two-player Commander trainer; it cannot claim to model all >30,000 Magic cards or four-player Commander rules.
