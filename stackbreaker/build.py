@@ -2,7 +2,7 @@ from pathlib import Path
 import re
 root=Path(__file__).resolve().parent
 html=(root/'template.html').read_text()
-css=(root/'design-tokens.css').read_text()+(root/'styles.css').read_text()
+css=(root/'design-tokens.css').read_text()+(root/'styles.css').read_text()+(root/'observatory.css').read_text()
 parts=[]
 for src in ['src/cards.js','src/engine.js','src/galaxies.js','src/commander.js','src/ui.js']:
  s=(root/src).read_text()
@@ -15,7 +15,7 @@ expansion=(root/'data/campaign-expansion.json').read_text()
 chapters=(root/'data/chapters.json').read_text()
 js=js.replace('const extraStages=generateStages([...coreScenarios,...campaignExpansion]);','const coreScenarios='+puzzles+';\nconst campaignExpansion='+expansion+';\nconst extraStages=generateStages([...coreScenarios,...campaignExpansion]);')
 assert 'const scenarios=' in js and js.count('const scenarios=')==1
-html=html.replace('<link rel="stylesheet" href="./design-tokens.css"><link rel="stylesheet" href="./styles.css">','<style>'+css+'</style>')
+html=html.replace('<link rel="stylesheet" href="./design-tokens.css"><link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./observatory.css">','<style>'+css+'</style>')
 html=html.replace('<script type="module" src="./src/ui.js"></script>','')
 html=html.replace('</body>','<script>'+js+'</script></body>')
 assert 'sourceMappingURL' not in html
