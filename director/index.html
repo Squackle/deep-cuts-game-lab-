@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+ <meta name="robots" content="noindex,nofollow,noarchive">
+ <meta name="description" content="Unranked internal Hive Run boss and finale preview. Lab only.">
+ <title>Hive Run · Director Mode — Game Lab Only</title>
+ <link rel="stylesheet" href="./styles.css"><script type="module" src="./main.js"></script>
+</head>
+<body>
+<header class="director-header">
+ <a href="../" class="back">← HIVE RUN LAB</a>
+ <span>DEEP CUTS / INTERNAL TEST LAB</span>
+ <a href="../lab/" class="back">ALL GAMES ↗</a>
+</header>
+<main>
+ <div class="director-intro">
+  <p class="kicker">◈ LAB EXCLUSIVE / NO PUBLIC SCORES ◈</p>
+  <h1>DIRECTOR <em>MODE.</em></h1>
+  <p>Jump directly to late encounters, rehearse hard-to-reach phases and inspect the upcoming victory celebration. Nothing here unlocks, uploads or records progress.</p>
+ </div>
+ <div class="director-grid">
+  <section class="controls" aria-label="Director testing controls">
+   <h2>SCENE SETUP</h2>
+   <label for="directorGame">ARCADE GAME</label>
+   <select id="directorGame"><option value="hunt">PREDATOR HUNT</option><option value="classic">BROOD TRAIL</option></select>
+   <div id="bossOptions">
+    <label for="directorBoss">BOSS</label>
+    <select id="directorBoss">
+     <option value="stalker">BURROW STALKER</option><option value="warden">HATCHERY WARDEN</option>
+     <option value="weaver">TUNNEL WEAVER</option><option value="guardian">RIFT GUARDIAN</option>
+     <option value="broodmother" selected>BROODMOTHER</option>
+    </select>
+   </div>
+   <label for="directorPhase">START AT</label>
+   <select id="directorPhase">
+    <option value="first">FIRST PHASE</option>
+    <option value="final" selected>FINAL CAPTURE PHASE</option>
+    <option value="victory">VICTORY SHOWCASE</option>
+   </select>
+   <fieldset>
+    <legend>TEST ASSISTANCE</legend>
+    <label class="toggle"><input type="checkbox" id="directorInvulnerable" checked><span>INVULNERABLE</span></label>
+    <label class="toggle"><input type="checkbox" id="directorSlow" checked><span>HALF-SPEED GAMEPLAY</span></label>
+   </fieldset>
+   <button class="main-action" id="directorStart" type="button">▶ START SHOWCASE</button>
+   <div class="extra-actions">
+    <button id="directorSkip" type="button">SKIP TO FINAL PHASE</button>
+    <button id="directorWin" type="button">PREVIEW VICTORY</button>
+    <button id="directorPause" type="button">Ⅱ PAUSE</button>
+    <button id="directorReset" type="button">↺ RESET</button>
+   </div>
+   <p class="safety">TEST ONLY · LOCAL SESSION · NO ACCOUNTS · NO LEADERBOARD · NEVER PUBLISHED</p>
+  </section>
+  <section class="game-panel" aria-label="Live unranked preview">
+   <div class="panel-bar"><strong id="directorLocation">THE DEEP FRACTURE</strong><span>UNRANKED</span></div>
+   <div class="readouts">
+    <span>SCORE <strong id="directorScore">000000</strong></span>
+    <span>EVOLUTION <strong id="directorEvolution">12</strong></span>
+    <span>PHASE <strong id="directorStage">3 / 3</strong></span>
+   </div>
+   <div class="arena">
+    <canvas id="directorCanvas" width="360" height="440" tabindex="0" aria-label="Hive Run Director test arena. Use arrow keys, WASD or swipe to steer."></canvas>
+    <div class="victory-screen" id="directorVictory" hidden role="status" aria-live="polite">
+     <div class="victory-symbol" aria-hidden="true">✦ ◈ ✦</div>
+     <p>FUTURE FINALE · REHEARSAL</p>
+     <h2 id="directorVictoryTitle">THE HIVE REIGNS</h2>
+     <span id="directorVictoryDetails">An unranked preview of the closing ceremony.</span>
+     <button id="directorVictoryReplay" type="button">REPLAY SHOWCASE ↺</button>
+    </div>
+   </div>
+   <div class="touch" aria-label="Direction controls">
+    <button type="button" data-turn="up" aria-label="Up">↑</button>
+    <div><button type="button" data-turn="left" aria-label="Left">←</button>
+     <button type="button" data-turn="down" aria-label="Down">↓</button>
+     <button type="button" data-turn="right" aria-label="Right">→</button></div>
+   </div>
+   <p class="status" id="directorStatus" role="status" aria-live="polite">UNRANKED · READY</p>
+   <p class="controls-hint">KEYBOARD: ARROWS / WASD · TOUCH: SWIPE OR DIRECTION BUTTONS</p>
+  </section>
+ </div>
+ <p class="bottom-note">This is a separate development tool. The live arcade, signed-in profiles, saved scores and replay verifier are never connected to Director Mode.</p>
+</main>
+</body>
+</html>

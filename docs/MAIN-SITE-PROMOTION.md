@@ -12,6 +12,7 @@ This repository is for **solo** experiments and reproducible previews. Only `Squ
 ## Promoting to the production website
 
 1. Record **full 40-character Lab source commit**, exact rules version, changed gameplay paths, test URLs and rollback to stable version. Changes can require server+client migration.
+   **PERMANENT EXCLUSION: Lab-only Director Mode must NEVER ship to production.** Exclude the entire `director/**` directory, any `DIRECTOR_ONLY` harness, its invulnerability/phase-skip/victory-forcing logic, shortcuts or linked UI. Tests must fail if a production diff introduces those paths or behaviors. Only ordinary separately tested gameplay may be integrated.
 2. Notify website developer and Control Room issue #14. Wait for owner authorization of the separate production update.
 3. Website developer opens a PR in `Squackle/deep-cuts-edh` with `Workstream: Game Lab Promotion` and the three required fields: `Lab source SHA:`, `Rules version:`, `Score/replay validation:`.
 4. Integrate/retest client and server replay against the same rules version; reject tampered or old-version scores. Ensure old verified rankings stay preserved and labeled, retired Daily Ritual remains retired, and Lab D1 remains isolated.

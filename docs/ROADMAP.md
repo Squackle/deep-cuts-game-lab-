@@ -240,3 +240,14 @@ This section supersedes earlier planned/not-implemented labels above; those sect
 - [ ] Release acceptance: Lab regression suite, CI, Cloudflare deployment and owner hands-on playtest.
 - [ ] **Future public promotion requires entirely separate owner approval and synchronized browser/server `hive-1.5` replay handling.** Never copy the solo Lab engine or ranked APIs directly to the public website. Older `hive-1.3` results must remain preserved and correctly distinguished.
 - [ ] Real iPhone/Android Broodmother fairness, Hatchling Ward tap control and visual contrast checks.
+
+
+## Current definitive vision (2026-10-16) — Dominion 2.0
+**The complete, up-to-date roadmap is [HIVE-RUN-2.0-ROADMAP.md](HIVE-RUN-2.0-ROADMAP.md).** Older unchecked tasks above are historical design notes, not automatically future content commitments.
+
+- **Two finished modes**, not an indefinite expansion: Brood Trail retains grow-to-fill classic arcade play, while Predator Hunt culminates with the fifth and final boss, the Broodmother.
+- **Director Mode: Game Lab only, NEVER publish.** Dedicated `/director/` tool for immediate first/final boss phases, half-speed, invulnerability and fake victory rehearsal. Does not touch scores, auth, saved records or ranked replay. Explicit permanent exclusion in the promotion policy.
+- **Predator Hunt growth redesign: proposed, not built.** Investigate seven-segment fixed length or a narrow cap. Redesign Hunt-only Green/Black growth-dependent mutation effects deliberately and run boss-capture fairness playtests. Brood Trail keeps unbounded growth. Any engine change requires a new version.
+- **Authentic final celebrations: not yet implemented.** Perfect-clear celebration for Brood Trail; final victory only after defeating Broodmother for Predator Hunt. Director's forced victory is an unranked test rehearsal, not a legitimate win.
+- **Release gate:** physical device signoff, ranked browser/server replay equivalence, historical score preservation, separate owner-approved production PR, verified deployment, and absolute exclusion of `director/**`.
+- Existing Lab Matriarch implementation is at `hive-1.5.2`, not the stale temporary-egg /`hive-1.5` description above. No sixth boss is in scope.
