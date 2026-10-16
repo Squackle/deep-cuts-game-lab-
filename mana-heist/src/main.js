@@ -506,6 +506,15 @@ el("campaignScreen").addEventListener("click",e=>{
  const exercise=e.target.closest("[data-learn-level]");
  if(exercise&&mode==="learn")load(Number(exercise.dataset.learnLevel),true);
 });
+el("campaignScreen").addEventListener("click",e=>{
+ const button=e.target.closest("[data-jump-galaxy]");
+ if(!button||mode!=="heist")return;
+ const g=Number(button.dataset.jumpGalaxy);
+ if(!Number.isInteger(g)||g<0||g>=GALAXIES.length)return;
+ world=GALAXIES[g].worldRange[0];
+ renderOverworld({world,bests:progress.bests,index,proofs,medal});
+ el("galaxyPicker").focus?.({preventScroll:true});
+});
 el("returnMap").addEventListener("click",showMap);
 function setGuideOpen(open,{restoreFocus=true}={}){
  const guide=el("gameNotes");
