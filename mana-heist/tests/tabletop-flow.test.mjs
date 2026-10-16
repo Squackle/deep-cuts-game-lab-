@@ -50,7 +50,7 @@ test("the game presents physical cards before explanations, without removing exi
 
 test("real Magic symbols are correctly distinct: numeric generic versus diamond colorless",()=>{
  assert.match(main,/C:\{name:"Colorless"[^\n]+icon:"◇"/);
- assert.match(main,/k==="N"\?\[coin\("N",String\(n\)\)\]/);
+ assert.match(main,/k==="N"\?\(n\?\[coin\("N",String\(n\)\)\]:\[\]\)/);
  assert.match(main,/Numerals|Numbers show generic mana costs/);
  assert.match(html,/Optional auto-cast|optional auto-cast/);
 });
