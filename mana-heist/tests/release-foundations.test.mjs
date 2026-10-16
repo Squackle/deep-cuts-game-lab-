@@ -55,6 +55,11 @@ test("P01 remains blocked; independently approved later work can be in progress 
   if(i===12){
    assert.match(record,/\| IN PROGRESS \|/,"P12 parity changes are partial, not the full release package");
    assert.match(record,/remaining|NOT COMPLETE/i);
+  }else if(i===2){
+   assert.match(record,/\| IN PROGRESS \|/,"owner-approved P02 isolated mana engine is still partial");
+   assert.match(record,/NOT COMPLETE/i);
+   assert.match(read("release/MANA-ENGINE-PHASE1.md"),/mh-mana-lab-2\.0\.0/);
+   assert.match(read("src/mana-engine-v2.js"),/export function payments\(/);
   }else if(i===4){
    assert.match(record,/\| IN PROGRESS \|/,"P04 beginner tutorial started by owner-approved Tabletop Flow");
    assert.match(record,/full.*not yet complete/i,"P04 is still incomplete");
