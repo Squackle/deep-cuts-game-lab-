@@ -38,12 +38,12 @@ function queueAutoCast(){
  if(pendingFlights.size||completed(level,state))return;
  if(!chooseAutomaticCast(level,state)||autoTimer!==null)return;
  el("wardTarget").classList.add("auto-primed");
- el("autoCastLabel").textContent="WARD READY · MOVE MOUSE TO STIR";
+ el("autoCastLabel").textContent="WARD READY · STIR TO MIX";
  const epoch=viewEpoch,primedAt=performance.now();
  function tryCast(){
   if(epoch!==viewEpoch||pendingFlights.size||completed(level,state)){autoTimer=null;return;}
   const now=performance.now(),elapsed=now-primedAt;
-  const stirring=fluid.isStirring()||now-fluid.lastStirAt()<650;
+  const stirring=fluid.isStirring()||now-fluid.lastStirAt()<900;
   if(elapsed<AUTO_SETTLE_MS||(stirring&&elapsed<AUTO_STIR_MAX_MS)){
    autoTimer=setTimeout(tryCast,140);return;
   }
