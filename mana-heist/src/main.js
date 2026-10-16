@@ -215,7 +215,7 @@ function tapLand(id){
  lastCardId=id;
  if(completed(level,state))return;
  const onField=state.field.find(f=>f.id===id);
- if(!onField){message("This land is not on the battlefield.",true);return;}
+ if(!onField){message("This source is not on the battlefield.",true);return;}
  if(onField.tapped&&getCard(level,id).v2!=="petal"){message(tappedLandMessage(level,state),true);return;}
  const card=getCard(level,id),possible=actions(level,state).filter(a=>(a.type==="tap"||a.type==="fetch"||a.type==="activate")&&a.id===id);
  if(card.kind==="fetch"){
@@ -292,12 +292,13 @@ function updateCastButton(){
  const ready=!completed(level,state)&&!pendingFlights.size&&!!chooseAutomaticCast(level,state);
  const button=el("castButton");
  button.disabled=!ready;
- button.textContent=ready?"CAST SPELL ✦":"NEED MORE MANA";
+ button.textContent=ready?"CAST SPELL ✦":state.manaUnits?.some(u=>u.restriction)&&COLORS.every(c=>(state.pool[c]||0)>=(level.stages[state.stage]?.cost?.[c]||0))?"MANA RESTRICTED":"NEED MORE MANA";
  button.setAttribute("aria-label",ready?"Cast the spell by spending mana":"Spell not ready; produce more mana");
  el("autoCastLabel").textContent=completed(level,state)?"VAULT OPEN":ready?(autoCastEnabled?"READY · AUTO-CAST ARMED":"READY · TAP CAST SPELL"):"TAP LANDS TO ADD MANA";
 }
 function teachingCue(){
  if(completed(level,state))return "Vault opened. Nice work!";
+ if(state.manaUnits?.some(u=>u.restriction)&&!actions(level,state).some(a=>a.type==="cast"))return "Some mana can only pay for creature spells. This vault may need a different mana source.";
  if(chooseAutomaticCast(level,state))return "Your mana matches the cost. Cast to spend it.";
  if(index===0)return "Tap your Island. Turning a land sideways makes mana.";
  if(index===1)return state.hand.length?"Play your Mountain from your hand.":"Tap your Mountain for red mana.";
