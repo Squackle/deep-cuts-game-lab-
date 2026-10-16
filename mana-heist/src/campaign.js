@@ -1,5 +1,6 @@
 // Standalone, deterministic campaign progression — no DOM, no storage side effects.
-// Only completed levels unlock the next stage. Historic Landfall v2 bests remain compatible.
+// Every level is selectable; completion remains a record of mastery, not a gate.
+// The old highestUnlocked counter is retained for reading historic v2 progress.
 import {CHAPTERS,LEVELS,GALAXIES} from "./levels.js";
 export function highestUnlocked(bests={}) {
   let i=0;
@@ -11,7 +12,7 @@ export function validBest(best) {
     Number.isInteger(best.spentLife) && best.spentLife>=0 && best.spentLife<=30;
 }
 export function unlocked(index,bests={}) {
-  return Number.isInteger(index) && index>=0 && index<LEVELS.length && index<=highestUnlocked(bests);
+  return Number.isInteger(index) && index>=0 && index<LEVELS.length && true;
 }
 export function chapterIndex(index) {
   return CHAPTERS.findIndex(ch=>index>=ch.range[0] && index<=ch.range[1]);
@@ -23,12 +24,12 @@ export function stageCode(index) {
   return (act.galaxy+1)+":"+(act.world+1)+":"+(index-act.range[0]+1);
 }
 export function chapterAccessible(chapter,bests={}) {
-  return CHAPTERS[chapter]?.range[0]<=highestUnlocked(bests);
+  return Number.isInteger(chapter)&&chapter>=0&&chapter<CHAPTERS.length;
 }
 export function galaxyIndex(levelIndex){return Math.floor(levelIndex/50);}
 export function galaxyAccessible(galaxy,bests={}){
  return Number.isInteger(galaxy)&&galaxy>=0&&galaxy<GALAXIES.length&&
- GALAXIES[galaxy].range[0]<=highestUnlocked(bests);
+ true;
 }
 export function worldInGalaxy(globalWorld){return globalWorld%5;}
 export function normalizedBests(raw) {
