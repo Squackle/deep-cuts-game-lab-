@@ -99,8 +99,10 @@ export function advanceFluid(grid,dt=1){
     grid[k][i]=Math.max(0,(tmp[k][i]*.96+average*.04)*.9998);
    }
   }
-  grid.vx[i]=tmp.vx[i]*grid.drag[i];
-  grid.vy[i]=tmp.vy[i]*grid.drag[i];
+  // Real-time damping: 30fps and 60fps must yield comparable flow.
+  const damping=Math.pow(grid.drag[i],dt);
+  grid.vx[i]=tmp.vx[i]*damping;
+  grid.vy[i]=tmp.vy[i]*damping;
  }
  if(grid.pigmentLive)mixPigments(grid,dt);
 }
@@ -116,6 +118,26 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
  off.width=N;off.height=N;
  const offctx=off.getContext("2d"),pixels=offctx.createImageData(N,N);
  canvas.width=192;canvas.height=192;
+ // Higher-resolution presentation on larger screens. The physical solver
+ // remains 64x64, so GPU scaling improves edges without increasing its cost.
+ let lastMeasuredWidth=0,lastMeasuredTime=-Infinity;
+ function ensureResolution(){
+  const now=performance.now();
+  if(now-lastMeasuredTime<300)return;
+  lastMeasuredTime=now;
+  const rect=canvas.getBoundingClientRect?.();
+  const cssWidth=rect?.width||0;
+  if(cssWidth<20)return; // Hidden overworld; wait for a visible game.
+  const mobile=(window.innerWidth||0)<=700;
+  const deviceScale=Math.min(window.devicePixelRatio||1,2);
+  const next=mobile?256:clamp(Math.ceil(cssWidth*deviceScale/32)*32,256,512);
+  if(next!==canvas.width){
+   canvas.width=next;canvas.height=next;
+   ctx.imageSmoothingEnabled=true;
+   ctx.imageSmoothingQuality="high";
+  }
+  lastMeasuredWidth=cssWidth;
+ }
  let active=false,raf=0,lastFrame=0,lastStir=0,drag=null,hover=null;
  let charged=[],appliedIds=new Set(),ripples=[],pulse=0;
  const reduced=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches===true;
@@ -135,6 +157,7 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
           y:(event.clientY-bounds.top)/Math.max(bounds.height,1)*(N-1)};
  };
  function render(){
+  ensureResolution();
   const data=pixels.data;
   for(let i=0;i<COUNT;i++){
    const offset=i*4;
@@ -149,34 +172,41 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
    data[offset+3]=255;
   }
   offctx.putImageData(pixels,0,0);
-  const w=canvas.width,h=canvas.height,m=w/2,rad=w*.468;
+  const w=canvas.width,h=canvas.height,m=w/2,rad=w*.468,k=w/192;
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality="high";
   ctx.clearRect(0,0,w,h);
   ctx.save();
   ctx.beginPath();ctx.arc(m,m,rad,0,Math.PI*2);ctx.clip();
-  const water=ctx.createRadialGradient(m-30,m-41,5,m,m,rad);
+  const water=ctx.createRadialGradient(m-30*k,m-41*k,5*k,m,m,rad);
   water.addColorStop(0,"#315a68");water.addColorStop(.62,"#173942");water.addColorStop(1,"#0b232d");
   ctx.fillStyle=water;ctx.fillRect(0,0,w,h);
   ctx.globalAlpha=.97;
   ctx.drawImage(off,0,0,w,h);
   ctx.globalAlpha=1;
-  const shine=ctx.createRadialGradient(m-31,m-35,0,m,m,rad);
+  const shine=ctx.createRadialGradient(m-31*k,m-35*k,0,m,m,rad);
   shine.addColorStop(0,"rgba(255,255,255,.13)");shine.addColorStop(.48,"rgba(255,255,255,.012)");shine.addColorStop(1,"rgba(0,0,0,.36)");
   ctx.fillStyle=shine;ctx.fillRect(0,0,w,h);
   for(const ripple of ripples){
-   ctx.beginPath();ctx.arc(ripple.x,ripple.y,ripple.age*27+3,0,Math.PI*2);
-   ctx.lineWidth=1.6;ctx.strokeStyle="rgba(245,247,251,"+(Math.max(0,1-ripple.age/2)*.55)+")";ctx.stroke();
+   ctx.beginPath();ctx.arc(ripple.x*w,ripple.y*h,(ripple.age*27+3)*k,0,Math.PI*2);
+   ctx.lineWidth=1.6*k;ctx.strokeStyle="rgba(245,247,251,"+(Math.max(0,1-ripple.age/2)*.55)+")";ctx.stroke();
   }
   ctx.restore();
-  ctx.lineWidth=3;ctx.strokeStyle="rgba(229,210,157,.75)";
-  ctx.shadowColor=cssForOrbs(charged);ctx.shadowBlur=7+pulse*16;
-  ctx.beginPath();ctx.arc(m,m,rad-1.5,0,Math.PI*2);ctx.stroke();
+  ctx.lineWidth=3*k;ctx.strokeStyle="rgba(229,210,157,.75)";
+  ctx.shadowColor=cssForOrbs(charged);ctx.shadowBlur=(7+pulse*16)*k;
+  ctx.beginPath();ctx.arc(m,m,rad-1.5*k,0,Math.PI*2);ctx.stroke();
   ctx.shadowBlur=0;
  }
  function frame(now){
   if(!active)return;
-  if(document.hidden||(!charged.length&&!drag&&!ripples.length)){raf=requestAnimationFrame(frame);return;}
+  if(document.hidden||(!charged.length&&!drag&&!ripples.length)){
+   lastFrame=0;raf=requestAnimationFrame(frame);return;
+  }
   if(lastFrame&&window.innerWidth<=700&&now-lastFrame<28){raf=requestAnimationFrame(frame);return;}
-  const dt=Math.min((now-lastFrame)/16.67||1,1.7);lastFrame=now;
+  // Include the entire time between 30fps mobile frames. Previously clamping
+  // 33ms to 1.7 steps made mobile physics run in slow motion relative to PC.
+  const dt=lastFrame?clamp((now-lastFrame)/16.6667,.05,2.5):1;
+  lastFrame=now;
   if(!reduced()){advanceFluid(grid,dt);for(const ripple of ripples)ripple.age+=dt*.09;}
   ripples=ripples.filter(r=>r.age<2);pulse=Math.max(0,pulse-.025*dt);
   render();raf=requestAnimationFrame(frame);
@@ -197,7 +227,7 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
   // Tiny impulse produces the injection ripple. Color coverage is set by
   // fillDyeProportions after the full accepted set is known.
   addDye(grid,orb.color,x,y,.08);
-  ripples.push({x:x/N*canvas.width,y:y/N*canvas.height,age:0});
+  ripples.push({x:x/N,y:y/N,age:0});
   pulse=1;
  }
  function sync(next,{reset=false}={}){
@@ -223,7 +253,22 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
   // bitmap remains visible indefinitely despite a cleared simulation grid.
   if(reset||removed||!list.length||!active||reduced())render();
  }
- // Mouse: simply entering and MOVING stirs — no button press.
+ // Continuous strokes are sampled along the path, not just at event
+ // endpoints. The same fractional path through the pot has the same input
+ // strength on a large monitor or a small phone.
+ function stirBetween(from,to){
+  const dx=to.x-from.x,dy=to.y-from.y,distance=Math.hypot(dx,dy);
+  if(distance<.14)return false;
+  const steps=Math.min(24,Math.max(1,Math.ceil(distance/2.4)));
+  const sx=dx/steps,sy=dy/steps;
+  for(let i=1;i<=steps;i++){
+   stirDye(grid,from.x+sx*i,from.y+sy*i,sx,sy);
+  }
+  lastStir=performance.now();onInteract();
+  if(reduced())render();
+  return true;
+ }
+ // Mouse: simply entering and moving stirs. Touch: press and drag.
  canvas.addEventListener("pointerenter",e=>{
   if(e.pointerType==="touch")return;
   const c=coord(e);
@@ -238,32 +283,21 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
   try{canvas.setPointerCapture?.(e.pointerId);}catch{}
   drag={id:e.pointerId,x:c.x,y:c.y};
   lastStir=performance.now();
-  // A tap adds a surface ripple. An actual drag moves pigment.
   stirDye(grid,c.x,c.y,.45,.45);
-  ripples.push({x:c.x/(N-1)*canvas.width,y:c.y/(N-1)*canvas.height,age:0});
+  ripples.push({x:c.x/(N-1),y:c.y/(N-1),age:0});
   target.classList.add("is-stirring");onInteract();
   if(reduced())render();
  });
  canvas.addEventListener("pointermove",e=>{
   const c=coord(e);
   if(drag&&drag.id===e.pointerId){
-   const dx=c.x-drag.x,dy=c.y-drag.y;
-   stirDye(grid,c.x,c.y,dx,dy);
-   drag.x=c.x;drag.y=c.y;lastStir=performance.now();onInteract();
-   if(reduced())render();
+   stirBetween(drag,c);
+   drag.x=c.x;drag.y=c.y;
    return;
   }
   if(e.pointerType==="touch")return;
   if(!inside(c.x,c.y)){hover=null;return;}
-  if(hover){
-   const dx=c.x-hover.x,dy=c.y-hover.y;
-   if(Math.hypot(dx,dy)>.14){
-    stirDye(grid,c.x,c.y,dx,dy);
-    lastStir=performance.now();
-    onInteract();
-    if(reduced())render();
-   }
-  }
+  if(hover)stirBetween(hover,c);
   hover=c;
  });
  function release(e){
@@ -280,7 +314,7 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
    grid.vx[i]+=dx*.017-dy*.005;
    grid.vy[i]+=dy*.017+dx*.005;
   }
-  ripples.push({x:canvas.width/2,y:canvas.height/2,age:0});
+  ripples.push({x:.5,y:.5,age:0});
   pulse=1;
   target.classList.remove("ward-breaking");
   void target.offsetWidth;
@@ -295,12 +329,14 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
    target.dataset.fusionCount="0";
    render();
   },
-  pause,resume,burst,isStirring:()=>!!drag,lastStirAt:()=>lastStir,
+  pause,resume,burst,isStirring:()=>!!drag||!!hover&&performance.now()-lastStir<550,lastStirAt:()=>lastStir,
   getColor:()=>cssForOrbs(charged),getCount:()=>charged.length,
   // Exposed for direct browser QA, does not affect authoritative puzzle rules.
   debugCellMass:()=>grid.mass.reduce((sum,v)=>sum+v,0),
   debugColorAt:(x,y)=>{const i=INDEX(Math.max(0,Math.min(N-1,Math.round(x))),Math.max(0,Math.min(N-1,Math.round(y))));const m=grid.mass[i]||1;return [grid.r[i]/m,grid.g[i]/m,grid.b[i]/m]},
   debugProportions:()=>charged.reduce((a,o)=>(a[o.color]=(a[o.color]||0)+1,a),{}),
-  debugMixerStats:()=>pigmentStatistics(grid)
+  debugMixerStats:()=>pigmentStatistics(grid),
+  debugResolution:()=>canvas.width,
+  debugVelocityEnergy:()=>grid.vx.reduce((sum,v,i)=>sum+(grid.active[i]?Math.abs(v)+Math.abs(grid.vy[i]):0),0)
  };
 }
