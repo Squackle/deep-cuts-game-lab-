@@ -62,11 +62,17 @@
    <div class="arena">
     <canvas id="directorCanvas" width="360" height="440" tabindex="0" aria-label="Hive Run Director test arena. Use arrow keys, WASD or swipe to steer."></canvas>
     <div class="victory-screen" id="directorVictory" hidden role="status" aria-live="polite">
-     <div class="victory-symbol" aria-hidden="true">✦ ◈ ✦</div>
-     <p>FUTURE FINALE · REHEARSAL</p>
-     <h2 id="directorVictoryTitle">THE HIVE REIGNS</h2>
-     <span id="directorVictoryDetails">An unranked preview of the closing ceremony.</span>
-     <button id="directorVictoryReplay" type="button">REPLAY SHOWCASE ↺</button>
+     <div class="victory-art" aria-hidden="true"></div>
+     <div class="victory-content">
+      <p class="victory-caption">◈ LAB FINALE PREVIEW ◈</p>
+      <h2 id="directorVictoryTitle">THE HIVE REIGNS</h2>
+      <strong class="victory-won">YOU WIN</strong>
+      <span id="directorVictoryDetails">The burrow can no longer contain your swarm. The village trembles before its new sovereign.</span>
+      <div class="victory-actions">
+       <button id="directorVictoryReplay" type="button">REPLAY FINALE ↺</button>
+       <button id="directorVictoryExit" type="button">RETURN TO DIRECTOR ↩</button>
+      </div>
+     </div>
     </div>
    </div>
    <div class="touch" aria-label="Direction controls">
@@ -78,6 +84,19 @@
    <p class="status" id="directorStatus" role="status" aria-live="polite">UNRANKED · READY</p>
    <p class="controls-hint">KEYBOARD: ARROWS / WASD · TOUCH: SWIPE OR DIRECTION BUTTONS</p>
   </section>
+  <aside class="cheat-panel" aria-label="Director Mode cheat ability legend">
+   <div class="cheat-header"><span>◈ INTERNAL TOOLS</span><strong>CHEAT CODES</strong></div>
+   <p>DIRECTOR MODE ONLY · UNRANKED</p>
+   <div class="cheat-list" id="directorCheatList">
+    <button id="directorBurgerCheat" type="button" data-cheat="super-orb" aria-label="Press 1 to spawn the 10-segment pixel cheeseburger super orb">
+     <kbd>1</kbd><canvas id="directorBurgerPreview" width="32" height="32" aria-hidden="true"></canvas>
+     <span><strong>SUPER ORB</strong><small>Spawn a pixel cheeseburger. Eat for +10 segments.</small></span>
+    </button>
+   </div>
+   <div class="cheat-slot"><kbd>+</kbd><span>MORE TEST ABILITIES CAN GO HERE</span></div>
+   <p class="cheat-hint">PRESS <kbd>1</kbd> ANYTIME DURING A LIVE DIRECTOR RUN, OR TAP THE CHEAT ABOVE.</p>
+   <p id="directorCheatMessage" class="cheat-message" role="status" aria-live="polite">READY TO SPAWN</p>
+  </aside>
  </div>
  <p class="bottom-note">This is a separate development tool. The live arcade, signed-in profiles, saved scores and replay verifier are never connected to Director Mode.</p>
 </main>
