@@ -226,7 +226,7 @@ function landHtml(instance,field){
  const src=imageFor(instance.id,key);
  const fallback=landPainting(card);
  const alt=name+" — Magic: The Gathering land card from Scryfall";
- return '<button type="button" draggable="false" class="land-card mtg-real-land '+(tapped?"is-tapped":"")+'" data-cardid="'+instance.id+'" data-zone="'+(field?"field":"hand")+'" data-kind="'+card.kind+'" data-real-card="'+key+'" aria-label="'+(field?"Tap ":"Drag to battlefield: ")+name+(tapped?", tapped":"")+'" title="'+name+' · '+(field?"tap to produce mana":"drag to play · tap to inspect")+'">'+
+ return '<button type="button" draggable="false" class="land-card mtg-real-land '+(tapped?"is-tapped":"")+'" data-cardid="'+instance.id+'" data-zone="'+(field?"field":"hand")+'" data-kind="'+card.kind+'" data-real-card="'+key+'" aria-label="'+(field?"Tap ":"Select or drag to play: ")+name+(tapped?", tapped":"")+'" title="'+name+' · '+(field?"tap to produce mana":"drag to play · tap to inspect")+'">'+
   '<img class="mtg-card-image" data-card-key="'+key+'" src="'+src+'" alt="'+alt+'" draggable="false" decoding="async" loading="eager">'+
   '<span class="mtg-fallback" aria-hidden="true"><strong>'+name+'</strong>'+fallback+'</span>'+
   '</button>';
@@ -250,7 +250,7 @@ function syncLandRows(){
   node.classList.toggle("is-tapped",!!tapped);
   node.dataset.zone=field?"field":"hand";
   const name=card.name;
-  node.setAttribute("aria-label",(field?"Tap ":"Drag to battlefield: ")+name+(tapped?", tapped":""));
+  node.setAttribute("aria-label",(field?"Tap ":"Select or drag to play: ")+name+(tapped?", tapped":""));
   node.title=name+" · "+(field?"tap to produce mana":"tap to select, drag to play");
    node.classList.toggle("hand-selected",!field&&id===selectedHandId);
   return node;
