@@ -27,7 +27,7 @@ test('each physical Island and Mountain fetches an independent random real Scryf
  assert.ok(app.includes("game:paper"));
  assert.ok(app.includes("unique=prints&order=random"));
  assert.ok(app.includes("[...new Set(urls)]"));
- assert.ok(app.includes("card.name===land.card"));
+ assert.ok(app.includes("filter(c=>c.name===name)"));
  assert.ok(app.includes("landArt.get(l.id)"),'independent land instances must not share an identical random printing');
  assert.ok(app.includes("cards\\.scryfall\\.io"));
  assert.ok(app.includes("sessionStorage"));
