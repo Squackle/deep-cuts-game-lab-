@@ -50,6 +50,6 @@ Do **not** add punctuation to the literal `Workstream: Game Lab` line. Follow an
 
 ## Next unstarted package
 
-**P01 — Release Foundations** is first. Its deliverables are a legal/brand decision log, supported-rules matrix, current 250-stage and browser capability inventory, design gates and 1.0 acceptance criteria. **Do not start P01 or alter the game until asked.**
+**P01 — Release Foundations** technical baseline is documented in [release/FOUNDATIONS-P01.md](release/FOUNDATIONS-P01.md), [release/MECHANICS-MATRIX-P01.md](release/MECHANICS-MATRIX-P01.md), and [release/ASSET-RIGHTS-P01.md](release/ASSET-RIGHTS-P01.md). P01 status: **BLOCKED on owner's rights/brand strategy decision and qualified sign-off**; do not claim public release is cleared. **P02 — Mana Engine 1.0** is the next *unstarted implementation package*, but may begin only with a fresh owner instruction and clarified rules scope. Read P01 risks and source-matrix first; do not silently rewrite engine or cards.
 
 For human-readable goals and package status, use [ROADMAP-1.0.md](ROADMAP-1.0.md). For everything a mana/puzzle change must preserve, use [RULESET-1.0.md](RULESET-1.0.md).

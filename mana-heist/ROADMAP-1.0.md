@@ -110,7 +110,7 @@ Every package produces: a scoped design/spec or implementation, deterministic te
 
 | Package | Status | Evidence |
 |---|---|---|
-| P01 | NOT STARTED | Roadmap planning only |
+| P01 | BLOCKED | P01 technical foundation delivered for Lab: [scope/risk register](release/FOUNDATIONS-P01.md), [mechanics audit](release/MECHANICS-MATRIX-P01.md), [asset/rights decision](release/ASSET-RIGHTS-P01.md), [baseline tests](tests/release-foundations.test.mjs). **Rights route, title review and owner sign-off unresolved; not public-release cleared.** |
 | P02 | NOT STARTED | Existing simplified engine is not audited 1.0 |
 | P03 | NOT STARTED | Existing solver and 250-level replay tests are a baseline, not completed authoring QA |
 | P04 | NOT STARTED | No approved Learn Mode acceptance |
@@ -129,3 +129,7 @@ Every package produces: a scoped design/spec or implementation, deterministic te
 ## Planning timeline
 
 **Estimated 12–16 weeks** for concentrated work; not a delivery promise. Legal/licensing and engine fidelity investigations can materially extend it. Package sequence and gates matter more than dates. Prioritize P01–P03 before large-scale lesson writing.
+
+## P01 technical delivery handoff (2026-10-15)
+
+**Technical baseline and artifacts completed; package status: BLOCKED pending owner choice/rights review.** See [release/FOUNDATIONS-P01.md](release/FOUNDATIONS-P01.md) for release scope, AC-01–AC-12, privacy baseline and R-01–R-10 risks; [release/MECHANICS-MATRIX-P01.md](release/MECHANICS-MATRIX-P01.md) for 24 lands and 19 mechanics with mandatory P02 audit; and [release/ASSET-RIGHTS-P01.md](release/ASSET-RIGHTS-P01.md) for a recorded licensing-vs-original-asset decision awaiting approval. The main-game 250 levels, artwork, engine and score storage were not altered. **P02 is not authorized by this delivery.** A rights/brand decision cannot be signed off by an automated agent.
