@@ -23,8 +23,10 @@ test('hand cards display only the full Scryfall card image, not duplicated title
 
 test('each physical Island and Mountain fetches an independent random real Scryfall printing',()=>{
  assert.ok(app.includes("for(const land of openingDrill.lands)"));
- assert.ok(app.includes("https://api.scryfall.com/cards/random?q="));
+ assert.ok(app.includes("https://api.scryfall.com/cards/search?q="));
  assert.ok(app.includes("game:paper"));
+ assert.ok(app.includes("unique=prints&order=random"));
+ assert.ok(app.includes("[...new Set(urls)]"));
  assert.ok(app.includes("card.name===land.card"));
  assert.ok(app.includes("landArt.get(l.id)"),'independent land instances must not share an identical random printing');
  assert.ok(app.includes("cards\\.scryfall\\.io"));
