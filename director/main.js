@@ -10,6 +10,7 @@ import {drawBroodPickup} from "../src/pickups.js";
 import {createDirectorRun,jumpDirectorPhase,showcaseDirectorVictory,advanceDirectorRun,directorStatus,spawnDirectorSuperOrb} from "./mode.js";
 import {drawSuperBurger} from "./super-burger-art.js";
 import {HIVE_FINALE_WEBP} from "./finale-art.js";
+import {HIVE_FINALE_DESKTOP_AVIF,HIVE_FINALE_MOBILE_AVIF} from "./high-resolution-finale-art.js";
 import {HIVE_MOBILE_FINALE_WEBP} from "./mobile-finale-art.js";
 const $=id=>document.getElementById(id);
 const canvas=$("directorCanvas"),ctx=canvas.getContext("2d",{alpha:false}),CELL=20;
@@ -47,13 +48,18 @@ function update(){
   const victory=$("directorVictory");
   const isHunt=run.mode==="hunt";
   victory.classList.toggle("victory-screen--hunt",isHunt);
+  // Modern browsers get the full-resolution poster; the previously deployed
+  // tiny WebP is only a fallback on old devices without AVIF support.
+  const desktopImage='image-set(url("'+HIVE_FINALE_DESKTOP_AVIF+
+    '") type("image/avif"), url("'+HIVE_FINALE_WEBP+'") type("image/webp"))';
+  const mobileImage='image-set(url("'+HIVE_FINALE_MOBILE_AVIF+
+    '") type("image/avif"), url("'+HIVE_MOBILE_FINALE_WEBP+'") type("image/webp"))';
   victory.style.setProperty("--director-finale-art",isHunt?
-    'url("'+HIVE_FINALE_WEBP+'")':
-    "linear-gradient(145deg,#96754b,#30204f,#112a2d)");
-  victory.style.setProperty("--director-finale-mobile",isHunt?
-    'url("'+HIVE_MOBILE_FINALE_WEBP+'")':"none");
+    desktopImage:"linear-gradient(145deg,#96754b,#30204f,#112a2d)");
+  victory.style.setProperty("--director-finale-mobile",isHunt?mobileImage:"none");
   $("directorVictory").hidden=false;
  }else $("directorVictory").hidden=true;
+ document.documentElement.classList.toggle("director-finale-open",run.status==="won");
  setStatus(directorStatus(run)+(paused?" · PAUSED":""));
 }
 function startScene(){
@@ -138,9 +144,25 @@ $("directorStart").addEventListener("click",startScene);
 $("directorWin").addEventListener("click",showFinale);
 $("directorVictoryReplay").addEventListener("click",()=>{
  $("directorVictory").hidden=true;
+ // Reset animation to replay the ceremony without changing Director controls.
+ const art=$("directorVictory").querySelector(".victory-art");
+ if(art){art.style.animation="none";void art.offsetHeight;art.style.animation=""}
  requestAnimationFrame(()=>showFinale());
 });
-$("directorVictoryExit").addEventListener("click",startScene);
+/**
+ * Return to the editor, not to another forced win.
+ * Starting a Director scene while the dropdown remains "victory" simply reopens
+ * the finale on the next frame; restore a playable phase before resetting.
+ */
+function returnToDirector(){
+ $("directorVictory").hidden=true;
+ if($("directorPhase").value==="victory"){
+  $("directorPhase").value=$("directorGame").value==="classic"?"first":"final";
+ }
+ startScene();
+ $("directorStart").focus({preventScroll:true});
+}
+$("directorVictoryExit").addEventListener("click",returnToDirector);
 $("directorBurgerCheat").addEventListener("click",()=>{summonBurger();canvas.focus({preventScroll:true})});
 $("directorReset").addEventListener("click",startScene);
 $("directorSkip").addEventListener("click",()=>{if(jumpDirectorPhase(run)){update();draw()}});
