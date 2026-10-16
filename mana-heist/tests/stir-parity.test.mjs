@@ -98,6 +98,6 @@ test("casting has the same bounded opportunity to stir on desktop and phone",()=
  assert.match(fluid,/function stirBetween\(from,to\)/);
  assert.match(fluid,/Math\.ceil\(distance\/2\.4\)/);
  assert.match(fluid,/Math\.pow\(grid\.drag\[i\],dt\)/);
- assert.match(mixer,/Math\.pow\(\.93,dt\)/);
- assert.match(mixer,/1-Math\.pow\(1-perFrame,dt\)/);
+ assert.match(mixer,/Math\.pow\(\.93,dt\*\.5\)/);
+ assert.match(mixer,/1-Math\.pow\(1-perFrame,dt\*\.5\)/);
 });
