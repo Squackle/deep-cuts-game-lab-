@@ -111,7 +111,7 @@ Every package produces: a scoped design/spec or implementation, deterministic te
 | Package | Status | Evidence |
 |---|---|---|
 | P01 | BLOCKED | P01 technical foundation delivered for Lab: [scope/risk register](release/FOUNDATIONS-P01.md), [mechanics audit](release/MECHANICS-MATRIX-P01.md), [asset/rights decision](release/ASSET-RIGHTS-P01.md), [baseline tests](tests/release-foundations.test.mjs). **Rights route, title review and owner sign-off unresolved; not public-release cleared.** |
-| P02 | NOT STARTED | Existing simplified engine is not audited 1.0 |
+| P02 | IN PROGRESS | Owner-approved Phase 1 Game Lab test bench: [rules-grounded engine and playable 10-board QA](release/MANA-ENGINE-PHASE1.md) now implemented alongside the old 250-level campaign. **Full 1.0 certification, land-entry support and old-campaign migration NOT COMPLETE.** |
 | P03 | NOT STARTED | Existing solver and 250-level replay tests are a baseline, not completed authoring QA |
 | P04 | IN PROGRESS | Tabletop Flow adds contextual beginner prompts and explicit land → tap → cast teaching; full 5–10 lesson curriculum and new-user testing not yet complete |
 | P05 | NOT STARTED | No approved three-tier hints |

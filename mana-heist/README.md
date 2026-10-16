@@ -10,6 +10,10 @@
 
 > **Latest lab UX (Tabletop Flow, Oct 15):** Curved selectable card hand, battlefield ABOVE hand, readable rotated/tapped lands, mana poured into the optional-to-stir cauldron, **deliberate Cast Spell by default**, optional auto-cast, short contextual prompts, and a collapsed optional field guide. Select a land and press Play selected land (or drag it onto the battlefield). View Card or focus + I opens the full printing. Generic costs now display Magic's numbered symbol, not the colorless diamond. All 250 IDs and the v2 guest save key are preserved. This is the isolated Game Lab prototype; it is not the rights-cleared public 1.0 release.
 
+## Phase 1 Mana Engine 2.0 — isolated playable calibration (2026-10-16)
+
+The owner approved Phase 1 for Game Lab testing. [Test Mana Engine 2.0](mana-engine-test.html) from the original Mana Heist campaign map; the new separate playable route has ten deterministic demonstrations of paid filtering, true multiple-mana taps, creature-restricted mana, Coffers/Urborg, Nykthos, single-use artifact mana and phase boundaries. It uses an independent pure engine module (mh-mana-lab-2.0.0), retains the legacy 250-level puzzle engine and unchanged saves, and awards no campaign medals. For current implementation limits, exact rules evidence and rollback, read [release/MANA-ENGINE-PHASE1.md](release/MANA-ENGINE-PHASE1.md). Broader mana ability support and the campaign conversion remain future P02 work; **do not represent this as a full Magic rules engine or public-site release**.
+
 ## What's new
 
 Version 0.2 rebuilds the original abstract relay game around **tappable land cards outside the vault**, a visible mana pool, land drops, casting ward-breaking spells, life decisions and tight turn deadlines. The battlefield is a land row separate from the vault; tap a land to add exactly one of its possible colors and rotate it sideways. Tapped lands remain unavailable until you end the turn. The player must cast a sequence of named spells to open a vault.

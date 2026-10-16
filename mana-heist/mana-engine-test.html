@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111b19">
+<meta name="description" content="Mana Heist Phase 1: advanced mana engine calibration. Test filters, Signets, multiple mana, restrictions and phases.">
+<title>MANA HEIST · MANA ENGINE 2.0 LAB</title>
+<link rel="stylesheet" href="./mana-engine-test.css">
+<script type="module" src="./src/mana-engine-test.js"></script>
+</head>
+<body>
+<header class="me-header">
+  <a href="./" class="me-brand">◇ <span>DEEP CUTS <b>· MANA HEIST</b></span></a>
+  <span class="me-stamp">P02 · ENGINE 2.0 TEST BENCH</span>
+  <a href="./" class="me-back">← CAMPAIGN</a>
+</header>
+<main class="me-shell">
+  <div class="me-intro">
+    <p class="me-eyebrow">ADVANCED MANA / INTERACTIVE GAME LAB</p>
+    <h1>The Mana Engine</h1>
+    <p>This is a playable Phase 1 rules test, not a scored galaxy. Try paying activation costs, chaining producers and spending restricted mana. Your existing campaign is unchanged.</p>
+  </div>
+  <div class="me-navigator">
+    <button type="button" id="prevButton" aria-label="Previous test board">←</button>
+    <div class="me-nav-middle">
+      <label for="scenarioSelect">CHOOSE A CALIBRATION BOARD</label>
+      <select id="scenarioSelect" aria-label="Choose a mana engine test scenario"></select>
+    </div>
+    <button type="button" id="nextButton" aria-label="Next test board">→</button>
+  </div>
+  <section class="me-table" aria-labelledby="challengeTitle">
+   <div class="me-table-header">
+    <div><span id="challengeTier" class="me-tier">Conversion</span><h2 id="challengeTitle">The Signet Bridge</h2><p id="tip" class="me-lead">A mana source may require payment.</p></div>
+    <span class="me-count" id="challengeCount">EXERCISE 1 / 10</span>
+   </div>
+   <div class="me-vault-row">
+    <div class="me-crystal" aria-hidden="true"><div class="me-crystal-core">✧</div><span>THE VAULT</span></div>
+    <div class="me-vault-info">
+      <span class="me-eyebrow">CAST THIS SPELL TO CRACK THE VAULT</span>
+      <h3 id="goalTitle">Open the Senate Seal</h3>
+      <div id="goalCost" class="me-mana-cost" aria-label="Mana symbols required to cast"></div>
+      <p class="me-muted" id="goalType">SORCERY</p>
+      <div id="castChoices" class="me-cast-choices" aria-label="Legal exact mana payments for casting"></div>
+    </div>
+   </div>
+   <div class="me-statebar">
+     <span id="turnLabel">TURN 1</span><span id="phaseLabel">1 / 4 · MAIN1</span><span id="lifeLabel">LIFE 20</span><span id="devotionLabel"></span>
+   </div>
+   <div class="me-battlefield">
+     <div class="me-section-heading"><div><span class="me-eyebrow">YOUR BATTLEFIELD</span><h3>Mana sources</h3></div><span class="me-muted">Choose a permanent to use it</span></div>
+     <div id="permanents" class="me-cards" role="group" aria-label="Mana source cards"></div>
+     <div class="me-action-container">
+       <span class="me-eyebrow">AVAILABLE MANA ABILITIES &amp; PAYMENT CHOICES</span>
+       <div id="activationChoices" class="me-actions" role="group" aria-label="Legal mana activations and payments"></div>
+     </div>
+   </div>
+   <div class="me-pool-wrap">
+     <div class="me-section-heading"><div><span class="me-eyebrow">YOUR MANA POOL</span><h3>The Chromatic Reserve</h3></div><span class="me-muted">Colors do not combine into a new mana type</span></div>
+     <div id="manaPool" class="me-pool" aria-label="Individual floating mana units and spending restrictions"></div>
+   </div>
+   <div class="me-footer-controls">
+     <button type="button" id="advanceButton" class="me-secondary">ADVANCE PHASE →</button>
+     <button type="button" id="undoButton" class="me-secondary">↶ UNDO</button>
+     <button type="button" id="resetButton" class="me-secondary">⟲ RESTART</button>
+     <button type="button" id="guideButton" class="me-secondary">ⓘ RULES</button>
+   </div>
+   <p id="note" class="me-note" role="status" aria-live="polite">Choose a mana source.</p>
+   <div id="winBanner" class="me-win" hidden><span>✦</span><strong>VAULT OPENED</strong><small>Try another calibration board or replay this one.</small></div>
+  </section>
+  <div class="me-lower">
+  <p class="me-objective"><strong>YOUR OBJECTIVE:</strong> <span id="objectiveCopy"></span></p>
+  <details id="mechanicsGuide" class="me-guide">
+   <summary>Engine scope &amp; rules references</summary>
+   <p>Each mana unit is tracked individually. An ability requiring mana must be paid before its output is added; restricted mana is marked CREATURE ONLY. Mana disappears when you advance to another phase, and your permanents untap only when you enter your next turn. The phase track is deliberately abbreviated: actual Magic also has steps within phases.</p>
+   <p>These puzzles start with permanents already established on the battlefield. They do not simulate the earlier enter-the-battlefield triggers or land drops, and the engine is not a full Magic game. Some displayed exercises specify existing devotion from other permanents outside the test area.</p>
+   <p><a target="_blank" rel="noopener noreferrer" href="https://magic.wizards.com/en/rules">Official Magic Comprehensive Rules ↗</a> · <a target="_blank" rel="noopener noreferrer" href="https://gatherer.wizards.com/">Official card database ↗</a></p>
+  </details>
+  </div>
+</main>
+<footer class="me-bottom">MANA HEIST · UNOFFICIAL GAME LAB CALIBRATION · NOT CONNECTED TO PUBLIC PROGRESS · REAL MAGIC CARD TEXT REFERENCES</footer>
+</body>
+</html>
