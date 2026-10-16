@@ -397,7 +397,7 @@ body.in-heist #heist .ward-info .auto-option{
  body.in-heist #heist .ward-info .auto-option{font-size:.56rem!important}
 }
 @media(max-height:640px){
- body.in-heist #gameScreen{--hand-height:clamp(149px,29dvh,183px)}
+ body.in-heist #gameScreen{--hand-height:clamp(139px,25dvh,167px)}
  body.in-heist #heist #hand{bottom:0!important}
  body.in-heist #heist .ward-info{max-height:70px!important}
  /* A compact discoverable toggle moves out of the short phone's spell/hand
