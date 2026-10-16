@@ -1,8 +1,10 @@
 # Mana Heist — Ruleset: current implementation vs. 1.0 contract
 
-**Status:** Working contract for future developers (2026-10-15). **Not an official Magic rules document** and not a claim of Oracle accuracy. The code is currently a self-contained *mana-puzzle* rules engine; the public 1.0 curriculum's supported rules must be explicitly reviewed and versioned in **P02**.
+**Status:** Working contract for future developers (updated 2026-10-16). **Not an official Magic rules document** and not a claim of Oracle accuracy. The code is currently a self-contained *mana-puzzle* rules engine; the public 1.0 curriculum's supported rules must be explicitly reviewed and versioned in **P02**.
 
 **Agent entry point:** [AGENTS.md](AGENTS.md). **Release package plan:** [ROADMAP-1.0.md](ROADMAP-1.0.md). **Historical playtest development:** [README.md](README.md).
+
+**2026-10-16 P02 Phase 1 lab:** A separate, pure, rules-grounded engine module is available at [src/mana-engine-v2.js](src/mana-engine-v2.js), version mh-mana-lab-2.0.0, with [ten playable calibration boards](mana-engine-test.html). It supports individual mana units, restricted mana, activation fees, multi-unit output, devotion snapshots, Urborg/Coffers types, sacrifice sources and simplified phase clearing. This has **NOT** replaced the legacy 250-puzzle engine, its version, or its saves. P02 remains in progress; see [release/MANA-ENGINE-PHASE1.md](release/MANA-ENGINE-PHASE1.md) for explicit constraints and official rules sources.
 
 ## 1. Authority, priority and versioning
 
