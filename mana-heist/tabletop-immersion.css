@@ -1,0 +1,296 @@
+/* Mana Heist — fixed cinematic tabletop; presentation only.
+   The campaign map remains a normal scrolling page. */
+html:has(body.in-heist),html:has(body.in-heist) body{
+ height:100%!important;overflow:hidden!important;overscroll-behavior:none!important;
+}
+body.in-heist .bar,body.in-heist .footer{display:none!important}
+body.in-heist .shell{
+ position:fixed!important;inset:0!important;margin:0!important;padding:0!important;
+ width:100%!important;max-width:none!important;height:100dvh!important;overflow:hidden!important;
+}
+body.in-heist #gameScreen{
+ --pot-size:clamp(184px,min(44dvh,calc(34vw + 85px)),382px);
+ --hand-height:clamp(122px,20dvh,177px);
+ position:fixed!important;inset:0!important;padding:0!important;margin:0!important;
+ width:100vw!important;max-width:none!important;height:100dvh!important;min-height:0!important;
+ display:block!important;overflow:hidden!important;overscroll-behavior:none;
+ isolation:isolate;background:
+ radial-gradient(ellipse 70% 66% at 50% 50%,#365450 0%,#193235 56%,#0a1b21 100%)!important;
+}
+body.in-heist #gameScreen:before{
+ content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+ background:radial-gradient(ellipse at 50% 67%,transparent 20%,#0006 100%);
+}
+body.in-heist #gameScreen>.game-titlebar{
+ position:absolute!important;top:env(safe-area-inset-top,0px)!important;left:0!important;right:0!important;
+ z-index:30!important;height:46px!important;min-height:46px!important;padding:4px clamp(9px,3vw,30px)!important;
+ margin:0!important;display:flex!important;align-items:center!important;
+ background:linear-gradient(#08191dc9,#15292b7d)!important;border-bottom:1px solid #d3b47d33;
+}
+body.in-heist .game-titlebar button{border-radius:8px!important;min-width:45px!important;height:35px!important;min-height:35px!important;padding:6px 10px!important}
+body.in-heist .game-titlebar .stage-label{font-size:clamp(.85rem,1.8vw,1.15rem)!important;letter-spacing:.12em}
+body.in-heist #heist.play-grid{
+ position:absolute!important;inset:0!important;display:block!important;margin:0!important;padding:0!important;
+ max-width:none!important;width:100%!important;height:100%!important;min-height:0!important;
+ overflow:hidden!important;
+}
+body.in-heist #heist .play-column{
+ position:relative!important;display:block!important;inset:0!important;
+ width:100%!important;height:100%!important;max-height:none!important;overflow:visible!important;
+ margin:0!important;padding:0!important;
+}
+body.in-heist #heist .vault-card{
+ position:static!important;display:block!important;inset:auto!important;padding:0!important;margin:0!important;
+ border:0!important;box-shadow:none!important;background:none!important;border-radius:0!important;
+ height:0!important;min-height:0!important;overflow:visible!important;
+}
+body.in-heist #heist .vault-topline{display:none!important}
+body.in-heist #heist .vault-card>h2{
+ position:absolute!important;top:calc(env(safe-area-inset-top,0px) + 48px)!important;left:12%!important;right:12%!important;
+ z-index:6;text-align:center!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ font:normal clamp(.85rem,1.55vw,1.32rem)/1.2 Georgia,serif!important;letter-spacing:.025em!important;
+ margin:0!important;padding:3px!important;color:#e8d5a9!important;
+}
+body.in-heist #heist .stats{
+ position:absolute!important;top:calc(env(safe-area-inset-top,0px) + 72px)!important;left:50%!important;
+ transform:translateX(-50%);z-index:6!important;
+ display:flex!important;justify-content:center!important;gap:24px!important;
+ width:max-content!important;max-width:95%!important;padding:0!important;margin:0!important;
+ border:0!important;background:none!important;
+}
+body.in-heist #heist .stats>div{padding:0!important;text-align:center!important}
+body.in-heist #heist .stats>div:nth-child(3),body.in-heist #heist .stats .par-stat{display:none!important}
+body.in-heist #heist .stats small{font-size:.49rem!important;letter-spacing:.15em!important;margin:0!important;opacity:.65}
+body.in-heist #heist .stats strong{font-size:.74rem!important;margin:0!important}
+body.in-heist #heist .lesson-prompt,
+body.in-heist #heist .stage-list,
+body.in-heist #heist .hand-guide,
+body.in-heist #heist .table-card .section-label,
+body.in-heist #heist .auto-cast-status,
+body.in-heist #heist .vault-stage .overline,
+body.in-heist #heist #libraryPanel,
+body.in-heist #heist #battlefield .empty,
+body.in-heist #heist #hand .empty{display:none!important}
+body.in-heist #heist .table-card:not(.hand-card){
+ position:absolute!important;top:clamp(102px,12dvh,142px)!important;left:0!important;right:0!important;
+ z-index:10!important;display:block!important;padding:0 8px!important;margin:0!important;
+ width:100%!important;height:clamp(90px,17dvh,153px)!important;min-height:0!important;max-height:none!important;
+ border:0!important;box-shadow:none!important;border-radius:0!important;background:none!important;overflow:visible!important;
+}
+body.in-heist #heist #battlefield{
+ display:flex!important;align-items:flex-start!important;justify-content:safe center!important;
+ flex-wrap:nowrap!important;gap:0!important;width:100%!important;height:100%!important;
+ min-height:0!important;max-height:none!important;padding:3px 4px!important;
+ overflow:visible!important;isolation:isolate;
+}
+body.in-heist #heist #battlefield .land-card.mtg-real-land{
+ position:relative!important;z-index:1;display:block!important;flex:0 0 var(--field-card-width,92px)!important;
+ width:var(--field-card-width,92px)!important;min-width:var(--field-card-width,92px)!important;
+ max-width:var(--field-card-width,92px)!important;
+ height:calc(var(--field-card-width,92px)*1.393)!important;min-height:0!important;max-height:none!important;
+ aspect-ratio:488/680!important;margin:0!important;margin-left:var(--field-overlap,0px)!important;
+ padding:0!important;transition:filter .2s,box-shadow .2s,translate .2s!important;transform-origin:center!important;
+}
+body.in-heist #heist #battlefield .land-card:first-child{margin-left:0!important}
+body.in-heist #heist #battlefield .land-card.mtg-real-land:hover,
+body.in-heist #heist #battlefield .land-card.mtg-real-land:focus-visible{z-index:7!important;translate:0 -7px}
+body.in-heist #heist #battlefield .land-card.mtg-real-land.is-tapped{
+ transform:rotate(90deg) scale(.72)!important;filter:brightness(.78)!important;
+ width:var(--field-card-width,92px)!important;height:calc(var(--field-card-width,92px)*1.393)!important;
+ flex-basis:var(--field-card-width,92px)!important;min-width:var(--field-card-width,92px)!important;
+ aspect-ratio:488/680!important;margin-left:var(--field-overlap,0px)!important;
+}
+body.in-heist #heist #battlefield .land-card.mtg-real-land.is-tapped .mtg-card-image{
+ transform:none!important;width:100%!important;height:100%!important;
+}
+/* The cauldron occupies the visual center; all information orbits around it. */
+body.in-heist #heist .vault-stage{
+ --pot-top:clamp(182px,26dvh,280px);
+ position:absolute!important;z-index:5!important;top:var(--pot-top)!important;left:0!important;right:0!important;
+ display:block!important;width:100%!important;height:var(--pot-size)!important;min-height:0!important;
+ margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
+ background:none!important;overflow:visible!important;
+}
+body.in-heist #heist #wardTarget.lock-ring{
+ position:absolute!important;top:0!important;left:50%!important;transform:translateX(-50%)!important;
+ display:grid!important;width:var(--pot-size)!important;height:var(--pot-size)!important;
+ min-width:0!important;min-height:0!important;max-width:none!important;
+ border:7px solid #c7b28b!important;border-radius:50%!important;
+ background:radial-gradient(circle at 44% 33%,#44797d,#1c3b49 66%,#0b242d 96%)!important;
+ box-shadow:0 0 0 3px #685e48,0 0 0 11px #c7b68415,inset 0 0 42px #050f23,0 0 42px #7bbdb441!important;
+ filter:drop-shadow(0 20px 26px #010a0bcc)!important;
+}
+body.in-heist #heist #wardTarget.lock-ring:before{
+ inset:8px!important;border:2px solid #dfd4a54c!important;border-radius:50%!important;
+}
+body.in-heist #heist #wardTarget.lock-ring:after{
+ content:"";pointer-events:none;position:absolute;inset:-16px;border-radius:50%;
+ border:1px dashed #dfc48e59;box-shadow:0 0 44px #b2d6a322;
+ animation:mh-ambient-spin 38s linear infinite;
+}
+@keyframes mh-ambient-spin{to{transform:rotate(360deg)}}
+body.in-heist #heist #wardTarget .lock-glyph{font-size:clamp(2.3rem,6dvh,4.5rem)!important;opacity:.8!important}
+body.in-heist #heist #wardTarget .ward-charge-count{font-size:.62rem!important}
+body.in-heist #heist #wardTarget .ring-text{font-size:.49rem!important}
+body.in-heist #heist .ward-info{
+ position:absolute!important;top:calc(var(--pot-size) + 10px)!important;left:50%!important;transform:translateX(-50%)!important;
+ display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;
+ gap:4px!important;width:min(95vw,440px)!important;max-height:98px!important;min-height:0!important;
+ padding:0!important;text-align:center!important;z-index:8!important;
+}
+body.in-heist #heist .ward-info h3{
+ font:normal clamp(.85rem,1.5vw,1.12rem)/1.1 Georgia,serif!important;margin:0!important;
+ color:#f6e4be!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:100%;
+}
+body.in-heist #heist #wardCost{
+ display:flex!important;justify-content:center!important;align-items:center!important;
+ gap:4px!important;min-height:23px!important;margin:0!important;
+}
+body.in-heist #heist #wardCost .mana-glyph{
+ width:24px!important;height:24px!important;font-size:.79rem!important;flex:none;
+}
+body.in-heist #heist #castButton.cast-action{
+ width:min(210px,54vw)!important;max-width:none!important;min-height:34px!important;height:34px!important;
+ margin:0!important;padding:3px 12px!important;border-radius:22px!important;font-size:.68rem!important;
+}
+body.in-heist #heist .auto-option{
+ position:absolute!important;top:calc(-1*var(--pot-size) - 34px)!important;
+ left:calc(50% + var(--pot-size)/2 + 13px)!important;display:flex!important;
+ align-items:center!important;white-space:nowrap!important;gap:4px!important;
+ font-size:.57rem!important;opacity:.72!important;
+}
+body.in-heist #heist .auto-option input{width:14px!important;height:14px!important}
+/* Hand of actual cards, drawn from the player's side of the table. */
+body.in-heist #heist .table-card.hand-card{
+ position:absolute!important;left:0!important;right:0!important;bottom:0!important;z-index:18!important;
+ display:block!important;height:var(--hand-height)!important;min-height:0!important;max-height:none!important;
+ width:100%!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
+ box-shadow:none!important;background:linear-gradient(0deg,#071518e8,transparent 78%)!important;
+ overflow:visible!important;
+}
+body.in-heist #heist #hand{
+ position:absolute!important;left:0!important;right:0!important;bottom:-43px!important;
+ display:flex!important;align-items:flex-start!important;justify-content:safe center!important;
+ width:100%!important;height:calc(var(--hand-height) + 47px)!important;min-height:0!important;
+ max-height:none!important;overflow:visible!important;gap:0!important;padding:5px 7px 0!important;
+ scrollbar-width:none!important;isolation:isolate;
+}
+body.in-heist #heist #hand .land-card.mtg-real-land{
+ position:relative!important;z-index:var(--fan-index,1)!important;
+ display:block!important;flex:0 0 var(--hand-card-width,110px)!important;
+ width:var(--hand-card-width,110px)!important;min-width:var(--hand-card-width,110px)!important;
+ max-width:var(--hand-card-width,110px)!important;
+ height:calc(var(--hand-card-width,110px)*1.393)!important;min-height:0!important;
+ max-height:none!important;aspect-ratio:488/680!important;
+ margin:0!important;margin-left:var(--hand-overlap,-24px)!important;padding:0!important;
+ transform-origin:50% 100%!important;
+ transform:translateY(calc(var(--fan-drop,0px) + 18px)) rotate(var(--fan-tilt,0deg))!important;
+ transition:transform .23s cubic-bezier(.2,.8,.25,1),box-shadow .2s,filter .2s!important;
+ animation:none!important;box-shadow:0 8px 24px #000c!important;
+ touch-action:none!important;
+}
+body.in-heist #heist #hand .land-card.mtg-real-land:first-child{margin-left:0!important}
+body.in-heist #heist #hand .land-card.mtg-real-land:hover,
+body.in-heist #heist #hand .land-card.mtg-real-land:focus-visible,
+body.in-heist #heist #hand .land-card.mtg-real-land.hand-selected{
+ transform:translateY(-37px) rotate(0deg) scale(1.08)!important;
+ z-index:100!important;box-shadow:0 0 0 2px #e5cb8c,0 13px 34px #000!important;
+}
+body.in-heist #heist .hand-actions{
+ position:absolute!important;top:-37px!important;right:clamp(8px,4vw,24px)!important;
+ z-index:25!important;display:flex!important;gap:5px!important;margin:0!important;
+}
+body.in-heist #heist .hand-actions button{
+ min-height:32px!important;height:32px!important;padding:4px 9px!important;font-size:.6rem!important;
+ background:#182b29e8!important;
+}
+body.in-heist #heist .hand-actions button:disabled{display:none!important}
+body.in-heist #heist .play-column>.controlbar{
+ position:absolute!important;top:calc(env(safe-area-inset-top,0px) + 52px)!important;right:9px!important;
+ left:auto!important;bottom:auto!important;z-index:24!important;
+ display:flex!important;flex-direction:row!important;justify-content:flex-end!important;align-items:center!important;
+ gap:5px!important;margin:0!important;padding:0!important;
+ width:auto!important;height:31px!important;min-height:0!important;
+}
+body.in-heist #heist .controlbar button{
+ min-height:30px!important;height:30px!important;min-width:43px!important;
+ padding:4px 6px!important;font-size:.55rem!important;border-radius:7px!important;
+ background:#162b2ad4!important;color:#ead6a4!important;border:1px solid #baa77c7a!important;
+}
+body.in-heist #heist .controlbar #endTurn{min-width:78px!important;color:#192721!important;background:#d5bb83!important}
+body.in-heist #heist .controlbar #skip{display:none!important}
+body.in-heist #heist .play-column>.feedback{
+ position:absolute!important;left:0!important;top:0!important;width:1px!important;height:1px!important;
+ overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;padding:0!important;margin:0!important;border:0!important;
+}
+body.in-heist #heist #winPanel:not([hidden]){
+ position:fixed!important;z-index:60!important;top:42%!important;left:50%!important;
+ transform:translate(-50%,-50%)!important;width:min(92vw,470px)!important;
+ background:#183c37f5!important;box-shadow:0 0 0 100vmax #08181ab8,0 0 36px #c6b87566!important;
+}
+body.in-heist #heist #actionBox:not([hidden]){
+ position:fixed!important;top:50%!important;left:50%!important;transform:translate(-50%,-50%)!important;
+ max-height:min(80dvh,630px)!important;overflow-y:auto!important;overscroll-behavior:contain!important;
+}
+body.in-heist #gameNotes.game-notes{
+ display:none!important;position:fixed!important;z-index:120!important;inset:clamp(42px,8dvh,85px) 4vw 5dvh!important;
+ overflow-y:auto!important;overscroll-behavior:contain!important;
+ width:min(700px,92vw)!important;max-width:92vw!important;max-height:87dvh!important;
+ margin:auto!important;padding:15px!important;background:#14292af7!important;border:1px solid #cfbc86!important;
+ border-radius:14px!important;box-shadow:0 0 0 100vmax #031013d9,0 20px 60px #000c!important;
+}
+body.in-heist #gameNotes.game-notes[open]{display:block!important}
+body.in-heist .reference-inspector{overscroll-behavior:contain!important}
+body.in-heist #manaTravelLayer{z-index:28}
+body.in-heist .mana-flight.mh-orbiting{
+ will-change:transform,opacity!important;width:30px!important;height:30px!important;
+ border:1px solid #fff8!important;mix-blend-mode:screen;
+}
+.mh-orbit-impact{
+ position:fixed;z-index:26;pointer-events:none;
+ width:14px;height:14px;border:2px solid var(--orb-color,#a9e0ca);border-radius:50%;
+ box-shadow:0 0 18px var(--orb-color,#a9e0ca);
+ animation:mh-absorb .48s ease-out both;
+}
+@keyframes mh-absorb{from{opacity:.9;transform:translate(-50%,-50%) scale(.3)}to{opacity:0;transform:translate(-50%,-50%) scale(6)}}
+@media(max-width:650px){
+ body.in-heist #gameScreen{--pot-size:clamp(188px,min(40dvh,calc(34vw + 85px)),260px);--hand-height:clamp(132px,19dvh,173px)}
+ body.in-heist #heist .vault-stage{--pot-top:clamp(180px,29dvh,268px)}
+ body.in-heist #heist .ward-info{top:calc(var(--pot-size) + 11px)!important;max-height:91px!important}
+ body.in-heist #heist .stats{left:20px!important;top:calc(env(safe-area-inset-top,0px) + 55px)!important;transform:none!important;gap:9px!important}
+ body.in-heist #heist .stats small{display:none!important}
+ body.in-heist #heist .stats strong{font-size:.69rem!important}
+ body.in-heist #heist .play-column>.controlbar{top:calc(env(safe-area-inset-top,0px) + 53px)!important;right:6px!important}
+ body.in-heist #heist .controlbar button{min-width:37px!important;padding:2px 5px!important;font-size:.51rem!important}
+ body.in-heist #heist .controlbar #endTurn{min-width:73px!important}
+ body.in-heist #heist .table-card:not(.hand-card){top:clamp(98px,14dvh,136px)!important;height:112px!important}
+ body.in-heist #heist .auto-option{top:calc(var(--pot-size) - 14px)!important;left:calc(50% + var(--pot-size)/2 - 27px)!important}
+ body.in-heist #heist #hand{bottom:-42px!important}
+ body.in-heist #heist .ward-info h3{font-size:.88rem!important}
+ body.in-heist #heist #wardCost .mana-glyph{width:23px!important;height:23px!important}
+}
+@media(max-width:390px){
+ body.in-heist #heist #battlefield{justify-content:safe center!important}
+ body.in-heist #heist #wardTarget.lock-ring{border-width:5px!important}
+ body.in-heist #heist .auto-option{font-size:.5rem!important}
+}
+@media(max-height:640px){
+ body.in-heist #gameScreen{--pot-size:clamp(150px,min(35dvh,calc(29vw + 72px)),210px);--hand-height:clamp(110px,22dvh,135px)}
+ body.in-heist #heist .vault-stage{--pot-top:clamp(142px,26dvh,192px)}
+ body.in-heist #heist .table-card:not(.hand-card){top:94px!important;height:90px!important}
+ body.in-heist #heist .vault-card>h2{top:calc(env(safe-area-inset-top,0px) + 40px)!important}
+ body.in-heist #heist .stats{top:calc(env(safe-area-inset-top,0px) + 59px)!important}
+ body.in-heist #heist .ward-info{top:calc(var(--pot-size) + 4px)!important;gap:1px!important}
+ body.in-heist #heist .ward-info h3{font-size:.75rem!important}
+ body.in-heist #heist #wardCost .mana-glyph{width:20px!important;height:20px!important;font-size:.65rem!important}
+ body.in-heist #heist #castButton.cast-action{height:30px!important;min-height:30px!important}
+ body.in-heist #heist #hand{bottom:-49px!important}
+}
+@media(hover:none){
+ body.in-heist #heist #hand .land-card.mtg-real-land{transition:transform .18s!important}
+}
+@media(prefers-reduced-motion:reduce){
+ body.in-heist #heist #wardTarget.lock-ring:after{animation:none!important}
+ body.in-heist #heist #hand .land-card.mtg-real-land{transition:none!important}
+ .mh-orbit-impact{animation:none!important;display:none!important}
+}
