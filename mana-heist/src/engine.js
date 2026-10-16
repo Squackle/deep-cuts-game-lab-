@@ -1,5 +1,7 @@
 // Mana Heist: Landfall v0.2 — original land-mana puzzle model.
 // No DOM, server identities, external assets, RNG, or production score calls.
+// Uses the validated Mana Engine 2.0 ability/payment kernel for advanced mana sources.
+import {SOURCES, modesFor, payments} from "./mana-engine-v2.js";
 export const VERSION="mh-landfall-0.2.0";
 export const COLORS=["W","U","B","R","G","C"];
 const zero=()=>Object.fromEntries(COLORS.map(c=>[c,0]));
@@ -28,7 +30,19 @@ export const CARDS={
  fetchUR:{name:"Scalding Tarn",kind:"fetch",colors:[],types:[],fetch:["Island","Mountain"],flavor:"Fetch land · search Island / Mountain"},
  fetchBG:{name:"Verdant Catacombs",kind:"fetch",colors:[],types:[],fetch:["Swamp","Forest"],flavor:"Fetch land · search Swamp / Forest"},
  bounceUG:{name:"Simic Growth Chamber",kind:"bounce",colors:["U","G"],types:[],flavor:"Bounce land · makes U or G; returns a land"},
- relic:{name:"Wastes",kind:"utility",colors:["C"],types:[],flavor:"Utility land · adds colorless"}
+ relic:{name:"Wastes",kind:"utility",colors:["C"],types:[],flavor:"Utility land · adds colorless"},
+ signet:{name:"Azorius Signet",kind:"artifact",colors:[],types:[],v2:"signet",flavor:"Artifact · pay {1}, tap for W and U"},
+ bluffs:{name:"Cascade Bluffs",kind:"filter",colors:[],types:[],v2:"bluffs",flavor:"Filter land · pay U/R, tap for two colored mana"},
+ solring:{name:"Sol Ring",kind:"artifact",colors:[],types:[],v2:"solring",flavor:"Artifact · tap for two colorless"},
+ coffers:{name:"Cabal Coffers",kind:"mana-engine",colors:[],types:[],v2:"coffers",flavor:"Pay {2}, tap for B per Swamp"},
+ urborg:{name:"Urborg, Tomb of Yawgmoth",kind:"mana-engine",colors:[],types:[],v2:"urborg",flavor:"All lands are also Swamps"},
+ nykthos:{name:"Nykthos, Shrine to Nyx",kind:"mana-engine",colors:[],types:[],v2:"nykthos",flavor:"Tap for colorless or pay {2} for devotion"},
+ lotus:{name:"Lotus Field",kind:"mana-engine",colors:[],types:[],v2:"lotus",flavor:"Tap for three mana of one color"},
+ ziggurat:{name:"Ancient Ziggurat",kind:"mana-engine",colors:[],types:[],v2:"ziggurat",flavor:"Mana may be spent only on creature spells"},
+ treasure:{name:"Treasure",kind:"artifact",colors:[],types:[],v2:"treasure",flavor:"Tap and sacrifice: add one mana of any color"},
+ petal:{name:"Lotus Petal",kind:"artifact",colors:[],types:[],v2:"petal",flavor:"Sacrifice: add one mana of any color"},
+ confluence:{name:"Mana Confluence",kind:"mana-engine",colors:[],types:[],v2:"confluence",flavor:"Pay 1 life and tap for any color"},
+ command:{name:"Command Tower",kind:"mana-engine",colors:[],types:[],v2:"command",flavor:"Add one color from commander identity"}
 };
 const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
 export function validate(level){
@@ -50,7 +64,7 @@ export function validate(level){
  }
  return true;
 }
-export function initial(level){validate(level);return {turn:1,life:level.life,played:0,stage:0,pool:zero(),hand:level.hand.map(x=>x.id),field:level.field.map(x=>({id:x.id,tapped:false})),spentLife:0,actions:0};}
+export function initial(level){validate(level);return {turn:1,life:level.life,played:0,stage:0,pool:zero(),manaUnits:[],manaSerial:0,hand:level.hand.map(x=>x.id),field:level.field.map(x=>({id:x.id,tapped:false})),spentLife:0,actions:0};}
 export function lookup(level,id){return [...level.hand,...level.field,...level.library].find(x=>x.id===id);}
 export function getCard(level,id){const l=lookup(level,id);return l?CARDS[l.card]:null;}
 export function poolLabel(p){return COLORS.map(c=>p[c]?p[c]+c:"").filter(Boolean).join(" · ")||"empty";}
@@ -68,6 +82,39 @@ export function payOptions(pool,cost){
  };
  walk(0,generic,[]);
  return result;
+}
+// Convert legacy battlefield references to a rules-kernel snapshot. The
+// original 250 puzzles still control the turn structure and save format.
+function rulesBoard(level,s){
+ return {permanents:s.field.map(f=>{
+  const c=getCard(level,f.id),key=lookup(level,f.id).card;
+  return {id:f.id,key:c.v2||key,tapped:f.tapped,types:c.types,type:c.kind==="artifact"?"Artifact":"Land"};
+ })};
+}
+function advancedModes(level,s,f){
+ const card=getCard(level,f.id);
+ if(!card.v2&&!s.field.some(x=>lookup(level,x.id)?.card==="urborg"))return [];
+ const board=rulesBoard(level,s);
+ const source=board.permanents.find(p=>p.id===f.id);
+ // A normal land granted a black-mana ability by Urborg also participates.
+ if(!card.v2){
+  if(card.kind==="fetch")return [];
+  return [{id:"urborg-black",label:"Tap: Add B (Urborg)",tap:true,life:0,cost:{},output:["B"]}];
+ }
+ return modesFor({devotion:level.devotion||{},commanderColors:level.commanderColors||["W","U","B","R","G"]},board,source);
+}
+function spendUnits(units,cost,context){
+ return payments(units,cost,context);
+}
+function payableCasts(s,cost,context){
+ if(!s.manaUnits?.some(u=>u.restriction))return payOptions(s.pool,cost);
+ const found=new Map();
+ for(const ids of spendUnits(s.manaUnits,cost,context)){
+  const spend=zero();
+  for(const id of ids){const unit=s.manaUnits.find(u=>u.id===id);spend[unit.color]++;}
+  found.set(JSON.stringify(spend),spend);
+ }
+ return [...found.values()];
 }
 function enterTapped(level,state,land,shock){
  const card=CARDS[land.card];
@@ -91,9 +138,17 @@ export function actions(level,s){
  }
  for(const f of s.field){
   const card=getCard(level,f.id);
-  if(!f.tapped&&card.kind!=="fetch")for(const color of card.colors){
+  if(!f.tapped&&card.kind!=="fetch")for(const color of (card.kind==="bounce"?["U"]:card.colors)){
    if(card.kind==="pain"&&color!=="C"&&s.life<=1)continue;
    out.push({type:"tap",id:f.id,color});
+  }
+  if(!f.tapped||getCard(level,f.id).v2==="petal"){
+   for(const mode of advancedModes(level,s,f)){
+    if(mode.tap&&f.tapped||s.life<=mode.life)continue;
+    for(const spend of spendUnits(s.manaUnits||[],mode.cost,{kind:"activation"})){
+     out.push({type:"activate",id:f.id,mode:mode.id,spend,output:[...mode.output]});
+    }
+   }
   }
   if(!f.tapped&&card.kind==="fetch"&&s.life>1)for(const land of level.library){
    const target=CARDS[land.card];
@@ -105,7 +160,7 @@ export function actions(level,s){
   }
  }
  const stage=level.stages[s.stage];
- for(const spend of payOptions(s.pool,stage.cost)){
+ for(const spend of payableCasts(s,stage.cost,{kind:"spell",spellType:stage.spellType||"sorcery"})){
   if(stage.effect==="untap"){
    for(const f of s.field.filter(f=>f.tapped&&getCard(level,f.id).kind!=="fetch"))out.push({type:"cast",spend,untapId:f.id});
   }else out.push({type:"cast",spend});
@@ -118,7 +173,16 @@ export function reduce(level,s,action){
  if(!action||typeof action!=="object")return {ok:false,error:"Choose an action."};
  if(s.stage===level.stages.length)return {ok:false,error:"Vault already cracked."};
  if(!actions(level,s).some(a=>signature(a)===signature(action)))return {ok:false,error:explain(level,s,action)};
- const n={...s,pool:{...s.pool},hand:[...s.hand],field:s.field.map(f=>({...f})),actions:s.actions+1};
+ const n={...s,pool:{...s.pool},manaUnits:[...(s.manaUnits||[])],manaSerial:s.manaSerial||0,hand:[...s.hand],field:s.field.map(f=>({...f})),actions:s.actions+1};
+ const addMana=(color,source,restriction=null)=>{
+  n.pool[color]++;
+  n.manaUnits.push({id:"m"+(++n.manaSerial),color,source,restriction});
+ };
+ const removeMana=(ids)=>{
+  const gone=new Set(ids);
+  for(const u of n.manaUnits)if(gone.has(u.id))n.pool[u.color]--;
+  n.manaUnits=n.manaUnits.filter(u=>!gone.has(u.id));
+ };
  if(action.type==="play"){
   const land=lookup(level,action.id);
   n.hand.splice(n.hand.indexOf(action.id),1);
@@ -133,7 +197,9 @@ export function reduce(level,s,action){
  }
  if(action.type==="tap"){
   n.field.find(f=>f.id===action.id).tapped=true;
-  n.pool[action.color]++;
+  addMana(action.color,action.id);
+  // Unlike single-color duals, Simic Growth Chamber adds G AND U at once.
+  if(getCard(level,action.id).kind==="bounce")addMana(action.color==="G"?"U":"G",action.id);
   if(getCard(level,action.id).kind==="pain"&&action.color!=="C"){n.life--;n.spentLife++;}
  }
  if(action.type==="fetch"){
@@ -143,13 +209,28 @@ export function reduce(level,s,action){
   const land=lookup(level,action.targetId);
   n.field.push({id:land.id,tapped:enterTapped(level,n,land,action.shock)});
  }
+ if(action.type==="activate"){
+  const f=n.field.find(f=>f.id===action.id),mode=advancedModes(level,s,f).find(m=>m.id===action.mode);
+  removeMana(action.spend);
+  n.life-=mode.life;n.spentLife+=mode.life;
+  if(mode.tap)f.tapped=true;
+  if(mode.sacrifice)n.field=n.field.filter(f=>f.id!==action.id);
+  for(const color of mode.output)addMana(color,action.id,mode.restriction||null);
+ }
  if(action.type==="cast"){
-  COLORS.forEach(c=>n.pool[c]-=action.spend[c]);
+  const available=spendUnits(n.manaUnits,level.stages[n.stage].cost,{kind:"spell",spellType:level.stages[n.stage].spellType||"sorcery"});
+  const chosen=available.find(ids=>{
+   const counts=zero();
+   for(const id of ids){counts[n.manaUnits.find(u=>u.id===id).color]++;}
+   return COLORS.every(c=>counts[c]===action.spend[c]);
+  });
+  if(!chosen)throw Error("Cast payment lacks a legal mana-unit allocation");
+  removeMana(chosen);
   n.stage++;
   if(action.untapId)n.field.find(f=>f.id===action.untapId).tapped=false;
  }
  if(action.type==="end"){
-  n.turn++;n.played=0;n.pool=zero();
+  n.turn++;n.played=0;n.pool=zero();n.manaUnits=[];
   for(const f of n.field)f.tapped=false;
  }
  return {ok:true,state:n};
@@ -158,12 +239,13 @@ function explain(level,s,a){
  if(a.type==="play")return s.played?"You already played a land this turn.":"That land cannot be played now.";
  if(a.type==="tap")return "This land is tapped, missing, or cannot safely produce that color.";
  if(a.type==="fetch")return "No legal fetch target, or insufficient life.";
- if(a.type==="cast")return "Not enough mana, or the chosen payment/untap target is illegal.";
+ if(a.type==="cast")return "Not enough legally spendable mana, or the chosen payment/untap target is illegal.";
+ if(a.type==="activate")return "That mana source is tapped, cannot pay its activation cost, or has an invalid ability choice.";
  if(a.type==="end")return "The last turn has passed. Undo or reset this heist.";
  return "That move isn't legal.";
 }
 export function key(s){
- return JSON.stringify([s.turn,s.life,s.played,s.stage,COLORS.map(c=>s.pool[c]),[...s.hand].sort(),s.field.map(x=>x.id+":"+Number(x.tapped)).sort()]);
+ return JSON.stringify([s.turn,s.life,s.played,s.stage,COLORS.map(c=>s.pool[c]),[...s.hand].sort(),s.field.map(x=>x.id+":"+Number(x.tapped)).sort(),(s.manaUnits||[]).filter(u=>u.restriction).map(u=>u.color+":"+u.restriction).sort()]);
 }
 export function completed(level,s){return s.stage===level.stages.length;}
 export function medal(level,s,par){
@@ -174,7 +256,8 @@ export function medal(level,s,par){
 }
 export function labelAction(level,a){
  if(a.type==="play")return "Play "+getCard(level,a.id).name+(a.shock?" · pay 2 life":a.returnId?" · return "+getCard(level,a.returnId).name:"");
- if(a.type==="tap")return "Tap "+getCard(level,a.id).name+" for "+a.color;
+ if(a.type==="tap")return "Tap "+getCard(level,a.id).name+" for "+(getCard(level,a.id).kind==="bounce"?"G and U":a.color);
+ if(a.type==="activate")return "Activate "+getCard(level,a.id).name+" for "+a.output.join("+");
  if(a.type==="fetch")return "Fetch "+getCard(level,a.targetId).name+(a.shock?" · shock in":"");
  if(a.type==="cast")return "Cast "+level.stages[0].name; // UI overrides stage name context.
  return "End turn and untap";
