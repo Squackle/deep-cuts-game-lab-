@@ -67,7 +67,7 @@ test("mixing is independent of clicking, no extra API lookups, and mobile can st
  const script=readFileSync(new URL("../src/fluid-ward.js",import.meta.url),"utf8");
  const mixer=readFileSync(new URL("../src/pigment-mixer.js",import.meta.url),"utf8");
  assert.match(script,/canvas\.addEventListener\("pointermove"/);
- assert.match(script,/if\(hover\)\{/);
+ assert.match(script,/if\(hover\)stirBetween\(hover,c\)/);
  assert.match(script,/if\(drag&&drag\.id===e\.pointerId\)/);
  assert.match(script,/mixPigments\(grid,dt\)/);
  assert.doesNotMatch(mixer,/\bfetch\s*\(/);
