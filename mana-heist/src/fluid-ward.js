@@ -17,7 +17,8 @@ export function makeFluidGrid(){
   const i=INDEX(x,y),dist=Math.hypot(x-MID,y-MID);
   active[i]=dist<RADIUS?1:0;
   const wall=clamp((RADIUS-dist)/5,0,1);
-  drag[i]=wall>.01?.987*(.17+.83*wall):0;
+  // Match the old mobile pot's long-lived currents at both 30 and 60fps.
+  drag[i]=wall>.01?.9935*(.17+.83*wall):0;
  }
  const grid={active,drag,n:N,mass:new Float32Array(COUNT),r:new Float32Array(COUNT),g:new Float32Array(COUNT),b:new Float32Array(COUNT),vx:new Float32Array(COUNT),vy:new Float32Array(COUNT)};
  grid.tmp=Object.fromEntries(FIELDS.map(k=>[k,new Float32Array(COUNT)]));
@@ -120,14 +121,14 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
  canvas.width=192;canvas.height=192;
  // Higher-resolution presentation on larger screens. The physical solver
  // remains 64x64, so GPU scaling improves edges without increasing its cost.
- let lastMeasuredWidth=0,lastMeasuredTime=-Infinity;
+ let lastMeasuredTime=-Infinity;
  function ensureResolution(){
   const now=performance.now();
   if(now-lastMeasuredTime<300)return;
-  lastMeasuredTime=now;
   const rect=canvas.getBoundingClientRect?.();
   const cssWidth=rect?.width||0;
-  if(cssWidth<20)return; // Hidden overworld; wait for a visible game.
+  if(cssWidth<20)return; // Hidden overworld; do not delay the first visible resize.
+  lastMeasuredTime=now;
   const mobile=(window.innerWidth||0)<=700;
   const deviceScale=Math.min(window.devicePixelRatio||1,2);
   const next=mobile?256:clamp(Math.ceil(cssWidth*deviceScale/32)*32,256,512);
@@ -136,7 +137,6 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
    ctx.imageSmoothingEnabled=true;
    ctx.imageSmoothingQuality="high";
   }
-  lastMeasuredWidth=cssWidth;
  }
  let active=false,raf=0,lastFrame=0,lastStir=0,drag=null,hover=null;
  let charged=[],appliedIds=new Set(),ripples=[],pulse=0;
