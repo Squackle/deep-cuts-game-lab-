@@ -113,7 +113,7 @@ Every package produces: a scoped design/spec or implementation, deterministic te
 | P01 | BLOCKED | P01 technical foundation delivered for Lab: [scope/risk register](release/FOUNDATIONS-P01.md), [mechanics audit](release/MECHANICS-MATRIX-P01.md), [asset/rights decision](release/ASSET-RIGHTS-P01.md), [baseline tests](tests/release-foundations.test.mjs). **Rights route, title review and owner sign-off unresolved; not public-release cleared.** |
 | P02 | IN PROGRESS | Owner-approved Phase 1 mana kernel is now [used inside the main Mana Heist reducer](release/MANA-ENGINE-PHASE1.md) for paid conversions, multi-mana sources, restrictions and sacrifice abilities. Optional advanced sources appear in generated stages; IDs and guest saves are preserved. The earlier separate diagnostic bench is QA-only. **Full turn/phase timing, land-entry coverage and final P02 certification NOT COMPLETE.** |
 | P03 | NOT STARTED | Existing solver and 250-level replay tests are a baseline, not completed authoring QA |
-| P04 | IN PROGRESS | Tabletop Flow adds contextual beginner prompts and explicit land → tap → cast teaching; full 5–10 lesson curriculum and new-user testing not yet complete |
+| P04 | IN PROGRESS | [Learn Mana mode entry and 18 practice exercises](release/TWO-PATHS-OPEN-VAULTS-20261016.md) now live on Game Lab with separate completion tracking; all vaults are also unsealed in Puzzle Mode. Full guided curriculum, dynamic coaching and beginner usability testing are NOT COMPLETE. |
 | P05 | NOT STARTED | No approved three-tier hints |
 | P06 | NOT STARTED | 50-stage baseline exists but not curriculum reviewed |
 | P07 | NOT STARTED | 50-stage baseline exists but not curriculum reviewed |
