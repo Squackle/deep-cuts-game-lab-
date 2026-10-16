@@ -121,7 +121,7 @@ Every package produces: a scoped design/spec or implementation, deterministic te
 | P09 | NOT STARTED | 50-stage baseline exists but not curriculum reviewed |
 | P10 | NOT STARTED | 50-stage baseline exists but not curriculum reviewed |
 | P11 | NOT STARTED | Prior mobile fixes ≠ full real-device/accessibility acceptance |
-| P12 | IN PROGRESS | Fluid stirring parity plus Tabletop Flow cauldron integration and responsive tabletop display; remaining sound/mute, reduced-FX settings, **real-device performance verification** and further polish NOT COMPLETE. |
+| P12 | IN PROGRESS | [Immersive Tabletop playtest](release/IMMERSIVE-TABLETOP-20261016.md): fixed 100dvh no-scroll gameplay, large centered Chromatic Cauldron, bottom-edge fanned hand and orbital mana flights integrated without changing puzzle rules or saves. **Physical-device testing, long-running performance, audio controls and final accessibility QA NOT COMPLETE.** |
 | P13 | NOT STARTED | Current guest bests ≠ save export/daily/achievements package |
 | P14 | NOT STARTED | Beta not performed |
 | P15 | NOT STARTED | Public launch not authorized or cleared |
