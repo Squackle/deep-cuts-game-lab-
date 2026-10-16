@@ -120,10 +120,10 @@ function proofFor(id){
 const proofs={get:proofFor};
 const lockGlyphs=["✧","⌑","◈","✦","⬡","✶"];
 function persist(){try{localStorage.setItem(storageKey,JSON.stringify({v:2,index,bests:progress.bests}));}catch{}}
-const coin=(c,extra="")=>'<span class="mana-glyph '+c+'" style="--coin:'+SYMBOL[c].color+'" aria-label="'+SYMBOL[c].name+' mana">'+(extra||SYMBOL[c].icon)+'</span>';
+const coin=(c,extra="")=>'<span class="mana-glyph '+c+'" style="--coin:'+SYMBOL[c].color+'" aria-label="'+(c==="N"&&extra?extra+" generic mana":SYMBOL[c].name+" mana")+'">'+(extra||SYMBOL[c].icon)+'</span>';
 function costHtml(cost){
  // Generic costs are numeric; diamonds are true colorless.
- return Object.entries(cost).flatMap(([k,n])=>k==="N"?[coin("N",String(n))]:Array.from({length:n},()=>coin(k))).join("");
+ return Object.entries(cost).flatMap(([k,n])=>k==="N"?(n?[coin("N",String(n))]:[]):Array.from({length:n},()=>coin(k))).join("");
 }
 function desc(action){
  if(action.type==="play")return (action.shock?"Pay 2 life · enter untapped":getCard(level,action.id).kind==="shock"?"Save 2 life · enter tapped":getCard(level,action.id).kind==="bounce"?"Return "+getCard(level,action.returnId).name+" · enter tapped":"Play "+getCard(level,action.id).name);
@@ -253,6 +253,7 @@ function syncLandRows(){
   node.setAttribute("aria-label",(field?"Tap ":"Select or drag to play: ")+name+(tapped?", tapped":""));
   node.title=name+" · "+(field?"tap to produce mana":"tap to select, drag to play");
    node.classList.toggle("hand-selected",!field&&id===selectedHandId);
+   if(field)node.removeAttribute("aria-pressed");else node.setAttribute("aria-pressed",String(id===selectedHandId));
   return node;
  };
  const fieldNodes=state.field.map(f=>make(f,true));
