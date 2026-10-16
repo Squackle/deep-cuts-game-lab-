@@ -18,7 +18,7 @@ test('Phase 1 design tokens own the v1.4 palette and future semantics',()=>{
 
 test('standalone shipped bundle matches the two source CSS files byte-for-byte',()=>{
  assert.ok(source.includes('<link rel="stylesheet" href="./design-tokens.css"><link rel="stylesheet" href="./styles.css">'));
- assert.ok(built.includes('<style>'+tokens+css+'</style>'),'run python build.py after CSS edits');
+ assert.ok(built.includes('<style>'+tokens+css+read('observatory.css')+'</style>'),'run python build.py after CSS edits');
  assert.ok(!built.includes('./design-tokens.css'),'standalone bundle has a stray local CSS import');
  assert.ok(built.includes('dc-stackbreaker-progress-v3'),'progress key changed or omitted from bundle');
  assert.ok(built.includes('dc-stackbreaker-last-level'),'selected stage persistence missing');
