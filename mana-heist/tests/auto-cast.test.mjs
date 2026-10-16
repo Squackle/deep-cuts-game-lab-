@@ -19,7 +19,7 @@ test("a ward automatically resolves on the first sufficient mana without a Cast 
  assert.equal(result.state.pool.U,0);
 });
 
-test("all 18 puzzles remain beatable when casting is automatic and never optional",()=>{
+test("all 18 puzzles remain beatable in the optional auto-cast mode",()=>{
  const outcomes=[];
  for(const level of LEVELS.slice(0,18)){
   const start=resolveAutomaticCasts(level,initial(level));
@@ -44,10 +44,16 @@ test("all 18 puzzles remain beatable when casting is automatic and never optiona
  assert.equal(outcomes.length,18);
 });
 
-test("all user-facing manual Cast and mana-ledger controls are absent",()=>{
+test("the tabletop teaches deliberate spending while retaining opt-in auto-cast",()=>{
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  const js=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
- assert.doesNotMatch(html,/id="castButton"/);
+ assert.match(html,/id="castButton"/);
+ assert.match(html,/id="autoCastToggle"/);
+ assert.match(html,/id="lessonPrompt"/);
+ assert.match(html,/id="playSelectedLand"/);
+ assert.match(js,/function updateCastButton\(\)/);
+ assert.match(js,/let autoCastEnabled=false/);
+ assert.match(js,/if\(!autoCastEnabled\|\|pendingFlights\.size/);
  assert.doesNotMatch(html,/class="mana-ledger-grid"/);
  assert.doesNotMatch(html,/id="poolTotal"/);
  assert.doesNotMatch(html,/class="side-box pool-box"/);
@@ -55,5 +61,5 @@ test("all user-facing manual Cast and mana-ledger controls are absent",()=>{
  assert.match(js,/queueAutoCast\(\)/);
  assert.match(js,/onArrival:/);
  assert.match(js,/target:null,destination:el\("wardTarget"\)/);
- assert.doesNotMatch(js,/addEventListener\("click",castSpell\)/);
+ assert.match(js,/el\("castButton"\)\.addEventListener\("click"/);
 });
