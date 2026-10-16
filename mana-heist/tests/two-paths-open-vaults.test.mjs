@@ -1,0 +1,59 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {LEVELS,BASE_LEVELS,GALAXIES,CHAPTERS} from "../src/levels.js";
+import {unlocked,chapterAccessible,galaxyAccessible,highestUnlocked,normalizedBests} from "../src/campaign.js";
+import {LEARN_GROUPS,LEARN_COUNT,isLearnLevel,normalizedLearnProgress,nextLearnIndex} from "../src/learn-track.js";
+import {VERSION} from "../src/engine.js";
+const read=p=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
+
+test("the full 250-vault map and every galaxy open with no completed puzzles",()=>{
+ assert.equal(LEVELS.length,250);
+ assert.equal(CHAPTERS.length,25);
+ assert.equal(GALAXIES.length,5);
+ const empty={};
+ for(let i=0;i<250;i++)assert.equal(unlocked(i,empty),true,"vault "+i);
+ for(let i=0;i<25;i++)assert.equal(chapterAccessible(i,empty),true,"world "+i);
+ for(let i=0;i<5;i++)assert.equal(galaxyAccessible(i,empty),true,"galaxy "+i);
+ for(const i of [-1,250,300,1.5,NaN])assert.equal(unlocked(i,empty),false);
+ assert.equal(galaxyAccessible(5,empty),false);
+ assert.equal(chapterAccessible(25,empty),false);
+});
+test("18 source-authored exercises are available independently of campaign ranking",()=>{
+ const indices=LEARN_GROUPS.flatMap(group=>group.indices);
+ assert.equal(LEARN_COUNT,18);
+ assert.deepEqual([...indices].sort((a,b)=>a-b),Array.from({length:18},(_,i)=>i));
+ assert.deepEqual(BASE_LEVELS.map(l=>l.id),LEVELS.slice(0,18).map(l=>l.id));
+ for(let i=0;i<18;i++)assert.ok(isLearnLevel(i));
+ for(const i of [-1,18,249])assert.equal(isLearnLevel(i),false);
+ assert.equal(nextLearnIndex(0),1);assert.equal(nextLearnIndex(17),null);
+});
+test("learning progress validates separately, does not grant puzzle medals or unlock gating",()=>{
+ const data=normalizedLearnProgress({completed:[0,2,2,6,999,-1,"4"],last:2});
+ assert.deepEqual(data,{completed:[0,2,6],last:2});
+ assert.deepEqual(normalizedLearnProgress({completed:"broken",last:33}),{completed:[],last:0});
+ const bests=normalizedBests({[LEVELS[0].id]:{turn:1,spentLife:0}});
+ assert.equal(highestUnlocked(bests),1);assert.equal(unlocked(249,bests),true);
+ assert.equal(VERSION,"mh-landfall-0.2.0");
+});
+test("two visible mode controls, separate maps and jump options",()=>{
+ const html=read("index.html");
+ assert.match(html,/data-mode="learn"/);assert.match(html,/data-mode="heist"/);
+ assert.match(html,/id="learnPanel"/);assert.match(html,/id="heistPanel"/);
+ assert.match(html,/id="learnPicker"/);
+ assert.match(html,/href="\.\/mode-paths\.css"/);
+ for(let g=0;g<5;g++)assert.match(html,new RegExp('data-jump-galaxy="'+g+'"'));
+ const css=read("mode-paths.css");
+ assert.match(css,/\.mode-options\{/);assert.match(css,/\.learn-exercise/);
+ assert.match(css,/\.campaign-screen \[hidden\]/);
+});
+test("mode-specific save key does not replace the existing 250-stage v2 bests",()=>{
+ const js=read("src/main.js");
+ assert.match(js,/const storageKey="dc-mana-heist-landfall-v2"/);
+ assert.match(js,/modeKey="dc-mana-heist-mode-v1",learnKey="dc-mana-heist-learn-v1"/);
+ assert.match(js,/if\(mode==="learn"\)\{/);
+ assert.match(js,/el\("winTitle"\)\.textContent="✧ LESSON COMPLETE"/);
+ assert.match(js,/if\(index\+1<LEVELS.length\)load\(index\+1,true\)/);
+ assert.doesNotMatch(js,/Math\.min\(progress\.index,highestUnlocked/);
+ assert.doesNotMatch(js,/Crack the previous stage to unlock/);
+});
