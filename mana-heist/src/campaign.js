@@ -12,7 +12,7 @@ export function validBest(best) {
     Number.isInteger(best.spentLife) && best.spentLife>=0 && best.spentLife<=30;
 }
 export function unlocked(index,bests={}) {
-  return Number.isInteger(index) && index>=0 && index<LEVELS.length && true;
+  return Number.isInteger(index) && index>=0 && index<LEVELS.length;
 }
 export function chapterIndex(index) {
   return CHAPTERS.findIndex(ch=>index>=ch.range[0] && index<=ch.range[1]);
@@ -28,8 +28,7 @@ export function chapterAccessible(chapter,bests={}) {
 }
 export function galaxyIndex(levelIndex){return Math.floor(levelIndex/50);}
 export function galaxyAccessible(galaxy,bests={}){
- return Number.isInteger(galaxy)&&galaxy>=0&&galaxy<GALAXIES.length&&
- true;
+ return Number.isInteger(galaxy)&&galaxy>=0&&galaxy<GALAXIES.length;
 }
 export function worldInGalaxy(globalWorld){return globalWorld%5;}
 export function normalizedBests(raw) {
