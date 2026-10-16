@@ -276,7 +276,7 @@ body.in-heist .mana-flight.mh-orbiting{
 }
 @media(max-height:640px){
  body.in-heist #gameScreen{--pot-size:clamp(150px,min(35dvh,calc(29vw + 72px)),210px);--hand-height:clamp(110px,22dvh,135px)}
- body.in-heist #heist .vault-stage{--pot-top:clamp(142px,26dvh,192px)}
+ body.in-heist #heist .vault-stage{--pot-top:clamp(184px,33dvh,205px)}
  body.in-heist #heist .table-card:not(.hand-card){top:94px!important;height:90px!important}
  body.in-heist #heist .vault-card>h2{top:calc(env(safe-area-inset-top,0px) + 40px)!important}
  body.in-heist #heist .stats{top:calc(env(safe-area-inset-top,0px) + 59px)!important}
