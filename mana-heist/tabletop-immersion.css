@@ -441,3 +441,26 @@ body.in-heist #heist .ward-info .auto-option{
  body.in-heist #heist .vault-stage{--pot-top:clamp(184px,26dvh,222px)}
  body.in-heist #heist .ward-info{max-height:102px!important}
 }
+
+
+/* The guide lives in a fixed overlay. Its return control must dismiss the
+   overlay, not try to scroll to #heist behind it. */
+body.in-heist #gameNotes .notes-heading #returnFromGuide{
+ appearance:none;
+ background:#30483f;
+ border:1px solid #cfb985;
+ border-radius:8px;
+ color:#f0d7a2;
+ padding:9px 13px;
+ min-height:40px;
+ font:800 .73rem system-ui,sans-serif;
+ letter-spacing:.06em;
+ cursor:pointer;
+}
+body.in-heist #gameNotes .notes-heading #returnFromGuide:hover{
+ background:#3e5d50;
+}
+body.in-heist #gameNotes .notes-heading #returnFromGuide:focus-visible{
+ outline:3px solid #e3d49c;
+ outline-offset:3px;
+}
