@@ -3,7 +3,8 @@ import {COLORS,CARDS,initial,actions,reduce,completed,getCard,lookup,medal} from
 import {solve} from "./solver.js";
 import {highestUnlocked,unlocked,chapterIndex,stageCode,normalizedBests,chapterAccessible,galaxyAccessible} from "./campaign.js";
 import {renderOverworld} from "./overworld.js";
-import {reconstruct,transitionOrbs,consistent,sendOrb} from "./mana-orbs.js";
+import {reconstruct,transitionOrbs,consistent} from "./mana-orbs.js";
+import {launchOrbitMana,cancelOrbitMana} from "./orbital-mana.js";
 import {renderWardCharge} from "./ward-charge.js";
 import {installFluidWard} from "./fluid-ward.js";
 import {PRELOADED_MIX_COUNT} from "./fluid-palette.js";
@@ -174,7 +175,7 @@ function perform(action){
  const out=reduce(level,state,action);
  if(!out.ok){if(action?.type==="cast")rejectCast();else message(out.error,true);return;}
  cancelAuto();
- if(action.type!=="tap"){viewEpoch++;pendingFlights.clear();el("manaTravelLayer").replaceChildren();}
+ if(action.type!=="tap"){viewEpoch++;pendingFlights.clear();cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();}
  history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type});
  state=out.state;
  manaOrbs=(action.type==="activate"||action.type==="tap"&&getCard(level,action.id).kind==="bounce")?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
@@ -183,8 +184,13 @@ function perform(action){
  // currents, ripples and glow immediately, even while Canvas is animating.
  // This does not change the reducer, spell costs or playable land state.
  if(action.type==="end"){fluid.clear();currentFluidStage="";}
- const pendingId=action.type==="tap"&&getCard(level,action.id).kind!=="bounce"?manaOrbs[manaOrbs.length-1]?.id:null;
- if(pendingId!=null)pendingFlights.add(pendingId);
+ // Orbital particles represent output mana, including paired and filtered output.
+ const produced=action.type==="tap"
+  ?(getCard(level,action.id).kind==="bounce"?["G","U"]:[action.color])
+  :action.type==="activate"?action.output:[];
+ const incoming=produced.length?manaOrbs.slice(-produced.length):[];
+ for(const orb of incoming)pendingFlights.add(orb.id);
+ const pendingId=incoming[0]?.id??null;
  if(completed(level,state)){
   const best=progress.bests[level.id];
   if(!best||state.turn<best.turn||(state.turn===best.turn&&state.spentLife<best.spentLife))progress.bests[level.id]={turn:state.turn,spentLife:state.spentLife};
@@ -197,18 +203,18 @@ function perform(action){
  else if(action.type==="cast")message("Spell cast · "+(level.stages.length-state.stage)+" seals remain.");
  landDrag?.cancel();
  render(pendingId);
- if(pendingId){
+ if(incoming.length){
   const epoch=viewEpoch;
-  sendOrb({
-   color:action.color,sourceRect,id:pendingId,layer:el("manaTravelLayer"),
-   target:null,destination:el("wardTarget"),
-   onArrival:()=>{if(epoch===viewEpoch){
-    pendingFlights.delete(pendingId);
-    chargeWard({animateId:pendingId});
-     updateCastButton();
-    queueAutoCast();
-   }}
-  });
+  incoming.forEach((orb,i)=>launchOrbitMana({
+   color:produced[i],sourceRect,layer:el("manaTravelLayer"),index:i,
+   destination:el("wardTarget"),
+   onArrival:()=>{if(epoch!==viewEpoch)return;
+    pendingFlights.delete(orb.id);
+    chargeWard({animateId:orb.id});
+    updateCastButton();
+    if(pendingFlights.size===0)queueAutoCast();
+   }
+  }));
  }else queueAutoCast();
 }
 function tapLand(id){
@@ -370,7 +376,7 @@ function showMap(){
  el("gameNotes").hidden=true;el("gameNotes").open=false;
   el("toggleGuide").setAttribute("aria-expanded","false");
  el("actionBox").hidden=true;
- el("manaTravelLayer").replaceChildren();
+ cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();
  el("gameScreen").hidden=true;el("campaignScreen").hidden=false;
  renderOverworld({world,bests:progress.bests,index,proofs,medal});
  el("campaignScreen").scrollIntoView({block:"start",behavior:"instant"});
@@ -395,7 +401,7 @@ function load(i,enter=false){
  level=LEVELS[index];state=initial(level);history=[];selectedMessage="";
  startStagePrintings(level);
  el("battlefield").replaceChildren();el("hand").replaceChildren();
- manaOrbs=reconstruct(state.pool);el("manaTravelLayer").replaceChildren();
+ manaOrbs=reconstruct(state.pool);cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();
  progress.index=index;persist();render();
  if(!el("gameNotes").hidden)renderCardReferences(el("cardGallery"),level);
  message("Stage "+stageCode(index)+" · "+teachingCue());
@@ -431,7 +437,7 @@ el("returnMap").addEventListener("click",showMap);
 el("toggleGuide").addEventListener("click",()=>{
  const guide=el("gameNotes");guide.open=!guide.open;
  el("toggleGuide").setAttribute("aria-expanded",String(guide.open));
- if(guide.open)guide.scrollIntoView({block:"start",behavior:"smooth"});
+ if(guide.open)guide.focus?.({preventScroll:true});
 });
 el("autoCastToggle").addEventListener("change",e=>{
  autoCastEnabled=e.target.checked;
@@ -478,7 +484,7 @@ el("undo").addEventListener("click",()=>{
  // Undo that move and every automatically resolved ward after it together.
  while(prev.actionType==="cast"&&history.length)prev=history.pop();
  state=prev.state;manaOrbs=prev.orbs;
- el("manaTravelLayer").replaceChildren();render();
+ cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();render();
  message("Previous move undone, including any automatically cast wards.");
 });
 el("reset").addEventListener("click",()=>load(index));
