@@ -6,7 +6,7 @@ export function handFanLayout(count,viewportWidth,viewportHeight){
  const vw=Math.max(240,Number(viewportWidth)||390);
  const vh=Math.max(360,Number(viewportHeight)||740);
  const phone=vw<=650;
- const cardWidth=Math.round(clamp(vh*(phone?.18:.177),phone?86:110,phone?125:160));
+ const cardWidth=Math.round(clamp(vh*(phone?(vh<=640?.17:.18):.177),phone?86:110,phone?125:160));
  const usableWidth=Math.max(180,vw-(phone?20:52));
  const naturalSpacing=cardWidth*(count>=4?.82:count>=3?.9:1);
  const spacing=count>1?Math.min(naturalSpacing,(usableWidth-cardWidth)/(count-1)):cardWidth;
