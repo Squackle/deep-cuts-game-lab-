@@ -379,6 +379,8 @@ function teachingCue(){
 function render(pendingId=null){
  const proof=proofs.get(level.id),isWin=completed(level,state),stage=level.stages[state.stage];
  el("stageLabel").textContent=mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
+ el("returnMap").textContent=mode==="learn"?"← LESSONS":"← MAP";
+ el("toggleGuide").textContent=mode==="learn"?"✧ LESSON NOTES":"ⓘ GUIDE";
  el("chapterName").textContent=level.chapter;
  el("difficulty").textContent=["INITIATE","ROOKIE","TACTICIAN","EXPERT","MASTERMIND"][level.rank-1];
  el("vaultName").textContent=level.title;
