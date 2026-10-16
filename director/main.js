@@ -138,9 +138,25 @@ $("directorStart").addEventListener("click",startScene);
 $("directorWin").addEventListener("click",showFinale);
 $("directorVictoryReplay").addEventListener("click",()=>{
  $("directorVictory").hidden=true;
+ // Reset animation to replay the ceremony without changing Director controls.
+ const art=$("directorVictory").querySelector(".victory-art");
+ if(art){art.style.animation="none";void art.offsetHeight;art.style.animation=""}
  requestAnimationFrame(()=>showFinale());
 });
-$("directorVictoryExit").addEventListener("click",startScene);
+/**
+ * Return to the editor, not to another forced win.
+ * Starting a Director scene while the dropdown remains "victory" simply reopens
+ * the finale on the next frame; restore a playable phase before resetting.
+ */
+function returnToDirector(){
+ $("directorVictory").hidden=true;
+ if($("directorPhase").value==="victory"){
+  $("directorPhase").value=$("directorGame").value==="classic"?"first":"final";
+ }
+ startScene();
+ $("directorStart").focus({preventScroll:true});
+}
+$("directorVictoryExit").addEventListener("click",returnToDirector);
 $("directorBurgerCheat").addEventListener("click",()=>{summonBurger();canvas.focus({preventScroll:true})});
 $("directorReset").addEventListener("click",startScene);
 $("directorSkip").addEventListener("click",()=>{if(jumpDirectorPhase(run)){update();draw()}});
