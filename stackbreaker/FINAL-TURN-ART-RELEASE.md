@@ -1,0 +1,11 @@
+# Stackbreaker — Full-size real card presentation
+
+**Owner request:** Remove decorative card containers, repeated labels and names from Final Turn's hand; enlarge Scryfall card images; show random genuine Scryfall land printings. Deploy to the existing standalone Game Lab drill only.
+
+- **UI scope**: `final-turn/app.js`, `final-turn/drill.css`. Card button is now a large full-card image, with tooltip/ARIA name and a keyboard focus ring; no extra under-card name/status caption or outer card panel. Drawn, unsupported hand lands also display their full card art but remain unplayable as before.
+- **Scryfall**: request `normal` card images for clear rules text. When a random basic land printing is retrieved, show a genuine Scryfall image at its existing functional `data-land` button. Each real land instance gets its own random paper printing via `/cards/random?q=!"Island" game:paper` or corresponding Mountain query. Art-only map is indexed by stable land ID; the original mana and tapped game-state logic never changes. Scryfall query outcomes don't enter gameplay or save/replay logic.
+- **Image failures**: keep a temporary named placeholder that still works as an accessible tap target when unavailable; fetch errors never stop the drill. Store resolved artwork URLs in sessionStorage so redraws and restarts don't cause constant random queries, and don't assume the Scryfall network is always available.
+- **Layout**: 165–246px hand cards desktop (up to 216px on mobile), 125–181px basic land cards desktop, touch-scrollable when the viewport cannot display them all. Focus and tap interactions remain. Reduced-motion support remains.
+- **Out of scope**: Classic 250-stage renderer; actual MTG mechanics; progression and legacy save keys; opponent AI; account/score APIs; public main-site promotion. 
+- **QA**: new display-source regressions, existing entire Game Lab deterministic suite, browser 390px and desktop DOM, Scryfall image request and actual card tap/cast/stack lethal sequence. Don't claim that network art succeeded unless verified.
+- **Rollback**: revert the isolated Stackbreaker PR; no game-state migrations required. The public website's separately owned promotion issue #53 should refer to the new lab commit if/when integrating these visuals.
