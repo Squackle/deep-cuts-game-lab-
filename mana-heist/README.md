@@ -2,6 +2,8 @@
 
 > **Future agents — start here (2026-10-15):** This README contains historical release notes starting with v0.2 and should **not** be mistaken for the current 1.0 rules specification. Read [**AGENTS.md**](AGENTS.md) for scoped agent responsibilities, [**ROADMAP-1.0.md**](ROADMAP-1.0.md) for the **15 planned deployment packages P01–P15, release gates and status ledger**, and [**RULESET-1.0.md**](RULESET-1.0.md) for the implemented mana rules, known simplifications and educational 1.0 targets. **No P01–P15 package is marked completed simply because a related prototype feature already exists.** The current 250-stage Game Lab prototype is not a rights-cleared public game. The repo-root [AGENTS.md](../AGENTS.md) also applies.
 
+> **P01 release foundations — Game Lab review package:** [release scope, acceptance criteria and risk register](release/FOUNDATIONS-P01.md) · [24-land/19-mechanic current engine audit](release/MECHANICS-MATRIX-P01.md) · [Magic artwork/IP and Scryfall decision register](release/ASSET-RIGHTS-P01.md). **P01 technical documentation is delivered; owner rights/brand sign-off remains BLOCKED.** No game code or public-site release is authorized by these documents.
+
 **Game:** Mana Heist: Crack the Vault  
 **Route:** `/mana-heist/` on the **standalone Deep Cuts Game Lab**, not the public Arcade.  
 **Rules engine:** `mh-landfall-0.2.0` (self-contained, deterministic, no servers).
