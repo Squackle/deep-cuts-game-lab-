@@ -1,6 +1,6 @@
 # Mana Heist — Roadmap to public 1.0
 
-**Status:** APPROVED PLANNING BASELINE (documented 2026-10-15); **P01–P15 NOT YET IMPLEMENTED OR RELEASED as roadmap packages**. This is an implementation plan, not a certification that current game mechanics or legal rights are ready for public launch.
+**Status:** APPROVED PLANNING BASELINE (documented 2026-10-15); **P01–P15 not yet fully completed as 1.0 acceptance packages**. This is an implementation plan, not a certification that current game mechanics or legal rights are ready for public launch.
 
 **Source of truth for agent workflow:** [AGENTS.md](AGENTS.md). **Current rules vs proposed rules:** [RULESET-1.0.md](RULESET-1.0.md). **Existing historical playtest log:** [README.md](README.md). Root-level [../AGENTS.md](../AGENTS.md) and [../docs/TEST-FIRST-RELEASE-POLICY.md](../docs/TEST-FIRST-RELEASE-POLICY.md) still apply.
 
@@ -26,7 +26,7 @@ Position 1.0 as a **focused mana-learning puzzle game**, not an MTG Arena replac
 | Puzzle atlas | 250 unique IDs, 5 galaxies, 25 worlds, 10 stages/world in `src/levels.js` | First 18 are authored; other **232 are generated** from templates. Legal winning-route replay is necessary, but does NOT prove distinct instructional value, fairness or best solution |
 | Game engine | `src/engine.js` has `VERSION="mh-landfall-0.2.0"`, pure `actions`/`reduce`/`payOptions`/validation | Simplified model; no full step/phase loop; mana expires on `end` turn, not every step and phase |
 | Land catalog | Real Magic land identities/images are in Lab, with basic, dual, shock, pain, check, fetch, bounce, colorless families | Simic Growth Chamber is currently modeled as U **or** G per tap; real card makes U **and** G. Complete support and Oracle accuracy unverified |
-| Casting | `src/auto-cast.js` chooses a legal payment and automatically resolves wards | Preserve current UX, but retest the whole campaign if actual mana outputs change |
+| Casting | Tabletop Flow now defaults to deliberate Cast Spell; `src/auto-cast.js` remains the optional legal payment/auto-cast selector | Both modes use the existing engine, must be verified through the campaign; no mana-output rule change |
 | Ward | Stirrable top-down pigment cauldron with precomputed mixtures | Needs polish, perf tuning, non-color cues, sound controls and accessibility alternatives |
 | UI | 250-stage overworld, mobile full-card hand, magnifier, drag-to-play, final-turn guidance | Physical iOS/Android testing, keyboard alternative to dragging, focus, visibility and low-height layouts are not complete |
 | Progress | Browser-local guest bests (`dc-mana-heist-landfall-v2`) | Export/import and save migration missing; do not reset progress or identifiers |
@@ -99,7 +99,7 @@ Every package produces: a scoped design/spec or implementation, deterministic te
 2. **Isolation:** `Squackle/deep-cuts-game-lab-` (trailing hyphen), `mana-heist/**` only. Any shared `lab/**` or main-site change needs separate explicit approval/coordination.
 3. **Coordination:** check current main SHA and open PRs; create fresh feature branch; never overwrite another agent's work.
 4. **Rules fidelity:** use the pure reducer/legal action list as authority. Tests must prove intended behavior; avoid changing card abilities without editing levels, hints, solver and save/replay treatment.
-5. **Tests:** `node --test mana-heist/tests/*.test.mjs` plus relevant syntax checks, solver replay, mandatory auto-cast, mobile fallback, keyboard/touch, and smoke for the feature.
+5. **Tests:** `node --test mana-heist/tests/*.test.mjs` plus relevant syntax checks, solver replay, deliberate casting with optional auto-cast, mobile fallback, keyboard/touch, and smoke for the feature.
 6. **Preview first:** require successful GitHub CI and Cloudflare **Game Lab preview** before merging; check the actual user-visible UI. A merged PR/deployment stage alone is not a browser smoke test.
 7. **Release evidence:** record commit SHA, PR, changed paths, exact test results, preview/live URL, known limitations and rollback.
 8. **Versioning:** record engine/rules version and migration impact; preserve legacy `dc-mana-heist-landfall-v2` until a tested migration.
@@ -113,7 +113,7 @@ Every package produces: a scoped design/spec or implementation, deterministic te
 | P01 | BLOCKED | P01 technical foundation delivered for Lab: [scope/risk register](release/FOUNDATIONS-P01.md), [mechanics audit](release/MECHANICS-MATRIX-P01.md), [asset/rights decision](release/ASSET-RIGHTS-P01.md), [baseline tests](tests/release-foundations.test.mjs). **Rights route, title review and owner sign-off unresolved; not public-release cleared.** |
 | P02 | NOT STARTED | Existing simplified engine is not audited 1.0 |
 | P03 | NOT STARTED | Existing solver and 250-level replay tests are a baseline, not completed authoring QA |
-| P04 | NOT STARTED | No approved Learn Mode acceptance |
+| P04 | IN PROGRESS | Tabletop Flow adds contextual beginner prompts and explicit land → tap → cast teaching; full 5–10 lesson curriculum and new-user testing not yet complete |
 | P05 | NOT STARTED | No approved three-tier hints |
 | P06 | NOT STARTED | 50-stage baseline exists but not curriculum reviewed |
 | P07 | NOT STARTED | 50-stage baseline exists but not curriculum reviewed |
@@ -121,7 +121,7 @@ Every package produces: a scoped design/spec or implementation, deterministic te
 | P09 | NOT STARTED | 50-stage baseline exists but not curriculum reviewed |
 | P10 | NOT STARTED | 50-stage baseline exists but not curriculum reviewed |
 | P11 | NOT STARTED | Prior mobile fixes ≠ full real-device/accessibility acceptance |
-| P12 | IN PROGRESS | Fluid stirring parity and adaptive desktop resolution implemented in a focused Game Lab patch (see README); remaining sound/mute, deep FX polish, reduced-FX settings and **physical-device performance verification** are NOT COMPLETE. |
+| P12 | IN PROGRESS | Fluid stirring parity plus Tabletop Flow cauldron integration and responsive tabletop display; remaining sound/mute, reduced-FX settings, **real-device performance verification** and further polish NOT COMPLETE. |
 | P13 | NOT STARTED | Current guest bests ≠ save export/daily/achievements package |
 | P14 | NOT STARTED | Beta not performed |
 | P15 | NOT STARTED | Public launch not authorized or cleared |
