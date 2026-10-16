@@ -101,8 +101,7 @@ export function payments(pool,cost,context={kind:"activation"}){
     if(!seen.has(sig)){seen.add(sig);options.push(ids);}
     return;
    }
-   const start=chosen.length?0:0;
-   for(let i=start;i<pool.length;i++){
+   for(let i=0;i<pool.length;i++){
     const u=pool[i];
     if(chosen.includes(u.id)||!usable(u,context))continue;
     walk(req,left-1,[...chosen,u.id]);
@@ -133,7 +132,7 @@ export function legalActions(scenario,state){
  }
  const goal=scenario.goals[state.cast];
  if((!goal.when||state.phase===goal.when)&&
-    (goal.spellType==="instant"||goal.spellType==="creature"||goal.spellType==="artifact"||["main1","main2"].includes(state.phase))){
+    (goal.spellType==="instant"||["main1","main2"].includes(state.phase))){
   for(const spend of payments(state.pool,goal.cost,{kind:"spell",spellType:goal.spellType})){
    out.push({type:"cast",spend});
   }
