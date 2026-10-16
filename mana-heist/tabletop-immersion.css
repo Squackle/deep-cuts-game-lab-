@@ -414,3 +414,24 @@ body.in-heist #heist .ward-info .auto-option{
  body.in-heist #heist #wardTarget.lock-ring.is-stirring{transition:none!important}
  body.in-heist #heist #hand .land-card.mtg-real-land{transition:none!important}
 }
+
+
+/* At laptop/tablet widths, tuck the cost/cast controls beside the vessel.
+   The fan can now be fully raised without covering the casting UI. */
+@media(min-width:700px) and (max-width:949px){
+ body.in-heist #heist .ward-info{
+  top:calc(var(--pot-size) * .22)!important;
+  left:calc(50% + var(--pot-size) / 2 + 12px)!important;
+  right:auto!important;transform:none!important;
+  width:min(200px,calc(50vw - var(--pot-size)/2 - 16px))!important;
+  max-height:none!important;align-items:flex-start!important;
+  text-align:left!important;
+ }
+ body.in-heist #heist .ward-info #wardCost{justify-content:flex-start!important}
+ body.in-heist #heist .ward-info #castButton{width:min(100%,190px)!important}
+}
+@media(min-width:500px) and (max-width:699px){
+ body.in-heist #gameScreen{--pot-size:clamp(205px,31dvh,242px)}
+ body.in-heist #heist .vault-stage{--pot-top:clamp(184px,26dvh,222px)}
+ body.in-heist #heist .ward-info{max-height:102px!important}
+}
