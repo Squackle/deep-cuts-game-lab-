@@ -19,7 +19,8 @@ test("isolated 2.0 mana engine is independent of the legacy save/version",()=>{
  assert.equal(new Set(ENGINE_SCENARIOS.map(s=>s.id)).size,ENGINE_SCENARIOS.length);
  assert.deepEqual(PHASES,["main1","combat","main2","end"]);
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
- assert.match(html,/href="\.\/mana-engine-test\.html"/);
+ assert.doesNotMatch(html,/href="\.\/mana-engine-test\.html"/);
+ assert.match(readFileSync(new URL("../src/engine.js",import.meta.url),"utf8"),/modesFor/);
  assert.match(readFileSync(new URL("../mana-engine-test.html",import.meta.url),"utf8"),/id="manaPool"/);
  assert.match(readFileSync(new URL("../src/engine.js",import.meta.url),"utf8"),/mh-landfall-0\.2\.0/);
 });
