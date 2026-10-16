@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Stackbreaker 2.0 — The Final Turn · Game Lab</title>
+<meta name="description" content="Stackbreaker Final Turn: break the stack, survive, and finish a game in a scenario-based Magic drill.">
+<link rel="stylesheet" href="./drill.css"><script type="module" src="./app.js"></script></head>
+<body>
+<a class="skip" href="#drill">Skip to the Final Turn game</a>
+<header class="mast"><a href="../" class="brand">◈ DEEP CUTS / STACKBREAKER</a><strong>THE FINAL TURN <small>2.0 · LIFECYCLE PROTOTYPE</small></strong><a href="../" class="classic">↗ CLASSIC MODE</a></header>
+<main id="drill" class="layout">
+<section class="mission"><div><small class="eyebrow">DRILL 001 · GAME STATE LIFECYCLE</small><h1>FROM THE BRINK</h1><p id="description">Opponent’s lethal spell is already on the stack. Break it, survive, then take your turn and win.</p></div>
+<div class="mission-status"><span id="turn" aria-live="polite">Opponent's turn</span><strong id="step">End step</strong><span class="priority">● YOUR PRIORITY</span></div></section>
+<section class="tabletop" aria-label="Interactive game state">
+ <div class="board">
+  <div class="opponent"><div class="orb rival"><small>OPPONENT</small><strong id="oppLife">3</strong><span>LIFE</span></div><div class="player-info"><span>THEIR BOARD</span><p>No creatures in this drill</p></div></div>
+  <div class="circle" aria-hidden="true">✧</div>
+  <div class="you"><div class="orb"><small>YOU</small><strong id="myLife">2</strong><span>LIFE</span></div><div class="player-info"><span>YOUR BOARD</span><p>No creatures · Combat unlocks in Phase 3</p></div></div>
+ </div>
+ <section class="spellzone" aria-label="Stack of spells"><div class="zhead"><strong>✦ THE STACK</strong><span>Last in, first out</span></div><ol id="stack" aria-label="Spell stack, top first"></ol><p id="emptyStack" hidden>The stack is empty. The game continues.</p></section>
+</section>
+<section class="shelf" aria-label="Mana and lands">
+ <div class="zhead"><strong>◈ YOUR LANDS</strong><span>Tap to add mana</span></div>
+ <div id="lands" class="lands" role="group" aria-label="Your lands"></div><div class="pool"><strong>MANA POOL</strong><span id="mana">Empty</span></div>
+</section>
+<section class="tray" aria-label="Your hand">
+ <div class="zhead"><strong>✧ YOUR HAND</strong><span id="handCount">2 cards</span></div><div id="hand" class="hand" role="group" aria-label="Cards in hand"></div>
+</section>
+<div class="controls"><div id="feedback" role="status" aria-live="polite">You have priority. Respond to the lethal spell.</div>
+<button id="pass" class="primary" type="button">PASS PRIORITY / RESOLVE →</button><button id="restart" class="reset" type="button">↻ RESTART</button></div>
+<div class="below"><section class="guide"><h2>Mission</h2><p><strong>Break the stack, then win.</strong> Your opponent has 3 life. You're at 2, facing a lethal Lightning Bolt. Respond before passing. After the crisis, advance into your own turn and finish the game.</p><details><summary>Need a hint?</summary><p>Tap both Islands to cast Counterspell targeting Lightning Bolt. Pass to resolve it. After the opponent's end step, advance through your upkeep and draw to your main phase, then tap your Mountain, cast Lava Spike at the opponent and resolve it.</p></details><p class="scope">Phase 1 supports a real continuing stack/priority window, turn advance, untap, draw, main-phase sorcery timing and a game-ending lethal spell. Combat, blockers, opponent AI and general card mechanics are not implemented yet.</p></section>
+<section class="history"><h2>Game log</h2><ol id="log" aria-label="Game action log"></ol></section></div>
+<footer>Independent Magic rules training prototype. Unofficial and not endorsed by Wizards of the Coast or Scryfall. Card names and artwork belong to their owners. <a href="../">Return to classic Stackbreaker</a>.</footer>
+</main>
+</body></html>
