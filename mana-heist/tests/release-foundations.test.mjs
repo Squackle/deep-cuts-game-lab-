@@ -43,12 +43,22 @@ test("P01 documents 1.0 acceptance, risks, current rules and blocked rights path
  assert.match(rights,/Scryfall.*403/i);
 });
 
-test("P01 status is clearly BLOCKED until owner rights choice, other packages remain not started",()=>{
+test("P01 remains blocked; independently approved later work can be in progress with evidence",()=>{
  const roadmap=read("ROADMAP-1.0.md");
  const agents=read("AGENTS.md");
  const readme=read("README.md");
  assert.match(roadmap,/\| P01 \| BLOCKED \|/);
- for(let i=2;i<=15;i++)assert.match(roadmap,new RegExp("\\| P"+String(i).padStart(2,"0")+" \\| NOT STARTED \\|"));
+ for(let i=2;i<=15;i++){
+  const id="P"+String(i).padStart(2,"0");
+  const record=roadmap.split("\n").find(row=>row.startsWith("| "+id+" |"));
+  assert.ok(record,"missing release status for "+id);
+  if(i===12){
+   assert.match(record,/\| IN PROGRESS \|/,"P12 parity changes are partial, not the full release package");
+   assert.match(record,/remaining|NOT COMPLETE/i);
+  }else{
+   assert.match(record,/\| NOT STARTED \|/,"unapproved package "+id+" must remain unstarted");
+  }
+ }
  assert.match(agents,/P01.*rights/i);
  assert.match(readme,/release\/FOUNDATIONS-P01\.md/);
  assert.match(readme,/release\/ASSET-RIGHTS-P01\.md/);
