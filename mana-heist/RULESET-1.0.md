@@ -8,7 +8,7 @@
 
 1. **Current executable truth:** `src/engine.js` (`VERSION = "mh-landfall-0.2.0"`) owns legal actions and state mutation. `actions(level,state)`, `reduce(level,state,action)`, `payOptions`, `initial`, `validate`, `completed`, `medal` define the current game. Reuse these rather than duplicating gameplay logic in UI.
 2. **Puzzles:** `src/levels.js` defines `BASE_LEVELS` (18 authored), `LEVELS` (250), `CHAPTERS` (25), `GALAXIES` (5). `src/solver.js` is the current proof source. Solver returns `inconclusive` for exceeded bounds; this is **not** proof that a puzzle cannot be solved.
-3. **Mandatory auto-cast:** `src/auto-cast.js` chooses a legal `cast` action when mana meets the current ward, and its `resolveAutomaticCasts` variant applies consecutive legal casts. Players do not press a Cast button.
+3. **Deliberate casting (Oct 15 Tabletop Flow update):** `src/auto-cast.js` still chooses an objectively legal cast/payment using the authoritative engine, but the UI defaults to a visible Cast Spell button. An optional auto-cast toggle runs the same existing solver-backed cast selection after charging; engine/legal costs are unchanged.
 4. **Visuals only:** `src/fluid-ward.js`, `src/pigment-mixer.js`, `src/fluid-palette.js`, `src/ward-charge.js`, `src/mana-orbs.js` can depict charged, consumed or expelled mana but **cannot** make previously illegal actions legal. Dye blending changes displayed colors, never mana identities or payment rules.
 5. **Future source of truth:** P02 should introduce an explicit, tested **1.0 supported-mechanics specification** and an updated engine/replay version where necessary. Do not silently change current code to match an imagined full Magic simulator.
 
@@ -23,7 +23,7 @@
 - **Fetch:** selected fetch sacrifices itself, pays life, chooses a matching eligible target from its fixed `level.library`, and enters that land using the game's entry rules.
 - **Untapping:** normal `end` action increments turn, allows another land drop, clears the whole floating mana pool and untaps battlefield lands. A spell may explicitly `untap` one tapped land.
 - **Turn limit:** `end` is legal only while `state.turn < level.turnLimit`. On the final turn, `FINAL TURN` is a UI explanation rather than a legal third turn. Undo/Restart still recover; **do not silently extend authored puzzle deadlines**.
-- **Casting:** when the current ward's entire cost is payable and the automatic payment selector finds a legal option, the game casts after a short optional water-stirring window; extra suitable mana may remain for a subsequent ward.
+- **Casting:** when the current ward's entire cost is payable, Cast Spell becomes available. Players spend that mana explicitly by default. Opt-in auto-cast uses the earlier water-stirring settlement window; extra suitable mana may remain for another ward.
 - **Progress & medals:** `src/campaign.js` sequentially unlocks one stage after another; `5 galaxies × 5 worlds × 10 levels`; bests are stored under `dc-mana-heist-landfall-v2`. Three-star scoring is based primarily on solver turns/life. Preserve past progress when evolving the rules; save migration may be required.
 
 ### Supported land archetypes to audit in P02
@@ -61,7 +61,7 @@ For each supported mechanic, future agents should fill a record:
 3. **Three-step hints:** conceptual nudge; targeted mechanical clue; explicit solver-valid solution. Hints must reflect **this exact current level and state**, not a generic or invalid route. Never show the full answer without a user action.
 4. **Post-win teaching:** concise explanation of the correct resource decision, why alternatives failed, and which concept carries into real Magic (if verified).
 5. **250-stage curation:** keep original progression structure, review puzzle variants and unintended wins, ensure five themed galaxies of progressively harder concepts, manually curate ~10 anchor puzzles per galaxy.
-6. **Mandatory legal auto-cast:** the user should not need to press Cast. Preserve mana-color accounting and complete tests on this behavior.
+6. **Optional legal auto-cast:** deliberate spending is now the teaching default; the player can turn on auto-cast. Both modes must preserve the same legal payments, mana-color accounting, and tested solver outcomes.
 7. **No false prompts:** e.g. final-turn tapped land cannot say “End your turn to untap” if the turn limit forbids ending; use precise actionable feedback.
 8. **Preserve user intent:** stirring cauldron is playful, optional and purely visual; don't require stirring to solve a ward. End-turn/Undo/Restart/Map should clear or reconstruct the fluid exactly from authoritative state.
 9. **Accessibility:** full card names/text, color names/pips (not hue alone), mobile taps and drags, keyboard/focus; provide a practical **non-drag alternative** for placing lands, reduce-motion/reduced-FX support, mute.

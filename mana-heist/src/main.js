@@ -17,14 +17,17 @@ import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from 
 import {missingMana,failureText,flashWard} from "./ward-feedback.js";
 import {isFinalTurn,requiredManaText,finalTurnMessage,tappedLandMessage} from "./turn-guidance.js";
 const el=id=>document.getElementById(id);
-const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"C"},N:{name:"Generic",color:"#bec5bd",icon:"◇"}};
+const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"◇"},N:{name:"Generic",color:"#bec5bd",icon:"1"}};
 const storageKey="dc-mana-heist-landfall-v2";
 function readProgress(){
  try{const x=JSON.parse(localStorage.getItem(storageKey)||"null");if(x&&x.v===2&&typeof x.bests==="object"&&x.bests&&!Array.isArray(x.bests))return {bests:normalizedBests(x.bests),index:Math.max(0,Math.min(LEVELS.length-1,Number.isInteger(x.index)?x.index:0))};}catch{}
  return {bests:{},index:0};
 }
 let progress=readProgress(),index=Math.min(progress.index,highestUnlocked(progress.bests)),level=LEVELS[index],state=initial(level),history=[],choiceActions=[],selectedMessage="";
-let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null;
+let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null,selectedHandId=null;
+let autoCastEnabled=false;
+try{autoCastEnabled=localStorage.getItem("dc-mana-heist-auto-cast")==="yes";}catch{}
+el("autoCastToggle").checked=autoCastEnabled;
 let viewEpoch=0;
 let autoTimer=null;
 function cancelAuto(){
@@ -35,7 +38,7 @@ function cancelAuto(){
 // stirring postpone the finish, but NEVER let interaction block a puzzle.
 const AUTO_SETTLE_MS=2000,AUTO_STIR_MAX_MS=5100;
 function queueAutoCast(){
- if(pendingFlights.size||completed(level,state))return;
+ if(!autoCastEnabled||pendingFlights.size||completed(level,state))return;
  if(!chooseAutomaticCast(level,state)||autoTimer!==null)return;
  el("wardTarget").classList.add("auto-primed");
  el("autoCastLabel").textContent="WARD READY · STIR TO MIX";
@@ -64,7 +67,7 @@ function queueAutoCast(){
 const pendingFlights=new Set();
 const fluid=installFluidWard({
  canvas:el("wardFluidCanvas"),target:el("wardTarget"),
- onInteract:()=>{if(autoTimer!==null)el("autoCastLabel").textContent="STIR THE WATER · AUTO-CAST WHEN IT SETTLES";}
+ onInteract:()=>{if(autoCastEnabled&&autoTimer!==null)el("autoCastLabel").textContent="STIR THE WATER · AUTO-CAST WHEN IT SETTLES";}
 });
 el("wardTarget").dataset.preloadedMixes=String(PRELOADED_MIX_COUNT);
 let currentFluidStage="";
@@ -117,9 +120,10 @@ function proofFor(id){
 const proofs={get:proofFor};
 const lockGlyphs=["✧","⌑","◈","✦","⬡","✶"];
 function persist(){try{localStorage.setItem(storageKey,JSON.stringify({v:2,index,bests:progress.bests}));}catch{}}
-const coin=(c,extra="")=>'<span class="mana-glyph '+c+'" style="--coin:'+SYMBOL[c].color+'" aria-label="'+SYMBOL[c].name+' mana">'+(extra||SYMBOL[c].icon)+'</span>';
+const coin=(c,extra="")=>'<span class="mana-glyph '+c+'" style="--coin:'+SYMBOL[c].color+'" aria-label="'+(c==="N"&&extra?extra+" generic mana":SYMBOL[c].name+" mana")+'">'+(extra||SYMBOL[c].icon)+'</span>';
 function costHtml(cost){
- return Object.entries(cost).flatMap(([k,n])=>Array.from({length:n},()=>coin(k))).join("");
+ // Generic costs are numeric; diamonds are true colorless.
+ return Object.entries(cost).flatMap(([k,n])=>k==="N"?(n?[coin("N",String(n))]:[]):Array.from({length:n},()=>coin(k))).join("");
 }
 function desc(action){
  if(action.type==="play")return (action.shock?"Pay 2 life · enter untapped":getCard(level,action.id).kind==="shock"?"Save 2 life · enter tapped":getCard(level,action.id).kind==="bounce"?"Return "+getCard(level,action.returnId).name+" · enter tapped":"Play "+getCard(level,action.id).name);
@@ -172,11 +176,11 @@ function perform(action){
   const best=progress.bests[level.id];
   if(!best||state.turn<best.turn||(state.turn===best.turn&&state.spentLife<best.spentLife))progress.bests[level.id]={turn:state.turn,spentLife:state.spentLife};
   persist();message("The vault breaks open! Case closed.");
- }else if(action.type==="end")message("Turn "+state.turn+". All your lands untap; floating mana empties.");
+ }else if(action.type==="end")message("Turn "+state.turn+" · lands untapped · mana emptied.");
  else if(action.type==="play")message(getCard(level,action.id).name+" enters the battlefield"+(state.field.find(f=>f.id===action.id)?.tapped?" tapped.":"."));
- else if(action.type==="tap")message("Mana added: "+SYMBOL[action.color].name+". The land is now tapped.");
+ else if(action.type==="tap")message("+1 "+SYMBOL[action.color].name+" mana · land tapped sideways.");
  else if(action.type==="fetch")message("Fetched "+getCard(level,action.targetId).name+". The fetch land is gone.");
- else if(action.type==="cast")message("Ward dispelled! "+(level.stages.length-state.stage)+" ward(s) remain.");
+ else if(action.type==="cast")message("Spell cast · "+(level.stages.length-state.stage)+" seals remain.");
  landDrag?.cancel();
  render(pendingId);
  if(pendingId){
@@ -187,6 +191,7 @@ function perform(action){
    onArrival:()=>{if(epoch===viewEpoch){
     pendingFlights.delete(pendingId);
     chargeWard({animateId:pendingId});
+     updateCastButton();
     queueAutoCast();
    }}
   });
@@ -207,7 +212,7 @@ function tapLand(id){
  else message("This land cannot produce mana safely at your current life total.",true);
 }
 function playLand(id){
- lastCardId=id;
+ lastCardId=id;selectedHandId=null;
  const card=getCard(level,id),possible=actions(level,state).filter(a=>a.type==="play"&&a.id===id);
  if(!possible.length){message(state.played?"You have already played a land this turn.":"This land cannot be played right now.",true);return;}
  if(possible.length===1)perform(possible[0]);
@@ -221,7 +226,7 @@ function landHtml(instance,field){
  const src=imageFor(instance.id,key);
  const fallback=landPainting(card);
  const alt=name+" — Magic: The Gathering land card from Scryfall";
- return '<button type="button" draggable="false" class="land-card mtg-real-land '+(tapped?"is-tapped":"")+'" data-cardid="'+instance.id+'" data-zone="'+(field?"field":"hand")+'" data-kind="'+card.kind+'" data-real-card="'+key+'" aria-label="'+(field?"Tap ":"Drag to battlefield: ")+name+(tapped?", tapped":"")+'" title="'+name+' · '+(field?"tap to produce mana":"drag to play · tap to inspect")+'">'+
+ return '<button type="button" draggable="false" class="land-card mtg-real-land '+(tapped?"is-tapped":"")+'" data-cardid="'+instance.id+'" data-zone="'+(field?"field":"hand")+'" data-kind="'+card.kind+'" data-real-card="'+key+'" aria-label="'+(field?"Tap ":"Select or drag to play: ")+name+(tapped?", tapped":"")+'" title="'+name+' · '+(field?"tap to produce mana":"drag to play · tap to inspect")+'">'+
   '<img class="mtg-card-image" data-card-key="'+key+'" src="'+src+'" alt="'+alt+'" draggable="false" decoding="async" loading="eager">'+
   '<span class="mtg-fallback" aria-hidden="true"><strong>'+name+'</strong>'+fallback+'</span>'+
   '</button>';
@@ -245,8 +250,10 @@ function syncLandRows(){
   node.classList.toggle("is-tapped",!!tapped);
   node.dataset.zone=field?"field":"hand";
   const name=card.name;
-  node.setAttribute("aria-label",(field?"Tap ":"Drag to battlefield: ")+name+(tapped?", tapped":""));
-  node.title=name+" · "+(field?"tap to produce mana":"drag to play · tap to inspect");
+  node.setAttribute("aria-label",(field?"Tap ":"Select or drag to play: ")+name+(tapped?", tapped":""));
+  node.title=name+" · "+(field?"tap to produce mana":"tap to select, drag to play");
+   node.classList.toggle("hand-selected",!field&&id===selectedHandId);
+   if(field)node.removeAttribute("aria-pressed");else node.setAttribute("aria-pressed",String(id===selectedHandId));
   return node;
  };
  const fieldNodes=state.field.map(f=>make(f,true));
@@ -257,6 +264,33 @@ function syncLandRows(){
  };
  el("battlefield").replaceChildren(...(fieldNodes.length?fieldNodes:[empty("No lands in play yet. Play one from your hand.")]));
  el("hand").replaceChildren(...(handNodes.length?handNodes:[empty("No land cards remain in hand.")]));
+ handNodes.forEach((node,i)=>{const m=(handNodes.length-1)/2;node.style.setProperty("--fan-tilt",((i-m)*Math.min(7,27/Math.max(1,handNodes.length-1)))+"deg");node.style.setProperty("--fan-drop",(Math.abs(i-m)*5)+"px");});
+ el("playSelectedLand").disabled=!selectedHandId||!state.hand.includes(selectedHandId)||!!state.played;
+ el("inspectSelected").disabled=!selectedHandId||!state.hand.includes(selectedHandId);
+}
+function selectHand(id){
+ if(!state.hand.includes(id))return;
+ selectedHandId=selectedHandId===id?null:id;
+ syncLandRows();
+ message(selectedHandId?"Selected "+getCard(level,id).name+" · play it or inspect it.":"Selection cleared.");
+}
+function updateCastButton(){
+ const ready=!completed(level,state)&&!pendingFlights.size&&!!chooseAutomaticCast(level,state);
+ const button=el("castButton");
+ button.disabled=!ready;
+ button.textContent=ready?"CAST SPELL ✦":"NEED MORE MANA";
+ button.setAttribute("aria-label",ready?"Cast the spell by spending mana":"Spell not ready; produce more mana");
+ el("autoCastLabel").textContent=completed(level,state)?"VAULT OPEN":ready?(autoCastEnabled?"READY · AUTO-CAST ARMED":"READY · TAP CAST SPELL"):"TAP LANDS TO ADD MANA";
+}
+function teachingCue(){
+ if(completed(level,state))return "Vault opened. Nice work!";
+ if(chooseAutomaticCast(level,state))return "Your mana matches the cost. Cast to spend it.";
+ if(index===0)return "Tap your Island. Turning a land sideways makes mana.";
+ if(index===1)return state.hand.length?"Play your Mountain from your hand.":"Tap your Mountain for red mana.";
+ if(index===2)return state.hand.length&&!state.played?"Play a land from your hand.":state.field.some(f=>!f.tapped)?"Tap a land to make mana.":"End your turn to untap your lands.";
+ if(state.hand.length&&!state.played&&state.field.every(f=>f.tapped))return "Select a land in your hand, then play it.";
+ if(state.field.some(f=>!f.tapped))return "Tap a land to make mana in your cauldron.";
+ return state.turn<level.turnLimit?"End turn: lands untap and floating mana disappears.":"Final turn. Undo or restart for another solution.";
 }
 function render(pendingId=null){
  const proof=proofs.get(level.id),isWin=completed(level,state),stage=level.stages[state.stage];
@@ -273,14 +307,14 @@ function render(pendingId=null){
  el("wardCounter").textContent=isWin?"VAULT OPEN":"WARD "+(state.stage+1)+" OF "+level.stages.length;
  el("wardName").textContent=isWin?"The seal is broken":stage.name;
  el("wardCost").innerHTML=isWin?"":costHtml(stage.cost);
- el("wardDescription").textContent=isWin?"The heist is complete. Your best route is preserved on this device.":stage.effect==="untap"?"Casting this heist spell also untaps one land you choose.":"Colored mana symbols require that exact color. A gray diamond is generic: you may use any remaining mana.";
+ el("wardDescription").textContent=isWin?"The heist is complete. Your best route is preserved on this device.":stage.effect==="untap"?"Casting this heist spell also untaps one land you choose.":"Numbers show generic mana costs, payable with any kind of mana; a diamond requires truly colorless mana.";
  const finalTurn=!isWin&&isFinalTurn(level,state);
  const neededMana=isWin?"":requiredManaText(level,state);
- el("autoCastLabel").textContent=isWin?"ALL WARDS OPEN":
-  finalTurn?(neededMana?"FINAL TURN · NEED "+neededMana.toUpperCase():"FINAL TURN · WARD READY"):
-  stage.effect==="untap"?"AUTO REWIND · MOVE TO STIR":"MOVE TO STIR · TOUCH AND DRAG";
+ el("lessonPrompt").textContent=teachingCue();
+ el("autoCastToggle").checked=autoCastEnabled;
  el("stageList").innerHTML=level.stages.map((spell,i)=>'<span class="stage-marker '+(i<state.stage?"done":i===state.stage?"active":"")+'">'+(i<state.stage?"✓":String(i+1).padStart(2,"0"))+" "+spell.name+"</span>").join("");
  el("battleCount").textContent=state.field.length+" LAND"+(state.field.length===1?"":"S");
+ if(selectedHandId&&!state.hand.includes(selectedHandId))selectedHandId=null;
  syncLandRows();
  el("handGuide").hidden=state.hand.length===0;
  el("hand").closest(".hand-card").classList.toggle("hand-empty",state.hand.length===0);
@@ -288,6 +322,7 @@ function render(pendingId=null){
  el("libraryPanel").textContent=level.library.length?"RESERVE / FETCH TARGETS: "+level.library.map(x=>CARDS[x.card].name).join(" · "):"";
 
  chargeWard({pendingId});
+ updateCastButton();
  el("undo").disabled=history.length===0;
  // Keep Final Turn clickable to explain the puzzle limit. A disabled button
  // would be silently unresponsive precisely when players most need guidance.
@@ -317,7 +352,8 @@ function showMap(){
  cardInspector.hide({restore:false});
  landDrag?.cancel();
  document.body.classList.remove("in-heist");
- el("gameNotes").hidden=true;
+ el("gameNotes").hidden=true;el("gameNotes").open=false;
+  el("toggleGuide").setAttribute("aria-expanded","false");
  el("actionBox").hidden=true;
  el("manaTravelLayer").replaceChildren();
  el("gameScreen").hidden=true;el("campaignScreen").hidden=false;
@@ -337,7 +373,7 @@ function load(i,enter=false){
  magnifier.hide();
  cancelAuto();viewEpoch++;pendingFlights.clear();
  cardInspector.hide({restore:false});
- lastCardId=null;
+ lastCardId=null;selectedHandId=null;
  landDrag?.cancel();
  if(!unlocked(i,progress.bests)){message("That vault is sealed. Crack the previous stage to unlock it.",true);return false;}
  index=i;world=chapterIndex(index);
@@ -347,7 +383,7 @@ function load(i,enter=false){
  manaOrbs=reconstruct(state.pool);el("manaTravelLayer").replaceChildren();
  progress.index=index;persist();render();
  if(!el("gameNotes").hidden)renderCardReferences(el("cardGallery"),level);
- message("Stage "+stageCode(index)+" ready. Drag a hand land up to the battlefield; tap battlefield lands for mana.");
+ message("Stage "+stageCode(index)+" · "+teachingCue());
  if(enter)showGame();
  return true;
 }
@@ -377,6 +413,23 @@ el("worldPips").addEventListener("click",e=>{
  if(button&&!button.disabled){world=Number(button.dataset.world);renderOverworld({world,bests:progress.bests,index,proofs,medal});}
 });
 el("returnMap").addEventListener("click",showMap);
+el("toggleGuide").addEventListener("click",()=>{
+ const guide=el("gameNotes");guide.open=!guide.open;
+ el("toggleGuide").setAttribute("aria-expanded",String(guide.open));
+ if(guide.open)guide.scrollIntoView({block:"start",behavior:"smooth"});
+});
+el("autoCastToggle").addEventListener("change",e=>{
+ autoCastEnabled=e.target.checked;
+ try{localStorage.setItem("dc-mana-heist-auto-cast",autoCastEnabled?"yes":"no");}catch{}
+ cancelAuto();updateCastButton();if(autoCastEnabled)queueAutoCast();
+});
+el("castButton").addEventListener("click",()=>{
+ if(pendingFlights.size)return;
+ const cast=chooseAutomaticCast(level,state);
+ if(cast){cancelAuto();fluid.burst();perform(cast);}else rejectCast();
+});
+el("playSelectedLand").addEventListener("click",()=>{if(selectedHandId)playLand(selectedHandId);});
+el("inspectSelected").addEventListener("click",()=>{if(selectedHandId)inspectById(selectedHandId);});
 el("dismissChoices").addEventListener("click",()=>choices("YOUR NEXT CHOICE","Tap a land or play a land from your hand.",[]));
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!el("actionBox").hidden){choices("YOUR NEXT CHOICE","Selection canceled.",[]);}});
 for(const zone of ["hand","battlefield"]){
@@ -387,6 +440,7 @@ for(const zone of ["hand","battlefield"]){
 el("battlefield").addEventListener("click",e=>{
  const card=e.target.closest('[data-zone="field"][data-cardid]');
  if(card)tapLand(card.dataset.cardid);
+ else if(selectedHandId)playLand(selectedHandId);
 });
 for(const id of ["battlefield","hand"])el(id).addEventListener("keydown",e=>{
  if(e.key.toLowerCase()!=="i"||e.altKey||e.ctrlKey||e.metaKey)return;
@@ -396,7 +450,7 @@ for(const id of ["battlefield","hand"])el(id).addEventListener("keydown",e=>{
 landDrag=installLandDragging({
  hand:el("hand"),battlefield:el("battlefield"),
  onDrop:id=>playLand(id),
- onInspect:id=>inspectById(id),
+ onInspect:id=>selectHand(id),
  onHint:(text,error=false)=>message(text,error)
 });
 el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a)perform(a);});

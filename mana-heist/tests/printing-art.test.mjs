@@ -44,16 +44,19 @@ test("no header inspector button; keyed card nodes keep the same image on tap an
  const js=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
  const img=readFileSync(new URL("../src/printing-art.js",import.meta.url),"utf8");
  assert.doesNotMatch(html,/id="inspectLand"/);
- assert.match(js,/onInspect:id=>inspectById\(id\)/);
+ assert.match(js,/onInspect:id=>selectHand\(id\)/);
+ assert.match(js,/inspectById\(selectedHandId\)/);
  assert.match(js,/function syncLandRows\(\)/);
  assert.match(js,/existing\.get\(id\)/);
  assert.match(js,/replaceChildren\(/);
  assert.match(js,/startStagePrintings\(level\)/);
  assert.doesNotMatch(img,/fetch\(/);
 });
-test("fixed viewport protects the whole ward and shares space between card rows",()=>{
+test("scrolling tabletop keeps card scans readable and the cauldron visible",()=>{
  const css=readFileSync(new URL("../styles.css",import.meta.url),"utf8");
- assert.match(css,/grid-template-rows:minmax\(max-content, 226px\) 42px minmax\(0,1fr\) minmax\(0,1fr\)/);
+ assert.match(css,/body\.in-heist #heist \.play-column\{display:grid!important/);
+ assert.match(css,/body\.in-heist #heist #hand\{display:flex!important/);
+ assert.match(css,/body\.in-heist #heist #wardTarget\.lock-ring\{grid-column:1!important/);
  assert.match(css,/\.vault-stage\{[\s\S]*?flex:0 0 auto!important/);
  assert.match(css,/height:min\(calc\(var\(--mh-land-width\)\*680\/488\),calc\(100% - 8px\)\)/);
 });

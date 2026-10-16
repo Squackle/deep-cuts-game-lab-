@@ -19,9 +19,12 @@ test("real Magic cards are playable images and have a full-size inspector",()=>{
  assert.match(main,/imageFor\(instance.id,key\)/);
  assert.match(main,/class="mtg-card-image"/);
 });
-test("hand pointer tap is now an inspection gesture, while drag still plays",()=>{
+test("hand pointer tap selects a card; separate inspection and drag actions remain available",()=>{
  assert.match(drag,/else onInspect\?\.\(id\)/);
- assert.match(main,/onInspect:id=>inspectById\(id\)/);
+ assert.match(main,/onInspect:id=>selectHand\(id\)/);
+ assert.match(main,/el\("inspectSelected"\)\.addEventListener/);
+ assert.match(main,/inspectById\(selectedHandId\)/);
+ assert.match(main,/el\("playSelectedLand"\)\.addEventListener/);
  assert.match(main,/onDrop:id=>playLand\(id\)/);
  assert.match(main,/onDrop:id=>playLand\(id\)/);
  assert.doesNotMatch(main,/inspectLand.*inspect-current-land/);

@@ -12,12 +12,16 @@ test("phones allocate real fixed-size hand card space instead of squeezing the c
  assert.match(css,/\.in-heist #heist #hand \.land-card\.mtg-real-land:not\(\.is-tapped\)\{\s*display:block!important;\s*width:107px!important;height:149px!important/);
  assert.match(css,/\.in-heist #heist #battlefield\{\s*height:132px!important;min-height:132px!important/);
 });
-test("hand becomes the first high-visibility playable zone on phone",()=>{
+test("tabletop order follows spell, battlefield and fanned hand, with tap-to-select controls",()=>{
  assert.match(css,/\.in-heist #heist \.table-card\.hand-card\{\s*grid-column:1!important;grid-row:3!important/);
  assert.match(css,/\.in-heist #heist \.table-card:not\(\.hand-card\)\{\s*grid-column:1!important;grid-row:4!important/);
  assert.match(html,/id="handGuide"/);
- assert.match(html,/START HERE/);
- assert.match(css,/\.in-heist #heist \.hand-guide\{\s*display:block!important/);
+ assert.match(html,/id="playSelectedLand"/);
+ assert.match(html,/id="inspectSelected"/);
+ assert.match(css,/body\.in-heist #heist \.hand-guide\{display:none!important/);
+ assert.match(css,/body\.in-heist #heist \.table-card\.hand-card\{grid-row:3!important/);
+ assert.match(css,/body\.in-heist #heist \.table-card:not\(\.hand-card\)\{grid-row:2!important/);
+ assert.match(css,/--fan-tilt/);
 });
 test("larger cards can still be dragged by auto-scrolling a short phone viewport",()=>{
  assert.match(dragging,/function autoScroll\(\)/);
