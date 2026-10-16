@@ -62,8 +62,8 @@ export function stirDye(grid,x,y,dx,dy){
    const p=INDEX(i,j),rx=i-x,ry=j-y,d2=rx*rx+ry*ry;
    if(!grid.active[p]||d2>radius2)continue;
    const f=(1-d2/radius2)**2;
-   grid.vx[p]+=clamp(dx,-10,10)*.18*f-ry*.004*f;
-   grid.vy[p]+=clamp(dy,-10,10)*.18*f+rx*.004*f;
+   grid.vx[p]+=clamp(dx,-10,10)*.18*f-ry*.004*speed*f;
+   grid.vy[p]+=clamp(dy,-10,10)*.18*f+rx*.004*speed*f;
   }
  }
 }
@@ -79,7 +79,7 @@ function sample(grid,field,x,y){
 
 export function advanceFluid(grid,dt=1){
  const {tmp}=grid;
- dt=clamp(dt,.05,1.8);
+ dt=clamp(dt,.05,2.5);
  // When the pot holds mana, only advect the physical velocity here.
  // Each color is transported separately, mixed and rebalanced afterwards.
  const fields=grid.pigmentLive?["vx","vy"]:FIELDS;
