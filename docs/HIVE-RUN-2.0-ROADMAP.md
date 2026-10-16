@@ -35,6 +35,8 @@ Ship **two finished arcade experiences** rather than an unbounded live-service r
 - [x] Isolated `/director/` tool uses original deterministic game engine/visual modules and repeatable solo seeds, no persistent/ranked sessions.
 - [x] Select mode, boss, first/final phase, invulnerability, half-speed; skip to final phase and invoke unranked victory rehearsal.
 - [x] Touch/swipe and keyboard movement, unranked indicator, mobile layout.
+- [x] **Lab-only test-cheat legend**, placed to the right of the game on desktop and beneath on mobile. Press **1** or the cheat button to summon a custom pixel-cheeseburger super orb on a safe unoccupied arena tile. Collecting it grants **10 additional tail segments over the next 10 moves**. Can be respawned for repeatable stress tests. No score, profile, or genuine achievement rewards. Leave expandable slots for future cheat tools.
+- [x] Giant Sliver victory **concept art preview** revised with the distinctive elongated, scythe-like forelimb and original pixel-rendered soldiers defending the village. Includes screen-level text over the visual art, and remains a LAB-ONLY Director rehearsal (NOT the final production victory screen). Future public art requires separate rights and release review.
 - [x] Permanent production-exclusion rule in `docs/MAIN-SITE-PROMOTION.md`: NEVER copy `director/**` nor Director cheats into public.
 - [ ] Owner hands-on visual/behavior acceptance of Director's scenario and control parity.
 - [ ] The exact later finale sequences must remain independently earned in arcade, not simulated by Director.

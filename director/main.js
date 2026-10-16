@@ -7,10 +7,25 @@ import {drawBossPixelIcon,drawMiniboss,drawWebs,drawBurrowWarning} from "../src/
 import {drawBroodmotherHatchlings} from "../src/broodmother-hatchlings.js";
 import {drawPlayerLocator} from "../src/player-visibility.js";
 import {drawBroodPickup} from "../src/pickups.js";
-import {createDirectorRun,jumpDirectorPhase,showcaseDirectorVictory,advanceDirectorRun,directorStatus} from "./mode.js";
+import {createDirectorRun,jumpDirectorPhase,showcaseDirectorVictory,advanceDirectorRun,directorStatus,spawnDirectorSuperOrb} from "./mode.js";
+import {drawSuperBurger} from "./super-burger-art.js";
+import {HIVE_FINALE_WEBP} from "./finale-art.js";
 const $=id=>document.getElementById(id);
 const canvas=$("directorCanvas"),ctx=canvas.getContext("2d",{alpha:false}),CELL=20;
 let art=null,bg=null,run=null,last=0,accumulator=0,paused=false,lastStatus="";
+const cheatPreview=$("directorBurgerPreview").getContext("2d");
+drawSuperBurger(cheatPreview,0,0,32,0);
+function syncCheatUI(){
+ const enabled=!!run&&run.status==="running"&&!paused;
+ $("directorBurgerCheat").disabled=!enabled;
+ $("directorCheatMessage").textContent=run?.directorNotice||"PRESS 1 TO SPAWN";
+}
+function summonBurger(){
+ if(!run||paused||run.status!=="running")return false;
+ const pos=spawnDirectorSuperOrb(run);
+ if(!pos){$("directorCheatMessage").textContent="NO OPEN TILE · TRY AGAIN";return false}
+ syncCheatUI();draw();return true;
+}
 const config=()=>({mode:$("directorGame").value,boss:$("directorBoss").value,phase:$("directorPhase").value});
 function setStatus(message){if(lastStatus!==message){$("directorStatus").textContent=message;lastStatus=message}}
 function update(){
@@ -22,11 +37,15 @@ function update(){
  $("directorSkip").disabled=run.mode!=="hunt"||!run.encounter||run.status!=="running";
  $("directorPause").disabled=!["paused","running"].includes(run.status);
  $("directorPause").textContent=paused?"▶ RESUME":"Ⅱ PAUSE";
+ syncCheatUI();
  if(run.status==="won"){
   $("directorVictoryTitle").textContent=run.mode==="classic"?"HIVE COMPLETE!":"THE HIVE REIGNS";
   $("directorVictoryDetails").textContent=run.mode==="classic"?
-   "Brood Trail perfect-clear finale rehearsal. The final celebration will be built and tested here before release.":
-   "Broodmother defeated. A preview of the final arcade victory ceremony, not an earned achievement.";
+   "The last square is claimed. Every corner of the burrow belongs to the swarm.":
+   "The burrow can no longer contain your swarm. The village trembles before its new sovereign.";
+  $("directorVictory").style.setProperty("--director-finale-art",run.mode==="hunt"?
+    'url("'+HIVE_FINALE_WEBP+'")':
+    "linear-gradient(145deg,#96754b,#30204f,#112a2d)");
   $("directorVictory").hidden=false;
  }else $("directorVictory").hidden=true;
  setStatus(directorStatus(run)+(paused?" · PAUSED":""));
@@ -73,6 +92,10 @@ function draw(){
   drawBurrowWarning(ctx,run.encounter.telegraph,CELL);
  }
  drawBroodmotherHatchlings(ctx,run,CELL,performance.now());
+ if(run.directorBurger){
+  const p=run.directorBurger;
+  drawSuperBurger(ctx,p.x*CELL-2,p.y*CELL-3,24,performance.now());
+ }
  drawPlayerLocator(ctx,run.body[0],run.direction,CELL,"below");
  drawSwarm();
  drawPlayerLocator(ctx,run.body[0],run.direction,CELL,"above");
@@ -107,7 +130,12 @@ function changeGame(){
 $("directorGame").addEventListener("change",changeGame);
 $("directorStart").addEventListener("click",startScene);
 $("directorWin").addEventListener("click",showFinale);
-$("directorVictoryReplay").addEventListener("click",showFinale);
+$("directorVictoryReplay").addEventListener("click",()=>{
+ $("directorVictory").hidden=true;
+ requestAnimationFrame(()=>showFinale());
+});
+$("directorVictoryExit").addEventListener("click",startScene);
+$("directorBurgerCheat").addEventListener("click",()=>{summonBurger();canvas.focus({preventScroll:true})});
 $("directorReset").addEventListener("click",startScene);
 $("directorSkip").addEventListener("click",()=>{if(jumpDirectorPhase(run)){update();draw()}});
 $("directorPause").addEventListener("click",()=>{
@@ -125,6 +153,7 @@ function steer(direction){
 }
 document.addEventListener("keydown",e=>{
  if(["INPUT","SELECT","TEXTAREA","BUTTON"].includes(e.target?.tagName))return;
+ if(e.key==="1"&&!e.repeat){e.preventDefault();summonBurger();return}
  if(Object.hasOwn(keys,e.key)){e.preventDefault();steer(keys[e.key]);}
 });
 for(const button of document.querySelectorAll("[data-turn]"))
