@@ -102,6 +102,13 @@ test("The Lab-only preview route has real controls but no network, storage, auth
  assert.match(ui,/pointerup/);assert.match(ui,/keydown/);
  assert.match(ui,/effectiveTickMs\(run\)\*\(\$\("directorSlow"\)\.checked\?2:1\)/);
  assert.match(labIndex,/href="\.\/director\//);
+ const patchNotes=labIndex.indexOf('class="mission mission--patch-notes"');
+ const directorLink=labIndex.indexOf('class="director-portal"');
+ const patchHeader=labIndex.indexOf('class="patch-notes-header"');
+ assert.ok(patchNotes>=0&&directorLink>patchNotes&&patchHeader>directorLink,
+  "Lab Director button appears immediately above the Patch Notes header");
+ assert.equal((labIndex.match(/class="director-portal"/g)||[]).length,1,
+  "Director Mode link is a single simple button, not a duplicate in the intro");
  assert.match(promo,/NEVER ship to production/);
  assert.match(promo,/director\/\*\*/);
  for(const source of [html,ui,mode]){
