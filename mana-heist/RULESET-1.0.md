@@ -19,11 +19,11 @@
 - **Mana colors:** `W` (white), `U` (blue), `B` (black), `R` (red), `G` (green), `C` (true colorless).
 - **Spell costs:** a `cost` object can contain exact colored/colorless symbols and `N` (generic amount). The `N` requirement can be paid using any leftover color after exact symbol requirements are reserved. **True colorless `C` is not generic.**
 - **Land play:** one land per turn, from `state.hand`, subject to legal choices. Land options include shock life-payment choice and bounce return target.
-- **Tap:** an untapped land provides one chosen symbol from the engine's `CARDS[card].colors` array; tapping marks it tapped. This is a deliberately **simplified one-symbol-per-tap model**. Fetch land has a separate `fetch` action.
+- **Tap / activate:** basic and conventional dual lands produce one chosen mana, but Simic Growth Chamber correctly adds G and U together. New integrated sources use the shared Mana Engine 2.0 ability kernel: Signets and filter lands pay mana activation costs; Sol Ring and Lotus Field can add multiple units; restricted mana is tracked individually. This is a curated abilities subset, not the entire Oracle rules system. Fetch lands still have a separate search action.
 - **Life:** shock-land untapped entry costs 2 life, eligible pain-land colored taps cost 1, eligible fetch land costs 1, and life-paying actions are disallowed if they would take life to 0 or less.
 - **Entering tapped:** shocks enter tapped if the player does not pay; bounce lands enter tapped and return another land; check lands consult matching basic land types already on the battlefield. The engine has no stack or opponent.
 - **Fetch:** selected fetch sacrifices itself, pays life, chooses a matching eligible target from its fixed `level.library`, and enters that land using the game's entry rules.
-- **Untapping:** normal `end` action increments turn, allows another land drop, clears the whole floating mana pool and untaps battlefield lands. A spell may explicitly `untap` one tapped land.
+- **Untapping / expiration:** the existing campaign still uses a simplified `end` action that increments turn, allows another land drop, clears the pool and untaps lands. Real Magic empties mana after each step and phase, a feature demonstrated in the separate technical QA kernel but not yet in the main campaign turn controls. A spell may explicitly `untap` one tapped land.
 - **Turn limit:** `end` is legal only while `state.turn < level.turnLimit`. On the final turn, `FINAL TURN` is a UI explanation rather than a legal third turn. Undo/Restart still recover; **do not silently extend authored puzzle deadlines**.
 - **Casting:** when the current ward's entire cost is payable, Cast Spell becomes available. Players spend that mana explicitly by default. Opt-in auto-cast uses the earlier water-stirring settlement window; extra suitable mana may remain for another ward.
 - **Progress & medals:** `src/campaign.js` sequentially unlocks one stage after another; `5 galaxies × 5 worlds × 10 levels`; bests are stored under `dc-mana-heist-landfall-v2`. Three-star scoring is based primarily on solver turns/life. Preserve past progress when evolving the rules; save migration may be required.
@@ -37,7 +37,7 @@
 | Pain | Colored mana costs life; colorless is free | Check all colorless vs colored payments and life cost |
 | Checks | Enter tapped absent specified typed lands | Check exact land-type queries and timing |
 | Fetch | Pay life, sacrifice, search the puzzle's fixed library | Clarify limited-puzzle library; confirm cost, targeting, shuffle assumptions and entry |
-| Bounce | Enter tapped and return another land; engine currently produces one of U/G | **Mismatch:** Simic Growth Chamber's real tap ability produces both U **and** G; a player should not be taught current simplified output as actual printed behavior |
+| Bounce | Enter tapped and return another land; Simic Growth Chamber now adds both G **and** U on tap | Keep entry choices and all paired-output replays under regression tests |
 | Wastes / utility | Tap for one `C` | Confirm colorless `C` and generic `N` differences |
 
 **Other notable divergence:** Real Magic mana ordinarily empties from mana pools at the end of **each step and phase**, not just at end of turn. The current two-action turn abstraction only clears on `end`. Decide in P02 whether to model steps/phases or clearly brand the title as a simplified land-resource learning puzzle. Never describe its current engine as an Oracle-accurate simulation.
