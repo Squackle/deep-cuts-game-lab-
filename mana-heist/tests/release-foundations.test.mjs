@@ -55,6 +55,14 @@ test("P01 remains blocked; independently approved later work can be in progress 
   if(i===12){
    assert.match(record,/\| IN PROGRESS \|/,"P12 parity changes are partial, not the full release package");
    assert.match(record,/remaining|NOT COMPLETE/i);
+  }else if(i===4){
+   assert.match(record,/\| IN PROGRESS \|/,"P04 beginner tutorial started by owner-approved Tabletop Flow");
+   assert.match(record,/full.*not yet complete/i,"P04 is still incomplete");
+   const main=read("src/main.js"),html=read("index.html"),tutorial=read("tests/tabletop-flow.test.mjs");
+   assert.match(main,/function teachingCue\(\)/);
+   assert.match(html,/id="lessonPrompt"/);
+   assert.match(html,/id="castButton"/);
+   assert.match(tutorial,/three distinct actions/);
   }else{
    assert.match(record,/\| NOT STARTED \|/,"unapproved package "+id+" must remain unstarted");
   }
