@@ -294,3 +294,20 @@ body.in-heist .mana-flight.mh-orbiting{
  body.in-heist #heist #hand .land-card.mtg-real-land{transition:none!important}
  .mh-orbit-impact{animation:none!important;display:none!important}
 }
+
+/* Win the specificity tie with the legacy mobile source sizes: no pot overlap
+   and no horizontal scrolling even with ten sources in a 320px viewport. */
+body.in-heist #heist #battlefield .land-card.mtg-real-land:not(.is-tapped){
+ width:var(--field-card-width,92px)!important;
+ min-width:var(--field-card-width,92px)!important;
+ max-width:var(--field-card-width,92px)!important;
+ flex:0 0 var(--field-card-width,92px)!important;
+ height:calc(var(--field-card-width,92px)*1.393)!important;
+ min-height:0!important;max-height:none!important;
+ aspect-ratio:488/680!important;
+ margin-left:var(--field-overlap,0px)!important;
+}
+body.in-heist #heist #battlefield .land-card.mtg-real-land:not(.is-tapped):first-child{margin-left:0!important}
+body.in-heist #heist #battlefield .land-card.mtg-real-land:not(.is-tapped) .mtg-card-image{
+ width:100%!important;height:100%!important;object-fit:fill!important;
+}
