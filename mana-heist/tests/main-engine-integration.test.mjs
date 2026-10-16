@@ -71,8 +71,8 @@ test("Ancient Ziggurat creature-only mana cannot cast ward sorcery or power the 
  const sorcery=puzzle("sorcery",[["a","ziggurat"],["b","island"],["c","forest"]],spell({G:1,U:1}));
  const a=play(sorcery,[activate("a","ziggurat-G"),tap("b")]);
  assert.equal(actions(sorcery,a).some(cast),false);
- assert.equal(actions(sorcery,a).some(activate("c")),true);
- const done=reduce(sorcery,reduce(sorcery,a,actions(sorcery,a).find(activate("c"))).state,
+ assert.equal(actions(sorcery,a).some(tap("c")),true);
+ const done=reduce(sorcery,reduce(sorcery,a,actions(sorcery,a).find(tap("c"))).state,
   actions(sorcery,reduce(sorcery,a,actions(sorcery,a).find(activate("c"))).state).find(cast));
  assert.ok(done.ok);
  assert.ok(completed(sorcery,done.state));
