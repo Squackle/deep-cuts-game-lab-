@@ -440,7 +440,7 @@ function showMap(){
  cancelAuto();viewEpoch++;pendingFlights.clear();
  cardInspector.hide({restore:false});
  landDrag?.cancel();
- document.body.classList.remove("in-heist");
+ document.body.classList.remove("in-heist","is-training");
  el("gameNotes").hidden=true;el("gameNotes").open=false;
   el("toggleGuide").setAttribute("aria-expanded","false");
  el("actionBox").hidden=true;
@@ -452,6 +452,7 @@ function showMap(){
 function showGame(){
  fluid.resume();
  document.body.classList.add("in-heist");
+ document.body.classList.toggle("is-training",mode==="learn");
  el("campaignScreen").hidden=true;el("gameScreen").hidden=false;
  el("gameNotes").hidden=false;
  renderCardReferences(el("cardGallery"),level);
@@ -474,7 +475,7 @@ function load(i,enter=false){
  else {progress.index=index;persist();}
  render();
  if(!el("gameNotes").hidden)renderCardReferences(el("cardGallery"),level);
- message("Stage "+stageCode(index)+" · "+teachingCue());
+ message((mode==="learn"?"Learn Mana "+(index+1):"Stage "+stageCode(index))+" · "+teachingCue());
  if(enter)showGame();
  return true;
 }
@@ -589,6 +590,6 @@ el("winNext").addEventListener("click",()=>{
  if(mode==="learn"){const next=nextLearnIndex(index);if(next!==null)load(next,true);else showMap();return;}
  if(index+1<LEVELS.length)load(index+1,true);else showMap();
 });
-load(index);
+load(mode==="learn"?learnProgress.last:index);
 showMap();
 showModePanels();
