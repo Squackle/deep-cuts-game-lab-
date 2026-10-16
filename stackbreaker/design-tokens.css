@@ -1,0 +1,47 @@
+/* Stackbreaker · Arcane Observatory Phase 1
+   Semantic design foundation only; no gameplay layout or visual reskin yet.
+   The first :root preserves v1.4's exact rendered palette and sizing. */
+:root{color-scheme:dark;--bg:#071214;--panel:#14292a;--panel2:#1c3333;--edge:#42675e;--gold:#edca81;--ivory:#f0ece0;--muted:#acbfb6;--mana:#a1d0a5;--bad:#e69b8e;--head-h:44px;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+:root{
+  /* Semantic colors: aliases for the established visual system */
+  --sb-ink:var(--ivory);
+  --sb-ink-muted:var(--muted);
+  --sb-canvas:var(--bg);
+  --sb-panel:var(--panel);
+  --sb-panel-raised:var(--panel2);
+  --sb-keyline:var(--edge);
+  --sb-accent:var(--gold);
+  --sb-positive:var(--mana);
+  --sb-danger:var(--bad);
+  --sb-mast-background:#0b1a1c;
+  --sb-mission-gradient:linear-gradient(120deg,#274039,#13262a);
+  --sb-focus-ring:#f6d782;
+  /* Typography: no remote font loading or CLS */
+  --sb-font-ui:Inter,system-ui,-apple-system,Segoe UI,sans-serif;
+  --sb-font-display:Georgia,serif;
+  --sb-font-mono:ui-monospace,SFMono-Regular,Consolas,monospace;
+  --sb-text-xs:9px;
+  --sb-text-sm:11px;
+  --sb-text-base:14px;
+  --sb-text-lg:18px;
+  /* Four-pixel spacing rhythm for subsequent phase components */
+  --sb-space-1:4px;
+  --sb-space-2:8px;
+  --sb-space-3:12px;
+  --sb-space-4:16px;
+  --sb-space-6:24px;
+  --sb-space-8:32px;
+  --sb-radius-sm:4px;
+  --sb-radius-md:8px;
+  --sb-radius-lg:14px;
+  --sb-shadow-card:0 3px 12px #0008;
+  --sb-shadow-lift:0 12px 28px #0009;
+  --sb-motion-fast:160ms;
+  --sb-motion-normal:240ms;
+  --sb-ease-play:cubic-bezier(.2,.75,.25,1);
+  --sb-z-board:1;
+  --sb-z-hand:3;
+  --sb-z-overlay:20;
+  --sb-z-preview:30;
+}
+/* Existing breakpoint CSS stays in styles.css; see PHASE-1-FOUNDATION.md. */
