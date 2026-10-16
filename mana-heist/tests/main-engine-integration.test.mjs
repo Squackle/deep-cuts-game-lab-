@@ -72,8 +72,8 @@ test("Ancient Ziggurat creature-only mana cannot cast ward sorcery or power the 
  const a=play(sorcery,[activate("a","ziggurat-G"),tap("b")]);
  assert.equal(actions(sorcery,a).some(cast),false);
  assert.equal(actions(sorcery,a).some(tap("c")),true);
- const done=reduce(sorcery,reduce(sorcery,a,actions(sorcery,a).find(tap("c"))).state,
-  actions(sorcery,reduce(sorcery,a,actions(sorcery,a).find(activate("c"))).state).find(cast));
+ const afterForest=reduce(sorcery,a,actions(sorcery,a).find(tap("c"))).state;
+ const done=reduce(sorcery,afterForest,actions(sorcery,afterForest).find(cast));
  assert.ok(done.ok);
  assert.ok(completed(sorcery,done.state));
  assert.equal(done.state.pool.G,1,"restricted G unit should remain in the pool, not be spent on a sorcery");
