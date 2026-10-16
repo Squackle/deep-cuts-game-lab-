@@ -1,0 +1,56 @@
+/* Mana Heist: two distinct paths, shared legal puzzle engine, all vaults open.
+   This stylesheet affects only the scrolling campaign selection screen. */
+.campaign-screen [hidden]{display:none!important}
+.mode-chooser{position:relative;padding:20px clamp(12px,2.2vw,28px) 20px;border:1px solid #d2b8856b;background:radial-gradient(ellipse at 50% -40%,#3b5950,#142a2b 78%);border-radius:16px;margin:0 0 22px}
+.mode-intro{text-align:center;margin:0 auto 20px}
+.mode-intro h2{font:normal clamp(1.8rem,3.4vw,2.65rem) Georgia,serif;color:#f2ddb3;margin:5px 0 8px}
+.mode-intro>p:last-child{font-size:.85rem;color:#cad3c6;margin:0}
+.mode-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;max-width:920px;margin:auto}
+.mode-option{display:flex;align-items:flex-start;text-align:left;flex-direction:column;gap:7px;min-height:226px;padding:18px clamp(14px,2vw,22px);border:1px solid #a4a58a7c;border-radius:13px;background:linear-gradient(140deg,#284640,#172d32);color:#e7e3cf;cursor:pointer;position:relative;box-shadow:0 8px 25px #09191b52}
+.mode-option[data-mode="learn"]{background:linear-gradient(142deg,#364e51,#1a3435 70%)}
+.mode-option:hover,.mode-option:focus-visible{border-color:#ecd8aa;background:linear-gradient(135deg,#405e54,#1b3438);transform:translateY(-2px)}
+.mode-option.active{border-color:#f6d69d;box-shadow:0 0 0 2px #dbc28f44,0 8px 27px #061a1b9c}
+.mode-emblem{font:normal 2rem Georgia,serif;color:#f0d395}
+.mode-name{font:normal clamp(1.2rem,2vw,1.65rem) Georgia,serif;color:#f7e8c3}
+.mode-tag{font-weight:800;text-transform:uppercase;letter-spacing:.12em;font-size:.62rem;color:#b9d4c4}
+.mode-description{font-size:.77rem;line-height:1.56;color:#d2d6c9;flex:1}
+.mode-action{font-size:.7rem;font-weight:800;letter-spacing:.08em;color:#efd39a;padding-top:4px}
+.learn-panel-head{display:flex;align-items:start;gap:15px;justify-content:space-between;margin:10px 2px 20px}
+.learn-panel-head h2{font:normal 2.1rem Georgia,serif;color:#f0daa9;margin:6px 0}
+.learn-panel-head p:not(.overline){font-size:.8rem;color:#c9d2c7;max-width:690px;line-height:1.55;margin:0}
+.learn-count{white-space:nowrap;font-size:.7rem;letter-spacing:.07em;font-weight:800;color:#e8cb91;border:1px solid #b4a47e63;padding:10px;border-radius:9px}
+.learn-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.learn-group{background:#132a2cba;border:1px solid #9c97775b;border-radius:13px;padding:15px}
+.learn-group-header h3{font:normal 1.23rem Georgia,serif;color:#f2d9a4;margin:0 0 6px}
+.learn-group-header p{color:#bfccbf;font-size:.76rem;line-height:1.4;margin:0 0 13px}
+.learn-exercises{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px}
+.learn-exercise{display:flex;align-items:center;text-align:left;gap:9px;min-height:67px;padding:10px;background:#243e3c;color:#e9e2c7;border:1px solid #a0a38b61;border-radius:9px;cursor:pointer;min-width:0}
+.learn-exercise:hover,.learn-exercise:focus-visible{background:#36534b;border-color:#efd39a}
+.learn-exercise.complete{border-color:#8dc9a178}
+.learn-number{font:normal 1.2rem Georgia,serif;color:#e6c78a}
+.learn-exercise-copy{display:flex;flex-direction:column;min-width:0;gap:5px}
+.learn-exercise-copy strong{font-size:.74rem;line-height:1.2}
+.learn-exercise-copy small{font-size:.57rem;letter-spacing:.08em;color:#9ec4ac}
+.vault-jump{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:16px}
+.vault-jump>span{font-size:.65rem;font-weight:800;letter-spacing:.14em;color:#e4c999;margin-right:4px}
+.vault-jump button{border:1px solid #ad9e785e;border-radius:8px;background:#263d37;color:#ead7ad;padding:9px 11px;font-size:.66rem;font-weight:800;cursor:pointer}
+.vault-jump button:hover,.vault-jump button:focus-visible{background:#406053;border-color:#e4c890}
+body.in-heist.is-training #gameScreen .game-titlebar{border-bottom-color:#9bd5c390!important}
+body.in-heist.is-training #stageLabel{color:#bce3d7!important}
+@media(max-width:650px){
+ .mode-chooser{padding:15px 10px}
+ .mode-options{gap:8px}
+ .mode-option{min-height:238px;padding:13px 9px}
+ .mode-emblem{font-size:1.6rem}
+ .mode-name{font-size:1.13rem}
+ .mode-description{font-size:.68rem;line-height:1.44}
+ .mode-tag{font-size:.53rem}
+ .mode-action{font-size:.57rem}
+ .learn-picker{grid-template-columns:1fr}
+ .learn-panel-head{flex-wrap:wrap}
+ .learn-count{font-size:.65rem}
+ .vault-jump{gap:5px}
+ .vault-jump button{font-size:.58rem;padding:7px 8px}
+}
+@media(max-width:365px){.mode-option{min-height:260px}.mode-options{gap:6px}.mode-name{font-size:1.04rem}}
+@media(prefers-reduced-motion:reduce){.mode-option{transition:none!important}}

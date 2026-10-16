@@ -4,12 +4,15 @@ import {LEVELS,CHAPTERS,GALAXIES} from "../src/levels.js";
 import {highestUnlocked,unlocked,chapterIndex,stageCode,chapterAccessible,galaxyAccessible,normalizedBests} from "../src/campaign.js";
 import {consistent,reconstruct,renderLedger,transitionOrbs} from "../src/mana-orbs.js";
 const win=(i)=>({[LEVELS[i].id]:{turn:1,spentLife:0}});
-test("first vault is the only unlocked stage for a new player",()=>{
+test("all stages and worlds are available from the start",()=>{
  assert.equal(highestUnlocked({}),0);
  assert.equal(unlocked(0,{}),true);
- assert.equal(unlocked(1,{}),false);
+ assert.equal(unlocked(1,{}),true);
+ assert.equal(unlocked(249,{}),true);
+ assert.equal(unlocked(250,{}),false);
  assert.equal(chapterAccessible(0,{}),true);
- assert.equal(chapterAccessible(1,{}),false);
+ assert.equal(chapterAccessible(1,{}),true);
+ assert.equal(galaxyAccessible(4,{}),true);
  assert.equal(stageCode(0),"1:1:1");
  assert.equal(stageCode(2),"1:1:3");
  assert.equal(stageCode(3),"1:1:4");
@@ -21,11 +24,11 @@ test("first vault is the only unlocked stage for a new player",()=>{
  assert.equal(CHAPTERS.length,25);
  assert.equal(GALAXIES.length,5);
 });
-test("sequential wins unlock exactly the next vault and acts stay closed until then",()=>{
+test("sequential wins still track historic bests but do not gate vault access",()=>{
  const best={};
  for(let i=0;i<LEVELS.length-1;i++){
   assert.equal(highestUnlocked(best),i,"stage "+i);
-  assert.equal(unlocked(i+1,best),false);
+  assert.equal(unlocked(i+1,best),true);
   Object.assign(best,win(i));
   assert.equal(unlocked(i+1,best),true);
   assert.equal(chapterIndex(i+1)>=chapterIndex(i),true);
@@ -34,10 +37,10 @@ test("sequential wins unlock exactly the next vault and acts stay closed until t
  assert.equal(chapterAccessible(24,best),true);
  assert.equal(galaxyAccessible(4,best),true);
 });
-test("out-of-order legacy wins never unlock skipped stages",()=>{
+test("out-of-order legacy wins are preserved while every stage stays playable",()=>{
  const best={...win(4),...win(12),...win(0)};
  assert.equal(highestUnlocked(best),1);
- assert.equal(unlocked(2,best),false);
+ assert.equal(unlocked(2,best),true);
 });
 test("saved v2 medals are kept and malformed records are dropped",()=>{
  const data={...win(0),...win(1),[LEVELS[3].id]:{turn:-50,spentLife:0},rogue:{turn:1,spentLife:0}};

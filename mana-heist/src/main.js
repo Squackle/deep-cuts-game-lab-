@@ -1,7 +1,8 @@
 import {LEVELS,CHAPTERS,GALAXIES,BASE_LEVELS} from "./levels.js";
 import {COLORS,CARDS,initial,actions,reduce,completed,getCard,lookup,medal} from "./engine.js";
 import {solve} from "./solver.js";
-import {highestUnlocked,unlocked,chapterIndex,stageCode,normalizedBests,chapterAccessible,galaxyAccessible} from "./campaign.js";
+import {chapterIndex,stageCode,normalizedBests} from "./campaign.js";
+import {LEARN_GROUPS,LEARN_COUNT,isLearnLevel,normalizedLearnProgress,nextLearnIndex} from "./learn-track.js";
 import {renderOverworld} from "./overworld.js";
 import {reconstruct,transitionOrbs,consistent} from "./mana-orbs.js";
 import {launchOrbitMana,cancelOrbitMana} from "./orbital-mana.js";
@@ -25,7 +26,11 @@ function readProgress(){
  try{const x=JSON.parse(localStorage.getItem(storageKey)||"null");if(x&&x.v===2&&typeof x.bests==="object"&&x.bests&&!Array.isArray(x.bests))return {bests:normalizedBests(x.bests),index:Math.max(0,Math.min(LEVELS.length-1,Number.isInteger(x.index)?x.index:0))};}catch{}
  return {bests:{},index:0};
 }
-let progress=readProgress(),index=Math.min(progress.index,highestUnlocked(progress.bests)),level=LEVELS[index],state=initial(level),history=[],choiceActions=[],selectedMessage="";
+const modeKey="dc-mana-heist-mode-v1",learnKey="dc-mana-heist-learn-v1";
+function readMode(){try{const m=localStorage.getItem(modeKey);return m==="learn"||m==="heist"?m:null;}catch{return null;}}
+function readLearn(){try{return normalizedLearnProgress(JSON.parse(localStorage.getItem(learnKey)||"null"));}catch{return normalizedLearnProgress(null);}}
+let mode=readMode(),learnProgress=readLearn();
+let progress=readProgress(),index=progress.index,level=LEVELS[index],state=initial(level),history=[],choiceActions=[],selectedMessage="";
 let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null,selectedHandId=null;
 let autoCastEnabled=false;
 try{autoCastEnabled=localStorage.getItem("dc-mana-heist-auto-cast")==="yes";}catch{}
@@ -121,7 +126,44 @@ function proofFor(id){
 }
 const proofs={get:proofFor};
 const lockGlyphs=["✧","⌑","◈","✦","⬡","✶"];
-function persist(){try{localStorage.setItem(storageKey,JSON.stringify({v:2,index,bests:progress.bests}));}catch{}}
+function persist(){try{localStorage.setItem(storageKey,JSON.stringify({v:2,index:progress.index,bests:progress.bests}));}catch{}}
+function persistLearn(){try{localStorage.setItem(learnKey,JSON.stringify({v:1,completed:learnProgress.completed,last:learnProgress.last}));}catch{}}
+function renderLearn(){
+ const done=new Set(learnProgress.completed),root=el("learnPicker");root.replaceChildren();
+ el("learnCount").textContent=done.size+" / "+LEARN_COUNT+" COMPLETED";
+ for(const group of LEARN_GROUPS){
+  const section=document.createElement("section");section.className="learn-group";
+  const h=document.createElement("div");h.className="learn-group-header";
+  const title=document.createElement("h3");title.textContent=group.title;
+  const intro=document.createElement("p");intro.textContent=group.summary;h.append(title,intro);
+  const list=document.createElement("div");list.className="learn-exercises";
+  for(const i of group.indices){
+   const p=LEVELS[i],b=document.createElement("button");b.type="button";
+   b.className="learn-exercise"+(done.has(i)?" complete":"");b.dataset.learnLevel=String(i);
+   const n=document.createElement("span");n.className="learn-number";n.textContent=String(i+1).padStart(2,"0");
+   const txt=document.createElement("span");txt.className="learn-exercise-copy";
+   const t=document.createElement("strong");t.textContent=p.title;
+   const flag=document.createElement("small");flag.textContent=done.has(i)?"✓ COMPLETE":"PRACTICE";
+   txt.append(t,flag);b.append(n,txt);list.append(b);
+  }
+  section.append(h,list);root.append(section);
+ }
+}
+function showModePanels(){
+ const learn=mode==="learn",heist=mode==="heist";
+ el("learnPanel").hidden=!learn;el("heistPanel").hidden=!heist;
+ for(const b of document.querySelectorAll(".mode-option")){
+  const active=b.dataset.mode===mode;b.classList.toggle("active",active);b.setAttribute("aria-pressed",String(active));
+ }
+ if(learn)renderLearn();
+ if(heist)renderOverworld({world,bests:progress.bests,index,proofs,medal});
+}
+function selectMode(next){
+ if(next!=="learn"&&next!=="heist")return;
+ mode=next;try{localStorage.setItem(modeKey,mode);}catch{}
+ if(mode==="heist"){index=progress.index;world=chapterIndex(index);}
+ showModePanels();
+}
 const coin=(c,extra="")=>'<span class="mana-glyph '+c+'" style="--coin:'+SYMBOL[c].color+'" aria-label="'+(c==="N"&&extra?extra+" generic mana":SYMBOL[c].name+" mana")+'">'+(extra||SYMBOL[c].icon)+'</span>';
 function costHtml(cost){
  // Generic costs are numeric; diamonds are true colorless.
@@ -193,9 +235,15 @@ function perform(action){
  for(const orb of incoming)pendingFlights.add(orb.id);
  const pendingId=incoming[0]?.id??null;
  if(completed(level,state)){
-  const best=progress.bests[level.id];
-  if(!best||state.turn<best.turn||(state.turn===best.turn&&state.spentLife<best.spentLife))progress.bests[level.id]={turn:state.turn,spentLife:state.spentLife};
-  persist();message("The vault breaks open! Case closed.");
+  if(mode==="learn"){
+   if(!learnProgress.completed.includes(index))learnProgress.completed.push(index);
+   learnProgress.completed.sort((a,b)=>a-b);learnProgress.last=index;persistLearn();
+   message("Practice complete! Select the next exercise or return to Learn Mana.");
+  }else{
+   const best=progress.bests[level.id];
+   if(!best||state.turn<best.turn||(state.turn===best.turn&&state.spentLife<best.spentLife))progress.bests[level.id]={turn:state.turn,spentLife:state.spentLife};
+   persist();message("The vault breaks open! Case closed.");
+  }
  }else if(action.type==="end")message("Turn "+state.turn+" · lands untapped · mana emptied.");
  else if(action.type==="play")message(getCard(level,action.id).name+" enters the battlefield"+(state.field.find(f=>f.id===action.id)?.tapped?" tapped.":"."));
  else if(action.type==="tap")message(getCard(level,action.id).kind==="bounce"?"Simic Growth Chamber adds green AND blue mana.":"+1 "+SYMBOL[action.color].name+" mana · land tapped sideways.");
@@ -330,7 +378,9 @@ function teachingCue(){
 }
 function render(pendingId=null){
  const proof=proofs.get(level.id),isWin=completed(level,state),stage=level.stages[state.stage];
- el("stageLabel").textContent="STAGE "+stageCode(index);
+ el("stageLabel").textContent=mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
+ el("returnMap").textContent=mode==="learn"?"← LESSONS":"← MAP";
+ el("toggleGuide").textContent=mode==="learn"?"✧ LESSON NOTES":"ⓘ GUIDE";
  el("chapterName").textContent=level.chapter;
  el("difficulty").textContent=["INITIATE","ROOKIE","TACTICIAN","EXPERT","MASTERMIND"][level.rank-1];
  el("vaultName").textContent=level.title;
@@ -343,7 +393,7 @@ function render(pendingId=null){
  el("wardCounter").textContent=isWin?"VAULT OPEN":"WARD "+(state.stage+1)+" OF "+level.stages.length;
  el("wardName").textContent=isWin?"The seal is broken":stage.name;
  el("wardCost").innerHTML=isWin?"":costHtml(stage.cost);
- el("wardDescription").textContent=isWin?"The heist is complete. Your best route is preserved on this device.":stage.effect==="untap"?"Casting this heist spell also untaps one land you choose.":"Numbers show generic mana costs, payable with any kind of mana; a diamond requires truly colorless mana.";
+ el("wardDescription").textContent=isWin?(mode==="learn"?"Practice complete; your learning progress is saved separately.":"The heist is complete. Your best route is preserved on this device."):stage.effect==="untap"?"Casting this heist spell also untaps one land you choose.":"Numbers show generic mana costs, payable with any kind of mana; a diamond requires truly colorless mana.";
  const finalTurn=!isWin&&isFinalTurn(level,state);
  const neededMana=isWin?"":requiredManaText(level,state);
  el("lessonPrompt").textContent=teachingCue();
@@ -370,13 +420,18 @@ function render(pendingId=null){
  endButton.setAttribute("aria-label",finalTurn?"Final turn. No further turns allowed. Tap for Undo or Restart advice.":"End turn and untap lands");
  el("winPanel").hidden=!isWin;
  if(isWin){
-  const score=medal(level,state,proof);
-  el("winTitle").textContent="★".repeat(score)+" VAULT CRACKED";
-  el("winCopy").textContent="Solved turn "+state.turn+" · "+state.spentLife+" life spent · perfect line: turn "+proof.turn+" / "+proof.spentLife+" life spent";
+  if(mode==="learn"){
+   el("winTitle").textContent="✧ LESSON COMPLETE";
+   el("winCopy").textContent="Practiced: "+level.title+". Learning doesn't require stars or an optimal route.";
+  }else{
+   const score=medal(level,state,proof);
+   el("winTitle").textContent="★".repeat(score)+" VAULT CRACKED";
+   el("winCopy").textContent="Solved turn "+state.turn+" · "+state.spentLife+" life spent · perfect line: turn "+proof.turn+" / "+proof.spentLife+" life spent";
+  }
  }
  el("skip").textContent="← MAP";
- el("winNext").textContent=index===LEVELS.length-1?"REPLAY CAMPAIGN →":"NEXT VAULT →";
- renderOverworld({world,bests:progress.bests,index,proofs,medal});
+ el("winNext").textContent=mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
+ if(mode==="heist")renderOverworld({world,bests:progress.bests,index,proofs,medal});
  choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap battlefield lands for mana; drag hand lands onto the battlefield to play.",[]);
  selectedMessage="";
 }
@@ -387,18 +442,19 @@ function showMap(){
  cancelAuto();viewEpoch++;pendingFlights.clear();
  cardInspector.hide({restore:false});
  landDrag?.cancel();
- document.body.classList.remove("in-heist");
+ document.body.classList.remove("in-heist","is-training");
  el("gameNotes").hidden=true;el("gameNotes").open=false;
   el("toggleGuide").setAttribute("aria-expanded","false");
  el("actionBox").hidden=true;
  cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();
  el("gameScreen").hidden=true;el("campaignScreen").hidden=false;
- renderOverworld({world,bests:progress.bests,index,proofs,medal});
+ showModePanels();
  el("campaignScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
 function showGame(){
  fluid.resume();
  document.body.classList.add("in-heist");
+ document.body.classList.toggle("is-training",mode==="learn");
  el("campaignScreen").hidden=true;el("gameScreen").hidden=false;
  el("gameNotes").hidden=false;
  renderCardReferences(el("cardGallery"),level);
@@ -411,15 +467,17 @@ function load(i,enter=false){
  cardInspector.hide({restore:false});
  lastCardId=null;selectedHandId=null;
  landDrag?.cancel();
- if(!unlocked(i,progress.bests)){message("That vault is sealed. Crack the previous stage to unlock it.",true);return false;}
+ if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(mode==="learn"&&!isLearnLevel(i)))return false;
  index=i;world=chapterIndex(index);
  level=LEVELS[index];state=initial(level);history=[];selectedMessage="";
  startStagePrintings(level);
  el("battlefield").replaceChildren();el("hand").replaceChildren();
  manaOrbs=reconstruct(state.pool);cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();
- progress.index=index;persist();render();
+ if(mode==="learn"){learnProgress.last=index;persistLearn();}
+ else {progress.index=index;persist();}
+ render();
  if(!el("gameNotes").hidden)renderCardReferences(el("cardGallery"),level);
- message("Stage "+stageCode(index)+" · "+teachingCue());
+ message((mode==="learn"?"Learn Mana "+(index+1):"Stage "+stageCode(index))+" · "+teachingCue());
  if(enter)showGame();
  return true;
 }
@@ -431,22 +489,34 @@ el("previousWorld").addEventListener("click",()=>{
  if(world>0){world--;renderOverworld({world,bests:progress.bests,index,proofs,medal});}
 });
 el("nextWorld").addEventListener("click",()=>{
- if(world<CHAPTERS.length-1&&chapterAccessible(world+1,progress.bests)){world++;renderOverworld({world,bests:progress.bests,index,proofs,medal});}
+ if(world<CHAPTERS.length-1){world++;renderOverworld({world,bests:progress.bests,index,proofs,medal});}
 });
 el("galaxyPicker").addEventListener("click",e=>{
  const button=e.target.closest("[data-galaxy]");
  if(!button||button.disabled)return;
  const galaxy=Number(button.dataset.galaxy);
- if(!galaxyAccessible(galaxy,progress.bests))return;
- const accessible=highestUnlocked(progress.bests);
- const first=GALAXIES[galaxy].worldRange[0];
- const last=Math.min(GALAXIES[galaxy].worldRange[1],chapterIndex(accessible));
- world=Math.max(first,last);
+ if(!Number.isInteger(galaxy)||galaxy<0||galaxy>=GALAXIES.length)return;
+ world=GALAXIES[galaxy].worldRange[0];
  renderOverworld({world,bests:progress.bests,index,proofs,medal});
 });
 el("worldPips").addEventListener("click",e=>{
  const button=e.target.closest("[data-world]");
  if(button&&!button.disabled){world=Number(button.dataset.world);renderOverworld({world,bests:progress.bests,index,proofs,medal});}
+});
+el("campaignScreen").addEventListener("click",e=>{
+ const pick=e.target.closest(".mode-option[data-mode]");
+ if(pick){selectMode(pick.dataset.mode);return;}
+ const exercise=e.target.closest("[data-learn-level]");
+ if(exercise&&mode==="learn")load(Number(exercise.dataset.learnLevel),true);
+});
+el("campaignScreen").addEventListener("click",e=>{
+ const button=e.target.closest("[data-jump-galaxy]");
+ if(!button||mode!=="heist")return;
+ const g=Number(button.dataset.jumpGalaxy);
+ if(!Number.isInteger(g)||g<0||g>=GALAXIES.length)return;
+ world=GALAXIES[g].worldRange[0];
+ renderOverworld({world,bests:progress.bests,index,proofs,medal});
+ el("galaxyPicker").focus?.({preventScroll:true});
 });
 el("returnMap").addEventListener("click",showMap);
 function setGuideOpen(open,{restoreFocus=true}={}){
@@ -518,6 +588,10 @@ el("undo").addEventListener("click",()=>{
 window.addEventListener("resize",()=>{if(document.body.classList.contains("in-heist"))syncLandRows();},{passive:true});
 el("reset").addEventListener("click",()=>load(index));
 el("skip").addEventListener("click",showMap);
-el("winNext").addEventListener("click",()=>{if(index+1<LEVELS.length&&unlocked(index+1,progress.bests))load(index+1,true);else showMap();});
-load(index);
+el("winNext").addEventListener("click",()=>{
+ if(mode==="learn"){const next=nextLearnIndex(index);if(next!==null)load(next,true);else showMap();return;}
+ if(index+1<LEVELS.length)load(index+1,true);else showMap();
+});
+load(mode==="learn"?learnProgress.last:index);
 showMap();
+showModePanels();

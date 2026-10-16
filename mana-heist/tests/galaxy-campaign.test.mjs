@@ -55,8 +55,8 @@ test("historic initial 18 save keys and chapter progress remain compatible",()=>
  assert.deepEqual(LEVELS.slice(0,18).map(x=>x.id),BASE_LEVELS.map(x=>x.id));
  const wins=Object.fromEntries(BASE_LEVELS.map(x=>[x.id,{turn:2,spentLife:0}]));
  assert.equal(highestUnlocked(wins),18);
- assert.equal(chapterAccessible(2,wins),false);
- assert.equal(galaxyAccessible(1,wins),false);
+ assert.equal(chapterAccessible(2,wins),true);
+ assert.equal(galaxyAccessible(1,wins),true);
 });
 test("game only solves the active puzzle lazily instead of all 250 on startup",()=>{
  const js=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");

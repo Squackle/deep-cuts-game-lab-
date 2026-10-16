@@ -18,6 +18,10 @@ Phase 1 initially shipped as a separate diagnostic test page. At the owner's dir
 
 The original Mana Heist Game Lab route now hosts a **fixed one-screen magical tabletop**, with a dramatically larger central Chromatic Cauldron, no permanent Battlefield/Your Hand headings or instructional copy, a player-held fan of interactive cards anchored to the bottom, and mana bubbles pulled through shrinking orbits into the pot. Multi-mana sources create multiple particles. All game rules, 250 stage IDs, saves, score logic and deliberate/automatic cast controls remain unchanged. The campaign map is still scrollable; only active gameplay is locked. See [full release notes, verification and rollback](release/IMMERSIVE-TABLETOP-20261016.md). The wider P12 acceptance is not complete.
 
+## Two Play Paths & Open Vaults (Oct 16, 2026)
+
+The Game Lab now begins with a clear **Learn Mana** / **Mana Heist** choice. Learn Mana organizes the original 18 authored scenarios into a starter practice track, with independent, unstarred lesson completion stored separately. Mana Heist exposes **all 250 vaults, all 25 worlds, and all five galaxies immediately**, with a quick jump to later galaxies, while preserving all existing puzzle medals and save data. This is the first mode split and a navigation upgrade; the complete teaching curriculum and genuinely calibrated challenge overhaul remain future work. See [release notes and verification](release/TWO-PATHS-OPEN-VAULTS-20261016.md).
+
 ## What's new
 
 Version 0.2 rebuilds the original abstract relay game around **tappable land cards outside the vault**, a visible mana pool, land drops, casting ward-breaking spells, life decisions and tight turn deadlines. The battlefield is a land row separate from the vault; tap a land to add exactly one of its possible colors and rotate it sideways. Tapped lands remain unavailable until you end the turn. The player must cast a sequence of named spells to open a vault.
