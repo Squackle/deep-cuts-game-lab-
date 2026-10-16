@@ -24,3 +24,9 @@ Branch protection must be enabled separately by the repo owner. CODEOWNERS with 
 ## One Lab, three independent playtests
 
 See [SHARED-GAME-LAB.md](docs/SHARED-GAME-LAB.md) for canonical game URLs, game-agent branch/path lanes, combined tests, and promotion requirements. This is a **single testing site**, never a single shared rules engine, shared score store, or authorization to modify the production Arcade.
+
+## MTG rules verification — all game and QA agents
+
+For Stackbreaker, Mana Heist, and any Magic-derived claims in future game mechanics, validate card interactions against Wizards' **latest [Comprehensive Rules](https://magic.wizards.com/en/rules)** and **[Gatherer Oracle text/rulings](https://gatherer.wizards.com/)** first. Include official release notes/Commander-format restrictions where relevant, and record rule numbers / text / effective date. For complicated or uncertain interactions, **also check [Card-Forge/forge](https://github.com/Card-Forge/forge) when reasonably practical** (inspect code/tests or reproduce in a real build); distinguish this from a merely proposed comparison. Forge is unofficial and never outranks official Magic rules. If Forge is unavailable, say so; do not fabricate a check. When changing our game rules, add a regression test and preserve deterministic replay/versioning boundaries. Do not copy/import Forge GPL-3.0 implementation, runtime or assets without separate approval and license review.
+
+Shared checklist: [website docs/MTG-RULES-VERIFICATION.md](https://github.com/Squackle/deep-cuts-edh/blob/main/docs/MTG-RULES-VERIFICATION.md) (canonical after its companion PR is merged). This policy applies to rules claims, not unrelated original Hive Run mechanics, and does not authorize production promotion.
