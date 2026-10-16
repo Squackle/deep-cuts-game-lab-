@@ -78,5 +78,5 @@ test("markup wires ring animation to land-to-ward flight without old socket mech
  assert.doesNotMatch(html,/class="pool mana-sockets"/);
  assert.match(js,/destination:el\("wardTarget"\)/);
  assert.match(js,/onArrival:/);
- assert.match(js,/chargeWard\(\{animateId:pendingId\}\)/);
+ assert.match(js,/chargeWard\(\{animateId:orb\.id\}\)/);
 });

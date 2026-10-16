@@ -60,6 +60,7 @@ test("the tabletop teaches deliberate spending while retaining opt-in auto-cast"
  assert.match(html,/id="autoCastStatus"/);
  assert.match(js,/queueAutoCast\(\)/);
  assert.match(js,/onArrival:/);
- assert.match(js,/target:null,destination:el\("wardTarget"\)/);
+ assert.match(js,/destination:el\("wardTarget"\)/);
+ assert.match(js,/launchOrbitMana\(/);
  assert.match(js,/el\("castButton"\)\.addEventListener\("click"/);
 });
