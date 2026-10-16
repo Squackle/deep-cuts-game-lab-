@@ -4,6 +4,7 @@
  */
 import {start,step,newRun} from "../src/engine.js";
 import {createLairRun,completeLairRun,lairBossSpec} from "../src/lair.js";
+import {reservedTerrain,terrainBlocks} from "../src/environments.js";
 export const DIRECTOR_ONLY=true;
 export const DIRECTOR_MODES=Object.freeze(["hunt","classic"]);
 export const DIRECTOR_PHASES=Object.freeze(["first","final","victory"]);
@@ -16,6 +17,9 @@ export function createDirectorRun({mode="hunt",boss="broodmother",phase="final"}
  // This marker is exclusively added to the isolated Lab preview object, not the engine.
  run.directorSession=true;
  run.directorBoss=mode==="hunt"?boss:null;
+ run.directorBurger=null;
+ run.directorBurgerCollected=0;
+ run.directorNotice="";
  if(mode==="hunt"){
   run.encounter.phase=phase==="first"?1:run.encounter.phases;
   run.encounter.introMs=0;
@@ -41,8 +45,44 @@ export function showcaseDirectorVictory(run){
   "PREDATOR HUNT · BROODMOTHER VICTORY PREVIEW";
  run.encounter=null;run.queuedEncounter=null;run.enemies=[];
  run.hatchlings=[];run.terrain=run.terrain.filter(t=>t.kind==="rock");
+ run.directorBurger=null;
  run.draftOptions=[];run.turnQueue=[];
  return run;
+}
+/** Key 1 summons an original pixel cheeseburger to a safe, unoccupied tile.
+ * It is never a standard game orb and may be collected in either preview mode.
+ */
+export const DIRECTOR_SUPER_ORB_SEGMENTS=10;
+export function spawnDirectorSuperOrb(run){
+ if(!run?.directorSession||run.status!=="running")return null;
+ const occupied=pos=>run.body.some(p=>p.x===pos.x&&p.y===pos.y)||
+  run.enemies.some(e=>e.pos.x===pos.x&&e.pos.y===pos.y)||
+  run.hatchlings.some(h=>h.pos.x===pos.x&&h.pos.y===pos.y)||
+  (run.food&&run.food.x===pos.x&&run.food.y===pos.y)||
+  (run.encounter?.webs||[]).some(w=>w.pos.x===pos.x&&w.pos.y===pos.y)||
+  terrainBlocks(run,pos)||reservedTerrain(run,pos);
+ const empty=[];
+ for(let y=1;y<run.rows-1;y++)for(let x=1;x<run.cols-1;x++){
+  const p={x,y};
+  if(!occupied(p))empty.push(p);
+ }
+ if(empty.length===0)return null;
+ const pos=empty[Math.floor(run.random()*empty.length)];
+ run.directorBurger={...pos};
+ run.directorNotice="PIXEL CHEESEBURGER SPAWNED · FIND IT!";
+ return {...pos};
+}
+export function consumeDirectorSuperOrb(run){
+ if(!run?.directorSession||!run.directorBurger||run.status==="over")return false;
+ const head=run.body[0];
+ if(head.x!==run.directorBurger.x||head.y!==run.directorBurger.y)return false;
+ run.directorBurger=null;
+ // Growth debt extends one additional tail segment on each of the next ten moves.
+ // Do not replicate occupied coordinates and create impossible collision geometry.
+ run.growthDebt+=DIRECTOR_SUPER_ORB_SEGMENTS;
+ run.directorBurgerCollected++;
+ run.directorNotice="CHEESEBURGER EATEN · +10 SWARM SEGMENTS";
+ return true;
 }
 export function advanceDirectorRun(run,{invulnerable=true}={}){
  if(!run?.directorSession)throw Error("Only Director Mode can use this unranked harness");
@@ -63,6 +103,7 @@ export function advanceDirectorRun(run,{invulnerable=true}={}){
    run.effects.shield=Math.max(1,run.effects.shield);
   }
  }
+ if(run.status!=="over"&&run.status!=="won")consumeDirectorSuperOrb(run);
  if(run.mode==="hunt")completeLairRun(run);
  return run;
 }
