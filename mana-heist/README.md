@@ -8,6 +8,8 @@
 **Route:** `/mana-heist/` on the **standalone Deep Cuts Game Lab**, not the public Arcade.  
 **Rules engine:** `mh-landfall-0.2.0` (self-contained, deterministic, no servers).
 
+> **Latest lab UX (Tabletop Flow, Oct 15):** Curved selectable card hand, battlefield ABOVE hand, readable rotated/tapped lands, mana poured into the optional-to-stir cauldron, **deliberate Cast Spell by default**, optional auto-cast, short contextual prompts, and a collapsed optional field guide. Select a land and press Play selected land (or drag it onto the battlefield). View Card or focus + I opens the full printing. Generic costs now display Magic's numbered symbol, not the colorless diamond. All 250 IDs and the v2 guest save key are preserved. This is the isolated Game Lab prototype; it is not the rights-cleared public 1.0 release.
+
 ## What's new
 
 Version 0.2 rebuilds the original abstract relay game around **tappable land cards outside the vault**, a visible mana pool, land drops, casting ward-breaking spells, life decisions and tight turn deadlines. The battlefield is a land row separate from the vault; tap a land to add exactly one of its possible colors and rotate it sideways. Tapped lands remain unavailable until you end the turn. The player must cast a sequence of named spells to open a vault.
