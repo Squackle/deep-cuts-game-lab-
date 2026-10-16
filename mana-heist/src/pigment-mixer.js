@@ -85,7 +85,10 @@ export function mixPigments(grid,dt=1){
  for(let y=0;y<n;y++)for(let x=0;x<n;x++){
   const i=idx(x,y,n);if(!active[i])continue;
   const left=i-1,right=i+1,up=i-n,down=i+n;
-  const mixing=clamp(.013+turbulence[i]*.060,.013,.32);
+  const perFrame=clamp(.013+turbulence[i]*.060,.013,.32);
+  // Calibrate to the original 30fps mobile feel (one old step per 33ms),
+  // but compute by elapsed time so a 60fps desktop behaves identically.
+  const mixing=1-Math.pow(1-perFrame,dt*.5);
   const count=(active[left]?1:0)+(active[right]?1:0)+(active[up]?1:0)+(active[down]?1:0);
   let cellSum=0;
   for(let c=0;c<C;c++){
@@ -99,7 +102,7 @@ export function mixPigments(grid,dt=1){
    const inv=1/cellSum;
    for(let c=0;c<C;c++)colors[c][i]*=inv;
   }
-  turbulence[i]*=.93;
+  turbulence[i]*=Math.pow(.93,dt*.5);
  }
  // Correct transport drift through bounded iterative proportional fitting.
  // This preserves each individual mana color even after very long stirring.

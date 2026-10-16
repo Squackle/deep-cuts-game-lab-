@@ -121,7 +121,7 @@ Every package produces: a scoped design/spec or implementation, deterministic te
 | P09 | NOT STARTED | 50-stage baseline exists but not curriculum reviewed |
 | P10 | NOT STARTED | 50-stage baseline exists but not curriculum reviewed |
 | P11 | NOT STARTED | Prior mobile fixes ≠ full real-device/accessibility acceptance |
-| P12 | NOT STARTED | Current fluid effect ≠ full production polish |
+| P12 | IN PROGRESS | Fluid stirring parity and adaptive desktop resolution implemented in a focused Game Lab patch (see README); remaining sound/mute, deep FX polish, reduced-FX settings and **physical-device performance verification** are NOT COMPLETE. |
 | P13 | NOT STARTED | Current guest bests ≠ save export/daily/achievements package |
 | P14 | NOT STARTED | Beta not performed |
 | P15 | NOT STARTED | Public launch not authorized or cleared |
@@ -133,3 +133,7 @@ Every package produces: a scoped design/spec or implementation, deterministic te
 ## P01 technical delivery handoff (2026-10-15)
 
 **Technical baseline and artifacts completed; package status: BLOCKED pending owner choice/rights review.** See [release/FOUNDATIONS-P01.md](release/FOUNDATIONS-P01.md) for release scope, AC-01–AC-12, privacy baseline and R-01–R-10 risks; [release/MECHANICS-MATRIX-P01.md](release/MECHANICS-MATRIX-P01.md) for 24 lands and 19 mechanics with mandatory P02 audit; and [release/ASSET-RIGHTS-P01.md](release/ASSET-RIGHTS-P01.md) for a recorded licensing-vs-original-asset decision awaiting approval. The main-game 250 levels, artwork, engine and score storage were not altered. **P02 is not authorized by this delivery.** A rights/brand decision cannot be signed off by an automated agent.
+
+### P12 partial work — fluid parity patch (2026-10-15)
+
+User-directed focused parity improvement after iPhone footage review: time-normalized fluid velocity, mixing and turbulence tuned to preserve the original 30fps mobile feel at desktop refresh rates; interpolated desktop hover strokes and touch gestures; responsive 256/512px Canvas resolution; equal auto-cast grace, without changing the 5.1-second maximum. New `tests/stir-parity.test.mjs` exercises cross-FPS decay and both pointer modes. **P12 stays IN PROGRESS**: the complete package still requires optional sound/mute, reduced-FX settings, real iPhone/Android and desktop performance measurements, broader visual polish, accessibility and owner review. P01 remains blocked by its separate public release rights decision. This focused Game Lab fix is not a public-site promotion or completed 1.0 milestone.
