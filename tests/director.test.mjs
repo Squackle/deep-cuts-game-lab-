@@ -66,7 +66,7 @@ test("Unmodified engine cannot use Director shortcuts or be silently invulnerabl
 });
 test("Optional invulnerability protects Director's player even when steering into a wall",()=>{
  const run=createDirectorRun({boss:"broodmother",phase:"final"});
- run.body=[{x:run.cols-2,y:8},{x:run.cols-3,y:8},{x:run.cols-4,y:8}];
+ run.body=[{x:run.cols-1,y:8},{x:run.cols-2,y:8},{x:run.cols-3,y:8}];
  run.direction="right";run.turnQueue=[];run.effects.shield=0;
  advanceDirectorRun(run,{invulnerable:true});
  assert.notEqual(run.status,"over");
@@ -74,7 +74,7 @@ test("Optional invulnerability protects Director's player even when steering int
 });
 test("Turning off Director invulnerability uses ordinary lethal collisions",()=>{
  const run=createDirectorRun({boss:"broodmother",phase:"final"});
- run.body=[{x:run.cols-2,y:8},{x:run.cols-3,y:8},{x:run.cols-4,y:8}];
+ run.body=[{x:run.cols-1,y:8},{x:run.cols-2,y:8},{x:run.cols-3,y:8}];
  run.direction="right";run.turnQueue=[];run.effects.shield=0;run.effects.molt=0;
  advanceDirectorRun(run,{invulnerable:false});
  assert.equal(run.status,"over");
