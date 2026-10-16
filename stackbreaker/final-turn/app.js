@@ -45,19 +45,28 @@ for(const name of ['Counterspell','Lava Spike','Lightning Bolt','Mountain'])fetc
 // for both Islands and the Mountain. Cards are always matched by exact name:
 // random visuals never change the scenario's mana colors or legal actions.
 async function fetchRandomLandArt(){
- for(const land of openingDrill.lands){
-  if(landArt.has(land.id))continue;
+ // A single random-ordered Scryfall print search per basic-land NAME supplies
+ // distinct real printings for multiple instances without repeated random hits.
+ const types=[...new Set(openingDrill.lands.map(l=>l.card))];
+ for(const name of types){
+  const pending=openingDrill.lands.filter(l=>l.card===name&&!landArt.has(l.id));
+  if(!pending.length)continue;
   try{
-   const query='!"'+land.card+'" game:paper';
-   const res=await fetch('https://api.scryfall.com/cards/random?q='+encodeURIComponent(query),
-    {headers:{Accept:'application/json'},cache:'no-store'});
+   const query='!"'+name+'" game:paper';
+   const search='https://api.scryfall.com/cards/search?q='+encodeURIComponent(query)+
+    '&unique=prints&order=random';
+   const res=await fetch(search,{headers:{Accept:'application/json'},cache:'no-store'});
    if(res.ok){
-    const card=await res.json();
-    const url=card.name===land.card?scryfallImage(card):'';
-    if(url){rememberLandArt(land.id,url);render();}
+    const result=await res.json();
+    const urls=(result.data||[]).filter(c=>c.name===name).map(scryfallImage)
+     .filter(Boolean);
+    const distinct=[...new Set(urls)];
+    for(let i=0;i<pending.length&&i<distinct.length;i++){
+     rememberLandArt(pending[i].id,distinct[i]);render();
+    }
    }
-  }catch{} // A temporary Scryfall failure must not block tapping or winning.
-  await new Promise(resolve=>setTimeout(resolve,130));
+  }catch{} // Artwork cannot affect mana, priority or the drill's outcome.
+  await new Promise(resolve=>setTimeout(resolve,140)); // Scryfall rate etiquette.
  }
 }
 fetchRandomLandArt();
