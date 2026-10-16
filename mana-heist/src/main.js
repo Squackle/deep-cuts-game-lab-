@@ -284,7 +284,22 @@ function syncLandRows(){
  };
  el("battlefield").replaceChildren(...(fieldNodes.length?fieldNodes:[empty("No lands in play yet. Play one from your hand.")]));
  el("hand").replaceChildren(...(handNodes.length?handNodes:[empty("No land cards remain in hand.")]));
- handNodes.forEach((node,i)=>{const m=(handNodes.length-1)/2;node.style.setProperty("--fan-tilt",((i-m)*Math.min(7,27/Math.max(1,handNodes.length-1)))+"deg");node.style.setProperty("--fan-drop",(Math.abs(i-m)*5)+"px");});
+ // Fit both zones within one viewport; overlap cards instead of scrolling.
+ const vw=window.innerWidth||390,vh=window.innerHeight||740;
+ const handWidth=Math.round(Math.min(vw<650?125:151,Math.max(vw<650?94:112,vh*.20)));
+ const fieldWidth=Math.round(Math.min(vw<650?94:111,Math.max(68,vh*.145)));
+ const fit=(count,width,padding)=>count>1
+  ?Math.min(0,(vw-padding-count*width)/(count-1)):0;
+ el("hand").style.setProperty("--hand-card-width",handWidth+"px");
+ el("hand").style.setProperty("--hand-overlap",Math.round(fit(handNodes.length,handWidth,24))+"px");
+ el("battlefield").style.setProperty("--field-card-width",fieldWidth+"px");
+ el("battlefield").style.setProperty("--field-overlap",Math.round(fit(fieldNodes.length,fieldWidth,22))+"px");
+ handNodes.forEach((node,i)=>{
+  const m=(handNodes.length-1)/2;
+  node.style.setProperty("--fan-tilt",((i-m)*Math.min(7,27/Math.max(1,handNodes.length-1)))+"deg");
+  node.style.setProperty("--fan-drop",(Math.abs(i-m)*5)+"px");
+  node.style.setProperty("--fan-index",String(i+1));
+ });
  el("playSelectedLand").disabled=!selectedHandId||!state.hand.includes(selectedHandId)||!!state.played;
  el("inspectSelected").disabled=!selectedHandId||!state.hand.includes(selectedHandId);
 }
@@ -487,6 +502,7 @@ el("undo").addEventListener("click",()=>{
  cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();render();
  message("Previous move undone, including any automatically cast wards.");
 });
+window.addEventListener("resize",()=>{if(document.body.classList.contains("in-heist"))syncLandRows();},{passive:true});
 el("reset").addEventListener("click",()=>load(index));
 el("skip").addEventListener("click",showMap);
 el("winNext").addEventListener("click",()=>{if(index+1<LEVELS.length&&unlocked(index+1,progress.bests))load(index+1,true);else showMap();});
