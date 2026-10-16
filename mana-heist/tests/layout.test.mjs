@@ -8,7 +8,9 @@ test("the complete playtable precedes separate below-fold reading content",()=>{
  assert.ok(html.indexOf('id="gameNotes"')>html.indexOf('id="gameScreen"'));
  assert.ok(html.indexOf('id="cardGallery"')>html.indexOf('id="gameNotes"'));
  assert.match(css,/\.in-heist #gameScreen\{height:100dvh\}/);
- assert.match(html,/href="#gameNotes"/);
+ assert.match(html,/id="toggleGuide"/);
+ assert.match(html,/<details id="gameNotes"/);
+ assert.match(css,/body\.in-heist #gameNotes\.game-notes\[open\]/);
 });
 test("the always-visible legend is removed, and optional choices use a dialog",()=>{
  assert.doesNotMatch(html,/class="side-box guide"/);
@@ -19,7 +21,7 @@ test("the always-visible legend is removed, and optional choices use a dialog",(
 test("all essential playable controls stay inside the playtable",()=>{
  const a=html.indexOf('id="gameScreen"'),b=html.indexOf('id="gameNotes"');
  const game=html.slice(a,b);
- for(const id of ["vaultName","wardCost","autoCastStatus","battlefield","hand","endTurn","undo","reset","returnMap"]){
+ for(const id of ["vaultName","wardCost","autoCastStatus","castButton","autoCastToggle","lessonPrompt","playSelectedLand","battlefield","hand","endTurn","undo","reset","returnMap"]){
   assert.match(game,new RegExp('id="'+id+'"'),id);
  }
 });
