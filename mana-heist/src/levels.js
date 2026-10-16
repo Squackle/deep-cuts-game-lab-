@@ -85,8 +85,9 @@ function variant(i){
  // Advanced mana sources are integrated into the same land-mana campaign,
  // not a separate game. Existing solution routes are retained: these
  // optional field sources never replace an original required card.
- if(i>=50&&i%11===4&&occupied.size<10){
-  const advanced=["signet","bluffs","solring","confluence","coffers","urborg","petal","treasure","lotus","ziggurat"];
+ if(i>=18&&i%11===4&&occupied.size<10){
+  const advanced=i<50?["signet","bluffs","solring"]:
+   ["signet","bluffs","solring","confluence","coffers","urborg","petal","treasure","lotus","ziggurat"];
   field.push({id:"mana2",card:advanced[(g*3+w+l)%advanced.length]});
  }
  const name=OPENERS[(i+w*3)%OPENERS.length]+" "+FINISHERS[(i*7+g)%FINISHERS.length];
