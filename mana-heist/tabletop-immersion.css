@@ -396,8 +396,14 @@ body.in-heist #heist .ward-info .auto-option{
  body.in-heist #heist .ward-info{max-height:118px!important}
  body.in-heist #heist .ward-info .auto-option{font-size:.56rem!important}
 }
-@media(max-height:640px){
+@media(max-height:640px) and (max-width:650px){
  body.in-heist #gameScreen{--hand-height:clamp(139px,25dvh,167px)}
+ /* A transformed parent turns position:fixed into local positioning;
+    remove that translation so the compact toggle stays up in the corner. */
+ body.in-heist #heist .ward-info{
+  left:0!important;right:0!important;width:100%!important;
+  max-width:none!important;transform:none!important;
+ }
  body.in-heist #heist #hand{bottom:0!important}
  body.in-heist #heist .ward-info{max-height:70px!important}
  /* A compact discoverable toggle moves out of the short phone's spell/hand
