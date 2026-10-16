@@ -58,7 +58,7 @@ test("the game connects immediately injected dye to orb arrival and bounded opti
  const js=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
  const css=readFileSync(new URL("../styles.css",import.meta.url),"utf8");
  assert.match(html,/id="wardFluidCanvas"/);
- assert.match(js,/chargeWard\(\{animateId:pendingId\}\)/);
+ assert.match(js,/chargeWard\(\{animateId:orb\.id\}\)/);
  assert.match(js,/fluid\.sync\(result\.charged/);
  assert.match(js,/PRELOADED_MIX_COUNT/);
  assert.match(js,/AUTO_STIR_MAX_MS=5100/);
