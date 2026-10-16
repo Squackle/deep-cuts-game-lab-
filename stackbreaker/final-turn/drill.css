@@ -35,3 +35,47 @@ h1{font:700 clamp(21px,2.8vw,38px) Georgia,serif;letter-spacing:.06em;margin:3px
 footer{margin-top:22px;color:#9daea6;font-size:11px}
 @media(max-width:700px){.mast{gap:5px}.mast a{font-size:9px}.mast strong{font-size:12px}.mast small{font-size:7px}.mission{padding:9px}.mission-status{font-size:10px}.mission-status strong{font-size:13px}.mission p{font-size:11px}.tabletop{grid-template-columns:minmax(0,1fr);padding:6px}.board{min-height:220px;padding:9px}.spellzone{min-height:130px;border-left:0;border-top:1px solid var(--edge)}.orb{height:64px;width:64px;flex-basis:64px}.orb strong{font-size:27px}.circle{height:160px;width:160px;font-size:60px}.lands,.hand{gap:7px}.controls{flex-wrap:wrap}.controls #feedback{flex:1 0 100%;padding:3px}.primary{flex:1}.below{grid-template-columns:1fr}.land{flex-basis:76px}.card{flex-basis:125px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* Final Turn · full-card presentation — cards themselves ARE the controls.
+   No duplicated names, captions, faux card panels or instructional boxes. */
+.tray{background:transparent;border:0;box-shadow:none;padding:10px 4px 5px}
+.tray .zhead{padding:0 10px 8px}
+.hand,.lands{display:flex;align-items:flex-start;gap:clamp(9px,1.5vw,23px);overflow-x:auto;
+ overflow-y:hidden;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
+ padding:11px 9px 20px;scrollbar-width:thin;scrollbar-color:#d8b97688 transparent;
+ min-height:0;touch-action:pan-x pan-y}
+.card,.land{appearance:none;-webkit-appearance:none;display:block;position:relative;
+ flex:0 0 auto;aspect-ratio:488/680;width:clamp(165px,19vw,246px);height:auto;min-height:0;
+ margin:0;padding:0;background:none!important;border:0!important;border-radius:11px;
+ text-align:initial;box-shadow:none!important;filter:drop-shadow(0 9px 13px #0009);
+ overflow:visible;scroll-snap-align:start;transition:transform .15s ease,filter .15s ease}
+.card img,.land img{display:block;width:100%;height:100%;aspect-ratio:488/680;
+ object-fit:contain;border-radius:10px;pointer-events:none;user-select:none}
+.card .card-loading,.land .card-loading{width:100%;height:100%;display:grid;place-content:center;
+ text-align:center;padding:10px;background:#243a37;border-radius:10px;border:1px solid #d3b4786f;
+ font:700 14px Georgia,serif;color:#f4ddb0}
+.card:hover:not(:disabled),.land:hover:not(:disabled){transform:translateY(-7px) scale(1.025);
+ filter:drop-shadow(0 13px 18px #000c)}
+.card:focus-visible,.land:focus-visible{outline:3px solid #ffe7a7;outline-offset:4px}
+.card.available{filter:drop-shadow(0 0 8px #eac97987) drop-shadow(0 8px 13px #0009)}
+.card:disabled{opacity:.6;filter:grayscale(.22) drop-shadow(0 5px 9px #0008)}
+.static-card{opacity:.8}
+.land{width:clamp(125px,12.6vw,181px);height:auto;min-height:0;flex-basis:auto}
+.land.tapped{transform:rotate(-8deg) scale(.96);filter:brightness(.63) saturate(.6)
+ drop-shadow(0 4px 9px #000a)}
+.land.tapped:hover{transform:rotate(-8deg) scale(.96)}
+.land:disabled{opacity:.78}
+.shelf{padding:10px 12px 5px}
+.shelf .zhead{padding:0 3px 8px}
+.pool{margin:0 0 5px}
+@media(max-width:700px){
+ .tray{padding:7px 0 2px}
+ .tray .zhead{padding:0 10px 5px}
+ .shelf{padding:8px 7px 4px}
+ .card{width:clamp(160px,48vw,216px);flex-basis:auto}
+ .land{width:clamp(112px,35vw,153px);flex-basis:auto}
+ .hand,.lands{gap:10px;padding:9px 8px 17px}
+}
+@media(prefers-reduced-motion:reduce){
+ .card,.land{transition:none}
+}
