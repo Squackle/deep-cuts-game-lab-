@@ -3,21 +3,73 @@ const $=id=>document.getElementById(id);
 const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const savedKey='dc-stackbreaker-final-turn-v1';
 const imageCache=new Map();
+// Art-only state is separate from authoritative mana and tap game state.
+const landArt=new Map();
+const landImageCacheKey='dc-stackbreaker-final-turn-land-art-v1';
+function scryfallImage(card){
+ const candidate=card.image_uris||card.card_faces?.[0]?.image_uris||{};
+ const url=candidate.normal||candidate.large||candidate.small||'';
+ return /^https:\/\/cards\.scryfall\.io\/[a-z0-9/_-]+\.(?:png|jpg|jpeg|webp)(?:\?.*)?$/i.test(url)?url:'';
+}
+function rememberLandArt(id,url){
+ landArt.set(id,url);
+ try{
+  const cache=JSON.parse(sessionStorage.getItem(landImageCacheKey)||'{}');
+  cache[id]=url;sessionStorage.setItem(landImageCacheKey,JSON.stringify(cache));
+ }catch{}
+}
+function restoreLandArt(){
+ try{
+  const cache=JSON.parse(sessionStorage.getItem(landImageCacheKey)||'{}');
+  for(const land of openingDrill.lands)if(typeof cache[land.id]==='string'&&
+   /^https:\/\/cards\.scryfall\.io\//.test(cache[land.id]))landArt.set(land.id,cache[land.id]);
+ }catch{}
+}
+restoreLandArt();
 let game=createDrill(openingDrill),notice='';
 function cardArt(name){
  const url=imageCache.get(name);
- return url?'<img src="'+escapeHTML(url)+'" alt="'+escapeHTML(name)+' card image from Scryfall" loading="lazy" draggable="false">':'<span aria-hidden="true">✧</span>';
+ return url?'<img src="'+escapeHTML(url)+'" alt="'+escapeHTML(name)+' Magic card from Scryfall" loading="lazy" draggable="false">':'<span class="card-loading" aria-hidden="true">✧ '+escapeHTML(name)+'</span>';
 }
 async function fetchArt(name){
  try{
   const r=await fetch('https://api.scryfall.com/cards/named?exact='+encodeURIComponent(name),{headers:{Accept:'application/json'}});
   if(!r.ok)return;
   const card=await r.json();
-  const url=card.image_uris?.small||card.card_faces?.[0]?.image_uris?.small||'';
+  const url=scryfallImage(card);
   if(/^https:\/\/cards\.scryfall\.io\//.test(url)){imageCache.set(name,url);render();}
  }catch{} // Artwork never blocks the game.
 }
-for(const name of ['Counterspell','Lava Spike','Lightning Bolt'])fetchArt(name);
+for(const name of ['Counterspell','Lava Spike','Lightning Bolt','Mountain'])fetchArt(name);
+// Scryfall's random endpoint selects genuine paper Magic printings, independently
+// for both Islands and the Mountain. Cards are always matched by exact name:
+// random visuals never change the scenario's mana colors or legal actions.
+async function fetchRandomLandArt(){
+ // A single random-ordered Scryfall print search per basic-land NAME supplies
+ // distinct real printings for multiple instances without repeated random hits.
+ const types=[...new Set(openingDrill.lands.map(l=>l.card))];
+ for(const name of types){
+  const pending=openingDrill.lands.filter(l=>l.card===name&&!landArt.has(l.id));
+  if(!pending.length)continue;
+  try{
+   const query='!"'+name+'" game:paper';
+   const search='https://api.scryfall.com/cards/search?q='+encodeURIComponent(query)+
+    '&unique=prints&order=random';
+   const res=await fetch(search,{headers:{Accept:'application/json'},cache:'no-store'});
+   if(res.ok){
+    const result=await res.json();
+    const urls=(result.data||[]).filter(c=>c.name===name).map(scryfallImage)
+     .filter(Boolean);
+    const distinct=[...new Set(urls)];
+    for(let i=0;i<pending.length&&i<distinct.length;i++){
+     rememberLandArt(pending[i].id,distinct[i]);render();
+    }
+   }
+  }catch{} // Artwork cannot affect mana, priority or the drill's outcome.
+  await new Promise(resolve=>setTimeout(resolve,140)); // Scryfall rate etiquette.
+ }
+}
+fetchRandomLandArt();
 function action(fn){
  try{
   const wasPlaying=game.status==='playing';game=fn(game);notice='';
@@ -35,15 +87,27 @@ function render(){
  const stack=[...game.stack].reverse();
  $('stack').innerHTML=stack.map((item,i)=>'<li class="spell" aria-label="'+escapeHTML(item.card)+' targeting '+escapeHTML(item.target)+'"><div>'+cardArt(item.card)+'</div><div><em>'+(i===0?'TOP — NEXT TO RESOLVE':'BELOW')+'</em><b>'+escapeHTML(item.card)+'</b><small>Target: '+escapeHTML(item.target==='player'?'You':item.target==='opponent'?'Opponent':game.stack.find(x=>x.id===item.target)?.card||item.target)+'</small></div></li>').join('');
  $('emptyStack').hidden=stack.length!==0;
- $('lands').innerHTML=game.lands.map(l=>'<button class="land '+(l.mana==='R'?'red ':'')+(l.tapped?'tapped':'')+'" type="button" data-land="'+escapeHTML(l.id)+'" '+(l.tapped||game.status!=='playing'?'disabled':'')+' aria-label="'+(l.tapped?'Tapped ':'Tap ')+escapeHTML(l.card)+' for '+escapeHTML(l.mana)+' mana"><b>'+escapeHTML(l.card)+'</b><span aria-hidden="true">'+(l.mana==='U'?'◆':'✹')+'</span><small>'+(l.tapped?'TAPPED':'TAP FOR '+l.mana)+'</small></button>').join('');
+ $('lands').innerHTML=game.lands.map(l=>{
+  const url=landArt.get(l.id)||imageCache.get(l.card)||'';
+  const art=url?'<img src="'+escapeHTML(url)+'" alt="" loading="lazy" draggable="false">':
+   '<span class="card-loading" aria-hidden="true">✧ '+escapeHTML(l.card)+'</span>';
+  return '<button class="land '+(l.tapped?'tapped':'')+'" type="button" data-land="'+escapeHTML(l.id)+'" '+
+   (l.tapped||game.status!=='playing'?'disabled':'')+' aria-label="'+(l.tapped?'Tapped ':'Tap ')+
+   escapeHTML(l.card)+' for '+escapeHTML(l.mana)+' mana" title="'+
+   escapeHTML(l.card+' — '+(l.tapped?'Tapped':'Tap for '+l.mana))+'">'+art+'</button>';
+ }).join('');
  const mana=Object.entries(game.mana).filter(([,n])=>n>0).map(([c,n])=>n+' '+c);
  $('mana').textContent=mana.length?mana.join(' · '):'Empty';
  $('hand').innerHTML=game.hand.map((name,i)=>{
   const definition=SUPPORTED_CARDS[name];
-  if(!definition)return '<div class="card" role="group"><b>'+escapeHTML(name)+'</b><small>Drawn card · Not playable in this prototype</small></div>';
+  if(!definition)return '<div class="card static-card" role="img" aria-label="'+escapeHTML(name)+
+   ' in your hand; playing lands from hand is not supported yet">'+cardArt(name)+'</div>';
   const can=legalCast(game,name);
-  const timing=definition.type==='sorcery'&&!isSorceryWindow(game)?'Main phase only':'Tap lands for mana';
-  return '<button class="card '+(can?'available':'')+'" type="button" data-card="'+escapeHTML(name)+'" '+(game.status!=='playing'?'disabled':'')+' aria-label="Cast '+escapeHTML(name)+' targeting '+escapeHTML(name==='Counterspell'?'the top spell':'opponent')+'"><div>'+cardArt(name)+'</div><b>'+escapeHTML(name)+'</b><small>'+escapeHTML(can?'CAST READY':timing)+'</small></button>';
+  const timing=definition.type==='sorcery'&&!isSorceryWindow(game)?'Only cast during your main phase with an empty stack':'Tap lands for mana to cast';
+  return '<button class="card '+(can?'available':'')+'" type="button" data-card="'+escapeHTML(name)+'" '+
+   (game.status!=='playing'?'disabled':'')+' title="'+escapeHTML(name+' — '+(can?'Ready to cast':timing))+
+   '" aria-label="Cast '+escapeHTML(name)+' targeting '+escapeHTML(name==='Counterspell'?'the top spell':'opponent')+
+   '">'+cardArt(name)+'</button>';
  }).join('');
  $('handCount').textContent=game.hand.length+' cards';
  const outcome=game.status!=='playing';
