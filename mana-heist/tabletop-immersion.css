@@ -311,3 +311,133 @@ body.in-heist #heist #battlefield .land-card.mtg-real-land:not(.is-tapped):first
 body.in-heist #heist #battlefield .land-card.mtg-real-land:not(.is-tapped) .mtg-card-image{
  width:100%!important;height:100%!important;object-fit:fill!important;
 }
+
+
+/* 2026-10-16 hotfix: legacy .is-stirring/:hover transform:none!important
+   replaced the 50% centering translation and shifted the pot sideways.
+   Hold the same transform in all interaction states; only the water moves. */
+body.in-heist #heist #wardTarget.lock-ring:hover,
+body.in-heist #heist #wardTarget.lock-ring.is-stirring,
+body.in-heist #heist #wardTarget.lock-ring:focus-within,
+body.in-heist #heist #wardTarget.lock-ring.fluid-enabled:hover,
+body.in-heist #heist #wardTarget.lock-ring.fluid-enabled.is-stirring{
+ transform:translateX(-50%)!important;
+ transform-origin:center center!important;
+ transition:box-shadow .24s ease,filter .24s ease!important;
+}
+body.in-heist #heist #wardTarget.lock-ring.is-stirring{
+ /* No enlargement on pointer movement; retain a gentle stirring glow. */
+ box-shadow:0 0 0 3px #685e48,0 0 0 11px #c7b68415,inset 0 0 42px #050f23,0 0 48px var(--fusion-color,#7bbdb4)!important;
+}
+/* Match the broad readable tabletop fan: more of every card remains above
+   the bottom screen edge, with meaningful overlap even on wide screens. */
+body.in-heist #gameScreen{
+ --hand-height:clamp(185px,26dvh,240px);
+}
+body.in-heist #heist .table-card.hand-card{
+ height:var(--hand-height)!important;
+}
+body.in-heist #heist #hand{
+ bottom:0!important;
+ height:100%!important;
+ min-height:0!important;
+ padding:4px max(8px,env(safe-area-inset-left)) 0!important;
+ overflow:visible!important;
+ justify-content:safe center!important;
+}
+body.in-heist #heist #hand .land-card.mtg-real-land{
+ transform:translateY(var(--fan-drop,0px)) rotate(var(--fan-tilt,0deg))!important;
+ transform-origin:50% 96%!important;
+ box-shadow:0 6px 16px #000b,0 0 0 1px #dcc89c55!important;
+}
+body.in-heist #heist #hand .land-card.mtg-real-land:hover,
+body.in-heist #heist #hand .land-card.mtg-real-land:focus-visible,
+body.in-heist #heist #hand .land-card.mtg-real-land.hand-selected{
+ transform:translateY(calc(var(--fan-drop,0px) - 34px)) rotate(0deg) scale(1.07)!important;
+ z-index:120!important;
+ box-shadow:0 0 0 2px #ead09b,0 16px 30px #000e!important;
+}
+/* Keep the auto-cast option alongside spell controls, not floating across
+   the upper rim where it looked like a stray overlay. */
+body.in-heist #heist .ward-info .auto-option{
+ position:static!important;left:auto!important;right:auto!important;top:auto!important;
+ transform:none!important;max-width:100%!important;
+ opacity:.78!important;margin:1px 0 0!important;
+ font-size:.64rem!important;
+}
+/* On a roomy desktop, spell controls beside the pot free vertical space
+   for the hand, similar to the Moxgate fan reference. */
+@media(min-width:950px){
+ body.in-heist #heist .ward-info{
+  top:calc(var(--pot-size) * .30)!important;
+  left:calc(50% + var(--pot-size) / 2 + 28px)!important;
+  right:auto!important;transform:none!important;
+  width:min(255px,calc(50vw - var(--pot-size)/2 - 45px))!important;
+  align-items:flex-start!important;text-align:left!important;
+  max-height:none!important;
+ }
+ body.in-heist #heist .ward-info #wardCost{justify-content:flex-start!important}
+ body.in-heist #heist .ward-info .auto-option{font-size:.66rem!important}
+}
+/* Mid-size desktop and tablets retain spell cost below the still-large pot
+   without clipping the newly raised card fan. */
+@media(min-width:651px) and (max-width:949px){
+ body.in-heist #gameScreen{
+  --pot-size:clamp(215px,35dvh,278px);
+  --hand-height:clamp(180px,27dvh,225px);
+ }
+ body.in-heist #heist .vault-stage{--pot-top:clamp(172px,26dvh,238px)}
+ body.in-heist #heist .ward-info{max-height:110px!important}
+}
+/* Phone-sized devices: show most or all of the cards, with compact
+   secondary controls below the cauldron. */
+@media(max-width:650px){
+ body.in-heist #gameScreen{--hand-height:clamp(170px,26dvh,215px)}
+ body.in-heist #heist .ward-info{max-height:118px!important}
+ body.in-heist #heist .ward-info .auto-option{font-size:.56rem!important}
+}
+@media(max-height:640px) and (max-width:650px){
+ body.in-heist #gameScreen{--hand-height:clamp(139px,25dvh,167px)}
+ /* A transformed parent turns position:fixed into local positioning;
+    remove that translation so the compact toggle stays up in the corner. */
+ body.in-heist #heist .ward-info{
+  left:0!important;right:0!important;width:100%!important;
+  max-width:none!important;transform:none!important;
+ }
+ body.in-heist #heist #hand{bottom:0!important}
+ body.in-heist #heist .ward-info{max-height:70px!important}
+ /* A compact discoverable toggle moves out of the short phone's spell/hand
+    gap and onto the otherwise empty upper-right edge. */
+ body.in-heist #heist .ward-info .auto-option{
+  position:fixed!important;top:84px!important;right:9px!important;
+  left:auto!important;z-index:35!important;
+  margin:0!important;font-size:.53rem!important;
+  background:#122929dc;border-radius:6px;padding:2px 4px;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ body.in-heist #heist #wardTarget.lock-ring:hover,
+ body.in-heist #heist #wardTarget.lock-ring.is-stirring{transition:none!important}
+ body.in-heist #heist #hand .land-card.mtg-real-land{transition:none!important}
+}
+
+
+/* At laptop/tablet widths, tuck the cost/cast controls beside the vessel.
+   The fan can now be fully raised without covering the casting UI. */
+@media(min-width:700px) and (max-width:949px){
+ body.in-heist #heist .ward-info{
+  top:calc(var(--pot-size) * .22)!important;
+  left:calc(50% + var(--pot-size) / 2 + 12px)!important;
+  right:auto!important;transform:none!important;
+  width:min(200px,calc(50vw - var(--pot-size)/2 - 16px))!important;
+  max-height:none!important;align-items:flex-start!important;
+  text-align:left!important;
+ }
+ body.in-heist #heist .ward-info #wardCost{justify-content:flex-start!important}
+ body.in-heist #heist .ward-info #castButton{width:min(100%,190px)!important}
+}
+@media(min-width:500px) and (max-width:699px){
+ body.in-heist #gameScreen{--pot-size:clamp(205px,31dvh,242px)}
+ body.in-heist #heist .vault-stage{--pot-top:clamp(184px,26dvh,222px)}
+ body.in-heist #heist .ward-info{max-height:102px!important}
+}

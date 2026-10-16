@@ -22,3 +22,12 @@
 
 ## Rollback
 Revert the Game Lab merge commit and allow its Cloudflare Pages main deployment to complete. The existing v2 guest save key and level IDs require no data migration. Do not promote these gameplay files to deep-cuts-edh without a separate explicit owner authorization and rights review.
+
+
+## October 16 hover/fan hotfix — user screenshot follow-up
+
+After the immersive tabletop merge, an inherited selector in the older stylesheet matched `#wardTarget.is-stirring` / `:hover` with `transform:none!important`, overriding the new table's centered `translateX(-50%)`. With the pointer over the pool, the cauldron jumped sideways by approximately half its width. Corrective CSS explicitly holds `translateX(-50%)` during hover, stirring and keyboard focus, with only a static highlight added for interaction. No cauldron resize, layout movement or rules effect is permitted.
+
+The owner also supplied a Moxgate.com screenshot as a **visual reference**, not a source to copy: cards visible in a broad physical fan across the bottom. The game now computes viewport-dependent card width, natural overlap even on wide screens, symmetric tilt and shallow edge drop. CSS raises the whole fan so the cards are substantially visible, and moves desktop spell controls beside the cauldron. Short phone screens use compact cards while leaving the casting area accessible. A prior auto-cast checkbox floating over the cauldron rim now stays with the spell area (or in an unobtrusive upper corner on short phones).
+
+Files: `tabletop-immersion.css`, `src/hand-fan-layout.js`, `src/main.js`, and `tests/cauldron-hover-fan.test.mjs`. Existing saves `dc-mana-heist-landfall-v2`, puzzle IDs, engine `mh-landfall-0.2.0`, and game rules remain unchanged. Tests include a regression for the original selector conflict and viewport-fitting geometry across phones, tablets and desktops. Real-device hover/touch QA remains to be completed separately.

@@ -5,6 +5,7 @@ import {highestUnlocked,unlocked,chapterIndex,stageCode,normalizedBests,chapterA
 import {renderOverworld} from "./overworld.js";
 import {reconstruct,transitionOrbs,consistent} from "./mana-orbs.js";
 import {launchOrbitMana,cancelOrbitMana} from "./orbital-mana.js";
+import {handFanLayout} from "./hand-fan-layout.js";
 import {renderWardCharge} from "./ward-charge.js";
 import {installFluidWard} from "./fluid-ward.js";
 import {PRELOADED_MIX_COUNT} from "./fluid-palette.js";
@@ -286,19 +287,18 @@ function syncLandRows(){
  el("hand").replaceChildren(...(handNodes.length?handNodes:[empty("No land cards remain in hand.")]));
  // Fit both zones within one viewport; overlap cards instead of scrolling.
  const vw=window.innerWidth||390,vh=window.innerHeight||740;
- const handWidth=Math.round(Math.min(vw<650?125:151,Math.max(vw<650?94:112,vh*.20)));
+ const fan=handFanLayout(handNodes.length,vw,vh);
  const fieldWidth=Math.round(vw<650?(vh<650?Math.min(64,Math.max(52,vh*.12)):Math.min(84,Math.max(68,vh*.12))):Math.min(80,Math.max(65,vh*.11)));
- const fit=(count,width,padding)=>count>1
-  ?Math.min(0,(vw-padding-count*width)/(count-1)):0;
- el("hand").style.setProperty("--hand-card-width",handWidth+"px");
- el("hand").style.setProperty("--hand-overlap",Math.round(fit(handNodes.length,handWidth,24))+"px");
+ const fit=(count,width,padding)=>count>1?Math.min(0,(vw-padding-count*width)/(count-1)):0;
+ el("hand").style.setProperty("--hand-card-width",fan.cardWidth+"px");
+ el("hand").style.setProperty("--hand-overlap",fan.overlap+"px");
  el("battlefield").style.setProperty("--field-card-width",fieldWidth+"px");
  el("battlefield").style.setProperty("--field-overlap",Math.round(fit(fieldNodes.length,fieldWidth,22))+"px");
  handNodes.forEach((node,i)=>{
-  const m=(handNodes.length-1)/2;
-  node.style.setProperty("--fan-tilt",((i-m)*Math.min(7,27/Math.max(1,handNodes.length-1)))+"deg");
-  node.style.setProperty("--fan-drop",(Math.abs(i-m)*5)+"px");
-  node.style.setProperty("--fan-index",String(i+1));
+  const position=fan.cards[i];
+  node.style.setProperty("--fan-tilt",position.tilt+"deg");
+  node.style.setProperty("--fan-drop",position.drop+"px");
+  node.style.setProperty("--fan-index",String(position.order));
  });
  el("playSelectedLand").disabled=!selectedHandId||!state.hand.includes(selectedHandId)||!!state.played;
  el("inspectSelected").disabled=!selectedHandId||!state.hand.includes(selectedHandId);
