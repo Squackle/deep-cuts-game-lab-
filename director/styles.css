@@ -44,3 +44,50 @@ kbd{display:inline-grid;place-items:center;min-width:25px;min-height:29px;border
 @media(max-width:830px){.director-grid{grid-template-columns:minmax(0,1fr)}.cheat-panel{grid-column:auto;grid-row:auto;order:3;max-width:510px;width:100%;margin:0 auto}.controls{order:1}.game-panel{order:2}}
 @media(max-width:580px){.victory-art{background-position:35% center}.victory-content{margin:0 16px 40px}.victory-screen .victory-content h2{font-size:34px}.victory-content>span{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.victory-art{animation:none}}
+
+/* Use the specifically composed 9:16 poster on phones; never squeeze desktop art. */
+@media (max-width:700px) and (orientation:portrait){
+ .victory-screen--hunt .victory-art{
+  background-image:var(--director-finale-mobile, var(--director-finale-art));
+  background-position:50% 42%;
+  background-size:cover;
+ }
+ /* The portrait artwork already contains THE HIVE REIGNS / YOU WIN in pixels.
+    Avoid displaying duplicate lettering over the monster or village. */
+ .victory-screen--hunt .victory-content{
+  width:100%;
+  max-width:none;
+  margin:0;
+  padding:12px 12px calc(13px + env(safe-area-inset-bottom,0px));
+  align-items:center;
+  text-align:center;
+  gap:8px;
+  background:linear-gradient(0deg,rgba(13,11,18,.97),rgba(13,11,18,.89) 65%,transparent);
+ }
+ .victory-screen--hunt .victory-content h2,
+ .victory-screen--hunt .victory-won,
+ .victory-screen--hunt .victory-content>span{display:none}
+ .victory-screen--hunt .victory-caption{
+  font:800 10px/1.3 ui-monospace,monospace;
+  letter-spacing:.07em;
+  margin:0;
+ }
+ .victory-screen--hunt .victory-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  width:100%;
+  max-width:420px;
+  gap:8px;
+  margin:0;
+ }
+ .victory-screen--hunt .victory-actions button{
+  min-height:48px;
+  font-size:clamp(9px,2.7vw,11px);
+  padding:8px 5px;
+  white-space:normal;
+ }
+}
+@media(max-width:360px) and (orientation:portrait){
+ .victory-screen--hunt .victory-actions{gap:5px}
+ .victory-screen--hunt .victory-actions button{font-size:9px}
+}
