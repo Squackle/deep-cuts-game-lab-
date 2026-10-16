@@ -412,6 +412,23 @@ el("worldPips").addEventListener("click",e=>{
  if(button&&!button.disabled){world=Number(button.dataset.world);renderOverworld({world,bests:progress.bests,index,proofs,medal});}
 });
 el("returnMap").addEventListener("click",showMap);
+el("toggleGuide").addEventListener("click",()=>{
+ const guide=el("gameNotes");guide.open=!guide.open;
+ el("toggleGuide").setAttribute("aria-expanded",String(guide.open));
+ if(guide.open)guide.scrollIntoView({block:"start",behavior:"smooth"});
+});
+el("autoCastToggle").addEventListener("change",e=>{
+ autoCastEnabled=e.target.checked;
+ try{localStorage.setItem("dc-mana-heist-auto-cast",autoCastEnabled?"yes":"no");}catch{}
+ cancelAuto();updateCastButton();if(autoCastEnabled)queueAutoCast();
+});
+el("castButton").addEventListener("click",()=>{
+ if(pendingFlights.size)return;
+ const cast=chooseAutomaticCast(level,state);
+ if(cast){cancelAuto();fluid.burst();perform(cast);}else rejectCast();
+});
+el("playSelectedLand").addEventListener("click",()=>{if(selectedHandId)playLand(selectedHandId);});
+el("inspectSelected").addEventListener("click",()=>{if(selectedHandId)inspectById(selectedHandId);});
 el("dismissChoices").addEventListener("click",()=>choices("YOUR NEXT CHOICE","Tap a land or play a land from your hand.",[]));
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!el("actionBox").hidden){choices("YOUR NEXT CHOICE","Selection canceled.",[]);}});
 for(const zone of ["hand","battlefield"]){
@@ -422,6 +439,7 @@ for(const zone of ["hand","battlefield"]){
 el("battlefield").addEventListener("click",e=>{
  const card=e.target.closest('[data-zone="field"][data-cardid]');
  if(card)tapLand(card.dataset.cardid);
+ else if(selectedHandId)playLand(selectedHandId);
 });
 for(const id of ["battlefield","hand"])el(id).addEventListener("keydown",e=>{
  if(e.key.toLowerCase()!=="i"||e.altKey||e.ctrlKey||e.metaKey)return;
@@ -431,7 +449,7 @@ for(const id of ["battlefield","hand"])el(id).addEventListener("keydown",e=>{
 landDrag=installLandDragging({
  hand:el("hand"),battlefield:el("battlefield"),
  onDrop:id=>playLand(id),
- onInspect:id=>inspectById(id),
+ onInspect:id=>selectHand(id),
  onHint:(text,error=false)=>message(text,error)
 });
 el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a)perform(a);});
