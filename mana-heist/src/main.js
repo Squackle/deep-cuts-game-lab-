@@ -163,7 +163,8 @@ function rejectCast(){
   const matching=COLORS.every(c=>(state.pool[c]||0)>=(stage.cost[c]||0));
   if(matching){message("Some floating mana is restricted to creature spells and cannot pay for this spell.",true);return;}
  }
- const stage=level.stages[state.stage];if(!stage)return;
+
+ if(!stage)return;
  const missing=missingMana(state.pool,stage.cost);
  flashWard({vault:el("heist").querySelector(".vault-card"),ward:el("lockGlyph"),costRow:el("wardCost"),button:null,pool:null,missing});
  message(failureText(missing),true);
