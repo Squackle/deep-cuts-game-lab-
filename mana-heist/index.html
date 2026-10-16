@@ -13,12 +13,25 @@
  <div class="bar-actions"><span class="test-stamp">VARIANT ART · 1.1 PLAYTEST</span><a href="/lab/" class="back lab-home-link" aria-label="Back to Test Lab, choose another game">← ALL GAMES</a></div>
 </header>
 <main class="shell">
- <section id="campaignScreen" class="campaign-screen" aria-labelledby="mapTitle">
-  <div class="campaign-top"><div><p class="overline">THE HEIST CAMPAIGN</p><h2 id="mapTitle">MANA HEIST <em>· THE VAULTS</em></h2><p class="muted">Five galaxies. Twenty-five worlds. Two hundred fifty vaults. Only your current path is revealed.</p></div><span id="campaignTotal" class="campaign-total" aria-live="polite">0 / 250 CRACKED</span></div>
-  <div class="galaxy-navigation" id="galaxyPicker" role="group" aria-label="Choose an unlocked galaxy"></div>
-  <div class="world-navigation"><button type="button" id="previousWorld" aria-label="Previous world">← PREVIOUS WORLD</button><div class="world-nameplate"><p class="overline" id="worldNumber">GALAXY 1 · WORLD 1</p><h3 id="worldName">THE FIRST KEY</h3><p id="worldSubtitle" class="muted"></p></div><button type="button" id="nextWorld" aria-label="Next unlocked world">NEXT WORLD →</button></div>
+ <section id="campaignScreen" class="campaign-screen" aria-labelledby="chooseTitle">
+  <div class="mode-chooser" aria-label="Choose how to play Mana Heist">
+   <div class="mode-intro"><p class="overline">THE MANA ARTS</p><h2 id="chooseTitle">Choose your path</h2><p>Study the craft, or jump straight into a heist. Both paths are open.</p></div>
+   <div class="mode-options" role="group" aria-label="Game mode">
+    <button type="button" class="mode-option" data-mode="learn" aria-pressed="false"><span class="mode-emblem" aria-hidden="true">✧</span><span class="mode-name">LEARN MANA</span><span class="mode-tag">Guided practice</span><span class="mode-description">Explore lands, colored costs, life choices and mana rules with 18 existing introductory exercises.</span><span class="mode-action">STUDY THE ARTS →</span></button>
+    <button type="button" class="mode-option" data-mode="heist" aria-pressed="false"><span class="mode-emblem" aria-hidden="true">◇</span><span class="mode-name">MANA HEIST</span><span class="mode-tag">Open challenge vaults</span><span class="mode-description">All 250 vaults are unsealed. Pick any galaxy or difficulty, solve a puzzle and improve your stars.</span><span class="mode-action">ENTER THE VAULTS →</span></button>
+   </div>
+  </div>
+  <div id="learnPanel" class="learn-panel" hidden aria-label="Learn Mana practice exercises">
+   <div class="learn-panel-head"><div><p class="overline">LEARN MANA · INTRODUCTORY EXERCISES</p><h2>Learn the craft</h2><p>These are 18 existing practice scenarios, organized by topic. More fully guided lessons are still in development. No stars or optimization pressure here.</p></div><span id="learnCount" class="learn-count" aria-live="polite">0 / 18 COMPLETED</span></div>
+   <div id="learnPicker" class="learn-picker" aria-label="Pick a training exercise"></div>
+  </div>
+  <div id="heistPanel" class="heist-panel" hidden aria-label="Mana Heist open-vault campaign">
+  <div class="campaign-top"><div><p class="overline">THE HEIST CAMPAIGN</p><h2 id="mapTitle">MANA HEIST <em>· THE VAULTS</em></h2><p class="muted">Five galaxies. Twenty-five worlds. Two hundred fifty vaults. Every galaxy and every vault is open. Jump to a challenge that fits your experience.</p></div><span id="campaignTotal" class="campaign-total" aria-live="polite">0 / 250 CRACKED</span></div>
+  <div class="galaxy-navigation" id="galaxyPicker" role="group" aria-label="Choose any galaxy"></div>
+  <div class="world-navigation"><button type="button" id="previousWorld" aria-label="Previous world">← PREVIOUS WORLD</button><div class="world-nameplate"><p class="overline" id="worldNumber">GALAXY 1 · WORLD 1</p><h3 id="worldName">THE FIRST KEY</h3><p id="worldSubtitle" class="muted"></p></div><button type="button" id="nextWorld" aria-label="Next world">NEXT WORLD →</button></div>
   <div class="campaign-track" aria-label="Campaign map"><div class="path-line" aria-hidden="true"></div><div id="chapterPicker" class="chapter-picker" role="group" aria-label="Stages in the current chapter"></div></div>
-  <div class="overworld-footer"><p id="mapHint" role="status" class="muted">Select an unlocked stage to begin.</p><div id="worldPips" class="world-pips" aria-label="Worlds in the current galaxy"></div></div>
+  <div class="overworld-footer"><p id="mapHint" role="status" class="muted">All vaults are open. Choose any stage to begin.</p><div id="worldPips" class="world-pips" aria-label="Worlds in the current galaxy"></div></div>
+  </div>
  </section>
  <div id="gameScreen" hidden>
   <div class="game-titlebar"><button type="button" id="returnMap">← MAP</button><span id="stageLabel" class="stage-label">STAGE 1:1</span><button type="button" class="info-link" id="toggleGuide" aria-controls="gameNotes" aria-expanded="false">ⓘ GUIDE</button></div>
