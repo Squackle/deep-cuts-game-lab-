@@ -191,6 +191,7 @@ function perform(action){
    onArrival:()=>{if(epoch===viewEpoch){
     pendingFlights.delete(pendingId);
     chargeWard({animateId:pendingId});
+     updateCastButton();
     queueAutoCast();
    }}
   });
@@ -266,6 +267,30 @@ function syncLandRows(){
  el("playSelectedLand").disabled=!selectedHandId||!state.hand.includes(selectedHandId)||!!state.played;
  el("inspectSelected").disabled=!selectedHandId||!state.hand.includes(selectedHandId);
 }
+function selectHand(id){
+ if(!state.hand.includes(id))return;
+ selectedHandId=selectedHandId===id?null:id;
+ syncLandRows();
+ message(selectedHandId?"Selected "+getCard(level,id).name+" · play it or inspect it.":"Selection cleared.");
+}
+function updateCastButton(){
+ const ready=!completed(level,state)&&!pendingFlights.size&&!!chooseAutomaticCast(level,state);
+ const button=el("castButton");
+ button.disabled=!ready;
+ button.textContent=ready?"CAST SPELL ✦":"NEED MORE MANA";
+ button.setAttribute("aria-label",ready?"Cast the spell by spending mana":"Spell not ready; produce more mana");
+ el("autoCastLabel").textContent=completed(level,state)?"VAULT OPEN":ready?(autoCastEnabled?"READY · AUTO-CAST ARMED":"READY · TAP CAST SPELL"):"TAP LANDS TO ADD MANA";
+}
+function teachingCue(){
+ if(completed(level,state))return "Vault opened. Nice work!";
+ if(chooseAutomaticCast(level,state))return "Your mana matches the cost. Cast to spend it.";
+ if(index===0)return "Tap your Island. Turning a land sideways makes mana.";
+ if(index===1)return state.hand.length?"Play your Mountain from your hand.":"Tap your Mountain for red mana.";
+ if(index===2)return state.hand.length&&!state.played?"Play a land from your hand.":state.field.some(f=>!f.tapped)?"Tap a land to make mana.":"End your turn to untap your lands.";
+ if(state.hand.length&&!state.played&&state.field.every(f=>f.tapped))return "Select a land in your hand, then play it.";
+ if(state.field.some(f=>!f.tapped))return "Tap a land to make mana in your cauldron.";
+ return state.turn<level.turnLimit?"End turn: lands untap and floating mana disappears.":"Final turn. Undo or restart for another solution.";
+}
 function render(pendingId=null){
  const proof=proofs.get(level.id),isWin=completed(level,state),stage=level.stages[state.stage];
  el("stageLabel").textContent="STAGE "+stageCode(index);
@@ -281,14 +306,14 @@ function render(pendingId=null){
  el("wardCounter").textContent=isWin?"VAULT OPEN":"WARD "+(state.stage+1)+" OF "+level.stages.length;
  el("wardName").textContent=isWin?"The seal is broken":stage.name;
  el("wardCost").innerHTML=isWin?"":costHtml(stage.cost);
- el("wardDescription").textContent=isWin?"The heist is complete. Your best route is preserved on this device.":stage.effect==="untap"?"Casting this heist spell also untaps one land you choose.":"Colored mana symbols require that exact color. A gray diamond is generic: you may use any remaining mana.";
+ el("wardDescription").textContent=isWin?"The heist is complete. Your best route is preserved on this device.":stage.effect==="untap"?"Casting this heist spell also untaps one land you choose.":"Numbers show generic mana costs, payable with any kind of mana; a diamond requires truly colorless mana.";
  const finalTurn=!isWin&&isFinalTurn(level,state);
  const neededMana=isWin?"":requiredManaText(level,state);
- el("autoCastLabel").textContent=isWin?"ALL WARDS OPEN":
-  finalTurn?(neededMana?"FINAL TURN · NEED "+neededMana.toUpperCase():"FINAL TURN · WARD READY"):
-  stage.effect==="untap"?"AUTO REWIND · MOVE TO STIR":"MOVE TO STIR · TOUCH AND DRAG";
+ el("lessonPrompt").textContent=teachingCue();
+ el("autoCastToggle").checked=autoCastEnabled;
  el("stageList").innerHTML=level.stages.map((spell,i)=>'<span class="stage-marker '+(i<state.stage?"done":i===state.stage?"active":"")+'">'+(i<state.stage?"✓":String(i+1).padStart(2,"0"))+" "+spell.name+"</span>").join("");
  el("battleCount").textContent=state.field.length+" LAND"+(state.field.length===1?"":"S");
+ if(selectedHandId&&!state.hand.includes(selectedHandId))selectedHandId=null;
  syncLandRows();
  el("handGuide").hidden=state.hand.length===0;
  el("hand").closest(".hand-card").classList.toggle("hand-empty",state.hand.length===0);
@@ -296,6 +321,7 @@ function render(pendingId=null){
  el("libraryPanel").textContent=level.library.length?"RESERVE / FETCH TARGETS: "+level.library.map(x=>CARDS[x.card].name).join(" · "):"";
 
  chargeWard({pendingId});
+ updateCastButton();
  el("undo").disabled=history.length===0;
  // Keep Final Turn clickable to explain the puzzle limit. A disabled button
  // would be silently unresponsive precisely when players most need guidance.
@@ -325,7 +351,8 @@ function showMap(){
  cardInspector.hide({restore:false});
  landDrag?.cancel();
  document.body.classList.remove("in-heist");
- el("gameNotes").hidden=true;
+ el("gameNotes").hidden=true;el("gameNotes").open=false;
+  el("toggleGuide").setAttribute("aria-expanded","false");
  el("actionBox").hidden=true;
  el("manaTravelLayer").replaceChildren();
  el("gameScreen").hidden=true;el("campaignScreen").hidden=false;
@@ -345,7 +372,7 @@ function load(i,enter=false){
  magnifier.hide();
  cancelAuto();viewEpoch++;pendingFlights.clear();
  cardInspector.hide({restore:false});
- lastCardId=null;
+ lastCardId=null;selectedHandId=null;
  landDrag?.cancel();
  if(!unlocked(i,progress.bests)){message("That vault is sealed. Crack the previous stage to unlock it.",true);return false;}
  index=i;world=chapterIndex(index);
@@ -355,7 +382,7 @@ function load(i,enter=false){
  manaOrbs=reconstruct(state.pool);el("manaTravelLayer").replaceChildren();
  progress.index=index;persist();render();
  if(!el("gameNotes").hidden)renderCardReferences(el("cardGallery"),level);
- message("Stage "+stageCode(index)+" ready. Drag a hand land up to the battlefield; tap battlefield lands for mana.");
+ message("Stage "+stageCode(index)+" · "+teachingCue());
  if(enter)showGame();
  return true;
 }
