@@ -8,7 +8,9 @@ const names=Object.freeze({
  painUR:"Shivan Reef",painUB:"Underground River",painBG:"Llanowar Wastes",
  checkUB:"Drowned Catacomb",checkUR:"Sulfur Falls",checkWG:"Sunpetal Grove",
  fetchUR:"Scalding Tarn",fetchBG:"Verdant Catacombs",
- bounceUG:"Simic Growth Chamber",relic:"Wastes"
+ bounceUG:"Simic Growth Chamber",relic:"Wastes",
+ signet:"Azorius Signet",bluffs:"Cascade Bluffs",solring:"Sol Ring",coffers:"Cabal Coffers",urborg:"Urborg, Tomb of Yawgmoth",
+ nykthos:"Nykthos, Shrine to Nyx",lotus:"Lotus Field",ziggurat:"Ancient Ziggurat",treasure:"Treasure",petal:"Lotus Petal",confluence:"Mana Confluence",command:"Command Tower"
 });
 export function referenceFor(cardKey){
  const name=names[cardKey];

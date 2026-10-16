@@ -53,11 +53,11 @@ export function initial(s){
 }
 export const complete=(scenario,state)=>state.cast>=scenario.goals.length;
 export function effectiveTypes(state,permanent){
- const c=SOURCES[permanent.key];const types=[...c.types];
- if(c.type==="Land"&&state.permanents.some(p=>p.key==="urborg")&&!types.includes("Swamp"))types.push("Swamp");
+ const c=SOURCES[permanent.key];const types=[...(c?.types||permanent.types||[])];
+ if((c?.type==="Land"||permanent.type==="Land")&&state.permanents.some(p=>p.key==="urborg")&&!types.includes("Swamp"))types.push("Swamp");
  return types;
 }
-function modesFor(scenario,state,permanent){
+export function modesFor(scenario,state,permanent){
  const card=SOURCES[permanent.key];const modes=[...card.abilities];
  const dynamic=card.dynamic;
  if(dynamic==="coffers"){

@@ -126,6 +126,13 @@ function costHtml(cost){
  return Object.entries(cost).flatMap(([k,n])=>k==="N"?(n?[coin("N",String(n))]:[]):Array.from({length:n},()=>coin(k))).join("");
 }
 function desc(action){
+ if(action.type==="activate"){
+  const source=getCard(level,action.id);
+  const paid=action.spend.map(id=>state.manaUnits.find(x=>x.id===id)?.color).filter(Boolean);
+  return (paid.length?"Spend "+paid.join(" + ")+" · ":"")+source.name+" → "+action.output.join(" + ")+
+    (source.v2==="ziggurat"?" · creature spells only":"")+
+    (source.v2==="treasure"||source.v2==="petal"?" · sacrifice":"");
+ }
  if(action.type==="play")return (action.shock?"Pay 2 life · enter untapped":getCard(level,action.id).kind==="shock"?"Save 2 life · enter tapped":getCard(level,action.id).kind==="bounce"?"Return "+getCard(level,action.returnId).name+" · enter tapped":"Play "+getCard(level,action.id).name);
  if(action.type==="tap")return "Tap for "+SYMBOL[action.color].name+(getCard(level,action.id).kind==="pain"&&action.color!=="C"?" · lose 1 life":"");
  if(action.type==="fetch")return "Find "+getCard(level,action.targetId).name+(action.shock?" · pay 3 life":" · pay 1 life");
@@ -151,26 +158,32 @@ function message(text,error=false){
  }
 }
 function rejectCast(){
- const stage=level.stages[state.stage];if(!stage)return;
+ const stage=level.stages[state.stage];
+ if(stage&&state.manaUnits?.some(u=>u.restriction)&&!actions(level,state).some(a=>a.type==="cast")){
+  const matching=COLORS.every(c=>(state.pool[c]||0)>=(stage.cost[c]||0));
+  if(matching){message("Some floating mana is restricted to creature spells and cannot pay for this spell.",true);return;}
+ }
+
+ if(!stage)return;
  const missing=missingMana(state.pool,stage.cost);
  flashWard({vault:el("heist").querySelector(".vault-card"),ward:el("lockGlyph"),costRow:el("wardCost"),button:null,pool:null,missing});
  message(failureText(missing),true);
 }
 function perform(action){
- const sourceRect=action.type==="tap"?el("battlefield").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():null;
+ const sourceRect=(action.type==="tap"||action.type==="activate")?el("battlefield").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():null;
  const out=reduce(level,state,action);
  if(!out.ok){if(action?.type==="cast")rejectCast();else message(out.error,true);return;}
  cancelAuto();
  if(action.type!=="tap"){viewEpoch++;pendingFlights.clear();el("manaTravelLayer").replaceChildren();}
  history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type});
  state=out.state;
- manaOrbs=transitionOrbs(manaOrbs,action,state.pool);
+ manaOrbs=(action.type==="activate"||action.type==="tap"&&getCard(level,action.id).kind==="bounce")?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
  if(!consistent(state.pool,manaOrbs))manaOrbs=reconstruct(state.pool);
  // Floating mana expires at the turn boundary. Reset ALL visual pigment,
  // currents, ripples and glow immediately, even while Canvas is animating.
  // This does not change the reducer, spell costs or playable land state.
  if(action.type==="end"){fluid.clear();currentFluidStage="";}
- const pendingId=action.type==="tap"?manaOrbs[manaOrbs.length-1]?.id:null;
+ const pendingId=action.type==="tap"&&getCard(level,action.id).kind!=="bounce"?manaOrbs[manaOrbs.length-1]?.id:null;
  if(pendingId!=null)pendingFlights.add(pendingId);
  if(completed(level,state)){
   const best=progress.bests[level.id];
@@ -178,7 +191,8 @@ function perform(action){
   persist();message("The vault breaks open! Case closed.");
  }else if(action.type==="end")message("Turn "+state.turn+" · lands untapped · mana emptied.");
  else if(action.type==="play")message(getCard(level,action.id).name+" enters the battlefield"+(state.field.find(f=>f.id===action.id)?.tapped?" tapped.":"."));
- else if(action.type==="tap")message("+1 "+SYMBOL[action.color].name+" mana · land tapped sideways.");
+ else if(action.type==="tap")message(getCard(level,action.id).kind==="bounce"?"Simic Growth Chamber adds green AND blue mana.":"+1 "+SYMBOL[action.color].name+" mana · land tapped sideways.");
+  else if(action.type==="activate")message(getCard(level,action.id).name+" produces "+action.output.join(" + ")+" mana"+(getCard(level,action.id).v2==="ziggurat"?" (creature spells only).":"."));
  else if(action.type==="fetch")message("Fetched "+getCard(level,action.targetId).name+". The fetch land is gone.");
  else if(action.type==="cast")message("Spell cast · "+(level.stages.length-state.stage)+" seals remain.");
  landDrag?.cancel();
@@ -201,15 +215,15 @@ function tapLand(id){
  lastCardId=id;
  if(completed(level,state))return;
  const onField=state.field.find(f=>f.id===id);
- if(!onField){message("This land is not on the battlefield.",true);return;}
- if(onField.tapped){message(tappedLandMessage(level,state),true);return;}
- const card=getCard(level,id),possible=actions(level,state).filter(a=>(a.type==="tap"||a.type==="fetch")&&a.id===id);
+ if(!onField){message("This source is not on the battlefield.",true);return;}
+ if(onField.tapped&&getCard(level,id).v2!=="petal"){message(tappedLandMessage(level,state),true);return;}
+ const card=getCard(level,id),possible=actions(level,state).filter(a=>(a.type==="tap"||a.type==="fetch"||a.type==="activate")&&a.id===id);
  if(card.kind==="fetch"){
   if(!possible.length)message("This fetch land has no legal target, or you cannot pay the life cost.",true);
   else choices("SEARCH YOUR RESERVE","Sacrifice this fetch land and pay 1 life to choose a compatible land.",possible);
  }else if(possible.length===1)perform(possible[0]);
- else if(possible.length)choices("CHOOSE YOUR MANA","Tap "+card.name+" for one mana color. A land cannot supply both colors at once.",possible);
- else message("This land cannot produce mana safely at your current life total.",true);
+ else if(possible.length)choices("CHOOSE A MANA ABILITY",card.v2?"Each choice shows the exact output and any input payment.":"Tap "+card.name+" for one mana color.",possible);
+ else message("This source is unavailable, or you cannot pay its activation cost or life payment.",true);
 }
 function playLand(id){
  lastCardId=id;selectedHandId=null;
@@ -225,7 +239,7 @@ function landHtml(instance,field){
  const name=full?.name||card.name;
  const src=imageFor(instance.id,key);
  const fallback=landPainting(card);
- const alt=name+" — Magic: The Gathering land card from Scryfall";
+ const alt=name+" — Magic: The Gathering card from Scryfall";
  return '<button type="button" draggable="false" class="land-card mtg-real-land '+(tapped?"is-tapped":"")+'" data-cardid="'+instance.id+'" data-zone="'+(field?"field":"hand")+'" data-kind="'+card.kind+'" data-real-card="'+key+'" aria-label="'+(field?"Tap ":"Select or drag to play: ")+name+(tapped?", tapped":"")+'" title="'+name+' · '+(field?"tap to produce mana":"drag to play · tap to inspect")+'">'+
   '<img class="mtg-card-image" data-card-key="'+key+'" src="'+src+'" alt="'+alt+'" draggable="false" decoding="async" loading="eager">'+
   '<span class="mtg-fallback" aria-hidden="true"><strong>'+name+'</strong>'+fallback+'</span>'+
@@ -278,18 +292,19 @@ function updateCastButton(){
  const ready=!completed(level,state)&&!pendingFlights.size&&!!chooseAutomaticCast(level,state);
  const button=el("castButton");
  button.disabled=!ready;
- button.textContent=ready?"CAST SPELL ✦":"NEED MORE MANA";
+ button.textContent=ready?"CAST SPELL ✦":state.manaUnits?.some(u=>u.restriction)&&COLORS.every(c=>(state.pool[c]||0)>=(level.stages[state.stage]?.cost?.[c]||0))?"MANA RESTRICTED":"NEED MORE MANA";
  button.setAttribute("aria-label",ready?"Cast the spell by spending mana":"Spell not ready; produce more mana");
  el("autoCastLabel").textContent=completed(level,state)?"VAULT OPEN":ready?(autoCastEnabled?"READY · AUTO-CAST ARMED":"READY · TAP CAST SPELL"):"TAP LANDS TO ADD MANA";
 }
 function teachingCue(){
  if(completed(level,state))return "Vault opened. Nice work!";
+ if(state.manaUnits?.some(u=>u.restriction)&&!actions(level,state).some(a=>a.type==="cast"))return "Some mana can only pay for creature spells. This vault may need a different mana source.";
  if(chooseAutomaticCast(level,state))return "Your mana matches the cost. Cast to spend it.";
  if(index===0)return "Tap your Island. Turning a land sideways makes mana.";
  if(index===1)return state.hand.length?"Play your Mountain from your hand.":"Tap your Mountain for red mana.";
  if(index===2)return state.hand.length&&!state.played?"Play a land from your hand.":state.field.some(f=>!f.tapped)?"Tap a land to make mana.":"End your turn to untap your lands.";
  if(state.hand.length&&!state.played&&state.field.every(f=>f.tapped))return "Select a land in your hand, then play it.";
- if(state.field.some(f=>!f.tapped))return "Tap a land to make mana in your cauldron.";
+ if(state.field.some(f=>!f.tapped))return "Choose a mana source. Some abilities require another mana first.";
  return state.turn<level.turnLimit?"End turn: lands untap and floating mana disappears.":"Final turn. Undo or restart for another solution.";
 }
 function render(pendingId=null){
@@ -313,7 +328,7 @@ function render(pendingId=null){
  el("lessonPrompt").textContent=teachingCue();
  el("autoCastToggle").checked=autoCastEnabled;
  el("stageList").innerHTML=level.stages.map((spell,i)=>'<span class="stage-marker '+(i<state.stage?"done":i===state.stage?"active":"")+'">'+(i<state.stage?"✓":String(i+1).padStart(2,"0"))+" "+spell.name+"</span>").join("");
- el("battleCount").textContent=state.field.length+" LAND"+(state.field.length===1?"":"S");
+ el("battleCount").textContent=state.field.length+" SOURCE"+(state.field.length===1?"":"S");
  if(selectedHandId&&!state.hand.includes(selectedHandId))selectedHandId=null;
  syncLandRows();
  el("handGuide").hidden=state.hand.length===0;
