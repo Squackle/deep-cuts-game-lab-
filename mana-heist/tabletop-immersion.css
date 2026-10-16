@@ -9,8 +9,8 @@ body.in-heist .shell{
  width:100%!important;max-width:none!important;height:100dvh!important;overflow:hidden!important;
 }
 body.in-heist #gameScreen{
- --pot-size:clamp(184px,min(44dvh,calc(34vw + 85px)),382px);
- --hand-height:clamp(122px,20dvh,177px);
+ --pot-size:clamp(184px,min(40dvh,calc(34vw + 85px)),380px);
+ --hand-height:clamp(112px,15dvh,170px);
  position:fixed!important;inset:0!important;padding:0!important;margin:0!important;
  width:100vw!important;max-width:none!important;height:100dvh!important;min-height:0!important;
  display:block!important;overflow:hidden!important;overscroll-behavior:none;
@@ -105,7 +105,7 @@ body.in-heist #heist #battlefield .land-card.mtg-real-land.is-tapped .mtg-card-i
 }
 /* The cauldron occupies the visual center; all information orbits around it. */
 body.in-heist #heist .vault-stage{
- --pot-top:clamp(182px,26dvh,280px);
+ --pot-top:clamp(210px,28dvh,310px);
  position:absolute!important;z-index:5!important;top:var(--pot-top)!important;left:0!important;right:0!important;
  display:block!important;width:100%!important;height:var(--pot-size)!important;min-height:0!important;
  margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
