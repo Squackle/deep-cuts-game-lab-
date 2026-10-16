@@ -449,10 +449,19 @@ el("worldPips").addEventListener("click",e=>{
  if(button&&!button.disabled){world=Number(button.dataset.world);renderOverworld({world,bests:progress.bests,index,proofs,medal});}
 });
 el("returnMap").addEventListener("click",showMap);
-el("toggleGuide").addEventListener("click",()=>{
- const guide=el("gameNotes");guide.open=!guide.open;
+function setGuideOpen(open,{restoreFocus=true}={}){
+ const guide=el("gameNotes");
+ guide.open=Boolean(open);
  el("toggleGuide").setAttribute("aria-expanded",String(guide.open));
- if(guide.open)guide.focus?.({preventScroll:true});
+ // The guide is a fixed overlay; changing the URL hash cannot close it.
+ // Return keyboard focus to the trigger when dismissing the guide.
+ if(restoreFocus)(guide.open?el("returnFromGuide"):el("toggleGuide")).focus({preventScroll:true});
+}
+el("toggleGuide").addEventListener("click",()=>setGuideOpen(!el("gameNotes").open));
+el("returnFromGuide").addEventListener("click",()=>setGuideOpen(false));
+// Clicking the native <summary> also changes <details>. Keep the state in sync.
+el("gameNotes").addEventListener("toggle",()=>{
+ el("toggleGuide").setAttribute("aria-expanded",String(el("gameNotes").open));
 });
 el("autoCastToggle").addEventListener("change",e=>{
  autoCastEnabled=e.target.checked;
@@ -467,7 +476,11 @@ el("castButton").addEventListener("click",()=>{
 el("playSelectedLand").addEventListener("click",()=>{if(selectedHandId)playLand(selectedHandId);});
 el("inspectSelected").addEventListener("click",()=>{if(selectedHandId)inspectById(selectedHandId);});
 el("dismissChoices").addEventListener("click",()=>choices("YOUR NEXT CHOICE","Tap a land or play a land from your hand.",[]));
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!el("actionBox").hidden){choices("YOUR NEXT CHOICE","Selection canceled.",[]);}});
+document.addEventListener("keydown",e=>{
+ if(e.key!=="Escape")return;
+ if(el("gameNotes").open){e.preventDefault();setGuideOpen(false);return;}
+ if(!el("actionBox").hidden){choices("YOUR NEXT CHOICE","Selection canceled.",[]);}
+});
 for(const zone of ["hand","battlefield"]){
  el(zone).addEventListener("error",e=>{
   if(e.target.matches?.(".mtg-card-image"))e.target.closest(".land-card")?.classList.add("image-failed");
