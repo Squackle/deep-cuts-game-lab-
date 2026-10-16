@@ -4,7 +4,7 @@
 
 **Agent entry point:** [AGENTS.md](AGENTS.md). **Release package plan:** [ROADMAP-1.0.md](ROADMAP-1.0.md). **Historical playtest development:** [README.md](README.md).
 
-**2026-10-16 P02 Phase 1 lab:** A separate, pure, rules-grounded engine module is available at [src/mana-engine-v2.js](src/mana-engine-v2.js), version mh-mana-lab-2.0.0, with [ten playable calibration boards](mana-engine-test.html). It supports individual mana units, restricted mana, activation fees, multi-unit output, devotion snapshots, Urborg/Coffers types, sacrifice sources and simplified phase clearing. This has **NOT** replaced the legacy 250-puzzle engine, its version, or its saves. P02 remains in progress; see [release/MANA-ENGINE-PHASE1.md](release/MANA-ENGINE-PHASE1.md) for explicit constraints and official rules sources.
+**2026-10-16 P02 Phase 1 lab:** A separate, pure, rules-grounded engine module is available at [src/mana-engine-v2.js](src/mana-engine-v2.js), version mh-mana-lab-2.0.0, with [ten playable calibration boards](mana-engine-test.html). It supports individual mana units, restricted mana, activation fees, multi-unit output, devotion snapshots, Urborg/Coffers types, sacrifice sources and simplified phase clearing. The original 250-stage engine now imports the common advanced ability and mana-unit payment kernel. Mana interactions are available inside the existing campaign tabletop without changing stage IDs, engine save version, or past medals. Full step/phase rules and the remaining land-entry mechanics are still pending. P02 remains in progress; see [release/MANA-ENGINE-PHASE1.md](release/MANA-ENGINE-PHASE1.md) for explicit constraints and official rules sources.
 
 ## 1. Authority, priority and versioning
 
