@@ -10,6 +10,7 @@ import {drawBroodPickup} from "../src/pickups.js";
 import {createDirectorRun,jumpDirectorPhase,showcaseDirectorVictory,advanceDirectorRun,directorStatus,spawnDirectorSuperOrb} from "./mode.js";
 import {drawSuperBurger} from "./super-burger-art.js";
 import {HIVE_FINALE_WEBP} from "./finale-art.js";
+import {HIVE_MOBILE_FINALE_WEBP} from "./mobile-finale-art.js";
 const $=id=>document.getElementById(id);
 const canvas=$("directorCanvas"),ctx=canvas.getContext("2d",{alpha:false}),CELL=20;
 let art=null,bg=null,run=null,last=0,accumulator=0,paused=false,lastStatus="";
@@ -43,9 +44,14 @@ function update(){
   $("directorVictoryDetails").textContent=run.mode==="classic"?
    "The last square is claimed. Every corner of the burrow belongs to the swarm.":
    "The burrow can no longer contain your swarm. The village trembles before its new sovereign.";
-  $("directorVictory").style.setProperty("--director-finale-art",run.mode==="hunt"?
+  const victory=$("directorVictory");
+  const isHunt=run.mode==="hunt";
+  victory.classList.toggle("victory-screen--hunt",isHunt);
+  victory.style.setProperty("--director-finale-art",isHunt?
     'url("'+HIVE_FINALE_WEBP+'")':
     "linear-gradient(145deg,#96754b,#30204f,#112a2d)");
+  victory.style.setProperty("--director-finale-mobile",isHunt?
+    'url("'+HIVE_MOBILE_FINALE_WEBP+'")':"none");
   $("directorVictory").hidden=false;
  }else $("directorVictory").hidden=true;
  setStatus(directorStatus(run)+(paused?" · PAUSED":""));
