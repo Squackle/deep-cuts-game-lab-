@@ -287,7 +287,7 @@ function syncLandRows(){
  // Fit both zones within one viewport; overlap cards instead of scrolling.
  const vw=window.innerWidth||390,vh=window.innerHeight||740;
  const handWidth=Math.round(Math.min(vw<650?125:151,Math.max(vw<650?94:112,vh*.20)));
- const fieldWidth=Math.round(vw<650&&vh<650?Math.min(64,Math.max(52,vh*.12)):Math.min(vw<650?94:111,Math.max(68,vh*.145)));
+ const fieldWidth=Math.round(vw<650?(vh<650?Math.min(64,Math.max(52,vh*.12)):Math.min(84,Math.max(68,vh*.12))):Math.min(80,Math.max(65,vh*.11)));
  const fit=(count,width,padding)=>count>1
   ?Math.min(0,(vw-padding-count*width)/(count-1)):0;
  el("hand").style.setProperty("--hand-card-width",handWidth+"px");
