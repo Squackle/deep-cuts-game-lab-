@@ -17,14 +17,17 @@ import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from 
 import {missingMana,failureText,flashWard} from "./ward-feedback.js";
 import {isFinalTurn,requiredManaText,finalTurnMessage,tappedLandMessage} from "./turn-guidance.js";
 const el=id=>document.getElementById(id);
-const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"C"},N:{name:"Generic",color:"#bec5bd",icon:"◇"}};
+const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"◇"},N:{name:"Generic",color:"#bec5bd",icon:"1"}};
 const storageKey="dc-mana-heist-landfall-v2";
 function readProgress(){
  try{const x=JSON.parse(localStorage.getItem(storageKey)||"null");if(x&&x.v===2&&typeof x.bests==="object"&&x.bests&&!Array.isArray(x.bests))return {bests:normalizedBests(x.bests),index:Math.max(0,Math.min(LEVELS.length-1,Number.isInteger(x.index)?x.index:0))};}catch{}
  return {bests:{},index:0};
 }
 let progress=readProgress(),index=Math.min(progress.index,highestUnlocked(progress.bests)),level=LEVELS[index],state=initial(level),history=[],choiceActions=[],selectedMessage="";
-let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null;
+let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null,selectedHandId=null;
+let autoCastEnabled=false;
+try{autoCastEnabled=localStorage.getItem("dc-mana-heist-auto-cast")==="yes";}catch{}
+el("autoCastToggle").checked=autoCastEnabled;
 let viewEpoch=0;
 let autoTimer=null;
 function cancelAuto(){
@@ -35,7 +38,7 @@ function cancelAuto(){
 // stirring postpone the finish, but NEVER let interaction block a puzzle.
 const AUTO_SETTLE_MS=2000,AUTO_STIR_MAX_MS=5100;
 function queueAutoCast(){
- if(pendingFlights.size||completed(level,state))return;
+ if(!autoCastEnabled||pendingFlights.size||completed(level,state))return;
  if(!chooseAutomaticCast(level,state)||autoTimer!==null)return;
  el("wardTarget").classList.add("auto-primed");
  el("autoCastLabel").textContent="WARD READY · STIR TO MIX";
@@ -64,7 +67,7 @@ function queueAutoCast(){
 const pendingFlights=new Set();
 const fluid=installFluidWard({
  canvas:el("wardFluidCanvas"),target:el("wardTarget"),
- onInteract:()=>{if(autoTimer!==null)el("autoCastLabel").textContent="STIR THE WATER · AUTO-CAST WHEN IT SETTLES";}
+ onInteract:()=>{if(autoCastEnabled&&autoTimer!==null)el("autoCastLabel").textContent="STIR THE WATER · AUTO-CAST WHEN IT SETTLES";}
 });
 el("wardTarget").dataset.preloadedMixes=String(PRELOADED_MIX_COUNT);
 let currentFluidStage="";
@@ -119,7 +122,8 @@ const lockGlyphs=["✧","⌑","◈","✦","⬡","✶"];
 function persist(){try{localStorage.setItem(storageKey,JSON.stringify({v:2,index,bests:progress.bests}));}catch{}}
 const coin=(c,extra="")=>'<span class="mana-glyph '+c+'" style="--coin:'+SYMBOL[c].color+'" aria-label="'+SYMBOL[c].name+' mana">'+(extra||SYMBOL[c].icon)+'</span>';
 function costHtml(cost){
- return Object.entries(cost).flatMap(([k,n])=>Array.from({length:n},()=>coin(k))).join("");
+ // Generic costs are numeric; diamonds are true colorless.
+ return Object.entries(cost).flatMap(([k,n])=>k==="N"?[coin("N",String(n))]:Array.from({length:n},()=>coin(k))).join("");
 }
 function desc(action){
  if(action.type==="play")return (action.shock?"Pay 2 life · enter untapped":getCard(level,action.id).kind==="shock"?"Save 2 life · enter tapped":getCard(level,action.id).kind==="bounce"?"Return "+getCard(level,action.returnId).name+" · enter tapped":"Play "+getCard(level,action.id).name);
@@ -172,11 +176,11 @@ function perform(action){
   const best=progress.bests[level.id];
   if(!best||state.turn<best.turn||(state.turn===best.turn&&state.spentLife<best.spentLife))progress.bests[level.id]={turn:state.turn,spentLife:state.spentLife};
   persist();message("The vault breaks open! Case closed.");
- }else if(action.type==="end")message("Turn "+state.turn+". All your lands untap; floating mana empties.");
+ }else if(action.type==="end")message("Turn "+state.turn+" · lands untapped · mana emptied.");
  else if(action.type==="play")message(getCard(level,action.id).name+" enters the battlefield"+(state.field.find(f=>f.id===action.id)?.tapped?" tapped.":"."));
- else if(action.type==="tap")message("Mana added: "+SYMBOL[action.color].name+". The land is now tapped.");
+ else if(action.type==="tap")message("+1 "+SYMBOL[action.color].name+" mana · land tapped sideways.");
  else if(action.type==="fetch")message("Fetched "+getCard(level,action.targetId).name+". The fetch land is gone.");
- else if(action.type==="cast")message("Ward dispelled! "+(level.stages.length-state.stage)+" ward(s) remain.");
+ else if(action.type==="cast")message("Spell cast · "+(level.stages.length-state.stage)+" seals remain.");
  landDrag?.cancel();
  render(pendingId);
  if(pendingId){
@@ -207,7 +211,7 @@ function tapLand(id){
  else message("This land cannot produce mana safely at your current life total.",true);
 }
 function playLand(id){
- lastCardId=id;
+ lastCardId=id;selectedHandId=null;
  const card=getCard(level,id),possible=actions(level,state).filter(a=>a.type==="play"&&a.id===id);
  if(!possible.length){message(state.played?"You have already played a land this turn.":"This land cannot be played right now.",true);return;}
  if(possible.length===1)perform(possible[0]);
@@ -246,7 +250,8 @@ function syncLandRows(){
   node.dataset.zone=field?"field":"hand";
   const name=card.name;
   node.setAttribute("aria-label",(field?"Tap ":"Drag to battlefield: ")+name+(tapped?", tapped":""));
-  node.title=name+" · "+(field?"tap to produce mana":"drag to play · tap to inspect");
+  node.title=name+" · "+(field?"tap to produce mana":"tap to select, drag to play");
+   node.classList.toggle("hand-selected",!field&&id===selectedHandId);
   return node;
  };
  const fieldNodes=state.field.map(f=>make(f,true));
@@ -257,6 +262,9 @@ function syncLandRows(){
  };
  el("battlefield").replaceChildren(...(fieldNodes.length?fieldNodes:[empty("No lands in play yet. Play one from your hand.")]));
  el("hand").replaceChildren(...(handNodes.length?handNodes:[empty("No land cards remain in hand.")]));
+ handNodes.forEach((node,i)=>{const m=(handNodes.length-1)/2;node.style.setProperty("--fan-tilt",((i-m)*Math.min(7,27/Math.max(1,handNodes.length-1)))+"deg");node.style.setProperty("--fan-drop",(Math.abs(i-m)*5)+"px");});
+ el("playSelectedLand").disabled=!selectedHandId||!state.hand.includes(selectedHandId)||!!state.played;
+ el("inspectSelected").disabled=!selectedHandId||!state.hand.includes(selectedHandId);
 }
 function render(pendingId=null){
  const proof=proofs.get(level.id),isWin=completed(level,state),stage=level.stages[state.stage];
