@@ -384,6 +384,7 @@ function syncLandRows(){
   item.className="empty";item.textContent=text;return item;
  };
  el("battlefield").replaceChildren(...(fieldNodes.length?fieldNodes:[empty("No lands in play yet. Play one from your hand.")]));
+ el("battlefield").classList.toggle("field-many",fieldNodes.length>=8);
  el("hand").replaceChildren(...(handNodes.length?handNodes:[empty("No land cards remain in hand.")]));
  // Fit both zones within one viewport; overlap cards instead of scrolling.
  const vw=window.innerWidth||390,vh=window.innerHeight||740;
