@@ -29,7 +29,7 @@ test("enemy movement is continuous at a fixed interval and obeys board boundarie
  assert.notDeepEqual(pos,{x:11,y:13});
  assert.ok(pos.x>=0&&pos.y>=0&&pos.x<18&&pos.y<22);
 });
-test("enemy capture is credited exactly once, awards 3 EV and growth",()=>{
+test("enemy capture is credited exactly once, awards 3 EV without lengthening Hunt",()=>{
  const run=newRun({seed:3});start(run);
  run.body=[{x:9,y:10},{x:8,y:10},{x:6,y:6},{x:5,y:5},{x:5,y:7},{x:10,y:10}];
  run.direction="down";run.enemies=[{id:20,kind:"skitter",pos:{x:5,y:6},dir:"right",period:1,clock:0,moves:0}];
@@ -39,7 +39,7 @@ test("enemy capture is credited exactly once, awards 3 EV and growth",()=>{
  assert.equal(run.energy,3);
  assert.equal(run.score,before+300);
  assert.equal(run.enemies.length,0);
- assert.ok(run.growthDebt>0);
+ assert.equal(run.growthDebt,0,"Hunt rewards energy and points, not permanent growth");
  const energy=run.energy;step(run);assert.equal(run.energy,energy);
 });
 test("two normal captures unlock one mutation at 5 EV and carry remainder",()=>{
@@ -103,7 +103,7 @@ test("red and blue change effective player speed but not WUBRG mutation identity
 });
 
 test("Alpha 0.4.1 calms the player pace around ten percent while retaining relative evolution scaling",()=>{
- assert.equal(RULES_VERSION,"hive-1.5.2");
+ assert.equal(RULES_VERSION,"hive-1.5.3");
  assert.equal(PLAYER_BASE_TICK_MS,150);
  assert.equal(PLAYER_MIN_TICK_MS,105);
  assert.equal(PLAYER_ACCELERATION_MS,4);

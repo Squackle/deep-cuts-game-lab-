@@ -15,7 +15,9 @@ export const OPENING_GRACE_MS=9000;
 export const OPENING_EVOLUTIONS=2;
 export const OPENING_ORB_MIN=70;
 export const OPENING_ORB_SPREAD=35;
-export const RULES_VERSION="hive-1.5.2";
+export const RULES_VERSION="hive-1.5.3";
+/** Lab balance trial: Predator Hunt focuses on trapping, not filling the board. */
+export const HUNT_SWARM_LENGTH=7;
 // Player speed is set in milliseconds per grid step (larger = easier).
 // Playtest adjustment: about 10% less movement per second at every stage.
 export const PLAYER_BASE_TICK_MS=150;
@@ -24,9 +26,9 @@ export const PLAYER_ACCELERATION_MS=4;
 export const MUTATIONS=Object.freeze({
  W:{color:"W",name:"Hardened Shell",school:"CARAPACE",icon:"◈",description:"Gain one shield. Survive a fatal impact and evade danger.",short:"+1 shield"},
  U:{color:"U",name:"Temporal Drift",school:"ADAPTATION",icon:"◷",description:"Slow your hive's movement for 28 steps to steer tighter traps.",short:"28 slow steps"},
- B:{color:"B",name:"Emergency Molt",school:"REGENERATION",icon:"✦",description:"Spend one molt charge and shed three segments to avoid death.",short:"+1 molt"},
+ B:{color:"B",name:"Emergency Molt",school:"REGENERATION",icon:"✦",description:"Spend a molt charge, briefly shed three segments to dodge death, then regrow them.",short:"+1 molt"},
  R:{color:"R",name:"Blood Rush",school:"FRENZY",icon:"✹",description:"Hunt faster and score double points for 24 movements.",short:"24 frenzy steps"},
- G:{color:"G",name:"Rapid Brood",school:"BROOD",icon:"✿",description:"Your next four captures or orbs each gain extra growth.",short:"4 bonus rewards"}
+ G:{color:"G",name:"Rapid Brood",school:"BROOD",icon:"✿",description:"Your next four captures or orbs each grant bonus evolution energy instead of growth.",short:"4 bonus EV rewards"}
 });
 export function seededRandom(seed){
  let t=(Number(seed)>>>0)||1;
@@ -48,7 +50,7 @@ export function newRun({cols=18,rows=22,random,seed,mode="hunt"}={}){
  if(!["hunt","classic"].includes(mode))throw Error("Invalid game mode");
  const rng=random||((seed===undefined)?Math.random:seededRandom(seed));
  const y=Math.floor(rows/2),x=Math.max(6,Math.floor(cols/2));
- const run={cols,rows,mode,biome:1,terrain:[],hazardMs:0,biomeNoticeMs:0,bossWins:0,random:rng,seed:seed??null,body:Array.from({length:7},(_,i)=>({x:x-i,y})),
+ const run={cols,rows,mode,biome:1,terrain:[],hazardMs:0,biomeNoticeMs:0,bossWins:0,random:rng,seed:seed??null,body:Array.from({length:mode==="hunt"?HUNT_SWARM_LENGTH:7},(_,i)=>({x:x-i,y})),
   direction:"right",turnQueue:[],food:null,orbIn:mode==="hunt"?72:145,
   openingGraceMs:mode==="hunt"?OPENING_GRACE_MS:0,
   mercy:mode==="hunt"?1:0,
@@ -119,7 +121,16 @@ function recover(run,failed,freePreyDodge=false){
  let color=null;
  if(freePreyDodge&&run.mercy>0){run.mercy--;color="G"}
  else if(e.shield>0){e.shield--;color="W"}
- else if(e.molt>0&&run.body.length>=5){e.molt--;color="B";const shed=compostMoltCost(run);if(shed===2)e.greenPickups--;run.body.splice(run.body.length-shed,shed)}
+ else if(e.molt>0&&run.body.length>=5){
+  e.molt--;color="B";
+  const shed=compostMoltCost(run);
+  if(shed===2)e.greenPickups--;
+  const toShed=Math.min(shed,run.body.length-3);
+  run.body.splice(run.body.length-toShed,toShed);
+  // Hunt has a tactical seven-segment length; a molt shrinks temporarily,
+  // then the lost tail returns over the next few safe movement steps.
+  if(run.mode==="hunt")run.growthDebt+=toShed;
+ }
  if(!color)return false;
  const compass=["up","right","down","left"],i=compass.indexOf(failed);
  const bend=[compass[(i+3)%4],compass[(i+1)%4]].find(h=>{
@@ -144,12 +155,19 @@ function recover(run,failed,freePreyDodge=false){
  return true;
 }
 function reward(run,{energy,score,growth,type,at}){
- run.earnedEnergy+=energy;run.energy+=energy;
+ let bonusEnergy=0;
+ if(run.effects.greenPickups>0){
+  run.effects.greenPickups--;
+  // Hunt Green is a progression tool; Brood Trail Green stays a growth tool.
+  if(run.mode==="hunt")bonusEnergy=1;
+  else run.growthDebt++;
+ }
+ const awardedEnergy=energy+bonusEnergy;
+ run.earnedEnergy+=awardedEnergy;run.energy+=awardedEnergy;
  run.score+=score*(run.effects.redTicks>0?2:1);
- run.growthDebt+=growth;
- if(run.effects.greenPickups>0){run.effects.greenPickups--;run.growthDebt++}
+ if(run.mode==="classic")run.growthDebt+=growth;
  if(type==="kill")run.kills++;
- emit(run,{type,energy,score:score*(run.effects.redTicks>0?2:1),at});
+ emit(run,{type,energy:awardedEnergy,score:score*(run.effects.redTicks>0?2:1),at});
  if(run.energy>=EVOLUTION_COST){
   run.energy-=EVOLUTION_COST;
   run.status="draft";run.draftCount++;
@@ -319,6 +337,6 @@ export function activeEffects(run){
  if(e.blueTicks)a.push({color:"U",count:e.blueTicks,label:e.blueTicks+" slow steps"});
  if(e.molt)a.push({color:"B",count:e.molt,label:e.molt+" molt"+(e.molt===1?"":"s")});
  if(e.redTicks)a.push({color:"R",count:e.redTicks,label:e.redTicks+" frenzy steps"});
- if(e.greenPickups)a.push({color:"G",count:e.greenPickups,label:e.greenPickups+" bonus rewards"});
+ if(e.greenPickups)a.push({color:"G",count:e.greenPickups,label:e.greenPickups+(run.mode==="hunt"?" bonus EV captures":" bonus growth orbs")});
  return a;
 }

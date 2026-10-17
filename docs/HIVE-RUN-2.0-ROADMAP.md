@@ -41,12 +41,12 @@ Ship **two finished arcade experiences** rather than an unbounded live-service r
 - [ ] Owner hands-on visual/behavior acceptance of Director's scenario and control parity.
 - [ ] The exact later finale sequences must remain independently earned in arcade, not simulated by Director.
 
-### D3 — Hunt fixed-size redesign (PROPOSED / requires playtests)
-- [ ] Prototype seven-segment Hunt movement/trapping in Game Lab, with original Brood Trail untouched.
-- [ ] Replace Hunt capture/orb/boss permanent growth and adjust Green/Black/Green synergies with usable mode-specific effects.
+### D3 — Hunt fixed-size redesign (GAME LAB trial implemented · owner acceptance pending)
+- [x] Prototype seven-segment Hunt movement/trapping in Game Lab, with original Brood Trail growth intact.
+- [x] Replace Hunt capture/orb/boss permanent growth: score and energy remain, but no reward creates tail segments. Green spends a charge to add +1 evolution energy per reward (4 charges per mutation); Black's emergency molt sheds 3 segments temporarily, then regrows over 3 safe steps (2 with Black+Green synergy at the cost of one Green charge). White+Green still consumes a Green charge to create Hatchling Ward.
 - [ ] Compare 7-segment, slight cap and existing grow-forever Hunt against all five bosses; assess fair time-to-capture/long-run survival.
-- [ ] Bump deterministic rules version, extend replay and collision tests.
-- [ ] Owner chooses the final Hunt-length cap after results.
+- [x] Bump Lab-only deterministic rules to `hive-1.5.3`; extend replay, 7-segment boss capture, color effects, Director cheat isolation and collision regression tests.
+- [ ] Owner chooses the final Hunt-length cap after hands-on results. The current seven-segment cap is a balance **experiment**, not yet accepted for public release.
 
 ### D4 — Real endings (DESIGN APPROVED, TO BUILD)
 - [ ] Brood Trail authentic board-fill perfect clear: finale animation/music, earned-clear summary, reduced-motion and mute support.
@@ -66,4 +66,4 @@ Ship **two finished arcade experiences** rather than an unbounded live-service r
 
 Standalone Game Lab's `director/**` is a debug harness, not user content or a game feature. It has no account identity, rankings, entitlement, saved victories, API posts or D1 access. Its win previews are **not** official accomplishments. Production gameplay needs server-verifiable replay for newly earned results. The existing scripted bulk export is intentionally disabled; selective review must explicitly exclude all of `director/**`.
 
-**Current source snapshots:** public Beacon uses replay rules `hive-1.3`; Game Lab Matriarch uses `hive-1.5.2`. This planning document describes the next steps without claiming any Hunt fixed-length or genuine final celebration has already shipped.
+**Current source snapshots:** public Beacon uses replay rules `hive-1.3`; Game Lab's Hunt balance experiment uses `hive-1.5.3`. Director Mode includes improved full-bleed victory concept art, but genuine earned victory finales and production integration are still pending.
