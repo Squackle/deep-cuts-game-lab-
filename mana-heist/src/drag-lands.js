@@ -96,16 +96,13 @@ export function installLandDragging({hand,battlefield,onDrop,onHint,onInspect}) 
  hand.addEventListener("pointercancel",()=>restore());
  hand.addEventListener("lostpointercapture",()=>restore());
  hand.addEventListener("dragstart",e=>e.preventDefault());
- // Keyboard equivalence: Enter/Space to pick up a land, Enter/Space on the battlefield to put it down.
+ // Keyboard equivalence: Enter/Space uses the selected hand card immediately; I opens inspection.
  hand.addEventListener("keydown",e=>{
   const card=e.target.closest('[data-zone="hand"][data-cardid]');
   if(!card||!["Enter"," "].includes(e.key))return;
   e.preventDefault();
   cancel();
-  keyboardId=card.dataset.cardid;
-  card.classList.add("keyboard-picked");zone.classList.add("keyboard-armed");
-  onHint?.("Card picked up. Focus the battlefield and press Enter or Space to use it; Esc cancels.");
-  battlefield.focus();
+  onDrop(card.dataset.cardid);
  });
  battlefield.addEventListener("keydown",e=>{
   if(!keyboardId||!["Enter"," "].includes(e.key))return;
