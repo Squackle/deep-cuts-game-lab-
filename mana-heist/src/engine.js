@@ -50,7 +50,7 @@ const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
 export function validate(level){
  if(!level||level.version!==VERSION||!/^mh-[\w-]+$/.test(level.id||""))throw Error("Invalid puzzle version/id");
  if(!Number.isInteger(level.turnLimit)||level.turnLimit<1||level.turnLimit>6||!Number.isInteger(level.life)||level.life<1||level.life>30)throw Error("Invalid turn limit/life");
- if(!Array.isArray(level.hand)||!Array.isArray(level.field)||!Array.isArray(level.library)||!Array.isArray(level.stages)||!level.stages.length||level.stages.length>5)throw Error("Invalid puzzle lists");
+ if(!Array.isArray(level.hand)||!Array.isArray(level.field)||!Array.isArray(level.library)||!Array.isArray(level.stages)||!level.stages.length||level.stages.length>6)throw Error("Invalid puzzle lists");
  const unique=new Set();
  for(const c of [...level.hand,...level.field,...level.library]){
   if(!c||typeof c.id!=="string"||!/^[-\w]{1,30}$/.test(c.id)||unique.has(c.id)||!CARDS[c.card])throw Error("Duplicate land ID or unknown card");
