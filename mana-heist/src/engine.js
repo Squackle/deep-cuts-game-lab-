@@ -63,7 +63,7 @@ export function validate(level){
   if(!stage||typeof stage.name!=="string"||stage.name.length>80||!stage.name.trim())throw Error("Invalid spell");
   const cost=stage.cost;
   if(!cost||typeof cost!=="object"||Array.isArray(cost)||!Object.keys(cost).length)throw Error("Invalid mana cost");
-  for(const [key,n] of Object.entries(cost))if(![...COLORS,"N"].includes(key)||!Number.isInteger(n)||n<0||n>8)throw Error("Invalid mana cost");
+  for(const [key,n] of Object.entries(cost))if(![...COLORS,"N"].includes(key)||!Number.isInteger(n)||n<0||n>16)throw Error("Invalid mana cost");
   if(sum(cost)<1||sum(cost)>16||stage.effect&&!["untap"].includes(stage.effect))throw Error("Invalid spell effect");
  }
  return true;
