@@ -194,6 +194,7 @@ function desc(action){
     (source.v2==="ziggurat"?" · creature spells only":"")+
     (source.v2==="treasure"||source.v2==="petal"?" · sacrifice":"");
  }
+ if(action.type==="ritual")return "Cast "+getCard(level,action.id).name+" · "+action.output.join(" + ")+" mana";
  if(action.type==="play")return (action.shock?"Pay 2 life · enter untapped":getCard(level,action.id).kind==="shock"?"Save 2 life · enter tapped":getCard(level,action.id).kind==="bounce"?"Return "+getCard(level,action.returnId).name+" · enter tapped":"Play "+getCard(level,action.id).name);
  if(action.type==="tap")return "Tap for "+SYMBOL[action.color].name+(getCard(level,action.id).kind==="pain"&&action.color!=="C"?" · lose 1 life":"");
  if(action.type==="fetch")return "Find "+getCard(level,action.targetId).name+(action.shock?" · pay 3 life":" · pay 1 life");
@@ -231,14 +232,14 @@ function rejectCast(){
  message(failureText(missing),true);
 }
 function perform(action){
- const sourceRect=(action.type==="tap"||action.type==="activate")?el("battlefield").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():null;
+ const sourceRect=(action.type==="tap"||action.type==="activate")?el("battlefield").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():action.type==="ritual"?el("hand").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():null;
  const out=reduce(level,state,action);
  if(!out.ok){if(action?.type==="cast")rejectCast();else message(out.error,true);return;}
  cancelAuto();
  if(action.type!=="tap"){viewEpoch++;pendingFlights.clear();cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();}
  history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type});
  state=out.state;
- manaOrbs=(action.type==="activate"||action.type==="tap"&&getCard(level,action.id).kind==="bounce")?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
+ manaOrbs=(action.type==="ritual"||action.type==="activate"||action.type==="tap"&&getCard(level,action.id).kind==="bounce")?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
  if(!consistent(state.pool,manaOrbs))manaOrbs=reconstruct(state.pool);
  // Floating mana expires at the turn boundary. Reset ALL visual pigment,
  // currents, ripples and glow immediately, even while Canvas is animating.
@@ -247,7 +248,7 @@ function perform(action){
  // Orbital particles represent output mana, including paired and filtered output.
  const produced=action.type==="tap"
   ?(getCard(level,action.id).kind==="bounce"?["G","U"]:[action.color])
-  :action.type==="activate"?action.output:[];
+  :action.type==="activate"||action.type==="ritual"?action.output:[];
  const incoming=produced.length?manaOrbs.slice(-produced.length):[];
  for(const orb of incoming)pendingFlights.add(orb.id);
  const pendingId=incoming[0]?.id??null;
