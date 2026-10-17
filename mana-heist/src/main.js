@@ -330,7 +330,7 @@ function tapLand(id){
  if(completed(level,state))return;
  const onField=state.field.find(f=>f.id===id);
  if(!onField){message("This source is not on the battlefield.",true);return;}
- if(onField.tapped&&getCard(level,id).v2!=="petal"){message(tappedLandMessage(level,state),true);return;}
+ if(onField.tapped&&!["petal","basalt"].includes(getCard(level,id).v2)){message(tappedLandMessage(level,state),true);return;}
  const card=getCard(level,id),possible=actions(level,state).filter(a=>(a.type==="tap"||a.type==="fetch"||a.type==="activate")&&a.id===id);
  if(card.kind==="fetch"){
   if(!possible.length)message("This fetch land has no legal target, or you cannot pay the life cost.",true);
@@ -342,7 +342,7 @@ function tapLand(id){
 function playLand(id){
  lastCardId=id;selectedHandId=null;
  const card=getCard(level,id);
- if(card.kind==="instant"){
+ if(card.manaSpell){
   const rituals=actions(level,state).filter(a=>a.type==="ritual"&&a.id===id);
   if(!rituals.length){message("Make enough mana to pay for this instant before casting it.",true);return;}
   if(rituals.length===1)perform(rituals[0]);
@@ -416,8 +416,8 @@ function syncLandRows(){
   node.style.setProperty("--fan-drop",position.drop+"px");
   node.style.setProperty("--fan-index",String(position.order));
  });
- el("playSelectedLand").disabled=!selectedHandId||!state.hand.includes(selectedHandId)||(!!state.played&&getCard(level,selectedHandId)?.kind!=="instant");
- el("playSelectedLand").textContent=selectedHandId&&getCard(level,selectedHandId)?.kind==="instant"?"CAST MANA SPELL ✦":"PLAY SELECTED LAND ↑";
+ el("playSelectedLand").disabled=!selectedHandId||!state.hand.includes(selectedHandId)||(!!state.played&&!getCard(level,selectedHandId)?.manaSpell);
+ el("playSelectedLand").textContent=selectedHandId&&!!getCard(level,selectedHandId)?.manaSpell?"CAST MANA SPELL ✦":"PLAY SELECTED LAND ↑";
  el("inspectSelected").disabled=!selectedHandId||!state.hand.includes(selectedHandId);
 }
 function selectHand(id){
