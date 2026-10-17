@@ -19,6 +19,6 @@ test("250 new expert puzzles have verified solutions and increasingly linked tur
   assert.ok(proof.actions.some(a=>a.type==="activate"&&a.mode==="coffers"),p.id);
   assert.equal(proof.turn,p.turnLimit,p.id);
  }
- assert.equal(LEVELS[499].stages.length,5);
+ assert.equal(LEVELS[499].stages.length,6);
  assert.equal(LEVELS[499].turnLimit,3);
 });
