@@ -69,6 +69,9 @@ test("P01 remains blocked; independently approved later work can be in progress 
    assert.match(html,/id="lessonPrompt"/);
    assert.match(html,/id="castButton"/);
    assert.match(tutorial,/three distinct actions/);
+  }else if([3,5,8,9,10].includes(i)){
+   assert.match(record,/\| IN PROGRESS \|/,"partially authorized mana and difficulty improvements are underway");
+   assert.match(record,/NOT COMPLETE/i,"partial release cannot be presented as 1.0 acceptance");
   }else{
    assert.match(record,/\| NOT STARTED \|/,"unapproved package "+id+" must remain unstarted");
   }
