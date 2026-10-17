@@ -56,7 +56,7 @@ export function validate(level){
   if(!c||typeof c.id!=="string"||!/^[-\w]{1,30}$/.test(c.id)||unique.has(c.id)||!CARDS[c.card])throw Error("Duplicate land ID or unknown card");
   unique.add(c.id);
  }
- if(level.hand.length+level.field.length+level.library.length>18)throw Error("Too many mana sources");
+ if(level.hand.length+level.field.length+level.library.length>22)throw Error("Too many mana sources");
  if([...level.field,...level.library].some(x=>CARDS[x.card].kind==="instant"))throw Error("Mana instants must begin in hand");
  if(level.hand.filter(x=>CARDS[x.card].kind==="instant").length>3)throw Error("Too many mana instants");
  for(const stage of level.stages){
