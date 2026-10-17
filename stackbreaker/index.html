@@ -524,6 +524,78 @@ main{max-width:1640px}
 @media(prefers-reduced-motion:reduce){
  .game-grid,.life-widget,.hand-card,.stack-entry{animation:none!important;transition:none!important}
 }
+
+
+/* 2026-10-17 · Keep original Scryfall card printed P/T fully untouched
+   for additive buffs / counters; show only an accessible green modifier. */
+.battle-card .pt-modifier {
+ position:absolute;
+ right:3.4%;
+ bottom:15.2%;
+ z-index:5;
+ min-width:38%;
+ max-width:91%;
+ width:max-content;
+ box-sizing:border-box;
+ min-height:16px;
+ padding:2px 5px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ white-space:nowrap;
+ overflow:visible;
+ border:1px solid #9bdb9b;
+ border-radius:6px;
+ background:#176b36;
+ color:#fff8d9;
+ box-shadow:0 1px 6px #000d,inset 0 1px 0 #ffffff24;
+ text-shadow:0 1px 2px #04331a;
+ font:800 clamp(9px,.93vw,13px)/1.1 system-ui,sans-serif;
+ pointer-events:none;
+}
+/* For genuinely base-setting effects, replace the printed P/T in a larger
+   full-height opaque box; unlike the previous 9–13px row digits do not clip. */
+.battle-card .pt-replacement {
+ position:absolute;
+ right:2.4%;
+ bottom:5.6%;
+ z-index:5;
+ width:max-content;
+ min-width:43%;
+ max-width:88%;
+ height:auto;
+ min-height:18px;
+ padding:2px 5px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ box-sizing:border-box;
+ white-space:nowrap;
+ overflow:visible;
+ border:1.5px solid #27291e;
+ border-radius:4px;
+ background:#f6efdb;
+ color:#111d16;
+ box-shadow:0 1px 4px #0009;
+ text-shadow:none;
+ font:900 clamp(10px,1.05vw,15px)/1.15 Georgia,serif;
+ pointer-events:none;
+}
+@media(max-width:600px){
+ .battle-card .pt-modifier{
+  bottom:15.3%;min-height:13px;min-width:40%;padding:1px 3px;
+  font-size:clamp(8px,2.6vw,11px);border-radius:4px;
+ }
+ .battle-card .pt-replacement{
+  min-height:16px;min-width:46%;padding:1px 3px;
+  font-size:clamp(9px,2.6vw,12px);
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .battle-card .pt-modifier,.battle-card .pt-replacement{
+  animation:none!important;transition:none!important;
+ }
+}
 </style></head>
 <body><a class="skip" href="#game">Skip to Stackbreaker game</a>
 <header class="mast"><a class="site-mark" href="/lab/" aria-label="Back to Game Test Lab home">◈ <b>DEEP CUTS</b> / GAME LAB</a><strong class="site-title">STACKBREAKER <small>1.5 · ARCANE OBSERVATORY</small></strong><a class="site-home" href="/lab/" aria-label="Back to Test Lab, choose another game">GAME LAB ↗</a></header>
@@ -1280,6 +1352,54 @@ function commanderScenario(input,index=0){
  p.solution=commanderClone(solution);p.companionColors=commanderPalette(p);
  return p;
 }
+
+/*
+ * Presentation only: distinguish additive stat changes from effects that
+ * change a creature's base P/T. Does not change MTG game characteristics.
+ * Scryfall card art and the printed P/T remain untouched for additive buffs.
+ */
+const signed = n => (n > 0 ? '+' : '') + String(n);
+const finite = n => typeof n === 'number' && Number.isFinite(n);
+function plusOneCounters(unit){
+ const counters=unit?.counters;
+ const explicit=unit?.plusOneCounters;
+ if(Number.isInteger(explicit)&&explicit>=0)return explicit;
+ if(counters&&typeof counters==='object'){
+  const value=counters['+1/+1']??counters.plusOnePlusOne;
+  if(Number.isInteger(value)&&value>=0)return value;
+ }
+ return 0;
+}
+function presentCreaturePT(unit,printed,currentPower,currentToughness){
+ if(!finite(printed?.power)||!finite(printed?.toughness)||
+    !finite(currentPower)||!finite(currentToughness))
+  throw new TypeError('P/T presentation requires numeric printed and effective P/T');
+ const deltaPower=currentPower-printed.power,deltaToughness=currentToughness-printed.toughness;
+ const changed=deltaPower!==0||deltaToughness!==0;
+ // A future engine may explicitly supply base-setting metadata; P/T overlays
+ // still reflect the engine-computed effective values, never invented ones.
+ const baseSet=unit?.basePTSet===true||unit?.ptSet===true||
+  finite(unit?.basePower)||finite(unit?.baseToughness);
+ if(!changed&&!baseSet)return {kind:'printed',text:'',accessible:''};
+ const counters=plusOneCounters(unit);
+ const additivePower=(unit?.powerBoost||0)+counters;
+ const additiveToughness=(unit?.toughnessBoost||0)+counters;
+ const onlyAdditive=!baseSet&&deltaPower===additivePower&&deltaToughness===additiveToughness;
+ if(onlyAdditive){
+  const onlyCounters=counters>0&&!(unit?.powerBoost||0)&&!(unit?.toughnessBoost||0);
+  const text=onlyCounters?counters+' × +1/+1':signed(deltaPower)+'/'+signed(deltaToughness);
+  const accessible='Creature P/T modifier '+text+
+   (counters>0&&!onlyCounters?' ('+counters+' +1/+1 counter'+(counters===1?'':'s')+')':'')+
+   '. Current power and toughness '+currentPower+'/'+currentToughness+'. Printed card unchanged.';
+  return {kind:'modifier',text,accessible};
+ }
+ return {
+  kind:'replacement',text:currentPower+'/'+currentToughness,
+  accessible:'Current power and toughness '+currentPower+'/'+currentToughness+
+   ' (base-changing effect or non-additive change).'
+ };
+}
+
 
 
 
@@ -3708,9 +3828,13 @@ function shortCard(u){
  // Full Scryfall cards already show their printed power/toughness. Only replace
  // the printed box if a real game effect changes either characteristic.
  // Marked damage does not reduce toughness in Magic and never changes this box.
- const changed=power!==printed.power||toughness!==printed.toughness;
+ const stat=presentCreaturePT(u,printed,power,toughness);
  const flags=[u.indestructible?'INDESTRUCTIBLE':'',u.hexproof?'HEXPROOF':'',u.damage?`${u.damage} DAMAGE`:''].filter(Boolean).join(' · ');
- const altered=changed?`<span class="pt-replacement" data-modified-pt aria-label="Modified power and toughness ${power}/${toughness}" title="Modified power/toughness: ${power}/${toughness}">${power}/${toughness}</span>`:'';
+ // Additive modifiers sit above printed Scryfall P/T; base-setters use a replacement.
+ const altered=stat.kind==='modifier'
+  ?`<span class="pt-modifier" data-pt-modifier aria-label="${esc(stat.accessible)}" title="${esc(stat.accessible)}">${esc(stat.text)}</span>`
+  :stat.kind==='replacement'
+  ?`<span class="pt-replacement" data-modified-pt aria-label="${esc(stat.accessible)}" title="${esc(stat.accessible)}">${esc(stat.text)}</span>`:'';
  const status=flags?`<span class="flags">${esc(flags)}</span>`:'';
  return `<div class="battle-unit"><button type="button" class="battle-card ${gone?'off':''} ${ability?'has-ability':''} ${active?'can-activate':''}" data-unit="${esc(u.id)}" ${ability?'data-activate-source="'+esc(ability.id)+'"':''} aria-label="${esc(u.card)}, ${power}/${toughness}. ${esc(flags)} ${active?'Activate its printed ability.':'View or target this card.'}"><span class="battle-card-face">${thumb(u.card,'normal','battle-image')}${altered}</span>${status}</button></div>`;
 }
