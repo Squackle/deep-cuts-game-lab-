@@ -1,0 +1,23 @@
+# Mana Heist: direct tap, C/D ratings, and Galaxies VI–X
+
+**Release date:** Oct 17, 2026. **Authorization:** “the current last level should be the last level of like galaxy 5 ... halfway point of diff and complexity. ... think and implement”. Only standalone Deep Cuts Game Lab under `mana-heist/**`, with no public-site changes or promotion. P01 external MTG rights approval is still BLOCKED.
+
+## What shipped
+
+**Hands:** On mouse, touch and pen, a short tap on a card from your hand immediately performs its default legal action: plays a land (including shock/bounce choices) or casts a mana spell when payable. A deliberate drag still plays a land; I or Inspect gives a full-card inspector; keyboard Enter/Space acts immediately. Illegal plays give feedback without using the land drop or mana. The original optional secondary Play Selected control remains usable as fallback.
+
+**Ratings:** Each vault has a numeric `C 1–100` (structural complexity) and `D 1–100` (estimated execution difficulty) rating on the campaign map and gameplay header, with descriptive help text. The two scores are **not player success probabilities or demonstrated optimal paths**. Complexity uses actual mana-source counts, distinct ability families, paid activation types, mana colors, life/restriction/one-use mechanics, multiple wards and compounded sequencing. Difficulty includes colored-pip demands, number of casts, meaningful paid abilities, turn count and estimated legal action count. Formula, benchmark and factors are in `src/difficulty-metrics.js`, are deterministic and testable.
+
+**Calibration anchor:** Prior stage `mh-250`, original Galaxy V world 5 level 10, remains unchanged at index 249 and is the 50/100 benchmark in **both** dimensions. It is *not* relabeled or modified. The new finale `mh-500` is a six-ward, three-turn puzzle with a 17-permanent mana board and three Dark Rituals in hand, targeting C 100/D 100. Ratings are *structural design targets*, not empirically validated cognitive-load difficulty.
+
+**Expansion:** Five additional galaxies (VI–X) with five worlds × ten vaults each: 250 new IDs `mh-251` to `mh-500`; total 500. All vaults remain unsealed. Later galaxies increment from 2 to 3, 4, 5 and 6 sequential ward objectives, spread over one to three turns. They require a paid Signet, two generic mana for Cabal Coffers, two-to-one colored conversion through Cascade Bluffs, a real instant Dark Ritual with net two black mana, and scarce Treasure production. Every new level is a variation of a **legally certified multicolor mana circuit**, with alternate land/ability choices and colored-cost splits. The changes are structurally meaningful, but these 250 new puzzles are **not 250 individually playtested, completely unique expert problems**; additional archetypes, solution uniqueness, and actual player-calibrated difficulty remain outstanding.
+
+**Safety and compatibility:** Exact IDs and board definitions of the original 250 stages unchanged, including the original Galaxy V finale. No migration or deletion of `dc-mana-heist-landfall-v2`. 26 lesson exercises remain separate with their own progress key. Advanced bests use existing versioned capstone best store `dc-mana-heist-capstones-v1` without reinterpreting original medals. Mana rules remain a simplified step/turn abstraction (no full Magic stack or every step/phase). Oracle and licensing review remains incomplete. The new 6-ward cap is a game-objective extension, not a changed MTG rule.
+
+## Source and verification
+
+Changed files: `src/drag-lands.js`, `src/main.js`, `src/levels.js`, `src/engine.js`, `src/overworld.js`; added `src/mastery-galaxies.js`, `src/mastery-certificates.js`, `src/difficulty-metrics.js`, `mastery-ratings.css`; tests and docs updated.
+
+Acceptance tests: all 500 unique IDs and original `mh-250` fixture unchanged; every new `mh-251..mh-500` validated and replayed to completion using deterministic exact legal actions including paid fees and actual rituals. C/D old midpoint 50/50, finale 100/100, increasing upper-galaxy averages, no stage-index-only score manipulation. Browser preview at 390×844: one tap played the single Mountain in Learn Lesson 2, turning the land drop from available to used without a second press; 10 galaxy tabs and quick jumps; old finale C50/D50; new final C100/D100; six wards, 17 field cards and three rituals, no document scrolling. Check phone touch hardware and gameplay latency on physical devices before the next acceptance status.
+
+Rollback: revert merged PR in **Game Lab only** and wait for Cloudflare Pages main deployment to complete. Do not delete existing browser save data. New levels disappear after rollback without touching old progress.
