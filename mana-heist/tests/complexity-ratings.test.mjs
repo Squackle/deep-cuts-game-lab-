@@ -30,7 +30,7 @@ test("new galaxies scale up in structure, not a hidden stage index bonus",()=>{
  assert.ok(avgs[5].d>avgs[4].d);
  const first=LEVELS[250],last=LEVELS[499];
  assert.equal(first.stages.length,2);
- assert.equal(last.stages.length,5);
+ assert.equal(last.stages.length,6);
  assert.ok(certifyMastery(last).steps>certifyMastery(first).steps);
 });
 test("ratings and two-part scale appear in both active vault and all map cards",()=>{
