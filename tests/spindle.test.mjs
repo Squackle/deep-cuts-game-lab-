@@ -7,7 +7,7 @@ import {safePreyTile,decidePrey,advancePrey,HEADINGS,VECTORS,ownAbilityHazard,re
 import {createLairRun} from "../src/lair.js";
 const shift=(p,dir)=>({x:p.x+VECTORS[dir][0],y:p.y+VECTORS[dir][1]});
 test("Spindle recharges Weaver every five seconds, Guardian every four",()=>{
- assert.equal(RULES_VERSION,"hive-1.5.2");
+ assert.equal(RULES_VERSION,"hive-1.5.3");
  assert.equal(ABILITIES.weaver.cooldownMs,5000);
  assert.equal(ABILITIES.guardian.cooldownMs,4000);
  assert.equal(MAX_WEBS,3);
