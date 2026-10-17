@@ -78,7 +78,7 @@ export function diverseFor(i){
  return {
   id,version:VERSION,chapter:familyLabels[family],rank:5,galaxy,world,
   revision:3,curated:"mana-diversity-3.0",
-  title:id==="mh-500"?"THE FINAL MANA CIRCUIT":familyLabels[family]+" · "+String(position+1).padStart(2,"0"),
+  title:id==="mh-500"?"THE FINAL MANA HEIST · FLAMES OF MEMORY":familyLabels[family]+" · "+String(position+1).padStart(2,"0"),
   briefing:special+" Make the right colors across "+wardCount+" wards.",
   life:family==="tide"&&position%2===1?turns+1:20,turnLimit:turns,
   field,hand,library:[],stages,
