@@ -21,7 +21,7 @@ test("real Magic cards are playable images and have a full-size inspector",()=>{
 });
 test("hand pointer tap selects a card; separate inspection and drag actions remain available",()=>{
  assert.match(drag,/else onInspect\?\.\(id\)/);
- assert.match(main,/onInspect:id=>selectHand\(id\)/);
+ assert.match(main,/onInspect:id=>playLand\(id\)/);
  assert.match(main,/el\("inspectSelected"\)\.addEventListener/);
  assert.match(main,/inspectById\(selectedHandId\)/);
  assert.match(main,/el\("playSelectedLand"\)\.addEventListener/);
