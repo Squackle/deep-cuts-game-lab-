@@ -22,7 +22,8 @@ test("all twenty-six authored Sage lessons have actual unique objectives and spe
  }
  const mixed=lessonNote(4,LEARN_LEVELS[4],{...initial(LEARN_LEVELS[4]),stage:1,pool:{W:0,U:1,B:0,R:1,G:0,C:0}});
  assert.equal(mixed.mixed,true);assert.match(mixed.body,/CAST SPELL/);
- assert.equal(relevantLesson(EXTRA_LESSONS[2]),10);
+ assert.equal(relevantLesson(EXTRA_LESSONS[2]),20);
+ assert.equal(relevantLesson(EXTRA_LESSONS[6]),24);
 });
 test("Sol Ring, Signet, both rituals, filtered mana and Coffers lessons are solver validated", {timeout:90000},()=>{
  for(const l of EXTRA_LESSONS){
