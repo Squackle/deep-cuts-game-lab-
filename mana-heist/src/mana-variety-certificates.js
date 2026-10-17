@@ -49,6 +49,39 @@ function instructions(level,round){
   activate("f6","basalt-CCC")
  ];
 }
+function finaleInstructions(round){
+ if(round===0)return [
+  tap("f0","U"),cast("h0"),tap("f1","U"),tap("f2","R"),tap("f3","W"),
+  activate("f18","lotus-U"),activate("f11","arcane-U"),
+  activate("f13","nyxlotus-U"),activate("f8","thran-CCC"),
+  activate("f9","filter"),activate("f10","filter-U-0"),
+  activate("f12","gilded-G"),activate("f14","prism-G"),
+  activate("f15","lantern-W"),tap("f6","W"),
+  tap("f4","R"),activate("f21","worn-CC")
+ ];
+ if(round===1)return [
+  tap("f4","R"),tap("f2","R"),activate("f8","thran-CCC"),
+  cast("h1"),tap("f1","U"),tap("f0","U"),
+  tap("f3","W"),activate("f11","arcane-U"),
+  activate("f13","nyxlotus-R"),activate("f12","gilded-B"),
+  activate("f15","lantern-B"),activate("f21","worn-CC"),
+  activate("f14","prism-B"),activate("f9","filter"),
+  activate("f10","filter-U-0"),tap("f6","W"),tap("f7","C"),
+  activate("f19","treasure-G"),activate("f20","bloom-G")
+ ];
+ return [
+  tap("f4","R"),cast("h2"),tap("f0","R"), /* Chromatic Lantern grants R to Island */
+  activate("f13","nyxlotus-R"),activate("f18","lotus-R"),
+  activate("f12","gilded-B"),activate("f15","lantern-G"),
+  activate("f11","arcane-U"),tap("f2","U"),tap("f3","W"),
+  tap("f6","W"),tap("f1","U"),activate("f8","thran-CCC"),
+  activate("f9","filter"),activate("f10","filter-U-0"),
+  activate("f14","prism-G"),activate("f21","worn-CC"),
+  tap("f7","C"),activate("f17","basalt-CCC"),
+  activate("f16","key-untap-f17"),activate("f17","basalt-CCC")
+ ];
+}
+
 export function certifyDiverse(level){
  if(level.curated!=="mana-diversity-3.0")return null;
  let state=initial(level);const trace=[];
@@ -66,7 +99,7 @@ export function certifyDiverse(level){
  };
  for(let round=0;round<level.turnLimit;round++){
   if(round)apply("end",null);
-  for(const [type,id,detail] of instructions(level,round))apply(type,id,detail);
+  for(const [type,id,detail] of (level.mastery.family==="finale"?finaleInstructions(round):instructions(level,round)))apply(type,id,detail);
   const casts=Math.min(2,level.stages.length-state.stage);
   for(let n=0;n<casts;n++)apply("cast",null);
  }
