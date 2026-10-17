@@ -23,7 +23,7 @@ export function renderOverworld({world,bests,index,proofs,medal}){
   const cleared=LEVELS.slice(g.range[0],g.range[1]+1).filter(l=>bests[l.id]).length;
   return '<button type="button" class="galaxy-tab '+(active?"active":"")+'" data-galaxy="'+i+'"'+(open?"":" disabled")+
    ' aria-pressed="'+active+'" aria-label="Galaxy '+(i+1)+': '+g.name+(open?"":" locked")+'">'+
-   '<span class="galaxy-symbol">'+(open?["✧","☾","◈","✦","✹"][i]:"◈")+'</span>'+
+   '<span class="galaxy-symbol">'+(open?["✧","☾","◈","✦","✹","✺","✸","◇","⬡","✷"][i]:"◈")+'</span>'+
    '<span><b>GALAXY '+roman[i]+'</b><small>'+(open?g.name:"UNEXPLORED")+'</small><em>'+cleared+' / 50</em></span></button>';
  }).join("");
  $("chapterPicker").innerHTML=LEVELS.slice(ch.range[0],ch.range[1]+1).map((p,off)=>{
