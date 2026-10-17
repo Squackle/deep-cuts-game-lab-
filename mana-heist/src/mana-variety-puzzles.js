@@ -39,9 +39,38 @@ const familyLabels={
  tide:"THE ISLAND TIDE",prism:"THE CHROMATIC WORKS",geyser:"OPPONENT'S FURNACE",
  rite:"THE GROWING FLAME",key:"THE MONOLITH LOCK"
 };
+export function finalNexus(){
+ const cards={
+  f0:"island",f1:"island",f2:"dualUR",f3:"dualWU",f4:"mountain",
+  f6:"plains",f7:"relic",f8:"thran",f9:"signet",f10:"bluffs",
+  f11:"arcane",f12:"gilded",f13:"nyxlotus",f14:"prism",
+  f15:"lantern",f16:"key",f17:"basalt",f18:"lotus",
+  f19:"treasure",f20:"bloom",f21:"worn"
+ };
+ return {
+  id:"mh-500",version:VERSION,chapter:"THE ETERNAL CITADEL",
+  rank:5,galaxy:9,world:4,revision:3,curated:"mana-diversity-3.0",
+  title:"THE FINAL MANA HEIST · THE CHROMATIC NEXUS",
+  briefing:"Three turns, three DIFFERENT mana spells. First, High Tide makes typed Islands produce extra blue—even when tapped for red or white. Next, Mana Geyser counts the opponent's EIGHT tapped lands; manage Lotus Bloom and Treasure as one-use fuel. Finally, use Rite of Flame, Chromatic Lantern and a Voltaic Key to untap Basalt Monolith, building nine true colorless mana.",
+  life:20,turnLimit:3,field:Object.entries(cards).map(([id,card])=>item(id,card)),
+  hand:[item("h0","tide"),item("h1","geyser"),item("h2","rite")],
+  library:[],opponentTappedLands:8,devotion:{U:3,R:4},
+  stages:[
+   {name:"The Rising Tide",cost:{U:7,W:2,G:2,C:1,R:1}},
+   {name:"The Island Cipher",cost:{U:6,W:2,G:2,C:2,R:1}},
+   {name:"The Furnace Gate",cost:{R:6,B:3,U:3,W:1,G:1,C:1}},
+   {name:"The One-Use Reckoning",cost:{R:6,B:2,U:2,W:2,G:3}},
+   {name:"The Monolith Equation",cost:{R:5,B:2,U:3,W:1,G:1,C:4}},
+   {name:"The Eternal Nexus",cost:{R:5,B:1,U:2,W:2,G:1,C:5}}
+  ],
+  mastery:{family:"finale",uniqueMechanic:"high-tide+opponent-geyser+artifact-untap",turns:3,wards:6,world:4,position:9}
+ };
+}
+
 export const DIVERSE_FAMILIES=Object.freeze(Object.keys(base));
 export function diverseFor(i){
  if(!Number.isInteger(i)||i<250||i>=500)return null;
+ if(i===499)return finalNexus();
  const galaxy=Math.floor(i/50),world=Math.floor(i/10)%5,position=i%10;
  // The black mana family remains the fifth, minority archetype in G VII–X.
  const family=["tide","prism","geyser",galaxy===5?"key":null,"rite"][world];
