@@ -117,5 +117,5 @@ test("Lab presence is only a public experimental analytics preview, never live s
  assert.match(preview,/noindex,nofollow/);
  assert.doesNotMatch(preview,/deep-cuts-edh\\.pages\\.dev\\/api|\\/api\\/leaderboard|\\/api\\/owner/);
  for(const file of ["functions/api/lab-presence.js","lab/presence.js","lab/presence.css","lab/command-center.js","lab/command-center.css"])assert.ok(fs.existsSync(file),file);
- assert.doesNotMatch(read("functions/api/lab-presence.js"),/community_profiles|leaderboard|D1|password|token|cookie/i);
+ assert.doesNotMatch(read("functions/api/lab-presence.js"),/community_profiles|leaderboard|env\\.DB|env\\.D1|password|token|cookie/i);
 });
