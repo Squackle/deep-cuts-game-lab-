@@ -23,7 +23,7 @@ export function renderOverworld({world,bests,index,proofs,medal}){
  $("chapterPicker").innerHTML=LEVELS.slice(ch.range[0],ch.range[1]+1).map((p,off)=>{
   const i=ch.range[0]+off,isOpen=true,win=bests[p.id];
   const optimal=win?proofs.get(p.id):null;
-  const stars=win&&optimal?medal(p,{turn:win.turn,spentLife:win.spentLife,stage:p.stages.length},optimal):0;
+  const stars=win&&optimal?medal(p,{turn:win.turn,spentLife:win.spentLife,actions:win.actions,stage:p.stages.length},optimal):0;
   const current=i===index&&!win;
   const displayCode=(off+1).toString().padStart(2,"0");
   return '<button class="overworld-stage '+(win?"finished":current?"current":"")+'" type="button" data-level="'+i+'"'+(isOpen?"":" disabled")+
