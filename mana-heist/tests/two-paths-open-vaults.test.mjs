@@ -19,14 +19,14 @@ test("the full 250-vault map and every galaxy open with no completed puzzles",()
  assert.equal(galaxyAccessible(5,empty),false);
  assert.equal(chapterAccessible(25,empty),false);
 });
-test("18 source-authored exercises are available independently of campaign ranking",()=>{
+test("26 Learn Mana exercises include the original 18 authored boards plus new independent studies",()=>{
  const indices=LEARN_GROUPS.flatMap(group=>group.indices);
- assert.equal(LEARN_COUNT,18);
- assert.deepEqual([...indices].sort((a,b)=>a-b),Array.from({length:18},(_,i)=>i));
+ assert.equal(LEARN_COUNT,26);
+ assert.deepEqual([...indices].sort((a,b)=>a-b),Array.from({length:26},(_,i)=>i));
  assert.deepEqual(BASE_LEVELS.map(l=>l.id),LEVELS.slice(0,18).map(l=>l.id));
- for(let i=0;i<18;i++)assert.ok(isLearnLevel(i));
- for(const i of [-1,18,249])assert.equal(isLearnLevel(i),false);
- assert.equal(nextLearnIndex(0),1);assert.equal(nextLearnIndex(17),null);
+ for(let i=0;i<26;i++)assert.ok(isLearnLevel(i));
+ for(const i of [-1,26,249])assert.equal(isLearnLevel(i),false);
+ assert.equal(nextLearnIndex(0),1);assert.equal(nextLearnIndex(25),null);
 });
 test("learning progress validates separately, does not grant puzzle medals or unlock gating",()=>{
  const data=normalizedLearnProgress({completed:[0,2,2,6,999,-1,"4"],last:2});
