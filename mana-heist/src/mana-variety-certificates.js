@@ -70,7 +70,7 @@ function finaleInstructions(round){
   activate("f19","treasure-G"),activate("f20","bloom-G")
  ];
  return [
-  tap("f4","R"),cast("h2"),tap("f0","R"), /* Chromatic Lantern grants R to Island */
+  tap("f4","R"),cast("h2"),activate("f0","lantern-R"), /* Lantern-granted ability, not Island printed ability */
   activate("f13","nyxlotus-R"),activate("f18","lotus-R"),
   activate("f12","gilded-B"),activate("f15","lantern-G"),
   activate("f11","arcane-U"),tap("f2","U"),tap("f3","W"),
