@@ -9,7 +9,7 @@ test("all stages and worlds are available from the start",()=>{
  assert.equal(unlocked(0,{}),true);
  assert.equal(unlocked(1,{}),true);
  assert.equal(unlocked(249,{}),true);
- assert.equal(unlocked(250,{}),false);
+ assert.equal(unlocked(500,{}),false);
  assert.equal(chapterAccessible(0,{}),true);
  assert.equal(chapterAccessible(1,{}),true);
  assert.equal(galaxyAccessible(4,{}),true);
@@ -21,8 +21,8 @@ test("all stages and worlds are available from the start",()=>{
  assert.equal(stageCode(17),"1:2:8");
  assert.equal(stageCode(50),"2:1:1");
  assert.equal(stageCode(249),"5:5:10");
- assert.equal(CHAPTERS.length,25);
- assert.equal(GALAXIES.length,5);
+ assert.equal(CHAPTERS.length,50);
+ assert.equal(GALAXIES.length,10);
 });
 test("sequential wins still track historic bests but do not gate vault access",()=>{
  const best={};

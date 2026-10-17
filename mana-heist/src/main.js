@@ -19,6 +19,8 @@ import {installCardMagnifier} from "./card-magnifier.js";
 import {SAGE_LESSONS} from "./sage-lessons.js";
 import {LEARN_LEVELS} from "./expanded-learn.js";
 import {certifyCapstone} from "./capstone-certificates.js";
+import {certifyMastery} from "./mastery-certificates.js";
+import {evaluateVault} from "./difficulty-metrics.js";
 import {mountSage} from "./sage-ui.js";
 import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
 import {missingMana,failureText,flashWard} from "./ward-feedback.js";
@@ -30,6 +32,8 @@ const sageStyle=document.createElement("link");
 sageStyle.rel="stylesheet";
 sageStyle.href=new URL("../sage-and-card-fixes.css",import.meta.url).href;
 document.head.append(sageStyle);
+const difficultyStyle=document.createElement("link");difficultyStyle.rel="stylesheet";
+difficultyStyle.href=new URL("../mastery-ratings.css",import.meta.url).href;document.head.append(difficultyStyle);
 const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"◇"},N:{name:"Generic",color:"#bec5bd",icon:"1"}};
 const storageKey="dc-mana-heist-landfall-v2";
 function readProgress(){
@@ -144,7 +148,7 @@ function proofFor(id){
  if(proofCache.has(id))return proofCache.get(id);
  const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id);
  if(!puzzle)return null;
- const exact=puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
+ const exact=puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
  let proof=exact;
  if(exact.status!=="solved"&&puzzle.templateId){
   const source=BASE_LEVELS.find(p=>p.id===puzzle.templateId);
@@ -158,6 +162,8 @@ function proofFor(id){
  return proof;
 }
 const proofs={get:proofFor};
+const masteryRating=document.createElement("span");masteryRating.id="masteryRating";masteryRating.className="mastery-rating";masteryRating.title="C = structural complexity; D = estimated execution difficulty. Both 1–100, old Galaxy V finale benchmark = 50.";
+el("stageLabel").after(masteryRating);
 const lockGlyphs=["✧","⌑","◈","✦","⬡","✶"];
 function persist(){try{localStorage.setItem(storageKey,JSON.stringify({v:2,index:progress.index,bests:progress.bests}));}catch{}}
 function persistLearn(){try{localStorage.setItem(learnKey,JSON.stringify({v:1,completed:learnProgress.completed,last:learnProgress.last}));}catch{}}
@@ -356,7 +362,7 @@ function landHtml(instance,field){
  const src=imageFor(instance.id,key);
  const fallback=landPainting(card);
  const alt=name+" — Magic: The Gathering card from Scryfall";
- return '<button type="button" draggable="false" class="land-card mtg-real-land '+(tapped?"is-tapped":"")+'" data-cardid="'+instance.id+'" data-zone="'+(field?"field":"hand")+'" data-kind="'+card.kind+'" data-real-card="'+key+'" aria-label="'+(field?"Tap ":"Select or drag to play: ")+name+(tapped?", tapped":"")+'" title="'+name+' · '+(field?"tap to produce mana":"drag to play · tap to inspect")+'">'+
+ return '<button type="button" draggable="false" class="land-card mtg-real-land '+(tapped?"is-tapped":"")+'" data-cardid="'+instance.id+'" data-zone="'+(field?"field":"hand")+'" data-kind="'+card.kind+'" data-real-card="'+key+'" aria-label="'+(field?"Tap ":"Tap to play or cast: ")+name+(tapped?", tapped":"")+'" title="'+name+' · '+(field?"tap to produce mana":"tap to play · hold and drag · press I to inspect")+'">'+
   '<img class="mtg-card-image" data-card-key="'+key+'" src="'+src+'" alt="'+alt+'" draggable="false" decoding="async" loading="eager">'+
   '<span class="mtg-fallback" aria-hidden="true"><strong>'+name+'</strong>'+fallback+'</span>'+
   '</button>';
@@ -380,8 +386,8 @@ function syncLandRows(){
   node.classList.toggle("is-tapped",!!tapped);
   node.dataset.zone=field?"field":"hand";
   const name=card.name;
-  node.setAttribute("aria-label",(field?"Tap ":"Select or drag to play: ")+name+(tapped?", tapped":""));
-  node.title=name+" · "+(field?"tap to produce mana":"tap to select, drag to play");
+  node.setAttribute("aria-label",(field?"Tap ":"Tap to play or cast: ")+name+(tapped?", tapped":""));
+  node.title=name+" · "+(field?"tap to produce mana":"tap to play or cast · press I to inspect");
    node.classList.toggle("hand-selected",!field&&id===selectedHandId);
    if(field)node.removeAttribute("aria-pressed");else node.setAttribute("aria-pressed",String(id===selectedHandId));
   return node;
@@ -446,6 +452,9 @@ function render(pendingId=null){
  el("toggleGuide").textContent=mode==="learn"?"✧ LESSON NOTES":"ⓘ GUIDE";
  el("chapterName").textContent=level.chapter;
  el("difficulty").textContent=["INITIATE","ROOKIE","TACTICIAN","EXPERT","MASTERMIND"][level.rank-1];
+ const rating=evaluateVault(level);
+ masteryRating.textContent="C "+rating.complexity+" · D "+rating.difficulty;
+ masteryRating.setAttribute("aria-label","Complexity "+rating.complexity+" of 100, estimated difficulty "+rating.difficulty+" of 100");
  el("vaultName").textContent=level.title;
  el("briefing").textContent=level.briefing;
  el("turnNumber").textContent=state.turn+" / "+level.turnLimit;
@@ -497,7 +506,7 @@ function render(pendingId=null){
  returnFromResult.hidden=!isWin;returnFromResult.textContent=mode==="learn"?"← LESSONS":"← VAULT MAP";
  sage.render({mode,index,level,state,finished:isWin});
  if(mode==="heist")renderOverworld({world,bests:displayBests(),index,proofs,medal});
- choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap battlefield lands for mana; drag hand lands onto the battlefield to play.",[]);
+ choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap battlefield lands for mana; tap a hand card to play it or cast a ritual.",[]);
  selectedMessage="";
 }
 function showMap(){
@@ -634,7 +643,7 @@ for(const id of ["battlefield","hand"])el(id).addEventListener("keydown",e=>{
 landDrag=installLandDragging({
  hand:el("hand"),battlefield:el("battlefield"),
  onDrop:id=>playLand(id),
- onInspect:id=>selectHand(id),
+ onInspect:id=>playLand(id),
  onHint:(text,error=false)=>message(text,error)
 });
 el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a)perform(a);});

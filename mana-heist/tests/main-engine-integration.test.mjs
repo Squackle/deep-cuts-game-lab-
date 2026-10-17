@@ -32,7 +32,7 @@ test("main Mana Heist engine recognizes the added authentic lands and mana artif
   assert.ok(CARDS[id],id+" not in main campaign");
   assert.ok(CARDS[id].v2,id+" not bridged into shared rules kernel");
  }
- assert.equal(LEVELS.length,250);
+ assert.equal(LEVELS.length,500);
  assert.equal(LEVELS.slice(0,18).filter(x=>x.field.some(f=>f.id==="mana2")).length,0);
  assert.ok(LEVELS.some(x=>x.field.some(f=>f.card==="signet"||f.card==="bluffs")));
  const main=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");

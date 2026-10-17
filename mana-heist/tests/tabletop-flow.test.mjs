@@ -42,7 +42,7 @@ test("the game presents physical cards before explanations, without removing exi
  assert.ok(html.indexOf('id="battlefield"')<html.indexOf('id="hand"'));
  assert.ok(html.indexOf('id="hand"')<html.indexOf('id="gameNotes"'));
  assert.match(html,/<details id="gameNotes"/);
- assert.match(main,/onInspect:id=>selectHand\(id\)/);
+ assert.match(main,/onInspect:id=>playLand\(id\)/);
  assert.match(main,/el\("playSelectedLand"\)\.addEventListener/);
  assert.match(css,/--fan-tilt/);
  assert.match(css,/max-width:650px/);
@@ -63,5 +63,5 @@ test("auto-cast is opt-in; mana stays available for manual cast until explicitly
  assert.match(main,/localStorage\.getItem\("dc-mana-heist-auto-cast"\)/);
  // Campaign and save identities are untouched by this presentation release.
  assert.match(main,/const storageKey="dc-mana-heist-landfall-v2"/);
- assert.equal(LEVELS.length,250);
+ assert.equal(LEVELS.length,500);
 });

@@ -52,7 +52,7 @@ test("spell and auto-cast option avoid the center cauldron and keep keyboard acc
 });
 test("this patch changes only UI and retains the same campaign, engine and save key",()=>{
  assert.equal(VERSION,"mh-landfall-0.2.0");
- assert.equal(LEVELS.length,250);
+ assert.equal(LEVELS.length,500);
  const main=read("src/main.js");
  assert.match(main,/dc-mana-heist-landfall-v2/);
  assert.match(main,/launchOrbitMana/);

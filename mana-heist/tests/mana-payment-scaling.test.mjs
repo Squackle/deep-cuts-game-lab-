@@ -37,7 +37,7 @@ import * as awaitableEngine from "../src/engine.js";
 test("all thirty revised puzzles have legal certificates and preserve existing stage ids",()=>{
  const special=LEVELS.filter(l=>l.revision===1);
  assert.equal(special.length,30);
- assert.equal(new Set(LEVELS.map(l=>l.id)).size,250);
+ assert.equal(new Set(LEVELS.map(l=>l.id)).size,500);
  assert.ok(LEVELS[249].field.length===12);
  for(const puzzle of special){
   const proof=certifyCapstone(puzzle);

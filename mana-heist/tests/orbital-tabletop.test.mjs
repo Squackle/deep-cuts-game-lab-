@@ -6,9 +6,9 @@ import {VERSION} from "../src/engine.js";
 import {orbitPosition} from "../src/orbital-mana.js";
 const read=f=>readFileSync(new URL("../"+f,import.meta.url),"utf8");
 test("the campaign still has 250 unchanged-stage IDs and saves",()=>{
- assert.equal(LEVELS.length,250);
+ assert.equal(LEVELS.length,500);
  assert.equal(VERSION,"mh-landfall-0.2.0");
- assert.equal(new Set(LEVELS.map(l=>l.id)).size,250);
+ assert.equal(new Set(LEVELS.map(l=>l.id)).size,500);
  const js=read("src/main.js");
  assert.match(js,/dc-mana-heist-landfall-v2/);
  assert.match(js,/function proofFor\(id\)/);

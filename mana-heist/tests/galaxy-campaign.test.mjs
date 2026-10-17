@@ -6,12 +6,12 @@ import {validate} from "../src/engine.js";
 import {solve,replay} from "../src/solver.js";
 import {galaxyAccessible,chapterAccessible,highestUnlocked,stageCode} from "../src/campaign.js";
 
-test("5 galaxies × 5 worlds × 10 stages = 250 valid, uniquely identified puzzles",()=>{
- assert.equal(GALAXIES.length,5);
- assert.equal(CHAPTERS.length,25);
- assert.equal(LEVELS.length,250);
- assert.equal(new Set(LEVELS.map(l=>l.id)).size,250);
- for(let g=0;g<5;g++){
+test("10 galaxies × 5 worlds × 10 stages = 500 valid, uniquely identified puzzles",()=>{
+ assert.equal(GALAXIES.length,10);
+ assert.equal(CHAPTERS.length,50);
+ assert.equal(LEVELS.length,500);
+ assert.equal(new Set(LEVELS.map(l=>l.id)).size,500);
+ for(let g=0;g<10;g++){
   assert.deepEqual(GALAXIES[g].range,[g*50,g*50+49]);
   assert.equal(CHAPTERS.slice(g*5,g*5+5).length,5);
   for(let w=0;w<5;w++){

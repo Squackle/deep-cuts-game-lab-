@@ -1,5 +1,6 @@
 import {VERSION} from "./engine.js";
 import {capstoneFor,coffersFor} from "./advanced-capstones.js";
+import {MASTERY_GALAXY_DATA,masteryFor} from "./mastery-galaxies.js";
 const cards=list=>list.map(([id,card])=>({id,card}));
 const spell=(name,cost,effect)=>({name,cost,...(effect?{effect}:{})});
 const L=(id,chapter,rank,title,briefing,turnLimit,life,hand,field,library,stages)=>({
@@ -36,6 +37,7 @@ const GALAXY_DATA=[
  ["THE OBSIDIAN REACH","Punishing decisions",["THE GRAND HEIST","PAINWATER PASS","DUALITY SPIRE","BLACKGLASS SANCTUM","THE HIDDEN CROWN"]],
  ["THE LAST CONSTELLATION","Masters of the vault",["THE IMPOSSIBLE KEY","SEVENFOLD ECHOES","THE CHROMATIC LABYRINTH","THE FINAL CITADEL","THE COSMIC VAULT"]]
 ];
+GALAXY_DATA.push(...MASTERY_GALAXY_DATA);
 export const GALAXIES=GALAXY_DATA.map(([name,subtitle],i)=>({
  id:i,name,subtitle,range:[i*50,i*50+49],worldRange:[i*5,i*5+4]
 }));
@@ -103,5 +105,5 @@ function variant(i){
   templateId:root.id,galaxy:g,world:w
  };
 }
-export const LEVELS=Array.from({length:250},(_,i)=>i<BASE_LEVELS.length?BASE_LEVELS[i]:(capstoneFor(i)||coffersFor(i)||variant(i)));
-if(LEVELS.length!==250||CHAPTERS.length!==25||GALAXIES.length!==5)throw Error("Campaign atlas is incomplete");
+export const LEVELS=Array.from({length:500},(_,i)=>i>=250?masteryFor(i):i<BASE_LEVELS.length?BASE_LEVELS[i]:(capstoneFor(i)||coffersFor(i)||variant(i)));
+if(LEVELS.length!==500||CHAPTERS.length!==50||GALAXIES.length!==10)throw Error("Campaign atlas is incomplete");

@@ -44,7 +44,7 @@ test("no header inspector button; keyed card nodes keep the same image on tap an
  const js=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
  const img=readFileSync(new URL("../src/printing-art.js",import.meta.url),"utf8");
  assert.doesNotMatch(html,/id="inspectLand"/);
- assert.match(js,/onInspect:id=>selectHand\(id\)/);
+ assert.match(js,/onInspect:id=>playLand\(id\)/);
  assert.match(js,/inspectById\(selectedHandId\)/);
  assert.match(js,/function syncLandRows\(\)/);
  assert.match(js,/existing\.get\(id\)/);

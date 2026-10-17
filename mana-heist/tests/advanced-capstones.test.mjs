@@ -9,7 +9,7 @@ import {validate,VERSION,actions,initial} from "../src/engine.js";
 test("thirty late-world engine and ritual challenge boards have substantial mana dependency boards",()=>{
  const special=LEVELS.filter(x=>x.revision===1);
  assert.equal(special.length,30);
- assert.equal(LEVELS.length,250);
+ assert.equal(LEVELS.length,500);
  assert.equal(LEVELS.filter(l=>l.templateId).length,202);
  assert.equal(LEVELS.filter(l=>l.curated==="capstone-1.0").length,15);
  assert.equal(LEVELS.filter(l=>l.curated==="coffers-1.0").length,15);

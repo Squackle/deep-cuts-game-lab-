@@ -15,10 +15,10 @@ test("P01 baseline matches actual rules/card/campaign sources, not old README de
  assert.equal(knownCardKeys().length,38);
  assert.equal(new Set(knownCardNames()).size,38);
  assert.equal(BASE_LEVELS.length,18);
- assert.equal(LEVELS.length,250);
+ assert.equal(LEVELS.length,500);
  assert.equal(LEVELS.filter(l=>l.templateId).length,202);
- assert.equal(GALAXIES.length,5);
- assert.equal(CHAPTERS.length,25);
+ assert.equal(GALAXIES.length,10);
+ assert.equal(CHAPTERS.length,50);
  assert.equal(stageCode(0),"1:1:1");
  assert.equal(stageCode(249),"5:5:10");
  assert.equal(CARDS.bounceUG.name,"Simic Growth Chamber");

@@ -7,17 +7,17 @@ import {LEARN_GROUPS,LEARN_COUNT,isLearnLevel,normalizedLearnProgress,nextLearnI
 import {VERSION} from "../src/engine.js";
 const read=p=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
 
-test("the full 250-vault map and every galaxy open with no completed puzzles",()=>{
- assert.equal(LEVELS.length,250);
- assert.equal(CHAPTERS.length,25);
- assert.equal(GALAXIES.length,5);
+test("the full 500-vault map and every galaxy open with no completed puzzles",()=>{
+ assert.equal(LEVELS.length,500);
+ assert.equal(CHAPTERS.length,50);
+ assert.equal(GALAXIES.length,10);
  const empty={};
- for(let i=0;i<250;i++)assert.equal(unlocked(i,empty),true,"vault "+i);
+ for(let i=0;i<500;i++)assert.equal(unlocked(i,empty),true,"vault "+i);
  for(let i=0;i<25;i++)assert.equal(chapterAccessible(i,empty),true,"world "+i);
  for(let i=0;i<5;i++)assert.equal(galaxyAccessible(i,empty),true,"galaxy "+i);
- for(const i of [-1,250,300,1.5,NaN])assert.equal(unlocked(i,empty),false);
- assert.equal(galaxyAccessible(5,empty),false);
- assert.equal(chapterAccessible(25,empty),false);
+ for(const i of [-1,500,600,1.5,NaN])assert.equal(unlocked(i,empty),false);
+ assert.equal(galaxyAccessible(10,empty),false);
+ assert.equal(chapterAccessible(50,empty),false);
 });
 test("26 Learn Mana exercises include the original 18 authored boards plus new independent studies",()=>{
  const indices=LEARN_GROUPS.flatMap(group=>group.indices);
