@@ -36,6 +36,20 @@ function readProgress(){
  return {bests:{},index:0};
 }
 const modeKey="dc-mana-heist-mode-v1",learnKey="dc-mana-heist-learn-v1";
+const revisedKey="dc-mana-heist-capstones-v1";
+function readRevised(){
+ try{const d=JSON.parse(localStorage.getItem(revisedKey)||"null");
+  return d?.v===1?normalizedBests(d.bests||{}):{};}catch{return {};}
+}
+let revisedBests=readRevised();
+function displayBests(){
+ const out={...progress.bests};
+ for(const puzzle of LEVELS)if(puzzle.revision)delete out[puzzle.id];
+ return {...out,...revisedBests};
+}
+function persistRevised(){
+ try{localStorage.setItem(revisedKey,JSON.stringify({v:1,bests:revisedBests}));}catch{}
+}
 function readMode(){try{const m=localStorage.getItem(modeKey);return m==="learn"||m==="heist"?m:null;}catch{return null;}}
 function readLearn(){try{return normalizedLearnProgress(JSON.parse(localStorage.getItem(learnKey)||"null"));}catch{return normalizedLearnProgress(null);}}
 let mode=readMode(),learnProgress=readLearn();
@@ -174,7 +188,7 @@ function showModePanels(){
   const active=b.dataset.mode===mode;b.classList.toggle("active",active);b.setAttribute("aria-pressed",String(active));
  }
  if(learn)renderLearn();
- if(heist)renderOverworld({world,bests:progress.bests,index,proofs,medal});
+ if(heist)renderOverworld({world,bests:displayBests(),index,proofs,medal});
 }
 function selectMode(next){
  if(next!=="learn"&&next!=="heist")return;
@@ -260,8 +274,16 @@ function perform(action){
    learnProgress.completed.sort((a,b)=>a-b);learnProgress.last=index;persistLearn();
    message("Practice complete! Select the next exercise or return to Learn Mana.");
   }else{
-   const best=progress.bests[level.id];
-   if(!best||state.turn<best.turn||(state.turn===best.turn&&state.spentLife<best.spentLife))progress.bests[level.id]={turn:state.turn,spentLife:state.spentLife};
+   if(level.revision){
+    const best=revisedBests[level.id];
+    if(!best||state.turn<best.turn||(state.turn===best.turn&&state.spentLife<best.spentLife))
+      revisedBests[level.id]={turn:state.turn,spentLife:state.spentLife};
+    persistRevised();
+   }else{
+    const best=progress.bests[level.id];
+    if(!best||state.turn<best.turn||(state.turn===best.turn&&state.spentLife<best.spentLife))
+      progress.bests[level.id]={turn:state.turn,spentLife:state.spentLife};
+   }
    persist();message("The vault breaks open! Case closed.");
   }
  }else if(action.type==="end")message("Turn "+state.turn+" · lands untapped · mana emptied.");
@@ -463,7 +485,7 @@ function render(pendingId=null){
  el("winNext").textContent=mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
  returnFromResult.hidden=!isWin;returnFromResult.textContent=mode==="learn"?"← LESSONS":"← VAULT MAP";
  sage.render({mode,index,level,state,finished:isWin});
- if(mode==="heist")renderOverworld({world,bests:progress.bests,index,proofs,medal});
+ if(mode==="heist")renderOverworld({world,bests:displayBests(),index,proofs,medal});
  choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap battlefield lands for mana; drag hand lands onto the battlefield to play.",[]);
  selectedMessage="";
 }
@@ -518,10 +540,10 @@ el("chapterPicker").addEventListener("click",e=>{
  if(x)load(Number(x.dataset.level),true);
 });
 el("previousWorld").addEventListener("click",()=>{
- if(world>0){world--;renderOverworld({world,bests:progress.bests,index,proofs,medal});}
+ if(world>0){world--;renderOverworld({world,bests:displayBests(),index,proofs,medal});}
 });
 el("nextWorld").addEventListener("click",()=>{
- if(world<CHAPTERS.length-1){world++;renderOverworld({world,bests:progress.bests,index,proofs,medal});}
+ if(world<CHAPTERS.length-1){world++;renderOverworld({world,bests:displayBests(),index,proofs,medal});}
 });
 el("galaxyPicker").addEventListener("click",e=>{
  const button=e.target.closest("[data-galaxy]");
@@ -529,11 +551,11 @@ el("galaxyPicker").addEventListener("click",e=>{
  const galaxy=Number(button.dataset.galaxy);
  if(!Number.isInteger(galaxy)||galaxy<0||galaxy>=GALAXIES.length)return;
  world=GALAXIES[galaxy].worldRange[0];
- renderOverworld({world,bests:progress.bests,index,proofs,medal});
+ renderOverworld({world,bests:displayBests(),index,proofs,medal});
 });
 el("worldPips").addEventListener("click",e=>{
  const button=e.target.closest("[data-world]");
- if(button&&!button.disabled){world=Number(button.dataset.world);renderOverworld({world,bests:progress.bests,index,proofs,medal});}
+ if(button&&!button.disabled){world=Number(button.dataset.world);renderOverworld({world,bests:displayBests(),index,proofs,medal});}
 });
 el("campaignScreen").addEventListener("click",e=>{
  const pick=e.target.closest(".mode-option[data-mode]");
@@ -547,7 +569,7 @@ el("campaignScreen").addEventListener("click",e=>{
  const g=Number(button.dataset.jumpGalaxy);
  if(!Number.isInteger(g)||g<0||g>=GALAXIES.length)return;
  world=GALAXIES[g].worldRange[0];
- renderOverworld({world,bests:progress.bests,index,proofs,medal});
+ renderOverworld({world,bests:displayBests(),index,proofs,medal});
  el("galaxyPicker").focus?.({preventScroll:true});
 });
 el("returnMap").addEventListener("click",showMap);
