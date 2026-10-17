@@ -48,12 +48,17 @@ export const SAGE_TAG_TO_LESSON=Object.freeze({
  "shock-land":5,"pain-land":7,"check-land":8,"generic-cost":9,
  "resource-allocation":10,"fetch-land":11,"untap":14,"bounce-land":15,
  "life-efficiency":16,"planning":17,
- "artifact":10,"mana-rock":10,"ritual":10,"filter":4,"mana-engine":17
+ "artifact":18,"mana-rock":18,"ritual":20,"filter":21,"mana-engine":24
 });
 export function relevantLesson(level){
  const cards=[...level.field,...level.hand,...level.library].map(x=>x.card);
- if(cards.some(x=>x==="ritual"||x==="pyretic"))return 10;
- if(cards.includes("signet")||cards.includes("bluffs"))return 4;
+ if(cards.some(x=>x==="ritual"))return 20;
+ if(cards.some(x=>x==="pyretic"))return 22;
+ if(cards.some(x=>x==="coffers"||x==="urborg"||x==="nykthos"))return 24;
+ if(cards.some(x=>x==="lotus"))return 25;
+ if(cards.some(x=>x==="signet"))return 19;
+ if(cards.some(x=>x==="bluffs"))return 21;
+ if(cards.some(x=>x==="solring"))return 18;
  if(cards.some(x=>x.startsWith("fetch")))return 11;
  if(cards.some(x=>x.startsWith("shock")))return 5;
  if(cards.some(x=>x.startsWith("pain")))return 7;
