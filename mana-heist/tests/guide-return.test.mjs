@@ -31,8 +31,8 @@ test("guide remains a fixed screen-friendly overlay with a visible keyboard acce
  assert.match(css,/#returnFromGuide:focus-visible/);
 });
 test("guide hotfix does not touch mana puzzle definitions, engine version or saved progress",()=>{
- assert.equal(LEVELS.length,250);
- assert.equal(new Set(LEVELS.map(l=>l.id)).size,250);
+ assert.equal(LEVELS.length,500);
+ assert.equal(new Set(LEVELS.map(l=>l.id)).size,500);
  assert.equal(VERSION,"mh-landfall-0.2.0");
  assert.match(read("src/main.js"),/dc-mana-heist-landfall-v2/);
 });
