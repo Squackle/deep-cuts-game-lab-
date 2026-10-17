@@ -47,7 +47,10 @@ test("Original game folders and their independent engines remain intact",()=>{
 });
 
 test("Shared Lab hub cannot silently create identities, scores, APIs or remote scripts",()=>{
- assert.doesNotMatch(hub,/\<iframe|\<script|\<form|onload=|onclick=|contenteditable/i);
+ assert.doesNotMatch(hub,/\<iframe|\<form|onload=|onclick=|contenteditable/i);
+ assert.equal((hub.match(/<script /g)||[]).length,1,"One reviewed, same-origin presence script only");
+ assert.match(hub,/<script defer src="\/lab\/presence\.js"><\/script>/);
+ assert.doesNotMatch(hub,/<script(?:[^>]*src="https?:|[^>]*>[^<]+<\/script>)/i);
  assert.doesNotMatch(hub,/\/api\/|localStorage|sessionStorage|fetch\(/);
  assert.match(hub,/noindex, nofollow/);
  assert.match(hub,/Public Arcade|PUBLIC ARCADE/);
@@ -101,4 +104,18 @@ test("Game Lab uses a first-party readable SVG favicon and concise hub tab title
  assert.match(svg,/<svg[^>]+viewBox="0 0 64 64"/);
  assert.match(svg,/<path[^>]+stroke="#e9cd8e"/);
  assert.doesNotMatch(svg,/<script|foreignObject|<image|href=|onload=/i);
+});
+
+test("Lab presence is only a public experimental analytics preview, never live scores or production member identity",()=>{
+ assert.match(hub,/href="\/lab\/command-center\.html"/);
+ assert.match(hub,/href="\/lab\/presence\.css"/);
+ const preview=read("lab/command-center.html");
+ assert.match(preview,/id="lab-online"/);
+ assert.match(preview,/id="lab-members"/);
+ assert.match(preview,/id="lab-top-count"/);
+ assert.match(preview,/No Lab accounts connected/);
+ assert.match(preview,/noindex,nofollow/);
+ assert.doesNotMatch(preview,/deep-cuts-edh\.pages\.dev\/api|\/api\/leaderboard|\/api\/owner/);
+ for(const file of ["functions/api/lab-presence.js","lab/presence.js","lab/presence.css","lab/command-center.js","lab/command-center.css"])assert.ok(fs.existsSync(file),file);
+ assert.doesNotMatch(read("functions/api/lab-presence.js"),/community_profiles|leaderboard|env\.DB|env\.D1|password|token|cookie/i);
 });

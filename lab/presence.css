@@ -1,0 +1,10 @@
+/* Scoped, non-interactive lab visitor count; never overlays score/game controls. */
+.lab-presence-pill{
+ position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));
+ z-index:70;border:1px solid #bca36d;border-radius:999px;
+ color:#f3e7cc;background:#20382aea;box-shadow:0 5px 20px #0008;
+ padding:9px 12px;font:800 10px/1.3 ui-monospace,SFMono-Regular,monospace;
+ letter-spacing:.05em;pointer-events:none;user-select:none;max-width:calc(100vw - 25px);
+}
+@media(max-width:620px){.lab-presence-pill{font-size:9px;right:9px;bottom:max(9px,env(safe-area-inset-bottom));padding:7px 9px}}
+@media(prefers-reduced-motion:reduce){.lab-presence-pill{transition:none}}
