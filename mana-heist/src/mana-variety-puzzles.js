@@ -47,7 +47,7 @@ export function diverseFor(i){
  const family=["tide","prism","geyser",galaxy===5?"key":null,"rite"][world];
  if(!family)return null;
  const turns=galaxy===5?1:galaxy<=7?2:3,wardCount=galaxy===5?2:galaxy===6?3:galaxy===7?4:galaxy===8?5:6;
- const field=base[family].map((card,n)=>item("f"+n,card)),hand=[],spell=family==="tide"?"tide":family==="prism"?"pyretic":family==="geyser"?"geyser":family==="rite"?"rite":"song";
+ const field=base[family].map((card,n)=>item("f"+n,card)),hand=[];let spell=family==="tide"?"tide":family==="prism"?"pyretic":family==="geyser"?"geyser":family==="rite"?"rite":"song";
  if(family==="tide"&&position%2===1)field.find(f=>f.id==="f10").card="painBG";
  if(family==="prism"){
   if(position%2===1)field.find(f=>f.id==="f10").card="vessel";
