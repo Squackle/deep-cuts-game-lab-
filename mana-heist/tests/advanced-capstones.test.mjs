@@ -6,19 +6,26 @@ import {replay} from "../src/solver.js";
 import {certifyCapstone} from "../src/capstone-certificates.js";
 import {validate,VERSION,actions,initial} from "../src/engine.js";
 
-test("fifteen later-world capstones have substantial mana dependency boards",()=>{
+test("thirty late-world engine and ritual challenge boards have substantial mana dependency boards",()=>{
  const special=LEVELS.filter(x=>x.revision===1);
- assert.equal(special.length,15);
+ assert.equal(special.length,30);
  assert.equal(LEVELS.length,250);
- assert.equal(LEVELS.filter(l=>l.templateId).length,217);
+ assert.equal(LEVELS.filter(l=>l.templateId).length,202);
  assert.equal(LEVELS.filter(l=>l.curated==="capstone-1.0").length,15);
+ assert.equal(LEVELS.filter(l=>l.curated==="coffers-1.0").length,15);
  for(const l of special){
   assert.equal(validate(l),true,l.id);
   assert.equal(l.turnLimit,1);
   assert.ok(l.field.length>=8,l.id);
-  assert.ok(l.hand.some(x=>x.card==="ritual"),l.id);
   assert.ok(l.field.some(x=>x.card==="solring"),l.id);
-  assert.ok(l.field.some(x=>x.card==="signet"),l.id);
+  if(l.curated==="capstone-1.0"){
+   assert.ok(l.hand.some(x=>x.card==="ritual"),l.id);
+   assert.ok(l.field.some(x=>x.card==="signet"),l.id);
+  }else{
+   assert.ok(l.field.some(x=>x.card==="coffers"),l.id);
+   assert.ok(l.field.some(x=>x.card==="urborg"),l.id);
+   if(l.galaxy>=3)assert.ok(l.field.some(x=>x.card==="nykthos"),l.id);
+  }
  }
  const last=LEVELS[249];
  assert.equal(last.field.length,12);
@@ -35,8 +42,9 @@ test("every revised world capstone has a verified complete legal route and uniqu
   assert.equal(result.status,"solved",puzzle.id);
   assert.ok(replay(puzzle,result.actions).ok,puzzle.id);
   assert.ok(result.actions.some(x=>x.type==="activate"),puzzle.id);
-  assert.ok(result.actions.some(x=>x.type==="ritual"),puzzle.id);
-  assert.ok(result.steps>=10,puzzle.id+" should demand several dependent moves");
+  if(puzzle.curated==="capstone-1.0")assert.ok(result.actions.some(x=>x.type==="ritual"),puzzle.id);
+  else assert.ok(result.actions.some(x=>x.type==="activate"&&x.mode==="coffers"),puzzle.id);
+  assert.ok(result.steps>=7,puzzle.id+" should demand multiple dependent moves");
   assert.match(result.certification,/optimum not independently proven/);
  }
 });
