@@ -32,6 +32,8 @@ const sageStyle=document.createElement("link");
 sageStyle.rel="stylesheet";
 sageStyle.href=new URL("../sage-and-card-fixes.css",import.meta.url).href;
 document.head.append(sageStyle);
+const difficultyStyle=document.createElement("link");difficultyStyle.rel="stylesheet";
+difficultyStyle.href=new URL("../mastery-ratings.css",import.meta.url).href;document.head.append(difficultyStyle);
 const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"◇"},N:{name:"Generic",color:"#bec5bd",icon:"1"}};
 const storageKey="dc-mana-heist-landfall-v2";
 function readProgress(){
