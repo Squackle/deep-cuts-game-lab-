@@ -1,4 +1,5 @@
 import {VERSION} from "./engine.js";
+import {capstoneFor} from "./advanced-capstones.js";
 const cards=list=>list.map(([id,card])=>({id,card}));
 const spell=(name,cost,effect)=>({name,cost,...(effect?{effect}:{})});
 const L=(id,chapter,rank,title,briefing,turnLimit,life,hand,field,library,stages)=>({
@@ -102,5 +103,5 @@ function variant(i){
   templateId:root.id,galaxy:g,world:w
  };
 }
-export const LEVELS=Array.from({length:250},(_,i)=>i<BASE_LEVELS.length?BASE_LEVELS[i]:variant(i));
+export const LEVELS=Array.from({length:250},(_,i)=>i<BASE_LEVELS.length?BASE_LEVELS[i]:(capstoneFor(i)||variant(i)));
 if(LEVELS.length!==250||CHAPTERS.length!==25||GALAXIES.length!==5)throw Error("Campaign atlas is incomplete");
