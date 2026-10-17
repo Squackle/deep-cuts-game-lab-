@@ -7,14 +7,14 @@ const table={
  2:{
   field:["swamp","swamp","island","mountain","relic","solring","signet","treasure"],
   hand:["ritual"],
-  cost:w=>({B:3,U:1,R:1,W:1,C:1,N:1+w%3}),
+  cost:w=>({B:4,U:1,R:1,W:1,C:1,N:1+w%3}),
   title:"Ritual Accounting",
   blurb:"Pay for a real Dark Ritual, then use one-use Treasure, Sol Ring and a Signet to assemble several exact colors."
  },
  3:{
   field:["swamp","swamp","island","island","mountain","relic","solring","signet","bluffs","treasure","petal"],
   hand:["ritual"],
-  cost:w=>({B:4,U:3,R:1,W:1,C:1,N:1+w%3}),
+  cost:w=>({B:5,U:3,R:1,W:1,C:1,N:1+w%3}),
   title:"The Chromatic Pipeline",
   blurb:"Generate colorless mana, pay a Signet, filter a second color, cast Dark Ritual, and decide when to sacrifice artifacts."
  },
