@@ -6,6 +6,7 @@ import {MUTATIONS,COLORS,activeEffects} from "./engine.js";
 const COLOR_NAMES={W:"WHITE",U:"BLUE",B:"BLACK",R:"RED",G:"GREEN"};
 const SELECTION_KEYS=["1","2","3"];
 const CLASSIC_COPY={
+ B:"Spend one molt charge and shed three segments to avoid death.",
  U:"Slow your swarm for 28 movements so you can navigate tight corners.",
  R:"Move faster and earn double points from brood orbs for 24 movements.",
  G:"Your next four collected orbs each grant extra growth."
