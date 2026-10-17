@@ -61,7 +61,8 @@ export function coffersFor(i){
   ["swamp","swamp","urborg","coffers","solring","relic","relic","nykthos","island","mountain","plains"];
  const cost=small?
   {B:8+(world%3),U:1,R:1,W:1}:
-  world%2===0?{B:14,U:1,R:1}:{B:15,U:1};
+  galaxy===3?(world%2===0?{B:12,U:1,R:1,W:1,N:1}:{B:13,U:1,W:1,N:1}):
+  (world%2===0?{B:13,U:1,R:1,W:1}:{B:14,U:1,W:1});
  return {
   id:"mh-"+String(i+1).padStart(3,"0"),version:VERSION,
   chapter:"THE BLACK-MANA ENGINE",rank:Math.min(5,galaxy+1),
