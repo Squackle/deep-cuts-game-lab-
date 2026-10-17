@@ -187,3 +187,75 @@ main{max-width:1640px}
 @media(prefers-reduced-motion:reduce){
  .game-grid,.life-widget,.hand-card,.stack-entry{animation:none!important;transition:none!important}
 }
+
+
+/* 2026-10-17 · Keep original Scryfall card printed P/T fully untouched
+   for additive buffs / counters; show only an accessible green modifier. */
+.battle-card .pt-modifier {
+ position:absolute;
+ right:3.4%;
+ bottom:15.2%;
+ z-index:5;
+ min-width:38%;
+ max-width:91%;
+ width:max-content;
+ box-sizing:border-box;
+ min-height:16px;
+ padding:2px 5px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ white-space:nowrap;
+ overflow:visible;
+ border:1px solid #9bdb9b;
+ border-radius:6px;
+ background:#176b36;
+ color:#fff8d9;
+ box-shadow:0 1px 6px #000d,inset 0 1px 0 #ffffff24;
+ text-shadow:0 1px 2px #04331a;
+ font:800 clamp(9px,.93vw,13px)/1.1 system-ui,sans-serif;
+ pointer-events:none;
+}
+/* For genuinely base-setting effects, replace the printed P/T in a larger
+   full-height opaque box; unlike the previous 9–13px row digits do not clip. */
+.battle-card .pt-replacement {
+ position:absolute;
+ right:2.4%;
+ bottom:5.6%;
+ z-index:5;
+ width:max-content;
+ min-width:43%;
+ max-width:88%;
+ height:auto;
+ min-height:18px;
+ padding:2px 5px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ box-sizing:border-box;
+ white-space:nowrap;
+ overflow:visible;
+ border:1.5px solid #27291e;
+ border-radius:4px;
+ background:#f6efdb;
+ color:#111d16;
+ box-shadow:0 1px 4px #0009;
+ text-shadow:none;
+ font:900 clamp(10px,1.05vw,15px)/1.15 Georgia,serif;
+ pointer-events:none;
+}
+@media(max-width:600px){
+ .battle-card .pt-modifier{
+  bottom:15.3%;min-height:13px;min-width:40%;padding:1px 3px;
+  font-size:clamp(8px,2.6vw,11px);border-radius:4px;
+ }
+ .battle-card .pt-replacement{
+  min-height:16px;min-width:46%;padding:1px 3px;
+  font-size:clamp(9px,2.6vw,12px);
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .battle-card .pt-modifier,.battle-card .pt-replacement{
+  animation:none!important;transition:none!important;
+ }
+}
