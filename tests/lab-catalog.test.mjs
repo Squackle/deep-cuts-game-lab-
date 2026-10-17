@@ -93,3 +93,12 @@ test("three original themed covers are first-party, meaningful, and do not depen
  assert.match(css,/\.game-card:hover \.game-cover/);
  assert.match(css,/prefers-reduced-motion:reduce/);
 });
+
+test("Game Lab uses a first-party readable SVG favicon and concise hub tab title",()=>{
+ const svg=read("lab/favicon.svg");
+ assert.match(hub,/<title>Game Lab \| Deep Cuts EDH<\/title>/);
+ assert.match(hub,/<link rel="icon" type="image\/svg\+xml" href="\/lab\/favicon.svg">/);
+ assert.match(svg,/<svg[^>]+viewBox="0 0 64 64"/);
+ assert.match(svg,/<path[^>]+stroke="#e9cd8e"/);
+ assert.doesNotMatch(svg,/<script|foreignObject|<image|href=|onload=/i);
+});
