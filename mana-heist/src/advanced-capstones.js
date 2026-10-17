@@ -47,3 +47,34 @@ export function capstoneFor(i){
   curated:"capstone-1.0"
  };
 }
+
+
+
+// A separate scaling-engine puzzle precedes each world finale. The board
+// intentionally teaches why land TYPES, paid activations and devotion matter.
+export function coffersFor(i){
+ if(!Number.isInteger(i)||i<100||i>=250||i%10!==8)return null;
+ const galaxy=Math.floor(i/50),world=Math.floor(i/10)%5;
+ const small=galaxy===2;
+ const field=small?
+  ["swamp","swamp","urborg","coffers","solring","island","mountain","plains"]:
+  ["swamp","swamp","urborg","coffers","solring","relic","relic","nykthos","island","mountain","plains"];
+ const cost=small?
+  {B:8+(world%3),U:1,R:1,W:1}:
+  world%2===0?{B:14,U:1,R:1}:{B:15,U:1};
+ return {
+  id:"mh-"+String(i+1).padStart(3,"0"),version:VERSION,
+  chapter:"THE BLACK-MANA ENGINE",rank:Math.min(5,galaxy+1),
+  title:world===4?"The Black-Mana Engine: MASTER TRIAL":"The Black-Mana Engine · "+(world+1),
+  briefing:small?
+   "Cabal Coffers counts the Swamps granted by Urborg. Feed it two colorless mana from Sol Ring, then assemble your colored costs.":
+   "Produce mana with Sol Ring and Wastes to pay BOTH Coffers and Nykthos. One scales with Swamp land types, the other with the board's stated devotion.",
+  turnLimit:1,life:20,
+  field:field.map((card,n)=>({id:"f"+n,card})),hand:[],library:[],
+  stages:[{name:"Unlock the Black-Mana Engine",cost}],
+  devotion:small?{}:{B:galaxy===4?6:5},
+  revision:1,galaxy,world,
+  mechanics:["mana-engine","activation-fee","static-land-types","devotion"],
+  curated:"coffers-1.0"
+ };
+}
