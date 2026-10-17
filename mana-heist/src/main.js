@@ -137,6 +137,8 @@ const returnFromResult=document.createElement("button");
 returnFromResult.type="button";returnFromResult.id="winReturn";
 returnFromResult.textContent="RETURN TO LESSONS";
 el("winPanel").append(returnFromResult);
+const manaContext=document.createElement("span");manaContext.id="manaContext";manaContext.className="mana-scenario-context";
+el("difficulty").after(manaContext);
 returnFromResult.addEventListener("click",()=>showMap());
 function inspectById(id){
  const record=lookup(level,id);
@@ -475,6 +477,9 @@ function render(pendingId=null){
  el("toggleGuide").textContent=mode==="learn"?"✧ LESSON NOTES":"ⓘ GUIDE";
  el("chapterName").textContent=level.chapter;
  el("difficulty").textContent=["INITIATE","ROOKIE","TACTICIAN","EXPERT","MASTERMIND"][level.rank-1];
+ const ritesInGraveyard=state.graveyard.filter(id=>getCard(level,id)?.name==="Rite of Flame").length;
+ manaContext.textContent=level.opponentTappedLands?"OPPONENT · "+level.opponentTappedLands+" TAPPED LANDS":state.highTide?"HIGH TIDE · EXTRA U ×"+state.highTide:ritesInGraveyard?"RITE MEMORY · "+ritesInGraveyard:"";
+ manaContext.hidden=!manaContext.textContent;
  const rating=evaluateVault(level);
  masteryRating.textContent="C "+rating.complexity+" · D "+rating.difficulty;
  masteryRating.setAttribute("aria-label","Complexity "+rating.complexity+" of 100, estimated difficulty "+rating.difficulty+" of 100");
