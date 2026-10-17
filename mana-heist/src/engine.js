@@ -42,7 +42,9 @@ export const CARDS={
  treasure:{name:"Treasure",kind:"artifact",colors:[],types:[],v2:"treasure",flavor:"Tap and sacrifice: add one mana of any color"},
  petal:{name:"Lotus Petal",kind:"artifact",colors:[],types:[],v2:"petal",flavor:"Sacrifice: add one mana of any color"},
  confluence:{name:"Mana Confluence",kind:"mana-engine",colors:[],types:[],v2:"confluence",flavor:"Pay 1 life and tap for any color"},
- command:{name:"Command Tower",kind:"mana-engine",colors:[],types:[],v2:"command",flavor:"Add one color from commander identity"}
+ command:{name:"Command Tower",kind:"mana-engine",colors:[],types:[],v2:"command",flavor:"Add one color from commander identity"},
+ ritual:{name:"Dark Ritual",kind:"instant",colors:[],types:[],manaSpell:{cost:{B:1},output:["B","B","B"]},flavor:"Instant · spend B to add BBB"},
+ pyretic:{name:"Pyretic Ritual",kind:"instant",colors:[],types:[],manaSpell:{cost:{N:1,R:1},output:["R","R","R"]},flavor:"Instant · spend 1R to add RRR"}
 };
 const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
 export function validate(level){
@@ -54,17 +56,19 @@ export function validate(level){
   if(!c||typeof c.id!=="string"||!/^[-\w]{1,30}$/.test(c.id)||unique.has(c.id)||!CARDS[c.card])throw Error("Duplicate land ID or unknown card");
   unique.add(c.id);
  }
- if(level.hand.length+level.field.length+level.library.length>10)throw Error("Too many lands");
+ if(level.hand.length+level.field.length+level.library.length>18)throw Error("Too many mana sources");
+ if([...level.field,...level.library].some(x=>CARDS[x.card].kind==="instant"))throw Error("Mana instants must begin in hand");
+ if(level.hand.filter(x=>CARDS[x.card].kind==="instant").length>3)throw Error("Too many mana instants");
  for(const stage of level.stages){
   if(!stage||typeof stage.name!=="string"||stage.name.length>80||!stage.name.trim())throw Error("Invalid spell");
   const cost=stage.cost;
   if(!cost||typeof cost!=="object"||Array.isArray(cost)||!Object.keys(cost).length)throw Error("Invalid mana cost");
-  for(const [key,n] of Object.entries(cost))if(![...COLORS,"N"].includes(key)||!Number.isInteger(n)||n<0||n>8)throw Error("Invalid mana cost");
-  if(sum(cost)<1||sum(cost)>10||stage.effect&&!["untap"].includes(stage.effect))throw Error("Invalid spell effect");
+  for(const [key,n] of Object.entries(cost))if(![...COLORS,"N"].includes(key)||!Number.isInteger(n)||n<0||n>16)throw Error("Invalid mana cost");
+  if(sum(cost)<1||sum(cost)>16||stage.effect&&!["untap"].includes(stage.effect))throw Error("Invalid spell effect");
  }
  return true;
 }
-export function initial(level){validate(level);return {turn:1,life:level.life,played:0,stage:0,pool:zero(),manaUnits:[],manaSerial:0,hand:level.hand.map(x=>x.id),field:level.field.map(x=>({id:x.id,tapped:false})),spentLife:0,actions:0};}
+export function initial(level){validate(level);return {turn:1,life:level.life,played:0,stage:0,pool:zero(),manaUnits:[],manaSerial:0,graveyard:[],hand:level.hand.map(x=>x.id),field:level.field.map(x=>({id:x.id,tapped:false})),spentLife:0,actions:0};}
 export function lookup(level,id){return [...level.hand,...level.field,...level.library].find(x=>x.id===id);}
 export function getCard(level,id){const l=lookup(level,id);return l?CARDS[l.card]:null;}
 export function poolLabel(p){return COLORS.map(c=>p[c]?p[c]+c:"").filter(Boolean).join(" · ")||"empty";}
@@ -128,12 +132,22 @@ export function actions(level,s){
  const out=[];
  if(!s.played)for(const id of s.hand){
   const c=getCard(level,id);
+  if(c.kind==="instant")continue;
   const options=c.kind==="shock"?[false,true]:[false];
   if(c.kind==="bounce"&&s.field.length===0)continue;
   for(const shock of options){
    if(shock&&s.life<=2)continue;
    if(c.kind==="bounce")for(const f of s.field)out.push({type:"play",id,shock,returnId:f.id});
    else out.push({type:"play",id,shock});
+  }
+ }
+ // Rituals are *spells* cast from hand, unlike mana abilities (rule 605).
+ // They consume mana, resolve and go to the graveyard, and create new mana.
+ for(const id of s.hand){
+  const card=getCard(level,id);
+  if(card.kind!=="instant"||!card.manaSpell)continue;
+  for(const spend of spendUnits(s.manaUnits||[],card.manaSpell.cost,{kind:"spell",spellType:"instant"})){
+   out.push({type:"ritual",id,spend,output:[...card.manaSpell.output]});
   }
  }
  for(const f of s.field){
@@ -145,9 +159,15 @@ export function actions(level,s){
   if(!f.tapped||getCard(level,f.id).v2==="petal"){
    for(const mode of advancedModes(level,s,f)){
     if(mode.tap&&f.tapped||s.life<=mode.life)continue;
-    for(const spend of spendUnits(s.manaUnits||[],mode.cost,{kind:"activation"})){
-     out.push({type:"activate",id:f.id,mode:mode.id,spend,output:[...mode.output]});
-    }
+    // Show meaningful payment-color choices, not 100 indistinguishable
+   // permutations of black mana units from Coffers and Nykthos.
+   const colorPayments=new Set();
+   for(const spend of spendUnits(s.manaUnits||[],mode.cost,{kind:"activation"})){
+    const colors=spend.map(id=>s.manaUnits.find(u=>u.id===id)?.color||"?").sort().join("");
+    if(colorPayments.has(colors))continue;
+    colorPayments.add(colors);
+    out.push({type:"activate",id:f.id,mode:mode.id,spend,output:[...mode.output]});
+   }
    }
   }
   if(!f.tapped&&card.kind==="fetch"&&s.life>1)for(const land of level.library){
@@ -173,7 +193,7 @@ export function reduce(level,s,action){
  if(!action||typeof action!=="object")return {ok:false,error:"Choose an action."};
  if(s.stage===level.stages.length)return {ok:false,error:"Vault already cracked."};
  if(!actions(level,s).some(a=>signature(a)===signature(action)))return {ok:false,error:explain(level,s,action)};
- const n={...s,pool:{...s.pool},manaUnits:[...(s.manaUnits||[])],manaSerial:s.manaSerial||0,hand:[...s.hand],field:s.field.map(f=>({...f})),actions:s.actions+1};
+ const n={...s,pool:{...s.pool},manaUnits:[...(s.manaUnits||[])],manaSerial:s.manaSerial||0,graveyard:[...(s.graveyard||[])],hand:[...s.hand],field:s.field.map(f=>({...f})),actions:s.actions+1};
  const addMana=(color,source,restriction=null)=>{
   n.pool[color]++;
   n.manaUnits.push({id:"m"+(++n.manaSerial),color,source,restriction});
@@ -194,6 +214,13 @@ export function reduce(level,s,action){
    n.hand.push(returned.id);
   }
   n.field.push({id:land.id,tapped:enterTapped(level,s,land,action.shock)});
+ }
+ if(action.type==="ritual"){
+  const card=getCard(level,action.id);
+  removeMana(action.spend);
+  n.hand=n.hand.filter(id=>id!==action.id);
+  n.graveyard.push(action.id);
+  for(const color of card.manaSpell.output)addMana(color,action.id);
  }
  if(action.type==="tap"){
   n.field.find(f=>f.id===action.id).tapped=true;
@@ -238,6 +265,7 @@ export function reduce(level,s,action){
 function explain(level,s,a){
  if(a.type==="play")return s.played?"You already played a land this turn.":"That land cannot be played now.";
  if(a.type==="tap")return "This land is tapped, missing, or cannot safely produce that color.";
+ if(a.type==="ritual")return "A ritual is cast from hand. Make enough legal mana to pay its spell cost first.";
  if(a.type==="fetch")return "No legal fetch target, or insufficient life.";
  if(a.type==="cast")return "Not enough legally spendable mana, or the chosen payment/untap target is illegal.";
  if(a.type==="activate")return "That mana source is tapped, cannot pay its activation cost, or has an invalid ability choice.";
@@ -250,6 +278,14 @@ export function key(s){
 export function completed(level,s){return s.stage===level.stages.length;}
 export function medal(level,s,par){
  if(!completed(level,s))return 0;
+ // New capstones use *legal reference routes*, not proven globally optimal
+ // lines. Reward efficient handling of the actual activation sequence, but
+ // do not equate merely winning in one turn with three stars.
+ if(level.revision){
+  if(s.turn<=par.turn&&s.spentLife<=par.spentLife&&s.actions<=par.steps)return 3;
+  if(s.turn<=par.turn+1&&s.life>0&&s.actions<=par.steps+2)return 2;
+  return 1;
+ }
  if(s.turn<=par.turn&&s.spentLife<=par.spentLife)return 3;
  if(s.turn<=par.turn+1&&s.life>0)return 2;
  return 1;
@@ -258,6 +294,7 @@ export function labelAction(level,a){
  if(a.type==="play")return "Play "+getCard(level,a.id).name+(a.shock?" · pay 2 life":a.returnId?" · return "+getCard(level,a.returnId).name:"");
  if(a.type==="tap")return "Tap "+getCard(level,a.id).name+" for "+(getCard(level,a.id).kind==="bounce"?"G and U":a.color);
  if(a.type==="activate")return "Activate "+getCard(level,a.id).name+" for "+a.output.join("+");
+ if(a.type==="ritual")return "Cast "+getCard(level,a.id).name+" · "+a.output.join("+")+" mana";
  if(a.type==="fetch")return "Fetch "+getCard(level,a.targetId).name+(a.shock?" · shock in":"");
  if(a.type==="cast")return "Cast "+level.stages[0].name; // UI overrides stage name context.
  return "End turn and untap";

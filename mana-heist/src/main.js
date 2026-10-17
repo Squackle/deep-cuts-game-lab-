@@ -1,7 +1,7 @@
 import {LEVELS,CHAPTERS,GALAXIES,BASE_LEVELS} from "./levels.js";
 import {COLORS,CARDS,initial,actions,reduce,completed,getCard,lookup,medal} from "./engine.js";
 import {solve} from "./solver.js";
-import {chapterIndex,stageCode,normalizedBests} from "./campaign.js";
+import {chapterIndex,stageCode,normalizedBests,validBest} from "./campaign.js";
 import {LEARN_GROUPS,LEARN_COUNT,isLearnLevel,normalizedLearnProgress,nextLearnIndex} from "./learn-track.js";
 import {renderOverworld} from "./overworld.js";
 import {reconstruct,transitionOrbs,consistent} from "./mana-orbs.js";
@@ -16,10 +16,20 @@ import {installLandDragging} from "./drag-lands.js";
 import {renderCardReferences,referenceFor} from "./card-references.js";
 import {installCardInspector} from "./card-inspector.js";
 import {installCardMagnifier} from "./card-magnifier.js";
+import {SAGE_LESSONS} from "./sage-lessons.js";
+import {LEARN_LEVELS} from "./expanded-learn.js";
+import {certifyCapstone} from "./capstone-certificates.js";
+import {mountSage} from "./sage-ui.js";
 import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
 import {missingMana,failureText,flashWard} from "./ward-feedback.js";
 import {isFinalTurn,requiredManaText,finalTurnMessage,tappedLandMessage} from "./turn-guidance.js";
 const el=id=>document.getElementById(id);
+// Scoped late-loading repair stylesheet avoids overlap with the concurrent
+// Game Lab branding PR that owns index.html.
+const sageStyle=document.createElement("link");
+sageStyle.rel="stylesheet";
+sageStyle.href=new URL("../sage-and-card-fixes.css",import.meta.url).href;
+document.head.append(sageStyle);
 const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"◇"},N:{name:"Generic",color:"#bec5bd",icon:"1"}};
 const storageKey="dc-mana-heist-landfall-v2";
 function readProgress(){
@@ -27,6 +37,20 @@ function readProgress(){
  return {bests:{},index:0};
 }
 const modeKey="dc-mana-heist-mode-v1",learnKey="dc-mana-heist-learn-v1";
+const revisedKey="dc-mana-heist-capstones-v1";
+function readRevised(){
+ try{const d=JSON.parse(localStorage.getItem(revisedKey)||"null");
+  return d?.v===1?Object.fromEntries(LEVELS.filter(l=>l.revision&&validBest(d.bests?.[l.id])).map(l=>[l.id,{turn:d.bests[l.id].turn,spentLife:d.bests[l.id].spentLife,actions:Number.isInteger(d.bests[l.id].actions)?d.bests[l.id].actions:999}])):{};}catch{return {};}
+}
+let revisedBests=readRevised();
+function displayBests(){
+ const out={...progress.bests};
+ for(const puzzle of LEVELS)if(puzzle.revision)delete out[puzzle.id];
+ return {...out,...revisedBests};
+}
+function persistRevised(){
+ try{localStorage.setItem(revisedKey,JSON.stringify({v:1,bests:revisedBests}));}catch{}
+}
 function readMode(){try{const m=localStorage.getItem(modeKey);return m==="learn"||m==="heist"?m:null;}catch{return null;}}
 function readLearn(){try{return normalizedLearnProgress(JSON.parse(localStorage.getItem(learnKey)||"null"));}catch{return normalizedLearnProgress(null);}}
 let mode=readMode(),learnProgress=readLearn();
@@ -94,8 +118,17 @@ function chargeWard({pendingId=null,animateId=null}={}){
 const cardInspector=installCardInspector({dialog:el("realCardInspector"),closeButton:el("closeInspector")});
 const magnifier=installCardMagnifier({
  battlefield:el("battlefield"),hand:el("hand"),panel:el("cardMagnifier"),
- canvas:el("magnifierCanvas"),title:el("magnifierTitle")
+ canvas:el("magnifierCanvas"),title:el("magnifierTitle"),
+ canShow:()=>document.body.classList.contains("in-heist")&&!completed(level,state)
 });
+const sage=mountSage({stage:el("heist").querySelector(".vault-stage"),
+ goToLesson:i=>{selectMode("learn");load(i,true);}
+});
+const returnFromResult=document.createElement("button");
+returnFromResult.type="button";returnFromResult.id="winReturn";
+returnFromResult.textContent="RETURN TO LESSONS";
+el("winPanel").append(returnFromResult);
+returnFromResult.addEventListener("click",()=>showMap());
 function inspectById(id){
  const record=lookup(level,id);
  if(!record)return false;
@@ -109,9 +142,9 @@ const proofCache=new Map();
 const sourceProofCache=new Map();
 function proofFor(id){
  if(proofCache.has(id))return proofCache.get(id);
- const puzzle=LEVELS.find(v=>v.id===id);
+ const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id);
  if(!puzzle)return null;
- const exact=solve(puzzle,{maxStates:65000});
+ const exact=puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
  let proof=exact;
  if(exact.status!=="solved"&&puzzle.templateId){
   const source=BASE_LEVELS.find(p=>p.id===puzzle.templateId);
@@ -130,6 +163,13 @@ function persist(){try{localStorage.setItem(storageKey,JSON.stringify({v:2,index
 function persistLearn(){try{localStorage.setItem(learnKey,JSON.stringify({v:1,completed:learnProgress.completed,last:learnProgress.last}));}catch{}}
 function renderLearn(){
  const done=new Set(learnProgress.completed),root=el("learnPicker");root.replaceChildren();
+ // Current HTML comes from a concurrent Game Lab branding branch. Keep
+ // course copy in sync at runtime without touching their index.html file.
+ const desc=document.querySelector('[data-mode="learn"] .mode-description');
+ if(desc)desc.textContent="26 step-by-step exercises, from tapping basic lands to rituals, mana rocks, restricted mana, filters and scaling engines.";
+ const intro=document.querySelector("#learnPanel .learn-panel-head p:not(.overline)");
+ if(intro)intro.textContent="Twenty-six skill-specific lessons. Follow the Sage's Notes beside the cauldron; this mode tracks learning without stars.";
+
  el("learnCount").textContent=done.size+" / "+LEARN_COUNT+" COMPLETED";
  for(const group of LEARN_GROUPS){
   const section=document.createElement("section");section.className="learn-group";
@@ -138,7 +178,7 @@ function renderLearn(){
   const intro=document.createElement("p");intro.textContent=group.summary;h.append(title,intro);
   const list=document.createElement("div");list.className="learn-exercises";
   for(const i of group.indices){
-   const p=LEVELS[i],b=document.createElement("button");b.type="button";
+   const p=LEARN_LEVELS[i],b=document.createElement("button");b.type="button";
    b.className="learn-exercise"+(done.has(i)?" complete":"");b.dataset.learnLevel=String(i);
    const n=document.createElement("span");n.className="learn-number";n.textContent=String(i+1).padStart(2,"0");
    const txt=document.createElement("span");txt.className="learn-exercise-copy";
@@ -156,7 +196,7 @@ function showModePanels(){
   const active=b.dataset.mode===mode;b.classList.toggle("active",active);b.setAttribute("aria-pressed",String(active));
  }
  if(learn)renderLearn();
- if(heist)renderOverworld({world,bests:progress.bests,index,proofs,medal});
+ if(heist)renderOverworld({world,bests:displayBests(),index,proofs,medal});
 }
 function selectMode(next){
  if(next!=="learn"&&next!=="heist")return;
@@ -177,6 +217,7 @@ function desc(action){
     (source.v2==="ziggurat"?" · creature spells only":"")+
     (source.v2==="treasure"||source.v2==="petal"?" · sacrifice":"");
  }
+ if(action.type==="ritual")return "Cast "+getCard(level,action.id).name+" · "+action.output.join(" + ")+" mana";
  if(action.type==="play")return (action.shock?"Pay 2 life · enter untapped":getCard(level,action.id).kind==="shock"?"Save 2 life · enter tapped":getCard(level,action.id).kind==="bounce"?"Return "+getCard(level,action.returnId).name+" · enter tapped":"Play "+getCard(level,action.id).name);
  if(action.type==="tap")return "Tap for "+SYMBOL[action.color].name+(getCard(level,action.id).kind==="pain"&&action.color!=="C"?" · lose 1 life":"");
  if(action.type==="fetch")return "Find "+getCard(level,action.targetId).name+(action.shock?" · pay 3 life":" · pay 1 life");
@@ -214,14 +255,14 @@ function rejectCast(){
  message(failureText(missing),true);
 }
 function perform(action){
- const sourceRect=(action.type==="tap"||action.type==="activate")?el("battlefield").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():null;
+ const sourceRect=(action.type==="tap"||action.type==="activate")?el("battlefield").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():action.type==="ritual"?el("hand").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():null;
  const out=reduce(level,state,action);
  if(!out.ok){if(action?.type==="cast")rejectCast();else message(out.error,true);return;}
  cancelAuto();
  if(action.type!=="tap"){viewEpoch++;pendingFlights.clear();cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();}
  history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type});
  state=out.state;
- manaOrbs=(action.type==="activate"||action.type==="tap"&&getCard(level,action.id).kind==="bounce")?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
+ manaOrbs=(action.type==="ritual"||action.type==="activate"||action.type==="tap"&&getCard(level,action.id).kind==="bounce")?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
  if(!consistent(state.pool,manaOrbs))manaOrbs=reconstruct(state.pool);
  // Floating mana expires at the turn boundary. Reset ALL visual pigment,
  // currents, ripples and glow immediately, even while Canvas is animating.
@@ -230,24 +271,36 @@ function perform(action){
  // Orbital particles represent output mana, including paired and filtered output.
  const produced=action.type==="tap"
   ?(getCard(level,action.id).kind==="bounce"?["G","U"]:[action.color])
-  :action.type==="activate"?action.output:[];
+  :action.type==="activate"||action.type==="ritual"?action.output:[];
  const incoming=produced.length?manaOrbs.slice(-produced.length):[];
  for(const orb of incoming)pendingFlights.add(orb.id);
  const pendingId=incoming[0]?.id??null;
  if(completed(level,state)){
+  magnifier.hide();
   if(mode==="learn"){
    if(!learnProgress.completed.includes(index))learnProgress.completed.push(index);
    learnProgress.completed.sort((a,b)=>a-b);learnProgress.last=index;persistLearn();
    message("Practice complete! Select the next exercise or return to Learn Mana.");
   }else{
-   const best=progress.bests[level.id];
-   if(!best||state.turn<best.turn||(state.turn===best.turn&&state.spentLife<best.spentLife))progress.bests[level.id]={turn:state.turn,spentLife:state.spentLife};
+   if(level.revision){
+    const best=revisedBests[level.id];
+    if(!best||state.turn<best.turn||
+       (state.turn===best.turn&&state.spentLife<best.spentLife)||
+       (state.turn===best.turn&&state.spentLife===best.spentLife&&state.actions<best.actions))
+      revisedBests[level.id]={turn:state.turn,spentLife:state.spentLife,actions:state.actions};
+    persistRevised();
+   }else{
+    const best=progress.bests[level.id];
+    if(!best||state.turn<best.turn||(state.turn===best.turn&&state.spentLife<best.spentLife))
+      progress.bests[level.id]={turn:state.turn,spentLife:state.spentLife};
+   }
    persist();message("The vault breaks open! Case closed.");
   }
  }else if(action.type==="end")message("Turn "+state.turn+" · lands untapped · mana emptied.");
  else if(action.type==="play")message(getCard(level,action.id).name+" enters the battlefield"+(state.field.find(f=>f.id===action.id)?.tapped?" tapped.":"."));
  else if(action.type==="tap")message(getCard(level,action.id).kind==="bounce"?"Simic Growth Chamber adds green AND blue mana.":"+1 "+SYMBOL[action.color].name+" mana · land tapped sideways.");
   else if(action.type==="activate")message(getCard(level,action.id).name+" produces "+action.output.join(" + ")+" mana"+(getCard(level,action.id).v2==="ziggurat"?" (creature spells only).":"."));
+ else if(action.type==="ritual")message("Cast "+getCard(level,action.id).name+" from your hand. It goes to your graveyard and adds "+action.output.join(" + ")+" mana.");
  else if(action.type==="fetch")message("Fetched "+getCard(level,action.targetId).name+". The fetch land is gone.");
  else if(action.type==="cast")message("Spell cast · "+(level.stages.length-state.stage)+" seals remain.");
  landDrag?.cancel();
@@ -282,7 +335,15 @@ function tapLand(id){
 }
 function playLand(id){
  lastCardId=id;selectedHandId=null;
- const card=getCard(level,id),possible=actions(level,state).filter(a=>a.type==="play"&&a.id===id);
+ const card=getCard(level,id);
+ if(card.kind==="instant"){
+  const rituals=actions(level,state).filter(a=>a.type==="ritual"&&a.id===id);
+  if(!rituals.length){message("Make enough mana to pay for this instant before casting it.",true);return;}
+  if(rituals.length===1)perform(rituals[0]);
+  else choices("CAST A MANA SPELL","Choose which mana pays for the instant.",rituals);
+  return;
+ }
+ const possible=actions(level,state).filter(a=>a.type==="play"&&a.id===id);
  if(!possible.length){message(state.played?"You have already played a land this turn.":"This land cannot be played right now.",true);return;}
  if(possible.length===1)perform(possible[0]);
  else choices(card.kind==="shock"?"SHOCK OR SAVE LIFE":card.kind==="bounce"?"RETURN A LAND":"PLAY YOUR LAND",card.kind==="shock"?"Pay 2 life to enter untapped, or enter tapped at no life cost.":card.kind==="bounce"?"This land enters tapped and sends a battlefield land back to your hand.":"Select how to play this land.",possible);
@@ -332,6 +393,7 @@ function syncLandRows(){
   item.className="empty";item.textContent=text;return item;
  };
  el("battlefield").replaceChildren(...(fieldNodes.length?fieldNodes:[empty("No lands in play yet. Play one from your hand.")]));
+ el("battlefield").classList.toggle("field-many",fieldNodes.length>=8);
  el("hand").replaceChildren(...(handNodes.length?handNodes:[empty("No land cards remain in hand.")]));
  // Fit both zones within one viewport; overlap cards instead of scrolling.
  const vw=window.innerWidth||390,vh=window.innerHeight||740;
@@ -348,7 +410,8 @@ function syncLandRows(){
   node.style.setProperty("--fan-drop",position.drop+"px");
   node.style.setProperty("--fan-index",String(position.order));
  });
- el("playSelectedLand").disabled=!selectedHandId||!state.hand.includes(selectedHandId)||!!state.played;
+ el("playSelectedLand").disabled=!selectedHandId||!state.hand.includes(selectedHandId)||(!!state.played&&getCard(level,selectedHandId)?.kind!=="instant");
+ el("playSelectedLand").textContent=selectedHandId&&getCard(level,selectedHandId)?.kind==="instant"?"CAST MANA SPELL ✦":"PLAY SELECTED LAND ↑";
  el("inspectSelected").disabled=!selectedHandId||!state.hand.includes(selectedHandId);
 }
 function selectHand(id){
@@ -377,7 +440,7 @@ function teachingCue(){
  return state.turn<level.turnLimit?"End turn: lands untap and floating mana disappears.":"Final turn. Undo or restart for another solution.";
 }
 function render(pendingId=null){
- const proof=proofs.get(level.id),isWin=completed(level,state),stage=level.stages[state.stage];
+ const isWin=completed(level,state),proof=mode==="learn"?{turn:level.turnLimit,spentLife:0}:proofs.get(level.id),stage=level.stages[state.stage];
  el("stageLabel").textContent=mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
  el("returnMap").textContent=mode==="learn"?"← LESSONS":"← MAP";
  el("toggleGuide").textContent=mode==="learn"?"✧ LESSON NOTES":"ⓘ GUIDE";
@@ -422,21 +485,23 @@ function render(pendingId=null){
  if(isWin){
   if(mode==="learn"){
    el("winTitle").textContent="✧ LESSON COMPLETE";
-   el("winCopy").textContent="Practiced: "+level.title+". Learning doesn't require stars or an optimal route.";
+   el("winCopy").textContent=SAGE_LESSONS[index]?.why||"Practice complete. Your new mana skill is ready for the next lesson.";
   }else{
    const score=medal(level,state,proof);
    el("winTitle").textContent="★".repeat(score)+" VAULT CRACKED";
-   el("winCopy").textContent="Solved turn "+state.turn+" · "+state.spentLife+" life spent · perfect line: turn "+proof.turn+" / "+proof.spentLife+" life spent";
+   el("winCopy").textContent=level.revision?"You solved a complex mana circuit using real card abilities. Your result is measured against a certified legal route, not a claimed globally optimal solution.":"Solved turn "+state.turn+" · "+state.spentLife+" life spent · perfect line: turn "+proof.turn+" / "+proof.spentLife+" life spent";
   }
  }
  el("skip").textContent="← MAP";
  el("winNext").textContent=mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
- if(mode==="heist")renderOverworld({world,bests:progress.bests,index,proofs,medal});
+ returnFromResult.hidden=!isWin;returnFromResult.textContent=mode==="learn"?"← LESSONS":"← VAULT MAP";
+ sage.render({mode,index,level,state,finished:isWin});
+ if(mode==="heist")renderOverworld({world,bests:displayBests(),index,proofs,medal});
  choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap battlefield lands for mana; drag hand lands onto the battlefield to play.",[]);
  selectedMessage="";
 }
 function showMap(){
- fluid.pause();fluid.clear();currentFluidStage="";
+ sage.hide();fluid.pause();fluid.clear();currentFluidStage="";
  magnifier.hide();
  invalidateStagePrintings();
  cancelAuto();viewEpoch++;pendingFlights.clear();
@@ -469,7 +534,7 @@ function load(i,enter=false){
  landDrag?.cancel();
  if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(mode==="learn"&&!isLearnLevel(i)))return false;
  index=i;world=chapterIndex(index);
- level=LEVELS[index];state=initial(level);history=[];selectedMessage="";
+ level=mode==="learn"?LEARN_LEVELS[index]:LEVELS[index];state=initial(level);history=[];selectedMessage="";
  startStagePrintings(level);
  el("battlefield").replaceChildren();el("hand").replaceChildren();
  manaOrbs=reconstruct(state.pool);cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();
@@ -486,10 +551,10 @@ el("chapterPicker").addEventListener("click",e=>{
  if(x)load(Number(x.dataset.level),true);
 });
 el("previousWorld").addEventListener("click",()=>{
- if(world>0){world--;renderOverworld({world,bests:progress.bests,index,proofs,medal});}
+ if(world>0){world--;renderOverworld({world,bests:displayBests(),index,proofs,medal});}
 });
 el("nextWorld").addEventListener("click",()=>{
- if(world<CHAPTERS.length-1){world++;renderOverworld({world,bests:progress.bests,index,proofs,medal});}
+ if(world<CHAPTERS.length-1){world++;renderOverworld({world,bests:displayBests(),index,proofs,medal});}
 });
 el("galaxyPicker").addEventListener("click",e=>{
  const button=e.target.closest("[data-galaxy]");
@@ -497,11 +562,11 @@ el("galaxyPicker").addEventListener("click",e=>{
  const galaxy=Number(button.dataset.galaxy);
  if(!Number.isInteger(galaxy)||galaxy<0||galaxy>=GALAXIES.length)return;
  world=GALAXIES[galaxy].worldRange[0];
- renderOverworld({world,bests:progress.bests,index,proofs,medal});
+ renderOverworld({world,bests:displayBests(),index,proofs,medal});
 });
 el("worldPips").addEventListener("click",e=>{
  const button=e.target.closest("[data-world]");
- if(button&&!button.disabled){world=Number(button.dataset.world);renderOverworld({world,bests:progress.bests,index,proofs,medal});}
+ if(button&&!button.disabled){world=Number(button.dataset.world);renderOverworld({world,bests:displayBests(),index,proofs,medal});}
 });
 el("campaignScreen").addEventListener("click",e=>{
  const pick=e.target.closest(".mode-option[data-mode]");
@@ -515,7 +580,7 @@ el("campaignScreen").addEventListener("click",e=>{
  const g=Number(button.dataset.jumpGalaxy);
  if(!Number.isInteger(g)||g<0||g>=GALAXIES.length)return;
  world=GALAXIES[g].worldRange[0];
- renderOverworld({world,bests:progress.bests,index,proofs,medal});
+ renderOverworld({world,bests:displayBests(),index,proofs,medal});
  el("galaxyPicker").focus?.({preventScroll:true});
 });
 el("returnMap").addEventListener("click",showMap);
@@ -586,7 +651,7 @@ el("undo").addEventListener("click",()=>{
  message("Previous move undone, including any automatically cast wards.");
 });
 window.addEventListener("resize",()=>{if(document.body.classList.contains("in-heist"))syncLandRows();},{passive:true});
-el("reset").addEventListener("click",()=>load(index));
+el("reset").addEventListener("click",()=>{sage.onRestart(level);load(index);});
 el("skip").addEventListener("click",showMap);
 el("winNext").addEventListener("click",()=>{
  if(mode==="learn"){const next=nextLearnIndex(index);if(next!==null)load(next,true);else showMap();return;}

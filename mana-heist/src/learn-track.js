@@ -5,9 +5,11 @@ export const LEARN_GROUPS=Object.freeze([
  {id:"two-colors",title:"Color Choices",summary:"Dual lands, colored requirements and shock entries.",indices:[3,4,5]},
  {id:"the-cost",title:"Life & Costs",summary:"Pain lands, check lands, generic mana and color planning.",indices:[6,7,8,9,10]},
  {id:"find-the-mana",title:"Search & Sequencing",summary:"Fetch lands, timing and untapping.",indices:[11,12,13,14]},
- {id:"mastery",title:"Mana Mastery",summary:"Bounce lands and harder combinations.",indices:[15,16,17]}
+ {id:"mastery",title:"Mana Mastery",summary:"Bounce lands and harder combinations.",indices:[15,16,17]},
+ {id:"mana-artifacts",title:"Beyond Lands",summary:"Sol Ring, Signets, rituals and paid conversion.",indices:[18,19,20,21,22]},
+ {id:"mana-engines",title:"Commander Mana Engines",summary:"Restricted mana, Coffers and Lotus Field.",indices:[23,24,25]}
 ]);
-export const LEARN_COUNT=18;
+export const LEARN_COUNT=26;
 export function isLearnLevel(i){return Number.isInteger(i)&&i>=0&&i<LEARN_COUNT;}
 export function normalizedLearnProgress(raw){
  if(!raw||typeof raw!=="object"||Array.isArray(raw))return {completed:[],last:0};

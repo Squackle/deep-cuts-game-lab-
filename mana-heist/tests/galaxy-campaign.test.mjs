@@ -25,7 +25,7 @@ test("5 galaxies × 5 worlds × 10 stages = 250 valid, uniquely identified puzzl
  assert.equal(stageCode(50),"2:1:1");
  assert.equal(stageCode(249),"5:5:10");
 });
-test("all 232 new puzzles replay a proven legal solution from their source archetype", {timeout:110000},()=>{
+test("unchanged template variants replay original legal routes while revised capstones use explicit certificates", {timeout:110000},()=>{
  const proofs=new Map(BASE_LEVELS.map(root=>{
   const proof=solve(root,{maxStates:200000});
   assert.equal(proof.status,"solved",root.id);

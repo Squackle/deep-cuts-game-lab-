@@ -1,7 +1,7 @@
 // One full-size hover preview of the SAME current physical card printing.
 // Paint directly from its already-loaded <img> to a canvas: no extra Scryfall
 // redirect is issued, so randomized reprints cannot change on mouse-over.
-export function installCardMagnifier({battlefield,hand,panel,canvas,title}){
+export function installCardMagnifier({battlefield,hand,panel,canvas,title,canShow=()=>true}){
  if(!battlefield||!hand||!panel||!canvas||!title)throw Error("Missing magnifier elements");
  const ctx=canvas.getContext("2d");
  let current=null,serial=0;
@@ -29,10 +29,10 @@ export function installCardMagnifier({battlefield,hand,panel,canvas,title}){
   panel.style.left=x+"px";panel.style.top=y+"px";
  }
  function show(card){
-  if(!card||(panel.hidden===false&&current===card))return;
+  if(!card||!canShow()||(panel.hidden===false&&current===card))return;
   const id=card.dataset.cardid;if(!id)return;
   current=card;serial++;
-  title.textContent=card.dataset.zone==="field"?"LAND IN PLAY":"LAND IN HAND";
+  title.textContent=card.dataset.zone==="field"?"CARD IN PLAY":"CARD IN HAND";
   panel.hidden=false;panel.setAttribute("aria-hidden","false");
   locate(card);paint(card);
  }

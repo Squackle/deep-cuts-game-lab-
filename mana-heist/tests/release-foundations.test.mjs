@@ -11,12 +11,12 @@ const read=(f)=>readFileSync(new URL("../"+f,import.meta.url),"utf8");
 test("P01 baseline matches actual rules/card/campaign sources, not old README descriptions",()=>{
  assert.equal(VERSION,"mh-landfall-0.2.0");
  assert.deepEqual(COLORS,["W","U","B","R","G","C"]);
- assert.equal(Object.keys(CARDS).length,36);
- assert.equal(knownCardKeys().length,36);
- assert.equal(new Set(knownCardNames()).size,36);
+ assert.equal(Object.keys(CARDS).length,38);
+ assert.equal(knownCardKeys().length,38);
+ assert.equal(new Set(knownCardNames()).size,38);
  assert.equal(BASE_LEVELS.length,18);
  assert.equal(LEVELS.length,250);
- assert.equal(LEVELS.filter(l=>l.templateId).length,232);
+ assert.equal(LEVELS.filter(l=>l.templateId).length,202);
  assert.equal(GALAXIES.length,5);
  assert.equal(CHAPTERS.length,25);
  assert.equal(stageCode(0),"1:1:1");
@@ -69,6 +69,9 @@ test("P01 remains blocked; independently approved later work can be in progress 
    assert.match(html,/id="lessonPrompt"/);
    assert.match(html,/id="castButton"/);
    assert.match(tutorial,/three distinct actions/);
+  }else if([3,5,8,9,10].includes(i)){
+   assert.match(record,/\| IN PROGRESS \|/,"partially authorized mana and difficulty improvements are underway");
+   assert.match(record,/NOT COMPLETE/i,"partial release cannot be presented as 1.0 acceptance");
   }else{
    assert.match(record,/\| NOT STARTED \|/,"unapproved package "+id+" must remain unstarted");
   }
