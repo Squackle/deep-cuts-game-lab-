@@ -88,7 +88,7 @@ test("Non-forced victory return preserves selected first/final phase; normal gam
  });
  assert.equal(els.directorPhase.value,"first");
  assert.equal(called,1);assert.equal(els.directorVictory.hidden,true);
- assert.equal(RULES_VERSION,"hive-1.5.2");
+ assert.equal(RULES_VERSION,"hive-1.5.3");
  assert.doesNotMatch(read("../src/engine.js"),/director-finale-open|high-resolution-finale-art/);
  assert.doesNotMatch(read("../src/main.js"),/high-resolution-finale-art/);
 });
