@@ -155,9 +155,9 @@ function shortCard(u){
  const gone=u.zone!=='battlefield';const ability=game.hand.find(a=>a.sourceId===u.id&&!game.used.includes(a.id));
  const active=ability&&game.status==='playing'&&legalActions(game).includes(ability.id);
  const power=creaturePower(u),toughness=creatureToughness(u),printed=CARDS[u.card];
- // Full Scryfall cards already show their printed power/toughness. Only replace
- // the printed box if a real game effect changes either characteristic.
- // Marked damage does not reduce toughness in Magic and never changes this box.
+ // Scryfall shows the authentic printed P/T. Additive effects get a green
+ // modifier chip; only base-changing/non-additive effects replace that box.
+ // Marked damage does not reduce toughness in Magic.
  const stat=presentCreaturePT(u,printed,power,toughness);
  const flags=[u.indestructible?'INDESTRUCTIBLE':'',u.hexproof?'HEXPROOF':'',u.damage?`${u.damage} DAMAGE`:''].filter(Boolean).join(' · ');
  // Additive modifiers sit above printed Scryfall P/T; base-setters use a replacement.
