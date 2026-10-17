@@ -48,7 +48,7 @@ export function certifyCapstone(level){
   trace.push(legal);state=result.state;
  }
  const cast=actions(level,state).find(a=>a.type==="cast");
- if(!cast)throw Error("Certified route cannot pay final ward "+level.id);
+ if(!cast)throw Error("Certified route cannot pay final ward "+level.id+" "+JSON.stringify({pool:state.pool,cost:level.stages[0].cost,turn:state.turn}));
  const end=reduce(level,state,cast);
  if(!end.ok||!completed(level,end.state))throw Error("Capstone did not complete "+level.id);
  trace.push(cast);
