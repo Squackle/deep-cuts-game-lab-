@@ -70,7 +70,7 @@ test("artifact Key can untap Basalt Monolith; Monolith does not naturally untap"
 });
 test("mana geyser scales with *opponent* tapped land count, varying across puzzles",()=>{
  const levels=LEVELS.filter(p=>p.curated==="mana-diversity-3.0"&&p.mastery.family==="geyser");
- assert.deepEqual([...new Set(levels.map(l=>l.opponentTappedLands))].sort(),[8,9,10]);
+ assert.deepEqual([...new Set(levels.map(l=>l.opponentTappedLands))].sort((a,b)=>a-b),[8,9,10]);
  for(const l of levels.slice(0,9)){
   const proof=certifyDiverse(l);
   const geyser=proof.actions.find(a=>a.type==="ritual");
