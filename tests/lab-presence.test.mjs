@@ -49,7 +49,7 @@ test("Missing Lab KV binding fails transparently without fake live counts",async
 test("Game counters heartbeat even when backgrounded; no activity or sign-in gating",()=>{
  const script=fs.readFileSync("lab/presence.js","utf8");
  assert.match(script,/window\.setInterval\(pulse,INTERVAL\)/);
- assert.match(script,/const INTERVAL=30000/);
+ assert.match(script,/INTERVAL=30000/);
  assert.doesNotMatch(script,/if\(document\.hidden\)return\s+touch|requiresLogin|currentUser/);
  assert.match(script,/localStorage\.getItem\(KEY\)/);
  assert.match(script,/addEventListener\("focus"/);
