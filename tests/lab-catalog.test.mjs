@@ -106,16 +106,10 @@ test("Game Lab uses a first-party readable SVG favicon and concise hub tab title
  assert.doesNotMatch(svg,/<script|foreignObject|<image|href=|onload=/i);
 });
 
-test("Lab presence is only a public experimental analytics preview, never live scores or production member identity",()=>{
- assert.match(hub,/href="\/lab\/command-center\.html"/);
+test("Lab retains anonymous online badge but no longer advertises or serves its own Command Center",()=>{
+ assert.doesNotMatch(hub,/command-center\.html/);
  assert.match(hub,/href="\/lab\/presence\.css"/);
- const preview=read("lab/command-center.html");
- assert.match(preview,/id="lab-online"/);
- assert.match(preview,/id="lab-members"/);
- assert.match(preview,/id="lab-top-count"/);
- assert.match(preview,/No Lab accounts connected/);
- assert.match(preview,/noindex,nofollow/);
- assert.doesNotMatch(preview,/deep-cuts-edh\.pages\.dev\/api|\/api\/leaderboard|\/api\/owner/);
- for(const file of ["functions/api/lab-presence.js","lab/presence.js","lab/presence.css","lab/command-center.js","lab/command-center.css"])assert.ok(fs.existsSync(file),file);
+ for(const file of ["functions/api/lab-presence.js","lab/presence.js","lab/presence.css"])assert.ok(fs.existsSync(file),file);
+ for(const file of ["lab/command-center.html","lab/command-center.js","lab/command-center.css"])assert.ok(!fs.existsSync(file),"Removed preview must not remain: "+file);
  assert.doesNotMatch(read("functions/api/lab-presence.js"),/community_profiles|leaderboard|env\.DB|env\.D1|password|token|cookie/i);
 });

@@ -53,6 +53,5 @@ test("Game counters heartbeat even when backgrounded; no activity or sign-in gat
  assert.doesNotMatch(script,/if\(document\.hidden\)return\s+touch|requiresLogin|currentUser/);
  assert.match(script,/localStorage\.getItem\(KEY\)/);
  assert.match(script,/addEventListener\("focus"/);
- const preview=fs.readFileSync("lab/command-center.html","utf8");
- assert.match(preview,/most recently focused Lab page/);
+ assert.equal(fs.existsSync("lab/command-center.html"),false,"Lab Command Center preview removed");
 });
