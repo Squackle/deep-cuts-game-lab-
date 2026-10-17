@@ -35,8 +35,7 @@ export function certifyCapstone(level){
  ]:[
   ["activate","f4","sol"],["activate","f3","coffers"],
   ["tap","f5","C"],["tap","f6","C"],["activate","f7","devotion-B"],
-  ["tap","f8","U"],
-  ...(level.world%2===0?[["tap","f9","R"]]:[])
+  ["tap","f8","U"],["tap","f9","R"],["tap","f10","W"]
  ]):plan[level.galaxy];
  if(!moves)throw Error("No certificate for "+level.id);
  let state=initial(level);const trace=[];
