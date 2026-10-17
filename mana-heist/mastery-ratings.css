@@ -1,0 +1,32 @@
+/* Mana Heist expansion: visible structural C and estimated D ratings.
+   The campaign can scroll; the active tabletop remains a fixed 100dvh. */
+.mastery-rating{display:inline-flex;align-items:center;white-space:nowrap;color:#f0d6a4;
+ font:800 .67rem system-ui,sans-serif;letter-spacing:.045em;
+ padding:6px 9px;border-radius:20px;border:1px solid #c4b3878a;
+ background:#172f2dd9;cursor:help}
+.vault-ratings{display:inline-block!important;letter-spacing:.1em;
+ color:#e0c892!important;background:#18332fc7;border-radius:7px;
+ border:1px solid #b7a47a65;padding:4px 7px;margin:4px 0!important;
+ font:800 .65rem system-ui,sans-serif!important}
+body.in-heist #gameScreen>.game-titlebar .mastery-rating{margin:0 auto}
+.campaign-screen .galaxy-navigation{
+ display:flex!important;flex-wrap:wrap!important;justify-content:center!important;
+ gap:8px!important;overflow:visible!important;align-items:stretch!important;
+}
+.campaign-screen .galaxy-navigation .galaxy-tab{
+ flex:1 1 155px!important;min-width:135px!important;max-width:calc(25% - 8px)!important;
+}
+.campaign-screen .vault-jump{margin-bottom:13px}
+.campaign-screen .vault-jump button{flex:0 0 auto}
+@media(max-width:650px){
+ body.in-heist #gameScreen>.game-titlebar .mastery-rating{
+  font-size:.56rem;letter-spacing:0;padding:5px 5px;margin:0 2px
+ }
+ .campaign-screen .galaxy-navigation .galaxy-tab{
+  flex-basis:calc(50% - 6px)!important;min-width:0!important;max-width:none!important
+ }
+ .campaign-screen .vault-jump{max-height:130px;overflow-y:auto;overscroll-behavior:contain}
+}
+@media(max-width:380px){
+ body.in-heist #gameScreen>.game-titlebar .mastery-rating{font-size:.51rem;padding:3px}
+}
