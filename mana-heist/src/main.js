@@ -1,7 +1,7 @@
 import {LEVELS,CHAPTERS,GALAXIES,BASE_LEVELS} from "./levels.js";
 import {COLORS,CARDS,initial,actions,reduce,completed,getCard,lookup,medal} from "./engine.js";
 import {solve} from "./solver.js";
-import {chapterIndex,stageCode,normalizedBests} from "./campaign.js";
+import {chapterIndex,stageCode,normalizedBests,validBest} from "./campaign.js";
 import {LEARN_GROUPS,LEARN_COUNT,isLearnLevel,normalizedLearnProgress,nextLearnIndex} from "./learn-track.js";
 import {renderOverworld} from "./overworld.js";
 import {reconstruct,transitionOrbs,consistent} from "./mana-orbs.js";
@@ -40,7 +40,7 @@ const modeKey="dc-mana-heist-mode-v1",learnKey="dc-mana-heist-learn-v1";
 const revisedKey="dc-mana-heist-capstones-v1";
 function readRevised(){
  try{const d=JSON.parse(localStorage.getItem(revisedKey)||"null");
-  return d?.v===1?normalizedBests(d.bests||{}):{};}catch{return {};}
+  return d?.v===1?Object.fromEntries(LEVELS.filter(l=>l.revision&&validBest(d.bests?.[l.id])).map(l=>[l.id,{turn:d.bests[l.id].turn,spentLife:d.bests[l.id].spentLife,actions:Number.isInteger(d.bests[l.id].actions)?d.bests[l.id].actions:999}])):{};}catch{return {};}
 }
 let revisedBests=readRevised();
 function displayBests(){
@@ -284,8 +284,10 @@ function perform(action){
   }else{
    if(level.revision){
     const best=revisedBests[level.id];
-    if(!best||state.turn<best.turn||(state.turn===best.turn&&state.spentLife<best.spentLife))
-      revisedBests[level.id]={turn:state.turn,spentLife:state.spentLife};
+    if(!best||state.turn<best.turn||
+       (state.turn===best.turn&&state.spentLife<best.spentLife)||
+       (state.turn===best.turn&&state.spentLife===best.spentLife&&state.actions<best.actions))
+      revisedBests[level.id]={turn:state.turn,spentLife:state.spentLife,actions:state.actions};
     persistRevised();
    }else{
     const best=progress.bests[level.id];
