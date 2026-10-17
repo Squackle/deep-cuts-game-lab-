@@ -48,7 +48,7 @@ test("Only true Director sessions can summon burgers or bypass production rules"
  const finished=createDirectorRun({phase:"victory"});
  assert.equal(spawnDirectorSuperOrb(finished),null);
  assert.equal(finished.directorBurger,null);
- assert.equal(RULES_VERSION,"hive-1.5.2");
+ assert.equal(RULES_VERSION,"hive-1.5.3");
 });
 test("Repeated key presses relocate one orb rather than stack infinite invisible rewards",()=>{
  const run=createDirectorRun({mode:"classic",phase:"first"});
