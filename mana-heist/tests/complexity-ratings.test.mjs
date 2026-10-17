@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
 import {LEVELS,GALAXIES} from "../src/levels.js";
 import {evaluateVault} from "../src/difficulty-metrics.js";
 import {certifyMastery} from "../src/mastery-certificates.js";
@@ -33,9 +34,8 @@ test("new galaxies scale up in structure, not a hidden stage index bonus",()=>{
  assert.ok(certifyMastery(last).steps>certifyMastery(first).steps);
 });
 test("ratings and two-part scale appear in both active vault and all map cards",()=>{
- const fs=await import("node:fs");
- const ui=fs.readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
- const map=fs.readFileSync(new URL("../src/overworld.js",import.meta.url),"utf8");
+ const ui=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
+ const map=readFileSync(new URL("../src/overworld.js",import.meta.url),"utf8");
  assert.match(ui,/masteryRating\.textContent=/);
  assert.match(map,/vault-ratings/);
  assert.match(map,/500 vaults/);
