@@ -17,7 +17,7 @@ body.in-heist #heist #battlefield .land-card.mtg-real-land.is-tapped:focus-visib
  opacity:1!important;
 }
 body.in-heist #heist #battlefield .land-card.mtg-real-land.is-tapped .mtg-card-image{
- display:block!important;position:absolute!important;top:50%!important;left:50%!important;inset:auto!important;
+ display:block!important;position:absolute!important;inset:auto!important;top:50%!important;left:50%!important;
  width:var(--tap-width)!important;height:calc(var(--tap-width) * 680 / 488)!important;
  min-width:var(--tap-width)!important;max-width:var(--tap-width)!important;
  min-height:0!important;max-height:none!important;
