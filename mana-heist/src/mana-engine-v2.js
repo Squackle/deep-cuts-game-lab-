@@ -89,33 +89,45 @@ function usable(mana,context){
 // We cannot assume that two {U} from different sources have the same restrictions.
 export function payments(pool,cost,context={kind:"activation"}){
  if(!validCost(cost))return [];
- const requirements=COLORS.flatMap(c=>Array(cost[c]||0).fill(c));
- const generic=cost.N||0,needed=requirements.length+generic;
+ const needed=COLORS.reduce((n,c)=>n+(cost[c]||0),cost.N||0);
  if(!needed)return [[]];
  if(pool.length<needed)return [];
- const options=[],seen=new Set();
- function walk(req,left,chosen){
-  if(req===requirements.length){
-   if(left===0){
-    const ids=[...chosen].sort(),sig=ids.join(",");
-    if(!seen.has(sig)){seen.add(sig);options.push(ids);}
-    return;
-   }
-   for(let i=0;i<pool.length;i++){
-    const u=pool[i];
-    if(chosen.includes(u.id)||!usable(u,context))continue;
-    walk(req,left-1,[...chosen,u.id]);
-   }
-   return;
-  }
-  const symbol=requirements[req];
-  for(const u of pool){
-   if(u.color!==symbol||chosen.includes(u.id)||!usable(u,context))continue;
-   walk(req+1,left,[...chosen,u.id]);
+ // Combination enumeration, not permutations: 14 identical black pips must
+ // not trigger 14! duplicate payment paths. Units preserve restrictions and
+ // source identity, so different eligible combinations remain available.
+ const available=pool.filter(u=>usable(u,context));
+ if(available.length<needed)return [];
+ const out=[],seen=new Set(),LIMIT=4096;
+ const emit=units=>{
+  const ids=units.map(u=>u.id).sort(),signature=ids.join(",");
+  if(!seen.has(signature)){seen.add(signature);out.push(ids);}
+ };
+ function choose(candidates,count,start,chosen,done){
+  if(out.length>=LIMIT)return;
+  if(count===0){done(chosen);return;}
+  for(let i=start;i<=candidates.length-count;i++){
+   choose(candidates,count-1,i+1,[...chosen,candidates[i]],done);
+   if(out.length>=LIMIT)return;
   }
  }
- walk(0,generic,[]);
- return options;
+ function generic(chosen){
+  const used=new Set(chosen.map(x=>x.id));
+  const candidates=available.filter(u=>!used.has(u.id));
+  const count=cost.N||0;
+  if(candidates.length<count)return;
+  choose(candidates,count,0,[],g=>emit([...chosen,...g]));
+ }
+ function colored(index,chosen){
+  if(out.length>=LIMIT)return;
+  if(index===COLORS.length){generic(chosen);return;}
+  const color=COLORS[index],required=cost[color]||0;
+  if(!required){colored(index+1,chosen);return;}
+  const candidates=available.filter(u=>u.color===color);
+  if(candidates.length<required)return;
+  choose(candidates,required,0,[],group=>colored(index+1,[...chosen,...group]));
+ }
+ colored(0,[]);
+ return out;
 }
 export function legalActions(scenario,state){
  if(complete(scenario,state))return [];
