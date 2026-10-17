@@ -362,7 +362,7 @@ function landHtml(instance,field){
  const src=imageFor(instance.id,key);
  const fallback=landPainting(card);
  const alt=name+" — Magic: The Gathering card from Scryfall";
- return '<button type="button" draggable="false" class="land-card mtg-real-land '+(tapped?"is-tapped":"")+'" data-cardid="'+instance.id+'" data-zone="'+(field?"field":"hand")+'" data-kind="'+card.kind+'" data-real-card="'+key+'" aria-label="'+(field?"Tap ":"Select or drag to play: ")+name+(tapped?", tapped":"")+'" title="'+name+' · '+(field?"tap to produce mana":"tap to play · hold and drag · press I to inspect")+'">'+
+ return '<button type="button" draggable="false" class="land-card mtg-real-land '+(tapped?"is-tapped":"")+'" data-cardid="'+instance.id+'" data-zone="'+(field?"field":"hand")+'" data-kind="'+card.kind+'" data-real-card="'+key+'" aria-label="'+(field?"Tap ":"Tap to play or cast: ")+name+(tapped?", tapped":"")+'" title="'+name+' · '+(field?"tap to produce mana":"tap to play · hold and drag · press I to inspect")+'">'+
   '<img class="mtg-card-image" data-card-key="'+key+'" src="'+src+'" alt="'+alt+'" draggable="false" decoding="async" loading="eager">'+
   '<span class="mtg-fallback" aria-hidden="true"><strong>'+name+'</strong>'+fallback+'</span>'+
   '</button>';
@@ -386,7 +386,7 @@ function syncLandRows(){
   node.classList.toggle("is-tapped",!!tapped);
   node.dataset.zone=field?"field":"hand";
   const name=card.name;
-  node.setAttribute("aria-label",(field?"Tap ":"Select or drag to play: ")+name+(tapped?", tapped":""));
+  node.setAttribute("aria-label",(field?"Tap ":"Tap to play or cast: ")+name+(tapped?", tapped":""));
   node.title=name+" · "+(field?"tap to produce mana":"tap to play or cast · press I to inspect");
    node.classList.toggle("hand-selected",!field&&id===selectedHandId);
    if(field)node.removeAttribute("aria-pressed");else node.setAttribute("aria-pressed",String(id===selectedHandId));
@@ -506,7 +506,7 @@ function render(pendingId=null){
  returnFromResult.hidden=!isWin;returnFromResult.textContent=mode==="learn"?"← LESSONS":"← VAULT MAP";
  sage.render({mode,index,level,state,finished:isWin});
  if(mode==="heist")renderOverworld({world,bests:displayBests(),index,proofs,medal});
- choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap battlefield lands for mana; drag hand lands onto the battlefield to play.",[]);
+ choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap battlefield lands for mana; tap a hand card to play it or cast a ritual.",[]);
  selectedMessage="";
 }
 function showMap(){
