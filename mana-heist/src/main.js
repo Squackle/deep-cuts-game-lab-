@@ -267,6 +267,7 @@ function perform(action){
  else if(action.type==="play")message(getCard(level,action.id).name+" enters the battlefield"+(state.field.find(f=>f.id===action.id)?.tapped?" tapped.":"."));
  else if(action.type==="tap")message(getCard(level,action.id).kind==="bounce"?"Simic Growth Chamber adds green AND blue mana.":"+1 "+SYMBOL[action.color].name+" mana · land tapped sideways.");
   else if(action.type==="activate")message(getCard(level,action.id).name+" produces "+action.output.join(" + ")+" mana"+(getCard(level,action.id).v2==="ziggurat"?" (creature spells only).":"."));
+ else if(action.type==="ritual")message("Cast "+getCard(level,action.id).name+" from your hand. It goes to your graveyard and adds "+action.output.join(" + ")+" mana.");
  else if(action.type==="fetch")message("Fetched "+getCard(level,action.targetId).name+". The fetch land is gone.");
  else if(action.type==="cast")message("Spell cast · "+(level.stages.length-state.stage)+" seals remain.");
  landDrag?.cancel();
@@ -301,7 +302,15 @@ function tapLand(id){
 }
 function playLand(id){
  lastCardId=id;selectedHandId=null;
- const card=getCard(level,id),possible=actions(level,state).filter(a=>a.type==="play"&&a.id===id);
+ const card=getCard(level,id);
+ if(card.kind==="instant"){
+  const rituals=actions(level,state).filter(a=>a.type==="ritual"&&a.id===id);
+  if(!rituals.length){message("Make enough mana to pay for this instant before casting it.",true);return;}
+  if(rituals.length===1)perform(rituals[0]);
+  else choices("CAST A MANA SPELL","Choose which mana pays for the instant.",rituals);
+  return;
+ }
+ const possible=actions(level,state).filter(a=>a.type==="play"&&a.id===id);
  if(!possible.length){message(state.played?"You have already played a land this turn.":"This land cannot be played right now.",true);return;}
  if(possible.length===1)perform(possible[0]);
  else choices(card.kind==="shock"?"SHOCK OR SAVE LIFE":card.kind==="bounce"?"RETURN A LAND":"PLAY YOUR LAND",card.kind==="shock"?"Pay 2 life to enter untapped, or enter tapped at no life cost.":card.kind==="bounce"?"This land enters tapped and sends a battlefield land back to your hand.":"Select how to play this land.",possible);
@@ -367,7 +376,8 @@ function syncLandRows(){
   node.style.setProperty("--fan-drop",position.drop+"px");
   node.style.setProperty("--fan-index",String(position.order));
  });
- el("playSelectedLand").disabled=!selectedHandId||!state.hand.includes(selectedHandId)||!!state.played;
+ el("playSelectedLand").disabled=!selectedHandId||!state.hand.includes(selectedHandId)||(!!state.played&&getCard(level,selectedHandId)?.kind!=="instant");
+ el("playSelectedLand").textContent=selectedHandId&&getCard(level,selectedHandId)?.kind==="instant"?"CAST MANA SPELL ✦":"PLAY SELECTED LAND ↑";
  el("inspectSelected").disabled=!selectedHandId||!state.hand.includes(selectedHandId);
 }
 function selectHand(id){
