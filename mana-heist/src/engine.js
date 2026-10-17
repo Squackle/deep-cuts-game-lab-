@@ -44,7 +44,28 @@ export const CARDS={
  confluence:{name:"Mana Confluence",kind:"mana-engine",colors:[],types:[],v2:"confluence",flavor:"Pay 1 life and tap for any color"},
  command:{name:"Command Tower",kind:"mana-engine",colors:[],types:[],v2:"command",flavor:"Add one color from commander identity"},
  ritual:{name:"Dark Ritual",kind:"instant",colors:[],types:[],manaSpell:{cost:{B:1},output:["B","B","B"]},flavor:"Instant · spend B to add BBB"},
- pyretic:{name:"Pyretic Ritual",kind:"instant",colors:[],types:[],manaSpell:{cost:{N:1,R:1},output:["R","R","R"]},flavor:"Instant · spend 1R to add RRR"}
+ pyretic:{name:"Pyretic Ritual",kind:"instant",colors:[],types:[],manaSpell:{cost:{N:1,R:1},output:["R","R","R"]},flavor:"Instant · spend 1R to add RRR"},
+ desperate:{name:"Desperate Ritual",kind:"instant",colors:[],types:[],manaSpell:{cost:{N:1,R:1},output:["R","R","R"]},flavor:"Instant · 1R → RRR; splice mode not yet simulated"},
+ song:{name:"Seething Song",kind:"instant",colors:[],types:[],manaSpell:{cost:{N:2,R:1},output:["R","R","R","R","R"]},flavor:"Instant · 2R → RRRRR"},
+ rite:{name:"Rite of Flame",kind:"instant",colors:[],types:[],manaSpell:{cost:{R:1},output:["R","R"],scaleGraveyard:true},flavor:"Sorcery · R → RR (+R per Rite in graveyards)"},
+ geyser:{name:"Mana Geyser",kind:"sorcery",colors:[],types:[],manaSpell:{cost:{N:3,R:2},output:[],scaleOpponentTapped:true},flavor:"Sorcery · 3RR → R per tapped opponent land (scenario count)"},
+ tide:{name:"High Tide",kind:"instant",colors:[],types:[],manaSpell:{cost:{U:1},output:[],effect:"highTide"},flavor:"Instant · Islands tapped for mana add an extra U until end of turn"},
+ mindstone:{name:"Mind Stone",kind:"artifact",colors:[],types:[],v2:"mindstone",flavor:"Artifact · tap for C; drawing not modeled"},
+ vessel:{name:"Thought Vessel",kind:"artifact",colors:[],types:[],v2:"vessel",flavor:"Artifact · tap for C; no maximum hand size"},
+ archive:{name:"Hedron Archive",kind:"artifact",colors:[],types:[],v2:"archive",flavor:"Artifact · tap for CC; drawing not modeled"},
+ thran:{name:"Thran Dynamo",kind:"artifact",colors:[],types:[],v2:"thran",flavor:"Artifact · tap for CCC"},
+ worn:{name:"Worn Powerstone",kind:"artifact",colors:[],types:[],v2:"worn",flavor:"Artifact · tap for CC, enters tapped if played; starts already in play"},
+ gilded:{name:"Gilded Lotus",kind:"artifact",colors:[],types:[],v2:"gilded",flavor:"Artifact · tap for three mana of any one color"},
+ arcane:{name:"Arcane Signet",kind:"artifact",colors:[],types:[],v2:"arcane",flavor:"Artifact · tap for one mana of commander's identity"},
+ prism:{name:"Prismatic Lens",kind:"artifact",colors:[],types:[],v2:"prism",flavor:"Artifact · tap for C or pay 1, tap for any color"},
+ cylix:{name:"Mana Cylix",kind:"artifact",colors:[],types:[],v2:"cylix",flavor:"Artifact · pay 1 and tap to add any color"},
+ lantern:{name:"Chromatic Lantern",kind:"artifact",colors:[],types:[],v2:"lantern",flavor:"Artifact · tap any color; lands you control gain this ability"},
+ skyclave:{name:"Skyclave Relic",kind:"artifact",colors:[],types:[],v2:"skyclave",flavor:"Indestructible artifact · tap any color; kick copies not modeled"},
+ basalt:{name:"Basalt Monolith",kind:"artifact",colors:[],types:[],v2:"basalt",flavor:"Artifact · tap for CCC; pay 3 to untap; no automatic untap"},
+ key:{name:"Voltaic Key",kind:"artifact",colors:[],types:[],v2:"key",flavor:"Artifact · pay 1 and tap to untap target artifact"},
+ bloom:{name:"Lotus Bloom",kind:"artifact",colors:[],types:[],v2:"bloom",flavor:"Artifact · tap and sacrifice for three mana one color; post-suspend battlefield snapshot"},
+ nyxlotus:{name:"Nyx Lotus",kind:"artifact",colors:[],types:[],v2:"nyxlotus",flavor:"Artifact · tap to add mana equal to devotion to the selected color"},
+ chalice:{name:"Everflowing Chalice",kind:"artifact",colors:[],types:[],v2:"chalice",flavor:"Artifact · tap for C per charge counter (board snapshot)"}
 };
 const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
 export function validate(level){
