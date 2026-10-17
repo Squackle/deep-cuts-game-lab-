@@ -32,8 +32,17 @@ test("red grants temporary scoring multiplier and changes travel speed",()=>{
  r.food={x:r.body[0].x+1,y:r.body[0].y};const before=r.score;
  step(r);assert.equal(r.score,before+200);
 });
-test("green rewards extra growth after orb pickup without granting free EV",()=>{
+test("Green in Hunt grants bonus evolution energy for four pickups without tail growth",()=>{
  const g=draft("G");g.enemies=[];g.respawnIn=100;
+ const size=g.body.length;g.food={x:g.body[0].x+1,y:g.body[0].y};
+ step(g);assert.equal(g.energy,2);assert.equal(g.effects.greenPickups,3);
+ assert.equal(g.growthDebt,0);assert.equal(g.body.length,size);
+ step(g);assert.equal(g.body.length,size);
+});
+test("Green in Brood Trail still grows the swarm instead of giving bonus evolution energy",()=>{
+ const g=newRun({seed:42,mode:"classic"});start(g);
+ g.status="draft";g.draftOptions=["G","W","B"];
+ assert.equal(chooseMutation(g,"G"),true);
  const size=g.body.length;g.food={x:g.body[0].x+1,y:g.body[0].y};
  step(g);assert.equal(g.energy,1);assert.equal(g.effects.greenPickups,3);
  assert.ok(g.growthDebt>=2);assert.equal(g.body.length,size);
