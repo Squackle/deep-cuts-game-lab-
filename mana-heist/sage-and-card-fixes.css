@@ -152,3 +152,28 @@ body.in-heist #heist #winPanel.win #winReturn{
  body.in-heist #sageNotes.sage-notes:not([hidden]){animation:none!important}
  body.in-heist #heist #winPanel.win:not([hidden]){animation:none!important}
 }
+
+
+/* Advanced boards: mobile battlefield is a swipeable rack, not a dense
+   pile of 12 untappable slivers. Only this zone scrolls, never the page. */
+@media(max-width:760px){
+ body.in-heist #heist #battlefield.field-many{
+  display:flex!important;align-items:center!important;
+  justify-content:flex-start!important;gap:8px!important;
+  overflow-x:auto!important;overflow-y:hidden!important;
+  overscroll-behavior-x:contain!important;
+  scroll-snap-type:x proximity!important;
+  touch-action:pan-x!important;scrollbar-width:thin!important;
+  padding:4px 12px 9px!important;
+ }
+ body.in-heist #heist #battlefield.field-many .land-card.mtg-real-land:not(.is-tapped){
+  margin-left:0!important;scroll-snap-align:center!important;
+  flex:0 0 var(--field-card-width,72px)!important;
+  width:var(--field-card-width,72px)!important;
+  min-width:var(--field-card-width,72px)!important;
+  max-width:var(--field-card-width,72px)!important;
+ }
+ body.in-heist #heist #battlefield.field-many .land-card.mtg-real-land.is-tapped{
+  margin-left:0!important;scroll-snap-align:center!important;
+ }
+}
