@@ -90,7 +90,7 @@ export function installLandDragging({hand,battlefield,onDrop,onHint,onInspect}) 
   const didDrag=active.dragging,accepted=didDrag&&hit(e.clientX,e.clientY);
   restore();
   if(accepted)onDrop(id);
-  else if(didDrag)onHint?.("Drop the land inside the highlighted battlefield to play it.",true);
+  else if(didDrag)onHint?.("Drop the card on the battlefield to play a land; cast mana instants from your hand.",true);
   else onInspect?.(id);
  });
  hand.addEventListener("pointercancel",()=>restore());
@@ -104,7 +104,7 @@ export function installLandDragging({hand,battlefield,onDrop,onHint,onInspect}) 
   cancel();
   keyboardId=card.dataset.cardid;
   card.classList.add("keyboard-picked");zone.classList.add("keyboard-armed");
-  onHint?.("Land picked up. Focus the battlefield and press Enter or Space to play; Esc cancels.");
+  onHint?.("Card picked up. Focus the battlefield and press Enter or Space to use it; Esc cancels.");
   battlefield.focus();
  });
  battlefield.addEventListener("keydown",e=>{
