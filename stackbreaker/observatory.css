@@ -259,3 +259,86 @@ main{max-width:1640px}
   animation:none!important;transition:none!important;
  }
 }
+
+
+/* 2026-10-17 · Riku-style creature status: the full printed Scryfall card stays
+   untouched. Effective P/T replaces the tiny bottom-right numbers while a
+   separate green counter/pump chip sits immediately ABOVE it. */
+.battle-card .battle-card-face{overflow:hidden}
+.battle-card .pt-badges{
+ position:absolute;
+ right:2.4%;
+ bottom:calc(5.6% + 25px);
+ width:max-content;
+ max-width:97%;
+ display:flex;
+ align-items:flex-end;
+ justify-content:flex-end;
+ gap:3px;
+ flex-wrap:wrap;
+ z-index:6;
+ pointer-events:none;
+}
+.battle-card .pt-modifier{
+ position:relative;
+ right:auto;
+ bottom:auto;
+ z-index:auto;
+ width:max-content;
+ max-width:100%;
+ min-width:0;
+ min-height:16px;
+ height:auto;
+ box-sizing:border-box;
+ padding:2px 5px;
+ border:1px solid #a4df9e;
+ border-radius:6px;
+ background:#176b36;
+ color:#fffde7;
+ box-shadow:0 2px 6px #000b,inset 0 1px 0 #ffffff29;
+ font:800 clamp(9px,.9vw,13px)/1.1 system-ui,sans-serif;
+ white-space:nowrap;
+ text-shadow:0 1px 2px #06391b;
+ pointer-events:none;
+}
+.battle-card .pt-modifier.pt-counter{
+ background:#327f56;
+ border-color:#c1efb7;
+}
+.battle-card .pt-modifier.pt-boost{
+ background:#185e35;
+}
+.battle-card .pt-replacement{
+ position:absolute;
+ right:2.4%;
+ bottom:5.6%;
+ z-index:5;
+ box-sizing:border-box;
+ min-width:43%;
+ width:max-content;
+ max-width:93%;
+ min-height:20px;
+ height:auto;
+ padding:2px 5px;
+ border:1.5px solid #2b2c23;
+ border-radius:4px;
+ background:#f2e9d0;
+ color:#141b13;
+ box-shadow:0 2px 6px #0009;
+ font:900 clamp(10px,1.05vw,15px)/1.2 Georgia,serif;
+ text-shadow:none;
+ white-space:nowrap;
+ overflow:visible;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ pointer-events:none;
+}
+@media(max-width:600px){
+ .battle-card .pt-badges{bottom:calc(5.6% + 21px);gap:2px}
+ .battle-card .pt-modifier{min-height:12px;padding:1px 3px;font-size:clamp(8px,2.4vw,10px);border-radius:4px}
+ .battle-card .pt-replacement{min-height:16px;padding:1px 3px;font-size:clamp(9px,2.7vw,12px)}
+}
+@media(prefers-reduced-motion:reduce){
+ .battle-card .pt-badges,.battle-card .pt-modifier,.battle-card .pt-replacement{animation:none!important;transition:none!important}
+}
