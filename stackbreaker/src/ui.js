@@ -1,5 +1,6 @@
 import {CARDS,LANDS,RULES_VERSION,cardLink} from './cards.js';
 import {createGame,tapLand,playLand,activate,pass,paymentOptions,legalActions,legalTargets,creaturePower,creatureToughness,labelTarget} from './engine.js';
+import {presentCreaturePT} from './pt-display.js';
 import coreScenarios from '../data/scenarios.json' with {type:'json'};
 import campaignExpansion from '../data/campaign-expansion.json' with {type:'json'};
 import {GALAXIES,makeWorlds,generateStages} from './galaxies.js';
@@ -154,12 +155,16 @@ function shortCard(u){
  const gone=u.zone!=='battlefield';const ability=game.hand.find(a=>a.sourceId===u.id&&!game.used.includes(a.id));
  const active=ability&&game.status==='playing'&&legalActions(game).includes(ability.id);
  const power=creaturePower(u),toughness=creatureToughness(u),printed=CARDS[u.card];
- // Full Scryfall cards already show their printed power/toughness. Only replace
- // the printed box if a real game effect changes either characteristic.
- // Marked damage does not reduce toughness in Magic and never changes this box.
- const changed=power!==printed.power||toughness!==printed.toughness;
+ // Scryfall shows the authentic printed P/T. Additive effects get a green
+ // modifier chip; only base-changing/non-additive effects replace that box.
+ // Marked damage does not reduce toughness in Magic.
+ const stat=presentCreaturePT(u,printed,power,toughness);
  const flags=[u.indestructible?'INDESTRUCTIBLE':'',u.hexproof?'HEXPROOF':'',u.damage?`${u.damage} DAMAGE`:''].filter(Boolean).join(' · ');
- const altered=changed?`<span class="pt-replacement" data-modified-pt aria-label="Modified power and toughness ${power}/${toughness}" title="Modified power/toughness: ${power}/${toughness}">${power}/${toughness}</span>`:'';
+ // Additive modifiers sit above printed Scryfall P/T; base-setters use a replacement.
+ const altered=stat.kind==='modifier'
+  ?`<span class="pt-modifier" data-pt-modifier aria-label="${esc(stat.accessible)}" title="${esc(stat.accessible)}">${esc(stat.text)}</span>`
+  :stat.kind==='replacement'
+  ?`<span class="pt-replacement" data-modified-pt aria-label="${esc(stat.accessible)}" title="${esc(stat.accessible)}">${esc(stat.text)}</span>`:'';
  const status=flags?`<span class="flags">${esc(flags)}</span>`:'';
  return `<div class="battle-unit"><button type="button" class="battle-card ${gone?'off':''} ${ability?'has-ability':''} ${active?'can-activate':''}" data-unit="${esc(u.id)}" ${ability?'data-activate-source="'+esc(ability.id)+'"':''} aria-label="${esc(u.card)}, ${power}/${toughness}. ${esc(flags)} ${active?'Activate its printed ability.':'View or target this card.'}"><span class="battle-card-face">${thumb(u.card,'normal','battle-image')}${altered}</span>${status}</button></div>`;
 }
