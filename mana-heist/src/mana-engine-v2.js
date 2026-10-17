@@ -33,7 +33,26 @@ export const SOURCES=Object.freeze({
  command:{name:"Command Tower",type:"Land",types:[],abilities:[],dynamic:"command"},
  petal:{name:"Lotus Petal",type:"Artifact",types:[],abilities:[],dynamic:"petal"},
  treasure:{name:"Treasure token",type:"Artifact",types:[],abilities:[],dynamic:"treasure"},
- confluence:{name:"Mana Confluence",type:"Land",types:[],abilities:[],dynamic:"confluence"}
+ confluence:{name:"Mana Confluence",type:"Land",types:[],abilities:[],dynamic:"confluence"},
+ mindstone:{name:"Mind Stone",type:"Artifact",types:[],abilities:[D({id:"stone-C",label:"Tap: Add C",output:["C"]})]},
+ vessel:{name:"Thought Vessel",type:"Artifact",types:[],abilities:[D({id:"vessel-C",label:"Tap: Add C",output:["C"]})]},
+ archive:{name:"Hedron Archive",type:"Artifact",types:[],abilities:[D({id:"archive-CC",label:"Tap: Add CC",output:["C","C"]})]},
+ thran:{name:"Thran Dynamo",type:"Artifact",types:[],abilities:[D({id:"thran-CCC",label:"Tap: Add CCC",output:["C","C","C"]})]},
+ worn:{name:"Worn Powerstone",type:"Artifact",types:[],abilities:[D({id:"worn-CC",label:"Tap: Add CC",output:["C","C"]})]},
+ gilded:{name:"Gilded Lotus",type:"Artifact",types:[],abilities:[],dynamic:"gilded"},
+ arcane:{name:"Arcane Signet",type:"Artifact",types:[],abilities:[],dynamic:"arcane"},
+ prism:{name:"Prismatic Lens",type:"Artifact",types:[],abilities:[D({id:"prism-C",label:"Tap: Add C",output:["C"]})],dynamic:"prism"},
+ cylix:{name:"Mana Cylix",type:"Artifact",types:[],abilities:[],dynamic:"cylix"},
+ lantern:{name:"Chromatic Lantern",type:"Artifact",types:[],abilities:[],dynamic:"lantern"},
+ skyclave:{name:"Skyclave Relic",type:"Artifact",types:[],abilities:[],dynamic:"skyclave"},
+ basalt:{name:"Basalt Monolith",type:"Artifact",types:[],abilities:[
+ D({id:"basalt-CCC",label:"Tap: Add CCC",output:["C","C","C"]}),
+ {...D({id:"basalt-untap",label:"Pay 3: Untap Basalt Monolith",tap:false,cost:{N:3}}),untapSelf:true}
+ ]},
+ key:{name:"Voltaic Key",type:"Artifact",types:[],abilities:[],dynamic:"key"},
+ bloom:{name:"Lotus Bloom",type:"Artifact",types:[],abilities:[],dynamic:"bloom"},
+ nyxlotus:{name:"Nyx Lotus",type:"Artifact",types:[],abilities:[],dynamic:"nyxlotus"},
+ chalice:{name:"Everflowing Chalice",type:"Artifact",types:[],abilities:[],dynamic:"chalice"}
 });
 const copy=value=>JSON.parse(JSON.stringify(value));
 const sum=c=>Object.values(c||{}).reduce((x,y)=>x+y,0);
@@ -76,11 +95,30 @@ export function modesFor(scenario,state,permanent){
  if(dynamic==="command")for(const c of scenario.commanderColors||FIVE)modes.push(D({id:"command-"+c,label:"Tap: Add "+c+" (commander color identity)",output:[c]}));
  if(dynamic==="petal")for(const c of FIVE)modes.push(D({id:"petal-"+c,label:"Sacrifice: Add "+c,output:[c],tap:false,sacrifice:true}));
  if(dynamic==="treasure")for(const c of FIVE)modes.push(D({id:"treasure-"+c,label:"Tap, sacrifice: Add "+c,output:[c],sacrifice:true}));
+
+ if(dynamic==="gilded")for(const c of FIVE)modes.push(D({id:"gilded-"+c,label:"Tap: Add "+c+c+c,output:[c,c,c]}));
+ if(dynamic==="arcane")for(const c of scenario.commanderColors||FIVE)modes.push(D({id:"arcane-"+c,label:"Tap: Add "+c+" (commander color)",output:[c]}));
+ if(dynamic==="prism"||dynamic==="cylix")for(const c of FIVE)modes.push(D({id:dynamic+"-"+c,label:"Pay {1}, tap: Add "+c,cost:{N:1},output:[c]}));
+ if(dynamic==="lantern"||dynamic==="skyclave")for(const c of FIVE)modes.push(D({id:dynamic+"-"+c,label:"Tap: Add "+c,output:[c]}));
+ if(dynamic==="bloom")for(const c of FIVE)modes.push(D({id:"bloom-"+c,label:"Tap, sacrifice: Add "+c+c+c,output:[c,c,c],sacrifice:true}));
+ if(dynamic==="nyxlotus")for(const c of FIVE){
+  const count=scenario.devotion?.[c]||0;
+  if(count>0)modes.push(D({id:"nyxlotus-"+c,label:"Tap: Add "+count+" "+c,output:Array(count).fill(c)}));
+ }
+ if(dynamic==="chalice"){
+  const n=Math.max(0,Math.min(16,permanent.counters||0));
+  if(n)modes.push(D({id:"chalice-C",label:"Tap: Add "+n+" colorless",output:Array(n).fill("C")}));
+ }
+ if(dynamic==="key"){
+  for(const p of state.permanents.filter(p=>p.type==="Artifact"&&p.tapped))
+   modes.push({...D({id:"key-untap-"+p.id,label:"Pay 1, tap: Untap "+p.id,cost:{N:1}}),untapTarget:p.id});
+ }
+
  // Urborg's static ability grants every land a separate tap-for-black mode.
  if(card.type==="Land"&&state.permanents.some(p=>p.key==="urborg")&&!modes.some(m=>m.id==="urborg-black")){
   modes.push(D({id:"urborg-black",label:"Tap: Add B (Urborg)",output:["B"]}));
  }
- return modes.filter(m=>m.output.length>0);
+ return modes.filter(m=>m.output.length>0||m.untapTarget||m.untapSelf);
 }
 function usable(mana,context){
  return !mana.restriction||(mana.restriction==="creature"&&context.kind==="spell"&&context.spellType==="creature");
