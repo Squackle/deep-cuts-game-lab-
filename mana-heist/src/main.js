@@ -17,6 +17,7 @@ import {renderCardReferences,referenceFor} from "./card-references.js";
 import {installCardInspector} from "./card-inspector.js";
 import {installCardMagnifier} from "./card-magnifier.js";
 import {SAGE_LESSONS} from "./sage-lessons.js";
+import {LEARN_LEVELS} from "./expanded-learn.js";
 import {mountSage} from "./sage-ui.js";
 import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
 import {missingMana,failureText,flashWard} from "./ward-feedback.js";
@@ -126,7 +127,7 @@ const proofCache=new Map();
 const sourceProofCache=new Map();
 function proofFor(id){
  if(proofCache.has(id))return proofCache.get(id);
- const puzzle=LEVELS.find(v=>v.id===id);
+ const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id);
  if(!puzzle)return null;
  const exact=solve(puzzle,{maxStates:65000});
  let proof=exact;
@@ -155,7 +156,7 @@ function renderLearn(){
   const intro=document.createElement("p");intro.textContent=group.summary;h.append(title,intro);
   const list=document.createElement("div");list.className="learn-exercises";
   for(const i of group.indices){
-   const p=LEVELS[i],b=document.createElement("button");b.type="button";
+   const p=LEARN_LEVELS[i],b=document.createElement("button");b.type="button";
    b.className="learn-exercise"+(done.has(i)?" complete":"");b.dataset.learnLevel=String(i);
    const n=document.createElement("span");n.className="learn-number";n.textContent=String(i+1).padStart(2,"0");
    const txt=document.createElement("span");txt.className="learn-exercise-copy";
@@ -406,7 +407,7 @@ function teachingCue(){
  return state.turn<level.turnLimit?"End turn: lands untap and floating mana disappears.":"Final turn. Undo or restart for another solution.";
 }
 function render(pendingId=null){
- const proof=proofs.get(level.id),isWin=completed(level,state),stage=level.stages[state.stage];
+ const isWin=completed(level,state),proof=mode==="learn"?{turn:level.turnLimit,spentLife:0}:proofs.get(level.id),stage=level.stages[state.stage];
  el("stageLabel").textContent=mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
  el("returnMap").textContent=mode==="learn"?"← LESSONS":"← MAP";
  el("toggleGuide").textContent=mode==="learn"?"✧ LESSON NOTES":"ⓘ GUIDE";
@@ -500,7 +501,7 @@ function load(i,enter=false){
  landDrag?.cancel();
  if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(mode==="learn"&&!isLearnLevel(i)))return false;
  index=i;world=chapterIndex(index);
- level=LEVELS[index];state=initial(level);history=[];selectedMessage="";
+ level=mode==="learn"?LEARN_LEVELS[index]:LEVELS[index];state=initial(level);history=[];selectedMessage="";
  startStagePrintings(level);
  el("battlefield").replaceChildren();el("hand").replaceChildren();
  manaOrbs=reconstruct(state.pool);cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();
