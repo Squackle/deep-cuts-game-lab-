@@ -28,6 +28,16 @@ test("all 250 mastery vaults have legal varied solution routes, not all Dark Rit
  assert.ok(finish.actions.some(a=>a.type==="activate"&&a.mode==="key-untap-f17"));
  assert.equal(finish.actions.filter(a=>a.type==="ritual").length,3);
 });
+test("every ten-vault mastery world rotates at least five actual strategy families",()=>{
+ for(let world=25;world<50;world++){
+  const segment=LEVELS.slice(world*10,world*10+10);
+  const families=new Set(segment.map(l=>l.mastery.family||"black-engine"));
+  assert.ok(families.size>=5,"World "+(world+1)+" has only "+families.size+" strategy families");
+  const rituals=new Set(segment.flatMap(l=>l.hand.filter(c=>CARDS[c.card].manaSpell).map(c=>c.card)));
+  assert.ok(rituals.size>=4,"World "+(world+1)+" repeats the same ritual effects");
+ }
+});
+
 test("new mana Oracle subset includes multiple spells, rocks, untap and fixing with exact identities",()=>{
  for(const card of ["song","desperate","rite","geyser","tide","mindstone","vessel","archive","thran","worn","gilded","arcane","prism","cylix","lantern","skyclave","basalt","key","bloom","nyxlotus","chalice"]){
   assert.ok(CARDS[card],card);
