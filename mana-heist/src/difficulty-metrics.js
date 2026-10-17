@@ -42,11 +42,19 @@ function profile(level){
   estimatedActions,lifeRisk,oneUse,restricted,pips};
 }
 const benchmark=profile(LEVELS[249]);
+const finalReference=profile(LEVELS[499]);
+// Calibrate midpoint and grand finale independently, without awarding
+// "100" just because a level has six wards. Each metric is based solely on
+// resource/ability structure and estimated execution work, not level ID.
+const normalized=(value,mid,final)=>{
+ if(value<=mid)return clamp(50*value/mid);
+ return clamp(50+50*(value-mid)/Math.max(1,final-mid));
+};
 export function evaluateVault(level){
  const p=profile(level);
  return {
-  complexity:clamp(50*p.complexity/benchmark.complexity),
-  difficulty:clamp(50*p.difficulty/benchmark.difficulty),
+  complexity:normalized(p.complexity,benchmark.complexity,finalReference.complexity),
+  difficulty:normalized(p.difficulty,benchmark.difficulty,finalReference.difficulty),
   methodology:"structural complexity and estimated execution difficulty; calibrated at 50 for the previous Galaxy V finale",
   factors:{sources:p.sourceCount,mechanics:p.mechanicTypes,paidActivations:p.paidTypes,
    wards:p.stages,turns:p.turns,coloredRequirements:p.colors,lifeRisk:p.lifeRisk,
