@@ -11,9 +11,9 @@ const read=(f)=>readFileSync(new URL("../"+f,import.meta.url),"utf8");
 test("P01 baseline matches actual rules/card/campaign sources, not old README descriptions",()=>{
  assert.equal(VERSION,"mh-landfall-0.2.0");
  assert.deepEqual(COLORS,["W","U","B","R","G","C"]);
- assert.equal(Object.keys(CARDS).length,38);
- assert.equal(knownCardKeys().length,38);
- assert.equal(new Set(knownCardNames()).size,38);
+ assert.equal(Object.keys(CARDS).length,59);
+ assert.equal(knownCardKeys().length,59);
+ assert.equal(new Set(knownCardNames()).size,59);
  assert.equal(BASE_LEVELS.length,18);
  assert.equal(LEVELS.length,500);
  assert.equal(LEVELS.filter(l=>l.templateId).length,202);
