@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {LEVELS,BASE_LEVELS} from "../src/levels.js";
 import {capstoneFor} from "../src/advanced-capstones.js";
-import {solve,replay} from "../src/solver.js";
+import {replay} from "../src/solver.js";
+import {certifyCapstone} from "../src/capstone-certificates.js";
 import {validate,VERSION,actions,initial} from "../src/engine.js";
 
 test("fifteen later-world capstones have substantial mana dependency boards",()=>{
@@ -27,14 +28,15 @@ test("fifteen later-world capstones have substantial mana dependency boards",()=
  assert.equal(last.stages[0].cost.N,2);
  assert.deepEqual(LEVELS.slice(0,18).map(x=>x.id),BASE_LEVELS.map(x=>x.id));
 });
-test("every revised world capstone is solved and replayed under the current rules", {timeout:110000},()=>{
+test("every revised world capstone has a verified complete legal route and unique source identity",()=>{
  const specials=LEVELS.filter(x=>x.revision===1);
  for(const puzzle of specials){
-  const result=solve(puzzle,{maxStates:200000});
-  assert.equal(result.status,"solved",puzzle.id+": "+JSON.stringify(result));
+  const result=certifyCapstone(puzzle);
+  assert.equal(result.status,"solved",puzzle.id);
   assert.ok(replay(puzzle,result.actions).ok,puzzle.id);
   assert.ok(result.actions.some(x=>x.type==="activate"),puzzle.id);
   assert.ok(result.actions.some(x=>x.type==="ritual"),puzzle.id);
-  console.log(puzzle.id,"source count",puzzle.field.length,"steps",result.steps,"states",result.explored);
+  assert.ok(result.steps>=10,puzzle.id+" should demand several dependent moves");
+  assert.match(result.certification,/optimum not independently proven/);
  }
 });
