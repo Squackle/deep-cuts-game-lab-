@@ -273,16 +273,18 @@ function perform(action){
  if(action.type!=="tap"){viewEpoch++;pendingFlights.clear();cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();}
  history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type});
  state=out.state;
- manaOrbs=(action.type==="ritual"||action.type==="activate"||action.type==="tap"&&getCard(level,action.id).kind==="bounce")?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
+ manaOrbs=(action.type==="ritual"||action.type==="activate"||action.type==="tap"&&(getCard(level,action.id).kind==="bounce"||state.highTide))?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
  if(!consistent(state.pool,manaOrbs))manaOrbs=reconstruct(state.pool);
  // Floating mana expires at the turn boundary. Reset ALL visual pigment,
  // currents, ripples and glow immediately, even while Canvas is animating.
  // This does not change the reducer, spell costs or playable land state.
  if(action.type==="end"){fluid.clear();currentFluidStage="";}
  // Orbital particles represent output mana, including paired and filtered output.
- const produced=action.type==="tap"
-  ?(getCard(level,action.id).kind==="bounce"?["G","U"]:[action.color])
-  :action.type==="activate"||action.type==="ritual"?action.output:[];
+ // Compare serialized mana units instead of guessing "one per tap".
+ // High Tide may create extra blue while a typed Island produces red/white,
+ // and untap abilities produce no mana at all.
+ const priorSerial=history.at(-1)?.state.manaSerial||0;
+ const produced=state.manaUnits.filter(u=>Number(u.id.slice(1))>priorSerial).map(u=>u.color);
  const incoming=produced.length?manaOrbs.slice(-produced.length):[];
  for(const orb of incoming)pendingFlights.add(orb.id);
  const pendingId=incoming[0]?.id??null;
@@ -316,9 +318,9 @@ function perform(action){
   }
  }else if(action.type==="end")message("Turn "+state.turn+" · lands untapped · mana emptied.");
  else if(action.type==="play")message(getCard(level,action.id).name+" enters the battlefield"+(state.field.find(f=>f.id===action.id)?.tapped?" tapped.":"."));
- else if(action.type==="tap")message(getCard(level,action.id).kind==="bounce"?"Simic Growth Chamber adds green AND blue mana.":"+1 "+SYMBOL[action.color].name+" mana · land tapped sideways.");
-  else if(action.type==="activate")message(getCard(level,action.id).name+" produces "+action.output.join(" + ")+" mana"+(getCard(level,action.id).v2==="ziggurat"?" (creature spells only).":"."));
- else if(action.type==="ritual")message("Cast "+getCard(level,action.id).name+" from your hand. It goes to your graveyard and adds "+action.output.join(" + ")+" mana.");
+ else if(action.type==="tap")message(getCard(level,action.id).kind==="bounce"?"Simic Growth Chamber adds green AND blue mana.":produced.length>1?"Added "+produced.join(" + ")+" mana (High Tide).":"+1 "+SYMBOL[action.color].name+" mana · land tapped sideways.");
+  else if(action.type==="activate")message(action.untapTarget?getCard(level,action.id).name+" untaps "+getCard(level,action.untapTarget).name+".":action.untapSelf?getCard(level,action.id).name+" untaps after its three-mana payment.":getCard(level,action.id).name+" produces "+produced.join(" + ")+" mana"+(getCard(level,action.id).v2==="ziggurat"?" (creature spells only).":"."));
+ else if(action.type==="ritual")message(getCard(level,action.id).manaSpell?.effect==="highTide"?"High Tide resolves! Islands tapped for mana produce extra blue until the turn ends.":"Cast "+getCard(level,action.id).name+" from your hand. It goes to your graveyard and adds "+produced.join(" + ")+" mana.");
  else if(action.type==="fetch")message("Fetched "+getCard(level,action.targetId).name+". The fetch land is gone.");
  else if(action.type==="cast")message("Spell cast · "+(level.stages.length-state.stage)+" seals remain.");
  landDrag?.cancel();
