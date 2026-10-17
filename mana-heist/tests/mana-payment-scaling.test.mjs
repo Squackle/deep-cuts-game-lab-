@@ -26,7 +26,7 @@ test("main engine offers one generic fee option per actual color combination, no
  assert.ok(validate(l));let s=initial(l);
  const ring=actions(l,s).find(a=>a.type==="activate"&&a.id==="r");
  s=(awaitAction(l,s,ring));
- const coffers=actions(l,s).filter(a=>a.type==="activate"&&a.id==="c");
+ const coffers=actions(l,s).filter(a=>a.type==="activate"&&a.id==="c"&&a.mode==="coffers");
  assert.equal(coffers.length,1,"2 identical colorless mana can only be paid one color pattern");
  const n=awaitAction(l,s,coffers[0]);
  assert.ok(n.pool.B>=7);
