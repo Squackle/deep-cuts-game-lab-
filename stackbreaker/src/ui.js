@@ -155,18 +155,18 @@ function shortCard(u){
  const gone=u.zone!=='battlefield';const ability=game.hand.find(a=>a.sourceId===u.id&&!game.used.includes(a.id));
  const active=ability&&game.status==='playing'&&legalActions(game).includes(ability.id);
  const power=creaturePower(u),toughness=creatureToughness(u),printed=CARDS[u.card];
- // Scryfall shows the authentic printed P/T. Additive effects get a green
- // modifier chip; only base-changing/non-additive effects replace that box.
- // Marked damage does not reduce toughness in Magic.
+ // Keep the original Scryfall print fully intact. Show actual CURRENT P/T
+ // over its printed corner, with separately visible counters and stat boosts.
+ // Marked damage is tracked separately and never reduces toughness.
  const stat=presentCreaturePT(u,printed,power,toughness);
  const flags=[u.indestructible?'INDESTRUCTIBLE':'',u.hexproof?'HEXPROOF':'',u.damage?`${u.damage} DAMAGE`:''].filter(Boolean).join(' · ');
- // Additive modifiers sit above printed Scryfall P/T; base-setters use a replacement.
- const altered=stat.kind==='modifier'
-  ?`<span class="pt-modifier" data-pt-modifier aria-label="${esc(stat.accessible)}" title="${esc(stat.accessible)}">${esc(stat.text)}</span>`
-  :stat.kind==='replacement'
-  ?`<span class="pt-replacement" data-modified-pt aria-label="${esc(stat.accessible)}" title="${esc(stat.accessible)}">${esc(stat.text)}</span>`:'';
+ const statBadges=stat.badges.length?
+  `<span class="pt-badges" data-pt-badges aria-hidden="true">${stat.badges.map(b=>`<span class="pt-modifier ${b.kind==='counter'?'pt-counter':'pt-boost'}" data-pt-modifier="${esc(b.kind)}">${esc(b.text)}</span>`).join('')}</span>`:'';
+ const currentPT=stat.showCurrent?
+  `<span class="pt-replacement" data-modified-pt aria-hidden="true">${esc(stat.text)}</span>`:'';
+ const altered=statBadges+currentPT;
  const status=flags?`<span class="flags">${esc(flags)}</span>`:'';
- return `<div class="battle-unit"><button type="button" class="battle-card ${gone?'off':''} ${ability?'has-ability':''} ${active?'can-activate':''}" data-unit="${esc(u.id)}" ${ability?'data-activate-source="'+esc(ability.id)+'"':''} aria-label="${esc(u.card)}, ${power}/${toughness}. ${esc(flags)} ${active?'Activate its printed ability.':'View or target this card.'}"><span class="battle-card-face">${thumb(u.card,'normal','battle-image')}${altered}</span>${status}</button></div>`;
+ return `<div class="battle-unit"><button type="button" class="battle-card ${gone?'off':''} ${ability?'has-ability':''} ${active?'can-activate':''}" data-unit="${esc(u.id)}" ${ability?'data-activate-source="'+esc(ability.id)+'"':''} aria-label="${esc(u.card)}, ${esc(stat.accessible||'Printed power and toughness '+power+'/'+toughness+'.')} ${esc(flags)} ${active?'Activate its printed ability.':'View or target this card.'}"><span class="battle-card-face">${thumb(u.card,'normal','battle-image')}${altered}</span>${status}</button></div>`;
 }
 function landCard(l){const c=LANDS[l.card],m=c.mana;return `<button class="land-card ${m} ${l.tapped?'tapped':''}" type="button" data-land="${esc(l.id)}" ${l.tapped||game.status!=='playing'?'disabled':''} title="${esc(l.card+' — '+c.oracle)}" aria-label="${l.tapped?'Tapped':'Tap'} ${esc(l.card)} for ${m} mana">${thumb(l.card,'normal','land-image')}<span class="tap-label">${l.tapped?'TAPPED':`TAP · ${m}`}</span></button>`;}
 function stackCard(item,i){
