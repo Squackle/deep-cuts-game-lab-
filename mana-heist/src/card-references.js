@@ -10,7 +10,8 @@ const names=Object.freeze({
  fetchUR:"Scalding Tarn",fetchBG:"Verdant Catacombs",
  bounceUG:"Simic Growth Chamber",relic:"Wastes",
  signet:"Azorius Signet",bluffs:"Cascade Bluffs",solring:"Sol Ring",coffers:"Cabal Coffers",urborg:"Urborg, Tomb of Yawgmoth",
- nykthos:"Nykthos, Shrine to Nyx",lotus:"Lotus Field",ziggurat:"Ancient Ziggurat",treasure:"Treasure",petal:"Lotus Petal",confluence:"Mana Confluence",command:"Command Tower",ritual:"Dark Ritual",pyretic:"Pyretic Ritual"
+ nykthos:"Nykthos, Shrine to Nyx",lotus:"Lotus Field",ziggurat:"Ancient Ziggurat",treasure:"Treasure",petal:"Lotus Petal",confluence:"Mana Confluence",command:"Command Tower",ritual:"Dark Ritual",pyretic:"Pyretic Ritual",desperate:"Desperate Ritual",song:"Seething Song",rite:"Rite of Flame",geyser:"Mana Geyser",tide:"High Tide",
+ mindstone:"Mind Stone",vessel:"Thought Vessel",archive:"Hedron Archive",thran:"Thran Dynamo",worn:"Worn Powerstone",gilded:"Gilded Lotus",arcane:"Arcane Signet",prism:"Prismatic Lens",cylix:"Mana Cylix",lantern:"Chromatic Lantern",skyclave:"Skyclave Relic",basalt:"Basalt Monolith",key:"Voltaic Key",bloom:"Lotus Bloom",nyxlotus:"Nyx Lotus",chalice:"Everflowing Chalice"
 });
 export function referenceFor(cardKey){
  const name=names[cardKey];
