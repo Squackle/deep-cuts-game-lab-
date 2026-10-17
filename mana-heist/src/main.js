@@ -20,6 +20,7 @@ import {SAGE_LESSONS} from "./sage-lessons.js";
 import {LEARN_LEVELS} from "./expanded-learn.js";
 import {certifyCapstone} from "./capstone-certificates.js";
 import {certifyMastery} from "./mastery-certificates.js";
+import {certifyDiverse} from "./mana-variety-certificates.js";
 import {evaluateVault} from "./difficulty-metrics.js";
 import {mountSage} from "./sage-ui.js";
 import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
@@ -42,15 +43,19 @@ function readProgress(){
 }
 const modeKey="dc-mana-heist-mode-v1",learnKey="dc-mana-heist-learn-v1";
 const revisedKey="dc-mana-heist-capstones-v1";
+const varietyKey="dc-mana-heist-variety-v1";
+let varietyBests={};
+try{const d=JSON.parse(localStorage.getItem(varietyKey)||"null");if(d?.v===1&&d.bests)for(const l of LEVELS.filter(l=>l.revision===3)){const best=d.bests[l.id];if(validBest(best))varietyBests[l.id]={turn:best.turn,spentLife:best.spentLife,actions:Number.isInteger(best.actions)?best.actions:999};}}catch{}
+function persistVariety(){try{localStorage.setItem(varietyKey,JSON.stringify({v:1,bests:varietyBests}));}catch{}}
 function readRevised(){
  try{const d=JSON.parse(localStorage.getItem(revisedKey)||"null");
-  return d?.v===1?Object.fromEntries(LEVELS.filter(l=>l.revision&&validBest(d.bests?.[l.id])).map(l=>[l.id,{turn:d.bests[l.id].turn,spentLife:d.bests[l.id].spentLife,actions:Number.isInteger(d.bests[l.id].actions)?d.bests[l.id].actions:999}])):{};}catch{return {};}
+  return d?.v===1?Object.fromEntries(LEVELS.filter(l=>l.revision&&l.revision!==3&&validBest(d.bests?.[l.id])).map(l=>[l.id,{turn:d.bests[l.id].turn,spentLife:d.bests[l.id].spentLife,actions:Number.isInteger(d.bests[l.id].actions)?d.bests[l.id].actions:999}])):{};}catch{return {};}
 }
 let revisedBests=readRevised();
 function displayBests(){
  const out={...progress.bests};
  for(const puzzle of LEVELS)if(puzzle.revision)delete out[puzzle.id];
- return {...out,...revisedBests};
+ return {...out,...revisedBests,...varietyBests};
 }
 function persistRevised(){
  try{localStorage.setItem(revisedKey,JSON.stringify({v:1,bests:revisedBests}));}catch{}
@@ -148,7 +153,7 @@ function proofFor(id){
  if(proofCache.has(id))return proofCache.get(id);
  const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id);
  if(!puzzle)return null;
- const exact=puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
+ const exact=puzzle.revision===3?certifyDiverse(puzzle):puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
  let proof=exact;
  if(exact.status!=="solved"&&puzzle.templateId){
   const source=BASE_LEVELS.find(p=>p.id===puzzle.templateId);
@@ -288,7 +293,14 @@ function perform(action){
    learnProgress.completed.sort((a,b)=>a-b);learnProgress.last=index;persistLearn();
    message("Practice complete! Select the next exercise or return to Learn Mana.");
   }else{
-   if(level.revision){
+   if(level.revision===3){
+    const best=varietyBests[level.id];
+    if(!best||state.turn<best.turn||
+       (state.turn===best.turn&&state.spentLife<best.spentLife)||
+       (state.turn===best.turn&&state.spentLife===best.spentLife&&state.actions<best.actions))
+      varietyBests[level.id]={turn:state.turn,spentLife:state.spentLife,actions:state.actions};
+    persistVariety();
+   }else if(level.revision){
     const best=revisedBests[level.id];
     if(!best||state.turn<best.turn||
        (state.turn===best.turn&&state.spentLife<best.spentLife)||
