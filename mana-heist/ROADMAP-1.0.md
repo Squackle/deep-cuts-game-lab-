@@ -111,17 +111,17 @@ Every package produces: a scoped design/spec or implementation, deterministic te
 | Package | Status | Evidence |
 |---|---|---|
 | P01 | BLOCKED | P01 technical foundation delivered for Lab: [scope/risk register](release/FOUNDATIONS-P01.md), [mechanics audit](release/MECHANICS-MATRIX-P01.md), [asset/rights decision](release/ASSET-RIGHTS-P01.md), [baseline tests](tests/release-foundations.test.mjs). **Rights route, title review and owner sign-off unresolved; not public-release cleared.** |
-| P02 | IN PROGRESS | Owner-approved Phase 1 mana kernel is now [used inside the main Mana Heist reducer](release/MANA-ENGINE-PHASE1.md) for paid conversions, multi-mana sources, restrictions and sacrifice abilities. Optional advanced sources appear in generated stages; IDs and guest saves are preserved. The earlier separate diagnostic bench is QA-only. **Full turn/phase timing, land-entry coverage and final P02 certification NOT COMPLETE.** |
-| P03 | NOT STARTED | Existing solver and 250-level replay tests are a baseline, not completed authoring QA |
-| P04 | IN PROGRESS | [Learn Mana mode entry and 18 practice exercises](release/TWO-PATHS-OPEN-VAULTS-20261016.md) now live on Game Lab with separate completion tracking; all vaults are also unsealed in Puzzle Mode. Full guided curriculum, dynamic coaching and beginner usability testing are not yet complete. |
-| P05 | NOT STARTED | No approved three-tier hints |
+| P02 | IN PROGRESS | [Mana Engine 2.0 / mana spells extension](release/SAGE-MANA-DEPTH-20261017.md) adds legal Dark Ritual and Pyretic Ritual casts from hand, generic/colorless fee choices and large-mana payment optimization. Existing saves remain, new capstone bests are versioned. **Full steps/phases, stack, abilities and final Oracle audit NOT COMPLETE.** |
+| P03 | IN PROGRESS | [30 late-board legal action certificates](release/SAGE-MANA-DEPTH-20261017.md) now prove replayable solves; these are reference routes, NOT demonstrated globally optimal, uniquely strategic or empirically calibrated. **Remaining 202 generated variants, global optimizer and clone detection NOT COMPLETE.** |
+| P04 | IN PROGRESS | [26 authored lessons and contextual Sage Notes](release/SAGE-MANA-DEPTH-20261017.md): original 18 preserved, eight added for rocks, Signets, rituals, filters and scaling, separately unscored and solver checked. Full progressive 1.0 curriculum and beginner usability testing are not yet complete. |
+| P05 | IN PROGRESS | [Sage Notes / Sage's Whisper](release/SAGE-MANA-DEPTH-20261017.md) add 26 state-aware lesson tips and optional linked guidance after two puzzle restarts. **Three-level spoiler controls, solver proof explanations and validation NOT COMPLETE.** |
 | P06 | NOT STARTED | 50-stage baseline exists but not curriculum reviewed |
 | P07 | NOT STARTED | 50-stage baseline exists but not curriculum reviewed |
-| P08 | NOT STARTED | 50-stage baseline exists but not curriculum reviewed |
-| P09 | NOT STARTED | 50-stage baseline exists but not curriculum reviewed |
-| P10 | NOT STARTED | 50-stage baseline exists but not curriculum reviewed |
+| P08 | IN PROGRESS | [Ten revised Galaxy III late stages](release/SAGE-MANA-DEPTH-20261017.md) introduce ritual and black-mana engines. **Other 40 stages, empirical difficulty curve and full review NOT COMPLETE.** |
+| P09 | IN PROGRESS | [Ten revised Galaxy IV late stages](release/SAGE-MANA-DEPTH-20261017.md) combine paid conversion, sacrifice and Coffers/Nykthos. **Other 40 stages and full review NOT COMPLETE.** |
+| P10 | IN PROGRESS | [Ten revised Galaxy V late stages](release/SAGE-MANA-DEPTH-20261017.md) with full 12-source last-vault finale, legal reference routes and high colored-cost requirements. **Other 40 stages, optimal-path proof and full review NOT COMPLETE.** |
 | P11 | NOT STARTED | Prior mobile fixes ≠ full real-device/accessibility acceptance |
-| P12 | IN PROGRESS | [Immersive Tabletop playtest](release/IMMERSIVE-TABLETOP-20261016.md): fixed 100dvh no-scroll gameplay, large centered Chromatic Cauldron, bottom-edge fanned hand and orbital mana flights integrated without changing puzzle rules or saves. **Physical-device testing, long-running performance, audio controls and final accessibility QA NOT COMPLETE.** |
+| P12 | IN PROGRESS | [Tabletop card/lesson/result hotfix](release/SAGE-MANA-DEPTH-20261017.md) aligns rotated full-card art, hides stale card previews on wins, provides compact results and mobile 12-source swipe rack while preserving large cauldron/orbits. **Physical-device, accessibility/performance, audio and final polish NOT COMPLETE.** |
 | P13 | NOT STARTED | Current guest bests ≠ save export/daily/achievements package |
 | P14 | NOT STARTED | Beta not performed |
 | P15 | NOT STARTED | Public launch not authorized or cleared |
