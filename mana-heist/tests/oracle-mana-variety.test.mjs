@@ -19,12 +19,14 @@ test("all 250 mastery vaults have legal varied solution routes, not all Dark Rit
   families.add(l.mastery.family||"black-engine");
   boardFingerprints.add(l.field.map(x=>x.card).sort().join("|")+";"+l.hand.map(x=>x.card).join("|"));
  }
- assert.deepEqual([...families].sort(),["black-engine","geyser","key","prism","rite","tide"].sort());
+ assert.deepEqual([...families].sort(),["black-engine","finale","geyser","key","prism","rite","tide"].sort());
  assert.ok(boardFingerprints.size>=18,"genuine mechanically distinct boards required: "+boardFingerprints.size);
  const last=LEVELS[499];assert.equal(last.stages.length,6);
- assert.equal(last.mastery.family,"rite");
- assert.ok(last.hand.every(x=>x.card==="rite"));
- assert.ok(!last.hand.some(x=>x.card==="ritual"));
+ assert.equal(last.mastery.family,"finale");
+ assert.deepEqual(last.hand.map(x=>x.card),["tide","geyser","rite"]);
+ const finish=certifyDiverse(last);
+ assert.ok(finish.actions.some(a=>a.type==="activate"&&a.mode==="key-untap-f17"));
+ assert.equal(finish.actions.filter(a=>a.type==="ritual").length,3);
 });
 test("new mana Oracle subset includes multiple spells, rocks, untap and fixing with exact identities",()=>{
  for(const card of ["song","desperate","rite","geyser","tide","mindstone","vessel","archive","thran","worn","gilded","arcane","prism","cylix","lantern","skyclave","basalt","key","bloom","nyxlotus","chalice"]){
