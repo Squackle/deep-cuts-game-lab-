@@ -285,7 +285,16 @@ function perform(action){
  // and untap abilities produce no mana at all.
  const priorSerial=history.at(-1)?.state.manaSerial||0;
  const produced=state.manaUnits.filter(u=>Number(u.id.slice(1))>priorSerial).map(u=>u.color);
- const incoming=produced.length?manaOrbs.slice(-produced.length):[];
+ const needed=new Map();
+ for(const color of produced)needed.set(color,(needed.get(color)||0)+1);
+ const incoming=[];
+ // The reconstructed pool is color-sorted, not temporal. Select by hue to
+ // animate exactly the units created (important for High Tide blue+red).
+ for(let at=manaOrbs.length-1;at>=0;at--){
+  const orb=manaOrbs[at],count=needed.get(orb.color)||0;
+  if(count>0){incoming.push(orb);needed.set(orb.color,count-1);}
+ }
+ incoming.reverse();
  for(const orb of incoming)pendingFlights.add(orb.id);
  const pendingId=incoming[0]?.id??null;
  if(completed(level,state)){
