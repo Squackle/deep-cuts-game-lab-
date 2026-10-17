@@ -278,6 +278,14 @@ export function key(s){
 export function completed(level,s){return s.stage===level.stages.length;}
 export function medal(level,s,par){
  if(!completed(level,s))return 0;
+ // New capstones use *legal reference routes*, not proven globally optimal
+ // lines. Reward efficient handling of the actual activation sequence, but
+ // do not equate merely winning in one turn with three stars.
+ if(level.revision){
+  if(s.turn<=par.turn&&s.spentLife<=par.spentLife&&s.actions<=par.steps)return 3;
+  if(s.turn<=par.turn+1&&s.life>0&&s.actions<=par.steps+2)return 2;
+  return 1;
+ }
  if(s.turn<=par.turn&&s.spentLife<=par.spentLife)return 3;
  if(s.turn<=par.turn+1&&s.life>0)return 2;
  return 1;
