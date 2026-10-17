@@ -73,7 +73,9 @@ export function diverseFor(i){
  if(i===499)return finalNexus();
  const galaxy=Math.floor(i/50),world=Math.floor(i/10)%5,position=i%10;
  // The black mana family remains the fifth, minority archetype in G VII–X.
- const family=["tide","prism","geyser",galaxy===5?"key":null,"rite"][world];
+ // Each ten-vault world cycles five distinct plans twice, instead of showing
+ // ten reskinned copies of the same engine. Black mana is a minority track.
+ const family=["tide","prism","geyser",galaxy===5?"key":null,"rite"][(world+position)%5];
  if(!family)return null;
  const turns=galaxy===5?1:galaxy<=7?2:3,wardCount=galaxy===5?2:galaxy===6?3:galaxy===7?4:galaxy===8?5:6;
  const field=base[family].map((card,n)=>item("f"+n,card)),hand=[];let spell=family==="tide"?"tide":family==="prism"?"pyretic":family==="geyser"?"geyser":family==="rite"?"rite":"song";
