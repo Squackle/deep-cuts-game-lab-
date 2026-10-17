@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 import {LEVELS,GALAXIES} from "../src/levels.js";
 import {evaluateVault} from "../src/difficulty-metrics.js";
 import {certifyMastery} from "../src/mastery-certificates.js";
+import {certifyDiverse} from "../src/mana-variety-certificates.js";
 test("C/D metrics are reproducible, bounded and grounded in board/ward structure",()=>{
  const old=evaluateVault(LEVELS[249]),end=evaluateVault(LEVELS[499]);
  assert.equal(old.complexity,50);assert.equal(old.difficulty,50);
@@ -31,7 +32,7 @@ test("new galaxies scale up in structure, not a hidden stage index bonus",()=>{
  const first=LEVELS[250],last=LEVELS[499];
  assert.equal(first.stages.length,2);
  assert.equal(last.stages.length,6);
- assert.ok(certifyMastery(last).steps>certifyMastery(first).steps);
+ assert.ok((last.revision===3?certifyDiverse(last):certifyMastery(last)).steps>(first.revision===3?certifyDiverse(first):certifyMastery(first)).steps);
 });
 test("ratings and two-part scale appear in both active vault and all map cards",()=>{
  const ui=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
