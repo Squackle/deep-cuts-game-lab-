@@ -163,6 +163,13 @@ function persist(){try{localStorage.setItem(storageKey,JSON.stringify({v:2,index
 function persistLearn(){try{localStorage.setItem(learnKey,JSON.stringify({v:1,completed:learnProgress.completed,last:learnProgress.last}));}catch{}}
 function renderLearn(){
  const done=new Set(learnProgress.completed),root=el("learnPicker");root.replaceChildren();
+ // Current HTML comes from a concurrent Game Lab branding branch. Keep
+ // course copy in sync at runtime without touching their index.html file.
+ const desc=document.querySelector('[data-mode="learn"] .mode-description');
+ if(desc)desc.textContent="26 step-by-step exercises, from tapping basic lands to rituals, mana rocks, restricted mana, filters and scaling engines.";
+ const intro=document.querySelector("#learnPanel .learn-panel-head p:not(.overline)");
+ if(intro)intro.textContent="Twenty-six skill-specific lessons. Follow the Sage's Notes beside the cauldron; this mode tracks learning without stars.";
+
  el("learnCount").textContent=done.size+" / "+LEARN_COUNT+" COMPLETED";
  for(const group of LEARN_GROUPS){
   const section=document.createElement("section");section.className="learn-group";
