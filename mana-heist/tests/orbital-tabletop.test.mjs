@@ -56,7 +56,7 @@ test("tapping Simic Growth Chamber and paid filter effects launch one bubble per
  const js=read("src/main.js"),orbit=read("src/orbital-mana.js");
  assert.match(js,/state\.manaUnits\.filter\(u=>Number\(u\.id\.slice\(1\)\)>priorSerial\)/);
  assert.match(js,/const needed=new Map\(\)/);
- assert.match(js,/action\.type==="activate"\|\|action\.type==="ritual"\?action\.output/);
+ assert.match(js,/const produced=state\.manaUnits\.filter/);
  assert.match(js,/incoming\.forEach\(\(orb,i\)=>launchOrbitMana/);
  assert.match(js,/pendingFlights\.add\(orb\.id\)/);
  assert.match(js,/pendingFlights\.delete\(orb\.id\)/);
