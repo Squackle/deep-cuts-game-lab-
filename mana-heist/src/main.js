@@ -19,6 +19,8 @@ import {installCardMagnifier} from "./card-magnifier.js";
 import {SAGE_LESSONS} from "./sage-lessons.js";
 import {LEARN_LEVELS} from "./expanded-learn.js";
 import {certifyCapstone} from "./capstone-certificates.js";
+import {certifyMastery} from "./mastery-certificates.js";
+import {evaluateVault} from "./difficulty-metrics.js";
 import {mountSage} from "./sage-ui.js";
 import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
 import {missingMana,failureText,flashWard} from "./ward-feedback.js";
@@ -144,7 +146,7 @@ function proofFor(id){
  if(proofCache.has(id))return proofCache.get(id);
  const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id);
  if(!puzzle)return null;
- const exact=puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
+ const exact=puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
  let proof=exact;
  if(exact.status!=="solved"&&puzzle.templateId){
   const source=BASE_LEVELS.find(p=>p.id===puzzle.templateId);
@@ -158,6 +160,8 @@ function proofFor(id){
  return proof;
 }
 const proofs={get:proofFor};
+const masteryRating=document.createElement("span");masteryRating.id="masteryRating";masteryRating.className="mastery-rating";masteryRating.title="C = structural complexity; D = estimated execution difficulty. Both 1–100, old Galaxy V finale benchmark = 50.";
+el("stageLabel").after(masteryRating);
 const lockGlyphs=["✧","⌑","◈","✦","⬡","✶"];
 function persist(){try{localStorage.setItem(storageKey,JSON.stringify({v:2,index:progress.index,bests:progress.bests}));}catch{}}
 function persistLearn(){try{localStorage.setItem(learnKey,JSON.stringify({v:1,completed:learnProgress.completed,last:learnProgress.last}));}catch{}}
@@ -446,6 +450,9 @@ function render(pendingId=null){
  el("toggleGuide").textContent=mode==="learn"?"✧ LESSON NOTES":"ⓘ GUIDE";
  el("chapterName").textContent=level.chapter;
  el("difficulty").textContent=["INITIATE","ROOKIE","TACTICIAN","EXPERT","MASTERMIND"][level.rank-1];
+ const rating=evaluateVault(level);
+ masteryRating.textContent="C "+rating.complexity+" · D "+rating.difficulty;
+ masteryRating.setAttribute("aria-label","Complexity "+rating.complexity+" of 100, estimated difficulty "+rating.difficulty+" of 100");
  el("vaultName").textContent=level.title;
  el("briefing").textContent=level.briefing;
  el("turnNumber").textContent=state.turn+" / "+level.turnLimit;
