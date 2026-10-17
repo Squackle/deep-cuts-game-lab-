@@ -16,10 +16,18 @@ import {installLandDragging} from "./drag-lands.js";
 import {renderCardReferences,referenceFor} from "./card-references.js";
 import {installCardInspector} from "./card-inspector.js";
 import {installCardMagnifier} from "./card-magnifier.js";
+import {SAGE_LESSONS} from "./sage-lessons.js";
+import {mountSage} from "./sage-ui.js";
 import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
 import {missingMana,failureText,flashWard} from "./ward-feedback.js";
 import {isFinalTurn,requiredManaText,finalTurnMessage,tappedLandMessage} from "./turn-guidance.js";
 const el=id=>document.getElementById(id);
+// Scoped late-loading repair stylesheet avoids overlap with the concurrent
+// Game Lab branding PR that owns index.html.
+const sageStyle=document.createElement("link");
+sageStyle.rel="stylesheet";
+sageStyle.href=new URL("../sage-and-card-fixes.css",import.meta.url).href;
+document.head.append(sageStyle);
 const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"◇"},N:{name:"Generic",color:"#bec5bd",icon:"1"}};
 const storageKey="dc-mana-heist-landfall-v2";
 function readProgress(){
@@ -94,8 +102,17 @@ function chargeWard({pendingId=null,animateId=null}={}){
 const cardInspector=installCardInspector({dialog:el("realCardInspector"),closeButton:el("closeInspector")});
 const magnifier=installCardMagnifier({
  battlefield:el("battlefield"),hand:el("hand"),panel:el("cardMagnifier"),
- canvas:el("magnifierCanvas"),title:el("magnifierTitle")
+ canvas:el("magnifierCanvas"),title:el("magnifierTitle"),
+ canShow:()=>document.body.classList.contains("in-heist")&&!completed(level,state)
 });
+const sage=mountSage({stage:el("heist").querySelector(".vault-stage"),
+ goToLesson:i=>{selectMode("learn");load(i,true);}
+});
+const returnFromResult=document.createElement("button");
+returnFromResult.type="button";returnFromResult.id="winReturn";
+returnFromResult.textContent="RETURN TO LESSONS";
+el("winPanel").append(returnFromResult);
+returnFromResult.addEventListener("click",()=>showMap());
 function inspectById(id){
  const record=lookup(level,id);
  if(!record)return false;
@@ -235,6 +252,7 @@ function perform(action){
  for(const orb of incoming)pendingFlights.add(orb.id);
  const pendingId=incoming[0]?.id??null;
  if(completed(level,state)){
+  magnifier.hide();
   if(mode==="learn"){
    if(!learnProgress.completed.includes(index))learnProgress.completed.push(index);
    learnProgress.completed.sort((a,b)=>a-b);learnProgress.last=index;persistLearn();
@@ -422,7 +440,7 @@ function render(pendingId=null){
  if(isWin){
   if(mode==="learn"){
    el("winTitle").textContent="✧ LESSON COMPLETE";
-   el("winCopy").textContent="Practiced: "+level.title+". Learning doesn't require stars or an optimal route.";
+   el("winCopy").textContent=SAGE_LESSONS[index]?.why||"Practice complete. Your new mana skill is ready for the next lesson.";
   }else{
    const score=medal(level,state,proof);
    el("winTitle").textContent="★".repeat(score)+" VAULT CRACKED";
@@ -431,12 +449,14 @@ function render(pendingId=null){
  }
  el("skip").textContent="← MAP";
  el("winNext").textContent=mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
+ returnFromResult.hidden=!isWin;returnFromResult.textContent=mode==="learn"?"← LESSONS":"← VAULT MAP";
+ sage.render({mode,index,level,state,finished:isWin});
  if(mode==="heist")renderOverworld({world,bests:progress.bests,index,proofs,medal});
  choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap battlefield lands for mana; drag hand lands onto the battlefield to play.",[]);
  selectedMessage="";
 }
 function showMap(){
- fluid.pause();fluid.clear();currentFluidStage="";
+ sage.hide();fluid.pause();fluid.clear();currentFluidStage="";
  magnifier.hide();
  invalidateStagePrintings();
  cancelAuto();viewEpoch++;pendingFlights.clear();
@@ -586,7 +606,7 @@ el("undo").addEventListener("click",()=>{
  message("Previous move undone, including any automatically cast wards.");
 });
 window.addEventListener("resize",()=>{if(document.body.classList.contains("in-heist"))syncLandRows();},{passive:true});
-el("reset").addEventListener("click",()=>load(index));
+el("reset").addEventListener("click",()=>{sage.onRestart(level);load(index);});
 el("skip").addEventListener("click",showMap);
 el("winNext").addEventListener("click",()=>{
  if(mode==="learn"){const next=nextLearnIndex(index);if(next!==null)load(next,true);else showMap();return;}
