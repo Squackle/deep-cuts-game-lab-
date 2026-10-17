@@ -26,7 +26,18 @@ const plan={
 };
 export function certifyCapstone(level){
  if(!level.revision||!level.curated)return null;
- const moves=plan[level.galaxy];
+ const small=level.galaxy===2;
+ const coffers=level.curated==="coffers-1.0";
+ const moves=coffers?(small?[
+  ["activate","f4","sol"],["activate","f3","coffers"],
+  ["tap","f0","B"],["tap","f1","B"],["activate","f2","urborg-black"],
+  ["tap","f5","U"],["tap","f6","R"],["tap","f7","W"]
+ ]:[
+  ["activate","f4","sol"],["activate","f3","coffers"],
+  ["tap","f5","C"],["tap","f6","C"],["activate","f7","devotion-B"],
+  ["tap","f8","U"],
+  ...(level.world%2===0?[["tap","f9","R"]]:[])
+ ]):plan[level.galaxy];
  if(!moves)throw Error("No certificate for "+level.id);
  let state=initial(level);const trace=[];
  for(const [type,id,mode] of moves){
