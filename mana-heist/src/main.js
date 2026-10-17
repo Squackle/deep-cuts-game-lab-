@@ -18,6 +18,7 @@ import {installCardInspector} from "./card-inspector.js";
 import {installCardMagnifier} from "./card-magnifier.js";
 import {SAGE_LESSONS} from "./sage-lessons.js";
 import {LEARN_LEVELS} from "./expanded-learn.js";
+import {certifyCapstone} from "./capstone-certificates.js";
 import {mountSage} from "./sage-ui.js";
 import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
 import {missingMana,failureText,flashWard} from "./ward-feedback.js";
@@ -143,7 +144,7 @@ function proofFor(id){
  if(proofCache.has(id))return proofCache.get(id);
  const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id);
  if(!puzzle)return null;
- const exact=solve(puzzle,{maxStates:65000});
+ const exact=puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
  let proof=exact;
  if(exact.status!=="solved"&&puzzle.templateId){
   const source=BASE_LEVELS.find(p=>p.id===puzzle.templateId);
@@ -478,7 +479,7 @@ function render(pendingId=null){
   }else{
    const score=medal(level,state,proof);
    el("winTitle").textContent="★".repeat(score)+" VAULT CRACKED";
-   el("winCopy").textContent="Solved turn "+state.turn+" · "+state.spentLife+" life spent · perfect line: turn "+proof.turn+" / "+proof.spentLife+" life spent";
+   el("winCopy").textContent=level.revision?"You solved a complex mana circuit using real card abilities. Your result is measured against a certified legal route, not a claimed globally optimal solution.":"Solved turn "+state.turn+" · "+state.spentLife+" life spent · perfect line: turn "+proof.turn+" / "+proof.spentLife+" life spent";
   }
  }
  el("skip").textContent="← MAP";
