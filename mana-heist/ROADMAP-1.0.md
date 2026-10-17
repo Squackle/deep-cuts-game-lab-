@@ -67,7 +67,7 @@ Every package produces: a scoped design/spec or implementation, deterministic te
 | **P09 — Sequencing** | IV | Planning land drops and turns, life tradeoffs, bounce lands, untaps, chained wards | Decisions cannot be bypassed by an unintended auto-cast shortcut; meaningful planning progression |
 | **P10 — Grand Heist** | V | Combined mechanics, challenging color competition, efficient routes, multi-turn/multi-ward mastery | 50 reviewed climax puzzles; final worlds combine 2+ learned mechanics; no softlocks or accidental missing moves |
 
-**Hard gate G2 (after P10):** Exactly 250 validated, educationally distinguishable challenges with reviewed world objectives, consistent difficulty escalation and satisfying finale structure. Winning replay alone is insufficient.
+**Hard gate G2 (after P10):** All 500 currently shipped IDs must eventually be validated as educationally distinguishable and difficulty-calibrated challenges, including the original 250 and the five added Galaxy VI–X chapters. Winning replay alone is insufficient. This gate is NOT COMPLETE.
 
 ### Phase IV — Production quality
 
@@ -137,3 +137,9 @@ Every package produces: a scoped design/spec or implementation, deterministic te
 ### P12 partial work — fluid parity patch (2026-10-15)
 
 User-directed focused parity improvement after iPhone footage review: time-normalized fluid velocity, mixing and turbulence tuned to preserve the original 30fps mobile feel at desktop refresh rates; interpolated desktop hover strokes and touch gestures; responsive 256/512px Canvas resolution; equal auto-cast grace, without changing the 5.1-second maximum. New `tests/stir-parity.test.mjs` exercises cross-FPS decay and both pointer modes. **P12 stays IN PROGRESS**: the complete package still requires optional sound/mute, reduced-FX settings, real iPhone/Android and desktop performance measurements, broader visual polish, accessibility and owner review. P01 remains blocked by its separate public release rights decision. This focused Game Lab fix is not a public-site promotion or completed 1.0 milestone.
+
+## Owner-authorized Mana Mastery expansion (Oct 17, 2026)
+
+The owner explicitly requested one-tap hand play, separate numeric Complexity and Difficulty ratings, preservation of the old final as the **Galaxy V / 250th vault midpoint**, and harder challenges beyond it. [Implementation and verification](release/MANA-MASTERY-TEN-GALAXIES-20261017.md) expands the catalog to **ten galaxies, 50 worlds and 500 vaults**, with 250 newly certified Galaxy VI–X mana-circuit scenarios. New galaxies add two, three, four, five and six wards over one to three turns. All old IDs and solutions remain unchanged. The old finale calibrates both scores at 50/100; the new finale scores 100/100.
+
+**P03 and P13 remain IN PROGRESS**: the numeric indicators are structural and estimated, not empirical player completion rates; 250 new puzzles share a certified core strategy, varying cost division, alternate source families and optional resource decisions. A 500-stage catalog is not evidence of 500 bespoke, uniquely difficult experiences. Further solver optimality, true alternate-line analysis and live user testing are required for the revised G2 gate. P01 rights approval remains BLOCKED; Game Lab only.
