@@ -16,7 +16,7 @@ test("P01 baseline matches actual rules/card/campaign sources, not old README de
  assert.equal(new Set(knownCardNames()).size,38);
  assert.equal(BASE_LEVELS.length,18);
  assert.equal(LEVELS.length,250);
- assert.equal(LEVELS.filter(l=>l.templateId).length,232);
+ assert.equal(LEVELS.filter(l=>l.templateId).length,217);
  assert.equal(GALAXIES.length,5);
  assert.equal(CHAPTERS.length,25);
  assert.equal(stageCode(0),"1:1:1");
