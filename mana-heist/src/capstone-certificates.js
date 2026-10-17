@@ -40,7 +40,11 @@ export function certifyCapstone(level){
  if(!moves)throw Error("No certificate for "+level.id);
  let state=initial(level);const trace=[];
  for(const [type,id,mode] of moves){
-  const legal=actions(level,state).find(by(type,id,mode));
+  // Spend colorless on generic activation fees when available; spending
+  // black on Nykthos would unnecessarily waste the Coffers mana.
+  const candidates=actions(level,state).filter(by(type,id,mode));
+  const colorless=a=>(a.spend||[]).filter(id=>state.manaUnits.find(u=>u.id===id)?.color==="C").length;
+  const legal=candidates.sort((a,b)=>colorless(b)-colorless(a))[0];
   if(!legal)throw Error("Illegal certified move "+level.id+": "+[type,id,mode].join("/"));
   const result=reduce(level,state,legal);
   if(!result.ok)throw Error("Replay error "+level.id+": "+result.error);
