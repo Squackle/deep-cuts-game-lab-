@@ -159,9 +159,15 @@ export function actions(level,s){
   if(!f.tapped||getCard(level,f.id).v2==="petal"){
    for(const mode of advancedModes(level,s,f)){
     if(mode.tap&&f.tapped||s.life<=mode.life)continue;
-    for(const spend of spendUnits(s.manaUnits||[],mode.cost,{kind:"activation"})){
-     out.push({type:"activate",id:f.id,mode:mode.id,spend,output:[...mode.output]});
-    }
+    // Show meaningful payment-color choices, not 100 indistinguishable
+   // permutations of black mana units from Coffers and Nykthos.
+   const colorPayments=new Set();
+   for(const spend of spendUnits(s.manaUnits||[],mode.cost,{kind:"activation"})){
+    const colors=spend.map(id=>s.manaUnits.find(u=>u.id===id)?.color||"?").sort().join("");
+    if(colorPayments.has(colors))continue;
+    colorPayments.add(colors);
+    out.push({type:"activate",id:f.id,mode:mode.id,spend,output:[...mode.output]});
+   }
    }
   }
   if(!f.tapped&&card.kind==="fetch"&&s.life>1)for(const land of level.library){
