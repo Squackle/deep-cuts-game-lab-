@@ -32,7 +32,7 @@ export function installCardMagnifier({battlefield,hand,panel,canvas,title,canSho
   if(!card||!canShow()||(panel.hidden===false&&current===card))return;
   const id=card.dataset.cardid;if(!id)return;
   current=card;serial++;
-  title.textContent=card.dataset.zone==="field"?"LAND IN PLAY":"LAND IN HAND";
+  title.textContent=card.dataset.zone==="field"?"CARD IN PLAY":"CARD IN HAND";
   panel.hidden=false;panel.setAttribute("aria-hidden","false");
   locate(card);paint(card);
  }
