@@ -2,12 +2,12 @@
 
 **Created:** 2026-10-17  
 **Owner instruction:** "Just tell me how many steps you need and I'll tell you to progress through them ... have some file created so another chat can pickup if you time out."  
-**Status:** PLANNED; **0 of 5 implementation steps completed**. The creation of this document is preparation, **not Step 1**.  
+**Status:** **1 of 5 development steps implemented and tested**. Step 1 passed 481/481 unified CI tests and 390px/1280px browser preview checks; Game Lab production verification is tracked in [PR #89](https://github.com/Squackle/deep-cuts-game-lab-/pull/89). **Next: Step 2 (Lightning Bolt VFX)**. The initial creation of this document was planning, not Step 1.  
 **Next trigger:** When owner says "next", "step 1", "go ahead", etc., begin the **first unchecked step**; complete/test it and update this file before stopping. If owner asks to progress further, begin the following step.
 
 ## Five steps — owner only needs to say "next"
 
-- [ ] **Step 1 — Event bridge / animation layer.** Capture authentic resolved spell actions and original source/target positions before the UI removes stack items. Create a lightweight VFX controller that consumes deterministic event descriptors (e.g. {type, sourceStackId, targetId, outcome}) without altering Magic rules, scenario replay, undo, card visibility or save keys. Add unit tests of events and reduced-motion fallback. *No large showy effects needed in this step.*
+- [x] **Step 1 — Event bridge / animation layer.** Capture authentic resolved spell actions and original source/target positions before the UI removes stack items. Create a lightweight VFX controller that consumes deterministic event descriptors (e.g. {type, sourceStackId, targetId, outcome}) without altering Magic rules, scenario replay, undo, card visibility or save keys. Add unit tests of events and reduced-motion fallback. *No large showy effects needed in this step.*
 - [ ] **Step 2 — Lightning Bolt.** Crackling projectile/branched electrical arc travels from the resolving stack spell toward its actual creature or player target; impact flash and damage reaction after a successful resolution. Distinguish spell damage being prevented, target no longer valid and loss/win. Mobile positions and short (roughly 0.4–0.9 s) motion.
 - [ ] **Step 3 — Pyroblast fireball.** Red fire/ember projectile from Pyroblast into its legal target; vary the endpoint effect based on the **actual** resolution: countering a blue spell on stack versus destroying a blue permanent. Do not claim either occurs if the spell fails to resolve. Reusable red spell VFX primitives. Verify Pyroblast is part of supported scenario/card data before promising a live trigger; if not, use an explicitly isolated VFX fixture and do not silently extend the rules engine.
 - [ ] **Step 4 — Counter / fizzle dust.** On a successful counter action, targeted spell flickers, fractures, and dissolves into magical dust/embers before stack settles. Spell casting/resolution must remain rule-correct and the canceled item must never visually resolve a second time. Distinguish a countered spell from a spell that fails to resolve because all targets became illegal ("fizzle")—different rule events can share visual motifs but must be accurately labeled.
@@ -38,6 +38,15 @@ Known source architecture (verified when file was created):
 5. **Progress:** Original stage IDs, save key `dc-stackbreaker-progress-v3`, star scoring and Finale/Atlas unchanged. Separate `stackbreaker/final-turn/` prototype unchanged unless owner explicitly assigns.
 6. **Tests:** Unit tests for emitted event correctness/outcome, visual controller cancellation, reduced-motion support, specific VFX availability, and full existing scenario suite. Browser preview at 390 and 1280 widths if service permits; if rate limited, report honestly. Record tested SHA and production SHA.
 
+
+## Step 1 implementation details — for the next chat
+
+- New `src/vfx-events.js` exports `describeSpellResolution(before,after)` (pure, effect/outcome journal), `captureSpellAnchors(document,event)` (source/target DOM centroids before rerender), and `createSpellVfxController(document,window)` (brief inert cancelable cue with reduced-motion opt-out).
+- `src/ui.js` pass handler snapshots the authoritative resolution **after** engine `pass()` yet captures visual positions **before** `pushState()` rerenders; `pushState`, `undo`, and `changeCase` cancel pending visual cues. Exceptions from the visual layer cannot prevent rules-state update.
+- `build.py` embeds `src/vfx-events.js` in `index.html`; `observatory.css` contains `.sb-vfx-layer` and `.sb-vfx-trace` animation (260ms). `tests/vfx-events.test.mjs` exercises damage, damage prevention, countering, uncounterable, invalid-target, target coordinates, cancellation, reduced motion, and bundled source.
+- Preview Cloudflare browser at 390px and 1280px: cast/resolve Lightning Bolt scenario from live page; `effect=damage`, `outcome=damage-dealt`, one source→target trace, no horizontal page overflow and `pointer-events:none` verified. This is a placeholder golden trace only, **not** the promised Step 2 lightning animation.
+- **Step 2 start point:** Replace/extend `createSpellVfxController.play(event,anchors)` based on `event.effect` and `event.outcome`; actual Lightning Bolt hits only for `outcome=damage-dealt`, and prevention/invalid-target must not show a damage impact. Do not edit the engine or release Step 3-5 early. Begin from latest main, preserve branch isolation and rerun full Game Lab CI.
+
 ## Running checklist / resuming in another chat
 
 1. Read **this file** at `stackbreaker/VFX-DEVELOPMENT-HANDOFF.md` on repo main and the last conversation instruction. Determine which of the five steps is next. Treat status labels and commit/PR notes below as canonical; do not mark a step complete based on a planned description.
@@ -51,7 +60,7 @@ Known source architecture (verified when file was created):
 | Date | Step | Status | Branch / PR / deployment | Tests and notes |
 |---|---|---|---|---|
 | 2026-10-17 | Planning | COMPLETE | `game/stackbreaker-vfx-handoff-20261017` | This document only; no VFX code or game deployment yet |
-| — | Step 1 | NOT STARTED | — | — |
+| 2026-10-17 | Step 1 | IMPLEMENTED & TESTED; production commit confirmation via PR #89 | `game/stackbreaker-vfx-event-bridge-s1-20261017` / [PR #89](https://github.com/Squackle/deep-cuts-game-lab-/pull/89) | 481/481 unified CI tests passed, release coordination success; Cloudflare preview `e0e69799-55e2-4fc1-be46-e25b0ceeb828` success; 390×844 and 1280×800 live browser pass detected Lightning Bolt resolution, source/target trace, `pointer-events:none`, no horizontal overflow. No engine/card/scenario/save changes. |
 | — | Step 2 | NOT STARTED | — | — |
 | — | Step 3 | NOT STARTED | — | — |
 | — | Step 4 | NOT STARTED | — | — |
