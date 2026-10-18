@@ -1,6 +1,7 @@
 import {CARDS,LANDS,RULES_VERSION,cardLink} from './cards.js';
 import {createGame,tapLand,playLand,activate,pass,paymentOptions,legalActions,legalTargets,creaturePower,creatureToughness,labelTarget} from './engine.js';
 import {presentCreaturePT} from './pt-display.js';
+import {describeSpellResolution,captureSpellAnchors,createSpellVfxController} from './vfx-events.js';
 import coreScenarios from '../data/scenarios.json' with {type:'json'};
 import campaignExpansion from '../data/campaign-expansion.json' with {type:'json'};
 import {GALAXIES,makeWorlds,generateStages} from './galaxies.js';
@@ -10,6 +11,7 @@ const scenarios=[...coreScenarios,...campaignExpansion,...extraStages].map((scen
 const chapters=makeWorlds();
 
 const $=id=>document.getElementById(id);
+const spellVfx=createSpellVfxController(document,window);
 const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
 const glyph={W:'☀',U:'◆',B:'✦',R:'✹',G:'❀',C:'◇'};
 // Images, card rules text and links are hydrated from a single Scryfall collection
@@ -150,7 +152,7 @@ function objectiveText(s){const o=s.objective;if(o.type==='winKeepUnit')return`D
  if(o.type==='keepN')return`Keep at least ${o.count} friendly creatures alive.`;
  return`Keep ${s.units.find(u=>u.id===o.unitId)?.card||'the required creature'} ${o.type==='keepUnit'?'on the battlefield':'out of the graveyard'}.`;
 }
-function changeCase(n){closeWorldMap(false);clearDragFeedback();index=Math.max(0,Math.min(scenarios.length-1,n));selectedWorld=Math.floor(index/10);selectedGalaxy=Math.floor(index/50);try{localStorage.setItem('dc-stackbreaker-last-level',String(index));}catch{}game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;render();}
+function changeCase(n){spellVfx.cancel();closeWorldMap(false);clearDragFeedback();index=Math.max(0,Math.min(scenarios.length-1,n));selectedWorld=Math.floor(index/10);selectedGalaxy=Math.floor(index/50);try{localStorage.setItem('dc-stackbreaker-last-level',String(index));}catch{}game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;render();}
 function shortCard(u){
  const gone=u.zone!=='battlefield';const ability=game.hand.find(a=>a.sourceId===u.id&&!game.used.includes(a.id));
  const active=ability&&game.status==='playing'&&legalActions(game).includes(ability.id);
@@ -311,10 +313,23 @@ $('handPrev').addEventListener('click',()=>scrollHand(-1));
 $('handNext').addEventListener('click',()=>scrollHand(1));
 $('hand').addEventListener('scroll',refreshHandArrows,{passive:true});
 function notify(message){$('live').textContent=message;}
-function pushState(s){clearDragFeedback();history.push(structuredClone(game));game=s;pendingPlay=null;armedCard=null;render()}
+function pushState(s){spellVfx.cancel();clearDragFeedback();history.push(structuredClone(game));game=s;pendingPlay=null;armedCard=null;render()}
 function applyLand(id){try{pushState(tapLand(game,id));}catch(e){notify(e.message)}}
-function applyPass(){pendingPlay=null;try{pushState(pass(game))}catch(e){notify(e.message)}}
-function undo(){pendingPlay=null;armedCard=null;if(!history.length){render();return;}game=history.pop();render()}
+function applyPass(){
+ pendingPlay=null;
+ try{
+  const before=game,after=pass(before);
+  // Capture actual resolved action and geometry before the UI rerenders.
+  let event=null,anchors=null;
+  try{
+   event=describeSpellResolution(before,after);
+   anchors=event?captureSpellAnchors(document,event):null;
+  }catch(_vfxError){event=null;anchors=null;}
+  pushState(after);
+  if(event){try{spellVfx.play(event,anchors)}catch(_vfxError){}}
+ }catch(e){notify(e.message)}
+}
+function undo(){spellVfx.cancel();pendingPlay=null;armedCard=null;if(!history.length){render();return;}game=history.pop();render()}
 $('lands').addEventListener('click',e=>{const btn=e.target.closest('[data-land]');if(btn)applyLand(btn.dataset.land)});
 $('battlefield').addEventListener('click',e=>{
  const unit=e.target.closest('[data-unit]');if(!unit)return;

@@ -342,3 +342,23 @@ main{max-width:1640px}
 @media(prefers-reduced-motion:reduce){
  .battle-card .pt-badges,.battle-card .pt-modifier,.battle-card .pt-replacement{animation:none!important;transition:none!important}
 }
+
+
+/* VFX Step 1: noninteractive, brief cue from resolving stack item to its target */
+.sb-vfx-layer{position:fixed;inset:0;pointer-events:none!important;overflow:hidden;z-index:45;isolation:isolate}
+.sb-vfx-layer *{pointer-events:none!important}
+.sb-vfx-trace{
+ position:absolute;height:2px;transform-origin:0 50%;
+ background:linear-gradient(90deg,transparent,#f1d397 24%,#fff1c0 74%,transparent);
+ box-shadow:0 0 7px #ebc97e77,0 0 13px #e5b75c33;
+ border-radius:999px;opacity:0;
+ animation:sb-spell-trace 250ms ease-out both;
+}
+.sb-vfx-trace[data-outcome="invalid-target"],
+.sb-vfx-trace[data-outcome="uncounterable"]{
+ background:linear-gradient(90deg,transparent,#bcc1bb80,transparent);box-shadow:none
+}
+@keyframes sb-spell-trace{0%{opacity:0}20%{opacity:.62}65%{opacity:.54}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){
+ .sb-vfx-layer,.sb-vfx-trace{display:none!important;animation:none!important;transition:none!important}
+}
