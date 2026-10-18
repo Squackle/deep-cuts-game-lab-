@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101b1b">
+<title>Stackbreaker — Pyroblast VFX Preview</title>
+<link rel="stylesheet" href="../observatory.css">
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 70% 15%,#4a281d 0,transparent 53%),#101b1b;color:#eee4ce;font:16px system-ui,sans-serif}
+main{max-width:1100px;margin:auto;padding:clamp(15px,4vw,44px)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:15px}
+a{color:#eac98d;text-decoration:none}
+small,.eyebrow{color:#e8b174;letter-spacing:.18em;font-size:.75rem;text-transform:uppercase}
+h1{font:700 clamp(2rem,5vw,4rem)/1.1 Georgia,serif;margin:22px 0 10px}
+p{color:#c3c6b8;line-height:1.6;max-width:700px}
+.notice{border:1px solid #976f49;background:#30251e;padding:13px 18px;border-radius:12px;margin:18px 0 23px;font-size:.87rem;color:#fff2d8}
+.arena{position:relative;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:clamp(28px,8vw,130px);min-height:360px;padding:clamp(18px,6vw,70px);border:1px solid #806b4e;border-radius:16px;background:radial-gradient(ellipse at center,#38434375,#142625 75%);box-shadow:inset 0 0 38px #0007}
+.card{position:relative;min-height:245px;max-width:225px;width:100%;border:5px solid #a68762;border-radius:16px;background:linear-gradient(150deg,#57261b,#b04422 48%,#6b1d17);box-shadow:0 12px 40px #0009;display:flex;flex-direction:column;justify-content:space-between;padding:14px}
+.card.target{justify-self:end;background:linear-gradient(155deg,#122b50,#346eac 46%,#132e58);border-color:#8baac9}
+.card::before{content:"";position:absolute;inset:47px 9px 52px;border:2px solid #eee3d077;border-radius:9px;background:radial-gradient(circle at 60% 45%,#ffbd6d,#8d221c 46%,#210d17 80%)}
+.card.target::before{background:radial-gradient(circle at 35% 42%,#9fd4fc,#284c9e 50%,#101f4a 85%)}
+.card b,.card span,.card em{position:relative;z-index:1;text-shadow:0 1px 4px #000}
+.card b{font:700 1.18rem Georgia,serif}
+.card em{font-size:.77rem;color:#eee8d5;font-style:normal}
+.card span{font-size:.78rem;color:#fff3d2;align-self:flex-end}
+.card.hit{animation:preview-hit 850ms ease-out both}
+@keyframes preview-hit{0%,65%{filter:brightness(1);opacity:1}72%{filter:brightness(2.6);opacity:1}88%{filter:brightness(1.5);opacity:.25}100%{filter:brightness(1);opacity:1}}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+button{cursor:pointer;border:1px solid #987852;border-radius:10px;background:#263a38;color:#f6e5c2;font:700 .9rem system-ui;padding:12px 16px;min-height:46px}
+button:hover,button:focus-visible{background:#44534b;outline-color:#ffd899}
+button[aria-pressed="true"]{background:#974d2d;border-color:#f1af6a}
+.status{min-height:29px;margin:15px 0 6px;color:#f4d9a9}
+footer{padding:12px 0;font-size:.81rem;color:#afb5a8}
+@media(max-width:600px){.arena{min-height:270px;gap:18px;padding:14px}.card{min-height:193px;padding:9px;border-width:3px}.card::before{inset:38px 6px 43px}.card b{font-size:.95rem}.card em,.card span{font-size:.69rem}}
+@media(prefers-reduced-motion:reduce){.card.hit{animation:none}}
+</style>
+<script type="module" src="./preview.js"></script>
+</head><body><main>
+<div class="top"><a href="../">← Stackbreaker Classic</a><span class="eyebrow">Deep Cuts Game Lab</span></div>
+<h1>Pyroblast: Fireball Effects</h1>
+<p>See how a resolving Pyroblast could launch a fireball, counter a blue spell, destroy a blue permanent, or fail without falsely showing a successful hit.</p>
+<div class="notice"><strong>VISUAL PREVIEW ONLY.</strong> These are scripted effect fixtures, not playable Pyroblast scenarios. The game's MTG card rules have not changed.</div>
+<div class="arena" aria-label="Pyroblast animation preview stage">
+<div class="card" id="origin"><b>Pyroblast</b><em>Red instant spell · resolving</em><span>R</span></div>
+<div class="card target" id="destination"><b id="targetName">Blue Spell</b><em id="targetInfo">Spell on the stack</em><span id="targetType">Instant</span></div>
+</div>
+<div class="controls" role="group" aria-label="Choose preview outcome">
+<button type="button" data-mode="counter" aria-pressed="false">Counter blue spell</button>
+<button type="button" data-mode="destroy" aria-pressed="false">Destroy blue permanent</button>
+<button type="button" data-mode="resist" aria-pressed="false">Can't be countered</button>
+<button type="button" data-mode="miss" aria-pressed="false">Target no longer legal</button>
+</div>
+<p class="status" id="previewStatus" role="status" aria-live="polite">Choose an outcome to play the fireball.</p>
+<footer>All animations are cosmetic. They do not cast cards, resolve spells, or change saved progress.</footer>
+</main></body></html>
