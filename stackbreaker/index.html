@@ -810,6 +810,92 @@ main{max-width:1640px}
   display:none!important;animation:none!important;transition:none!important;
  }
 }
+
+
+/* Step 3: Pyroblast fixture-only fireball (counter, destroy, resist, miss). */
+.sb-vfx-fire-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none!important;overflow:hidden}
+.sb-vfx-fire-svg *{pointer-events:none!important}
+.sb-vfx-fire-trail{
+ fill:none;stroke:#fc5a25;stroke-width:8;stroke-linecap:round;
+ filter:drop-shadow(0 0 9px #ff9235) drop-shadow(0 0 15px #e54116);
+ stroke-dasharray:100;stroke-dashoffset:100;
+ animation:sb-fire-tail 900ms ease-out both
+}
+.sb-vfx-fire-orb{filter:drop-shadow(0 0 9px #ff8c1e) drop-shadow(0 0 20px #d7350a)}
+.sb-vfx-fire-aura{opacity:0;animation:sb-fire-orb 900ms ease-out both}
+.sb-vfx-fire-core{fill:#fff2ad;opacity:0;animation:sb-fire-orb 900ms ease-out both}
+.sb-vfx-fire-ember{opacity:0;filter:drop-shadow(0 0 5px #ff7425);animation:sb-fire-ember 900ms ease-out both}
+.sb-vfx-fire-counterburst{
+ fill:#ff662450;stroke:#ffb760;stroke-width:4;opacity:0;
+ filter:drop-shadow(0 0 15px #fa461e);transform-box:fill-box;transform-origin:center;
+ animation:sb-fire-counterburst 900ms ease-out both
+}
+.sb-vfx-fire-destroyburst{
+ fill:#ed280f8c;stroke:#ffe9a0;stroke-width:5;opacity:0;
+ filter:drop-shadow(0 0 17px #f44408) drop-shadow(0 0 10px #ffd977);
+ transform-box:fill-box;transform-origin:center;
+ animation:sb-fire-destroyburst 900ms ease-out both
+}
+.sb-vfx-fire-impact-core{
+ fill:#fff1bb;opacity:0;
+ filter:drop-shadow(0 0 9px #fff) drop-shadow(0 0 21px #ff6625);
+ transform-box:fill-box;transform-origin:center;animation:sb-fire-core-burst 900ms ease-out both
+}
+.sb-vfx-fire-impact-spark{
+ fill:none;stroke:#ffc552;stroke-width:3;opacity:0;stroke-linecap:round;
+ stroke-dasharray:100;stroke-dashoffset:100;animation:sb-fire-sparks 900ms ease-out both
+}
+.sb-vfx-fire-resist{
+ fill:#79c5fa28;stroke:#8deaff;stroke-width:4;opacity:0;
+ filter:drop-shadow(0 0 12px #8feaff);
+ transform-box:fill-box;transform-origin:center;animation:sb-fire-resisted 900ms ease-out both
+}
+.sb-vfx-fire-miss{
+ fill:none;stroke:#a2a8ac;stroke-width:3;stroke-dasharray:5 5;opacity:0;
+ transform-box:fill-box;transform-origin:center;animation:sb-fire-missed 420ms ease-out both
+}
+@keyframes sb-fire-tail{
+ 0%,8%{opacity:0;stroke-dashoffset:100}
+ 17%{opacity:1}62%{opacity:.9;stroke-dashoffset:0}
+ 72%,100%{opacity:0;stroke-dashoffset:0}
+}
+@keyframes sb-fire-orb{0%,7%{opacity:0}18%,61%{opacity:1}76%,100%{opacity:0}}
+@keyframes sb-fire-ember{0%,15%{opacity:0}26%,65%{opacity:.8}80%,100%{opacity:0}}
+@keyframes sb-fire-counterburst{
+ 0%,59%{opacity:0;transform:scale(.24)}
+ 66%{opacity:1;transform:scale(.75)}
+ 82%{opacity:.5;transform:scale(1.7)}
+ 100%{opacity:0;transform:scale(2.2)}
+}
+@keyframes sb-fire-destroyburst{
+ 0%,59%{opacity:0;transform:scale(.2)}
+ 66%{opacity:1;transform:scale(.85)}
+ 83%{opacity:.7;transform:scale(2)}
+ 100%{opacity:0;transform:scale(2.8)}
+}
+@keyframes sb-fire-core-burst{
+ 0%,61%{opacity:0;transform:scale(.3)}
+ 68%{opacity:1;transform:scale(1.9)}
+ 85%,100%{opacity:0;transform:scale(.1)}
+}
+@keyframes sb-fire-sparks{
+ 0%,63%{opacity:0;stroke-dashoffset:100}
+ 72%{opacity:1;stroke-dashoffset:0}
+ 94%,100%{opacity:0;stroke-dashoffset:0}
+}
+@keyframes sb-fire-resisted{
+ 0%,59%{opacity:0;transform:scale(.2)}
+ 68%{opacity:1;transform:scale(.85)}
+ 90%,100%{opacity:0;transform:scale(1.45)}
+}
+@keyframes sb-fire-missed{
+ 0%{opacity:0;transform:scale(.4)}
+ 42%{opacity:.6;transform:scale(.9)}
+ 100%{opacity:0;transform:scale(1.9)}
+}
+@media(prefers-reduced-motion:reduce){
+ .sb-vfx-fire-svg,.sb-vfx-fire-svg *{display:none!important;animation:none!important;transition:none!important}
+}
 </style></head>
 <body><a class="skip" href="#game">Skip to Stackbreaker game</a>
 <header class="mast"><a class="site-mark" href="/lab/" aria-label="Back to Game Test Lab home">◈ <b>DEEP CUTS</b> / GAME LAB</a><strong class="site-title">STACKBREAKER <small>1.5 · ARCANE OBSERVATORY</small></strong><a class="site-home" href="/lab/" aria-label="Back to Test Lab, choose another game">GAME LAB ↗</a></header>
@@ -1636,8 +1722,84 @@ function presentCreaturePT(unit,printed,currentPower,currentToughness){
  };
 }
 
-// Stackbreaker VFX step 1 — presentation-only resolution journal.
+// Pyroblast visuals; engine-authoritative outcome required, no gameplay rules added.
+function pyroblastVisualMode(event){
+ if(event?.card!=='Pyroblast')return 'generic';
+ if(event.outcome==='invalid-target')return 'fire-miss';
+ if(event.effect==='counter'&&event.targetKind==='stack'&&event.outcome==='countered'&&
+   event.relatedStackIds?.includes(event.targetId))return 'fire-counter';
+ if(event.effect==='destroy'&&['creature','permanent'].includes(event.targetKind)&&
+   event.outcome==='destroyed')return 'fire-destroy';
+ if(event.effect==='counter'&&event.targetKind==='stack'&&event.outcome==='uncounterable')return 'fire-resist';
+ return 'generic';
+}
+function fireballGeometry(source,target,seed='pyroblast'){
+ if(!source||!target||![source.x,source.y,target.x,target.y].every(Number.isFinite))return null;
+ const dx=target.x-source.x,dy=target.y-source.y,distance=Math.hypot(dx,dy);
+ if(distance<2)return null;
+ let hash=2166136261;
+ for(const c of String(seed)){hash^=c.charCodeAt(0);hash=Math.imul(hash,16777619);}
+ const offset=Math.min(85,Math.max(13,distance*.16))*(hash%2?1:-1);
+ const nx=-dy/distance,ny=dx/distance;
+ const p=(t,a)=>({x:source.x+dx*t+nx*offset*a,y:source.y+dy*t+ny*offset*a});
+ const a=p(.27,.88),b=p(.70,.87);
+ const n=x=>Math.round(x*10)/10;
+ return {path:'M'+n(source.x)+' '+n(source.y)+' C'+n(a.x)+' '+n(a.y)+
+  ' '+n(b.x)+' '+n(b.y)+' '+n(target.x)+' '+n(target.y),distance};
+}
+function fireNode(root,parent,tag,attrs={},klass=''){
+ const e=root.createElementNS('http://www.w3.org/2000/svg',tag);
+ for(const [key,value] of Object.entries(attrs))e.setAttribute(key,String(value));
+ if(klass)e.setAttribute('class',klass);
+ parent.appendChild(e);
+ return e;
+}
+function renderPyroblastVfx(root,layer,view,event,anchors,mode){
+ const width=Math.max(1,view?.innerWidth||root.documentElement?.clientWidth||1000);
+ const height=Math.max(1,view?.innerHeight||root.documentElement?.clientHeight||750);
+ const svg=fireNode(root,layer,'svg',{viewBox:'0 0 '+width+' '+height,
+  preserveAspectRatio:'none','aria-hidden':'true'},'sb-vfx-fire-svg');
+ const source=anchors.source;
+ if(mode==='fire-miss'){
+  fireNode(root,svg,'circle',{cx:source.x,cy:source.y,r:20},'sb-vfx-fire-miss');
+  return;
+ }
+ const target=anchors.target,arc=fireballGeometry(source,target,event.sourceStackId);
+ if(!arc)return;
+ const defs=fireNode(root,svg,'defs');
+ const gradient=fireNode(root,defs,'radialGradient',{id:'sb-vfx-pyro-gradient'});
+ fireNode(root,gradient,'stop',{offset:'0%','stop-color':'#fffada'});
+ fireNode(root,gradient,'stop',{offset:'40%','stop-color':'#ffd34f'});
+ fireNode(root,gradient,'stop',{offset:'70%','stop-color':'#ff6529'});
+ fireNode(root,gradient,'stop',{offset:'100%','stop-color':'#c51511','stop-opacity':0});
+ fireNode(root,svg,'path',{d:arc.path,pathLength:100},'sb-vfx-fire-trail');
+ const orb=fireNode(root,svg,'g',{},'sb-vfx-fire-orb');
+ fireNode(root,orb,'circle',{r:23,fill:'url(#sb-vfx-pyro-gradient)'},'sb-vfx-fire-aura');
+ fireNode(root,orb,'circle',{r:7},'sb-vfx-fire-core');
+ fireNode(root,orb,'animateMotion',{path:arc.path,dur:'610ms',begin:'0ms',fill:'freeze'});
+ for(let i=0;i<5;i++){
+  const ember=fireNode(root,svg,'circle',{r:3+(i%3),fill:i%2?'#ff8a27':'#ffd781'},'sb-vfx-fire-ember');
+  fireNode(root,ember,'animateMotion',{path:arc.path,dur:'650ms',
+   begin:(65+i*36)+'ms',fill:'freeze'});
+ }
+ const klass=mode==='fire-counter'?'sb-vfx-fire-counterburst':
+  mode==='fire-destroy'?'sb-vfx-fire-destroyburst':'sb-vfx-fire-resist';
+ const radius=mode==='fire-destroy'?39:mode==='fire-resist'?29:32;
+ fireNode(root,svg,'circle',{cx:target.x,cy:target.y,r:radius},klass);
+ if(mode==='fire-counter'||mode==='fire-destroy'){
+  fireNode(root,svg,'circle',{cx:target.x,cy:target.y,r:9},'sb-vfx-fire-impact-core');
+  for(let i=0;i<6;i++){
+   const a=i*Math.PI/3;
+   fireNode(root,svg,'path',{d:'M'+target.x+' '+target.y+' l'+
+    Math.round(Math.cos(a)*28)+' '+Math.round(Math.sin(a)*28)},
+    'sb-vfx-fire-impact-spark');
+  }
+ }
+}
+
+// Stackbreaker VFX (Steps 1–3) — presentation-only resolution journal.
 // Rules state is authoritative; no VFX event is written to saved gameplay.
+
 
 const pointRect=el=>{
  if(!el||typeof el.getBoundingClientRect!=='function')return null;
@@ -1782,17 +1944,23 @@ function createSpellVfxController(root,view){
   if(reduce())return {played:false,reason:'reduced-motion'};
   if(!anchors?.source)return {played:false,reason:'no-anchors'};
   if(!root?.createElement||!root.body)return {played:false,reason:'no-document'};
-  const mode=lightningVisualMode(event);
-  if(mode!=='dissipate'&&!anchors.target)return {played:false,reason:'no-anchors'};
+  const fireMode=pyroblastVisualMode(event);
+  if(event.card==='Pyroblast'&&fireMode==='generic')return {played:false,reason:'unverified-pyroblast-outcome'};
+  const mode=fireMode==='generic'?lightningVisualMode(event):fireMode;
+  const misses=mode==='dissipate'||mode==='fire-miss';
+  if(!misses&&!anchors.target)return {played:false,reason:'no-anchors'};
   const geometry=anchors.target?lightningGeometry(anchors.source,anchors.target,event.sourceStackId):null;
-  if(mode!=='dissipate'&&!geometry)return {played:false,reason:'overlapping'};
+  if(!misses&&!geometry)return {played:false,reason:'overlapping'};
   const layer=root.createElement('div');
   layer.className='sb-vfx-layer';
   layer.setAttribute('aria-hidden','true');
   layer.setAttribute('data-vfx-mode',mode);
   layer.setAttribute('data-vfx-outcome',event.outcome||'resolved');
   if(event.terminalStatus)layer.setAttribute('data-vfx-terminal',event.terminalStatus);
-  if(mode==='generic'){
+  if(mode.startsWith('fire-')){
+   if(typeof root.createElementNS!=='function')return {played:false,reason:'no-svg'};
+   renderPyroblastVfx(root,layer,view,event,anchors,mode);
+  }else if(mode==='generic'){
    const trace=root.createElement('div');
    trace.className='sb-vfx-trace';
    trace.style.left=anchors.source.x+'px';
@@ -1836,7 +2004,7 @@ function createSpellVfxController(root,view){
    }
   }
   root.body.appendChild(layer);cue=layer;
-  const lifetime=mode==='generic'?260:mode==='dissipate'?420:800;
+  const lifetime=mode==='generic'?260:misses?420:mode.startsWith('fire-')?900:800;
   if(typeof view?.setTimeout==='function')clearTimer=view.setTimeout(()=>{
    if(cue===layer){layer.remove();cue=null;}clearTimer=null;
   },lifetime);
