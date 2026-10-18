@@ -48,10 +48,10 @@ test('countered target reported only when the rules engine removed the spell',()
  assert.equal(next.life.player,10);
 });
 test('uncounterability is not falsely labeled a successful counter',()=>{
- const uncounterable=Object.keys(CARDS).find(n=>CARDS[n].uncounterable);
- if(!uncounterable)return;
+ const uncounterable="Urza's Rage";
+ assert.equal(CARDS[uncounterable].uncounterable,true);
  const s=initial({stack:[
-  {id:'immune',card:uncounterable,controller:'opponent',targetId:null,spell:true},
+  {id:'immune',card:uncounterable,controller:'opponent',targetId:'player',spell:true},
   {id:'counter-a',card:'Counterspell',controller:'player',targetId:'immune'}
  ]});
  const x=describeSpellResolution(s,pass(s));
