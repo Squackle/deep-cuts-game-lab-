@@ -1,6 +1,7 @@
 // Stackbreaker VFX (Steps 1–3) — presentation-only resolution journal.
 // Rules state is authoritative; no VFX event is written to saved gameplay.
 import {CARDS} from './cards.js';
+import {pyroblastVisualMode,renderPyroblastVfx} from './pyroblast-vfx.js';
 
 const pointRect=el=>{
  if(!el||typeof el.getBoundingClientRect!=='function')return null;
@@ -145,17 +146,23 @@ export function createSpellVfxController(root,view){
   if(reduce())return {played:false,reason:'reduced-motion'};
   if(!anchors?.source)return {played:false,reason:'no-anchors'};
   if(!root?.createElement||!root.body)return {played:false,reason:'no-document'};
-  const mode=lightningVisualMode(event);
-  if(mode!=='dissipate'&&!anchors.target)return {played:false,reason:'no-anchors'};
+  const fireMode=pyroblastVisualMode(event);
+  if(event.card==='Pyroblast'&&fireMode==='generic')return {played:false,reason:'unverified-pyroblast-outcome'};
+  const mode=fireMode==='generic'?lightningVisualMode(event):fireMode;
+  const misses=mode==='dissipate'||mode==='fire-miss';
+  if(!misses&&!anchors.target)return {played:false,reason:'no-anchors'};
   const geometry=anchors.target?lightningGeometry(anchors.source,anchors.target,event.sourceStackId):null;
-  if(mode!=='dissipate'&&!geometry)return {played:false,reason:'overlapping'};
+  if(!misses&&!geometry)return {played:false,reason:'overlapping'};
   const layer=root.createElement('div');
   layer.className='sb-vfx-layer';
   layer.setAttribute('aria-hidden','true');
   layer.setAttribute('data-vfx-mode',mode);
   layer.setAttribute('data-vfx-outcome',event.outcome||'resolved');
   if(event.terminalStatus)layer.setAttribute('data-vfx-terminal',event.terminalStatus);
-  if(mode==='generic'){
+  if(mode.startsWith('fire-')){
+   if(typeof root.createElementNS!=='function')return {played:false,reason:'no-svg'};
+   renderPyroblastVfx(root,layer,view,event,anchors,mode);
+  }else if(mode==='generic'){
    const trace=root.createElement('div');
    trace.className='sb-vfx-trace';
    trace.style.left=anchors.source.x+'px';
@@ -199,7 +206,7 @@ export function createSpellVfxController(root,view){
    }
   }
   root.body.appendChild(layer);cue=layer;
-  const lifetime=mode==='generic'?260:mode==='dissipate'?420:800;
+  const lifetime=mode==='generic'?260:misses?420:mode.startsWith('fire-')?900:800;
   if(typeof view?.setTimeout==='function')clearTimer=view.setTimeout(()=>{
    if(cue===layer){layer.remove();cue=null;}clearTimer=null;
   },lifetime);
