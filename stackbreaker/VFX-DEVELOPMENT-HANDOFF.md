@@ -2,7 +2,7 @@
 
 **Created:** 2026-10-17  
 **Owner instruction:** "Just tell me how many steps you need and I'll tell you to progress through them ... have some file created so another chat can pickup if you time out."  
-**Status:** **2 of 5 development steps implemented and tested**. Step 1 was deployed successfully at Game Lab commit `4d8bf71d9b638138bec1e339a6217dac61f77c4e`. Step 2 passed **489/489 tests** and Cloudflare preview at PR #90; production deployment SHA is recorded in [PR #90](https://github.com/Squackle/deep-cuts-game-lab-/pull/90). Browser Rendering for Step 2 was rate-limited (2001), so a fresh in-browser VFX pass is **not claimed**. **Next: Step 3 (Pyroblast fireball)**. The initial creation of this document was planning, not Step 1.  
+**Status:** **2 of 5 development steps implemented and tested**. Step 1 was deployed successfully at Game Lab commit `4d8bf71d9b638138bec1e339a6217dac61f77c4e`. Step 2 passed **489/489 tests** and Cloudflare preview at PR #90; production deployment SHA is recorded in [PR #90](https://github.com/Squackle/deep-cuts-game-lab-/pull/90). Browser Rendering for Step 2 was rate-limited (2001), so a fresh in-browser VFX pass is **not claimed**. **Step 3 in progress:** a feature branch has been created. Repo code writes currently return a safety-check block; no files changed or deployed. **Next: Step 3 (Pyroblast fireball)**. The initial creation of this document was planning, not Step 1.  
 **Next trigger:** When owner says "next", "step 1", "go ahead", etc., begin the **first unchecked step**; complete/test it and update this file before stopping. If owner asks to progress further, begin the following step.
 
 ## Five steps — owner only needs to say "next"
