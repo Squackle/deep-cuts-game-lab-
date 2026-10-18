@@ -1,4 +1,4 @@
-// Stackbreaker VFX step 1 — presentation-only resolution journal.
+// Stackbreaker VFX (Steps 1–3) — presentation-only resolution journal.
 // Rules state is authoritative; no VFX event is written to saved gameplay.
 import {CARDS} from './cards.js';
 
