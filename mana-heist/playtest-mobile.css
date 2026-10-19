@@ -142,3 +142,15 @@ body.mana-reduced-effects .ward-mana-sector{
  animation:none!important;transition:none!important;
 }
 @media(max-width:650px){.hint-actions{display:grid;grid-template-columns:1fr 1fr}.hint-actions button{min-height:48px;font-size:.72rem}.fx-pref label{font-size:.79rem}.fx-pref{padding:11px}}
+
+.guest-milestones{border:1px solid #b6a16b66;border-radius:10px;background:#182d29;margin:12px 0 18px;overflow:hidden}
+.guest-milestones>summary{padding:15px 18px;color:#efd4a1;font-weight:800;cursor:pointer;font-size:.82rem}
+.guest-milestones>summary:focus-visible{outline:3px solid #efd4a1;outline-offset:3px}
+.guest-milestones>p{padding:0 18px;color:#b6c7c0;line-height:1.55;font-size:.79rem}
+.guest-milestone-grid{padding:5px 15px 15px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px}
+.guest-milestone{border:1px solid #73877888;border-radius:9px;padding:11px;display:grid;gap:6px;background:#1b2d29;color:#bdc4ba}
+.guest-milestone.earned{background:#26463c;border-color:#e0bd82;color:#e9d6b2}
+.guest-milestone strong{font-size:.83rem;color:#e8ce9d}
+.guest-milestone span{font-size:.74rem;line-height:1.4}
+.guest-milestone small{font-size:.65rem;font-weight:800}
+@media(max-width:650px){.guest-milestone-grid{grid-template-columns:1fr 1fr;gap:7px;padding:10px}.guest-milestone{padding:9px}.guest-milestone strong{font-size:.71rem}}
