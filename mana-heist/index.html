@@ -60,6 +60,19 @@
     <textarea id="deviceQaExportText" aria-label="Manual device QA report for copying" rows="7" readonly hidden></textarea>
    </div>
   </details>
+  <details class="guest-backup" id="guestBackupPanel">
+   <summary>◇ GUEST PROGRESS BACKUP · THIS BROWSER</summary>
+   <div class="guest-backup-body">
+    <p>Your 500-vault medals, older-version scores, 28 lessons and bonus trials are saved only in this browser. Export a local JSON backup before clearing browser data or moving devices. The file contains <strong>game progress only</strong>, not playtest reports, consent settings, device tests or account details.</p>
+    <div class="guest-backup-actions"><button type="button" id="guestBackupDownload">SAVE BACKUP FILE ↓</button><button type="button" id="guestBackupCopy">COPY BACKUP TEXT</button></div>
+    <label class="guest-backup-file-label" for="guestBackupFile">Restore progress from a Mana Heist backup (.json)</label>
+    <input id="guestBackupFile" type="file" accept=".json,application/json"/>
+    <p id="guestBackupStatus" role="status" aria-live="polite">No backup selected. Imports are previewed before you confirm, and your better existing results are preserved.</p>
+    <button id="guestBackupImport" type="button" disabled>CONFIRM &amp; MERGE BACKUP</button>
+    <textarea id="guestBackupText" hidden readonly rows="7" aria-label="Guest backup JSON for manual copying"></textarea>
+    <p class="guest-backup-disclaimer">This is a local, unsigned guest-save file, not proof for a public leaderboard. Import does not overwrite better scores, and historical puzzle revisions remain separate. Nothing uploads to Deep Cuts EDH.</p>
+   </div>
+  </details>
  </section>
  <div id="gameScreen" hidden>
   <p id="cardKeyboardHelp" class="card-keyboard-instructions">Keyboard: Tab to a card. Left and right arrows or up and down arrows move between cards in its rack; Home and End jump to the first and last card. Enter or Space selects or uses a card, I opens its card reference, and Escape cancels open choices.</p>
