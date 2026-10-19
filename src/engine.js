@@ -269,11 +269,13 @@ export function step(run){
  const heading=run.turnQueue.shift()??run.direction,t=target(run,heading);
  if(t.wall||t.body||t.enemy||t.hatchling){
   run.direction=heading;
-  // Beginner's one-use instinct evades only ordinary prey, never a boss,
-  // terrain wall, or the player's own body. Keep defenses for boss contact.
+  // Ranked Hunt still forgives ONLY ordinary prey. Unranked Lair practice
+  // may instead spend its first free life on boss or hatchling contact.
+  // The player is never rescued for a wall or own-body collision.
   const ordinary=run.mode==="hunt"&&!run.encounter&&t.enemy&&
    run.enemies.some(e=>(e.kind==="skitter"||e.kind==="runner")&&same(e.pos,t.next));
-  if(recover(run,heading,ordinary&&run.mercy>0))return run;
+  const practiceEnemy=!!run.lairBoss&&(t.enemy||t.hatchling);
+  if(recover(run,heading,(ordinary||practiceEnemy)&&run.mercy>0))return run;
   if(run.status==="over")return run; // failed emergency recovery already ended the run
   finishRun(run,ENDINGS.DEATH,t.hatchling?"A hatchling blocked your path.":t.enemy?"A hunter collided with you.":t.wall?"You hit the arena wall.":"You crossed your own swarm.");
   return run;
@@ -306,7 +308,7 @@ export function step(run){
   if(contact){
    // A baby spider blindly ran into the head. Normal defenses may still save it.
    run.hatchlings=run.hatchlings.filter(h=>h.id!==contact.id);
-   if(recover(run,run.direction,false))return run;
+   if(recover(run,run.direction,!!run.lairBoss&&run.mercy>0))return run;
    finishRun(run,ENDINGS.DEATH,"A blind hatchling struck your swarm.",{at:contact.pos});
    return run;
   }
