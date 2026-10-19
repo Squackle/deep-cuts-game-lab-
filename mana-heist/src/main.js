@@ -18,10 +18,14 @@ import {installCardInspector} from "./card-inspector.js";
 import {installCardMagnifier} from "./card-magnifier.js";
 import {SAGE_LESSONS} from "./sage-lessons.js";
 import {BONUS_TRIALS,BONUS_TRIAL_STORAGE_KEY,normalizeBonusBests,betterBonusScore} from "./bonus-trials.js";
+import {PLAYTEST_KEY,PLAYTEST_OPT_KEY,blankPlaytest,normalizePlaytest,beginPlaytest,countPlaytestEvent,finishPlaytest,ratePlaytest,exportPlaytest} from "./playtest-metrics.js";
+import {DEVICE_QA_KEY,DEVICE_QA_CHECKS,DEVICE_QA_STATUSES,blankDeviceQA,normalizeDeviceQA,setDeviceContext,setDeviceQAResult,summarizeDeviceQA,exportDeviceQA} from "./device-qa.js";
 import {LEARN_LEVELS} from "./expanded-learn.js";
 import {certifyCapstone} from "./capstone-certificates.js";
 import {certifyMastery} from "./mastery-certificates.js";
 import {certifyDiverse} from "./mana-variety-certificates.js";
+import {diverseFor} from "./mana-variety-puzzles.js";
+import {certifyRemix,REMIX_KEY,REMIXED_IDS,validateRemixBests} from "./certified-remixes.js";
 import {evaluateVault} from "./difficulty-metrics.js";
 import {mountSage} from "./sage-ui.js";
 import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
@@ -45,21 +49,24 @@ function readProgress(){
 const modeKey="dc-mana-heist-mode-v1",learnKey="dc-mana-heist-learn-v1";
 const revisedKey="dc-mana-heist-capstones-v1";
 const varietyKey="dc-mana-heist-variety-v1";
+let remixBests={};
+try{remixBests=validateRemixBests(JSON.parse(localStorage.getItem(REMIX_KEY)||"null"));}catch{}
+function persistRemix(){try{localStorage.setItem(REMIX_KEY,JSON.stringify({v:1,bests:remixBests}));}catch{}}
 let trialIndex=null,trialBests={};
 try{trialBests=normalizeBonusBests(JSON.parse(localStorage.getItem(BONUS_TRIAL_STORAGE_KEY)||"null"));}catch{}
 function persistBonusTrials(){try{localStorage.setItem(BONUS_TRIAL_STORAGE_KEY,JSON.stringify({v:1,bests:trialBests}));}catch{}}
 let varietyBests={};
-try{const d=JSON.parse(localStorage.getItem(varietyKey)||"null");if(d?.v===1&&d.bests)for(const l of LEVELS.filter(l=>l.revision===3)){const best=d.bests[l.id];if(validBest(best))varietyBests[l.id]={turn:best.turn,spentLife:best.spentLife,actions:Number.isInteger(best.actions)?best.actions:999};}}catch{}
+try{const d=JSON.parse(localStorage.getItem(varietyKey)||"null");if(d?.v===1&&d.bests)for(const l of LEVELS.filter(l=>l.revision===3||l.revision===4)){const best=d.bests[l.id];if(validBest(best))varietyBests[l.id]={turn:best.turn,spentLife:best.spentLife,actions:Number.isInteger(best.actions)?best.actions:999};}}catch{}
 function persistVariety(){try{localStorage.setItem(varietyKey,JSON.stringify({v:1,bests:varietyBests}));}catch{}}
 function readRevised(){
  try{const d=JSON.parse(localStorage.getItem(revisedKey)||"null");
-  return d?.v===1?Object.fromEntries(LEVELS.filter(l=>l.revision&&l.revision!==3&&validBest(d.bests?.[l.id])).map(l=>[l.id,{turn:d.bests[l.id].turn,spentLife:d.bests[l.id].spentLife,actions:Number.isInteger(d.bests[l.id].actions)?d.bests[l.id].actions:999}])):{};}catch{return {};}
+  return d?.v===1?Object.fromEntries(LEVELS.filter(l=>[1,2].includes(l.revision)&&validBest(d.bests?.[l.id])).map(l=>[l.id,{turn:d.bests[l.id].turn,spentLife:d.bests[l.id].spentLife,actions:Number.isInteger(d.bests[l.id].actions)?d.bests[l.id].actions:999}])):{};}catch{return {};}
 }
 let revisedBests=readRevised();
 function displayBests(){
  const out={...progress.bests};
  for(const puzzle of LEVELS)if(puzzle.revision)delete out[puzzle.id];
- return {...out,...revisedBests,...varietyBests};
+ return {...out,...revisedBests,...Object.fromEntries(Object.entries(varietyBests).filter(([id])=>!REMIXED_IDS.includes(id))),...remixBests};
 }
 function persistRevised(){
  try{localStorage.setItem(revisedKey,JSON.stringify({v:1,bests:revisedBests}));}catch{}
@@ -68,7 +75,57 @@ function readMode(){try{const m=localStorage.getItem(modeKey);return m==="learn"
 function readLearn(){try{return normalizedLearnProgress(JSON.parse(localStorage.getItem(learnKey)||"null"));}catch{return normalizedLearnProgress(null);}}
 let mode=readMode(),learnProgress=readLearn();
 let progress=readProgress(),index=progress.index,level=LEVELS[index],state=initial(level),history=[],choiceActions=[],selectedMessage="";
-let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null,selectedHandId=null;
+let playtestEnabled=false,playtestData=blankPlaytest(),playtestAttempt=null,pendingRatingKey=null,playtestRatingDone=false;
+try{
+ playtestEnabled=localStorage.getItem(PLAYTEST_OPT_KEY)==="yes";
+ playtestData=normalizePlaytest(JSON.parse(localStorage.getItem(PLAYTEST_KEY)||"null"));
+}catch{}
+el("playtestOptIn").checked=playtestEnabled;
+function savePlaytest(){try{localStorage.setItem(PLAYTEST_KEY,JSON.stringify(playtestData));}catch{}}
+function startPlaytest(){
+ if(!playtestEnabled||playtestAttempt||completed(level,state))return;
+ playtestAttempt=beginPlaytest(level,performance.now());
+}
+function notePlaytest(event){if(playtestEnabled&&playtestAttempt)playtestAttempt=countPlaytestEvent(playtestAttempt,event);}
+function closePlaytest(status){
+ if(!playtestAttempt)return;
+ const attempt=playtestAttempt;playtestAttempt=null;
+ if(!playtestEnabled)return;
+ playtestData=finishPlaytest(playtestData,attempt,status,performance.now());
+ savePlaytest();
+ if(status==="win"){pendingRatingKey=attempt.key;playtestRatingDone=false;}
+}
+
+let deviceQa=blankDeviceQA();
+try{deviceQa=normalizeDeviceQA(JSON.parse(localStorage.getItem(DEVICE_QA_KEY)||"null"));}catch{}
+function saveDeviceQA(){try{localStorage.setItem(DEVICE_QA_KEY,JSON.stringify(deviceQa));}catch{}}
+function updateDeviceQAStatus(){
+ const s=summarizeDeviceQA(deviceQa);
+ el("deviceQaStatus").textContent=s.reviewed+" / "+s.total+" checked · "+s.pass+" passed · "+s.issue+" needs fixing · "+s.untested+" not tested. Manual self-report only.";
+}
+function renderDeviceQA(){
+ const root=el("deviceQaChecks");
+ root.replaceChildren();
+ for(const [field,id] of [["device","deviceQaDevice"],["browser","deviceQaBrowser"],["orientation","deviceQaOrientation"]])el(id).value=deviceQa[field];
+ const statuses=[["untested","Not tested"],["pass","Pass"],["issue","Needs fixing"],["not-applicable","Not applicable"]];
+ for(const item of DEVICE_QA_CHECKS){
+  const card=document.createElement("section");card.className="device-qa-case";
+  const title=document.createElement("h3");title.textContent=item.title;
+  const details=document.createElement("p");details.textContent=item.steps;
+  const controls=document.createElement("div");controls.className="device-qa-case-controls";
+  const label=document.createElement("label");label.textContent="Your test result";
+  const select=document.createElement("select");select.dataset.qaCase=item.id;
+  select.setAttribute("aria-label",item.title+" — your device test result");
+  for(const [value,name] of statuses){const opt=document.createElement("option");opt.value=value;opt.textContent=name;select.append(opt);}
+  select.value=deviceQa.checks[item.id];label.append(select);
+  const launch=document.createElement("button");launch.type="button";launch.dataset.qaLaunch=item.id;
+  launch.textContent="OPEN TEST STAGE →";
+  launch.setAttribute("aria-label","Open test stage for "+item.title);
+  controls.append(label,launch);card.append(title,details,controls);root.append(card);
+ }
+ updateDeviceQAStatus();
+}
+let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null;
 let autoCastEnabled=false;
 try{autoCastEnabled=localStorage.getItem("dc-mana-heist-auto-cast")==="yes";}catch{}
 el("autoCastToggle").checked=autoCastEnabled;
@@ -144,6 +201,15 @@ el("winPanel").append(returnFromResult);
 const manaContext=document.createElement("span");manaContext.id="manaContext";manaContext.className="mana-scenario-context";
 el("difficulty").after(manaContext);
 returnFromResult.addEventListener("click",()=>showMap());
+const difficultyReview=document.createElement("div");difficultyReview.id="playtestRating";difficultyReview.className="playtest-rating";difficultyReview.hidden=true;
+const ratingLabel=document.createElement("span");ratingLabel.textContent="Optional playtest feedback: how hard did this vault feel? 1 = easy · 5 = very hard";
+difficultyReview.append(ratingLabel);
+for(let i=1;i<=5;i++){
+ const button=document.createElement("button");button.type="button";button.dataset.playtestRating=String(i);
+ button.textContent=String(i);button.setAttribute("aria-label","Rate difficulty "+i+" of 5");
+ difficultyReview.append(button);
+}
+el("winPanel").append(difficultyReview);
 function inspectById(id){
  const record=lookup(level,id);
  if(!record)return false;
@@ -159,7 +225,7 @@ function proofFor(id){
  if(proofCache.has(id))return proofCache.get(id);
  const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id)||BONUS_TRIALS.find(v=>v.id===id);
  if(!puzzle)return null;
- const exact=puzzle.revision===3?certifyDiverse(puzzle):puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
+ const exact=puzzle.revision===4?certifyRemix(puzzle):puzzle.revision===3?certifyDiverse(puzzle):puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
  let proof=exact;
  if(exact.status!=="solved"&&puzzle.templateId){
   const source=BASE_LEVELS.find(p=>p.id===puzzle.templateId);
@@ -175,6 +241,8 @@ function proofFor(id){
 const proofs={get:proofFor};
 const masteryRating=document.createElement("span");masteryRating.id="masteryRating";masteryRating.className="mastery-rating";masteryRating.title="C = structural complexity; D = estimated execution difficulty. Both 1–100, old Galaxy V finale benchmark = 50.";
 el("stageLabel").after(masteryRating);
+const historicalNote=document.createElement("p");historicalNote.className="muted small";historicalNote.setAttribute("aria-live","polite");el("briefing").after(historicalNote);
+const historicalMedals=new Map();
 const lockGlyphs=["✧","⌑","◈","✦","⬡","✶"];
 function persist(){try{localStorage.setItem(storageKey,JSON.stringify({v:2,index:progress.index,bests:progress.bests}));}catch{}}
 function persistLearn(){try{localStorage.setItem(learnKey,JSON.stringify({v:1,completed:learnProgress.completed,last:learnProgress.last}));}catch{}}
@@ -260,12 +328,20 @@ function desc(action){
  }
  return "End this turn";
 }
+let choiceReturnFocus=null;
 function choices(title,help,moves){
+ const wasVisible=!el("actionBox").hidden;
+ if(moves.length&&!wasVisible)choiceReturnFocus=document.activeElement;
  choiceActions=moves;
  el("actionBox").hidden=moves.length===0;
  el("actionTitle").textContent=title;
  el("choices").innerHTML='<p class="muted small">'+help+'</p>'+moves.map((action,i)=>'<button class="choice-button" type="button" data-choice="'+i+'">'+desc(action)+'</button>').join("");
  if(!moves.length)el("choices").innerHTML='<p class="muted">'+help+'</p>';
+ if(moves.length&&!wasVisible)el("dismissChoices").focus({preventScroll:true});
+ if(!moves.length&&wasVisible){
+  const previous=choiceReturnFocus;choiceReturnFocus=null;
+  if(previous?.isConnected&&document.body.classList.contains("in-heist"))previous.focus({preventScroll:true});
+ }
 }
 function message(text,error=false){
  const item=el("feedback");
@@ -276,6 +352,7 @@ function message(text,error=false){
  }
 }
 function rejectCast(){
+ notePlaytest("failedCast");
  const stage=level.stages[state.stage];
  if(stage&&state.manaUnits?.some(u=>u.restriction)&&!actions(level,state).some(a=>a.type==="cast")){
   const matching=COLORS.every(c=>(state.pool[c]||0)>=(stage.cost[c]||0));
@@ -294,6 +371,7 @@ function perform(action){
  cancelAuto();
  if(action.type!=="tap"){viewEpoch++;pendingFlights.clear();cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();}
  history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type});
+ notePlaytest("action");
  state=out.state;
  manaOrbs=(action.type==="ritual"||action.type==="activate"||action.type==="tap"&&(getCard(level,action.id).kind==="bounce"||state.highTide))?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
  if(!consistent(state.pool,manaOrbs))manaOrbs=reconstruct(state.pool);
@@ -320,6 +398,7 @@ function perform(action){
  for(const orb of incoming)pendingFlights.add(orb.id);
  const pendingId=incoming[0]?.id??null;
  if(completed(level,state)){
+  closePlaytest("win");
   magnifier.hide();
   if(trialIndex!==null){
    const proof=proofs.get(level.id),record={turn:state.turn,spentLife:state.spentLife,actions:state.actions,
@@ -332,7 +411,12 @@ function perform(action){
    learnProgress.completed.sort((a,b)=>a-b);learnProgress.last=index;persistLearn();
    message("Practice complete! Select the next exercise or return to Learn Mana.");
   }else{
-   if(level.revision===3){
+   if(level.revision===4){
+    const best=remixBests[level.id];
+    if(!best||state.turn<best.turn||(state.turn===best.turn&&state.spentLife<best.spentLife)||(state.turn===best.turn&&state.spentLife===best.spentLife&&state.actions<best.actions))
+     remixBests[level.id]={turn:state.turn,spentLife:state.spentLife,actions:state.actions};
+    persistRemix();
+   }else if(level.revision===3){
     const best=varietyBests[level.id];
     if(!best||state.turn<best.turn||
        (state.turn===best.turn&&state.spentLife<best.spentLife)||
@@ -513,6 +597,15 @@ function render(pendingId=null){
  masteryRating.setAttribute("aria-label","Complexity "+rating.complexity+" of 100, estimated difficulty "+rating.difficulty+" of 100");
  el("vaultName").textContent=level.title;
  el("briefing").textContent=level.briefing;
+ const archived=level.revision===4?varietyBests[level.id]:null;
+ if(archived){
+  if(!historicalMedals.has(level.id)){
+   const original=diverseFor(index),oldProof=certifyDiverse(original);
+   historicalMedals.set(level.id,medal(original,{turn:archived.turn,spentLife:archived.spentLife,actions:archived.actions,stage:original.stages.length},oldProof));
+  }
+  historicalNote.textContent="PREVIOUS VERSION · "+"★".repeat(historicalMedals.get(level.id))+" · turn "+archived.turn+", "+archived.spentLife+" life spent · preserved in your archived results. This new board has separate medals.";
+  historicalNote.hidden=false;
+ }else{historicalNote.textContent="";historicalNote.hidden=true;}
  el("turnNumber").textContent=state.turn+" / "+level.turnLimit;
  el("lifeTotal").textContent=state.life;
  el("landDrop").textContent=state.played?"USED":"AVAILABLE";
@@ -547,6 +640,7 @@ function render(pendingId=null){
  endButton.title=finalTurn?"No more turns. Tap for advice on this puzzle.":"End turn and untap your lands";
  endButton.setAttribute("aria-label",finalTurn?"Final turn. No further turns allowed. Tap for Undo or Restart advice.":"End turn and untap lands");
  el("winPanel").hidden=!isWin;
+ difficultyReview.hidden=!(isWin&&playtestEnabled&&pendingRatingKey&&!playtestRatingDone);
  if(isWin){
   if(trialIndex!==null){
    const best=trialBests[level.id],stars=medal(level,state,proof);
@@ -570,6 +664,7 @@ function render(pendingId=null){
  selectedMessage="";
 }
 function showMap(){
+ closePlaytest("exit");pendingRatingKey=null;
  sage.hide();fluid.pause();fluid.clear();currentFluidStage="";
  magnifier.hide();
  invalidateStagePrintings();
@@ -587,6 +682,7 @@ function showMap(){
  el("campaignScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
 function showGame(){
+ startPlaytest();
  fluid.resume();
  document.body.classList.add("in-heist");
  document.body.classList.toggle("is-training",mode==="learn");
@@ -596,6 +692,7 @@ function showGame(){
  el("gameScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
 function load(i,enter=false){
+ closePlaytest("exit");pendingRatingKey=null;playtestRatingDone=false;
  fluid.clear();currentFluidStage="";
  magnifier.hide();
  cancelAuto();viewEpoch++;pendingFlights.clear();
@@ -710,9 +807,58 @@ landDrag=installLandDragging({
  onHint:(text,error=false)=>message(text,error)
 });
 el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a)perform(a);});
+// Mana-choice sheets must remain usable by keyboard and screen readers on
+// small screens, not just visually centered above the battlefield.
+el("actionBox").addEventListener("keydown",e=>{
+ if(e.key!=="Tab"||el("actionBox").hidden)return;
+ const controls=[...el("actionBox").querySelectorAll('button:not([disabled])')];
+ if(!controls.length)return;
+ const first=controls[0],last=controls.at(-1);
+ if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+ else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+});
+el("playtestOptIn").addEventListener("change",e=>{
+ playtestEnabled=Boolean(e.target.checked);
+ try{localStorage.setItem(PLAYTEST_OPT_KEY,playtestEnabled?"yes":"no");}catch{}
+ if(playtestEnabled&&document.body.classList.contains("in-heist"))startPlaytest();
+ if(!playtestEnabled){playtestAttempt=null;pendingRatingKey=null;difficultyReview.hidden=true;}
+ el("playtestStatus").textContent=playtestEnabled?"Local playtest counts enabled. Nothing is transmitted automatically.":"Playtest notes are off. Existing local counts remain until you clear them.";
+});
+el("playtestCopy").addEventListener("click",async()=>{
+ const report=exportPlaytest(playtestData);
+ try{
+  if(!navigator.clipboard?.writeText)throw Error("Clipboard API unavailable");
+  await navigator.clipboard.writeText(report);
+  el("playtestExportText").hidden=true;
+  el("playtestStatus").textContent="Local report copied. Paste it into your playtest feedback when you choose.";
+ }catch{
+  const area=el("playtestExportText");
+  area.value=report;area.hidden=false;area.focus();area.select();
+  el("playtestStatus").textContent="Clipboard access is unavailable. Select and copy the report shown below.";
+ }
+});
+el("playtestClear").addEventListener("click",()=>{
+ if(!window.confirm("Clear ALL optional local playtest notes? Campaign medals and lesson completion are unaffected."))return;
+ playtestData=blankPlaytest();savePlaytest();playtestAttempt=null;pendingRatingKey=null;
+ if(playtestEnabled&&document.body.classList.contains("in-heist"))startPlaytest();
+ el("playtestExportText").hidden=true;
+ el("playtestStatus").textContent="Local playtest notes cleared. Your campaign and lesson saves were not changed.";
+});
+difficultyReview.addEventListener("click",e=>{
+ const selected=e.target.closest("[data-playtest-rating]");
+ if(!selected||!pendingRatingKey||!playtestEnabled||playtestRatingDone)return;
+ const rating=Number(selected.dataset.playtestRating);
+ if(!Number.isInteger(rating)||rating<1||rating>5)return;
+ playtestData=ratePlaytest(playtestData,pendingRatingKey,rating);
+ savePlaytest();playtestRatingDone=true;pendingRatingKey=null;
+ difficultyReview.hidden=true;
+ message("Thanks. Difficulty rating saved on this device only.");
+});
+
 el("endTurn").addEventListener("click",()=>{const a=actions(level,state).find(a=>a.type==="end");if(a)perform(a);else message(finalTurnMessage(level,state),true);});
 el("undo").addEventListener("click",()=>{
  if(!history.length)return;
+ notePlaytest("undo");
  cancelAuto();viewEpoch++;pendingFlights.clear();
  let prev=history.pop();
  // An automatic cast is a consequence of the previous manual move.
@@ -723,13 +869,54 @@ el("undo").addEventListener("click",()=>{
  message("Previous move undone, including any automatically cast wards.");
 });
 window.addEventListener("resize",()=>{if(document.body.classList.contains("in-heist"))syncLandRows();},{passive:true});
-el("reset").addEventListener("click",()=>{sage.onRestart(level);load(index);});
+el("reset").addEventListener("click",()=>{closePlaytest("restart");sage.onRestart(level);load(index);startPlaytest();});
 el("skip").addEventListener("click",showMap);
 el("winNext").addEventListener("click",()=>{
  if(trialIndex!==null){showMap();return;}
  if(mode==="learn"){const next=nextLearnIndex(index);if(next!==null)load(next,true);else showMap();return;}
  if(index+1<LEVELS.length)load(index+1,true);else showMap();
 });
+// All checklist outcomes come from explicit tester actions. Opening a
+// suggested stage never automatically changes its QA result or player medals.
+for(const [field,id] of [["device","deviceQaDevice"],["browser","deviceQaBrowser"],["orientation","deviceQaOrientation"]]){
+ el(id).addEventListener("change",e=>{
+  deviceQa=setDeviceContext(deviceQa,field,e.target.value);saveDeviceQA();updateDeviceQAStatus();
+ });
+}
+el("deviceQaChecks").addEventListener("change",e=>{
+ const selector=e.target.closest("select[data-qa-case]");
+ if(!selector)return;
+ deviceQa=setDeviceQAResult(deviceQa,selector.dataset.qaCase,selector.value);
+ saveDeviceQA();updateDeviceQAStatus();
+});
+el("deviceQaChecks").addEventListener("click",e=>{
+ const button=e.target.closest("button[data-qa-launch]");
+ if(!button)return;
+ const item=DEVICE_QA_CHECKS.find(c=>c.id===button.dataset.qaLaunch);
+ if(!item?.target)return;
+ trialIndex=null;
+ selectMode(item.target.mode);
+ load(item.target.index,true);
+});
+el("deviceQaCopy").addEventListener("click",async()=>{
+ const report=exportDeviceQA(deviceQa);
+ try{
+  if(!navigator.clipboard?.writeText)throw Error("Clipboard API unavailable");
+  await navigator.clipboard.writeText(report);
+  el("deviceQaExportText").hidden=true;
+  el("deviceQaMessage").textContent="Manual QA report copied. Share it only if you choose; results are not sent automatically.";
+ }catch{
+  const area=el("deviceQaExportText");area.value=report;area.hidden=false;area.focus();area.select();
+  el("deviceQaMessage").textContent="Clipboard unavailable. Select and copy the manual test report below.";
+ }
+});
+el("deviceQaClear").addEventListener("click",()=>{
+ if(!window.confirm("Reset only the manual device QA checklist on this browser? Game progress and playtest counts will remain untouched."))return;
+ deviceQa=blankDeviceQA();saveDeviceQA();renderDeviceQA();
+ el("deviceQaExportText").hidden=true;
+ el("deviceQaMessage").textContent="Manual device QA checklist reset; all nine results are Not tested. Game and playtest data are unchanged.";
+});
+renderDeviceQA();
 load(mode==="learn"?learnProgress.last:index);
 showMap();
 showModePanels();
