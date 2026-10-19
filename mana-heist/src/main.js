@@ -17,6 +17,7 @@ import {renderCardReferences,referenceFor} from "./card-references.js";
 import {installCardInspector} from "./card-inspector.js";
 import {installCardMagnifier} from "./card-magnifier.js";
 import {SAGE_LESSONS} from "./sage-lessons.js";
+import {BONUS_TRIALS,BONUS_TRIAL_STORAGE_KEY,normalizeBonusBests,betterBonusScore} from "./bonus-trials.js";
 import {LEARN_LEVELS} from "./expanded-learn.js";
 import {certifyCapstone} from "./capstone-certificates.js";
 import {certifyMastery} from "./mastery-certificates.js";
@@ -44,6 +45,9 @@ function readProgress(){
 const modeKey="dc-mana-heist-mode-v1",learnKey="dc-mana-heist-learn-v1";
 const revisedKey="dc-mana-heist-capstones-v1";
 const varietyKey="dc-mana-heist-variety-v1";
+let trialIndex=null,trialBests={};
+try{trialBests=normalizeBonusBests(JSON.parse(localStorage.getItem(BONUS_TRIAL_STORAGE_KEY)||"null"));}catch{}
+function persistBonusTrials(){try{localStorage.setItem(BONUS_TRIAL_STORAGE_KEY,JSON.stringify({v:1,bests:trialBests}));}catch{}}
 let varietyBests={};
 try{const d=JSON.parse(localStorage.getItem(varietyKey)||"null");if(d?.v===1&&d.bests)for(const l of LEVELS.filter(l=>l.revision===3)){const best=d.bests[l.id];if(validBest(best))varietyBests[l.id]={turn:best.turn,spentLife:best.spentLife,actions:Number.isInteger(best.actions)?best.actions:999};}}catch{}
 function persistVariety(){try{localStorage.setItem(varietyKey,JSON.stringify({v:1,bests:varietyBests}));}catch{}}
@@ -153,7 +157,7 @@ const proofCache=new Map();
 const sourceProofCache=new Map();
 function proofFor(id){
  if(proofCache.has(id))return proofCache.get(id);
- const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id);
+ const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id)||BONUS_TRIALS.find(v=>v.id===id);
  if(!puzzle)return null;
  const exact=puzzle.revision===3?certifyDiverse(puzzle):puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
  let proof=exact;
@@ -181,7 +185,7 @@ function renderLearn(){
  const desc=document.querySelector('[data-mode="learn"] .mode-description');
  if(desc)desc.textContent=LEARN_COUNT+" step-by-step exercises, from basic lands and rituals to opponent-dependent colors and damage tradeoffs.";
  const intro=document.querySelector("#learnPanel .learn-panel-head p:not(.overline)");
- if(intro)intro.textContent="Twenty-six skill-specific lessons. Follow the Sage's Notes beside the cauldron; this mode tracks learning without stars.";
+ if(intro)intro.textContent=LEARN_COUNT+" skill-specific lessons. Follow the Sage's Notes beside the cauldron. Practice lessons are unscored; optional bonus trials keep separate local medals.";
 
  el("learnCount").textContent=done.size+" / "+LEARN_COUNT+" COMPLETED";
  for(const group of LEARN_GROUPS){
@@ -201,6 +205,21 @@ function renderLearn(){
   }
   section.append(h,list);root.append(section);
  }
+ const trials=document.createElement("section");trials.className="learn-group bonus-trial-group";
+ const head=document.createElement("div");head.className="learn-group-header";
+ const title=document.createElement("h3");title.textContent="BONUS MANA TRIALS";
+ const caption=document.createElement("p");caption.textContent="Optional scored side-vaults · local medals only · no change to your 500 campaign scores.";
+ head.append(title,caption);const list=document.createElement("div");list.className="learn-exercises";
+ BONUS_TRIALS.forEach((trial,i)=>{
+  const record=trialBests[trial.id],button=document.createElement("button");button.type="button";
+  button.className="learn-exercise"+(record?" complete":"");button.dataset.trialIndex=String(i);
+  const number=document.createElement("span");number.className="learn-number";number.textContent="T"+(i+1);
+  const text=document.createElement("span");text.className="learn-exercise-copy";
+  const label=document.createElement("strong");label.textContent=trial.title;
+  const status=document.createElement("small");status.textContent=record?"★".repeat(record.stars)+" · BEST TURN "+record.turn:"SCORED SIDE VAULT";
+  text.append(label,status);button.append(number,text);list.append(button);
+ });
+ trials.append(head,list);root.append(trials);
 }
 function showModePanels(){
  const learn=mode==="learn",heist=mode==="heist";
@@ -227,6 +246,7 @@ function desc(action){
   const source=getCard(level,action.id);
   const paid=action.spend.map(id=>state.manaUnits.find(x=>x.id===id)?.color).filter(Boolean);
   return (paid.length?"Spend "+paid.join(" + ")+" · ":"")+source.name+" → "+action.output.join(" + ")+
+    (source.v2==="talisman"&&action.mode!=="talisman-C"?" · 1 damage to you":"")+
     (source.v2==="ziggurat"?" · creature spells only":"")+
     (source.v2==="treasure"||source.v2==="petal"?" · sacrifice":"");
  }
@@ -301,7 +321,13 @@ function perform(action){
  const pendingId=incoming[0]?.id??null;
  if(completed(level,state)){
   magnifier.hide();
-  if(mode==="learn"){
+  if(trialIndex!==null){
+   const proof=proofs.get(level.id),record={turn:state.turn,spentLife:state.spentLife,actions:state.actions,
+    stars:medal(level,state,proof)};
+   if(betterBonusScore(record,trialBests[level.id]))trialBests[level.id]=record;
+   persistBonusTrials();
+   message("Bonus vault opened! Local medal saved independently from your campaign.");
+  }else if(mode==="learn"){
    if(!learnProgress.completed.includes(index))learnProgress.completed.push(index);
    learnProgress.completed.sort((a,b)=>a-b);learnProgress.last=index;persistLearn();
    message("Practice complete! Select the next exercise or return to Learn Mana.");
@@ -471,10 +497,10 @@ function teachingCue(){
  return state.turn<level.turnLimit?"End turn: lands untap and floating mana disappears.":"Final turn. Undo or restart for another solution.";
 }
 function render(pendingId=null){
- const isWin=completed(level,state),proof=mode==="learn"?{turn:level.turnLimit,spentLife:0}:proofs.get(level.id),stage=level.stages[state.stage];
- el("stageLabel").textContent=mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
- el("returnMap").textContent=mode==="learn"?"← LESSONS":"← MAP";
- el("toggleGuide").textContent=mode==="learn"?"✧ LESSON NOTES":"ⓘ GUIDE";
+ const isWin=completed(level,state),proof=mode==="learn"&&trialIndex===null?{turn:level.turnLimit,spentLife:0}:proofs.get(level.id),stage=level.stages[state.stage];
+ el("stageLabel").textContent=trialIndex!==null?"BONUS TRIAL "+(trialIndex+1)+" / "+BONUS_TRIALS.length:mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
+ el("returnMap").textContent=mode==="learn"?(trialIndex!==null?"← TRIALS":"← LESSONS"):"← MAP";
+ el("toggleGuide").textContent=mode==="learn"&&trialIndex===null?"✧ LESSON NOTES":"ⓘ GUIDE";
  el("chapterName").textContent=level.chapter;
  el("difficulty").textContent=["INITIATE","ROOKIE","TACTICIAN","EXPERT","MASTERMIND"][level.rank-1];
  const ritesInGraveyard=state.graveyard.filter(id=>getCard(level,id)?.name==="Rite of Flame").length;
@@ -522,7 +548,11 @@ function render(pendingId=null){
  endButton.setAttribute("aria-label",finalTurn?"Final turn. No further turns allowed. Tap for Undo or Restart advice.":"End turn and untap lands");
  el("winPanel").hidden=!isWin;
  if(isWin){
-  if(mode==="learn"){
+  if(trialIndex!==null){
+   const best=trialBests[level.id],stars=medal(level,state,proof);
+   el("winTitle").textContent="★".repeat(stars)+" BONUS VAULT OPEN";
+   el("winCopy").textContent="Local trial result: turn "+state.turn+", "+state.spentLife+" life spent, "+state.actions+" moves. Best medal: "+(best?.stars||stars)+" star(s). Not part of your 500 campaign rankings.";
+  }else if(mode==="learn"){
    el("winTitle").textContent="✧ LESSON COMPLETE";
    el("winCopy").textContent=SAGE_LESSONS[index]?.why||"Practice complete. Your new mana skill is ready for the next lesson.";
   }else{
@@ -532,9 +562,9 @@ function render(pendingId=null){
   }
  }
  el("skip").textContent="← MAP";
- el("winNext").textContent=mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
- returnFromResult.hidden=!isWin;returnFromResult.textContent=mode==="learn"?"← LESSONS":"← VAULT MAP";
- sage.render({mode,index,level,state,finished:isWin});
+ el("winNext").textContent=trialIndex!==null?"BACK TO BONUS TRIALS →":mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
+ returnFromResult.hidden=!isWin;returnFromResult.textContent=trialIndex!==null?"← BONUS TRIALS":mode==="learn"?"← LESSONS":"← VAULT MAP";
+ sage.render({mode:trialIndex!==null?"bonus":mode,index,level,state,finished:isWin});
  if(mode==="heist")renderOverworld({world,bests:displayBests(),index,proofs,medal});
  choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap battlefield lands for mana; tap a hand card to play it or cast a ritual.",[]);
  selectedMessage="";
@@ -552,6 +582,7 @@ function showMap(){
  el("actionBox").hidden=true;
  cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();
  el("gameScreen").hidden=true;el("campaignScreen").hidden=false;
+ trialIndex=null;
  showModePanels();
  el("campaignScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
@@ -573,15 +604,15 @@ function load(i,enter=false){
  landDrag?.cancel();
  if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(mode==="learn"&&!isLearnLevel(i)))return false;
  index=i;world=chapterIndex(index);
- level=mode==="learn"?LEARN_LEVELS[index]:LEVELS[index];state=initial(level);history=[];selectedMessage="";
+ level=trialIndex!==null?BONUS_TRIALS[trialIndex]:mode==="learn"?LEARN_LEVELS[index]:LEVELS[index];state=initial(level);history=[];selectedMessage="";
  startStagePrintings(level);
  el("battlefield").replaceChildren();el("hand").replaceChildren();
  manaOrbs=reconstruct(state.pool);cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();
- if(mode==="learn"){learnProgress.last=index;persistLearn();}
+ if(mode==="learn"&&trialIndex===null){learnProgress.last=index;persistLearn();}
  else {progress.index=index;persist();}
  render();
  if(!el("gameNotes").hidden)renderCardReferences(el("cardGallery"),level);
- message((mode==="learn"?"Learn Mana "+(index+1):"Stage "+stageCode(index))+" · "+teachingCue());
+ message((trialIndex!==null?"Bonus Trial "+(trialIndex+1):mode==="learn"?"Learn Mana "+(index+1):"Stage "+stageCode(index))+" · "+teachingCue());
  if(enter)showGame();
  return true;
 }
@@ -610,8 +641,10 @@ el("worldPips").addEventListener("click",e=>{
 el("campaignScreen").addEventListener("click",e=>{
  const pick=e.target.closest(".mode-option[data-mode]");
  if(pick){selectMode(pick.dataset.mode);return;}
+ const bonus=e.target.closest("[data-trial-index]");
+ if(bonus&&mode==="learn"){const n=Number(bonus.dataset.trialIndex);if(Number.isInteger(n)&&n>=0&&n<BONUS_TRIALS.length){trialIndex=n;load(26+n,true);}return;}
  const exercise=e.target.closest("[data-learn-level]");
- if(exercise&&mode==="learn")load(Number(exercise.dataset.learnLevel),true);
+ if(exercise&&mode==="learn"){trialIndex=null;load(Number(exercise.dataset.learnLevel),true);}
 });
 el("campaignScreen").addEventListener("click",e=>{
  const button=e.target.closest("[data-jump-galaxy]");
@@ -693,6 +726,7 @@ window.addEventListener("resize",()=>{if(document.body.classList.contains("in-he
 el("reset").addEventListener("click",()=>{sage.onRestart(level);load(index);});
 el("skip").addEventListener("click",showMap);
 el("winNext").addEventListener("click",()=>{
+ if(trialIndex!==null){showMap();return;}
  if(mode==="learn"){const next=nextLearnIndex(index);if(next!==null)load(next,true);else showMap();return;}
  if(index+1<LEVELS.length)load(index+1,true);else showMap();
 });
