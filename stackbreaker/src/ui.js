@@ -12,7 +12,21 @@ import {COSMETIC_TYPES,COSMETIC_META,cosmeticChoices,emptyCosmeticEquip,readCosm
 const extraStages=generateStages([...coreScenarios,...campaignExpansion]);
 const scenarios=[...coreScenarios,...campaignExpansion,...extraStages].map((scenario,i)=>commanderScenario(scenario,i));
 const chapters=makeWorlds();
-const dailyRoute=new URLSearchParams(window.location.search).get('daily')==='1';
+const routeParams=new URLSearchParams(window.location.search);
+const dailyRoute=routeParams.get('daily')==='1';
+const siteRanked=dailyRoute&&routeParams.get('siteRanked')==='1'&&window.parent!==window;
+let rankedBusy=false;
+const siteParentOrigin=()=>{
+ try{
+  const parent=new URL(document.referrer).origin;
+  if(parent==='https://deep-cuts-edh.pages.dev'||/^https:\/\/[a-z0-9-]+\.deep-cuts-edh\.pages\.dev$/.test(parent))return parent;
+ }catch{}
+ return null;
+};
+const sendSite=message=>{
+ const origin=siteParentOrigin();
+ if(siteRanked&&origin)window.parent.postMessage(message,origin);
+};
 const dailyDate=dailyUtcDate();
 const dailyBound=dailyRoute?bindDailyScenario(dailyEntryForDate(dailyDate),scenarios):null;
 const dailyIndex=dailyBound?scenarios.findIndex(s=>s.id===dailyBound.puzzleId):-1;
@@ -22,7 +36,7 @@ let localCosmetics=readCosmeticEquip(localStorage,masteryLedger);
 let masteryRun=emptyMasteryRun();
 let masteryTransitionHistory=[];
 const isDaily=()=>dailyRoute&&dailyIndex>=0;
-const dailyReady=()=>isDaily()&&!dailyExpired&&dailyUtcDate()===dailyDate&&['practice','scored'].includes(dailySession)&&game?.status==='playing';
+const dailyReady=()=>isDaily()&&!dailyExpired&&!rankedBusy&&dailyUtcDate()===dailyDate&&['practice','scored'].includes(dailySession)&&game?.status==='playing';
 const scoredDaily=()=>isDaily()&&dailySession==='scored';
 
 const $=id=>document.getElementById(id);
@@ -217,7 +231,7 @@ function renderPlayPrompt(){
    node.classList.toggle('targetable',p.phase==='target'&&p.targets.includes(id));
  });
 }
-function submitCast(id,target,spend){try{pushState(activate(game,id,target,spend));notify('Spell or ability placed on the stack.');}catch(error){pendingPlay=null;render();notify(error.message);}}
+function submitCast(id,target,spend){try{pushState(activate(game,id,target,spend),{type:'cast',actionId:id,targetId:target,genericSpend:spend});notify(siteRanked&&scoredDaily()?'Verifying the cast with Deep Cuts EDH…':'Spell or ability placed on the stack.');}catch(error){pendingPlay=null;render();notify(error.message);}}
 function chooseTarget(target){if(!pendingPlay||pendingPlay.phase!=='target'||!pendingPlay.targets.includes(target))return;
  pendingPlay.target=target;const p=pendingPlay;
  if(p.payments.length>1){p.phase='payment';renderPlayPrompt();return;}
@@ -231,7 +245,7 @@ function beginPlay(id,dropTarget=null,requireDirectTarget=false,dropZone=null){
  const action=game.hand.find(a=>a.id===id&&!a.sourceId&&!game.used.includes(a.id));if(!action){notify('That card is unavailable.');return;}
  if(LANDS[action.card]){
   if(dropZone&&dropZone!=='fieldDrop'){notify('A land can only be played onto the battlefield, not onto the stack.');return;}
-  try{pushState(playLand(game,id));notify('Land played without using the stack.');}
+  try{pushState(playLand(game,id),{type:'play-land',handId:id});notify('Land played without using the stack.');}
   catch(error){notify(error.message);}
   return;
  }
@@ -421,7 +435,8 @@ function renderDailyStatus(){
  $('dailyDate').textContent=active?'Challenge '+dailyDate+' UTC · '+dailyBound.difficulty:
   dailyExpired?'This UTC day has ended. Reload for the next challenge.':
   'No dated puzzle is published for this UTC date. A new manifest is needed.';
- $('dailyStart').disabled=!active;$('dailyPractice').disabled=!active;
+ $('dailyStart').disabled=siteRanked||!active;$('dailyPractice').disabled=!active;
+ if(siteRanked){$('dailyStart').hidden=true;$('dailyCopy').hidden=true;}
  $('dailyStart').textContent=dailyRecord?dailyRecord.status==='playing'?'RESUME LOCAL SCORED ATTEMPT':'VIEW RECORDED ATTEMPT':'START LOCAL SCORED ATTEMPT';
  $('scenarioSelect').closest('.mission-picker')?.classList.toggle('daily-picker-locked',true);
  const summary=dailySession==='scored'&&dailyRecord?
@@ -446,6 +461,7 @@ function startDailyPractice(){
  notify('Unlimited local practice. Does not earn a verified daily score.');
 }
 function startDailyScored(){
+ if(siteRanked){notify('Use the website verified-attempt control. A local result cannot grant ranked credit.');return;}
  if(!dailyBound||dailyExpired)return;
  if(dailyRecord){
   dailySession='scored';spellVfx.cancel();clearDragFeedback();closeWorldMap(false);
@@ -483,8 +499,16 @@ $('handPrev').addEventListener('click',()=>scrollHand(-1));
 $('handNext').addEventListener('click',()=>scrollHand(1));
 $('hand').addEventListener('scroll',refreshHandArrows,{passive:true});
 function notify(message){$('live').textContent=message;}
-function pushState(s){
+function pushState(s,instruction=null){
  if(dailyRoute&&!dailyReady())return;
+ if(siteRanked&&scoredDaily()){
+  if(!instruction||rankedBusy)return;
+  rankedBusy=true;
+  sendSite({type:'dc-sb-ranked-move',move:instruction,puzzleId:dailyBound?.puzzleId,
+   day:dailyDate});
+  notify('Verifying this move against the authoritative website game…');
+  return;
+ }
  spellVfx.cancel();clearDragFeedback();
  if(scoredDaily()){
   dailyRecord=dailyAcceptedTransition(dailyRecord,game,s);
@@ -517,7 +541,7 @@ function applyLand(id){
   const point=rect?{x:rect.left+rect.width/2,y:rect.top+rect.height/2}:null;
   const after=tapLand(before,id);
   const actuallyTapped=!!land&&!land.tapped&&after.lands.find(l=>l.id===id)?.tapped;
-  pushState(after);
+  pushState(after,{type:'tap',landId:id});
   if(actuallyTapped&&point){
    try{
     spellVfx.play({card:land.card,fxType:'tap',verifiedTap:true,cosmeticTheme:effectiveCosmeticEquip(localCosmetics,masteryLedger).vfx,colors:[LANDS[land.card]?.mana||'C'],
@@ -538,7 +562,7 @@ function applyPass(){
    event=describeSpellResolution(before,after);
    anchors=event?captureSpellAnchors(document,event):null;
   }catch(_vfxError){event=null;anchors=null;}
-  pushState(after);
+  pushState(after,{type:'pass'});
   if(event){
    notify(describeSpellVfxForA11y(event));
    try{spellVfx.play(decoratedSpellEvent(event),anchors)}catch(_vfxError){}
@@ -700,7 +724,7 @@ document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INP
 let lastLevel=0;try{lastLevel=Number(localStorage.getItem('dc-stackbreaker-last-level')||'0')||0;}catch{}
 if(dailyRoute){
  if(dailyBound){
-  dailyRecord=readLocalDaily(localStorage,dailyBound);
+  dailyRecord=siteRanked?null:readLocalDaily(localStorage,dailyBound);
   changeCase(dailyIndex,true);
  }else changeCase(0,true);
  $('dailyBanner').hidden=false;
@@ -712,3 +736,29 @@ if(dailyRoute){
  renderDailyStatus();
 }else changeCase(lastLevel);
 fetchScryfallCatalog();
+if(siteRanked){
+ window.addEventListener('message',event=>{
+  if(event.source!==window.parent||event.origin!==siteParentOrigin())return;
+  const data=event.data;
+  if(!data||typeof data!=='object')return;
+  if(data.type==='dc-sb-ranked-state'){
+   if(!dailyBound||data.puzzleId!==dailyBound.puzzleId||data.day!==dailyDate
+    ||data.state?.id!==dailyBound.puzzleId||!['started','won','lost'].includes(data.status)
+    ||!Number.isInteger(data.moves)||data.moves<0||data.moves>140)return;
+   rankedBusy=false;
+   dailySession='scored';
+   dailyRecord={status:data.status==='started'?'playing':data.status,
+    acceptedActionCount:data.moves,localUnverified:false};
+   spellVfx.cancel();clearDragFeedback();
+   game=structuredClone(data.state);
+   pendingPlay=null;armedCard=null;history=[];hint=false;
+   render();
+   notify(data.status==='started'?'Verified attempt resumed · all moves replayed by website server.':
+    'Website server confirmed outcome: '+data.status.toUpperCase());
+  }else if(data.type==='dc-sb-ranked-error'){
+   rankedBusy=false;
+   notify('Server rejected or could not verify action. Refresh to recover your official attempt.');
+  }
+ });
+ sendSite({type:'dc-sb-ranked-ready',day:dailyDate,puzzleId:dailyBound?.puzzleId||null});
+}
