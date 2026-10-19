@@ -788,3 +788,29 @@ main{max-width:1640px}
 @media(prefers-reduced-motion:reduce){
  .sb-fx-scene,.sb-fx-scene *{display:none!important;animation:none!important;transition:none!important}
 }
+
+
+/* Five-color particle grammar; each mana color has a recognizable silhouette. */
+.sb-fx-scene[data-fx-color="W"] .sb-fx-particle{
+ border-radius:1px;rotate:45deg;
+ box-shadow:0 0 4px #ffe2a7,0 0 9px #fff2c2;
+}
+.sb-fx-scene[data-fx-color="U"] .sb-fx-particle{
+ width:7px;height:7px;border-radius:50%;
+ background:radial-gradient(circle at 30% 35%,#effaff,#65b8f0 58%,transparent 70%);
+ box-shadow:0 0 10px #81ccfc;animation-timing-function:cubic-bezier(.14,.2,.35,1);
+}
+.sb-fx-scene[data-fx-color="B"] .sb-fx-particle{
+ clip-path:polygon(40% 0,67% 20%,100% 45%,63% 60%,70% 100%,22% 75%,0 34%);
+ background:#bd9fcd;box-shadow:none;
+}
+.sb-fx-scene[data-fx-color="R"] .sb-fx-particle{
+ clip-path:polygon(45% 0,67% 34%,100% 50%,59% 62%,40% 100%,25% 65%,0 44%);
+ background:linear-gradient(140deg,#ffdb77,#fa4e18);
+ box-shadow:0 0 9px #fd5927;
+}
+.sb-fx-scene[data-fx-color="G"] .sb-fx-particle{
+ width:5px;height:9px;border-radius:100% 0 100% 0;
+ rotate:27deg;background:linear-gradient(135deg,#e3ffa4,#4cc76a);
+ box-shadow:0 0 7px #8bdf83;
+}
