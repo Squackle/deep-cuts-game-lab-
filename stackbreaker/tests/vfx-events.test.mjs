@@ -108,7 +108,7 @@ test('CSS and standalone bundler reference Step 1 VFX without changing save IDs'
  const ui=load('src/ui.js'),build=load('build.py'),css=load('observatory.css'),built=load('index.html');
  assert.match(ui,/describeSpellResolution\(before,after\)/);
  assert.match(ui,/captureSpellAnchors\(document,event\)/);
- assert.match(ui,/spellVfx\.play\(event,anchors\)/);
+ assert.match(ui,/spellVfx\.play\(decoratedSpellEvent\(event\),anchors\)/);
  assert.match(build,/'src\/vfx-events\.js'/);
  assert.match(css,/\.sb-vfx-layer/);
  assert.match(css,/prefers-reduced-motion/);
