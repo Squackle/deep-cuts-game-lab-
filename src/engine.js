@@ -284,7 +284,8 @@ export function step(run){
  if(run.growthDebt>0)run.growthDebt--;else run.body.pop();
  decay(run);ageHatchlingWards(run);run.moves++;run.runTicks++;
  if(t.eating){
-  run.brood++;reward(run,{energy:1,score:100,growth:1,type:"orb",at:t.next});
+  const completesBoard=run.mode==="classic"&&isPerfectClear(run);
+  run.brood++;reward(run,{energy:1,score:100,growth:1,type:"orb",at:t.next,terminal:completesBoard});
   run.orbIn=orbInterval(run);
  }
  // Entering a web costs two seconds of movement, not two seconds of combat.
