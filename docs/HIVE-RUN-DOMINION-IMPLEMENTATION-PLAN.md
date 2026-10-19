@@ -21,7 +21,7 @@ Acceptance specification:
 
 **Status:** owner decision locked; balance code already implemented/tested in Game Lab. No new Task 1 implementation needed unless tests expose a defect.
 
-## Task 2 — Implement TWO legitimate final victory endings — 2A BUILT IN GAME LAB; 2B PENDING
+## Task 2 — Implement TWO legitimate final victory endings — 2A + 2B BUILT IN GAME LAB; OWNER VISUAL ACCEPTANCE PENDING
 
 ### 2A. Engine event contract, separate from UI — LAB IMPLEMENTED (hive-1.5.4)
 
@@ -39,7 +39,13 @@ Acceptance specification:
 
 **Acceptance tests:** earn a genuine Brood Trail full clear in a small deterministic simulation; hit 6,000 steps without triggering that celebration; capture actual Broodmother phase three through the real engine; award boss points once; do not continue; lose normally; Lair practice remains unranked; replay identical inputs yields identical final type, score and tick count. Tests should make the terminal condition feasible quickly without requiring a real 30-minute playthrough.
 
-### 2B. Finale presentation (after engine proof)
+### 2B. Finale presentation — GAME LAB IMPLEMENTED (presentation only, hive-1.5.4 unchanged)
+
+**Delivered 2026-10-19:** real earned Hunt wins now trigger an independent full-screen 1200x675/576x1024 pixel-art Sliver village finale from game-owned `src/victory-art.js`, **not a Director Mode import**. True Brood Trail perfect clears trigger an original layered, animated WUBRG spiral-swarm pixel-canvas finale with its own title. Both include final score/captures or orbs/evolutions, play again, return to arcade and replay-celebration buttons; one-shot original chiptune fanfares play only when music is enabled, the Web Audio context is already unlocked and the page is visible. Mobile portrait artwork/controls respect safe area; reduced-motion mode freezes animation; death, 6000-step boundary and Lair practice do not trigger cinematic victories.
+
+**Still requires owner acceptance:** actual artwork framing on PC/mobile (including the gold-framed controls below the Hunt's embedded victory text), generated pixel composition of the Brood Trail finale, music/mute behavior on devices, keyboard/touch buttons and game-only mode. This is **not** public production approval.
+
+### 2B. Original acceptance specification
 
 - **Brood Trail:** **HIVE COMPLETE!** An animated, original pixel-art swarm filling the burrow, celebratory particles and music sting, real score/milestone recap, play again. No outside-village attack scene needed for this mode.
 - **Predator Hunt:** **THE HIVE REIGNS — YOU WIN**. Show the approved scythe-armed giant Sliver, smaller Slivers and soldiers confronting the swarm outside the village, with original, high-quality pixel artwork and a readable, tactfully framed button tray below the win copy. Desktop fills the available screen intentionally; mobile has its own portrait composition with safe-area buttons. Maintain accurate pixelated typography and avoid doubling text already baked into art. Use a **production-reviewed original art asset in normal game assets**, not any `director/**` import or game-cheat logic.
