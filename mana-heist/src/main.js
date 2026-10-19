@@ -321,7 +321,13 @@ function perform(action){
  const pendingId=incoming[0]?.id??null;
  if(completed(level,state)){
   magnifier.hide();
-  if(mode==="learn"){
+  if(trialIndex!==null){
+   const proof=proofs.get(level.id),record={turn:state.turn,spentLife:state.spentLife,actions:state.actions,
+    stars:medal(level,state,proof)};
+   if(betterBonusScore(record,trialBests[level.id]))trialBests[level.id]=record;
+   persistBonusTrials();
+   message("Bonus vault opened! Local medal saved independently from your campaign.");
+  }else if(mode==="learn"){
    if(!learnProgress.completed.includes(index))learnProgress.completed.push(index);
    learnProgress.completed.sort((a,b)=>a-b);learnProgress.last=index;persistLearn();
    message("Practice complete! Select the next exercise or return to Learn Mana.");
@@ -491,10 +497,10 @@ function teachingCue(){
  return state.turn<level.turnLimit?"End turn: lands untap and floating mana disappears.":"Final turn. Undo or restart for another solution.";
 }
 function render(pendingId=null){
- const isWin=completed(level,state),proof=mode==="learn"?{turn:level.turnLimit,spentLife:0}:proofs.get(level.id),stage=level.stages[state.stage];
- el("stageLabel").textContent=mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
- el("returnMap").textContent=mode==="learn"?"← LESSONS":"← MAP";
- el("toggleGuide").textContent=mode==="learn"?"✧ LESSON NOTES":"ⓘ GUIDE";
+ const isWin=completed(level,state),proof=mode==="learn"&&trialIndex===null?{turn:level.turnLimit,spentLife:0}:proofs.get(level.id),stage=level.stages[state.stage];
+ el("stageLabel").textContent=trialIndex!==null?"BONUS TRIAL "+(trialIndex+1)+" / "+BONUS_TRIALS.length:mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
+ el("returnMap").textContent=mode==="learn"?(trialIndex!==null?"← TRIALS":"← LESSONS"):"← MAP";
+ el("toggleGuide").textContent=mode==="learn"&&trialIndex===null?"✧ LESSON NOTES":"ⓘ GUIDE";
  el("chapterName").textContent=level.chapter;
  el("difficulty").textContent=["INITIATE","ROOKIE","TACTICIAN","EXPERT","MASTERMIND"][level.rank-1];
  const ritesInGraveyard=state.graveyard.filter(id=>getCard(level,id)?.name==="Rite of Flame").length;
@@ -542,7 +548,11 @@ function render(pendingId=null){
  endButton.setAttribute("aria-label",finalTurn?"Final turn. No further turns allowed. Tap for Undo or Restart advice.":"End turn and untap lands");
  el("winPanel").hidden=!isWin;
  if(isWin){
-  if(mode==="learn"){
+  if(trialIndex!==null){
+   const best=trialBests[level.id],stars=medal(level,state,proof);
+   el("winTitle").textContent="★".repeat(stars)+" BONUS VAULT OPEN";
+   el("winCopy").textContent="Local trial result: turn "+state.turn+", "+state.spentLife+" life spent, "+state.actions+" moves. Best medal: "+(best?.stars||stars)+" star(s). Not part of your 500 campaign rankings.";
+  }else if(mode==="learn"){
    el("winTitle").textContent="✧ LESSON COMPLETE";
    el("winCopy").textContent=SAGE_LESSONS[index]?.why||"Practice complete. Your new mana skill is ready for the next lesson.";
   }else{
@@ -552,9 +562,9 @@ function render(pendingId=null){
   }
  }
  el("skip").textContent="← MAP";
- el("winNext").textContent=mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
- returnFromResult.hidden=!isWin;returnFromResult.textContent=mode==="learn"?"← LESSONS":"← VAULT MAP";
- sage.render({mode,index,level,state,finished:isWin});
+ el("winNext").textContent=trialIndex!==null?"BACK TO BONUS TRIALS →":mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
+ returnFromResult.hidden=!isWin;returnFromResult.textContent=trialIndex!==null?"← BONUS TRIALS":mode==="learn"?"← LESSONS":"← VAULT MAP";
+ sage.render({mode:trialIndex!==null?"bonus":mode,index,level,state,finished:isWin});
  if(mode==="heist")renderOverworld({world,bests:displayBests(),index,proofs,medal});
  choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap battlefield lands for mana; tap a hand card to play it or cast a ritual.",[]);
  selectedMessage="";
@@ -572,6 +582,7 @@ function showMap(){
  el("actionBox").hidden=true;
  cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();
  el("gameScreen").hidden=true;el("campaignScreen").hidden=false;
+ trialIndex=null;
  showModePanels();
  el("campaignScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
