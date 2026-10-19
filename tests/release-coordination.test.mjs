@@ -52,11 +52,11 @@ test("Stackbreaker and Mana Heist source stays exclusive to matching agent branc
 test("Protected release coordination fails closed when unified game tests fail",()=>{
  const catalog=readFileSync(new URL("../.github/workflows/lab-catalog.yml",import.meta.url),"utf8");
  const coordination=readFileSync(new URL("../.github/workflows/release-coordination.yml",import.meta.url),"utf8");
- assert.match(catalog,/^  workflow_call:\\s*$/m);
- assert.match(coordination,/^  game-lab-suite:\\s*$/m);
- assert.match(coordination,/uses: \\.\\/\\.github\\/workflows\\/lab-catalog\\.yml/);
- assert.match(coordination,/needs: game-lab-suite/);
- assert.match(coordination,/if: \\$\\{\\{ always\\(\\) \\$\\}/);
- assert.match(coordination,/SUITE_RESULT: \\$\\{\\{ needs\\.game-lab-suite\\.result \\$\\}/);
- assert.match(coordination,/run: test "\\$SUITE_RESULT" = "success"/);
+ assert.ok(catalog.includes("  workflow_call:"),"Unified suite must be reusable");
+ assert.ok(coordination.includes("  game-lab-suite:"),"Suite prerequisite job must exist");
+ assert.ok(coordination.includes("uses: ./.github/workflows/lab-catalog.yml"),"Use actual unified suite");
+ assert.ok(coordination.includes("needs: game-lab-suite"),"Required job must wait on suite");
+ assert.ok(coordination.includes("if: ${{ always() }}"),"Required job must not skip when suite fails");
+ assert.ok(coordination.includes("SUITE_RESULT: ${{ needs.game-lab-suite.result }}"),"Propagate suite result");
+ assert.ok(coordination.includes('run: test "$SUITE_RESULT" = "success"'),"Fail required job unless suite passes");
 });
