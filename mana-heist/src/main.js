@@ -19,6 +19,7 @@ import {installCardMagnifier} from "./card-magnifier.js";
 import {SAGE_LESSONS} from "./sage-lessons.js";
 import {BONUS_TRIALS,BONUS_TRIAL_STORAGE_KEY,normalizeBonusBests,betterBonusScore} from "./bonus-trials.js";
 import {PLAYTEST_KEY,PLAYTEST_OPT_KEY,blankPlaytest,normalizePlaytest,beginPlaytest,countPlaytestEvent,finishPlaytest,ratePlaytest,exportPlaytest} from "./playtest-metrics.js";
+import {DEVICE_QA_KEY,DEVICE_QA_CHECKS,DEVICE_QA_STATUSES,blankDeviceQA,normalizeDeviceQA,setDeviceContext,setDeviceQAResult,summarizeDeviceQA,exportDeviceQA} from "./device-qa.js";
 import {LEARN_LEVELS} from "./expanded-learn.js";
 import {certifyCapstone} from "./capstone-certificates.js";
 import {certifyMastery} from "./mastery-certificates.js";
@@ -95,7 +96,36 @@ function closePlaytest(status){
  if(status==="win"){pendingRatingKey=attempt.key;playtestRatingDone=false;}
 }
 
-let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null,selectedHandId=null;
+let deviceQa=blankDeviceQA();
+try{deviceQa=normalizeDeviceQA(JSON.parse(localStorage.getItem(DEVICE_QA_KEY)||"null"));}catch{}
+function saveDeviceQA(){try{localStorage.setItem(DEVICE_QA_KEY,JSON.stringify(deviceQa));}catch{}}
+function updateDeviceQAStatus(){
+ const s=summarizeDeviceQA(deviceQa);
+ el("deviceQaStatus").textContent=s.reviewed+" / "+s.total+" checked · "+s.pass+" passed · "+s.issue+" needs fixing · "+s.untested+" not tested. Manual self-report only.";
+}
+function renderDeviceQA(){
+ const root=el("deviceQaChecks");
+ root.replaceChildren();
+ for(const [field,id] of [["device","deviceQaDevice"],["browser","deviceQaBrowser"],["orientation","deviceQaOrientation"]])el(id).value=deviceQa[field];
+ const statuses=[["untested","Not tested"],["pass","Pass"],["issue","Needs fixing"],["not-applicable","Not applicable"]];
+ for(const item of DEVICE_QA_CHECKS){
+  const card=document.createElement("section");card.className="device-qa-case";
+  const title=document.createElement("h3");title.textContent=item.title;
+  const details=document.createElement("p");details.textContent=item.steps;
+  const controls=document.createElement("div");controls.className="device-qa-case-controls";
+  const label=document.createElement("label");label.textContent="Your test result";
+  const select=document.createElement("select");select.dataset.qaCase=item.id;
+  select.setAttribute("aria-label",item.title+" — your device test result");
+  for(const [value,name] of statuses){const opt=document.createElement("option");opt.value=value;opt.textContent=name;select.append(opt);}
+  select.value=deviceQa.checks[item.id];label.append(select);
+  const launch=document.createElement("button");launch.type="button";launch.dataset.qaLaunch=item.id;
+  launch.textContent="OPEN TEST STAGE →";
+  launch.setAttribute("aria-label","Open test stage for "+item.title);
+  controls.append(label,launch);card.append(title,details,controls);root.append(card);
+ }
+ updateDeviceQAStatus();
+}
+let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null;
 let autoCastEnabled=false;
 try{autoCastEnabled=localStorage.getItem("dc-mana-heist-auto-cast")==="yes";}catch{}
 el("autoCastToggle").checked=autoCastEnabled;
@@ -846,6 +876,47 @@ el("winNext").addEventListener("click",()=>{
  if(mode==="learn"){const next=nextLearnIndex(index);if(next!==null)load(next,true);else showMap();return;}
  if(index+1<LEVELS.length)load(index+1,true);else showMap();
 });
+// All checklist outcomes come from explicit tester actions. Opening a
+// suggested stage never automatically changes its QA result or player medals.
+for(const [field,id] of [["device","deviceQaDevice"],["browser","deviceQaBrowser"],["orientation","deviceQaOrientation"]]){
+ el(id).addEventListener("change",e=>{
+  deviceQa=setDeviceContext(deviceQa,field,e.target.value);saveDeviceQA();updateDeviceQAStatus();
+ });
+}
+el("deviceQaChecks").addEventListener("change",e=>{
+ const selector=e.target.closest("select[data-qa-case]");
+ if(!selector)return;
+ deviceQa=setDeviceQAResult(deviceQa,selector.dataset.qaCase,selector.value);
+ saveDeviceQA();updateDeviceQAStatus();
+});
+el("deviceQaChecks").addEventListener("click",e=>{
+ const button=e.target.closest("button[data-qa-launch]");
+ if(!button)return;
+ const item=DEVICE_QA_CHECKS.find(c=>c.id===button.dataset.qaLaunch);
+ if(!item?.target)return;
+ trialIndex=null;
+ selectMode(item.target.mode);
+ load(item.target.index,true);
+});
+el("deviceQaCopy").addEventListener("click",async()=>{
+ const report=exportDeviceQA(deviceQa);
+ try{
+  if(!navigator.clipboard?.writeText)throw Error("Clipboard API unavailable");
+  await navigator.clipboard.writeText(report);
+  el("deviceQaExportText").hidden=true;
+  el("deviceQaMessage").textContent="Manual QA report copied. Share it only if you choose; results are not sent automatically.";
+ }catch{
+  const area=el("deviceQaExportText");area.value=report;area.hidden=false;area.focus();area.select();
+  el("deviceQaMessage").textContent="Clipboard unavailable. Select and copy the manual test report below.";
+ }
+});
+el("deviceQaClear").addEventListener("click",()=>{
+ if(!window.confirm("Reset only the manual device QA checklist on this browser? Game progress and playtest counts will remain untouched."))return;
+ deviceQa=blankDeviceQA();saveDeviceQA();renderDeviceQA();
+ el("deviceQaExportText").hidden=true;
+ el("deviceQaMessage").textContent="Manual device QA checklist reset; all nine results are Not tested. Game and playtest data are unchanged.";
+});
+renderDeviceQA();
 load(mode==="learn"?learnProgress.last:index);
 showMap();
 showModePanels();

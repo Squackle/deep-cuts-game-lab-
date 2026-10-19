@@ -44,6 +44,22 @@
     <textarea id="playtestExportText" aria-label="Local playtest report for manual copying" readonly hidden rows="6"></textarea>
    </div>
   </details>
+  <details class="device-qa" id="deviceQaPanel">
+   <summary>◈ GUIDED DEVICE CHECK · MANUAL TESTING</summary>
+   <div class="device-qa-body">
+    <p>Use a real phone, tablet or keyboard to check the controls below. Choose the device type yourself, open each sample stage, then record Pass, Needs fixing, Not applicable or Not tested. All results start <strong>Not tested</strong>. This is a manual self-report, not an automated hardware test.</p>
+    <div class="device-qa-environment">
+     <label>Device type <select id="deviceQaDevice"><option value="unspecified">Choose device</option><option value="phone">Phone</option><option value="tablet">Tablet</option><option value="desktop">Desktop / laptop</option></select></label>
+     <label>Browser <select id="deviceQaBrowser"><option value="unspecified">Choose browser</option><option value="safari">Safari</option><option value="chrome">Chrome</option><option value="firefox">Firefox</option><option value="edge">Edge</option><option value="other">Other</option></select></label>
+     <label>Orientation <select id="deviceQaOrientation"><option value="unspecified">Choose orientation</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label>
+    </div>
+    <p id="deviceQaStatus" role="status" aria-live="polite">0 / 9 checked · no device test results recorded.</p>
+    <div id="deviceQaChecks" class="device-qa-cases" aria-label="Manual gameplay device test checklist"></div>
+    <div class="local-playtest-actions"><button id="deviceQaCopy" type="button">COPY MANUAL QA REPORT</button><button id="deviceQaClear" type="button">RESET QA CHECKLIST</button></div>
+    <p id="deviceQaMessage" role="status" aria-live="polite">No report is sent automatically. You decide whether to share a copy.</p>
+    <textarea id="deviceQaExportText" aria-label="Manual device QA report for copying" rows="7" readonly hidden></textarea>
+   </div>
+  </details>
  </section>
  <div id="gameScreen" hidden>
   <div class="game-titlebar"><button type="button" id="returnMap">← MAP</button><span id="stageLabel" class="stage-label">STAGE 1:1</span><button type="button" class="info-link" id="toggleGuide" aria-controls="gameNotes" aria-expanded="false">ⓘ GUIDE</button></div>

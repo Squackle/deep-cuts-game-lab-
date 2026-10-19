@@ -45,3 +45,33 @@
  }
  body.in-heist #heist #actionBox .choice-button{min-height:44px!important}
 }
+
+/* Optional human-only device QA. Off the tabletop, so all gameplay actions
+   retain their existing touch handling and accessible control order. */
+.device-qa{margin:16px 0 24px;border:1px solid #ad9e7866;background:#142624;border-radius:12px;color:#f3e9d5;overflow:hidden}
+.device-qa>summary{cursor:pointer;padding:16px 18px;font-weight:800;font-size:.83rem;letter-spacing:.05em;color:#e2c18b;line-height:1.4}
+.device-qa-body{padding:0 18px 19px}
+.device-qa-body>p{font-size:.82rem;color:#c1cfca;line-height:1.55}
+.device-qa-environment{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.device-qa-environment label{display:grid;gap:6px;font-weight:750;font-size:.76rem;color:#e2d2ad}
+.device-qa-environment select,.device-qa-case select{min-height:46px;max-width:100%;padding:8px 10px;border:1px solid #bfa878;background:#213a37;color:#f8f0e1;border-radius:8px;font:inherit;cursor:pointer}
+.device-qa-cases{display:grid;gap:9px;margin:15px 0}
+.device-qa-case{padding:14px;border:1px solid #78988b66;background:#1d3330;border-radius:10px;min-width:0}
+.device-qa-case h3{font:600 1rem/1.35 Georgia,serif;color:#f0d3a1;margin:0 0 6px}
+.device-qa-case p{font-size:.79rem;line-height:1.5;color:#c1cfca;margin:0 0 12px}
+.device-qa-case-controls{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.device-qa-case-controls label{font-weight:750;font-size:.76rem;display:grid;gap:5px;min-width:150px;flex:1}
+.device-qa-case-controls button{border:1px solid #bea979;background:#29493f;color:#f6dea8;min-height:46px;padding:9px 12px;border-radius:8px;font-weight:800;font-size:.76rem}
+.device-qa-body .local-playtest-actions button{min-height:46px}
+.device-qa #deviceQaExportText{display:block;width:100%;min-height:120px;resize:vertical;padding:10px;font:12px/1.4 monospace;color:#eff2e7;background:#0b1b1a;border:1px solid #bea979;border-radius:8px}
+.device-qa #deviceQaExportText[hidden]{display:none}
+.device-qa>summary:focus-visible,.device-qa button:focus-visible,.device-qa select:focus-visible{outline:3px solid #f5dc9b;outline-offset:3px}
+@media(max-width:650px){
+ .device-qa>summary{padding:14px;font-size:.76rem}
+ .device-qa-body{padding:0 12px 15px}
+ .device-qa-environment{grid-template-columns:1fr}
+ .device-qa-case{padding:12px}
+ .device-qa-case-controls{display:grid;grid-template-columns:1fr;gap:10px}
+ .device-qa-case-controls label{min-width:0}
+ .device-qa-case-controls button{min-height:48px}
+}
