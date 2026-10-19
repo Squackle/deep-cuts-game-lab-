@@ -62,6 +62,7 @@
   </details>
  </section>
  <div id="gameScreen" hidden>
+  <p id="cardKeyboardHelp" class="card-keyboard-instructions">Keyboard: Tab to a card. Left and right arrows or up and down arrows move between cards in its rack; Home and End jump to the first and last card. Enter or Space selects or uses a card, I opens its card reference, and Escape cancels open choices.</p>
   <div class="game-titlebar"><button type="button" id="returnMap">← MAP</button><span id="stageLabel" class="stage-label">STAGE 1:1</span><button type="button" class="info-link" id="toggleGuide" aria-controls="gameNotes" aria-expanded="false">ⓘ GUIDE</button></div>
  <div class="play-grid" id="heist">
   <div class="play-column">
@@ -98,12 +99,12 @@
    <div class="controlbar"><button type="button" id="endTurn" class="primary">END TURN <span>↗</span></button><button id="undo" type="button">↶ UNDO</button><button id="reset" type="button">⟲ RESTART</button><button id="skip" type="button">← MAP</button></div>
    <section class="table-card" aria-labelledby="battleTitle">
     <div class="section-label"><div><p class="overline">THE BATTLEFIELD</p><h2 id="battleTitle">Battlefield <small>Tap a source to choose a mana ability</small></h2></div><span id="battleCount" class="count">0 SOURCES</span></div>
-    <div id="battlefield" class="land-grid" tabindex="0" role="group" aria-label="Battlefield drop zone: drag lands here from your hand"></div>
+    <div id="battlefield" class="land-grid" tabindex="0" role="group" aria-describedby="cardKeyboardHelp" aria-label="Battlefield drop zone: drag lands here from your hand"></div>
    </section>
    <section class="table-card hand-card" aria-labelledby="handTitle">
     <div class="section-label"><div><p class="overline">YOUR HAND</p><h2 id="handTitle">Your hand <small>Pick a land or drag it upward</small></h2></div><span class="count">1 LAND / TURN</span></div>
     <p class="hand-guide" id="handGuide">Select a land, then play it onto the battlefield.</p>
-    <div id="hand" class="land-grid" aria-label="Curved hand: select a land or drag it onto the battlefield"></div>
+    <div id="hand" class="land-grid" role="group" aria-describedby="cardKeyboardHelp" aria-label="Curved hand: select a land or drag it onto the battlefield"></div>
     <div class="hand-actions"><button type="button" id="playSelectedLand" disabled>PLAY SELECTED LAND ↑</button><button type="button" id="inspectSelected" disabled>VIEW CARD ⓘ</button></div>
     <div id="libraryPanel" class="library-panel" hidden></div>
    </section>
@@ -120,7 +121,7 @@
   <div class="notes-heading"><p class="overline">BELOW THE TABLE</p><h2 id="notesTitle">The case file</h2><button type="button" id="returnFromGuide" aria-label="Close guide and return to Mana Heist game">↑ BACK TO GAME</button></div>
   <p class="muted" id="briefing"></p>
   <p id="wardDescription" class="muted">The current ward requires the mana shown in its cost.</p>
-  <div class="notes-grid"><div><h3>How it works</h3><p class="muted">Play lands from your hand onto the battlefield by dragging or selecting them. Tap a land or mana artifact to use its available mana ability. Some sources produce several mana at once; others require spending mana, paying life, or sacrificing themselves first. Restricted mana can only pay for permitted spells. Mana enters the cauldron as separate colors, even when the liquid blends visually. Cast Spell spends legal mana; optional auto-cast handles a valid payment for you. The current campaign uses a simplified turn structure: floating mana clears when you end your turn, while actual Magic clears it at the end of every step and phase. Undo or restart any vault.</p></div>
+  <div class="notes-grid"><div><h3>How it works</h3><p class="muted">Play lands from your hand onto the battlefield by dragging or selecting them. Tap a land or mana artifact to use its available mana ability. Some sources produce several mana at once; others require spending mana, paying life, or sacrificing themselves first. Restricted mana can only pay for permitted spells. Mana enters the cauldron as separate colors, even when the liquid blends visually. Cast Spell spends legal mana; optional auto-cast handles a valid payment for you. The current campaign uses a simplified turn structure: floating mana clears when you end your turn, while actual Magic clears it at the end of every step and phase. Undo or restart any vault. Keyboard: Tab to a card; use Left/Right or Up/Down arrows to move between cards in the same rack, Home/End for the first/last card, Enter or Space to use it, I to inspect it, and Escape to dismiss choices.</p></div>
   <div><h3>Three-star route</h3><p class="muted">The solver scores the fewest turns and least life lost, not the number of taps. In this simplified puzzle, mana empties at the end of your turn (in real Magic it empties at the end of each step or phase). Numerals are generic costs payable with any mana; a diamond requires true colorless mana. Future chapters unlock sequentially.</p></div></div>
   <section id="realCardReference" aria-labelledby="cardReferenceHeading"><div class="notes-heading"><div><p class="overline">OFFICIAL CARDS · LEARNING REFERENCES</p><h2 id="cardReferenceHeading">Real Magic mana cards</h2></div><a href="https://scryfall.com/" target="_blank" rel="noopener noreferrer">VIEW SCRYFALL ↗</a></div>
   <p class="muted small">Genuine Magic land and mana-artifact cards appear in the puzzle and here as larger study references. Supported activated mana abilities now include multi-output sources, paid filters, and spend restrictions. Mana Heist still simulates a simplified turn structure rather than a complete Magic game.</p>
