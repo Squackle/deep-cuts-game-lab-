@@ -7,6 +7,8 @@ export const ADVANCED_CARDS = Object.freeze({
   'Redirect': {type:'Instant', cost:{U:2}, effect:'retarget', modes:null, targets:['spell']},
   'Lightning Bolt': {type:'Instant', cost:{R:1}, effect:'bolt', modes:null, targets:['any']},
   'Arc Trail': {type:'Sorcery', cost:{generic:1,R:1}, effect:'arcTrail', modes:null, targets:['any','anotherAny']},
+  'Counterspell': {type:'Instant', cost:{U:2}, effect:'counter', modes:null, targets:['spell']},
+  'Grizzly Bears': {type:'Creature', cost:{generic:1,G:1}, effect:'creature', modes:null, targets:[]},
   'Abrade': {type:'Instant', cost:{generic:1,R:1}, effect:'abrade', modes:{
     creature:{targets:['creature']}, artifact:{targets:['artifact']}
   }}
@@ -31,7 +33,7 @@ function targetLegal(s,item,id,type) {
     if(type==='spell')return true; // A spell copy is still a spell on the stack.
     return ['Instant','Sorcery'].includes(ADVANCED_CARDS[ref.cardId]?.type);
   }
-  if(type==='any'&&who(id))return true;
+  if((type==='any'||type==='anotherAny')&&who(id))return true;
   const p=s.permanents.find(x=>x.id===id&&x.zone==='battlefield');
   if(!p)return false;
   if((type==='creature'||type==='anotherAny'||type==='any')&&p.type!=='creature')return false;
@@ -153,18 +155,28 @@ function effectResolve(s,item) {
   const specs=targetRules(item);
   const valid=t.map((id,i)=>targetLegal(s,item,id,specs[i]));
   // 608.2b: a spell whose every target became illegal does not resolve.
-  if(t.length&&valid.every(x=>!x)){addEvent(s,'spell.fizzled',item.id);s.log.push(`${item.cardId}: all targets became illegal.`);return;}
+  if(t.length&&valid.every(x=>!x)){addEvent(s,'spell.fizzled',item.id);s.log.push(`${item.cardId}: all targets became illegal.`);return false;}
   if(card.effect==='bolt'&&valid[0])applyDamage(s,t[0],3,item.id);
   if(card.effect==='arcTrail') {
     if(valid[0])applyDamage(s,t[0],2,item.id);
     if(valid[1])applyDamage(s,t[1],1,item.id);
   }
+  if(card.effect==='counter'&&valid[0]) {
+    const ix=s.stack.findIndex(x=>x.id===t[0]);
+    if(ix>=0){const [target]=s.stack.splice(ix,1);addEvent(s,'spell.countered',target.id,{by:item.id,wasCopy:target.kind==='copy'});}
+  }
+  if(card.effect==='creature') {
+    s.permanents.push({id:'permanent-'+item.id,type:'creature',cardId:item.cardId,controller:item.controller,zone:'battlefield',toughness:2,damage:0});
+  }
   if(card.effect==='abrade'&&valid[0]) {
     if(item.chosenModes[0]==='creature')applyDamage(s,t[0],3,item.id);
     else{const p=s.permanents.find(x=>x.id===t[0]);if(p?.zone==='battlefield'){p.zone='graveyard';addEvent(s,'artifact.destroyed',p.id);}}
   }
+  return true;
 }
-export function resolveAdvanced(s0,{newTargets=null}={}) {
+export function resolveAdvanced(s0,options={}) {
+  assert(options&&typeof options==='object'&&Object.keys(options).every(x=>x==='newTargets'),'Unsupported resolution choice');
+  const newTargets=options.newTargets??null;
   assert(s0.status==='playing'&&s0.stack.length>0,'Nothing to resolve');
   assert(s0.step<80,'Action budget reached');
   const top=s0.stack.at(-1),effect=ADVANCED_CARDS[top.cardId].effect;
@@ -178,7 +190,6 @@ export function resolveAdvanced(s0,{newTargets=null}={}) {
     assert(false,'No legal spell to retarget');
   }
   const s=copy(s0),item=s.stack.pop();s.step++;
-  addEvent(s,'spell.resolved',item.id,{isCast:item.isCast});
   if(effect==='copy'||effect==='retarget') {
     const target=s.stack.find(x=>x.id===item.targets[0]);
     if(target) {
@@ -196,7 +207,9 @@ export function resolveAdvanced(s0,{newTargets=null}={}) {
         s.log.push(`Redirect resolves. ${target.cardId} retains its original mode.`);
       }
     }else{s.log.push(`${item.cardId} has no legal stack target on resolution.`);}
-  }else effectResolve(s,item);
+    if(target)addEvent(s,'spell.resolved',item.id,{isCast:item.isCast});
+    else addEvent(s,'spell.fizzled',item.id);
+  }else if(effectResolve(s,item))addEvent(s,'spell.resolved',item.id,{isCast:item.isCast});
   closeIfFinished(s);
   s.history.push({action:'resolve',newTargets:newTargets==null?null:copy(newTargets)});
   return s;
