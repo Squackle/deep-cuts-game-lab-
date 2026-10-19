@@ -73,7 +73,7 @@ test('source and target rectangles captured prior to DOM replacement',()=>{
  const spell={sourceStackId:'counter-a',targetId:'bolt-a',targetKind:'stack'};
  assert.deepEqual(captureSpellAnchors(root,spell),{
   source:{x:250,y:55,width:100,height:50},
-  target:{x:145,y:58,width:90,height:36}
+  target:{x:145,y:58,width:90,height:36},field:null,affected:[]
  });
  const player={sourceStackId:'bolt-a',targetId:'player',targetKind:'life'};
  assert.deepEqual(captureSpellAnchors(root,player).target,{x:30,y:230,width:60,height:60});

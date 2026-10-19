@@ -165,7 +165,7 @@ test('reduced motion skips dust VFX and all new actions still cancel the cue',()
 test('standalone generated Classic build and labeled preview include dust and fizzle without rules changes',()=>{
  const build=read('build.py'),ui=read('src/ui.js'),css=read('observatory.css');
  const html=read('index.html'),preview=read('vfx-lab/index.html'),script=read('vfx-lab/preview.js');
- assert.match(build,/'src\/dust-vfx\.js','src\/vfx-events\.js'/);
+ assert.match(build,/'src\/dust-vfx\.js','src\/resolution-fx\.js','src\/vfx-events\.js'/);
  assert.match(ui,/captureSpellAnchors\(document,event\)/);
  assert.match(css,/@keyframes sb-dust-counter-card/);
  assert.match(css,/@keyframes sb-dust-fizzle-card/);

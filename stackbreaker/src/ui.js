@@ -314,7 +314,25 @@ $('handNext').addEventListener('click',()=>scrollHand(1));
 $('hand').addEventListener('scroll',refreshHandArrows,{passive:true});
 function notify(message){$('live').textContent=message;}
 function pushState(s){spellVfx.cancel();clearDragFeedback();history.push(structuredClone(game));game=s;pendingPlay=null;armedCard=null;render()}
-function applyLand(id){try{pushState(tapLand(game,id));}catch(e){notify(e.message)}}
+function applyLand(id){
+ try{
+  const before=game;
+  const land=before.lands.find(l=>l.id===id);
+  const node=[...document.querySelectorAll('[data-land]')].find(el=>el.dataset.land===id);
+  const rect=node?.getBoundingClientRect();
+  const point=rect?{x:rect.left+rect.width/2,y:rect.top+rect.height/2}:null;
+  const after=tapLand(before,id);
+  const actuallyTapped=!!land&&!land.tapped&&after.lands.find(l=>l.id===id)?.tapped;
+  pushState(after);
+  if(actuallyTapped&&point){
+   try{
+    spellVfx.play({card:land.card,fxType:'tap',verifiedTap:true,colors:[LANDS[land.card]?.mana||'C'],
+     sourceStackId:id,outcome:'resolved'},
+     {source:point,target:point});
+   }catch(_vfxError){}
+  }
+ }catch(e){notify(e.message)}
+}
 function applyPass(){
  pendingPlay=null;
  try{

@@ -124,7 +124,7 @@ test('Pyroblast remains a VFX-only fixture; no new game rules or stage data',()=
 });
 test('source and bundle include new fireball effects and accessibility guards',()=>{
  const build=read('build.py'),css=read('observatory.css'),html=read('index.html');
- assert.match(build,/'src\/pyroblast-vfx\.js','src\/dust-vfx\.js','src\/vfx-events\.js'/);
+ assert.match(build,/'src\/pyroblast-vfx\.js','src\/dust-vfx\.js','src\/resolution-fx\.js','src\/vfx-events\.js'/);
  assert.ok(css.includes('sb-vfx-fire-trail'));
  assert.ok(css.includes('sb-fire-counterburst'));
  assert.ok(css.includes('sb-fire-destroyburst'));
