@@ -298,12 +298,20 @@ function desc(action){
  }
  return "End this turn";
 }
+let choiceReturnFocus=null;
 function choices(title,help,moves){
+ const wasVisible=!el("actionBox").hidden;
+ if(moves.length&&!wasVisible)choiceReturnFocus=document.activeElement;
  choiceActions=moves;
  el("actionBox").hidden=moves.length===0;
  el("actionTitle").textContent=title;
  el("choices").innerHTML='<p class="muted small">'+help+'</p>'+moves.map((action,i)=>'<button class="choice-button" type="button" data-choice="'+i+'">'+desc(action)+'</button>').join("");
  if(!moves.length)el("choices").innerHTML='<p class="muted">'+help+'</p>';
+ if(moves.length&&!wasVisible)el("dismissChoices").focus({preventScroll:true});
+ if(!moves.length&&wasVisible){
+  const previous=choiceReturnFocus;choiceReturnFocus=null;
+  if(previous?.isConnected&&document.body.classList.contains("in-heist"))previous.focus({preventScroll:true});
+ }
 }
 function message(text,error=false){
  const item=el("feedback");
@@ -314,6 +322,7 @@ function message(text,error=false){
  }
 }
 function rejectCast(){
+ notePlaytest("failedCast");
  const stage=level.stages[state.stage];
  if(stage&&state.manaUnits?.some(u=>u.restriction)&&!actions(level,state).some(a=>a.type==="cast")){
   const matching=COLORS.every(c=>(state.pool[c]||0)>=(stage.cost[c]||0));
@@ -332,6 +341,7 @@ function perform(action){
  cancelAuto();
  if(action.type!=="tap"){viewEpoch++;pendingFlights.clear();cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();}
  history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type});
+ notePlaytest("action");
  state=out.state;
  manaOrbs=(action.type==="ritual"||action.type==="activate"||action.type==="tap"&&(getCard(level,action.id).kind==="bounce"||state.highTide))?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
  if(!consistent(state.pool,manaOrbs))manaOrbs=reconstruct(state.pool);
@@ -358,6 +368,7 @@ function perform(action){
  for(const orb of incoming)pendingFlights.add(orb.id);
  const pendingId=incoming[0]?.id??null;
  if(completed(level,state)){
+  closePlaytest("win");
   magnifier.hide();
   if(trialIndex!==null){
    const proof=proofs.get(level.id),record={turn:state.turn,spentLife:state.spentLife,actions:state.actions,
@@ -599,6 +610,7 @@ function render(pendingId=null){
  endButton.title=finalTurn?"No more turns. Tap for advice on this puzzle.":"End turn and untap your lands";
  endButton.setAttribute("aria-label",finalTurn?"Final turn. No further turns allowed. Tap for Undo or Restart advice.":"End turn and untap lands");
  el("winPanel").hidden=!isWin;
+ difficultyReview.hidden=!(isWin&&playtestEnabled&&pendingRatingKey&&!playtestRatingDone);
  if(isWin){
   if(trialIndex!==null){
    const best=trialBests[level.id],stars=medal(level,state,proof);
@@ -622,6 +634,7 @@ function render(pendingId=null){
  selectedMessage="";
 }
 function showMap(){
+ closePlaytest("exit");pendingRatingKey=null;
  sage.hide();fluid.pause();fluid.clear();currentFluidStage="";
  magnifier.hide();
  invalidateStagePrintings();
@@ -639,6 +652,7 @@ function showMap(){
  el("campaignScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
 function showGame(){
+ startPlaytest();
  fluid.resume();
  document.body.classList.add("in-heist");
  document.body.classList.toggle("is-training",mode==="learn");
@@ -648,6 +662,7 @@ function showGame(){
  el("gameScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
 function load(i,enter=false){
+ closePlaytest("exit");pendingRatingKey=null;playtestRatingDone=false;
  fluid.clear();currentFluidStage="";
  magnifier.hide();
  cancelAuto();viewEpoch++;pendingFlights.clear();
@@ -765,6 +780,7 @@ el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choic
 el("endTurn").addEventListener("click",()=>{const a=actions(level,state).find(a=>a.type==="end");if(a)perform(a);else message(finalTurnMessage(level,state),true);});
 el("undo").addEventListener("click",()=>{
  if(!history.length)return;
+ notePlaytest("undo");
  cancelAuto();viewEpoch++;pendingFlights.clear();
  let prev=history.pop();
  // An automatic cast is a consequence of the previous manual move.
@@ -775,7 +791,7 @@ el("undo").addEventListener("click",()=>{
  message("Previous move undone, including any automatically cast wards.");
 });
 window.addEventListener("resize",()=>{if(document.body.classList.contains("in-heist"))syncLandRows();},{passive:true});
-el("reset").addEventListener("click",()=>{sage.onRestart(level);load(index);});
+el("reset").addEventListener("click",()=>{closePlaytest("restart");sage.onRestart(level);load(index);startPlaytest();});
 el("skip").addEventListener("click",showMap);
 el("winNext").addEventListener("click",()=>{
  if(trialIndex!==null){showMap();return;}
