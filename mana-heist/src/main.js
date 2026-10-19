@@ -130,6 +130,11 @@ function renderDeviceQA(){
  updateDeviceQAStatus();
 }
 let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null;
+let reducedFx=false;
+const reducedFxKey="dc-mana-heist-reduced-effects-v1";
+try{reducedFx=localStorage.getItem(reducedFxKey)==="yes";}catch{}
+el("reducedFxToggle").checked=reducedFx;
+document.body.classList.toggle("mana-reduced-effects",reducedFx);
 let autoCastEnabled=false;
 try{autoCastEnabled=localStorage.getItem("dc-mana-heist-auto-cast")==="yes";}catch{}
 el("autoCastToggle").checked=autoCastEnabled;
@@ -174,6 +179,13 @@ const fluid=installFluidWard({
  canvas:el("wardFluidCanvas"),target:el("wardTarget"),
  onInteract:()=>{if(autoCastEnabled&&autoTimer!==null)el("autoCastLabel").textContent="STIR THE WATER · AUTO-CAST WHEN IT SETTLES";}
 });
+fluid.setReduced(reducedFx);
+el("reducedFxToggle").addEventListener("change",e=>{
+ reducedFx=Boolean(e.target.checked);
+ document.body.classList.toggle("mana-reduced-effects",reducedFx);
+ try{localStorage.setItem(reducedFxKey,reducedFx?"yes":"no");}catch{}
+ fluid.setReduced(reducedFx);
+});
 el("wardTarget").dataset.preloadedMixes=String(PRELOADED_MIX_COUNT);
 let currentFluidStage="";
 function chargeWard({pendingId=null,animateId=null}={}){
@@ -184,7 +196,7 @@ function chargeWard({pendingId=null,animateId=null}={}){
   svg:el("wardManaRing"),count:el("wardChargeCount"),
   cost:level.stages[state.stage]?.cost||{},orbs:manaOrbs,
   pendingId,pendingIds:[...pendingFlights],animateId,open:completed(level,state),
-  fluid:fluid.available
+  fluid:fluid.available,reduced:reducedFx
  });
  fluid.sync(result.charged,{reset:isNewStage});
  return result;
@@ -407,7 +419,7 @@ function rejectCast(){
 
  if(!stage)return;
  const missing=missingMana(state.pool,stage.cost);
- flashWard({vault:el("heist").querySelector(".vault-card"),ward:el("lockGlyph"),costRow:el("wardCost"),button:null,pool:null,missing});
+ flashWard({vault:el("heist").querySelector(".vault-card"),ward:el("lockGlyph"),costRow:el("wardCost"),button:null,pool:null,missing,reduced:reducedFx});
  message(failureText(missing),true);
 }
 function perform(action){
@@ -496,7 +508,7 @@ function perform(action){
   const epoch=viewEpoch;
   incoming.forEach((orb,i)=>launchOrbitMana({
    color:produced[i],sourceRect,layer:el("manaTravelLayer"),index:i,
-   destination:el("wardTarget"),
+   destination:el("wardTarget"),reduced:reducedFx,
    onArrival:()=>{if(epoch!==viewEpoch)return;
     pendingFlights.delete(orb.id);
     chargeWard({animateId:orb.id});
