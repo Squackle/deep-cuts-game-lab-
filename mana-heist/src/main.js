@@ -18,6 +18,7 @@ import {installCardInspector} from "./card-inspector.js";
 import {installCardMagnifier} from "./card-magnifier.js";
 import {SAGE_LESSONS} from "./sage-lessons.js";
 import {BONUS_TRIALS,BONUS_TRIAL_STORAGE_KEY,normalizeBonusBests,betterBonusScore} from "./bonus-trials.js";
+import {PLAYTEST_KEY,PLAYTEST_OPT_KEY,blankPlaytest,normalizePlaytest,beginPlaytest,countPlaytestEvent,finishPlaytest,ratePlaytest,exportPlaytest} from "./playtest-metrics.js";
 import {LEARN_LEVELS} from "./expanded-learn.js";
 import {certifyCapstone} from "./capstone-certificates.js";
 import {certifyMastery} from "./mastery-certificates.js";
@@ -73,6 +74,27 @@ function readMode(){try{const m=localStorage.getItem(modeKey);return m==="learn"
 function readLearn(){try{return normalizedLearnProgress(JSON.parse(localStorage.getItem(learnKey)||"null"));}catch{return normalizedLearnProgress(null);}}
 let mode=readMode(),learnProgress=readLearn();
 let progress=readProgress(),index=progress.index,level=LEVELS[index],state=initial(level),history=[],choiceActions=[],selectedMessage="";
+let playtestEnabled=false,playtestData=blankPlaytest(),playtestAttempt=null,pendingRatingKey=null,playtestRatingDone=false;
+try{
+ playtestEnabled=localStorage.getItem(PLAYTEST_OPT_KEY)==="yes";
+ playtestData=normalizePlaytest(JSON.parse(localStorage.getItem(PLAYTEST_KEY)||"null"));
+}catch{}
+el("playtestOptIn").checked=playtestEnabled;
+function savePlaytest(){try{localStorage.setItem(PLAYTEST_KEY,JSON.stringify(playtestData));}catch{}}
+function startPlaytest(){
+ if(!playtestEnabled||playtestAttempt||completed(level,state))return;
+ playtestAttempt=beginPlaytest(level,performance.now());
+}
+function notePlaytest(event){if(playtestEnabled&&playtestAttempt)playtestAttempt=countPlaytestEvent(playtestAttempt,event);}
+function closePlaytest(status){
+ if(!playtestAttempt)return;
+ const attempt=playtestAttempt;playtestAttempt=null;
+ if(!playtestEnabled)return;
+ playtestData=finishPlaytest(playtestData,attempt,status,performance.now());
+ savePlaytest();
+ if(status==="win"){pendingRatingKey=attempt.key;playtestRatingDone=false;}
+}
+
 let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null,selectedHandId=null;
 let autoCastEnabled=false;
 try{autoCastEnabled=localStorage.getItem("dc-mana-heist-auto-cast")==="yes";}catch{}
@@ -149,6 +171,15 @@ el("winPanel").append(returnFromResult);
 const manaContext=document.createElement("span");manaContext.id="manaContext";manaContext.className="mana-scenario-context";
 el("difficulty").after(manaContext);
 returnFromResult.addEventListener("click",()=>showMap());
+const difficultyReview=document.createElement("div");difficultyReview.id="playtestRating";difficultyReview.className="playtest-rating";difficultyReview.hidden=true;
+const ratingLabel=document.createElement("span");ratingLabel.textContent="Optional playtest feedback: how hard did this vault feel? 1 = easy · 5 = very hard";
+difficultyReview.append(ratingLabel);
+for(let i=1;i<=5;i++){
+ const button=document.createElement("button");button.type="button";button.dataset.playtestRating=String(i);
+ button.textContent=String(i);button.setAttribute("aria-label","Rate difficulty "+i+" of 5");
+ difficultyReview.append(button);
+}
+el("winPanel").append(difficultyReview);
 function inspectById(id){
  const record=lookup(level,id);
  if(!record)return false;
