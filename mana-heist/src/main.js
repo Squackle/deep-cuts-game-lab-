@@ -1,5 +1,5 @@
 import {LEVELS,CHAPTERS,GALAXIES,BASE_LEVELS} from "./levels.js";
-import {COLORS,CARDS,initial,actions,reduce,completed,getCard,lookup,medal} from "./engine.js";
+import {COLORS,CARDS,initial,actions,reduce,completed,getCard,lookup,medal,key} from "./engine.js";
 import {solve} from "./solver.js";
 import {chapterIndex,stageCode,normalizedBests,validBest} from "./campaign.js";
 import {LEARN_GROUPS,LEARN_COUNT,isLearnLevel,normalizedLearnProgress,nextLearnIndex} from "./learn-track.js";
