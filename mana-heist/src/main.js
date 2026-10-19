@@ -932,6 +932,73 @@ el("deviceQaClear").addEventListener("click",()=>{
  el("deviceQaExportText").hidden=true;
  el("deviceQaMessage").textContent="Manual device QA checklist reset; all nine results are Not tested. Game and playtest data are unchanged.";
 });
+// P12: Download/restore only the six existing guest progress namespaces.
+// Real tester QA, optional playtest metrics, consent, and mode settings NEVER
+// enter backups. Import merges better records rather than resetting progress.
+let pendingGuestBackup=null;
+const readGuestStorage=()=>readGuestSaves(key=>localStorage.getItem(key));
+function backupStatus(messageText,isError=false){
+ const node=el("guestBackupStatus");node.textContent=messageText;
+ node.classList.toggle("bad",isError);
+}
+el("guestBackupDownload").addEventListener("click",()=>{
+ try{
+  const json=createGuestBackup(readGuestStorage());
+  const blob=new Blob([json],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const anchor=document.createElement("a");
+  anchor.href=url;anchor.download="mana-heist-guest-backup-v1.json";
+  document.body.append(anchor);anchor.click();anchor.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  backupStatus("Backup file prepared. Keep your JSON copy somewhere safe; it contains your guest game results only.");
+ }catch{backupStatus("Could not prepare a backup. Check that browser storage is available.",true);}
+});
+el("guestBackupCopy").addEventListener("click",async()=>{
+ try{
+  const json=createGuestBackup(readGuestStorage());
+  if(!navigator.clipboard?.writeText)throw Error("Clipboard unavailable");
+  await navigator.clipboard.writeText(json);
+  el("guestBackupText").hidden=true;
+  backupStatus("Guest progress JSON copied. Paste and save it securely as a text or .json file.");
+ }catch{
+  try{
+   const node=el("guestBackupText");node.value=createGuestBackup(readGuestStorage());
+   node.hidden=false;node.focus();node.select();
+   backupStatus("Clipboard unavailable. Select and copy the backup text shown below.");
+  }catch{backupStatus("Could not read browser guest progress.",true);}
+ }
+});
+el("guestBackupFile").addEventListener("change",async()=>{
+ pendingGuestBackup=null;el("guestBackupImport").disabled=true;
+ const file=el("guestBackupFile").files?.[0];
+ if(!file){backupStatus("No backup selected.");return;}
+ if(file.size>MAX_BACKUP_BYTES){backupStatus("Backup exceeds the 256 KB safety limit.",true);return;}
+ try{
+  const text=await file.text();
+  const incoming=parseGuestBackup(text);
+  const plan=previewGuestRestore(readGuestStorage(),incoming);
+  pendingGuestBackup=incoming;
+  el("guestBackupImport").disabled=!plan.changed;
+  backupStatus(plan.changed?
+   "Ready to merge: "+plan.added+" new vault results, "+plan.improved+" better vault results, "+plan.addedLessons+" new completed lessons. Your existing better scores stay. Review before confirming.":
+   "Valid backup loaded, but it has no new or better progress to restore. No changes needed.");
+ }catch(error){
+  backupStatus("Import rejected: "+(error?.message||"unreadable backup"),true);
+ }
+});
+el("guestBackupImport").addEventListener("click",()=>{
+ if(!pendingGuestBackup)return;
+ try{
+  // Re-read current browser progress at the moment of confirmation so a
+  // previously opened import preview cannot overwrite more recent wins.
+  const plan=previewGuestRestore(readGuestStorage(),pendingGuestBackup);
+  if(!plan.changed){backupStatus("All progress in this backup is already present or superseded.");return;}
+  if(!window.confirm("Merge "+plan.added+" new vault results, "+plan.improved+" improved results and "+plan.addedLessons+" lesson completions into THIS browser? Existing better records remain. This cannot be undone automatically."))return;
+  applyGuestRestore(localStorage,plan);
+  backupStatus("Guest progress merged. Reloading Mana Heist to display all restored results.");
+  window.location.reload();
+ }catch(error){backupStatus("Restore was not completed: "+(error?.message||"browser storage unavailable"),true);}
+});
 renderDeviceQA();
 load(mode==="learn"?learnProgress.last:index);
 showMap();
