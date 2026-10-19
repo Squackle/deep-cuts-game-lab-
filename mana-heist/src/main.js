@@ -22,6 +22,7 @@ import {LEARN_LEVELS} from "./expanded-learn.js";
 import {certifyCapstone} from "./capstone-certificates.js";
 import {certifyMastery} from "./mastery-certificates.js";
 import {certifyDiverse} from "./mana-variety-certificates.js";
+import {diverseFor} from "./mana-variety-puzzles.js";
 import {certifyRemix,REMIX_KEY,REMIXED_IDS,validateRemixBests} from "./certified-remixes.js";
 import {evaluateVault} from "./difficulty-metrics.js";
 import {mountSage} from "./sage-ui.js";
@@ -179,6 +180,8 @@ function proofFor(id){
 const proofs={get:proofFor};
 const masteryRating=document.createElement("span");masteryRating.id="masteryRating";masteryRating.className="mastery-rating";masteryRating.title="C = structural complexity; D = estimated execution difficulty. Both 1–100, old Galaxy V finale benchmark = 50.";
 el("stageLabel").after(masteryRating);
+const historicalNote=document.createElement("p");historicalNote.className="muted small";historicalNote.setAttribute("aria-live","polite");el("briefing").after(historicalNote);
+const historicalMedals=new Map();
 const lockGlyphs=["✧","⌑","◈","✦","⬡","✶"];
 function persist(){try{localStorage.setItem(storageKey,JSON.stringify({v:2,index:progress.index,bests:progress.bests}));}catch{}}
 function persistLearn(){try{localStorage.setItem(learnKey,JSON.stringify({v:1,completed:learnProgress.completed,last:learnProgress.last}));}catch{}}
@@ -522,6 +525,15 @@ function render(pendingId=null){
  masteryRating.setAttribute("aria-label","Complexity "+rating.complexity+" of 100, estimated difficulty "+rating.difficulty+" of 100");
  el("vaultName").textContent=level.title;
  el("briefing").textContent=level.briefing;
+ const archived=level.revision===4?varietyBests[level.id]:null;
+ if(archived){
+  if(!historicalMedals.has(level.id)){
+   const original=diverseFor(index),oldProof=certifyDiverse(original);
+   historicalMedals.set(level.id,medal(original,{turn:archived.turn,spentLife:archived.spentLife,actions:archived.actions,stage:original.stages.length},oldProof));
+  }
+  historicalNote.textContent="PREVIOUS VERSION · "+"★".repeat(historicalMedals.get(level.id))+" · turn "+archived.turn+", "+archived.spentLife+" life spent · preserved in your archived results. This new board has separate medals.";
+  historicalNote.hidden=false;
+ }else{historicalNote.textContent="";historicalNote.hidden=true;}
  el("turnNumber").textContent=state.turn+" / "+level.turnLimit;
  el("lifeTotal").textContent=state.life;
  el("landDrop").textContent=state.played?"USED":"AVAILABLE";
