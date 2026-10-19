@@ -48,3 +48,57 @@ export const applicableEffects=s=>s.status==='playing'?s.effects.filter(e=>activ
  .map(e=>({id:e.id,card:e.card,kind:e.kind})):[];
 export const replacementChooser=s=>s.status==='playing'?controllerFor(s,s.pending.target):null;
 const event=(s,type,other={})=>s.events.push({type,step:s.step,ordinal:s.events.length,...other});
+
+function commitDamage(s){
+ const e=s.pending;
+ if(e.amount>0){
+  if(actors.includes(e.target)){s.life[e.target]-=e.amount;event(s,'damage.dealt',{target:e.target,amount:e.amount});}
+  else{
+   const creature=s.permanents.find(p=>p.id===e.target);
+   creature.damage=(creature.damage||0)+e.amount;
+   event(s,'damage.dealt',{target:e.target,amount:e.amount});
+   if(creature.damage>=creature.toughness){creature.zone='graveyard';event(s,'permanent.died',{id:creature.id});}
+  }
+ }else event(s,'damage.prevented-all',{target:e.target});
+ const objective=s.objective;
+ const alive=s.life.player>0;
+ const saved=objective.type==='survive'||s.permanents.some(p=>p.id===objective.target&&p.zone==='battlefield');
+ s.status=alive&&saved?'won':'lost';event(s,'window.closed',{status:s.status});
+}
+export function chooseReplacement(s0,{effectId,actor}={}){
+ insist(s0.status==='playing'&&s0.step<30,'Replacement window already ended');
+ const s=clone(s0);
+ const available=applicableEffects(s);
+ insist(actor===replacementChooser(s),'Only affected player or permanent controller chooses');
+ if(!available.length){
+  insist(effectId===null,'No replacements remain');
+  s.step++;commitDamage(s);
+ }else{
+  insist(available.some(e=>e.id===effectId),'Replacement is not applicable');
+  const e=s.effects.find(x=>x.id===effectId);
+  e.used=true;s.pending.applied.push(e.id);s.step++;
+  if(e.kind==='double'){
+   const before=s.pending.amount;s.pending.amount*=2;
+   event(s,'replacement.applied',{id:e.id,kind:'double',before,after:s.pending.amount});
+  }else if(e.kind==='prevent'){
+   const n=Math.min(e.remaining,s.pending.amount);
+   e.remaining-=n;s.pending.amount-=n;
+   event(s,'prevention.applied',{id:e.id,amount:n,remaining:e.remaining});
+  }else if(e.kind==='redirect'){
+   const before=s.pending.target;s.pending.target=e.to;
+   event(s,'replacement.applied',{id:e.id,kind:'redirect',before,after:e.to});
+  }
+  if(!applicableEffects(s).length)commitDamage(s);
+ }
+ s.history.push({action:'choose',actor,effectId});
+ return s;
+}
+export function replayReplacement(scene,actions){
+ insist(Array.isArray(actions)&&actions.length<=30,'Invalid replay length');
+ let state=createReplacementGame(scene);
+ for(const action of actions){
+  insist(action?.action==='choose','Invalid replay action');
+  state=chooseReplacement(state,action);
+ }
+ return state;
+}
