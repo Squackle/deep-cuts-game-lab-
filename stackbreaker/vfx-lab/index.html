@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101b1b">
-<title>Stackbreaker — Spell Effects Preview</title>
+<title>Stackbreaker — All Spell Resolution Effects</title>
 <link rel="stylesheet" href="../observatory.css">
 <style>
 :root{color-scheme:dark}
@@ -38,9 +38,9 @@ footer{padding:12px 0;font-size:.81rem;color:#afb5a8}
 <script type="module" src="./preview.js"></script>
 </head><body><main>
 <div class="top"><a href="../">← Stackbreaker Classic</a><span class="eyebrow">Deep Cuts Game Lab</span></div>
-<h1>Fireball &amp; Counterspell Effects</h1>
-<p>Explore Pyroblast's fireball, a successfully countered spell dissolving into dust, and a spell with no legal targets fizzling into ash.</p>
-<div class="notice"><strong>VISUAL PREVIEW ONLY.</strong> These are scripted spell effect fixtures, not new playable Pyroblast scenarios or changes to Magic rules.</div>
+<h1>Spell Resolution Effects</h1>
+<p>Try the full visual vocabulary: summoning, exile, bounce, lifegain, protection, destruction, board wipes, counters, tokens, and more. The five colors have their own magical glow.</p>
+<div class="notice"><strong>VISUAL PREVIEW ONLY.</strong> Effects reflect real Classic actions where the engine supports them. Other modes (such as tokens, scry, draw, spell copying and reanimation) are scripted visual demonstrations only. No new Magic rules have been added.</div>
 <div class="arena" aria-label="Pyroblast animation preview stage">
 <div class="card" id="origin"><b id="sourceName">Pyroblast</b><em>Red instant spell · resolving</em><span>R</span></div>
 <div class="card target" id="destination"><b id="targetName">Blue Spell</b><em id="targetInfo">Spell on the stack</em><span id="targetType">Instant</span></div>
@@ -52,7 +52,25 @@ footer{padding:12px 0;font-size:.81rem;color:#afb5a8}
 <button type="button" data-mode="miss" aria-pressed="false">Pyroblast: illegal target</button>
 <button type="button" data-mode="dust-counter" aria-pressed="false">Counterspell: dissolve spell</button>
 <button type="button" data-mode="dust-fizzle" aria-pressed="false">Illegal target: fizzle to ash</button>
+<button type="button" data-mode="heal" aria-pressed="false">Lifegain · W</button>
+<button type="button" data-mode="exile" aria-pressed="false">Exile portal · W</button>
+<button type="button" data-mode="summon" aria-pressed="false">Creature summon · G</button>
+<button type="button" data-mode="bounce" aria-pressed="false">Bounce to hand · U</button>
+<button type="button" data-mode="shield" aria-pressed="false">Protection shield · W</button>
+<button type="button" data-mode="destroy-fx" aria-pressed="false">Creature destruction · B</button>
+<button type="button" data-mode="wipe" aria-pressed="false">Board wipe · W</button>
+<button type="button" data-mode="damage-wave" aria-pressed="false">Damage shockwave · R</button>
+<button type="button" data-mode="buff" aria-pressed="false">Temporary +P/+T · G</button>
+<button type="button" data-mode="weaken" aria-pressed="false">Weaken · B</button>
+<button type="button" data-mode="counters" aria-pressed="false">Add +1/+1 counter · G</button>
+<button type="button" data-mode="draw" aria-pressed="false">Draw cards · U</button>
+<button type="button" data-mode="token" aria-pressed="false">Create tokens · G</button>
+<button type="button" data-mode="reanimate" aria-pressed="false">Reanimate · B</button>
+<button type="button" data-mode="tap" aria-pressed="false">Tap mana land · G</button>
+<button type="button" data-mode="untap" aria-pressed="false">Untap · W</button>
+<button type="button" data-mode="copy" aria-pressed="false">Copy spell · U</button>
+<button type="button" data-mode="scry" aria-pressed="false">Scry · U</button>
 </div>
 <p class="status" id="previewStatus" role="status" aria-live="polite">Choose a spell outcome to preview.</p>
-<footer>All animations are cosmetic. They do not cast cards, resolve spells, or change saved progress.</footer>
+<footer>All demonstrations are cosmetic and do not cast cards or change saved progress. Playable triggers only activate after genuine game events.</footer>
 </main></body></html>
