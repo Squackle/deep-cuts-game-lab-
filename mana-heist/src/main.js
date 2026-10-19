@@ -604,15 +604,15 @@ function load(i,enter=false){
  landDrag?.cancel();
  if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(mode==="learn"&&!isLearnLevel(i)))return false;
  index=i;world=chapterIndex(index);
- level=mode==="learn"?LEARN_LEVELS[index]:LEVELS[index];state=initial(level);history=[];selectedMessage="";
+ level=trialIndex!==null?BONUS_TRIALS[trialIndex]:mode==="learn"?LEARN_LEVELS[index]:LEVELS[index];state=initial(level);history=[];selectedMessage="";
  startStagePrintings(level);
  el("battlefield").replaceChildren();el("hand").replaceChildren();
  manaOrbs=reconstruct(state.pool);cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();
- if(mode==="learn"){learnProgress.last=index;persistLearn();}
+ if(mode==="learn"&&trialIndex===null){learnProgress.last=index;persistLearn();}
  else {progress.index=index;persist();}
  render();
  if(!el("gameNotes").hidden)renderCardReferences(el("cardGallery"),level);
- message((mode==="learn"?"Learn Mana "+(index+1):"Stage "+stageCode(index))+" · "+teachingCue());
+ message((trialIndex!==null?"Bonus Trial "+(trialIndex+1):mode==="learn"?"Learn Mana "+(index+1):"Stage "+stageCode(index))+" · "+teachingCue());
  if(enter)showGame();
  return true;
 }
@@ -641,8 +641,10 @@ el("worldPips").addEventListener("click",e=>{
 el("campaignScreen").addEventListener("click",e=>{
  const pick=e.target.closest(".mode-option[data-mode]");
  if(pick){selectMode(pick.dataset.mode);return;}
+ const bonus=e.target.closest("[data-trial-index]");
+ if(bonus&&mode==="learn"){const n=Number(bonus.dataset.trialIndex);if(Number.isInteger(n)&&n>=0&&n<BONUS_TRIALS.length){trialIndex=n;load(26+n,true);}return;}
  const exercise=e.target.closest("[data-learn-level]");
- if(exercise&&mode==="learn")load(Number(exercise.dataset.learnLevel),true);
+ if(exercise&&mode==="learn"){trialIndex=null;load(Number(exercise.dataset.learnLevel),true);}
 });
 el("campaignScreen").addEventListener("click",e=>{
  const button=e.target.closest("[data-jump-galaxy]");
@@ -724,6 +726,7 @@ window.addEventListener("resize",()=>{if(document.body.classList.contains("in-he
 el("reset").addEventListener("click",()=>{sage.onRestart(level);load(index);});
 el("skip").addEventListener("click",showMap);
 el("winNext").addEventListener("click",()=>{
+ if(trialIndex!==null){showMap();return;}
  if(mode==="learn"){const next=nextLearnIndex(index);if(next!==null)load(next,true);else showMap();return;}
  if(index+1<LEVELS.length)load(index+1,true);else showMap();
 });
