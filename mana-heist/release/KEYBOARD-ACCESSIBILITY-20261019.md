@@ -27,3 +27,7 @@ Only `mana-heist/**` is changed. No rules, player saves, game economy, card cont
 500 scored campaign stages, 28 practice lessons, two local scored bonus trials, current v4 and archived v3 medals and all browser-local keys are unchanged. Pure keyboard UI functions do not call the mana reducer or save layer. Revert the isolated PR to restore prior focus behavior; no save migration needed.
 
 P01 rights/brand review still BLOCKED. No promotion to Deep Cuts EDH public production website, which remains a separate authorization and workstream.
+
+## Human smoke-test script after this deploy
+
+From the campaign screen, expand **Guided Device Check**, open the **Keyboard and screen reader labels** case, and use a physical keyboard on the linked Fellwar lesson. Tab to Fellwar, arrow between cards, press Enter or Space to choose a source, Tab around the color-choice dialog, press Escape to cancel, press I to inspect a focused card, close the inspector and return to the map. Verify focus is now on an active visible lesson launcher rather than a hidden tabletop button. Repeat Galaxy X vault **451** with ten or more battlefield sources: arrows and End should bring the intended card into the swipeable rack without scrolling the whole page. **Do not mark any QA case Pass from this script alone; a human must actually perform and record the observation.**
