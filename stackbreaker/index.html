@@ -1226,10 +1226,74 @@ main{max-width:1640px}
 }
 @media(max-width:480px){.sb-fx-card-ghost{width:48px;height:70px;margin-left:-24px;margin-top:-35px}
  .sb-fx-card-glyph{font-size:7px}}
+
+
+/* Daily Stackbreaker — independent local preview, no campaign state writes. */
+.daily-banner[hidden],.daily-result[hidden]{display:none!important}
+.daily-banner{
+ max-width:1500px;margin:16px auto 20px;padding:clamp(16px,3vw,28px);
+ background:radial-gradient(ellipse at 90% 10%,#334f5988,transparent 65%),linear-gradient(150deg,#1d292c,#101a21);
+ border:1px solid #bfa06e91;border-radius:18px;box-shadow:0 9px 30px #0007;color:#efe2c5
+}
+.daily-heading{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.daily-kicker{font:700 .72rem/1.4 system-ui,sans-serif;letter-spacing:.18em;color:#dfbd7b}
+.daily-heading h1{font:700 clamp(1.65rem,4vw,3rem)/1.1 Georgia,serif;margin:.18em 0}
+.daily-heading p{margin:5px 0;color:#d4c9ae}
+.daily-countdown{display:flex;flex-direction:column;gap:5px;min-width:145px}
+.daily-countdown span{font:700 .7rem/1.3 system-ui,sans-serif;letter-spacing:.13em;color:#cec4b0}
+.daily-countdown b{font:700 clamp(1.5rem,3vw,2.35rem)/1.1 ui-monospace,monospace;font-variant-numeric:tabular-nums;color:#f3db9e}
+.daily-disclaimer{font-size:.88rem;line-height:1.5;color:#dfd1ae;margin:18px 0}
+.daily-disclaimer strong{color:#fff0b5}
+.daily-buttons{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.daily-buttons button,.daily-result button{
+ border:1px solid #b49767;border-radius:10px;padding:10px 14px;min-height:44px;
+ background:linear-gradient(#455e57,#243630);color:#fff3cb;font:700 .82rem/1.2 system-ui,sans-serif;
+ cursor:pointer
+}
+.daily-buttons button:hover:not(:disabled),.daily-result button:hover{background:#4c6f64}
+.daily-buttons button:disabled{cursor:not-allowed;opacity:.45}
+.daily-buttons button:focus-visible,.daily-result button:focus-visible,.daily-campaign:focus-visible{outline:3px solid #f9d28e;outline-offset:3px}
+.daily-campaign{color:#f6d9a3;text-decoration:underline;font-size:.85rem;margin-left:auto}
+#dailyStatus{color:#bde4d4;font-size:.88rem;margin:14px 0 3px;line-height:1.5}
+.daily-result{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px;border-top:1px solid #d5b67a54;padding-top:15px}
+.daily-result label{flex:0 0 100%;font-size:.78rem;color:#d5c5a7}
+.daily-result textarea{resize:vertical;min-height:84px;width:min(100%,500px);padding:10px;border-radius:9px;background:#0d1e22;color:#f4e6bd;border:1px solid #94b6ab;font:500 .85rem/1.45 ui-monospace,monospace}
+.daily-picker-locked{display:none!important}
+.daily-game .level-arrows,.daily-game #mapButton{display:none!important}
+@media(max-width:550px){
+ .daily-banner{margin:8px 6px 12px;padding:16px}
+ .daily-heading{align-items:flex-start}
+ .daily-countdown{width:100%;min-width:0}
+ .daily-buttons{flex-direction:column;align-items:stretch}
+ .daily-campaign{margin:5px 0}
+ .daily-result textarea{width:100%}
+}
+@media(prefers-reduced-motion:reduce){.daily-banner *{scroll-behavior:auto!important;transition:none!important}}
 </style></head>
 <body><a class="skip" href="#game">Skip to Stackbreaker game</a>
 <header class="mast"><a class="site-mark" href="/lab/" aria-label="Back to Game Test Lab home">◈ <b>DEEP CUTS</b> / GAME LAB</a><strong class="site-title">STACKBREAKER <small>1.5 · ARCANE OBSERVATORY</small></strong><a class="site-home" href="/lab/" aria-label="Back to Test Lab, choose another game">GAME LAB ↗</a></header>
-<main><section id="game" class="game-screen" aria-label="Playable Stackbreaker training game">
+<main>
+<section class="daily-banner" id="dailyBanner" aria-label="Daily Stackbreaker challenge" hidden>
+ <div class="daily-heading">
+  <div><span class="daily-kicker">✦ DAILY STACKBREAKER · LOCAL GAME LAB PREVIEW</span>
+   <h1>One stack. One day.</h1>
+   <p id="dailyDate">Loading UTC daily puzzle…</p>
+  </div>
+  <div class="daily-countdown"><span>NEW PUZZLE IN · UTC</span><b id="dailyCountdown" role="timer">--:--:--</b></div>
+ </div>
+ <p class="daily-disclaimer">Guest attempts and results are <strong>LOCAL / UNVERIFIED</strong>. This is not an authenticated score, account achievement, or competitive leaderboard.</p>
+ <div class="daily-buttons"><button id="dailyStart" type="button">START LOCAL SCORED ATTEMPT</button>
+  <button id="dailyPractice" type="button">UNLIMITED PRACTICE</button>
+  <a href="./" class="daily-campaign">← BACK TO 250 CAMPAIGN PUZZLES</a></div>
+ <p id="dailyStatus" role="status" aria-live="polite">Choose practice or start your local scored attempt.</p>
+ <div class="daily-result" id="dailyResult" hidden>
+  <b id="dailyActions">0 accepted actions</b>
+  <label for="dailyShareText">Spoiler-free result</label>
+  <textarea id="dailyShareText" rows="3" readonly spellcheck="false"></textarea>
+  <button id="dailyCopy" type="button">COPY RESULT</button>
+ </div>
+</section>
+<section id="game" class="game-screen" aria-label="Playable Stackbreaker training game">
 <div class="mission-bar"><div class="mission-id"><small id="missionTier">APPRENTICE</small><strong id="scenarioTitle">Loading…</strong></div><div class="mission-picker"><label for="scenarioSelect">LEVEL <span id="missionNum">1-1</span></label><select id="scenarioSelect" aria-label="Choose level"></select><button type="button" id="mapButton" class="map-toggle" aria-haspopup="dialog" aria-controls="worldMap" aria-expanded="false">◈ MAP</button></div><span class="run-status" id="priority" aria-live="polite">● PRIORITY: YOU</span></div>
 <div class="game-grid"><section class="field-zone" id="fieldDrop" tabindex="0" aria-label="Battlefield drop area; drag a spell here to cast it onto the stack"><div class="zone-top"><span>✥ THE DUELING TABLE <em>DROP A SPELL OR ACTIVATE A CREATURE</em></span><span id="objectiveShort">SURVIVE</span></div><div class="observatory-orbit" aria-hidden="true"></div><div class="life-row"><div class="life-widget" data-target-person="player" role="button" tabindex="0" aria-label="Your life total; choose as spell target"><small>YOU</small><b id="playerLife">—</b></div><div class="creature-row" id="battlefield"></div><div class="life-widget enemy" data-target-person="opponent" role="button" tabindex="0" aria-label="Opponent life total; choose as spell target"><small>OPP</small><b id="opponentLife">—</b></div></div><p id="objective" class="objective"></p></section>
 <section class="stack-zone" id="stackDrop" tabindex="0" aria-label="Drop spells here to cast onto the stack"><div class="zone-top"><span>✦ SPELL SEQUENCE <em>DROP SPELL HERE</em></span><span class="stack-meta"><span id="artStatus">LOADING SCRYFALL…</span> · <span id="stackCount">00</span></span></div><ol class="stack-list" id="stack" aria-label="Stack top-first"></ol><div class="stack-drop-hint">↑ Drop a spell here · top resolves first</div></section></div>
@@ -1238,8 +1302,3033 @@ main{max-width:1640px}
 <div class="game-controls"><div class="result-mini" id="resultMini" aria-live="polite"><b id="resultEyebrow">YOUR MOVE</b><span id="resultTitle">Tap lands, then drag your spell.</span></div><button type="button" class="pass-button" id="passButton">PASS / RESOLVE →</button><button type="button" class="minor-button" id="undoButton">↶ UNDO</button><button type="button" class="minor-button" id="restartButton">↻ RESET</button><div class="level-arrows"><button type="button" class="prev-button" id="prevButton" aria-label="Previous level">← PREV</button><button type="button" class="next-button" id="nextButton" aria-label="Next level">NEXT →</button></div></div>
 <div id="live" class="sr-only" role="status" aria-live="polite"></div><section id="worldMap" class="world-map" role="dialog" aria-modal="true" aria-labelledby="worldMapTitle" aria-hidden="true" hidden><header class="world-map-header"><div><p>STACKBREAKER · CAMPAIGN</p><h2 id="worldMapTitle">GALAXY ATLAS</h2></div><button id="closeMapButton" type="button" aria-label="Close chapter map">✕ CLOSE</button></header><nav class="galaxy-tabs" id="galaxyTabs" aria-label="Choose galaxy"></nav><nav class="world-tabs" id="worldTabs" aria-label="Choose a world"></nav><div id="worldStage" class="world-stage"></div><footer class="world-map-footer"><span id="worldMapProgress"></span><span>Navigate five galaxies, twenty-five worlds and ten levels each · choose any stage · victories plant a flag ★</span></footer></section>
 </section>
-<section class="study-notes" id="notes"><div class="notes-head"><div><p class="eyebrow">THE TRAINING FILE</p><h1>ONE TURN TO LIVE.</h1><p><a href="./final-turn/" aria-label="Play the new Final Turn lifecycle drill">✦ TRY FINAL TURN 2.0 — NEW PLAYABLE DRILL ↗</a></p><p id="scenarioIntro"></p></div><div class="progress"><b id="completed">0 / 250 SOLVED</b><span>COMMANDER SINGLETON PRACTICE</span></div></div><div class="notes-grid"><div class="notes-box"><h2>Your objective</h2><p id="objectiveLong"></p><button type="button" id="hintButton" aria-expanded="false">◇ REVEAL HINT</button><p id="hintText" hidden></p></div><div class="notes-box"><h2>Why it worked</h2><p id="resultExplanation">Finish a case to reveal its rules explanation.</p><div id="resultStars" class="result-stars"></div></div><div class="notes-box"><h2>Resolution log</h2><ol id="log" aria-label="Action and stack resolution log"></ol></div></div>
-<footer><div><b>STACKBREAKER · <span id="version"></span></b><p>An unofficial educational Magic rules trainer; not affiliated with or endorsed by Wizards of the Coast or Scryfall. Card images and artwork provided by Scryfall, © Wizards of the Coast; card artwork © respective artists. Card-image previews and links open Scryfall. Commander-style singleton for each participant (except basic lands), with distinct choices in each hand. Limited two-player training windows, not a full 100-card Commander deck, multiplayer engine or judge ruling.</p></div><a href="/">← GAME LAB HOME</a></footer></section></main><div id="cardPreview" class="card-preview" hidden role="group" aria-label="Scryfall full card preview"><img id="cardPreviewImage" alt=""/><div id="cardPreviewLabel" class="card-preview-title"></div><small id="cardPreviewCredit"></small><a id="cardPreviewLink" href="https://scryfall.com/" target="_blank" rel="noopener noreferrer" tabindex="-1">Scryfall card reference</a></div><script>// Stackbreaker 0.2 — limited, curated MTG card-reference catalog.
+<section class="study-notes" id="notes"><div class="notes-head"><div><p class="eyebrow">THE TRAINING FILE</p><h1>ONE TURN TO LIVE.</h1><p><a href="./daily/" aria-label="Play Daily Stackbreaker, local unverified challenge">✦ PLAY DAILY STACKBREAKER — NEW UTC CHALLENGE ↗</a></p><p><a href="./final-turn/" aria-label="Play the new Final Turn lifecycle drill">✦ TRY FINAL TURN 2.0 — NEW PLAYABLE DRILL ↗</a></p><p id="scenarioIntro"></p></div><div class="progress"><b id="completed">0 / 250 SOLVED</b><span>COMMANDER SINGLETON PRACTICE</span></div></div><div class="notes-grid"><div class="notes-box"><h2>Your objective</h2><p id="objectiveLong"></p><button type="button" id="hintButton" aria-expanded="false">◇ REVEAL HINT</button><p id="hintText" hidden></p></div><div class="notes-box"><h2>Why it worked</h2><p id="resultExplanation">Finish a case to reveal its rules explanation.</p><div id="resultStars" class="result-stars"></div></div><div class="notes-box"><h2>Resolution log</h2><ol id="log" aria-label="Action and stack resolution log"></ol></div></div>
+<footer><div><b>STACKBREAKER · <span id="version"></span></b><p>An unofficial educational Magic rules trainer; not affiliated with or endorsed by Wizards of the Coast or Scryfall. Card images and artwork provided by Scryfall, © Wizards of the Coast; card artwork © respective artists. Card-image previews and links open Scryfall. Commander-style singleton for each participant (except basic lands), with distinct choices in each hand. Limited two-player training windows, not a full 100-card Commander deck, multiplayer engine or judge ruling.</p></div><a href="/">← GAME LAB HOME</a></footer></section></main><div id="cardPreview" class="card-preview" hidden role="group" aria-label="Scryfall full card preview"><img id="cardPreviewImage" alt=""/><div id="cardPreviewLabel" class="card-preview-title"></div><small id="cardPreviewCredit"></small><a id="cardPreviewLink" href="https://scryfall.com/" target="_blank" rel="noopener noreferrer" tabindex="-1">Scryfall card reference</a></div><script>const dailyManifest={
+  "schemaVersion": 1,
+  "manifestVersion": 1,
+  "resetAt": "00:00:00Z",
+  "publishedFrom": "2026-10-19",
+  "publishedThrough": "2027-10-18",
+  "candidateCount": 90,
+  "contentReviewStatus": "30 approved scenarios plus 60 tested generated scenarios; human editorial review of the 60 generated scenarios pending before public verified/competitive launch",
+  "verification": "Game Lab local preview only; future official server must publish SHA-256 scenario digests and verify results",
+  "candidates": [
+    "sb-01",
+    "sb-02",
+    "sb-03",
+    "sb-04",
+    "sb-05",
+    "sb-06",
+    "sb-07",
+    "sb-08",
+    "sb-09",
+    "sb-10",
+    "sb-11",
+    "sb-12",
+    "sb-13",
+    "sb-14",
+    "sb-15",
+    "sb-16",
+    "sb-17",
+    "sb-18",
+    "sb-19",
+    "sb-20",
+    "sb-21",
+    "sb-22",
+    "sb-23",
+    "sb-24",
+    "sb-25",
+    "sb-26",
+    "sb-27",
+    "sb-28",
+    "sb-29",
+    "sb-30",
+    "sg-031",
+    "sg-032",
+    "sg-033",
+    "sg-034",
+    "sg-035",
+    "sg-036",
+    "sg-037",
+    "sg-038",
+    "sg-039",
+    "sg-040",
+    "sg-041",
+    "sg-042",
+    "sg-043",
+    "sg-044",
+    "sg-045",
+    "sg-046",
+    "sg-047",
+    "sg-048",
+    "sg-049",
+    "sg-050",
+    "sg-051",
+    "sg-052",
+    "sg-053",
+    "sg-054",
+    "sg-055",
+    "sg-056",
+    "sg-057",
+    "sg-058",
+    "sg-059",
+    "sg-060",
+    "sg-061",
+    "sg-062",
+    "sg-063",
+    "sg-064",
+    "sg-065",
+    "sg-066",
+    "sg-067",
+    "sg-068",
+    "sg-069",
+    "sg-070",
+    "sg-071",
+    "sg-072",
+    "sg-073",
+    "sg-074",
+    "sg-075",
+    "sg-076",
+    "sg-077",
+    "sg-078",
+    "sg-079",
+    "sg-080",
+    "sg-081",
+    "sg-082",
+    "sg-083",
+    "sg-084",
+    "sg-085",
+    "sg-086",
+    "sg-087",
+    "sg-088",
+    "sg-089",
+    "sg-090"
+  ],
+  "entries": [
+    {
+      "utcDate": "2026-10-19",
+      "puzzleId": "sb-01",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-10-20",
+      "puzzleId": "sg-038",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-10-21",
+      "puzzleId": "sg-075",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-10-22",
+      "puzzleId": "sb-22",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-10-23",
+      "puzzleId": "sg-059",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-10-24",
+      "puzzleId": "sb-06",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-10-25",
+      "puzzleId": "sg-043",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-10-26",
+      "puzzleId": "sg-080",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-10-27",
+      "puzzleId": "sb-27",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-10-28",
+      "puzzleId": "sg-064",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-10-29",
+      "puzzleId": "sb-11",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-10-30",
+      "puzzleId": "sg-048",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-10-31",
+      "puzzleId": "sg-085",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-01",
+      "puzzleId": "sg-032",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-02",
+      "puzzleId": "sg-069",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-03",
+      "puzzleId": "sb-16",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-04",
+      "puzzleId": "sg-053",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-05",
+      "puzzleId": "sg-090",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-06",
+      "puzzleId": "sg-037",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-07",
+      "puzzleId": "sg-074",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-08",
+      "puzzleId": "sb-21",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-09",
+      "puzzleId": "sg-058",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-10",
+      "puzzleId": "sb-05",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-11",
+      "puzzleId": "sg-042",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-12",
+      "puzzleId": "sg-079",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-13",
+      "puzzleId": "sb-26",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-14",
+      "puzzleId": "sg-063",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-15",
+      "puzzleId": "sb-10",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-16",
+      "puzzleId": "sg-047",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-17",
+      "puzzleId": "sg-084",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-18",
+      "puzzleId": "sg-031",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-19",
+      "puzzleId": "sg-068",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-20",
+      "puzzleId": "sb-15",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-21",
+      "puzzleId": "sg-052",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-22",
+      "puzzleId": "sg-089",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-23",
+      "puzzleId": "sg-036",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-24",
+      "puzzleId": "sg-073",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-25",
+      "puzzleId": "sb-20",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-26",
+      "puzzleId": "sg-057",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-27",
+      "puzzleId": "sb-04",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-28",
+      "puzzleId": "sg-041",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-29",
+      "puzzleId": "sg-078",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-11-30",
+      "puzzleId": "sb-25",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-01",
+      "puzzleId": "sg-062",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-02",
+      "puzzleId": "sb-09",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-03",
+      "puzzleId": "sg-046",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-04",
+      "puzzleId": "sg-083",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-05",
+      "puzzleId": "sb-30",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-06",
+      "puzzleId": "sg-067",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-07",
+      "puzzleId": "sb-14",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-08",
+      "puzzleId": "sg-051",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-09",
+      "puzzleId": "sg-088",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-10",
+      "puzzleId": "sg-035",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-11",
+      "puzzleId": "sg-072",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-12",
+      "puzzleId": "sb-19",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-13",
+      "puzzleId": "sg-056",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-14",
+      "puzzleId": "sb-03",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-15",
+      "puzzleId": "sg-040",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-16",
+      "puzzleId": "sg-077",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-17",
+      "puzzleId": "sb-24",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-18",
+      "puzzleId": "sg-061",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-19",
+      "puzzleId": "sb-08",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-20",
+      "puzzleId": "sg-045",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-21",
+      "puzzleId": "sg-082",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-22",
+      "puzzleId": "sb-29",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-23",
+      "puzzleId": "sg-066",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-24",
+      "puzzleId": "sb-13",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-25",
+      "puzzleId": "sg-050",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-26",
+      "puzzleId": "sg-087",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-27",
+      "puzzleId": "sg-034",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-28",
+      "puzzleId": "sg-071",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-29",
+      "puzzleId": "sb-18",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-30",
+      "puzzleId": "sg-055",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2026-12-31",
+      "puzzleId": "sb-02",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-01",
+      "puzzleId": "sg-039",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-02",
+      "puzzleId": "sg-076",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-03",
+      "puzzleId": "sb-23",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-04",
+      "puzzleId": "sg-060",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-05",
+      "puzzleId": "sb-07",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-06",
+      "puzzleId": "sg-044",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-07",
+      "puzzleId": "sg-081",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-08",
+      "puzzleId": "sb-28",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-09",
+      "puzzleId": "sg-065",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-10",
+      "puzzleId": "sb-12",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-11",
+      "puzzleId": "sg-049",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-12",
+      "puzzleId": "sg-086",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-13",
+      "puzzleId": "sg-033",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-14",
+      "puzzleId": "sg-070",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-15",
+      "puzzleId": "sb-17",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-16",
+      "puzzleId": "sg-054",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-17",
+      "puzzleId": "sb-18",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-18",
+      "puzzleId": "sg-055",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-19",
+      "puzzleId": "sb-02",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-20",
+      "puzzleId": "sg-039",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-21",
+      "puzzleId": "sg-076",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-22",
+      "puzzleId": "sb-23",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-23",
+      "puzzleId": "sg-060",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-24",
+      "puzzleId": "sb-07",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-25",
+      "puzzleId": "sg-044",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-26",
+      "puzzleId": "sg-081",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-27",
+      "puzzleId": "sb-28",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-28",
+      "puzzleId": "sg-065",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-29",
+      "puzzleId": "sb-12",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-30",
+      "puzzleId": "sg-049",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-01-31",
+      "puzzleId": "sg-086",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-01",
+      "puzzleId": "sg-033",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-02",
+      "puzzleId": "sg-070",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-03",
+      "puzzleId": "sb-17",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-04",
+      "puzzleId": "sg-054",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-05",
+      "puzzleId": "sb-01",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-06",
+      "puzzleId": "sg-038",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-07",
+      "puzzleId": "sg-075",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-08",
+      "puzzleId": "sb-22",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-09",
+      "puzzleId": "sg-059",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-10",
+      "puzzleId": "sb-06",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-11",
+      "puzzleId": "sg-043",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-12",
+      "puzzleId": "sg-080",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-13",
+      "puzzleId": "sb-27",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-14",
+      "puzzleId": "sg-064",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-15",
+      "puzzleId": "sb-11",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-16",
+      "puzzleId": "sg-048",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-17",
+      "puzzleId": "sg-085",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-18",
+      "puzzleId": "sg-032",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-19",
+      "puzzleId": "sg-069",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-20",
+      "puzzleId": "sb-16",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-21",
+      "puzzleId": "sg-053",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-22",
+      "puzzleId": "sg-090",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-23",
+      "puzzleId": "sg-037",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-24",
+      "puzzleId": "sg-074",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-25",
+      "puzzleId": "sb-21",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-26",
+      "puzzleId": "sg-058",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-27",
+      "puzzleId": "sb-05",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-02-28",
+      "puzzleId": "sg-042",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-01",
+      "puzzleId": "sg-079",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-02",
+      "puzzleId": "sb-26",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-03",
+      "puzzleId": "sg-063",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-04",
+      "puzzleId": "sb-10",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-05",
+      "puzzleId": "sg-047",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-06",
+      "puzzleId": "sg-084",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-07",
+      "puzzleId": "sg-031",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-08",
+      "puzzleId": "sg-068",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-09",
+      "puzzleId": "sb-15",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-10",
+      "puzzleId": "sg-052",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-11",
+      "puzzleId": "sg-089",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-12",
+      "puzzleId": "sg-036",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-13",
+      "puzzleId": "sg-073",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-14",
+      "puzzleId": "sb-20",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-15",
+      "puzzleId": "sg-057",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-16",
+      "puzzleId": "sb-04",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-17",
+      "puzzleId": "sg-041",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-18",
+      "puzzleId": "sg-078",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-19",
+      "puzzleId": "sb-25",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-20",
+      "puzzleId": "sg-062",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-21",
+      "puzzleId": "sb-09",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-22",
+      "puzzleId": "sg-046",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-23",
+      "puzzleId": "sg-083",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-24",
+      "puzzleId": "sb-30",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-25",
+      "puzzleId": "sg-067",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-26",
+      "puzzleId": "sb-14",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-27",
+      "puzzleId": "sg-051",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-28",
+      "puzzleId": "sg-088",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-29",
+      "puzzleId": "sg-035",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-30",
+      "puzzleId": "sg-072",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-03-31",
+      "puzzleId": "sb-19",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-01",
+      "puzzleId": "sg-056",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-02",
+      "puzzleId": "sb-03",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-03",
+      "puzzleId": "sg-040",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-04",
+      "puzzleId": "sg-077",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-05",
+      "puzzleId": "sb-24",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-06",
+      "puzzleId": "sg-061",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-07",
+      "puzzleId": "sb-08",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-08",
+      "puzzleId": "sg-045",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-09",
+      "puzzleId": "sg-082",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-10",
+      "puzzleId": "sb-29",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-11",
+      "puzzleId": "sg-066",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-12",
+      "puzzleId": "sb-13",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-13",
+      "puzzleId": "sg-050",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-14",
+      "puzzleId": "sg-087",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-15",
+      "puzzleId": "sg-034",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-16",
+      "puzzleId": "sg-071",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-17",
+      "puzzleId": "sg-035",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-18",
+      "puzzleId": "sg-072",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-19",
+      "puzzleId": "sb-19",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-20",
+      "puzzleId": "sg-056",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-21",
+      "puzzleId": "sb-03",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-22",
+      "puzzleId": "sg-040",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-23",
+      "puzzleId": "sg-077",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-24",
+      "puzzleId": "sb-24",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-25",
+      "puzzleId": "sg-061",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-26",
+      "puzzleId": "sb-08",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-27",
+      "puzzleId": "sg-045",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-28",
+      "puzzleId": "sg-082",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-29",
+      "puzzleId": "sb-29",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-04-30",
+      "puzzleId": "sg-066",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-01",
+      "puzzleId": "sb-13",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-02",
+      "puzzleId": "sg-050",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-03",
+      "puzzleId": "sg-087",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-04",
+      "puzzleId": "sg-034",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-05",
+      "puzzleId": "sg-071",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-06",
+      "puzzleId": "sb-18",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-07",
+      "puzzleId": "sg-055",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-08",
+      "puzzleId": "sb-02",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-09",
+      "puzzleId": "sg-039",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-10",
+      "puzzleId": "sg-076",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-11",
+      "puzzleId": "sb-23",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-12",
+      "puzzleId": "sg-060",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-13",
+      "puzzleId": "sb-07",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-14",
+      "puzzleId": "sg-044",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-15",
+      "puzzleId": "sg-081",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-16",
+      "puzzleId": "sb-28",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-17",
+      "puzzleId": "sg-065",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-18",
+      "puzzleId": "sb-12",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-19",
+      "puzzleId": "sg-049",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-20",
+      "puzzleId": "sg-086",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-21",
+      "puzzleId": "sg-033",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-22",
+      "puzzleId": "sg-070",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-23",
+      "puzzleId": "sb-17",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-24",
+      "puzzleId": "sg-054",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-25",
+      "puzzleId": "sb-01",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-26",
+      "puzzleId": "sg-038",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-27",
+      "puzzleId": "sg-075",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-28",
+      "puzzleId": "sb-22",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-29",
+      "puzzleId": "sg-059",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-30",
+      "puzzleId": "sb-06",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-05-31",
+      "puzzleId": "sg-043",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-01",
+      "puzzleId": "sg-080",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-02",
+      "puzzleId": "sb-27",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-03",
+      "puzzleId": "sg-064",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-04",
+      "puzzleId": "sb-11",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-05",
+      "puzzleId": "sg-048",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-06",
+      "puzzleId": "sg-085",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-07",
+      "puzzleId": "sg-032",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-08",
+      "puzzleId": "sg-069",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-09",
+      "puzzleId": "sb-16",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-10",
+      "puzzleId": "sg-053",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-11",
+      "puzzleId": "sg-090",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-12",
+      "puzzleId": "sg-037",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-13",
+      "puzzleId": "sg-074",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-14",
+      "puzzleId": "sb-21",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-15",
+      "puzzleId": "sg-058",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-16",
+      "puzzleId": "sb-05",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-17",
+      "puzzleId": "sg-042",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-18",
+      "puzzleId": "sg-079",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-19",
+      "puzzleId": "sb-26",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-20",
+      "puzzleId": "sg-063",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-21",
+      "puzzleId": "sb-10",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-22",
+      "puzzleId": "sg-047",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-23",
+      "puzzleId": "sg-084",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-24",
+      "puzzleId": "sg-031",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-25",
+      "puzzleId": "sg-068",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-26",
+      "puzzleId": "sb-15",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-27",
+      "puzzleId": "sg-052",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-28",
+      "puzzleId": "sg-089",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-29",
+      "puzzleId": "sg-036",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-06-30",
+      "puzzleId": "sg-073",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-01",
+      "puzzleId": "sb-20",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-02",
+      "puzzleId": "sg-057",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-03",
+      "puzzleId": "sb-04",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-04",
+      "puzzleId": "sg-041",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-05",
+      "puzzleId": "sg-078",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-06",
+      "puzzleId": "sb-25",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-07",
+      "puzzleId": "sg-062",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-08",
+      "puzzleId": "sb-09",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-09",
+      "puzzleId": "sg-046",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-10",
+      "puzzleId": "sg-083",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-11",
+      "puzzleId": "sb-30",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-12",
+      "puzzleId": "sg-067",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-13",
+      "puzzleId": "sb-14",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-14",
+      "puzzleId": "sg-051",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-15",
+      "puzzleId": "sg-088",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-16",
+      "puzzleId": "sg-052",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-17",
+      "puzzleId": "sg-089",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-18",
+      "puzzleId": "sg-036",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-19",
+      "puzzleId": "sg-073",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-20",
+      "puzzleId": "sb-20",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-21",
+      "puzzleId": "sg-057",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-22",
+      "puzzleId": "sb-04",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-23",
+      "puzzleId": "sg-041",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-24",
+      "puzzleId": "sg-078",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-25",
+      "puzzleId": "sb-25",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-26",
+      "puzzleId": "sg-062",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-27",
+      "puzzleId": "sb-09",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-28",
+      "puzzleId": "sg-046",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-29",
+      "puzzleId": "sg-083",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-30",
+      "puzzleId": "sb-30",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-07-31",
+      "puzzleId": "sg-067",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-01",
+      "puzzleId": "sb-14",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-02",
+      "puzzleId": "sg-051",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-03",
+      "puzzleId": "sg-088",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-04",
+      "puzzleId": "sg-035",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-05",
+      "puzzleId": "sg-072",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-06",
+      "puzzleId": "sb-19",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-07",
+      "puzzleId": "sg-056",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-08",
+      "puzzleId": "sb-03",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-09",
+      "puzzleId": "sg-040",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-10",
+      "puzzleId": "sg-077",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-11",
+      "puzzleId": "sb-24",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-12",
+      "puzzleId": "sg-061",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-13",
+      "puzzleId": "sb-08",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-14",
+      "puzzleId": "sg-045",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-15",
+      "puzzleId": "sg-082",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-16",
+      "puzzleId": "sb-29",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-17",
+      "puzzleId": "sg-066",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-18",
+      "puzzleId": "sb-13",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-19",
+      "puzzleId": "sg-050",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-20",
+      "puzzleId": "sg-087",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-21",
+      "puzzleId": "sg-034",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-22",
+      "puzzleId": "sg-071",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-23",
+      "puzzleId": "sb-18",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-24",
+      "puzzleId": "sg-055",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-25",
+      "puzzleId": "sb-02",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-26",
+      "puzzleId": "sg-039",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-27",
+      "puzzleId": "sg-076",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-28",
+      "puzzleId": "sb-23",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-29",
+      "puzzleId": "sg-060",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-30",
+      "puzzleId": "sb-07",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-08-31",
+      "puzzleId": "sg-044",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-01",
+      "puzzleId": "sg-081",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-02",
+      "puzzleId": "sb-28",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-03",
+      "puzzleId": "sg-065",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-04",
+      "puzzleId": "sb-12",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-05",
+      "puzzleId": "sg-049",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-06",
+      "puzzleId": "sg-086",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-07",
+      "puzzleId": "sg-033",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-08",
+      "puzzleId": "sg-070",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-09",
+      "puzzleId": "sb-17",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-10",
+      "puzzleId": "sg-054",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-11",
+      "puzzleId": "sb-01",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-12",
+      "puzzleId": "sg-038",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-13",
+      "puzzleId": "sg-075",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-14",
+      "puzzleId": "sb-22",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-15",
+      "puzzleId": "sg-059",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-16",
+      "puzzleId": "sb-06",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-17",
+      "puzzleId": "sg-043",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-18",
+      "puzzleId": "sg-080",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-19",
+      "puzzleId": "sb-27",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-20",
+      "puzzleId": "sg-064",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-21",
+      "puzzleId": "sb-11",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-22",
+      "puzzleId": "sg-048",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-23",
+      "puzzleId": "sg-085",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-24",
+      "puzzleId": "sg-032",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-25",
+      "puzzleId": "sg-069",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-26",
+      "puzzleId": "sb-16",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-27",
+      "puzzleId": "sg-053",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-28",
+      "puzzleId": "sg-090",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-29",
+      "puzzleId": "sg-037",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-09-30",
+      "puzzleId": "sg-074",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-01",
+      "puzzleId": "sb-21",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-02",
+      "puzzleId": "sg-058",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-03",
+      "puzzleId": "sb-05",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-04",
+      "puzzleId": "sg-042",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-05",
+      "puzzleId": "sg-079",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-06",
+      "puzzleId": "sb-26",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-07",
+      "puzzleId": "sg-063",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-08",
+      "puzzleId": "sb-10",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-09",
+      "puzzleId": "sg-047",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-10",
+      "puzzleId": "sg-084",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-11",
+      "puzzleId": "sg-031",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-12",
+      "puzzleId": "sg-068",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-13",
+      "puzzleId": "sb-15",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-14",
+      "puzzleId": "sg-069",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-15",
+      "puzzleId": "sb-16",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Foundation",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-16",
+      "puzzleId": "sg-053",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-17",
+      "puzzleId": "sg-090",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Adept",
+      "manifestVersion": 1
+    },
+    {
+      "utcDate": "2027-10-18",
+      "puzzleId": "sg-037",
+      "puzzleRevision": 1,
+      "rulesVersion": "sb-mtg-training-0.3.0",
+      "difficulty": "Apprentice",
+      "manifestVersion": 1
+    }
+  ]
+}
+;
+// Stackbreaker 0.2 — limited, curated MTG card-reference catalog.
 // Card text and statistics are reference data, not a full executable card interpreter.
 const RULES_VERSION='sb-mtg-training-0.3.0';
 const CARDS={
@@ -2694,6 +5783,114 @@ function createSpellVfxController(root,view){
  }
  return {play,cancel};
 }
+
+
+const DAILY_STORAGE_KEY='dc-stackbreaker-daily-local-v1';
+const DAILY_MANIFEST=dailyManifest;
+const iso=/^\d{4}-\d{2}-\d{2}$/;
+function dailyUtcDate(now=Date.now()){
+ const time=now instanceof Date?now.getTime():Number(now);
+ if(!Number.isFinite(time))throw new RangeError('Invalid daily clock');
+ return new Date(time).toISOString().slice(0,10);
+}
+function millisUntilUtcReset(now=Date.now()){
+ const ms=now instanceof Date?now.getTime():Number(now);
+ if(!Number.isFinite(ms))throw new RangeError('Invalid daily clock');
+ const day=86400000;
+ return day-(ms%day+day)%day;
+}
+function dailyCountdown(now=Date.now()){
+ const s=Math.max(0,Math.floor(millisUntilUtcReset(now)/1000));
+ return [Math.floor(s/3600),Math.floor(s%3600/60),s%60].map(x=>String(x).padStart(2,'0')).join(':');
+}
+function dailyEntryForDate(utcDate,manifest=DAILY_MANIFEST){
+ if(!iso.test(String(utcDate)))return null;
+ return manifest.entries.find(x=>x.utcDate===utcDate)||null;
+}
+// Deterministic content fingerprint for the LOCAL game only; it is NOT an
+// authenticated SHA-256, score proof, or replacement for website verification.
+function localScenarioFingerprint(scenario){
+ if(!scenario||!scenario.id)return null;
+ const text=JSON.stringify(scenario);
+ let hash=2166136261;
+ for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619);}
+ return 'fnv1a32-'+(hash>>>0).toString(16).padStart(8,'0');
+}
+function bindDailyScenario(entry,scenarios){
+ if(!entry)return null;
+ const scenario=scenarios.find(x=>x.id===entry.puzzleId&&x.version===entry.rulesVersion);
+ if(!scenario)return null;
+ return {...entry,scenarioDigest:localScenarioFingerprint(scenario),scenario};
+}
+function localDailyStart(entry,state,now=Date.now()){
+ if(!entry||!state||!state.id||entry.puzzleId!==state.id)throw Error('Daily puzzle mismatch');
+ return {
+  schemaVersion:1,utcDate:entry.utcDate,puzzleId:entry.puzzleId,
+  puzzleRevision:entry.puzzleRevision,manifestVersion:entry.manifestVersion,
+  rulesVersion:entry.rulesVersion,scenarioDigest:entry.scenarioDigest,
+  localUnverified:true,startedAt:new Date(now).toISOString(),status:'playing',
+  completed:false,acceptedActionCount:0,castAndActivationCount:0,
+  priorityPassCount:0,hintUsed:false,undoUsed:false,state:structuredClone(state)
+ };
+}
+function dailyAcceptedTransition(record,before,after){
+ if(!record||record.status!=='playing'||before?.status!=='playing'||!after)return record;
+ if(JSON.stringify(before)===JSON.stringify(after))return record;
+ let kind='action';
+ if(after.step!==before.step)kind='pass';
+ else if(after.used?.length>before.used?.length)kind='cast';
+ else if(after.lands?.some((l,i)=>l.tapped&&!before.lands?.[i]?.tapped))kind='tap';
+ else if(after.lands?.length!==before.lands?.length||after.used?.length>before.used?.length)kind='cast';
+ return {
+  ...record,acceptedActionCount:record.acceptedActionCount+1,
+  castAndActivationCount:record.castAndActivationCount+(kind==='cast'?1:0),
+  priorityPassCount:record.priorityPassCount+(kind==='pass'?1:0),
+  status:after.status==='won'?'won':after.status==='lost'?'lost':'playing',
+  completed:after.status==='won',
+  state:structuredClone(after)
+ };
+}
+function safeDailyLoad(raw,entry){
+ if(!raw||!entry||typeof raw!=='object')return null;
+ if(raw.schemaVersion!==1||raw.utcDate!==entry.utcDate||raw.puzzleId!==entry.puzzleId||
+  raw.rulesVersion!==entry.rulesVersion||raw.puzzleRevision!==entry.puzzleRevision||
+  raw.scenarioDigest!==entry.scenarioDigest)return null;
+ if(!['playing','won','lost','expired'].includes(raw.status)||
+  !Number.isSafeInteger(raw.acceptedActionCount)||raw.acceptedActionCount<0||
+  !raw.state||raw.state.id!==entry.puzzleId||!Array.isArray(raw.state.stack)||
+  !Array.isArray(raw.state.units)||!Array.isArray(raw.state.hand)||
+  !Array.isArray(raw.state.lands)||!Array.isArray(raw.state.log)||
+  !raw.state.life||!raw.localUnverified)return null;
+ // Browser storage can always be forged: this is resume safety, NOT proof.
+ return raw;
+}
+function readLocalDaily(store,entry){
+ try{
+  const all=JSON.parse(store.getItem(DAILY_STORAGE_KEY)||'{}');
+  return safeDailyLoad(all?.[entry?.utcDate],entry);
+ }catch{return null;}
+}
+function writeLocalDaily(store,record){
+ if(!record?.utcDate)return false;
+ try{
+  const all=JSON.parse(store.getItem(DAILY_STORAGE_KEY)||'{}');
+  const data=all&&typeof all==='object'&&!Array.isArray(all)?all:{};
+  // Keep only a small recent window of non-authoritative local results.
+  data[record.utcDate]=record;
+  const keys=Object.keys(data).sort();
+  for(const key of keys.slice(0,Math.max(0,keys.length-120)))delete data[key];
+  store.setItem(DAILY_STORAGE_KEY,JSON.stringify(data));
+  return true;
+ }catch{return false;}
+}
+function dailyShareText(entry,result){
+ if(!entry||!result)return '';
+ const status=result.status==='won'?'✅ SOLVED':result.status==='lost'?'❌ UNSOLVED':'◇ IN PROGRESS';
+ const actions=Number.isSafeInteger(result.acceptedActionCount)?result.acceptedActionCount:0;
+ return 'Stackbreaker Daily · '+entry.utcDate+' (UTC)\n'+
+  entry.difficulty+' · '+status+' · '+actions+' accepted actions\nLOCAL / UNVERIFIED · Deep Cuts Game Lab';
+}
+
 
 
 
@@ -4974,6 +8171,14 @@ const campaignExpansion=[
 const extraStages=generateStages([...coreScenarios,...campaignExpansion]);
 const scenarios=[...coreScenarios,...campaignExpansion,...extraStages].map((scenario,i)=>commanderScenario(scenario,i));
 const chapters=makeWorlds();
+const dailyRoute=new URLSearchParams(window.location.search).get('daily')==='1';
+const dailyDate=dailyUtcDate();
+const dailyBound=dailyRoute?bindDailyScenario(dailyEntryForDate(dailyDate),scenarios):null;
+const dailyIndex=dailyBound?scenarios.findIndex(s=>s.id===dailyBound.puzzleId):-1;
+let dailySession='preview',dailyRecord=null,dailyPracticeMoves=0,dailyExpired=false;
+const isDaily=()=>dailyRoute&&dailyIndex>=0;
+const dailyReady=()=>isDaily()&&!dailyExpired&&dailyUtcDate()===dailyDate&&['practice','scored'].includes(dailySession)&&game?.status==='playing';
+const scoredDaily=()=>isDaily()&&dailySession==='scored';
 
 const $=id=>document.getElementById(id);
 const spellVfx=createSpellVfxController(document,window);
@@ -5117,7 +8322,13 @@ function objectiveText(s){const o=s.objective;if(o.type==='winKeepUnit')return`D
  if(o.type==='keepN')return`Keep at least ${o.count} friendly creatures alive.`;
  return`Keep ${s.units.find(u=>u.id===o.unitId)?.card||'the required creature'} ${o.type==='keepUnit'?'on the battlefield':'out of the graveyard'}.`;
 }
-function changeCase(n){spellVfx.cancel();closeWorldMap(false);clearDragFeedback();index=Math.max(0,Math.min(scenarios.length-1,n));selectedWorld=Math.floor(index/10);selectedGalaxy=Math.floor(index/50);try{localStorage.setItem('dc-stackbreaker-last-level',String(index));}catch{}game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;render();}
+function changeCase(n,force=false){
+ if(dailyRoute&&!force)return;
+ spellVfx.cancel();closeWorldMap(false);clearDragFeedback();
+ index=Math.max(0,Math.min(scenarios.length-1,n));selectedWorld=Math.floor(index/10);selectedGalaxy=Math.floor(index/50);
+ if(!dailyRoute)try{localStorage.setItem('dc-stackbreaker-last-level',String(index));}catch{}
+ game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;render();
+}
 function shortCard(u){
  const gone=u.zone!=='battlefield';const ability=game.hand.find(a=>a.sourceId===u.id&&!game.used.includes(a.id));
  const active=ability&&game.status==='playing'&&legalActions(game).includes(ability.id);
@@ -5170,6 +8381,7 @@ function choosePayment(i){const p=pendingPlay;if(!p||p.phase!=='payment'||!p.pay
  pendingPlay=null;submitCast(p.id,p.target,p.payments[i].spend);
 }
 function beginPlay(id,dropTarget=null,requireDirectTarget=false,dropZone=null){
+ if(dailyRoute&&!dailyReady()){notify('Choose practice or start your scored attempt first.');return;}
  const action=game.hand.find(a=>a.id===id&&!a.sourceId&&!game.used.includes(a.id));if(!action){notify('That card is unavailable.');return;}
  if(LANDS[action.card]){
   if(dropZone&&dropZone!=='fieldDrop'){notify('A land can only be played onto the battlefield, not onto the stack.');return;}
@@ -5201,6 +8413,7 @@ function beginPlay(id,dropTarget=null,requireDirectTarget=false,dropZone=null){
  else{render();renderPlayPrompt();notify(chosen===undefined?'Choose a legal target.':'Choose which mana to spend.');}
 }
 function activateFromBattlefield(id){
+ if(dailyRoute&&!dailyReady())return;
  const a=game.hand.find(x=>x.id===id&&x.sourceId);
  if(!a||!legalActions(game).includes(id)){notify('This card does not have an available activated ability.');return;}
  const targets=legalTargets(game,a);
@@ -5255,16 +8468,93 @@ function render(){closeCardPreview();const s=game,p=scenarios[index],worldIndex=
  $('lands').innerHTML=s.lands.length?s.lands.map(landCard).join(''):'<span class="empty-creatures">No lands needed — activate your creature’s ability</span>';
  $('stackCount').textContent=String(s.stack.length).padStart(2,'0');$('stack').innerHTML=s.stack.length?[...s.stack].reverse().map(stackCard).join(''):'<li class="stack-empty">Empty stack</li>';
  const remaining=s.hand.filter(a=>!a.sourceId&&!s.used.includes(a.id));$('handCount').textContent=remaining.length+' CARDS';$('hand').classList.toggle('many',remaining.length>3);$('hand').innerHTML=remaining.map(handCard).join('')||'<span class="empty-creatures">Your hand is empty</span>';
- $('passButton').disabled=s.status!=='playing';$('undoButton').disabled=!history.length;$('prevButton').disabled=index===0;$('prevButton').textContent='← PREV';$('nextButton').disabled=index===scenarios.length-1;$('nextButton').textContent=index%10===9?'NEXT WORLD →':'NEXT →';$('mapButton').setAttribute('aria-label',`Open chapter map for ${chapters[worldIndex].name}`);
+ $('passButton').disabled=s.status!=='playing'||(dailyRoute&&!dailyReady());$('undoButton').disabled=!history.length||(dailyRoute&&dailySession!=='practice');$('prevButton').disabled=dailyRoute||index===0;$('prevButton').textContent='← PREV';$('nextButton').disabled=dailyRoute||index===scenarios.length-1;$('nextButton').textContent=index%10===9?'NEXT WORLD →':'NEXT →';$('mapButton').setAttribute('aria-label',`Open chapter map for ${chapters[worldIndex].name}`);
  $('resultMini').className='result-mini'+(s.status==='won'?' won':s.status==='lost'?' lost':'');$('resultEyebrow').textContent=s.status==='won'?'✓ CASE SOLVED':s.status==='lost'?'✕ TRY AGAIN':'YOUR MOVE';
  $('resultTitle').textContent=s.status==='won'?(index%10===9?'★ Chapter completed — claim your flag on the map!':'Next case is ready'):s.status==='lost'?'Reset or undo to retry':'Tap lands, drag a spell, or activate a creature';
+ if(dailyRoute){
+  $('scenarioSelect').disabled=true;$('mapButton').disabled=true;
+  $('restartButton').disabled=dailySession!=='practice'||dailyExpired;
+  $('hintButton').disabled=dailySession!=='practice'||dailyExpired;
+  $('passButton').disabled=!dailyReady();
+  $('game').classList.add('daily-game');
+ }
  $('scenarioIntro').textContent=p.intro;$('objectiveLong').textContent=objectiveText(s);$('hintText').hidden=!hint;$('hintText').textContent=p.hint;$('hintButton').setAttribute('aria-expanded',String(hint));
  $('resultExplanation').textContent=s.status==='playing'?'Complete the case to see the rules explanation.':p.explanation;
- if(s.status==='won'){const par=p.par||2,stars=s.used.length<=par?3:s.used.length===par+1?2:1;progress[p.id]=Math.max(progress[p.id]||0,stars);save();$('resultStars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);}else $('resultStars').textContent='';
+ if(s.status==='won'){const par=p.par||2,stars=s.used.length<=par?3:s.used.length===par+1?2:1;if(!dailyRoute){progress[p.id]=Math.max(progress[p.id]||0,stars);save();}$('resultStars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);}else $('resultStars').textContent='';
  renderPlayPrompt();$('completed').textContent=Object.keys(progress).filter(id=>scenarios.some(s=>s.id===id)).length+' / '+scenarios.length+' SOLVED';$('log').innerHTML=s.log.slice(-14).reverse().map(x=>`<li>${esc(x)}</li>`).join('');$('version').textContent=RULES_VERSION;$('live').textContent=s.log.at(-1)||'Tap a land to produce mana.';
  if(dragSession)paintLegalDragTargets();
  refreshHandArrows();
+ if(dailyRoute)renderDailyStatus();
 }
+
+function updateDailyCountdown(){
+ if(!dailyRoute)return;
+ $('dailyCountdown').textContent=dailyCountdown();
+ const expired=dailyUtcDate()!==dailyDate;
+ if(expired&&!dailyExpired){
+  dailyExpired=true;
+  if(dailySession==='scored'&&dailyRecord?.status==='playing'){
+   dailyRecord={...dailyRecord,status:'expired',completed:false};
+   writeLocalDaily(localStorage,dailyRecord);
+  }
+  spellVfx.cancel();render();
+ }
+}
+function renderDailyStatus(){
+ if(!dailyRoute)return;
+ const active=!!dailyBound&&!dailyExpired&&dailyUtcDate()===dailyDate;
+ $('dailyDate').textContent=active?'Challenge '+dailyDate+' UTC · '+dailyBound.difficulty:
+  dailyExpired?'This UTC day has ended. Reload for the next challenge.':
+  'No dated puzzle is published for this UTC date. A new manifest is needed.';
+ $('dailyStart').disabled=!active;$('dailyPractice').disabled=!active;
+ $('dailyStart').textContent=dailyRecord?dailyRecord.status==='playing'?'RESUME LOCAL SCORED ATTEMPT':'VIEW RECORDED ATTEMPT':'START LOCAL SCORED ATTEMPT';
+ $('scenarioSelect').closest('.mission-picker')?.classList.toggle('daily-picker-locked',true);
+ const summary=dailySession==='scored'&&dailyRecord?
+  (dailyRecord.status==='playing'?'Scored attempt in progress':dailyRecord.status==='won'?'Daily solved locally':dailyRecord.status==='expired'?'Attempt expired at UTC midnight':'Daily attempt ended without a win')+
+  ' · '+dailyRecord.acceptedActionCount+' accepted actions · LOCAL / UNVERIFIED':
+  dailySession==='practice'?'Unlimited practice · '+dailyPracticeMoves+' accepted actions · hints, undo, and reset allowed · NO SCORE':
+  dailyRecord?'Local scored start already saved for today. Resume or practice freely.':
+  'Choose unlimited practice or start one local scored attempt (no hints, undo or retry).';
+ $('dailyStatus').textContent=summary;
+ const result=dailySession==='scored'?dailyRecord:
+  dailySession==='practice'&&game?.status!=='playing'?{status:game.status,acceptedActionCount:dailyPracticeMoves}:null;
+ $('dailyResult').hidden=!result;
+ if(result){
+  $('dailyActions').textContent=result.acceptedActionCount+' accepted actions · '+result.status.toUpperCase();
+  $('dailyShareText').value=dailyShareText(dailyBound,result);
+ }
+}
+function startDailyPractice(){
+ if(!dailyBound||dailyExpired)return;
+ dailySession='practice';dailyPracticeMoves=0;
+ changeCase(dailyIndex,true);
+ notify('Unlimited local practice. Does not earn a verified daily score.');
+}
+function startDailyScored(){
+ if(!dailyBound||dailyExpired)return;
+ if(dailyRecord){
+  dailySession='scored';spellVfx.cancel();clearDragFeedback();closeWorldMap(false);
+  game=structuredClone(dailyRecord.state);history=[];hint=false;pendingPlay=null;armedCard=null;
+  render();return;
+ }
+ const initial=createGame(scenarios[dailyIndex]);
+ dailyRecord=localDailyStart(dailyBound,initial);
+ if(!writeLocalDaily(localStorage,dailyRecord)){
+  dailyRecord=null;notify('Local storage is unavailable. Use unlimited practice instead.');return;
+ }
+ dailySession='scored';spellVfx.cancel();clearDragFeedback();game=initial;
+ history=[];hint=false;pendingPlay=null;armedCard=null;
+ render();notify('Local scored attempt started. No hints, undo, or resets. Unverified preview.');
+}
+async function copyDailyShare(){
+ const text=$('dailyShareText').value;if(!text)return;
+ try{
+  if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(text);
+  else{$('dailyShareText').focus();$('dailyShareText').select();if(!document.execCommand('copy'))throw Error('Manual copy needed');}
+  notify('Spoiler-free LOCAL / UNVERIFIED result copied.');
+ }catch{notify('Select the result text and copy it manually.');}
+}
+
 function refreshHandArrows(){
  const row=$('hand');const prev=$('handPrev'),next=$('handNext');
  if(!row||!prev||!next)return;
@@ -5278,8 +8568,17 @@ $('handPrev').addEventListener('click',()=>scrollHand(-1));
 $('handNext').addEventListener('click',()=>scrollHand(1));
 $('hand').addEventListener('scroll',refreshHandArrows,{passive:true});
 function notify(message){$('live').textContent=message;}
-function pushState(s){spellVfx.cancel();clearDragFeedback();history.push(structuredClone(game));game=s;pendingPlay=null;armedCard=null;render()}
+function pushState(s){
+ if(dailyRoute&&!dailyReady())return;
+ spellVfx.cancel();clearDragFeedback();
+ if(scoredDaily()){
+  dailyRecord=dailyAcceptedTransition(dailyRecord,game,s);
+  writeLocalDaily(localStorage,dailyRecord);
+ }else if(dailyRoute&&JSON.stringify(game)!==JSON.stringify(s))dailyPracticeMoves++;
+ history.push(structuredClone(game));game=s;pendingPlay=null;armedCard=null;render();
+}
 function applyLand(id){
+ if(dailyRoute&&!dailyReady())return;
  try{
   const before=game;
   const land=before.lands.find(l=>l.id===id);
@@ -5299,6 +8598,7 @@ function applyLand(id){
  }catch(e){notify(e.message)}
 }
 function applyPass(){
+ if(dailyRoute&&!dailyReady())return;
  pendingPlay=null;
  try{
   const before=game,after=pass(before);
@@ -5315,7 +8615,7 @@ function applyPass(){
   }
  }catch(e){notify(e.message)}
 }
-function undo(){spellVfx.cancel();pendingPlay=null;armedCard=null;if(!history.length){render();return;}game=history.pop();render()}
+function undo(){if(dailyRoute&&dailySession!=='practice')return;spellVfx.cancel();pendingPlay=null;armedCard=null;if(!history.length){render();return;}game=history.pop();if(dailyRoute)dailyPracticeMoves=Math.max(0,dailyPracticeMoves-1);render()}
 $('lands').addEventListener('click',e=>{const btn=e.target.closest('[data-land]');if(btn)applyLand(btn.dataset.land)});
 $('battlefield').addEventListener('click',e=>{
  const unit=e.target.closest('[data-unit]');if(!unit)return;
@@ -5382,7 +8682,7 @@ function renderWorldMap(){
  $('worldMapProgress').textContent=Object.keys(progress).filter(id=>scenarios.some(p=>p.id===id)).length+' / '+scenarios.length+' levels cleared';
 }
 function openWorldMap(){
- if(dragSession||dragTouch?.moved||pendingPlay)return;
+ if(dailyRoute||dragSession||dragTouch?.moved||pendingPlay)return;
  returnMapFocus=document.activeElement;selectedGalaxy=Math.floor(index/50);selectedWorld=Math.floor(index/10);
  const map=$('worldMap');map.hidden=false;map.setAttribute('aria-hidden','false');
  $('mapButton').setAttribute('aria-expanded','true');renderWorldMap();$('closeMapButton').focus();
@@ -5405,9 +8705,9 @@ document.addEventListener('keydown',e=>{
  else if(!e.shiftKey&&document.activeElement===focusable.at(-1)){e.preventDefault();focusable[0].focus();}
 });
 
-$('passButton').addEventListener('click',applyPass);$('undoButton').addEventListener('click',undo);$('restartButton').addEventListener('click',()=>changeCase(index));$('prevButton').addEventListener('click',()=>changeCase(index-1));$('nextButton').addEventListener('click',()=>{if(index<scenarios.length-1)changeCase(index+1)});
+$('passButton').addEventListener('click',applyPass);$('undoButton').addEventListener('click',undo);$('restartButton').addEventListener('click',()=>{if(dailyRoute){if(dailySession==='practice')startDailyPractice();}else changeCase(index);});$('prevButton').addEventListener('click',()=>changeCase(index-1));$('nextButton').addEventListener('click',()=>{if(index<scenarios.length-1)changeCase(index+1)});
 $('scenarioSelect').addEventListener('change',e=>changeCase(Number(e.target.value)));
-$('hintButton').addEventListener('click',()=>{hint=!hint;render()});
+$('hintButton').addEventListener('click',()=>{if(dailyRoute&&dailySession!=='practice')return;hint=!hint;render()});
 // Desktop: legal targets get a soft glow; the one under the dragged card
 // brightens to confirm that releasing here will cast the spell at it.
 $('hand').addEventListener('dragstart',e=>{const source=e.target.closest('[data-drag-card]');if(!source||game.status!=='playing'){e.preventDefault();return;}
@@ -5454,5 +8754,17 @@ document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INP
  else if(e.key.toLowerCase()==='z'&&document.activeElement===document.body)undo();
 });
 let lastLevel=0;try{lastLevel=Number(localStorage.getItem('dc-stackbreaker-last-level')||'0')||0;}catch{}
-changeCase(lastLevel);
+if(dailyRoute){
+ if(dailyBound){
+  dailyRecord=readLocalDaily(localStorage,dailyBound);
+  changeCase(dailyIndex,true);
+ }else changeCase(0,true);
+ $('dailyBanner').hidden=false;
+ updateDailyCountdown();
+ window.setInterval(updateDailyCountdown,1000);
+ $('dailyStart').addEventListener('click',startDailyScored);
+ $('dailyPractice').addEventListener('click',startDailyPractice);
+ $('dailyCopy').addEventListener('click',copyDailyShare);
+ renderDailyStatus();
+}else changeCase(lastLevel);
 fetchScryfallCatalog();</script></body></html>

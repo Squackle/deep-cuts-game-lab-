@@ -6,9 +6,18 @@ import coreScenarios from '../data/scenarios.json' with {type:'json'};
 import campaignExpansion from '../data/campaign-expansion.json' with {type:'json'};
 import {GALAXIES,makeWorlds,generateStages} from './galaxies.js';
 import {commanderScenario,HAND_SIZE} from './commander.js';
+import {dailyUtcDate,dailyCountdown,dailyEntryForDate,bindDailyScenario,localDailyStart,dailyAcceptedTransition,readLocalDaily,writeLocalDaily,dailyShareText} from './daily.js';
 const extraStages=generateStages([...coreScenarios,...campaignExpansion]);
 const scenarios=[...coreScenarios,...campaignExpansion,...extraStages].map((scenario,i)=>commanderScenario(scenario,i));
 const chapters=makeWorlds();
+const dailyRoute=new URLSearchParams(window.location.search).get('daily')==='1';
+const dailyDate=dailyUtcDate();
+const dailyBound=dailyRoute?bindDailyScenario(dailyEntryForDate(dailyDate),scenarios):null;
+const dailyIndex=dailyBound?scenarios.findIndex(s=>s.id===dailyBound.puzzleId):-1;
+let dailySession='preview',dailyRecord=null,dailyPracticeMoves=0,dailyExpired=false;
+const isDaily=()=>dailyRoute&&dailyIndex>=0;
+const dailyReady=()=>isDaily()&&!dailyExpired&&dailyUtcDate()===dailyDate&&['practice','scored'].includes(dailySession)&&game?.status==='playing';
+const scoredDaily=()=>isDaily()&&dailySession==='scored';
 
 const $=id=>document.getElementById(id);
 const spellVfx=createSpellVfxController(document,window);
@@ -152,7 +161,13 @@ function objectiveText(s){const o=s.objective;if(o.type==='winKeepUnit')return`D
  if(o.type==='keepN')return`Keep at least ${o.count} friendly creatures alive.`;
  return`Keep ${s.units.find(u=>u.id===o.unitId)?.card||'the required creature'} ${o.type==='keepUnit'?'on the battlefield':'out of the graveyard'}.`;
 }
-function changeCase(n){spellVfx.cancel();closeWorldMap(false);clearDragFeedback();index=Math.max(0,Math.min(scenarios.length-1,n));selectedWorld=Math.floor(index/10);selectedGalaxy=Math.floor(index/50);try{localStorage.setItem('dc-stackbreaker-last-level',String(index));}catch{}game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;render();}
+function changeCase(n,force=false){
+ if(dailyRoute&&!force)return;
+ spellVfx.cancel();closeWorldMap(false);clearDragFeedback();
+ index=Math.max(0,Math.min(scenarios.length-1,n));selectedWorld=Math.floor(index/10);selectedGalaxy=Math.floor(index/50);
+ if(!dailyRoute)try{localStorage.setItem('dc-stackbreaker-last-level',String(index));}catch{}
+ game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;render();
+}
 function shortCard(u){
  const gone=u.zone!=='battlefield';const ability=game.hand.find(a=>a.sourceId===u.id&&!game.used.includes(a.id));
  const active=ability&&game.status==='playing'&&legalActions(game).includes(ability.id);
@@ -205,6 +220,7 @@ function choosePayment(i){const p=pendingPlay;if(!p||p.phase!=='payment'||!p.pay
  pendingPlay=null;submitCast(p.id,p.target,p.payments[i].spend);
 }
 function beginPlay(id,dropTarget=null,requireDirectTarget=false,dropZone=null){
+ if(dailyRoute&&!dailyReady()){notify('Choose practice or start your scored attempt first.');return;}
  const action=game.hand.find(a=>a.id===id&&!a.sourceId&&!game.used.includes(a.id));if(!action){notify('That card is unavailable.');return;}
  if(LANDS[action.card]){
   if(dropZone&&dropZone!=='fieldDrop'){notify('A land can only be played onto the battlefield, not onto the stack.');return;}
@@ -236,6 +252,7 @@ function beginPlay(id,dropTarget=null,requireDirectTarget=false,dropZone=null){
  else{render();renderPlayPrompt();notify(chosen===undefined?'Choose a legal target.':'Choose which mana to spend.');}
 }
 function activateFromBattlefield(id){
+ if(dailyRoute&&!dailyReady())return;
  const a=game.hand.find(x=>x.id===id&&x.sourceId);
  if(!a||!legalActions(game).includes(id)){notify('This card does not have an available activated ability.');return;}
  const targets=legalTargets(game,a);
@@ -290,16 +307,93 @@ function render(){closeCardPreview();const s=game,p=scenarios[index],worldIndex=
  $('lands').innerHTML=s.lands.length?s.lands.map(landCard).join(''):'<span class="empty-creatures">No lands needed — activate your creature’s ability</span>';
  $('stackCount').textContent=String(s.stack.length).padStart(2,'0');$('stack').innerHTML=s.stack.length?[...s.stack].reverse().map(stackCard).join(''):'<li class="stack-empty">Empty stack</li>';
  const remaining=s.hand.filter(a=>!a.sourceId&&!s.used.includes(a.id));$('handCount').textContent=remaining.length+' CARDS';$('hand').classList.toggle('many',remaining.length>3);$('hand').innerHTML=remaining.map(handCard).join('')||'<span class="empty-creatures">Your hand is empty</span>';
- $('passButton').disabled=s.status!=='playing';$('undoButton').disabled=!history.length;$('prevButton').disabled=index===0;$('prevButton').textContent='← PREV';$('nextButton').disabled=index===scenarios.length-1;$('nextButton').textContent=index%10===9?'NEXT WORLD →':'NEXT →';$('mapButton').setAttribute('aria-label',`Open chapter map for ${chapters[worldIndex].name}`);
+ $('passButton').disabled=s.status!=='playing'||(dailyRoute&&!dailyReady());$('undoButton').disabled=!history.length||(dailyRoute&&dailySession!=='practice');$('prevButton').disabled=dailyRoute||index===0;$('prevButton').textContent='← PREV';$('nextButton').disabled=dailyRoute||index===scenarios.length-1;$('nextButton').textContent=index%10===9?'NEXT WORLD →':'NEXT →';$('mapButton').setAttribute('aria-label',`Open chapter map for ${chapters[worldIndex].name}`);
  $('resultMini').className='result-mini'+(s.status==='won'?' won':s.status==='lost'?' lost':'');$('resultEyebrow').textContent=s.status==='won'?'✓ CASE SOLVED':s.status==='lost'?'✕ TRY AGAIN':'YOUR MOVE';
  $('resultTitle').textContent=s.status==='won'?(index%10===9?'★ Chapter completed — claim your flag on the map!':'Next case is ready'):s.status==='lost'?'Reset or undo to retry':'Tap lands, drag a spell, or activate a creature';
+ if(dailyRoute){
+  $('scenarioSelect').disabled=true;$('mapButton').disabled=true;
+  $('restartButton').disabled=dailySession!=='practice'||dailyExpired;
+  $('hintButton').disabled=dailySession!=='practice'||dailyExpired;
+  $('passButton').disabled=!dailyReady();
+  $('game').classList.add('daily-game');
+ }
  $('scenarioIntro').textContent=p.intro;$('objectiveLong').textContent=objectiveText(s);$('hintText').hidden=!hint;$('hintText').textContent=p.hint;$('hintButton').setAttribute('aria-expanded',String(hint));
  $('resultExplanation').textContent=s.status==='playing'?'Complete the case to see the rules explanation.':p.explanation;
- if(s.status==='won'){const par=p.par||2,stars=s.used.length<=par?3:s.used.length===par+1?2:1;progress[p.id]=Math.max(progress[p.id]||0,stars);save();$('resultStars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);}else $('resultStars').textContent='';
+ if(s.status==='won'){const par=p.par||2,stars=s.used.length<=par?3:s.used.length===par+1?2:1;if(!dailyRoute){progress[p.id]=Math.max(progress[p.id]||0,stars);save();}$('resultStars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);}else $('resultStars').textContent='';
  renderPlayPrompt();$('completed').textContent=Object.keys(progress).filter(id=>scenarios.some(s=>s.id===id)).length+' / '+scenarios.length+' SOLVED';$('log').innerHTML=s.log.slice(-14).reverse().map(x=>`<li>${esc(x)}</li>`).join('');$('version').textContent=RULES_VERSION;$('live').textContent=s.log.at(-1)||'Tap a land to produce mana.';
  if(dragSession)paintLegalDragTargets();
  refreshHandArrows();
+ if(dailyRoute)renderDailyStatus();
 }
+
+function updateDailyCountdown(){
+ if(!dailyRoute)return;
+ $('dailyCountdown').textContent=dailyCountdown();
+ const expired=dailyUtcDate()!==dailyDate;
+ if(expired&&!dailyExpired){
+  dailyExpired=true;
+  if(dailySession==='scored'&&dailyRecord?.status==='playing'){
+   dailyRecord={...dailyRecord,status:'expired',completed:false};
+   writeLocalDaily(localStorage,dailyRecord);
+  }
+  spellVfx.cancel();render();
+ }
+}
+function renderDailyStatus(){
+ if(!dailyRoute)return;
+ const active=!!dailyBound&&!dailyExpired&&dailyUtcDate()===dailyDate;
+ $('dailyDate').textContent=active?'Challenge '+dailyDate+' UTC · '+dailyBound.difficulty:
+  dailyExpired?'This UTC day has ended. Reload for the next challenge.':
+  'No dated puzzle is published for this UTC date. A new manifest is needed.';
+ $('dailyStart').disabled=!active;$('dailyPractice').disabled=!active;
+ $('dailyStart').textContent=dailyRecord?dailyRecord.status==='playing'?'RESUME LOCAL SCORED ATTEMPT':'VIEW RECORDED ATTEMPT':'START LOCAL SCORED ATTEMPT';
+ $('scenarioSelect').closest('.mission-picker')?.classList.toggle('daily-picker-locked',true);
+ const summary=dailySession==='scored'&&dailyRecord?
+  (dailyRecord.status==='playing'?'Scored attempt in progress':dailyRecord.status==='won'?'Daily solved locally':dailyRecord.status==='expired'?'Attempt expired at UTC midnight':'Daily attempt ended without a win')+
+  ' · '+dailyRecord.acceptedActionCount+' accepted actions · LOCAL / UNVERIFIED':
+  dailySession==='practice'?'Unlimited practice · '+dailyPracticeMoves+' accepted actions · hints, undo, and reset allowed · NO SCORE':
+  dailyRecord?'Local scored start already saved for today. Resume or practice freely.':
+  'Choose unlimited practice or start one local scored attempt (no hints, undo or retry).';
+ $('dailyStatus').textContent=summary;
+ const result=dailySession==='scored'?dailyRecord:
+  dailySession==='practice'&&game?.status!=='playing'?{status:game.status,acceptedActionCount:dailyPracticeMoves}:null;
+ $('dailyResult').hidden=!result;
+ if(result){
+  $('dailyActions').textContent=result.acceptedActionCount+' accepted actions · '+result.status.toUpperCase();
+  $('dailyShareText').value=dailyShareText(dailyBound,result);
+ }
+}
+function startDailyPractice(){
+ if(!dailyBound||dailyExpired)return;
+ dailySession='practice';dailyPracticeMoves=0;
+ changeCase(dailyIndex,true);
+ notify('Unlimited local practice. Does not earn a verified daily score.');
+}
+function startDailyScored(){
+ if(!dailyBound||dailyExpired)return;
+ if(dailyRecord){
+  dailySession='scored';spellVfx.cancel();clearDragFeedback();closeWorldMap(false);
+  game=structuredClone(dailyRecord.state);history=[];hint=false;pendingPlay=null;armedCard=null;
+  render();return;
+ }
+ const initial=createGame(scenarios[dailyIndex]);
+ dailyRecord=localDailyStart(dailyBound,initial);
+ if(!writeLocalDaily(localStorage,dailyRecord)){
+  dailyRecord=null;notify('Local storage is unavailable. Use unlimited practice instead.');return;
+ }
+ dailySession='scored';spellVfx.cancel();clearDragFeedback();game=initial;
+ history=[];hint=false;pendingPlay=null;armedCard=null;
+ render();notify('Local scored attempt started. No hints, undo, or resets. Unverified preview.');
+}
+async function copyDailyShare(){
+ const text=$('dailyShareText').value;if(!text)return;
+ try{
+  if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(text);
+  else{$('dailyShareText').focus();$('dailyShareText').select();if(!document.execCommand('copy'))throw Error('Manual copy needed');}
+  notify('Spoiler-free LOCAL / UNVERIFIED result copied.');
+ }catch{notify('Select the result text and copy it manually.');}
+}
+
 function refreshHandArrows(){
  const row=$('hand');const prev=$('handPrev'),next=$('handNext');
  if(!row||!prev||!next)return;
@@ -313,8 +407,17 @@ $('handPrev').addEventListener('click',()=>scrollHand(-1));
 $('handNext').addEventListener('click',()=>scrollHand(1));
 $('hand').addEventListener('scroll',refreshHandArrows,{passive:true});
 function notify(message){$('live').textContent=message;}
-function pushState(s){spellVfx.cancel();clearDragFeedback();history.push(structuredClone(game));game=s;pendingPlay=null;armedCard=null;render()}
+function pushState(s){
+ if(dailyRoute&&!dailyReady())return;
+ spellVfx.cancel();clearDragFeedback();
+ if(scoredDaily()){
+  dailyRecord=dailyAcceptedTransition(dailyRecord,game,s);
+  writeLocalDaily(localStorage,dailyRecord);
+ }else if(dailyRoute&&JSON.stringify(game)!==JSON.stringify(s))dailyPracticeMoves++;
+ history.push(structuredClone(game));game=s;pendingPlay=null;armedCard=null;render();
+}
 function applyLand(id){
+ if(dailyRoute&&!dailyReady())return;
  try{
   const before=game;
   const land=before.lands.find(l=>l.id===id);
@@ -334,6 +437,7 @@ function applyLand(id){
  }catch(e){notify(e.message)}
 }
 function applyPass(){
+ if(dailyRoute&&!dailyReady())return;
  pendingPlay=null;
  try{
   const before=game,after=pass(before);
@@ -350,7 +454,7 @@ function applyPass(){
   }
  }catch(e){notify(e.message)}
 }
-function undo(){spellVfx.cancel();pendingPlay=null;armedCard=null;if(!history.length){render();return;}game=history.pop();render()}
+function undo(){if(dailyRoute&&dailySession!=='practice')return;spellVfx.cancel();pendingPlay=null;armedCard=null;if(!history.length){render();return;}game=history.pop();if(dailyRoute)dailyPracticeMoves=Math.max(0,dailyPracticeMoves-1);render()}
 $('lands').addEventListener('click',e=>{const btn=e.target.closest('[data-land]');if(btn)applyLand(btn.dataset.land)});
 $('battlefield').addEventListener('click',e=>{
  const unit=e.target.closest('[data-unit]');if(!unit)return;
@@ -417,7 +521,7 @@ function renderWorldMap(){
  $('worldMapProgress').textContent=Object.keys(progress).filter(id=>scenarios.some(p=>p.id===id)).length+' / '+scenarios.length+' levels cleared';
 }
 function openWorldMap(){
- if(dragSession||dragTouch?.moved||pendingPlay)return;
+ if(dailyRoute||dragSession||dragTouch?.moved||pendingPlay)return;
  returnMapFocus=document.activeElement;selectedGalaxy=Math.floor(index/50);selectedWorld=Math.floor(index/10);
  const map=$('worldMap');map.hidden=false;map.setAttribute('aria-hidden','false');
  $('mapButton').setAttribute('aria-expanded','true');renderWorldMap();$('closeMapButton').focus();
@@ -440,9 +544,9 @@ document.addEventListener('keydown',e=>{
  else if(!e.shiftKey&&document.activeElement===focusable.at(-1)){e.preventDefault();focusable[0].focus();}
 });
 
-$('passButton').addEventListener('click',applyPass);$('undoButton').addEventListener('click',undo);$('restartButton').addEventListener('click',()=>changeCase(index));$('prevButton').addEventListener('click',()=>changeCase(index-1));$('nextButton').addEventListener('click',()=>{if(index<scenarios.length-1)changeCase(index+1)});
+$('passButton').addEventListener('click',applyPass);$('undoButton').addEventListener('click',undo);$('restartButton').addEventListener('click',()=>{if(dailyRoute){if(dailySession==='practice')startDailyPractice();}else changeCase(index);});$('prevButton').addEventListener('click',()=>changeCase(index-1));$('nextButton').addEventListener('click',()=>{if(index<scenarios.length-1)changeCase(index+1)});
 $('scenarioSelect').addEventListener('change',e=>changeCase(Number(e.target.value)));
-$('hintButton').addEventListener('click',()=>{hint=!hint;render()});
+$('hintButton').addEventListener('click',()=>{if(dailyRoute&&dailySession!=='practice')return;hint=!hint;render()});
 // Desktop: legal targets get a soft glow; the one under the dragged card
 // brightens to confirm that releasing here will cast the spell at it.
 $('hand').addEventListener('dragstart',e=>{const source=e.target.closest('[data-drag-card]');if(!source||game.status!=='playing'){e.preventDefault();return;}
@@ -489,5 +593,17 @@ document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INP
  else if(e.key.toLowerCase()==='z'&&document.activeElement===document.body)undo();
 });
 let lastLevel=0;try{lastLevel=Number(localStorage.getItem('dc-stackbreaker-last-level')||'0')||0;}catch{}
-changeCase(lastLevel);
+if(dailyRoute){
+ if(dailyBound){
+  dailyRecord=readLocalDaily(localStorage,dailyBound);
+  changeCase(dailyIndex,true);
+ }else changeCase(0,true);
+ $('dailyBanner').hidden=false;
+ updateDailyCountdown();
+ window.setInterval(updateDailyCountdown,1000);
+ $('dailyStart').addEventListener('click',startDailyScored);
+ $('dailyPractice').addEventListener('click',startDailyPractice);
+ $('dailyCopy').addEventListener('click',copyDailyShare);
+ renderDailyStatus();
+}else changeCase(lastLevel);
 fetchScryfallCatalog();
