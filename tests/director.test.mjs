@@ -12,7 +12,7 @@ test("Director Mode is marked permanently internal and available for both game m
  assert.equal(DIRECTOR_ONLY,true);
  assert.deepEqual(DIRECTOR_MODES,["hunt","classic"]);
  assert.deepEqual(DIRECTOR_PHASES,["first","final","victory"]);
- assert.equal(RULES_VERSION,"hive-1.5.3","Director adds no replay-facing engine rules");
+ assert.equal(RULES_VERSION,"hive-1.5.4","Director adds no replay-facing engine rules");
 });
 test("Each of the five bosses can start instantly in first or final phase",()=>{
  for(const boss of LAIR_BOSSES){

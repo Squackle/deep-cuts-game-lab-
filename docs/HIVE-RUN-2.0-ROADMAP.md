@@ -48,12 +48,14 @@ Ship **two finished arcade experiences** rather than an unbounded live-service r
 - [x] Bump Lab-only deterministic rules to `hive-1.5.3`; extend replay, 7-segment boss capture, color effects, Director cheat isolation and collision regression tests.
 - [x] Owner chose and approved the seven-segment baseline; final end-to-end release QA and production authorization remain separate gates.
 
-### D4 — Real endings (IMPLEMENTATION PLANNED; TEST LAB FIRST)
-- [ ] Brood Trail authentic board-fill perfect clear: finale animation/music, earned-clear summary, reduced-motion and mute support.
-- [ ] Predator Hunt real Broodmother last capture: terminal victory rather than more endless evolutions/boss loops.
+### D4 — Real endings (AUTHENTIC SIMULATION COMPLETE IN LAB; CINEMATIC PRESENTATION NEXT)
+- [x] Brood Trail earned perfect-clear terminal condition, including permanent-rock / temporary-hazard discrimination, in Lab `hive-1.5.4`.
+- [ ] Brood Trail actual finale animation/music, score recap, reduced-motion and mute support (Task 2B).
+- [x] Predator Hunt earned final Broodmother capture at evolution 12 terminates once, with boss score/energy and no draft or further AI (Lab `hive-1.5.4`).
 - [ ] Director preview shortcuts trigger **non-authoritative** versions for QA and animation inspection; these do not earn scores/achievements.
-- [ ] Ensure death, timeout/technical run boundary and real victory use distinct honest language.
-- [ ] Tests for ending triggers, auto-stop, replay determinism and score records.
+- [x] Distinct deterministic death, 6,000-step run limit, Lair practice and two earned victory outcomes with honest temporary textual overlay labels.
+- [x] Lab deterministic tests for both real terminal triggers, one-time boss award, frozen game state, draft priority, no fake hazard fill, and replay outcome anti-forgery.
+- [ ] Public server/client replay equivalence and historical score preservation (Task 4, separately authorized).
 
 ### D5 — Acceptance and 2.0 public release (PENDING)
 - [ ] Physical iOS/Android, desktop keyboards, touch, fullscreen, accessibility, performance and color-contrast signoff.

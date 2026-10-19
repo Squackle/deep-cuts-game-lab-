@@ -32,7 +32,7 @@ test("Director selects portrait only for Hunt in portrait mobile viewports",()=>
  assert.match(css,/min-height:48px/);
  assert.ok(js.includes('linear-gradient(145deg,#96754b,#30204f,#112a2d)'),
   "Brood Trail maintains its distinct prototype backdrop");
- assert.equal(RULES_VERSION,"hive-1.5.3","no ranked engine changes permitted");
+ assert.equal(RULES_VERSION,"hive-1.5.4","no ranked engine changes permitted");
 });
 
 test("Mobile finale remains permanently Game Lab-only",()=>{
