@@ -36,7 +36,7 @@ test('gallery definitions preserve 13 titles, seven frames, six FX themes and 24
   const choices=cosmeticChoices(type);
   assert.equal(choices.length,length,type);
   assert.equal(new Set(choices.map(x=>x.id)).size,length,type);
-  assert.ok(choices.every(x=>typeof x.achievementId==='string'&&x.name));
+  assert.ok(choices.every(x=>(typeof x.achievementId==='string'||x.starter===true)&&x.name));
  }
  assert.equal(cosmeticChoices('invalid').length,0);
  assert.equal(COSMETIC_META.white,'White · Radiance');
@@ -46,10 +46,11 @@ test('no cosmetic is unlocked without a genuine mastery ledger; defaults remain 
  assert.deepEqual(sanitizeCosmeticEquip(null,ledger),raw);
  for(const type of COSMETIC_TYPES){
   for(const c of cosmeticChoices(type)){
-   assert.equal(hasCosmeticGrant(ledger,type,c.id),false,c.id);
+   const starter=type==='frame'&&c.id==='red';
+   assert.equal(hasCosmeticGrant(ledger,type,c.id),starter,c.id);
    const denied=equipLocalCosmetic(raw,ledger,type,c.id);
-   assert.equal(denied.ok,false,c.id);
-   assert.equal(denied.equip[type],null);
+   assert.equal(denied.ok,starter,c.id);
+   assert.equal(denied.equip[type],starter?'red':null);
   }
   const def=equipLocalCosmetic(raw,ledger,type,null);
   assert.equal(def.ok,true);
@@ -64,6 +65,7 @@ test('real Selfless Spirit victory permits first-responder title and white frame
  assert.equal(hasCosmeticGrant(ledger,'vfx','white'),false);
  assert.equal(hasCosmeticGrant(ledger,'title','apprentice'),false);
  assert.equal(hasCosmeticGrant(ledger,'frame','gold'),false);
+ assert.equal(hasCosmeticGrant(emptyMasteryLedger(),'frame','red'),true); // free starter, not achievement
  const a=equipLocalCosmetic(emptyCosmeticEquip(),ledger,'title','first-responder');
  assert.equal(a.ok,true);
  const b=equipLocalCosmetic(a.equip,ledger,'frame','white');
