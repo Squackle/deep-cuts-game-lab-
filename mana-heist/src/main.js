@@ -17,6 +17,7 @@ import {renderCardReferences,referenceFor} from "./card-references.js";
 import {installCardInspector} from "./card-inspector.js";
 import {installCardMagnifier} from "./card-magnifier.js";
 import {SAGE_LESSONS} from "./sage-lessons.js";
+import {BONUS_TRIALS,BONUS_TRIAL_STORAGE_KEY,normalizeBonusBests,betterBonusScore} from "./bonus-trials.js";
 import {LEARN_LEVELS} from "./expanded-learn.js";
 import {certifyCapstone} from "./capstone-certificates.js";
 import {certifyMastery} from "./mastery-certificates.js";
@@ -44,6 +45,9 @@ function readProgress(){
 const modeKey="dc-mana-heist-mode-v1",learnKey="dc-mana-heist-learn-v1";
 const revisedKey="dc-mana-heist-capstones-v1";
 const varietyKey="dc-mana-heist-variety-v1";
+let trialIndex=null,trialBests={};
+try{trialBests=normalizeBonusBests(JSON.parse(localStorage.getItem(BONUS_TRIAL_STORAGE_KEY)||"null"));}catch{}
+function persistBonusTrials(){try{localStorage.setItem(BONUS_TRIAL_STORAGE_KEY,JSON.stringify({v:1,bests:trialBests}));}catch{}}
 let varietyBests={};
 try{const d=JSON.parse(localStorage.getItem(varietyKey)||"null");if(d?.v===1&&d.bests)for(const l of LEVELS.filter(l=>l.revision===3)){const best=d.bests[l.id];if(validBest(best))varietyBests[l.id]={turn:best.turn,spentLife:best.spentLife,actions:Number.isInteger(best.actions)?best.actions:999};}}catch{}
 function persistVariety(){try{localStorage.setItem(varietyKey,JSON.stringify({v:1,bests:varietyBests}));}catch{}}
@@ -153,7 +157,7 @@ const proofCache=new Map();
 const sourceProofCache=new Map();
 function proofFor(id){
  if(proofCache.has(id))return proofCache.get(id);
- const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id);
+ const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id)||BONUS_TRIALS.find(v=>v.id===id);
  if(!puzzle)return null;
  const exact=puzzle.revision===3?certifyDiverse(puzzle):puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
  let proof=exact;
@@ -181,7 +185,7 @@ function renderLearn(){
  const desc=document.querySelector('[data-mode="learn"] .mode-description');
  if(desc)desc.textContent=LEARN_COUNT+" step-by-step exercises, from basic lands and rituals to opponent-dependent colors and damage tradeoffs.";
  const intro=document.querySelector("#learnPanel .learn-panel-head p:not(.overline)");
- if(intro)intro.textContent="Twenty-six skill-specific lessons. Follow the Sage's Notes beside the cauldron; this mode tracks learning without stars.";
+ if(intro)intro.textContent=LEARN_COUNT+" skill-specific lessons. Follow the Sage's Notes beside the cauldron. Practice lessons are unscored; optional bonus trials keep separate local medals.";
 
  el("learnCount").textContent=done.size+" / "+LEARN_COUNT+" COMPLETED";
  for(const group of LEARN_GROUPS){
@@ -201,6 +205,21 @@ function renderLearn(){
   }
   section.append(h,list);root.append(section);
  }
+ const trials=document.createElement("section");trials.className="learn-group bonus-trial-group";
+ const head=document.createElement("div");head.className="learn-group-header";
+ const title=document.createElement("h3");title.textContent="BONUS MANA TRIALS";
+ const caption=document.createElement("p");caption.textContent="Optional scored side-vaults · local medals only · no change to your 500 campaign scores.";
+ head.append(title,caption);const list=document.createElement("div");list.className="learn-exercises";
+ BONUS_TRIALS.forEach((trial,i)=>{
+  const record=trialBests[trial.id],button=document.createElement("button");button.type="button";
+  button.className="learn-exercise"+(record?" complete":"");button.dataset.trialIndex=String(i);
+  const number=document.createElement("span");number.className="learn-number";number.textContent="T"+(i+1);
+  const text=document.createElement("span");text.className="learn-exercise-copy";
+  const label=document.createElement("strong");label.textContent=trial.title;
+  const status=document.createElement("small");status.textContent=record?"★".repeat(record.stars)+" · BEST TURN "+record.turn:"SCORED SIDE VAULT";
+  text.append(label,status);button.append(number,text);list.append(button);
+ });
+ trials.append(head,list);root.append(trials);
 }
 function showModePanels(){
  const learn=mode==="learn",heist=mode==="heist";
@@ -227,6 +246,7 @@ function desc(action){
   const source=getCard(level,action.id);
   const paid=action.spend.map(id=>state.manaUnits.find(x=>x.id===id)?.color).filter(Boolean);
   return (paid.length?"Spend "+paid.join(" + ")+" · ":"")+source.name+" → "+action.output.join(" + ")+
+    (source.v2==="talisman"&&action.mode!=="talisman-C"?" · 1 damage to you":"")+
     (source.v2==="ziggurat"?" · creature spells only":"")+
     (source.v2==="treasure"||source.v2==="petal"?" · sacrifice":"");
  }
