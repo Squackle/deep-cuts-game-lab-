@@ -3,7 +3,7 @@ import {ADVANCED_CARDS,createAdvancedGame,castAdvanced,resolveAdvanced,
   advancedTargetOptions,targetRules} from '../src/advanced-stack.js';
 
 const byId=id=>document.getElementById(id);
-const esc=value=>String(value??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;'}[x]));
+const esc=value=>String(value??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
 const validCases=new Map(cases.map(c=>[c.id,c]));
 const routeCase=new URLSearchParams(location.search).get('case');
 let active=validCases.has(routeCase)?routeCase:cases[0].id;
