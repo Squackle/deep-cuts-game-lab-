@@ -144,7 +144,7 @@ function render(){
   const result=byId('result');result.className='result '+(state.status==='playing'?'':state.status);
   result.textContent=state.status==='playing'?'PRIORITY WINDOW OPEN':state.status==='won'?'CASE SOLVED · STACKBROKEN':'CASE LOST · TRY AGAIN';
   const resolveButton=byId('resolveButton');resolveButton.disabled=state.status!=='playing'||!state.stack.length;
-  resolveButton.textContent=state.stack.length?state.stack.at(-1).cardId==='Twincast'?'RESOLVE TWNCAST · CREATE COPY →':
+  resolveButton.textContent=state.stack.length?state.stack.at(-1).cardId==='Twincast'?'RESOLVE TWINCAST · CREATE COPY →':
     'PASS / RESOLVE TOP →':'STACK EMPTY';
   byId('lessonText').textContent=state.status==='won'?c.lesson:'Complete a case to reveal the relevant copy and target interaction.';
   const log=state.events.slice(-14).map(e=>`${e.type} · ${e.subjectId}`);
