@@ -17,7 +17,7 @@ function mother(){
  return run;
 }
 test("Matriarch 1.5.2 keeps the Broodmother catchable across every phase",()=>{
- assert.equal(RULES_VERSION,"hive-1.5.3");
+ assert.equal(RULES_VERSION,"hive-1.5.4");
  assert.equal(PREY.broodmother.period,BROODMOTHER_PERIOD);
  assert.equal(BROODMOTHER_PERIOD,7);
  for(const id of ["stalker","weaver","warden","guardian"])assert.equal(PREY[id].period,4);
