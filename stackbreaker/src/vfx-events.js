@@ -3,6 +3,7 @@
 import {CARDS} from './cards.js';
 import {pyroblastVisualMode,renderPyroblastVfx} from './pyroblast-vfx.js';
 import {dustVisualMode,captureDustCard,renderSpellDust} from './dust-vfx.js';
+import {observeResolutionChanges,resolutionFxMode,renderResolutionFx,fxNarration} from './resolution-fx.js';
 
 const pointRect=el=>{
  if(!el||typeof el.getBoundingClientRect!=='function')return null;
@@ -49,6 +50,7 @@ export function describeSpellResolution(before,after){
  const playerDamaged=target==='life'&&after.life?.[targetId]<before.life?.[targetId];
  const didDamage=(card.effect==='damage'||card.effect==='helix')&&(playerDamaged||creatureDamaged);
  const destroyed=target==='creature'&&targetUnit?.zone==='battlefield'&&afterUnit?.zone==='graveyard';
+ const changes=observeResolutionChanges(before,after);
  let outcome='resolved';
  if(invalid)outcome='invalid-target';
  else if(uncounterable)outcome='uncounterable';
@@ -66,6 +68,8 @@ export function describeSpellResolution(before,after){
    ? (before.life?.[targetId]??0)-(after.life?.[targetId]??0)
    : (afterUnit?.damage??0)-(targetUnit?.damage??0)):0,
   terminalStatus:after.status==='won'||after.status==='lost'?after.status:null,
+  colors:card.colors||[],changes,
+  isCreatureSpell:top.spell!==false&&card.type?.startsWith('Creature'),
   gameStep:after.step,scenarioId:before.id
  };
 }
@@ -80,7 +84,16 @@ export function captureSpellAnchors(root,event){
   :event.targetKind==='creature'
   ?findDataNode(root,'[data-unit]','unit',event.targetId)
   :null;
- const anchors={source:pointRect(source),target:pointRect(target)};
+ const field=pointRect(root?.getElementById?.('battlefield'));
+ const healTarget=event.effect==='heal'||event.effect==='sacGain'?
+  pointRect(root?.getElementById?.(event.targetId==='opponent'?'opponentLife':'playerLife')):null;
+ const anchors={source:pointRect(source),target:pointRect(target)||healTarget,
+  field,affected:(event.changes?.units||[]).map(x=>pointRect(
+   findDataNode(root,'[data-unit]','unit',x.id))).filter(Boolean)};
+ // A creature summon is not targeted; the battlefield is its arrival point.
+ if(event.isCreatureSpell&&!anchors.target)anchors.target=field;
+ if(['destroyAll','weakenAll','sweepDamage','ward','intervention'].includes(event.effect)&&!anchors.target)
+  anchors.target=field;
  const dustCard=captureDustCard(root,event);
  if(dustCard)anchors.dustCard=dustCard;
  return anchors;
@@ -101,7 +114,8 @@ export function describeSpellVfxForA11y(event){
   case 'prevented':return card+' resolves; damage is prevented.';
   case 'damage-dealt':return card+' resolves and deals '+(event.damageAmount||0)+' damage to '+target+'.';
   case 'destroyed':return card+' destroys '+target+'.';
-  default:return card+' resolves.';
+  default:{const semantic=resolutionFxMode(event);
+   return semantic!=='none'?fxNarration(event,semantic):card+' resolves.';}
  }
 }
 /** Deterministic screen-space bolt: repeatable seed, no game RNG or effects. */
@@ -183,19 +197,23 @@ export function createSpellVfxController(root,view){
   if(event.card==='Pyroblast'&&fireMode==='generic')return {played:false,reason:'unverified-pyroblast-outcome'};
   const boltMode=lightningVisualMode(event);
   const dustMode=dustVisualMode(event);
+  const semanticMode=resolutionFxMode(event);
   const mode=fireMode!=='generic'?fireMode:boltMode!=='generic'?boltMode:
-   dustMode!=='none'?dustMode:'generic';
+   dustMode!=='none'?dustMode:semanticMode!=='none'?semanticMode:'generic';
   const misses=mode==='dissipate'||mode==='fire-miss'||mode==='dust-fizzle';
-  if(!misses&&!anchors.target)return {played:false,reason:'no-anchors'};
+  const semantic=semanticMode!=='none'&&mode===semanticMode;
+  if(!misses&&!semantic&&!anchors.target)return {played:false,reason:'no-anchors'};
   const geometry=anchors.target?lightningGeometry(anchors.source,anchors.target,event.sourceStackId):null;
-  if(!misses&&!geometry)return {played:false,reason:'overlapping'};
+  if(!misses&&!semantic&&!geometry)return {played:false,reason:'overlapping'};
   const layer=root.createElement('div');
   layer.className='sb-vfx-layer';
   layer.setAttribute('aria-hidden','true');
   layer.setAttribute('data-vfx-mode',mode);
   layer.setAttribute('data-vfx-outcome',event.outcome||'resolved');
   if(event.terminalStatus)layer.setAttribute('data-vfx-terminal',event.terminalStatus);
-  if(mode.startsWith('fire-')){
+  if(semantic){
+   renderResolutionFx(root,layer,view,event,anchors,mode);
+  }else if(mode.startsWith('fire-')){
    if(typeof root.createElementNS!=='function')return {played:false,reason:'no-svg'};
    renderPyroblastVfx(root,layer,view,event,anchors,mode);
   }else if(mode==='dust-counter'||mode==='dust-fizzle'){
@@ -255,7 +273,7 @@ export function createSpellVfxController(root,view){
   }
   if(dustMode!=='none')renderSpellDust(root,layer,event,anchors,dustMode);
   root.body.appendChild(layer);cue=layer;
-  const lifetime=mode==='generic'?260:mode==='dust-counter'?880:mode==='dust-fizzle'?650:
+  const lifetime=semantic?850:mode==='generic'?260:mode==='dust-counter'?880:mode==='dust-fizzle'?650:
    misses?420:mode.startsWith('fire-')?900:800;
   if(typeof view?.setTimeout==='function')clearTimer=view.setTimeout(()=>{
    if(cue===layer){layer.remove();cue=null;}clearTimer=null;
