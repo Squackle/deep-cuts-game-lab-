@@ -68,6 +68,7 @@ test('Multiple independent targets and a modal choice can be normalized and vali
  const chosen=validateModeAndTargets(card,{chosenModes:['artifacts'],
    targets:['sol-ring','arcane-signet']},allowed);
  assert.deepEqual(chosen,{chosenModes:['artifacts'],targets:['sol-ring','arcane-signet']});
+ assert.deepEqual(validateModeAndTargets(card,{chosenModes:['creature'],targets:['creature-one']},allowed),{chosenModes:['creature'],targets:['creature-one']});
  assert.throws(()=>validateModeAndTargets(card,{chosenModes:['artifacts'],
    targets:['sol-ring','sol-ring']},allowed),/must differ/);
  assert.throws(()=>validateModeAndTargets(card,{chosenModes:['artifacts'],
