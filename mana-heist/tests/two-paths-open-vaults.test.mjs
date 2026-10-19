@@ -19,14 +19,14 @@ test("the full 500-vault map and every galaxy open with no completed puzzles",()
  assert.equal(galaxyAccessible(10,empty),false);
  assert.equal(chapterAccessible(50,empty),false);
 });
-test("26 Learn Mana exercises include the original 18 authored boards plus new independent studies",()=>{
+test("28 Learn Mana exercises include the original 18 authored boards plus ten independent studies",()=>{
  const indices=LEARN_GROUPS.flatMap(group=>group.indices);
- assert.equal(LEARN_COUNT,26);
- assert.deepEqual([...indices].sort((a,b)=>a-b),Array.from({length:26},(_,i)=>i));
+ assert.equal(LEARN_COUNT,28);
+ assert.deepEqual([...indices].sort((a,b)=>a-b),Array.from({length:28},(_,i)=>i));
  assert.deepEqual(BASE_LEVELS.map(l=>l.id),LEVELS.slice(0,18).map(l=>l.id));
- for(let i=0;i<26;i++)assert.ok(isLearnLevel(i));
- for(const i of [-1,26,249])assert.equal(isLearnLevel(i),false);
- assert.equal(nextLearnIndex(0),1);assert.equal(nextLearnIndex(25),null);
+ for(let i=0;i<28;i++)assert.ok(isLearnLevel(i));
+ for(const i of [-1,28,249])assert.equal(isLearnLevel(i),false);
+ assert.equal(nextLearnIndex(0),1);assert.equal(nextLearnIndex(25),26);assert.equal(nextLearnIndex(27),null);
 });
 test("learning progress validates separately, does not grant puzzle medals or unlock gating",()=>{
  const data=normalizedLearnProgress({completed:[0,2,2,6,999,-1,"4"],last:2});
@@ -61,11 +61,11 @@ test("mode-specific save key does not replace the existing 250-stage v2 bests",(
 
 test("first-load campaign and lessons agree with current playable inventory",()=>{
  const html=read("index.html");
- assert.match(html,/Explore 500 mana puzzles across ten galaxies and 50 worlds, plus 26 Learn Mana lessons/);
+ assert.match(html,/Explore 500 mana puzzles across ten galaxies and 50 worlds, plus 28 Learn Mana lessons/);
  assert.match(html,/All 500 vaults are unsealed across ten galaxies/);
  assert.match(html,/0 \/ 500 CRACKED/);
- assert.match(html,/0 \/ 26 COMPLETED/);
- assert.match(html,/original 18 foundations and eight advanced lessons/);
+ assert.match(html,/0 \/ 28 COMPLETED/);
+ assert.match(html,/original 18 foundations and ten advanced lessons/);
  assert.doesNotMatch(html,/Solve 250 land-and-mana vault puzzles/);
  assert.doesNotMatch(html,/All 250 vaults are unsealed/);
  assert.doesNotMatch(html,/0 \/ 250 CRACKED|0 \/ 18 COMPLETED/);
