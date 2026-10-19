@@ -437,3 +437,136 @@ body.game-only .encounter-hud .encounter-banner{padding:2px 5px;font-size:9px}
 .lab-all-games:focus-visible{outline:3px solid #f4cf79;outline-offset:3px}
 @media(max-width:670px){.lab-header{flex-wrap:wrap}.lab-header-actions{margin-left:auto}.lab-all-games{font-size:9px;min-height:39px;padding:8px 9px}}
 @media(max-width:390px){.lab-header{gap:9px}.lab-header-actions{width:100%;justify-content:space-between}.lab-all-games{flex:1}.lab-badge{font-size:9px}}
+
+/* Dominion 2B — true earned victories: fullscreen and completely isolated from
+ * unranked Director previews. Never reveal for ordinary death or a 6,000-step cap. */
+[hidden]{display:none!important}
+html.dominion-victory-active{overflow:hidden;overscroll-behavior:none}
+.dominion-victory{
+ position:fixed;inset:0;z-index:3000;
+ width:100%;height:100%;height:100dvh;overflow:hidden;
+ display:block;background:#090f1d;color:#fff1cc;
+ font-family:ui-monospace,"Courier New",monospace;
+ isolation:isolate;
+}
+.dominion-victory-art{position:absolute;inset:0;z-index:-2;overflow:hidden}
+.dominion-victory-art img{
+ position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+ object-position:center center;display:block;image-rendering:auto;
+}
+.dominion-mobile-poster{display:none!important}
+.dominion-victory-trail-art{display:none}
+.dominion-victory-trail-art canvas{
+ display:block;width:100%;height:100%;object-fit:cover;image-rendering:pixelated;
+}
+.dominion-victory--classic .dominion-victory-hunt-art{display:none}
+.dominion-victory--classic .dominion-victory-trail-art{display:block}
+.dominion-victory::before{
+ content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+ background:linear-gradient(0deg,rgba(7,10,16,.75),transparent 20%),
+  linear-gradient(90deg,rgba(7,10,16,.16),transparent 32%);
+}
+.dominion-victory-narrative{
+ position:absolute;top:12%;left:50%;transform:translateX(-50%);
+ width:min(94vw,850px);text-align:center;
+ text-shadow:3px 3px #2f2337,-2px -2px #15161e;
+}
+.dominion-victory-eyebrow{
+ color:#ffe7a1;font:900 clamp(10px,1.2vw,15px)/1.4 ui-monospace,"Courier New",monospace;
+ letter-spacing:.15em;text-shadow:2px 2px #211521;margin:0 0 13px;
+}
+.dominion-victory-narrative h2{
+ color:#ffeab2;font:900 clamp(34px,6.4vw,76px)/1.04 ui-monospace,"Courier New",monospace;
+ letter-spacing:.025em;margin:0;text-shadow:4px 4px #5d3452,-2px -2px #171c2a;
+}
+.dominion-victory-narrative p:last-child{
+ margin:12px auto 0;max-width:650px;font:800 clamp(12px,1.4vw,18px)/1.5 ui-monospace,"Courier New",monospace;
+}
+.dominion-victory--hunt .dominion-victory-narrative{
+ /* The approved Sliver poster already includes the title and victory lettering.
+    Keep this semantic content available to screen readers without visual doubling. */
+ position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+ overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+.dominion-victory-panel{
+ position:absolute;z-index:2;
+ top:62%;left:70%;transform:translateX(-50%);
+ width:min(470px,43vw);
+ padding:12px;border:2px solid #ebbc76;border-radius:7px;
+ background:rgba(8,13,24,.9);
+ box-shadow:0 0 0 3px rgba(14,21,27,.75),0 12px 38px #060711bd;
+}
+.dominion-victory-scoreboard{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:7px;padding:0 0 11px;
+}
+.dominion-victory-scoreboard>div{
+ display:grid;gap:2px;min-width:0;text-align:center;
+ border:1px solid #977b55;background:#1d302e;padding:8px 3px;
+}
+.dominion-victory-scoreboard span{
+ font:900 9px/1.4 ui-monospace,"Courier New",monospace;
+ letter-spacing:.08em;color:#d6c39e;
+}
+.dominion-victory-scoreboard strong{
+ color:#fff0cc;font:900 clamp(14px,1.45vw,19px)/1.4 ui-monospace,"Courier New",monospace;
+ font-variant-numeric:tabular-nums;
+}
+.dominion-victory-actions{
+ display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+ gap:10px;
+}
+.dominion-victory-actions button{
+ min-height:50px;border:1px solid #fff1b6;background:#f4d497;
+ color:#19291e;border-radius:4px;padding:9px 6px;
+ font:900 clamp(10px,.95vw,13px)/1.25 ui-monospace,"Courier New",monospace;
+ cursor:pointer;box-shadow:inset 0 -3px #a57c4e;
+}
+.dominion-victory-actions button:hover{background:#ffebad}
+.dominion-victory-actions button:focus-visible,
+.dominion-victory-rewatch:focus-visible{
+ outline:3px solid #fff;outline-offset:3px;
+}
+.dominion-victory-rewatch{
+ display:block;width:100%;min-height:37px;margin-top:8px;padding:7px 6px;
+ border:1px solid #90865b;background:#26382f;color:#fce0a3;border-radius:3px;
+ font:900 10px/1.4 ui-monospace,"Courier New",monospace;
+}
+.dominion-victory-rewatch:hover{background:#385041}
+.dominion-victory--classic .dominion-victory-panel{
+ top:auto;bottom:calc(25px + env(safe-area-inset-bottom,0px));
+ left:50%;transform:translateX(-50%);width:min(470px,88vw);
+}
+@media(max-width:900px) and (orientation:landscape){
+ .dominion-victory-panel{top:auto;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);width:min(490px,81vw)}
+ .dominion-victory-narrative{top:5%}
+ .dominion-victory--classic .dominion-victory-narrative h2{font-size:clamp(26px,5vw,50px)}
+}
+@media(max-width:700px) and (orientation:portrait){
+ .dominion-victory-hunt-art .dominion-desktop-poster{display:none}
+ .dominion-victory-hunt-art .dominion-mobile-poster{
+  display:block!important;object-position:50% 43%;
+ }
+ .dominion-victory-panel{
+  top:auto;left:50%;bottom:0;transform:translateX(-50%);
+  width:100%;max-width:460px;padding:9px 11px calc(11px + env(safe-area-inset-bottom,0px));
+  background:rgba(8,12,22,.95);border-bottom:0;border-radius:8px 8px 0 0;
+ }
+ .dominion-victory-scoreboard{padding:0 0 8px;gap:5px}
+ .dominion-victory-scoreboard>div{padding:5px 2px}
+ .dominion-victory-scoreboard strong{font-size:clamp(14px,4vw,19px)}
+ .dominion-victory-actions{gap:7px}
+ .dominion-victory-actions button{min-height:48px;font-size:clamp(9px,2.65vw,12px)}
+ .dominion-victory-rewatch{min-height:36px;font-size:9px}
+ .dominion-victory-narrative{top:10%;width:96vw}
+ .dominion-victory-narrative h2{font-size:clamp(31px,7vw,51px)}
+ .dominion-victory--classic .dominion-victory-panel{bottom:0;width:100%;max-width:460px}
+}
+@media(max-width:360px){
+ .dominion-victory-panel{padding-left:6px;padding-right:6px}
+ .dominion-victory-scoreboard span{font-size:8px}
+ .dominion-victory-rewatch{font-size:8px}
+}
+@media(prefers-reduced-motion:reduce){
+ .dominion-victory *{scroll-behavior:auto;animation:none!important;transition:none!important}
+}
