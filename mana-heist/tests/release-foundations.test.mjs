@@ -11,9 +11,9 @@ const read=(f)=>readFileSync(new URL("../"+f,import.meta.url),"utf8");
 test("P01 baseline matches actual rules/card/campaign sources, not old README descriptions",()=>{
  assert.equal(VERSION,"mh-landfall-0.2.0");
  assert.deepEqual(COLORS,["W","U","B","R","G","C"]);
- assert.equal(Object.keys(CARDS).length,59);
- assert.equal(knownCardKeys().length,59);
- assert.equal(new Set(knownCardNames()).size,59);
+ assert.equal(Object.keys(CARDS).length,61);
+ assert.equal(knownCardKeys().length,61);
+ assert.equal(new Set(knownCardNames()).size,61);
  assert.equal(BASE_LEVELS.length,18);
  assert.equal(LEVELS.length,500);
  assert.equal(LEVELS.filter(l=>l.templateId).length,202);
@@ -21,6 +21,8 @@ test("P01 baseline matches actual rules/card/campaign sources, not old README de
  assert.equal(CHAPTERS.length,50);
  assert.equal(stageCode(0),"1:1:1");
  assert.equal(stageCode(249),"5:5:10");
+ assert.equal(CARDS.fellwar.name,"Fellwar Stone");
+ assert.equal(CARDS.talisman.name,"Talisman of Dominance");
  assert.equal(CARDS.bounceUG.name,"Simic Growth Chamber");
  assert.deepEqual(CARDS.bounceUG.colors,["U","G"],"available colors of Simic Growth Chamber");
  assert.match(read("src/engine.js"),/kind==="bounce"\)addMana/);

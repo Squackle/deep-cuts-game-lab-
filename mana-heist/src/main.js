@@ -179,7 +179,7 @@ function renderLearn(){
  // Current HTML comes from a concurrent Game Lab branding branch. Keep
  // course copy in sync at runtime without touching their index.html file.
  const desc=document.querySelector('[data-mode="learn"] .mode-description');
- if(desc)desc.textContent="26 step-by-step exercises, from tapping basic lands to rituals, mana rocks, restricted mana, filters and scaling engines.";
+ if(desc)desc.textContent=LEARN_COUNT+" step-by-step exercises, from basic lands and rituals to opponent-dependent colors and damage tradeoffs.";
  const intro=document.querySelector("#learnPanel .learn-panel-head p:not(.overline)");
  if(intro)intro.textContent="Twenty-six skill-specific lessons. Follow the Sage's Notes beside the cauldron; this mode tracks learning without stars.";
 
@@ -478,7 +478,9 @@ function render(pendingId=null){
  el("chapterName").textContent=level.chapter;
  el("difficulty").textContent=["INITIATE","ROOKIE","TACTICIAN","EXPERT","MASTERMIND"][level.rank-1];
  const ritesInGraveyard=state.graveyard.filter(id=>getCard(level,id)?.name==="Rite of Flame").length;
- manaContext.textContent=level.opponentTappedLands?"OPPONENT · "+level.opponentTappedLands+" TAPPED LANDS":state.highTide?"HIGH TIDE · EXTRA U ×"+state.highTide:ritesInGraveyard?"RITE MEMORY · "+ritesInGraveyard:"";
+ const opponentInfo=level.opponentTappedLands?"OPPONENT · "+level.opponentTappedLands+" TAPPED LANDS":"";
+ const paletteInfo=level.opponentLandColors?.length?"OPPONENT LAND COLORS · "+level.opponentLandColors.join(" / "):"";
+ manaContext.textContent=[opponentInfo,paletteInfo].filter(Boolean).join(" · ")||(state.highTide?"HIGH TIDE · EXTRA U ×"+state.highTide:ritesInGraveyard?"RITE MEMORY · "+ritesInGraveyard:"");
  manaContext.hidden=!manaContext.textContent;
  const rating=evaluateVault(level);
  masteryRating.textContent="C "+rating.complexity+" · D "+rating.difficulty;

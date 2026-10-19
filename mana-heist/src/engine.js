@@ -50,6 +50,8 @@ export const CARDS={
  rite:{name:"Rite of Flame",kind:"instant",colors:[],types:[],manaSpell:{cost:{R:1},output:["R","R"],scaleGraveyard:true},flavor:"Sorcery · R → RR (+R per Rite in graveyards)"},
  geyser:{name:"Mana Geyser",kind:"sorcery",colors:[],types:[],manaSpell:{cost:{N:3,R:2},output:[],scaleOpponentTapped:true},flavor:"Sorcery · 3RR → R per tapped opponent land (scenario count)"},
  tide:{name:"High Tide",kind:"instant",colors:[],types:[],manaSpell:{cost:{U:1},output:[],effect:"highTide"},flavor:"Instant · Islands tapped for mana add an extra U until end of turn"},
+ fellwar:{name:"Fellwar Stone",kind:"artifact",colors:[],types:[],v2:"fellwar",flavor:"Artifact · opponent land color snapshot; never adds colorless"},
+ talisman:{name:"Talisman of Dominance",kind:"artifact",colors:[],types:[],v2:"talisman",flavor:"Artifact · tap for C, or U/B and take 1 damage (unprevented in Lab)"},
  mindstone:{name:"Mind Stone",kind:"artifact",colors:[],types:[],v2:"mindstone",flavor:"Artifact · tap for C; drawing not modeled"},
  vessel:{name:"Thought Vessel",kind:"artifact",colors:[],types:[],v2:"vessel",flavor:"Artifact · tap for C; no maximum hand size"},
  archive:{name:"Hedron Archive",kind:"artifact",colors:[],types:[],v2:"archive",flavor:"Artifact · tap for CC; drawing not modeled"},
@@ -80,6 +82,7 @@ export function validate(level){
  if(level.hand.length+level.field.length+level.library.length>24)throw Error("Too many mana sources");
  if([...level.field,...level.library].some(x=>CARDS[x.card].manaSpell))throw Error("Mana spells must begin in hand");
  if(level.hand.filter(x=>CARDS[x.card].manaSpell).length>4)throw Error("Too many mana spells");
+ if(level.opponentLandColors!==undefined&&(!Array.isArray(level.opponentLandColors)||level.opponentLandColors.some(c=>!["W","U","B","R","G"].includes(c))))throw Error("Invalid opponent land colors");
  for(const stage of level.stages){
   if(!stage||typeof stage.name!=="string"||stage.name.length>80||!stage.name.trim())throw Error("Invalid spell");
   const cost=stage.cost;
@@ -129,7 +132,7 @@ function advancedModes(level,s,f){
   if(card.kind!=="artifact"&&s.field.some(x=>lookup(level,x.id)?.card==="lantern"))for(const color of COLORS.slice(0,5))out.push({id:"lantern-"+color,label:"Tap: Add "+color+" (Chromatic Lantern)",tap:true,life:0,cost:{},output:[color]});
   return out;
  }
- const modes=modesFor({devotion:level.devotion||{},commanderColors:level.commanderColors||["W","U","B","R","G"]},board,source);
+ const modes=modesFor({devotion:level.devotion||{},commanderColors:level.commanderColors||["W","U","B","R","G"],opponentLandColors:level.opponentLandColors||[]},board,source);
  if(card.kind!=="artifact"&&s.field.some(x=>lookup(level,x.id)?.card==="lantern"))for(const color of COLORS.slice(0,5))modes.push({id:"lantern-"+color,label:"Tap: Add "+color+" (Chromatic Lantern)",tap:true,life:0,cost:{},output:[color]});
  return modes;
 }

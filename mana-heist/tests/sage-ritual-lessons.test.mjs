@@ -8,13 +8,13 @@ import {LEARN_COUNT,LEARN_GROUPS} from "../src/learn-track.js";
 import {CARDS,actions,reduce,initial,completed,validate} from "../src/engine.js";
 import {solve,replay} from "../src/solver.js";
 const read=p=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
-test("all twenty-six authored Sage lessons have actual unique objectives and specific notes",()=>{
- assert.equal(LEARN_COUNT,26);assert.equal(LEARN_LEVELS.length,26);
- assert.equal(EXTRA_LESSONS.length,8);
- assert.equal(SAGE_LESSONS.length,26);
- assert.deepEqual(LEARN_GROUPS.flatMap(g=>g.indices).sort((a,b)=>a-b),Array.from({length:26},(_,i)=>i));
+test("all twenty-eight authored Sage lessons have actual unique objectives and specific notes",()=>{
+ assert.equal(LEARN_COUNT,28);assert.equal(LEARN_LEVELS.length,28);
+ assert.equal(EXTRA_LESSONS.length,10);
+ assert.equal(SAGE_LESSONS.length,28);
+ assert.deepEqual(LEARN_GROUPS.flatMap(g=>g.indices).sort((a,b)=>a-b),Array.from({length:28},(_,i)=>i));
  assert.deepEqual(LEARN_LEVELS.slice(0,18).map(l=>l.id),LEVELS.slice(0,18).map(l=>l.id));
- for(let i=0;i<26;i++){
+ for(let i=0;i<28;i++){
   const l=LEARN_LEVELS[i],s=initial(l),n=lessonNote(i,l,s);
   assert.ok(n?.title&&n?.body&&n.why,l.id+" should contain meaningful hints");
   assert.ok(n.body.length>55,l.id+" too short");

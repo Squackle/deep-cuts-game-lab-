@@ -34,6 +34,11 @@ export const SOURCES=Object.freeze({
  petal:{name:"Lotus Petal",type:"Artifact",types:[],abilities:[],dynamic:"petal"},
  treasure:{name:"Treasure token",type:"Artifact",types:[],abilities:[],dynamic:"treasure"},
  confluence:{name:"Mana Confluence",type:"Land",types:[],abilities:[],dynamic:"confluence"},
+ fellwar:{name:"Fellwar Stone",type:"Artifact",types:[],abilities:[],dynamic:"fellwar"},
+ talisman:{name:"Talisman of Dominance",type:"Artifact",types:[],abilities:[
+  D({id:"talisman-C",label:"Tap: Add C",output:["C"]}),
+  ...["U","B"].map(c=>D({id:"talisman-"+c,label:"Tap: Add "+c+" (deals 1 damage to you)",output:[c],life:1}))
+ ]},
  mindstone:{name:"Mind Stone",type:"Artifact",types:[],abilities:[D({id:"stone-C",label:"Tap: Add C",output:["C"]})]},
  vessel:{name:"Thought Vessel",type:"Artifact",types:[],abilities:[D({id:"vessel-C",label:"Tap: Add C",output:["C"]})]},
  archive:{name:"Hedron Archive",type:"Artifact",types:[],abilities:[D({id:"archive-CC",label:"Tap: Add CC",output:["C","C"]})]},
@@ -98,6 +103,14 @@ export function modesFor(scenario,state,permanent){
 
  if(dynamic==="gilded")for(const c of FIVE)modes.push(D({id:"gilded-"+c,label:"Tap: Add "+c+c+c,output:[c,c,c]}));
  if(dynamic==="arcane")for(const c of scenario.commanderColors||FIVE)modes.push(D({id:"arcane-"+c,label:"Tap: Add "+c+" (commander color)",output:[c]}));
+ // Opponents are not simulated; this list is a declared snapshot of the
+ // colors their lands could produce, irrespective of those lands being tapped.
+ // Colorless is not a color and cannot be produced by Fellwar Stone.
+ if(dynamic==="fellwar"){
+  const palette=Array.isArray(scenario.opponentLandColors)?scenario.opponentLandColors:[];
+  for(const c of [...new Set(palette.filter(c=>FIVE.includes(c)))])
+   modes.push(D({id:"fellwar-"+c,label:"Tap: Add "+c+" (opponent land palette)",output:[c]}));
+ }
  if(dynamic==="prism"||dynamic==="cylix")for(const c of FIVE)modes.push(D({id:dynamic+"-"+c,label:"Pay {1}, tap: Add "+c,cost:{N:1},output:[c]}));
  if(dynamic==="lantern"||dynamic==="skyclave")for(const c of FIVE)modes.push(D({id:dynamic+"-"+c,label:"Tap: Add "+c,output:[c]}));
  if(dynamic==="bloom")for(const c of FIVE)modes.push(D({id:"bloom-"+c,label:"Tap, sacrifice: Add "+c+c+c,output:[c,c,c],sacrifice:true}));

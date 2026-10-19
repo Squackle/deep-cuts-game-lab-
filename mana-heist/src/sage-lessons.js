@@ -28,7 +28,9 @@ export const SAGE_LESSONS=Object.freeze([
  item("Pyretic Ritual","ritual","spells","Tap Mountain for {R} and Wastes for {C}. Use {1}{R} to cast Pyretic Ritual from hand.","Your one-shot instant produces three red mana. Cast the red ward.","Ritual spells accelerate mana temporarily, but cannot be replayed after resolving."),
  item("Ancient Ziggurat","restricted-mana","artifacts","Tap Ancient Ziggurat for the green mana in this creature spell's cost, then tap Island for blue.","The spell is a creature, so the restricted mana is legal. This source could not pay for a sorcery ward.","Restricted mana only pays costs permitted by its source's rules text."),
  item("Urborg and Cabal Coffers","scaling-mana","lands","Tap Sol Ring for two colorless mana. Pay {2} and tap Cabal Coffers to add black mana equal to your Swamps.","With Urborg on the battlefield, Coffers and Urborg themselves are also Swamps. Tap a remaining Swamp to reach five black.","Static land type effects can change how much mana scaling lands produce."),
- item("Lotus Field","multi-output","lands","Tap Lotus Field and choose blue. It produces three blue mana together; Island supplies the fourth.","Count three mana from one land tap. You do not tap Lotus Field three separate times.","Some lands produce multiple mana in one activation. The entry sacrifice of Lotus Field occurred before this snapshot.")
+ item("Lotus Field","multi-output","lands","Tap Lotus Field and choose blue. It produces three blue mana together; Island supplies the fourth.","Count three mana from one land tap. You do not tap Lotus Field three separate times.","Some lands produce multiple mana in one activation. The entry sacrifice of Lotus Field occurred before this snapshot."),
+ item("Fellwar Stone","opponent-colors","artifacts","Your opponent's lands can produce white or black in this fixed puzzle snapshot. Tap Fellwar Stone for WHITE, then Island for blue. The Stone cannot make colorless or a color missing from that palette.","Find the white mode on Fellwar Stone; a tapped opponent land could still provide its color to Fellwar Stone's possibilities.","Fellwar Stone reads which COLORS an opponent's lands could produce; it does not steal their mana, and colorless is not a color."),
+ item("Talisman of Dominance","damage-choice","artifacts","At 2 life, you need black mana for the ward. Talisman of Dominance can make colorless without damage, but making BLACK or BLUE deals 1 damage to you. Choose black and stay alive.","Use the black Talisman activation; Island gives blue and Wastes provides the colorless symbol. You should finish at 1 life.","The Talisman deals damage when it adds blue or black. This solo training puzzle models unprevented damage as losing 1 life, but actual Magic can prevent or modify damage.")
 ]);
 export function lessonNote(index,level,state){
  const meta=SAGE_LESSONS[index];if(!meta)return null;
@@ -48,7 +50,7 @@ export const SAGE_TAG_TO_LESSON=Object.freeze({
  "shock-land":5,"pain-land":7,"check-land":8,"generic-cost":9,
  "resource-allocation":10,"fetch-land":11,"untap":14,"bounce-land":15,
  "life-efficiency":16,"planning":17,
- "artifact":18,"mana-rock":18,"ritual":20,"filter":21,"mana-engine":24
+ "artifact":18,"mana-rock":18,"ritual":20,"filter":21,"mana-engine":24,"opponent-colors":26,"damage-choice":27
 });
 export function relevantLesson(level){
  // Point challenged players to an actual related existing lesson. These are
@@ -61,6 +63,8 @@ export function relevantLesson(level){
  if(family==="key")return 14;   // untapping a mana source
  if(family==="prism")return 19; // paid mana filtering
  const cards=[...level.field,...level.hand,...level.library].map(x=>x.card);
+ if(cards.some(x=>x==="fellwar"))return 26;
+ if(cards.some(x=>x==="talisman"))return 27;
  if(cards.some(x=>x==="ritual"))return 20;
  if(cards.some(x=>x==="pyretic"))return 22;
  if(cards.some(x=>x==="coffers"||x==="urborg"||x==="nykthos"))return 24;
