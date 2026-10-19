@@ -48,11 +48,13 @@ Ship **two finished arcade experiences** rather than an unbounded live-service r
 - [x] Bump Lab-only deterministic rules to `hive-1.5.3`; extend replay, 7-segment boss capture, color effects, Director cheat isolation and collision regression tests.
 - [x] Owner chose and approved the seven-segment baseline; final end-to-end release QA and production authorization remain separate gates.
 
-### D4 — Real endings (AUTHENTIC SIMULATION COMPLETE IN LAB; CINEMATIC PRESENTATION NEXT)
+### D4 — Real endings (SIMULATION + CINEMATICS BUILT IN LAB; OWNER SIGNOFF PENDING)
 - [x] Brood Trail earned perfect-clear terminal condition, including permanent-rock / temporary-hazard discrimination, in Lab `hive-1.5.4`.
-- [ ] Brood Trail actual finale animation/music, score recap, reduced-motion and mute support (Task 2B).
+- [x] Brood Trail original full-screen animated five-color swarm, separate victory song, score/EV/orb recap and reduced-motion/mute/touch support (Game Lab Task 2B).
+- [x] Predator Hunt genuine Broodmother finale uses independent approved high-resolution Sliver/village art for desktop + portrait, framed buttons, score recap, music and accessibility (Game Lab Task 2B).
+- [ ] Owner reviews both authentic screens and audio on desktop/physical phones; fine-tune art/button placement if necessary.
 - [x] Predator Hunt earned final Broodmother capture at evolution 12 terminates once, with boss score/energy and no draft or further AI (Lab `hive-1.5.4`).
-- [ ] Director preview shortcuts trigger **non-authoritative** versions for QA and animation inspection; these do not earn scores/achievements.
+- [x] Director previews remain strictly non-authoritative and separate; normal arcade celebrations depend exclusively on the game engine's earned end outcomes.
 - [x] Distinct deterministic death, 6,000-step run limit, Lair practice and two earned victory outcomes with honest temporary textual overlay labels.
 - [x] Lab deterministic tests for both real terminal triggers, one-time boss award, frozen game state, draft priority, no fake hazard fill, and replay outcome anti-forgery.
 - [ ] Public server/client replay equivalence and historical score preservation (Task 4, separately authorized).
@@ -68,4 +70,4 @@ Ship **two finished arcade experiences** rather than an unbounded live-service r
 
 Standalone Game Lab's `director/**` is a debug harness, not user content or a game feature. It has no account identity, rankings, entitlement, saved victories, API posts or D1 access. Its win previews are **not** official accomplishments. Production gameplay needs server-verifiable replay for newly earned results. The existing scripted bulk export is intentionally disabled; selective review must explicitly exclude all of `director/**`.
 
-**Current source snapshots:** public Beacon uses replay rules `hive-1.3`; Game Lab's **approved** Hunt seven-segment balance uses `hive-1.5.3`. Director Mode includes victory concept art, but genuine earned victory finales and production integration are still pending. Refer to the linked implementation plan for the four completion tasks.
+**Current source snapshots:** public Beacon uses replay rules `hive-1.3`; Game Lab gameplay uses `hive-1.5.4` with approved seven-segment Hunt, genuine earned terminal conditions and complete Task 2B cinematic screens. Both earned endings still need owner device/visual acceptance before final QA and any separately authorized public integration. Director Mode and its cheats are permanently Lab-only.

@@ -23,6 +23,9 @@ import {createSoloSession} from "./solo-session.js";
 import {createSessionBest} from "./session-best.js";
 import {isLairChallenge,createLairRun,completeLairRun,lairDetails} from "./lair.js";
 import {lairFlashEvent,drawLairEffects} from "./lair-visuals.js";
+import {victoryDetails,drawBroodTrailFinale} from "./victory-scenes.js";
+import {VICTORY_HUNT_DESKTOP_AVIF,VICTORY_HUNT_MOBILE_AVIF} from "./victory-art.js";
+import {VictoryFanfare} from "./victory-fanfare.js";
 
 /* HIVE RUN Alpha 0.4 — hand-authored pixel-art minibosses and encounter powers. */
 const $=id=>document.getElementById(id);
@@ -56,6 +59,8 @@ try{selectedMode=localStorage.getItem("hive-mode-v1")==="classic"?"classic":"hun
 $("gameMode").value=selectedMode;
 const STORE="deepcuts-hive-run-best-v4",SOUND_STORE="deepcuts-hive-run-audio-v1",MUSIC_STORE="deepcuts-hive-run-music-v1";
 const soundtrack=new HatcherySoundtrack();
+const victoryFanfare=new VictoryFanfare();
+let victoryOpenedAt=0;
 const bossGate=new BossBriefingGate();
 // Encounter director selects music automatically; no player-facing track previews.
 function setEncounterMusic(encounterType){
@@ -91,7 +96,7 @@ function syncUI(){
  $("trapHelp").textContent=run.encounter?"◇ BOSS · NO TRAP HINTS":
   run.evolutionsChosen<3?"◇ AMBER = LIMITED ESCAPES":"◇ AMBER HINTS ENDED";
  const p=progress(run);
- $("progress").textContent=lairActive()?"LAIR PRACTICE · UNRANKED":run.status==="won"?"HIVE COMPLETE":
+ $("progress").textContent=lairActive()?"LAIR PRACTICE · UNRANKED":run.status==="won"?(run.outcome==="broodmother_defeated"?"THE HIVE REIGNS":"HIVE COMPLETE"):
   run.status==="draft"?"CHOOSE YOUR EVOLUTION":("NEXT MUTATION IN "+p.untilNext+" ENERGY");
  $("evoCountdown").textContent=run.status==="draft"?"READY":p.energy+" / 5 EV";
  $("evoCount").textContent=run.evolutionsChosen+" "+(run.evolutionsChosen===1?"EVOLUTION":"EVOLUTIONS");
@@ -99,7 +104,7 @@ function syncUI(){
  $("lastEvolution").textContent=run.lastMutation?"LAST: "+run.lastMutation.name.toUpperCase():"FIVE COLORS · FIVE POWERS";
  $("stateLabel").textContent=bossGate.phase==="briefing"?"BOSS DOSSIER · PAUSED":
   bossGate.phase==="countdown"?"REGROUP · "+bossGate.seconds:
-  ({ready:"AWAITING PLAYER",running:"IN MOTION",paused:"PAUSED",draft:"EVOLVING",over:"RUN ENDED",won:"HIVE COMPLETE"})[run.status];
+  ({ready:"AWAITING PLAYER",running:"IN MOTION",paused:"PAUSED",draft:"EVOLVING",over:"RUN ENDED",won:run.outcome==="broodmother_defeated"?"VICTORIOUS":"HIVE COMPLETE"})[run.status];
  const playable=run.status==="running";
  $("pauseButton").disabled=!playable||bossGate.blocking||awaitingMutationResume;
  $("wardButton").hidden=!canPlaceWard(run)||bossGate.blocking||awaitingMutationResume;
@@ -190,6 +195,50 @@ function playTone(hz,duration=0.09,volume=.025){
   oscillator.connect(gain).connect(audio.destination);
   oscillator.start();oscillator.stop(audio.currentTime+duration);
  }catch{}
+}
+function victoryVisible(){return !$("victoryOverlay").hidden}
+function hideVictoryCelebration(){
+ $("victoryOverlay").hidden=true;
+ document.documentElement.classList.remove("dominion-victory-active");
+ victoryFanfare.stop();
+}
+function replayVictoryCelebration(){
+ if(!victoryVisible())return false;
+ victoryOpenedAt=performance.now();
+ victoryFanfare.play(state.ctx,state.run.outcome,state.musicOn&&!document.hidden);
+ drawVictoryCelebration(victoryOpenedAt);
+ return true;
+}
+function drawVictoryCelebration(now=performance.now()){
+ if(!victoryVisible()||state.run.outcome!=="perfect_clear")return;
+ const canvas=$("victoryTrailCanvas");
+ const ctx=canvas.getContext("2d");
+ if(ctx)drawBroodTrailFinale(ctx,Math.max(0,now-victoryOpenedAt),prefersReducedMotion());
+}
+function showVictoryCelebration(run){
+ const details=victoryDetails(run);
+ if(!details||lairActive())return false;
+ const overlay=$("victoryOverlay");
+ overlay.classList.toggle("dominion-victory--hunt",details.kind==="hunt");
+ overlay.classList.toggle("dominion-victory--classic",details.kind==="classic");
+ $("victoryHeading").textContent=details.title;
+ $("victoryEyebrow").textContent=details.eyebrow;
+ $("victoryStory").textContent=details.message;
+ $("victoryScore").textContent=padScore(run.score);
+ $("victoryCountLabel").textContent=details.countLabel;
+ $("victoryCount").textContent=String(details.count).padStart(2,"0");
+ $("victoryEvolutions").textContent=String(run.evolutionsChosen).padStart(2,"0");
+ if(details.kind==="hunt"){
+  // Art assets are independent of all Director modules, cheats and shortcuts.
+  const desktop=$("victoryHuntDesktop"),mobile=$("victoryHuntMobile");
+  if(!desktop.getAttribute("src"))desktop.src=VICTORY_HUNT_DESKTOP_AVIF;
+  if(!mobile.getAttribute("src"))mobile.src=VICTORY_HUNT_MOBILE_AVIF;
+ }
+ overlay.hidden=false;
+ document.documentElement.classList.add("dominion-victory-active");
+ replayVictoryCelebration();
+ $("victoryPlayAgain").focus({preventScroll:true});
+ return true;
 }
 function showOverlay(title,description,buttonLabel){
  showLairPicker();
@@ -291,6 +340,7 @@ function resumeMutationByKey(key){
 }
 function begin(){
  if(startingRun||bossGate.blocking||awaitingMutationResume)return;
+ hideVictoryCelebration();
  wakeAudio();
  if(["ready","over","won"].includes(state.run.status)){
   beaconCapture=null;
@@ -317,6 +367,7 @@ function begin(){
 }
 function reset(){
  if(startingRun)return;
+ hideVictoryCelebration();
  beaconCapture=null;
  resetBossBriefing();clearMutationResume();
  state.run=lairActive()?createLairRun(selectedLairBoss,COLS,ROWS):newRun({cols:COLS,rows:ROWS,mode:selectedMode});
@@ -568,10 +619,12 @@ function loop(time){
      outcome==="perfect_clear"?"HIVE COMPLETE!":
      outcome==="broodmother_defeated"?"THE HIVE REIGNS!":
      outcome==="step_limit"?"EXPEDITION ENDED":"GAME OVER";
-    showOverlay(endTitle,
-     lairActive()?state.run.endReason+" Practice is unranked. Select another boss or retry.":
-      state.run.endReason+" Final score: "+state.run.score.toLocaleString()+". Session best: "+state.sessionBest.toLocaleString()+".",
-     lairActive()?"RETRY BOSS ↺":"PLAY AGAIN ↺");
+    if(!showVictoryCelebration(state.run)){
+     showOverlay(endTitle,
+      lairActive()?state.run.endReason+" Practice is unranked. Select another boss or retry.":
+       state.run.endReason+" Final score: "+state.run.score.toLocaleString()+". Session best: "+state.sessionBest.toLocaleString()+".",
+      lairActive()?"RETRY BOSS ↺":"PLAY AGAIN ↺");
+    }
     announce((final?"Victory! ":outcome==="step_limit"?"Expedition finished. ":"Game over. ")+
      state.run.endReason+" Final score "+state.run.score+". Saved on this device only.");
    }
@@ -580,11 +633,17 @@ function loop(time){
  }
  soundtrack.tick(); // tiny lookahead schedules original 8-bit notes on AudioContext clock.
  draw();
+ drawVictoryCelebration(time);
  requestAnimationFrame(loop);
 }
 // Unlock on direct interaction; an async score request is too late for autoplay rules.
 document.addEventListener("pointerdown",wakeAudio,{capture:true,passive:true});
 $("primaryButton").addEventListener("click",begin);
+$("victoryPlayAgain").addEventListener("click",()=>{
+ hideVictoryCelebration();state.lastFrame=0;state.accumulator=0;begin();
+});
+$("victoryReturn").addEventListener("click",()=>{hideVictoryCelebration();reset();$("primaryButton").focus({preventScroll:true})});
+$("victoryRewatch").addEventListener("click",replayVictoryCelebration);
 $("pauseButton").addEventListener("click",togglePause);
 function activateWard(){
  if(!placeHatchlingWard(state.run))return false;
@@ -600,12 +659,24 @@ $("soundButton").addEventListener("click",()=>{
 });
 $("musicButton").addEventListener("click",()=>{
  state.musicOn=!state.musicOn;
+ if(!state.musicOn)victoryFanfare.stop();
  try{localStorage.setItem(MUSIC_STORE,state.musicOn?"on":"off")}catch{}
  if(state.musicOn)wakeAudio();
  syncSoundtrack();syncUI();
  announce(state.musicOn?(state.ctx?.state==="running"?TRACKS[soundtrack.trackId].name+" playing.":"Music enabled. Use a game control to allow desktop audio."):"Background music muted.");
 });
 document.addEventListener("keydown",event=>{
+ if(victoryVisible()){
+  if(event.key==="Tab"){
+   const options=[$("victoryPlayAgain"),$("victoryReturn"),$("victoryRewatch")];
+   const current=options.indexOf(document.activeElement);
+   const next=event.shiftKey?(current<=0?options.length-1:current-1):
+    (current+1)%options.length;
+   event.preventDefault();options[next].focus({preventScroll:true});return;
+  }
+  if(event.key==="Escape"){event.preventDefault();hideVictoryCelebration();reset();$("primaryButton").focus({preventScroll:true})}
+  return;
+ }
  if(bossGate.blocking){
   if(event.key==="Tab"&&bossGate.phase==="briefing"){
    event.preventDefault();$("bossBriefingResume").focus({preventScroll:true});
@@ -676,6 +747,7 @@ canvas.addEventListener("pointercancel",event=>{
 });
 document.addEventListener("visibilitychange",()=>{
  if(document.hidden){
+  victoryFanfare.stop();
   if(bossGate.blocking)reopenBossBriefing();
    else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
   soundtrack.stop(); // Also silence title-screen music in hidden tabs.
@@ -686,12 +758,14 @@ window.addEventListener("focus",()=>{
  if(!document.hidden){syncSoundtrack();syncUI()}
 });
 window.addEventListener("pagehide",()=>{
+ victoryFanfare.stop();
  if(bossGate.blocking)reopenBossBriefing();
  else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
  soundtrack.stop();
  state.lastFrame=0;state.accumulator=0;
 });
 window.addEventListener("blur",()=>{
+ victoryFanfare.stop();
  if(bossGate.blocking)reopenBossBriefing();
  else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
  soundtrack.stop();
