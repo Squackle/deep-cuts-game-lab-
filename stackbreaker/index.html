@@ -1307,6 +1307,112 @@ main{max-width:1640px}
  .mastery-list{grid-template-columns:1fr}
  .mastery-state{max-width:100px}
 }
+
+
+/* STEP 4 / Cosmetic equipment is always LOCAL + UNVERIFIED. */
+.cosmetics-panel{
+ margin:18px 0;border:1px solid #a98b5c8a;border-radius:15px;
+ background:linear-gradient(140deg,#283738,#152329);color:#eee0c0;overflow:hidden
+}
+.cosmetics-panel summary{
+ padding:14px 18px;display:flex;align-items:center;justify-content:space-between;
+ gap:12px;flex-wrap:wrap;cursor:pointer;list-style:none;
+ font:700 .86rem/1.35 system-ui,sans-serif;letter-spacing:.045em
+}
+.cosmetics-panel summary::-webkit-details-marker{display:none}
+.cosmetics-panel summary:before{content:"▸";color:#efd19c}
+.cosmetics-panel[open] summary:before{content:"▾"}
+.cosmetics-panel summary small{display:block;font:.65rem/1.4 system-ui,sans-serif;color:#d4bf98;margin-top:4px}
+.cosmetics-panel summary strong{color:#ead7a0;font:.73rem/1.35 system-ui,sans-serif}
+.cosmetics-panel summary:focus-visible,.cosmetic-choice:focus-visible{
+ outline:3px solid #f3d9a5;outline-offset:2px
+}
+.cosmetics-content{border-top:1px solid #8f966e50;padding:18px}
+.cosmetics-caveat{color:#b9c9c4;font:.8rem/1.55 system-ui,sans-serif}
+.cosmetics-preview{
+ --frame-color:#81949a;--frame-color-b:#aec0be;
+ display:flex;align-items:center;gap:15px;
+ margin:16px 0;padding:14px 18px;min-height:98px;
+ border:2px solid var(--frame-color);border-radius:13px;
+ background:linear-gradient(105deg,#18252f,#253633);
+ box-shadow:inset 0 0 17px #0008,0 0 11px #0006;
+ transition:border-color .2s ease,box-shadow .2s ease
+}
+.cosmetics-avatar{
+ display:grid;place-items:center;flex:0 0 62px;width:62px;height:62px;
+ border:3px double var(--frame-color);border-radius:50%;
+ color:#f7e0ae;font-size:28px;text-shadow:0 0 8px var(--frame-color);
+ box-shadow:0 0 12px var(--frame-color),inset 0 0 15px #000a
+}
+.cosmetics-preview-label{display:flex;flex-direction:column;gap:7px;min-width:0}
+.cosmetics-preview-label strong{font:700 clamp(1.07rem,2.5vw,1.45rem)/1.15 Georgia,serif;color:#fff2d1}
+.cosmetics-preview-label small{font:.78rem/1.4 system-ui,sans-serif;color:#c4d6ce}
+.cosmetics-preview[data-frame="white"]{--frame-color:#f5e5b5;--frame-color-b:#e5d29b}
+.cosmetics-preview[data-frame="blue"]{--frame-color:#84d1f9;--frame-color-b:#5d91e9}
+.cosmetics-preview[data-frame="black"]{--frame-color:#b7a0d9;--frame-color-b:#815296}
+.cosmetics-preview[data-frame="red"]{--frame-color:#f9a16e;--frame-color-b:#d95033}
+.cosmetics-preview[data-frame="green"]{--frame-color:#97df9a;--frame-color-b:#3eaa74}
+.cosmetics-preview[data-frame="gold"]{--frame-color:#ffe18c;--frame-color-b:#a77a2b}
+.cosmetics-preview[data-frame="prismatic"]{
+ --frame-color:#e1b8ff;--frame-color-b:#fff3ad;
+ border-color:var(--frame-color);
+ box-shadow:inset 0 0 16px #0007,0 0 0 2px var(--frame-color-b),0 0 15px #d2a9eb7b
+}
+.cosmetics-gallery{display:grid;gap:15px;margin:16px 0}
+.cosmetics-group h3{color:#e9d6a2;letter-spacing:.08em;font:.75rem/1.5 system-ui,sans-serif;margin:0 0 9px}
+.cosmetics-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:8px}
+.cosmetic-choice{
+ display:flex;align-items:center;gap:8px;justify-content:space-between;
+ padding:12px 11px;min-height:48px;text-align:left;cursor:pointer;
+ border:1px solid #7a968f;border-radius:10px;color:#f8f1da;background:#213b3c;
+ font:700 .78rem/1.3 system-ui,sans-serif;
+}
+.cosmetic-choice small{color:#c0d6ce;font:.69rem/1.3 system-ui,sans-serif;text-align:right}
+.cosmetic-choice[aria-pressed="true"]{border:2px solid #f3d78d;background:#42563f}
+.cosmetic-choice[disabled]{opacity:.55;cursor:not-allowed;border-style:dashed}
+.cosmetic-choice .cosmetic-swatch{
+ display:inline-grid;place-items:center;flex:0 0 20px;width:20px;height:20px;
+ border-radius:50%;border:2px solid #ede2c2;color:#0d1720;font-size:13px;background:#c6cfcc
+}
+.cosmetic-choice[data-cosmetic-id="white"] .cosmetic-swatch{background:#fff0c5}
+.cosmetic-choice[data-cosmetic-id="blue"] .cosmetic-swatch{background:#77c5f5}
+.cosmetic-choice[data-cosmetic-id="black"] .cosmetic-swatch{background:#b59dcc}
+.cosmetic-choice[data-cosmetic-id="red"] .cosmetic-swatch{background:#ff965e}
+.cosmetic-choice[data-cosmetic-id="green"] .cosmetic-swatch{background:#80d68a}
+.cosmetic-choice[data-cosmetic-id="gold"] .cosmetic-swatch{background:#f2d277}
+.cosmetic-choice[data-cosmetic-id="prismatic"] .cosmetic-swatch{
+ background:conic-gradient(#fbd2a3,#80d89d,#75c9ef,#b4a1e1,#fc9691,#fbd2a3)
+}
+#cosmeticStatus{color:#e7d096;font:.77rem/1.5 system-ui,sans-serif}
+/* Spell cosmetic filter affects only an inert effect overlay, never playfield cards. */
+.sb-vfx-layer[data-vfx-theme="white"]{--cosmetic-hue:#ffebb3}
+.sb-vfx-layer[data-vfx-theme="blue"]{--cosmetic-hue:#79caff}
+.sb-vfx-layer[data-vfx-theme="black"]{--cosmetic-hue:#c19ddf}
+.sb-vfx-layer[data-vfx-theme="red"]{--cosmetic-hue:#ff9d61}
+.sb-vfx-layer[data-vfx-theme="green"]{--cosmetic-hue:#99e9a4}
+.sb-vfx-layer[data-vfx-theme="prismatic"]{--cosmetic-hue:#f0abf7}
+.sb-vfx-layer[data-vfx-theme] .sb-fx-scene{--spell-hue:var(--cosmetic-hue)!important}
+.sb-vfx-layer[data-vfx-theme] .sb-fx-particle{
+ background:var(--cosmetic-hue)!important;
+ box-shadow:0 0 9px var(--cosmetic-hue)!important
+}
+.sb-vfx-layer[data-vfx-theme] .sb-fx-pulse,.sb-vfx-layer[data-vfx-theme] .sb-fx-wave{
+ border-color:var(--cosmetic-hue)!important;
+ box-shadow:0 0 16px var(--cosmetic-hue)!important
+}
+.sb-vfx-layer[data-vfx-theme] .sb-vfx-bolt-svg,
+.sb-vfx-layer[data-vfx-theme] .sb-vfx-fire-svg{filter:drop-shadow(0 0 10px var(--cosmetic-hue))}
+@media(max-width:560px){
+ .cosmetics-content{padding:12px}
+ .cosmetics-panel summary{padding:12px}
+ .cosmetics-options{grid-template-columns:1fr}
+ .cosmetics-preview{padding:12px;gap:10px}
+ .cosmetics-avatar{flex-basis:52px;width:52px;height:52px}
+}
+@media(prefers-reduced-motion:reduce){
+ .cosmetics-preview{transition:none!important}
+ .sb-vfx-layer[data-vfx-theme]{display:none!important;animation:none!important}
+}
 </style></head>
 <body><a class="skip" href="#game">Skip to Stackbreaker game</a>
 <header class="mast"><a class="site-mark" href="/lab/" aria-label="Back to Game Test Lab home">◈ <b>DEEP CUTS</b> / GAME LAB</a><strong class="site-title">STACKBREAKER <small>1.5 · ARCANE OBSERVATORY</small></strong><a class="site-home" href="/lab/" aria-label="Back to Test Lab, choose another game">GAME LAB ↗</a></header>
@@ -1344,8 +1450,21 @@ main{max-width:1640px}
  <summary><span>✦ STACKBREAKER MASTERY <small>LOCAL / UNVERIFIED</small></span><strong id="masteryCount">0 / 24 LOCAL MILESTONES</strong></summary>
  <div class="mastery-content">
   <p id="masterySummary">Mastery achievements begin with new wins. Existing campaign stars are preserved.</p>
-  <p class="mastery-caveat">These are local progress previews, not verified profile rewards. Advanced-rule and server-verified Daily achievements remain locked. Cosmetic equipment arrives in a later development step.</p>
+  <p class="mastery-caveat">These are local progress previews, not verified profile rewards. Advanced-rule and server-verified Daily achievements remain locked. Equip unlocked appearance items using the local Arcane Identity gallery; no real account rewards are granted.</p>
   <ol id="masteryList" class="mastery-list" aria-label="Achievements and milestone progress"></ol>
+ </div>
+</details>
+<details id="cosmeticsPanel" class="cosmetics-panel" aria-label="Local cosmetic rewards and gallery">
+ <summary><span>✧ YOUR ARCANE IDENTITY <small>LOCAL / UNVERIFIED COSMETIC PREVIEW</small></span><strong>VIEW YOUR REWARDS ↗</strong></summary>
+ <div class="cosmetics-content">
+  <p id="cosmeticsNotice" class="cosmetics-caveat">Earned Classic puzzle rewards can be equipped here. The red frame is a free local starter style because no existing achievement awards it. Nothing is linked to a Deep Cuts EDH profile.</p>
+  <div class="cosmetics-preview" id="cosmeticsPreview" data-frame="none" data-vfx="none" aria-label="Local profile appearance preview">
+   <span class="cosmetics-avatar" aria-hidden="true">✦</span>
+   <span class="cosmetics-preview-label"><strong id="cosmeticsTitle">Unranked Duelist</strong><small id="cosmeticsPreviewText">Default frame · default spell effects · LOCAL / UNVERIFIED</small></span>
+  </div>
+  <div id="cosmeticGallery" class="cosmetics-gallery" role="group" aria-label="Equip locally unlocked titles, frames and visual spell styles"></div>
+  <p class="cosmetics-caveat">Frames and titles are visible in this Game Lab preview only. The spell style is cosmetic and never alters targets, spell legality, outcomes, or damage. Turn on Reduced Motion in your device settings to suppress animations.</p>
+  <p id="cosmeticStatus" role="status" aria-live="polite"></p>
  </div>
 </details>
 <div class="notes-grid"><div class="notes-box"><h2>Your objective</h2><p id="objectiveLong"></p><button type="button" id="hintButton" aria-expanded="false">◇ REVEAL HINT</button><p id="hintText" hidden></p></div><div class="notes-box"><h2>Why it worked</h2><p id="resultExplanation">Finish a case to reveal its rules explanation.</p><div id="resultStars" class="result-stars"></div></div><div class="notes-box"><h2>Resolution log</h2><ol id="log" aria-label="Action and stack resolution log"></ol></div></div>
@@ -6150,6 +6269,9 @@ function createSpellVfxController(root,view){
   layer.setAttribute('aria-hidden','true');
   layer.setAttribute('data-vfx-mode',mode);
   layer.setAttribute('data-vfx-outcome',event.outcome||'resolved');
+  // A cosmetic theme is a whitelisted overlay attribute, never a rules input.
+  if(['white','blue','black','red','green','prismatic'].includes(event.cosmeticTheme))
+   layer.setAttribute('data-vfx-theme',event.cosmeticTheme);
   if(event.terminalStatus)layer.setAttribute('data-vfx-terminal',event.terminalStatus);
   if(semantic){
    renderResolutionFx(root,layer,view,event,anchors,mode);
@@ -8773,6 +8895,103 @@ const campaignExpansion=[
     "par": 5
   }
 ];
+
+// Entirely local Game Lab appearance preferences. Never turns preview wins into
+// an authenticated website grant or changes any game-state transition.
+const COSMETIC_STORAGE_KEY='dc-stackbreaker-cosmetics-local-v1';
+const COSMETIC_TYPES=['title','frame','vfx'];
+const REWARD_TYPE={title:'titles',frame:'frames',vfx:'vfx'};
+const DEFAULT_EQUIP={title:null,frame:null,vfx:null};
+const labels={
+ 'first-responder':'First Responder',apprentice:'Apprentice',tactician:'Tactician',
+ veteran:'Veteran',explorer:'Explorer',conqueror:'Conqueror',
+ 'clean-stack':'Clean Stack',countermage:'Countermage',
+ 'stack-surgeon':'Stack Surgeon','modal-master':'Modal Master',
+ 'trigger-technician':'Trigger Technician','replacement-scholar':'Replacement Scholar',
+ 'daily-adept':'Daily Adept',white:'White · Radiance',
+ blue:'Blue · Arcana',black:'Black · Shadow',red:'Red · Flame',
+ green:'Green · Verdance',prismatic:'Prismatic · Fivefold',gold:'Gold · Daily'
+};
+const COSMETIC_META=Object.freeze(labels);
+function cosmeticChoices(type,catalog=MASTERY_CATALOG){
+ if(!COSMETIC_TYPES.includes(type))return [];
+ const earned=catalog.achievements.filter(a=>a.reward?.type===type).map(a=>({
+  id:a.reward.id,achievementId:a.id,achievementName:a.name,
+  name:labels[a.reward.id]||a.reward.id
+ }));
+ // Red has no grant in the frozen 24-achievement catalog; it is a plainly
+ // labeled starter frame rather than a fabricated milestone reward.
+ return type==='frame'?[...earned,{id:'red',achievementId:null,
+  achievementName:'Starter frame',name:labels.red,starter:true}]:earned;
+}
+function emptyCosmeticEquip(){
+ return {schemaVersion:1,localUnverified:true,title:null,frame:null,vfx:null};
+}
+function grantedIds(ledger,catalog=MASTERY_CATALOG){
+ return new Set(evaluateMastery(ledger,catalog).filter(a=>a.unlocked).map(a=>a.id));
+}
+function hasCosmeticGrant(ledger,type,id,catalog=MASTERY_CATALOG){
+ if(!COSMETIC_TYPES.includes(type)||typeof id!=='string'||!id)return false;
+ if(type==='frame'&&id==='red')return true; // disclosed free starter frame
+ const entry=catalog.achievements.find(a=>a.reward?.type===type&&a.reward?.id===id);
+ return !!entry&&grantedIds(ledger,catalog).has(entry.id);
+}
+// Every equipped value is re-validated against *current* real engine-derived
+// local ledger criteria. Tampered/stale/locked IDs fall back to the base style.
+function sanitizeCosmeticEquip(raw,ledger,catalog=MASTERY_CATALOG){
+ const clean=emptyCosmeticEquip();
+ if(!raw||raw.schemaVersion!==1||raw.localUnverified!==true)return clean;
+ for(const type of COSMETIC_TYPES){
+  if(raw[type]===null||raw[type]===undefined)continue;
+  if(hasCosmeticGrant(ledger,type,raw[type],catalog))clean[type]=raw[type];
+ }
+ return clean;
+}
+function equipLocalCosmetic(raw,ledger,type,id,catalog=MASTERY_CATALOG){
+ const previous=sanitizeCosmeticEquip(raw,ledger,catalog);
+ if(!COSMETIC_TYPES.includes(type))return {ok:false,reason:'Unknown cosmetic category',equip:previous};
+ if(id!==null&&!hasCosmeticGrant(ledger,type,id,catalog))
+  return {ok:false,reason:'Cosmetic not unlocked locally',equip:previous};
+ return {ok:true,reason:'LOCAL / UNVERIFIED preview saved',
+  equip:{...previous,[type]:id}};
+}
+function readCosmeticEquip(store,ledger){
+ try{return sanitizeCosmeticEquip(JSON.parse(store.getItem(COSMETIC_STORAGE_KEY)||'null'),ledger);}
+ catch{return emptyCosmeticEquip();}
+}
+function writeCosmeticEquip(store,equip,ledger){
+ try{
+  const allowed=sanitizeCosmeticEquip(equip,ledger);
+  store.setItem(COSMETIC_STORAGE_KEY,JSON.stringify(allowed));
+  return true;
+ }catch{return false;}
+}
+function effectiveCosmeticEquip(raw,ledger){
+ return sanitizeCosmeticEquip(raw,ledger);
+}
+function cosmeticAppearanceOnly(equip){
+ // Fixed, inert rendering data only. No effect cards, mana, turn order,
+ // targets, rules version, scenario, scoring or outcome fields are touched.
+ const clean=equip||DEFAULT_EQUIP;
+ return {
+  label:clean.title&&labels[clean.title]||'Unranked Duelist',
+  frame:clean.frame||'none',
+  vfx:clean.vfx||'none',
+  localUnverified:true
+ };
+}
+
+
+
+
+
+
+
+
+
+
+
+
 const extraStages=generateStages([...coreScenarios,...campaignExpansion]);
 const scenarios=[...coreScenarios,...campaignExpansion,...extraStages].map((scenario,i)=>commanderScenario(scenario,i));
 const chapters=makeWorlds();
@@ -8782,6 +9001,7 @@ const dailyBound=dailyRoute?bindDailyScenario(dailyEntryForDate(dailyDate),scena
 const dailyIndex=dailyBound?scenarios.findIndex(s=>s.id===dailyBound.puzzleId):-1;
 let dailySession='preview',dailyRecord=null,dailyPracticeMoves=0,dailyExpired=false;
 let masteryLedger=readLocalMastery(localStorage);
+let localCosmetics=readCosmeticEquip(localStorage,masteryLedger);
 let masteryRun=emptyMasteryRun();
 let masteryTransitionHistory=[];
 const isDaily=()=>dailyRoute&&dailyIndex>=0;
@@ -9094,6 +9314,7 @@ function render(){closeCardPreview();const s=game,p=scenarios[index],worldIndex=
  if(dragSession)paintLegalDragTargets();
  refreshHandArrows();
  renderMasteryPanel();
+ renderCosmeticGallery();
  if(dailyRoute)renderDailyStatus();
 }
 
@@ -9117,6 +9338,53 @@ function renderMasteryPanel(){
  }).join('');
 }
 
+function renderCosmeticGallery(){
+ const gallery=$('cosmeticGallery');
+ if(!gallery)return;
+ localCosmetics=effectiveCosmeticEquip(localCosmetics,masteryLedger);
+ const appearance=cosmeticAppearanceOnly(localCosmetics);
+ const preview=$('cosmeticsPreview');
+ preview.setAttribute('data-frame',appearance.frame);
+ preview.setAttribute('data-vfx',appearance.vfx);
+ $('cosmeticsTitle').textContent=appearance.label;
+ $('cosmeticsPreviewText').textContent=
+  (appearance.frame==='none'?'Default':'Equipped '+appearance.frame)+' frame · '+
+  (appearance.vfx==='none'?'default':'Equipped '+appearance.vfx)+' spell effects · LOCAL / UNVERIFIED';
+ const titles={title:'TITLES',frame:'MANA FRAMES',vfx:'SPELL EFFECT STYLES'};
+ gallery.innerHTML=COSMETIC_TYPES.map(type=>{
+  const options=[{id:null,name:'Default',achievementId:null},...cosmeticChoices(type)];
+  return '<section class="cosmetics-group" aria-label="'+titles[type]+'"><h3>'+titles[type]+'</h3><div class="cosmetics-options">'+
+   options.map(option=>{
+    const id=option.id;
+    const owned=id===null||hasCosmeticGrant(masteryLedger,type,id);
+    const selected=localCosmetics[type]===id;
+    const lockedLabel=owned?(selected?'EQUIPPED':option.starter?'STARTER · EQUIP':'EQUIP'):'LOCKED';
+    const action=id===null?'':esc(id);
+    const swatch=type==='title'?'✧':'✦';
+    return '<button type="button" class="cosmetic-choice" data-cosmetic-type="'+type+
+     '" data-cosmetic-id="'+action+'" aria-pressed="'+String(selected)+'"'+(owned?'':' disabled')+
+     ' aria-label="'+esc(option.name)+' — '+lockedLabel+'">'+
+     '<span><span class="cosmetic-swatch" aria-hidden="true">'+swatch+'</span> '+esc(option.name)+'</span>'+
+     '<small>'+lockedLabel+'</small></button>';
+   }).join('')+'</div></section>';
+ }).join('');
+}
+function equipSelectedCosmetic(type,id){
+ const result=equipLocalCosmetic(localCosmetics,masteryLedger,type,id);
+ if(!result.ok){$('cosmeticStatus').textContent=result.reason;return;}
+ if(!writeCosmeticEquip(localStorage,result.equip,masteryLedger)){
+  $('cosmeticStatus').textContent='Local storage unavailable; this change was not saved.';return;
+ }
+ localCosmetics=result.equip;
+ renderCosmeticGallery();
+ $('cosmeticStatus').textContent=id===null?'Default '+type+' restored · LOCAL / UNVERIFIED':
+  (COSMETIC_META[id]||id)+' equipped locally · LOCAL / UNVERIFIED';
+}
+function decoratedSpellEvent(event){
+ if(!event)return event;
+ const effective=effectiveCosmeticEquip(localCosmetics,masteryLedger);
+ return {...event,cosmeticTheme:effective.vfx};
+}
 function updateDailyCountdown(){
  if(!dailyRoute)return;
  $('dailyCountdown').textContent=dailyCountdown();
@@ -9235,7 +9503,7 @@ function applyLand(id){
   pushState(after);
   if(actuallyTapped&&point){
    try{
-    spellVfx.play({card:land.card,fxType:'tap',verifiedTap:true,colors:[LANDS[land.card]?.mana||'C'],
+    spellVfx.play({card:land.card,fxType:'tap',verifiedTap:true,cosmeticTheme:effectiveCosmeticEquip(localCosmetics,masteryLedger).vfx,colors:[LANDS[land.card]?.mana||'C'],
      sourceStackId:id,outcome:'resolved'},
      {source:point,target:point});
    }catch(_vfxError){}
@@ -9256,7 +9524,7 @@ function applyPass(){
   pushState(after);
   if(event){
    notify(describeSpellVfxForA11y(event));
-   try{spellVfx.play(event,anchors)}catch(_vfxError){}
+   try{spellVfx.play(decoratedSpellEvent(event),anchors)}catch(_vfxError){}
   }
  }catch(e){notify(e.message)}
 }
@@ -9358,6 +9626,12 @@ document.addEventListener('keydown',e=>{
  else if(!e.shiftKey&&document.activeElement===focusable.at(-1)){e.preventDefault();focusable[0].focus();}
 });
 
+$('cosmeticGallery').addEventListener('click',e=>{
+ const button=e.target.closest('button[data-cosmetic-type]');
+ if(!button||button.disabled)return;
+ const id=button.dataset.cosmeticId||null;
+ equipSelectedCosmetic(button.dataset.cosmeticType,id);
+});
 $('passButton').addEventListener('click',applyPass);$('undoButton').addEventListener('click',undo);$('restartButton').addEventListener('click',()=>{if(dailyRoute){if(dailySession==='practice')startDailyPractice();}else changeCase(index);});$('prevButton').addEventListener('click',()=>changeCase(index-1));$('nextButton').addEventListener('click',()=>{if(index<scenarios.length-1)changeCase(index+1)});
 $('scenarioSelect').addEventListener('change',e=>changeCase(Number(e.target.value)));
 $('hintButton').addEventListener('click',()=>{if(dailyRoute&&dailySession!=='practice')return;hint=!hint;if(hint&&!dailyRoute)masteryRun=markMasteryRunUnclean(masteryRun);render()});

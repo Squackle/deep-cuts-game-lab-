@@ -178,7 +178,7 @@ test('the runtime view cannot grant real profiles or count daily practice as a v
  assert.match(template,/id="masteryPanel"/);
  assert.match(template,/LOCAL \/ UNVERIFIED/);
  assert.match(css,/\.mastery-list/);
- assert.match(build,/'src\/mastery\.js','src\/ui\.js'/);
+ assert.match(build,/'src\/mastery\.js','src\/cosmetics\.js','src\/ui\.js'/);
  assert.ok(html.includes('function evaluateMastery('));
  assert.ok(html.includes('const masteryCatalog='));
  assert.ok(html.includes('dc-stackbreaker-progress-v3'));

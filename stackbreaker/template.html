@@ -36,8 +36,21 @@
  <summary><span>✦ STACKBREAKER MASTERY <small>LOCAL / UNVERIFIED</small></span><strong id="masteryCount">0 / 24 LOCAL MILESTONES</strong></summary>
  <div class="mastery-content">
   <p id="masterySummary">Mastery achievements begin with new wins. Existing campaign stars are preserved.</p>
-  <p class="mastery-caveat">These are local progress previews, not verified profile rewards. Advanced-rule and server-verified Daily achievements remain locked. Cosmetic equipment arrives in a later development step.</p>
+  <p class="mastery-caveat">These are local progress previews, not verified profile rewards. Advanced-rule and server-verified Daily achievements remain locked. Equip unlocked appearance items using the local Arcane Identity gallery; no real account rewards are granted.</p>
   <ol id="masteryList" class="mastery-list" aria-label="Achievements and milestone progress"></ol>
+ </div>
+</details>
+<details id="cosmeticsPanel" class="cosmetics-panel" aria-label="Local cosmetic rewards and gallery">
+ <summary><span>✧ YOUR ARCANE IDENTITY <small>LOCAL / UNVERIFIED COSMETIC PREVIEW</small></span><strong>VIEW YOUR REWARDS ↗</strong></summary>
+ <div class="cosmetics-content">
+  <p id="cosmeticsNotice" class="cosmetics-caveat">Earned Classic puzzle rewards can be equipped here. The red frame and black spell-effect style are free local starter options because no existing achievements award them. Nothing is linked to a Deep Cuts EDH profile.</p>
+  <div class="cosmetics-preview" id="cosmeticsPreview" data-frame="none" data-vfx="none" aria-label="Local profile appearance preview">
+   <span class="cosmetics-avatar" aria-hidden="true">✦</span>
+   <span class="cosmetics-preview-label"><strong id="cosmeticsTitle">Unranked Duelist</strong><small id="cosmeticsPreviewText">Default frame · default spell effects · LOCAL / UNVERIFIED</small></span>
+  </div>
+  <div id="cosmeticGallery" class="cosmetics-gallery" role="group" aria-label="Equip locally unlocked titles, frames and visual spell styles"></div>
+  <p class="cosmetics-caveat">Frames and titles are visible in this Game Lab preview only. The spell style is cosmetic and never alters targets, spell legality, outcomes, or damage. Turn on Reduced Motion in your device settings to suppress animations.</p>
+  <p id="cosmeticStatus" role="status" aria-live="polite"></p>
  </div>
 </details>
 <div class="notes-grid"><div class="notes-box"><h2>Your objective</h2><p id="objectiveLong"></p><button type="button" id="hintButton" aria-expanded="false">◇ REVEAL HINT</button><p id="hintText" hidden></p></div><div class="notes-box"><h2>Why it worked</h2><p id="resultExplanation">Finish a case to reveal its rules explanation.</p><div id="resultStars" class="result-stars"></div></div><div class="notes-box"><h2>Resolution log</h2><ol id="log" aria-label="Action and stack resolution log"></ol></div></div>
