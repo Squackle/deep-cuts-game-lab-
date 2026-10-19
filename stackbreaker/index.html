@@ -1004,6 +1004,20 @@ main{max-width:1640px}
   display:none!important;animation:none!important;transition:none!important
  }
 }
+
+
+/* VFX final pass: leaner dust on small screens and high-contrast accessibility. */
+@media(max-width:480px){
+ .sb-vfx-dust-particle:nth-child(n+17){display:none}
+ .sb-vfx-dust-host{max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px)}
+ .sb-vfx-dust-card{box-shadow:0 0 5px #79e3f644,0 3px 10px #0009}
+ .sb-vfx-bolt-glow{filter:drop-shadow(0 0 5px #74cdff)}
+ .sb-vfx-fire-orb{filter:drop-shadow(0 0 8px #ff8c1e)}
+}
+@media(forced-colors:active){
+ .sb-vfx-layer{forced-color-adjust:none}
+ .sb-vfx-dust-label{background:#111;color:#fff}
+}
 </style></head>
 <body><a class="skip" href="#game">Skip to Stackbreaker game</a>
 <header class="mast"><a class="site-mark" href="/lab/" aria-label="Back to Game Test Lab home">◈ <b>DEEP CUTS</b> / GAME LAB</a><strong class="site-title">STACKBREAKER <small>1.5 · ARCANE OBSERVATORY</small></strong><a class="site-home" href="/lab/" aria-label="Back to Test Lab, choose another game">GAME LAB ↗</a></header>
@@ -1949,6 +1963,20 @@ function dustParticleLayout(seed='spell',count=24){
  }
  return values;
 }
+/** Keep a ghost wholly within the visible viewport without moving gameplay. */
+function fitDustBounds(center,requested,viewport,padding=8){
+ if(!center||![center.x,center.y].every(Number.isFinite))return null;
+ const vw=Math.max(1,viewport?.width||1000),vh=Math.max(1,viewport?.height||750);
+ const maxW=Math.max(1,vw-2*padding),maxH=Math.max(1,vh-2*padding);
+ const width=Math.min(maxW,Math.max(60,Math.min(360,requested?.width||175)));
+ const height=Math.min(maxH,Math.max(55,Math.min(230,requested?.height||105)));
+ const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
+ return {
+  x:clamp(center.x,padding+width/2,vw-padding-width/2),
+  y:clamp(center.y,padding+height/2,vh-padding-height/2),
+  width,height
+ };
+}
 // Unlike a real card game move, this only renders a snapshot after the engine
 // has already removed the item. It never modifies the stack or game state.
 function renderSpellDust(root,layer,event,anchors,mode){
@@ -1957,14 +1985,16 @@ function renderSpellDust(root,layer,event,anchors,mode){
  const point=fizzle?anchors?.source:anchors?.target;
  if(!point||![point.x,point.y].every(Number.isFinite))return null;
  const snapshot=anchors?.dustCard;
+ const bounds=fitDustBounds(point,{width:anchors?.dustCard?.rect?.width,height:anchors?.dustCard?.rect?.height},
+  {width:root.documentElement?.clientWidth,height:root.documentElement?.clientHeight});
  const host=root.createElement('div');
  host.className='sb-vfx-dust-host '+(fizzle?'sb-vfx-dust-fizzle':'sb-vfx-dust-counter');
  host.setAttribute('aria-hidden','true');
- host.style.left=point.x+'px';
- host.style.top=point.y+'px';
+ host.style.left=bounds.x+'px';
+ host.style.top=bounds.y+'px';
  const cssProp=(node,key,value)=>node.style.setProperty?node.style.setProperty(key,value):node.style[key]=value;
- cssProp(host,'--dust-width',Math.max(60,Math.min(360,snapshot?.rect?.width||175))+'px');
- cssProp(host,'--dust-height',Math.max(55,Math.min(230,snapshot?.rect?.height||105))+'px');
+ cssProp(host,'--dust-width',bounds.width+'px');
+ cssProp(host,'--dust-height',bounds.height+'px');
  const ghost=root.createElement('div');
  ghost.className='sb-vfx-dust-card';
  const picture=snapshot?.imageSrc;
@@ -1996,7 +2026,7 @@ function renderSpellDust(root,layer,event,anchors,mode){
  return host;
 }
 
-// Stackbreaker VFX (Steps 1–3) — presentation-only resolution journal.
+// Stackbreaker VFX (Steps 1–5) — presentation-only resolution journal.
 // Rules state is authoritative; no VFX event is written to saved gameplay.
 
 
@@ -2082,6 +2112,25 @@ function captureSpellAnchors(root,event){
  if(dustCard)anchors.dustCard=dustCard;
  return anchors;
 }
+/** Accessible narration follows the engine outcome, not an animation guess. */
+function describeSpellVfxForA11y(event){
+ if(!event)return '';
+ const card=event.card||'Spell';
+ const target=event.targetCard||(
+  event.targetId==='player'?'you':
+  event.targetId==='opponent'?'your opponent':'the target'
+ );
+ switch(event.outcome){
+  case 'countered':return card+' counters '+target+'. The spell leaves the stack.';
+  case 'invalid-target':return card+' fails to resolve: all its targets are illegal.';
+  case 'uncounterable':return card+' resolves, but '+target+' cannot be countered.';
+  case 'no-counter':return card+' resolves without countering '+target+'.';
+  case 'prevented':return card+' resolves; damage is prevented.';
+  case 'damage-dealt':return card+' resolves and deals '+(event.damageAmount||0)+' damage to '+target+'.';
+  case 'destroyed':return card+' destroys '+target+'.';
+  default:return card+' resolves.';
+ }
+}
 /** Deterministic screen-space bolt: repeatable seed, no game RNG or effects. */
 function lightningGeometry(source,target,seed='bolt'){
  if(!source||!target||![source.x,source.y,target.x,target.y].every(Number.isFinite))return null;
@@ -2137,6 +2186,15 @@ function svgNode(root,parent,tag,attrs={},klass=''){
 function createSpellVfxController(root,view){
  let cue=null,clearTimer=null;
  const reduce=()=>!!view?.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+ // Never strand viewport-space particles after resize, scrolling or page leave.
+ // This listener is per controller, not per individual spell/event.
+ view?.addEventListener?.('resize',()=>cancel(),{passive:true});
+ view?.addEventListener?.('orientationchange',()=>cancel(),{passive:true});
+ view?.addEventListener?.('pagehide',()=>cancel());
+ view?.addEventListener?.('scroll',()=>cancel(),{passive:true});
+ root?.addEventListener?.('visibilitychange',()=>{
+  if(root.hidden)cancel();
+ });
  const cancel=()=>{
   if(clearTimer!==null){view?.clearTimeout?.(clearTimer);clearTimer=null;}
   cue?.remove?.();cue=null;
@@ -2145,6 +2203,7 @@ function createSpellVfxController(root,view){
   cancel();
   if(!event)return {played:false,reason:'no-event'};
   if(reduce())return {played:false,reason:'reduced-motion'};
+  if(root?.hidden)return {played:false,reason:'hidden-document'};
   if(!anchors?.source)return {played:false,reason:'no-anchors'};
   if(!root?.createElement||!root.body)return {played:false,reason:'no-document'};
   const fireMode=pyroblastVisualMode(event);
@@ -4829,7 +4888,10 @@ function applyPass(){
    anchors=event?captureSpellAnchors(document,event):null;
   }catch(_vfxError){event=null;anchors=null;}
   pushState(after);
-  if(event){try{spellVfx.play(event,anchors)}catch(_vfxError){}}
+  if(event){
+   notify(describeSpellVfxForA11y(event));
+   try{spellVfx.play(event,anchors)}catch(_vfxError){}
+  }
  }catch(e){notify(e.message)}
 }
 function undo(){spellVfx.cancel();pendingPlay=null;armedCard=null;if(!history.length){render();return;}game=history.pop();render()}

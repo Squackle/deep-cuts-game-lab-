@@ -1,4 +1,4 @@
-// Stackbreaker VFX (Steps 1–3) — presentation-only resolution journal.
+// Stackbreaker VFX (Steps 1–5) — presentation-only resolution journal.
 // Rules state is authoritative; no VFX event is written to saved gameplay.
 import {CARDS} from './cards.js';
 import {pyroblastVisualMode,renderPyroblastVfx} from './pyroblast-vfx.js';
@@ -85,6 +85,25 @@ export function captureSpellAnchors(root,event){
  if(dustCard)anchors.dustCard=dustCard;
  return anchors;
 }
+/** Accessible narration follows the engine outcome, not an animation guess. */
+export function describeSpellVfxForA11y(event){
+ if(!event)return '';
+ const card=event.card||'Spell';
+ const target=event.targetCard||(
+  event.targetId==='player'?'you':
+  event.targetId==='opponent'?'your opponent':'the target'
+ );
+ switch(event.outcome){
+  case 'countered':return card+' counters '+target+'. The spell leaves the stack.';
+  case 'invalid-target':return card+' fails to resolve: all its targets are illegal.';
+  case 'uncounterable':return card+' resolves, but '+target+' cannot be countered.';
+  case 'no-counter':return card+' resolves without countering '+target+'.';
+  case 'prevented':return card+' resolves; damage is prevented.';
+  case 'damage-dealt':return card+' resolves and deals '+(event.damageAmount||0)+' damage to '+target+'.';
+  case 'destroyed':return card+' destroys '+target+'.';
+  default:return card+' resolves.';
+ }
+}
 /** Deterministic screen-space bolt: repeatable seed, no game RNG or effects. */
 export function lightningGeometry(source,target,seed='bolt'){
  if(!source||!target||![source.x,source.y,target.x,target.y].every(Number.isFinite))return null;
@@ -140,6 +159,15 @@ function svgNode(root,parent,tag,attrs={},klass=''){
 export function createSpellVfxController(root,view){
  let cue=null,clearTimer=null;
  const reduce=()=>!!view?.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+ // Never strand viewport-space particles after resize, scrolling or page leave.
+ // This listener is per controller, not per individual spell/event.
+ view?.addEventListener?.('resize',()=>cancel(),{passive:true});
+ view?.addEventListener?.('orientationchange',()=>cancel(),{passive:true});
+ view?.addEventListener?.('pagehide',()=>cancel());
+ view?.addEventListener?.('scroll',()=>cancel(),{passive:true});
+ root?.addEventListener?.('visibilitychange',()=>{
+  if(root.hidden)cancel();
+ });
  const cancel=()=>{
   if(clearTimer!==null){view?.clearTimeout?.(clearTimer);clearTimer=null;}
   cue?.remove?.();cue=null;
@@ -148,6 +176,7 @@ export function createSpellVfxController(root,view){
   cancel();
   if(!event)return {played:false,reason:'no-event'};
   if(reduce())return {played:false,reason:'reduced-motion'};
+  if(root?.hidden)return {played:false,reason:'hidden-document'};
   if(!anchors?.source)return {played:false,reason:'no-anchors'};
   if(!root?.createElement||!root.body)return {played:false,reason:'no-document'};
   const fireMode=pyroblastVisualMode(event);

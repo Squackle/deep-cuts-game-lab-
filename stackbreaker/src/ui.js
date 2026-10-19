@@ -1,7 +1,7 @@
 import {CARDS,LANDS,RULES_VERSION,cardLink} from './cards.js';
 import {createGame,tapLand,playLand,activate,pass,paymentOptions,legalActions,legalTargets,creaturePower,creatureToughness,labelTarget} from './engine.js';
 import {presentCreaturePT} from './pt-display.js';
-import {describeSpellResolution,captureSpellAnchors,createSpellVfxController} from './vfx-events.js';
+import {describeSpellResolution,captureSpellAnchors,createSpellVfxController,describeSpellVfxForA11y} from './vfx-events.js';
 import coreScenarios from '../data/scenarios.json' with {type:'json'};
 import campaignExpansion from '../data/campaign-expansion.json' with {type:'json'};
 import {GALAXIES,makeWorlds,generateStages} from './galaxies.js';
@@ -326,7 +326,10 @@ function applyPass(){
    anchors=event?captureSpellAnchors(document,event):null;
   }catch(_vfxError){event=null;anchors=null;}
   pushState(after);
-  if(event){try{spellVfx.play(event,anchors)}catch(_vfxError){}}
+  if(event){
+   notify(describeSpellVfxForA11y(event));
+   try{spellVfx.play(event,anchors)}catch(_vfxError){}
+  }
  }catch(e){notify(e.message)}
 }
 function undo(){spellVfx.cancel();pendingPlay=null;armedCard=null;if(!history.length){render();return;}game=history.pop();render()}
