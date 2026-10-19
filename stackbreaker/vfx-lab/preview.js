@@ -1,6 +1,7 @@
 import {createSpellVfxController} from '../src/vfx-events.js';
 const controller=createSpellVfxController(document,window);
 const origin=document.getElementById('origin');
+const sourceName=document.getElementById('sourceName');
 const target=document.getElementById('destination');
 const title=document.getElementById('targetName');
 const info=document.getElementById('targetInfo');
@@ -11,7 +12,9 @@ const fixtures={
  counter:{effect:'counter',outcome:'countered',targetKind:'stack',targetId:'blue-spell',relatedStackIds:['blue-spell'],title:'Blue Spell',info:'Spell on the stack',type:'Instant',status:'Pyroblast counters the target blue spell.'},
  destroy:{effect:'destroy',outcome:'destroyed',targetKind:'permanent',targetId:'blue-permanent',relatedStackIds:[],title:'Blue Permanent',info:'Permanent on the battlefield',type:'Creature',status:'Pyroblast destroys the blue permanent.'},
  resist:{effect:'counter',outcome:'uncounterable',targetKind:'stack',targetId:'uncounterable-spell',relatedStackIds:[],title:'Uncounterable Spell',info:'Spell on the stack',type:'Instant',status:'The spell cannot be countered. No destruction occurs.'},
- miss:{effect:'counter',outcome:'invalid-target',targetKind:'stack',targetId:'missing-spell',relatedStackIds:[],title:'Missing Target',info:'Target no longer legal',type:'No legal target',status:'Pyroblast fails to resolve. No fireball hits the target.'}
+ miss:{effect:'counter',outcome:'invalid-target',targetKind:'stack',targetId:'missing-spell',relatedStackIds:[],title:'Missing Target',info:'Target no longer legal',type:'No legal target',status:'Pyroblast fails to resolve. No fireball hits the target.'},
+ 'dust-counter':{card:'Counterspell',effect:'counter',outcome:'countered',targetKind:'stack',targetId:'blue-spell',relatedStackIds:['blue-spell'],title:'Lightning Bolt',info:'Spell on the stack',type:'Instant',status:'Counterspell resolves: its target Lightning Bolt is countered and dissolves into dust.'},
+ 'dust-fizzle':{card:'Swords to Plowshares',effect:'exile',outcome:'invalid-target',targetKind:'creature',targetId:'missing-creature',relatedStackIds:[],title:'Gone Creature',info:'All targets became illegal',type:'No legal target',status:'Swords to Plowshares fails to resolve because all targets became illegal. The source spell fades into ash.'}
 };
 const center=el=>{const r=el.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}};
 function show(mode){
@@ -19,11 +22,19 @@ function show(mode){
  controller.cancel();
  if(resetId!==null){clearTimeout(resetId);resetId=null}
  target.classList.remove('hit');void target.offsetWidth;
+ sourceName.textContent=data.card||'Pyroblast';
  title.textContent=data.title;info.textContent=data.info;type.textContent=data.type;
  document.querySelectorAll('[data-mode]').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.mode===mode)));
- const event={card:'Pyroblast',sourceStackId:'demo-pyroblast',effect:data.effect,outcome:data.outcome,
-  targetKind:data.targetKind,targetId:data.targetId,relatedStackIds:data.relatedStackIds};
- const outcome=controller.play(event,{source:center(origin),target:mode==='miss'?null:center(target)});
+ const event={card:data.card||'Pyroblast',sourceStackId:'demo-'+mode,effect:data.effect,outcome:data.outcome,
+  targetKind:data.targetKind,targetId:data.targetId,targetCard:data.title,relatedStackIds:data.relatedStackIds};
+ const r=target.getBoundingClientRect(),originRect=origin.getBoundingClientRect();
+ const dustCard=mode==='dust-counter'||mode==='dust-fizzle'?{
+  rect:{width:mode==='dust-counter'?r.width:originRect.width,height:mode==='dust-counter'?r.height:originRect.height},
+  title:mode==='dust-counter'?data.title:(data.card||'Pyroblast'),imageSrc:null
+ }:null;
+ const outcome=controller.play(event,{source:center(origin),
+  target:mode==='miss'||mode==='dust-fizzle'?null:center(target),
+  ...(dustCard?{dustCard}:{})});
  status.textContent=outcome.reason==='reduced-motion'?data.status+' Reduced-motion mode: animation skipped.':
   outcome.played?data.status:'Preview unavailable: '+outcome.reason+'.';
  if(outcome.played&&(mode==='counter'||mode==='destroy'))target.classList.add('hit');
