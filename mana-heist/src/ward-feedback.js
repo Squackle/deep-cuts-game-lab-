@@ -19,9 +19,9 @@ export function failureText(missing){
  if(!parts.length)return "This ward cannot be cast yet.";
  return "Need "+parts.join(" and ")+". "+(missing.N?"Generic mana accepts any color.":"Only the colored symbol needs that exact color.");
 }
-export function flashWard({vault,ward,costRow,button,pool,missing}){
+export function flashWard({vault,ward,costRow,button,pool,missing,reduced=false}){
  if(typeof document==="undefined")return;
- const noMotion=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+ const noMotion=reduced||window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
  const animations=[];
  const animate=(el,frames,options)=>{
   if(!el||typeof el.animate!=="function")return;
