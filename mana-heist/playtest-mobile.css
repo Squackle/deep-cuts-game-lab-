@@ -91,3 +91,33 @@ body.in-heist #heist #hand .land-card.mtg-real-land:focus-visible{
  outline:3px solid #f9d98e!important;outline-offset:3px!important;
  box-shadow:0 0 0 4px #102925,0 0 22px #f9d98e66!important;
 }
+
+/* P12 — browser-only guest progress portability. This never sits on the
+   fixed heist tabletop or changes any live card interaction. */
+.guest-backup{margin:16px 0 26px;border:1px solid #ad9e7866;background:#142624;border-radius:12px;color:#f3e9d5;overflow:hidden}
+.guest-backup>summary{cursor:pointer;padding:16px 18px;font-weight:800;font-size:.83rem;letter-spacing:.05em;color:#e2c18b}
+.guest-backup-body{padding:0 18px 18px;max-width:860px}
+.guest-backup-body p{font-size:.84rem;color:#cbd8d0;line-height:1.55}
+.guest-backup-actions{display:flex;flex-wrap:wrap;gap:10px;margin:15px 0}
+.guest-backup-actions button,.guest-backup #guestBackupImport{
+ cursor:pointer;border:1px solid #bea979;background:#29493f;color:#f6dea8;
+ min-height:46px;border-radius:8px;padding:11px 14px;font-weight:800;font-size:.78rem;
+}
+.guest-backup #guestBackupImport:disabled{cursor:not-allowed;opacity:.45}
+.guest-backup-file-label{display:block;font-size:.82rem;font-weight:750;color:#ebd6a8;margin:13px 0 8px}
+.guest-backup #guestBackupFile{display:block;max-width:100%;min-height:44px;font-size:.8rem;color:#d8e3dc}
+.guest-backup #guestBackupFile::file-selector-button{min-height:44px;margin-right:12px;border:1px solid #bea979;background:#274139;color:#efdbaf;border-radius:7px;padding:9px 12px}
+.guest-backup #guestBackupText{display:block;max-width:100%;width:100%;margin-top:13px;min-height:130px;
+  padding:12px;background:#0c201d;color:#f4f0df;border:1px solid #bea979;border-radius:8px;font:12px/1.4 monospace}
+.guest-backup #guestBackupText[hidden]{display:none}
+.guest-backup .guest-backup-disclaimer{font-size:.72rem;color:#acbfb4}
+.guest-backup>summary:focus-visible,.guest-backup button:focus-visible,.guest-backup #guestBackupFile:focus-visible{
+ outline:3px solid #f5dc9b;outline-offset:3px;
+}
+@media(max-width:650px){
+ .guest-backup>summary{font-size:.72rem;padding:15px}
+ .guest-backup-body{padding:0 12px 15px}
+ .guest-backup-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+ .guest-backup-actions button{font-size:.69rem;min-height:48px}
+ .guest-backup #guestBackupImport{width:100%;min-height:48px}
+}
