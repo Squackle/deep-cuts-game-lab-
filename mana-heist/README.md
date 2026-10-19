@@ -10,6 +10,10 @@
 
 > **Latest lab UX (Tabletop Flow, Oct 15):** Curved selectable card hand, battlefield ABOVE hand, readable rotated/tapped lands, mana poured into the optional-to-stir cauldron, **deliberate Cast Spell by default**, optional auto-cast, short contextual prompts, and a collapsed optional field guide. Select a land and press Play selected land (or drag it onto the battlefield). View Card or focus + I opens the full printing. Generic costs now display Magic's numbered symbol, not the colorless diamond. All 250 IDs and the v2 guest save key are preserved. This is the isolated Game Lab prototype; it is not the rights-cleared public 1.0 release.
 
+## Optional scored bonus mana trials (Oct 19, 2026)
+
+Two independent, scored **Bonus Mana Trials** now appear beneath the **28 unscored Learn Mana exercises** in the Lab. *The Borrowed Gate* requires smart Fellwar Stone color selection and Talisman damage management in one turn; *The Talisman's Two Turns* tests colorless versus colored mana across an actual turn boundary. Scores and medals remain **browser-local** under `dc-mana-heist-bonus-trials-v1`. **All 500 main campaign vaults, historical medals and save keys remain untouched.** See [new side-vault release and rollback notes](release/BONUS-SCORED-TRIALS-20261019.md). This is still a Game Lab playtest, not rights-cleared public game content.
+
 ## Borrowed Colors — opponent mana and life-risk lessons (Oct 19, 2026)
 
 The Game Lab Learn Mana track now has **28** exercises. Lessons 27–28 teach *Fellwar Stone* (an explicit hypothetical opponent-land color snapshot: no imaginary colors or colorless) and *Talisman of Dominance* (colorless with no damage versus blue/black with one damage, represented as unprevented life loss in the Lab). Both use real mana actions with source-specific notes, tests, and independent unstarred lesson progress. The **500 scored vaults and their existing guest medals remain unchanged**. See [rules, verification, limitations and rollback](release/OPPONENT-MANA-LESSONS-20261019.md).
