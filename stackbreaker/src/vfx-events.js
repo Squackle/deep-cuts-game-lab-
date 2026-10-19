@@ -90,6 +90,8 @@ export function captureSpellAnchors(root,event){
  const anchors={source:pointRect(source),target:pointRect(target)||healTarget,
   field,affected:(event.changes?.units||[]).map(x=>pointRect(
    findDataNode(root,'[data-unit]','unit',x.id))).filter(Boolean)};
+ const hand=pointRect(root?.getElementById?.('hand'));
+ if(hand)anchors.hand=hand;
  // A creature summon is not targeted; the battlefield is its arrival point.
  if(event.isCreatureSpell&&!anchors.target)anchors.target=field;
  if(['destroyAll','weakenAll','sweepDamage','ward','intervention'].includes(event.effect)&&!anchors.target)
