@@ -16,6 +16,7 @@ const routeParams=new URLSearchParams(window.location.search);
 const dailyRoute=routeParams.get('daily')==='1';
 const siteRanked=dailyRoute&&routeParams.get('siteRanked')==='1'&&window.parent!==window;
 let rankedBusy=false;
+if(window.parent!==window)window.parent.postMessage({type:'dc-sb-ranked-diagnostic',siteRanked,search:window.location.search},'*');
 const siteParentOrigin=()=>{
  try{
   const parent=new URL(document.referrer).origin;
