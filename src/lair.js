@@ -28,7 +28,7 @@ export function createLairRun(kind,cols=18,rows=22){
 export function completeLairRun(run){
  if(!run?.lairBoss||!run.lastEncounter||run.lastEncounter.kind!==run.lairBoss||
   run.lastEncounter.type!=="defeat"||run.status==="over"||run.status==="won")return false;
- run.status="won";run.endReason=BRIEFINGS[run.lairBoss].name+" defeated. The Lair is yours.";
+ run.status="won";run.outcome="lair_practice";run.endReason=BRIEFINGS[run.lairBoss].name+" defeated. The Lair is yours.";
  run.draftOptions=[];run.energy=0;run.turnQueue=[];return true;
 }
 export function lairDetails(kind){
