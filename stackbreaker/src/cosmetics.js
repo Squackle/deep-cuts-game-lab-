@@ -19,11 +19,14 @@ const labels={
 export const COSMETIC_META=Object.freeze(labels);
 export function cosmeticChoices(type,catalog=MASTERY_CATALOG){
  if(!COSMETIC_TYPES.includes(type))return [];
- const group=catalog.achievements.filter(a=>a.reward?.type===type);
- return catalog.achievements.length?group.map(a=>({
+ const earned=catalog.achievements.filter(a=>a.reward?.type===type).map(a=>({
   id:a.reward.id,achievementId:a.id,achievementName:a.name,
   name:labels[a.reward.id]||a.reward.id
- })):group;
+ }));
+ // Red has no grant in the frozen 24-achievement catalog; it is a plainly
+ // labeled starter frame rather than a fabricated milestone reward.
+ return type==='frame'?[...earned,{id:'red',achievementId:null,
+  achievementName:'Starter frame',name:labels.red,starter:true}]:earned;
 }
 export function emptyCosmeticEquip(){
  return {schemaVersion:1,localUnverified:true,title:null,frame:null,vfx:null};
@@ -33,6 +36,7 @@ function grantedIds(ledger,catalog=MASTERY_CATALOG){
 }
 export function hasCosmeticGrant(ledger,type,id,catalog=MASTERY_CATALOG){
  if(!COSMETIC_TYPES.includes(type)||typeof id!=='string'||!id)return false;
+ if(type==='frame'&&id==='red')return true; // disclosed free starter frame
  const entry=catalog.achievements.find(a=>a.reward?.type===type&&a.reward?.id===id);
  return !!entry&&grantedIds(ledger,catalog).has(entry.id);
 }
