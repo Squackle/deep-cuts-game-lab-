@@ -38,7 +38,7 @@ function sectorPath(i,total){
  const a=polar(start),b=polar(end),large=end-start>180?1:0;
  return "M 60 60 L "+a.join(" ")+" A "+radius+" "+radius+" 0 "+large+" 1 "+b.join(" ")+" Z";
 }
-export function renderWardCharge({svg,count,cost,orbs,pendingId=null,pendingIds=[],animateId=null,open=false,fluid=false}){
+export function renderWardCharge({svg,count,cost,orbs,pendingId=null,pendingIds=[],animateId=null,open=false,fluid=false,reduced=false}){
  if(!svg)return {total:0,charged:[]};
  const included=orbs.filter(orb=>orb.id!==pendingId&&!pendingIds.includes(orb.id));
  const result=chargeAllocation(cost,included);
@@ -65,13 +65,13 @@ export function renderWardCharge({svg,count,cost,orbs,pendingId=null,pendingIds=
  if(count)count.textContent=open?"OPEN":charged.length+" / "+total;
  if(animateId!=null&&typeof svg.querySelector==="function"){
   const added=svg.querySelector('[data-charge-id="'+animateId+'"]');
-  if(added&&typeof added.animate==="function"&&!globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){
+  if(added&&typeof added.animate==="function"&&!reduced&&!globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){
    added.animate([{opacity:.1,filter:"brightness(3)",strokeWidth:4},{opacity:1,filter:"brightness(1.6)",strokeWidth:12,offset:.45},{opacity:1,filter:"brightness(1)",strokeWidth:9}],{duration:510,easing:"cubic-bezier(.18,.86,.22,1)"});
   }
  }
   if(animateId!=null&&typeof svg.querySelector==="function"){
   const slice=svg.querySelector('[data-sector-id="'+animateId+'"]');
-  if(slice&&typeof slice.animate==="function"&&!globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){
+  if(slice&&typeof slice.animate==="function"&&!reduced&&!globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){
    slice.animate([{opacity:0,transform:"scale(.25)"},{opacity:.62,transform:"scale(1.07)",offset:.68},{opacity:.43,transform:"scale(1)"}],{duration:590,easing:"cubic-bezier(.2,.85,.25,1)"});
    svg.animate?.([{filter:"drop-shadow(0 0 1px #fff1)"},{filter:"drop-shadow(0 0 18px #e5e5d4)",offset:.42},{filter:"drop-shadow(0 0 0px #fff0)"}],{duration:680,easing:"ease-out"});
   }
