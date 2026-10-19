@@ -1,0 +1,392 @@
+{
+  "schemaVersion": 1,
+  "catalogVersion": 1,
+  "status": "local-unverified-game-lab-ledger",
+  "verification": "LOCAL / UNVERIFIED — no authenticated profile unlocks",
+  "achievements": [
+    {
+      "id": "first-response",
+      "metric": "classic-win",
+      "threshold": 1,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "first-responder"
+      },
+      "name": "First Response",
+      "description": "Win your first Classic puzzle",
+      "status": "local-eligible"
+    },
+    {
+      "id": "ten-responses",
+      "metric": "distinct-classic-wins",
+      "threshold": 10,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "apprentice"
+      },
+      "name": "Ten Responses",
+      "description": "Win distinct Classic puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "fifty-solutions",
+      "metric": "distinct-classic-wins",
+      "threshold": 50,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "tactician"
+      },
+      "name": "Fifty Solutions",
+      "description": "Win distinct Classic puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "centurion",
+      "metric": "distinct-classic-wins",
+      "threshold": 100,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "veteran"
+      },
+      "name": "Centurion",
+      "description": "Win distinct Classic puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "galactic-explorer",
+      "metric": "completed-worlds",
+      "threshold": 1,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "explorer"
+      },
+      "name": "World Explorer",
+      "description": "Finish all 10 puzzles in a world",
+      "status": "local-eligible"
+    },
+    {
+      "id": "five-galaxies",
+      "metric": "galaxies-with-completion",
+      "threshold": 5,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "frame",
+        "id": "prismatic"
+      },
+      "name": "Fivefold Explorer",
+      "description": "Finish a world in each of the five galaxies",
+      "status": "local-eligible"
+    },
+    {
+      "id": "campaign-conqueror",
+      "metric": "distinct-classic-wins",
+      "threshold": 250,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "conqueror"
+      },
+      "name": "Classic Solver",
+      "description": "Win distinct Classic puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "clean-stack",
+      "metric": "distinct-clean-wins",
+      "threshold": 10,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "clean-stack"
+      },
+      "name": "Clean Stack",
+      "description": "Win distinct puzzles without hints or undo",
+      "status": "local-eligible"
+    },
+    {
+      "id": "perfect-window",
+      "metric": "three-star-classic-wins",
+      "threshold": 1,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "frame",
+        "id": "white"
+      },
+      "name": "Perfect Window",
+      "description": "Earn three stars on distinct puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "perfect-ten",
+      "metric": "three-star-classic-wins",
+      "threshold": 10,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "vfx",
+        "id": "white"
+      },
+      "name": "Perfect Window",
+      "description": "Earn three stars on distinct puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "countermage",
+      "metric": "distinct-solved-with-counter",
+      "threshold": 5,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "countermage"
+      },
+      "name": "Countermage",
+      "description": "Successfully counter spells during winning puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "counter-archmage",
+      "metric": "distinct-solved-with-counter",
+      "threshold": 25,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "vfx",
+        "id": "blue"
+      },
+      "name": "Countermage",
+      "description": "Successfully counter spells during winning puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "shield-bearer",
+      "metric": "distinct-solved-with-protection",
+      "threshold": 10,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "frame",
+        "id": "green"
+      },
+      "name": "Shield Bearer",
+      "description": "Grant protection during winning puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "lifeline",
+      "metric": "distinct-solved-with-lifegain",
+      "threshold": 10,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "vfx",
+        "id": "green"
+      },
+      "name": "Lifeline",
+      "description": "Gain life during winning puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "banisher",
+      "metric": "distinct-solved-with-exile",
+      "threshold": 10,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "frame",
+        "id": "black"
+      },
+      "name": "Banisher",
+      "description": "Exile permanents during winning puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "stack-surgeon",
+      "metric": "distinct-advanced-retarget-wins",
+      "threshold": 5,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": "advanced-v0.4+",
+      "reward": {
+        "type": "title",
+        "id": "stack-surgeon"
+      },
+      "name": "Stack Surgeon",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "future-advanced"
+    },
+    {
+      "id": "copycat",
+      "metric": "distinct-advanced-copy-wins",
+      "threshold": 5,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": "advanced-v0.4+",
+      "reward": {
+        "type": "vfx",
+        "id": "red"
+      },
+      "name": "Copycat",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "future-advanced"
+    },
+    {
+      "id": "modal-master",
+      "metric": "distinct-advanced-modal-wins",
+      "threshold": 5,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": "advanced-v0.4+",
+      "reward": {
+        "type": "title",
+        "id": "modal-master"
+      },
+      "name": "Modal Master",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "future-advanced"
+    },
+    {
+      "id": "trigger-technician",
+      "metric": "distinct-advanced-trigger-wins",
+      "threshold": 5,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": "advanced-v0.4+",
+      "reward": {
+        "type": "title",
+        "id": "trigger-technician"
+      },
+      "name": "Trigger Technician",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "future-advanced"
+    },
+    {
+      "id": "ward-specialist",
+      "metric": "distinct-advanced-ward-paid-wins",
+      "threshold": 5,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": "advanced-v0.4+",
+      "reward": {
+        "type": "frame",
+        "id": "blue"
+      },
+      "name": "Ward Specialist",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "future-advanced"
+    },
+    {
+      "id": "replacement-scholar",
+      "metric": "distinct-advanced-replacement-wins",
+      "threshold": 5,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": "advanced-v0.4+",
+      "reward": {
+        "type": "title",
+        "id": "replacement-scholar"
+      },
+      "name": "Replacement Scholar",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "future-advanced"
+    },
+    {
+      "id": "daily-first",
+      "metric": "distinct-verified-daily-wins",
+      "threshold": 1,
+      "distinctBy": "utcDate",
+      "requireCompletedWin": true,
+      "requiresServerVerification": true,
+      "engineGate": null,
+      "reward": {
+        "type": "frame",
+        "id": "gold"
+      },
+      "name": "Daily First",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "server-required"
+    },
+    {
+      "id": "seven-dates",
+      "metric": "distinct-verified-daily-wins",
+      "threshold": 7,
+      "distinctBy": "utcDate",
+      "requireCompletedWin": true,
+      "requiresServerVerification": true,
+      "engineGate": null,
+      "reward": {
+        "type": "vfx",
+        "id": "prismatic"
+      },
+      "name": "Seven Dates",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "server-required"
+    },
+    {
+      "id": "monthly-rhythm",
+      "metric": "distinct-verified-daily-wins",
+      "threshold": 20,
+      "distinctBy": "utcDate",
+      "requireCompletedWin": true,
+      "requiresServerVerification": true,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "daily-adept"
+      },
+      "name": "Monthly Rhythm",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "server-required"
+    }
+  ]
+}
