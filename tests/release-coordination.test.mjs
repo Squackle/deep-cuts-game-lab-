@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
 import {validatePR,validateLabGameLane,findOverlaps} from "../scripts/release-coordination.mjs";
 const main="Squackle/deep-cuts-edh",lab="Squackle/deep-cuts-game-lab-";
 const fields=["Owner authorization: Explicit owner approval October 15","Files/Scope: Docs and workflow only","Concurrent work: no open PRs checked","Test plan: node --test","Rollback: revert release commit"].join("\n");
@@ -46,4 +47,16 @@ test("Stackbreaker and Mana Heist source stays exclusive to matching agent branc
  assert.deepEqual(validateLabGameLane({repo:lab,branch:"coord/unified-game-lab-hub",files:["lab/index.html","lab/lab.css","index.html","AGENTS.md"]}),[]);
  assert.deepEqual(validateLabGameLane({repo:lab,branch:"game/matriarch-v15",files:["src/engine.js","styles.css"]}),[]);
  assert.deepEqual(validateLabGameLane({repo:main,branch:"site/arcade",files:["games.html"]}),[]);
+});
+
+test("Protected release coordination fails closed when unified game tests fail",()=>{
+ const catalog=readFileSync(new URL("../.github/workflows/lab-catalog.yml",import.meta.url),"utf8");
+ const coordination=readFileSync(new URL("../.github/workflows/release-coordination.yml",import.meta.url),"utf8");
+ assert.match(catalog,/^  workflow_call:\\s*$/m);
+ assert.match(coordination,/^  game-lab-suite:\\s*$/m);
+ assert.match(coordination,/uses: \\.\\/\\.github\\/workflows\\/lab-catalog\\.yml/);
+ assert.match(coordination,/needs: game-lab-suite/);
+ assert.match(coordination,/if: \\$\\{\\{ always\\(\\) \\$\\}/);
+ assert.match(coordination,/SUITE_RESULT: \\$\\{\\{ needs\\.game-lab-suite\\.result \\$\\}/);
+ assert.match(coordination,/run: test "\\$SUITE_RESULT" = "success"/);
 });
