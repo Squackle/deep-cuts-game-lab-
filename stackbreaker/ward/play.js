@@ -35,8 +35,8 @@ function restart(){
  selected=state.hand[0]?.id??null;
  render();feedback('Case restarted. No persistent progress is stored.');
 }
-function castDecision(){
- const element=byId('decision');element.innerHTML='';
+function castDecision({append=false}={}){
+ const element=byId('decision');if(!append)element.innerHTML='';
  if(state.status!=='playing'||!selected)return;
  const hand=state.hand.find(x=>x.id===selected);
  if(!hand)return;
@@ -113,8 +113,11 @@ function render(){
  for(const button of byId('hand').querySelectorAll('button'))
   button.addEventListener('click',()=>{selected=button.dataset.hand;render();feedback();});
  const top=state.stack.at(-1);
- if(top?.kind==='trigger')wardDecision();
- else castDecision();
+ if(top?.kind==='trigger'){
+  wardDecision();
+  // Trigger on stack does not stop instants: Stifle/Edict may respond.
+  castDecision({append:true});
+ }else castDecision();
  const status=byId('result');
  status.className='result '+(state.status==='playing'?'':state.status);
  status.textContent=state.status==='playing'?'PRIORITY WINDOW OPEN':state.status==='won'?'CASE SOLVED · STACKBROKEN':'CASE LOST · TRY AGAIN';
