@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Stackbreaker · Triggers &amp; Ward · Game Lab</title>
+<meta name="description" content="Practice legal MTG ward payments, counters, trigger ordering and priority in the Deep Cuts EDH Stackbreaker Game Lab.">
+<link rel="stylesheet" href="./style.css">
+<script type="module" src="./play.js"></script>
+</head>
+<body>
+<div class="shell">
+<header>
+  <a class="logo" href="../">DEEP CUTS <strong>STACKBREAKER</strong></a>
+  <nav aria-label="Stackbreaker training navigation"><a href="../advanced/">COPY &amp; RETARGET</a><a href="../">CLASSIC</a></nav>
+</header>
+<main>
+  <div class="intro">
+    <p class="eyebrow">GAME LAB / ADVANCED RULES / STEP 07</p>
+    <h1>TRIGGERS <em>&amp;</em> WARD</h1>
+    <p class="lead">The spell is legal to cast. The <b>trigger on the stack</b> decides what happens next.</p>
+    <span class="local">LOCAL / UNVERIFIED · NO ACCOUNT REWARDS</span>
+  </div>
+  <section class="cases" aria-label="Choose a rules case">
+    <h2>CHOOSE YOUR RESPONSE WINDOW</h2><div id="caseChoices" class="case-grid"></div>
+  </section>
+  <div class="layout">
+   <section class="board" aria-label="Interactive ward and trigger board">
+    <p class="eyebrow" id="caseNumber">CASE</p><h2 id="caseName"></h2><p id="intro" class="description"></p>
+    <div class="stats"><div><small>YOUR LIFE</small><strong id="yourLife">—</strong></div><div><small>OPPONENT LIFE</small><strong id="enemyLife">—</strong></div><div><small>AVAILABLE MANA</small><strong id="mana">—</strong></div></div>
+    <section class="permanent-section" aria-label="Permanents on battlefield"><h3>THE BATTLEFIELD</h3><div id="battlefield" class="permanents"></div></section>
+    <section aria-label="Spells and triggers on the stack"><h3>THE STACK <small>last in, first out</small></h3><ol id="stack" class="stack"></ol></section>
+    <section aria-label="Your instant responses"><h3>YOUR HAND</h3><div id="hand" class="hand"></div></section>
+    <section id="decision" class="decision" aria-label="Legal cast and ward decisions"></section>
+    <div id="result" class="result" aria-live="polite"></div>
+    <div class="controls"><button type="button" id="resolveButton" class="primary">PASS / RESOLVE TOP →</button><button type="button" id="upkeepButton" class="primary">BEGIN YOUR UPKEEP →</button><button type="button" id="resetButton" class="secondary">↻ RESTART</button></div>
+    <p id="feedback" role="status" aria-live="polite"></p>
+   </section>
+   <aside aria-label="Rules reference and semantic event log">
+     <div class="panel"><p class="eyebrow">RULES IN FOCUS</p><h2>WARD IS NOT HEXPROOF.</h2>
+       <p>Ward triggers when an opponent targets a ward permanent with a spell or ability. The original target is legal. The ward ability goes on the stack above that spell.</p>
+       <p>When ward resolves, the spell or ability’s controller may pay the listed cost. Otherwise ward counters the spell or ability. <strong>Stifle</strong> can counter that triggered ability.</p>
+       <p>Triggered abilities can remain on the stack even if their source leaves. When multiple triggers occur, the active player stacks theirs first (APNAP).</p>
+       <a href="https://magic.wizards.com/en/rules" target="_blank" rel="noopener noreferrer">CURRENT OFFICIAL MAGIC RULES ↗</a>
+     </div>
+     <div class="panel"><h3>REAL ENGINE EVENTS</h3><ol id="log" aria-label="Semantic action and resolution log"></ol></div>
+     <div class="panel"><strong>GAME LAB ONLY</strong><p>Two players, scripted opponent priority pass, curated cards and abilities. No all-card engine, account verification, D1 writes, leaderboards or persistent progress.</p></div>
+   </aside>
+  </div>
+  <section class="lesson" aria-live="polite"><p class="eyebrow">THE RULE BEHIND THE WIN</p><h2>WHAT RESOLVED?</h2><p id="lessonText">Solve a case to see the relevant interaction.</p></section>
+</main>
+<footer>STACKBREAKER · DEEP CUTS EDH · <a href="../advanced/">COPY &amp; RETARGET</a></footer>
+</div>
+</body></html>
