@@ -8,7 +8,7 @@ const cards=names=>names.map((name,i)=>card("f"+i,name));
 const ward=(name,cost)=>({name,cost});
 const plans=[
  [
-  ["activate","f1","stone-C"],["activate","f2","filter"],["activate","f0","fellwar-U"],["cast"],
+  ["tap","f1","C"],["activate","f2","filter"],["activate","f0","fellwar-U"],["cast"],
   ["activate","f3","talisman-B"],["tap","f4","R"],["cast"]
  ],
  [
