@@ -76,7 +76,8 @@ test("Blind hatchlings CAN run into the player's head and cause a lethal collisi
  run.hatchlings=[{id:23,pos:{x:head.x,y:head.y-1},dir:2,ageMs:0,moveMs:0}];
  const event=tickHatchlings(run,HATCHLING_MOVE_MS);
  assert.equal(event?.type,"hatchling-hit");assert.deepEqual(event.pos,head);
- const actual=mother();actual.enemies[0].pos={x:3,y:3};
+ const actual=mother();actual.mercy=0; // After the one free Lair dodge, a second hatchling hit remains lethal.
+  actual.enemies[0].pos={x:3,y:3};
  actual.hatchlings=[{id:24,pos:{x:actual.body[0].x+2,y:actual.body[0].y},dir:3,ageMs:0,moveMs:HATCHLING_MOVE_MS-1}];
  step(actual);
  assert.equal(actual.status,"over");
