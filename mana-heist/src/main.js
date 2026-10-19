@@ -20,6 +20,7 @@ import {SAGE_LESSONS} from "./sage-lessons.js";
 import {BONUS_TRIALS,BONUS_TRIAL_STORAGE_KEY,normalizeBonusBests,betterBonusScore} from "./bonus-trials.js";
 import {PLAYTEST_KEY,PLAYTEST_OPT_KEY,blankPlaytest,normalizePlaytest,beginPlaytest,countPlaytestEvent,finishPlaytest,ratePlaytest,exportPlaytest} from "./playtest-metrics.js";
 import {navigateCardRack} from "./keyboard-rack.js";
+import {hintConcept,legalContinuation,hintInstruction} from "./verified-hints.js";
 import {MAX_BACKUP_BYTES,readGuestSaves,createGuestBackup,parseGuestBackup,previewGuestRestore,applyGuestRestore} from "./guest-backup.js";
 import {DEVICE_QA_KEY,DEVICE_QA_CHECKS,DEVICE_QA_STATUSES,blankDeviceQA,normalizeDeviceQA,setDeviceContext,setDeviceQAResult,summarizeDeviceQA,exportDeviceQA} from "./device-qa.js";
 import {LEARN_LEVELS} from "./expanded-learn.js";
@@ -246,6 +247,48 @@ const masteryRating=document.createElement("span");masteryRating.id="masteryRati
 el("stageLabel").after(masteryRating);
 const historicalNote=document.createElement("p");historicalNote.className="muted small";historicalNote.setAttribute("aria-live","polite");el("briefing").after(historicalNote);
 const historicalMedals=new Map();
+// Optional P05 Hint Ladder: each level is user-unlocked; Hint 3 is never
+// shown unless a reducer-validated continuation from this exact state exists.
+const hintPanel=document.createElement("section");hintPanel.id="hintLadder";hintPanel.className="hint-ladder";
+hintPanel.setAttribute("aria-label","Optional three-step mana hints");
+const hintHeading=document.createElement("h3");hintHeading.textContent="SAGE’S THREE CLUES";
+const hintCopy=document.createElement("p");hintCopy.id="hintCopy";hintCopy.setAttribute("aria-live","polite");
+hintCopy.textContent="Clues start hidden. Reveal them one at a time, only when you want help.";
+const hintActions=document.createElement("div");hintActions.className="hint-actions";
+const hintReveal=document.createElement("button");hintReveal.type="button";hintReveal.id="hintReveal";
+hintReveal.textContent="REVEAL HINT 1";
+const hintReset=document.createElement("button");hintReset.type="button";hintReset.id="hintReset";
+hintReset.textContent="HIDE HINTS";hintReset.hidden=true;
+hintActions.append(hintReveal,hintReset);hintPanel.append(hintHeading,hintCopy,hintActions);
+el("wardDescription").after(hintPanel);
+let hintStamp="",hintStep=0;
+function resetHintLadder(){
+ hintStep=0;
+ hintCopy.textContent="Clues start hidden. Reveal them one at a time, only when you want help.";
+ hintCopy.style.whiteSpace="pre-line";hintReveal.textContent="REVEAL HINT 1";
+ hintReveal.disabled=false;hintReset.hidden=true;
+}
+function syncHintLadder(){
+ const stamp=level.id+"|"+key(state);
+ if(stamp!==hintStamp){hintStamp=stamp;resetHintLadder();}
+}
+hintReset.addEventListener("click",()=>resetHintLadder());
+hintReveal.addEventListener("click",()=>{
+ syncHintLadder();
+ const next=Math.min(3,hintStep+1);
+ if(next===1){hintCopy.textContent=hintConcept(level,state);}
+ else{
+  let route={status:"inconclusive",actions:[]};
+  try{route=legalContinuation(level,state,proofFor(level.id),{maxStates:12000});}
+  catch{route={status:"inconclusive",actions:[]};}
+  hintCopy.textContent=hintInstruction(level,state,route,next===3);
+ }
+ hintStep=next;
+ hintReset.hidden=false;
+ hintReveal.textContent=next<3?"REVEAL HINT "+(next+1):"ALL HINTS REVEALED";
+ hintReveal.disabled=next===3;
+});
+
 const lockGlyphs=["✧","⌑","◈","✦","⬡","✶"];
 function persist(){try{localStorage.setItem(storageKey,JSON.stringify({v:2,index:progress.index,bests:progress.bests}));}catch{}}
 function persistLearn(){try{localStorage.setItem(learnKey,JSON.stringify({v:1,completed:learnProgress.completed,last:learnProgress.last}));}catch{}}
@@ -584,6 +627,7 @@ function teachingCue(){
  return state.turn<level.turnLimit?"End turn: lands untap and floating mana disappears.":"Final turn. Undo or restart for another solution.";
 }
 function render(pendingId=null){
+ syncHintLadder();
  const isWin=completed(level,state),proof=mode==="learn"&&trialIndex===null?{turn:level.turnLimit,spentLife:0}:proofs.get(level.id),stage=level.stages[state.stage];
  el("stageLabel").textContent=trialIndex!==null?"BONUS TRIAL "+(trialIndex+1)+" / "+BONUS_TRIALS.length:mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
  el("returnMap").textContent=mode==="learn"?(trialIndex!==null?"← TRIALS":"← LESSONS"):"← MAP";
