@@ -1,0 +1,403 @@
+[
+  {
+    "id": "tw-001",
+    "version": "sb-mtg-training-0.4.0-preview",
+    "title": "Pay the Toll",
+    "description": "Lightning Bolt may legally target Waterfall Aerialist, but its ward {2} trigger will counter the Bolt unless you pay.",
+    "detail": "Ward triggers on an opponent’s targeted spell. Pay at trigger resolution, then Bolt resolves.",
+    "activeActor": "opponent",
+    "currentActor": "player",
+    "passedBy": [
+      "opponent"
+    ],
+    "life": {
+      "player": 8,
+      "opponent": 8
+    },
+    "mana": {
+      "player": {
+        "R": 1,
+        "C": 2
+      },
+      "opponent": {}
+    },
+    "permanents": [
+      {
+        "id": "aerialist",
+        "cardId": "Waterfall Aerialist",
+        "controller": "opponent",
+        "type": "creature",
+        "zone": "battlefield",
+        "toughness": 1,
+        "ward": {
+          "generic": 2
+        }
+      }
+    ],
+    "hand": [
+      {
+        "id": "bolt",
+        "cardId": "Lightning Bolt",
+        "controller": "player"
+      }
+    ],
+    "stack": [],
+    "objective": {
+      "type": "destroyPermanent",
+      "permanentId": "aerialist"
+    },
+    "solution": [
+      {
+        "action": "cast",
+        "handId": "bolt",
+        "targets": [
+          "aerialist"
+        ]
+      },
+      {
+        "action": "resolve",
+        "payWard": true
+      },
+      {
+        "action": "resolve"
+      }
+    ]
+  },
+  {
+    "id": "tw-002",
+    "version": "sb-mtg-training-0.4.0-preview",
+    "title": "Stifle the Ward",
+    "description": "You cannot afford ward {2}, but you can counter the ward triggered ability using Stifle. Lightning Bolt itself remains legal.",
+    "detail": "Stifle counters a triggered ability, not a spell. The ward trigger is above Lightning Bolt on the stack.",
+    "activeActor": "opponent",
+    "currentActor": "player",
+    "passedBy": [
+      "opponent"
+    ],
+    "life": {
+      "player": 8,
+      "opponent": 8
+    },
+    "mana": {
+      "player": {
+        "R": 1,
+        "U": 1
+      },
+      "opponent": {}
+    },
+    "permanents": [
+      {
+        "id": "aerialist",
+        "cardId": "Waterfall Aerialist",
+        "controller": "opponent",
+        "type": "creature",
+        "zone": "battlefield",
+        "toughness": 1,
+        "ward": {
+          "generic": 2
+        }
+      }
+    ],
+    "hand": [
+      {
+        "id": "bolt",
+        "cardId": "Lightning Bolt",
+        "controller": "player"
+      },
+      {
+        "id": "stifle",
+        "cardId": "Stifle",
+        "controller": "player"
+      }
+    ],
+    "stack": [],
+    "objective": {
+      "type": "destroyPermanent",
+      "permanentId": "aerialist"
+    },
+    "solution": [
+      {
+        "action": "cast",
+        "handId": "bolt",
+        "targets": [
+          "aerialist"
+        ]
+      },
+      {
+        "action": "cast",
+        "handId": "stifle",
+        "targets": [
+          "trigger-1"
+        ]
+      },
+      {
+        "action": "resolve"
+      },
+      {
+        "action": "resolve"
+      }
+    ]
+  },
+  {
+    "id": "tw-003",
+    "version": "sb-mtg-training-0.4.0-preview",
+    "title": "Ward Is Not Hexproof",
+    "description": "An opponent’s Lightning Bolt targets YOUR Waterfall Aerialist. Its ward trigger is already above the spell. The opponent will decline to pay.",
+    "detail": "The trigger counters the opponent’s spell when they do not pay. You never had to make targeting illegal.",
+    "activeActor": "opponent",
+    "currentActor": "player",
+    "passedBy": [
+      "opponent"
+    ],
+    "life": {
+      "player": 2,
+      "opponent": 8
+    },
+    "mana": {
+      "player": {},
+      "opponent": {}
+    },
+    "permanents": [
+      {
+        "id": "aerialist",
+        "cardId": "Waterfall Aerialist",
+        "controller": "player",
+        "type": "creature",
+        "zone": "battlefield",
+        "toughness": 1,
+        "ward": {
+          "generic": 2
+        }
+      }
+    ],
+    "hand": [],
+    "stack": [
+      {
+        "id": "bolt",
+        "kind": "spell",
+        "cardId": "Lightning Bolt",
+        "controller": "opponent",
+        "sourceId": null,
+        "isCast": true,
+        "chosenModes": [],
+        "targets": [
+          "aerialist"
+        ],
+        "xValue": 0,
+        "choices": {},
+        "originActionIndex": 0
+      }
+    ],
+    "seedWardFromTop": true,
+    "objective": {
+      "type": "survive"
+    },
+    "solution": [
+      {
+        "action": "resolve"
+      }
+    ]
+  },
+  {
+    "id": "tw-004",
+    "version": "sb-mtg-training-0.4.0-preview",
+    "title": "The Ward Remains",
+    "description": "The opponent’s Waterfall Aerialist has already triggered ward for your Lightning Bolt. Remove it with Diabolic Edict before that ward trigger resolves.",
+    "detail": "A triggered ability exists independently of its source. The Air­ialist leaving does not cancel its already-stacked ward trigger.",
+    "activeActor": "opponent",
+    "currentActor": "player",
+    "passedBy": [
+      "opponent"
+    ],
+    "life": {
+      "player": 8,
+      "opponent": 8
+    },
+    "mana": {
+      "player": {
+        "B": 1,
+        "C": 1
+      },
+      "opponent": {}
+    },
+    "permanents": [
+      {
+        "id": "aerialist",
+        "cardId": "Waterfall Aerialist",
+        "controller": "opponent",
+        "type": "creature",
+        "zone": "battlefield",
+        "toughness": 1,
+        "ward": {
+          "generic": 2
+        }
+      }
+    ],
+    "hand": [
+      {
+        "id": "edict",
+        "cardId": "Diabolic Edict",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "bolt",
+        "kind": "spell",
+        "cardId": "Lightning Bolt",
+        "controller": "player",
+        "sourceId": null,
+        "isCast": true,
+        "chosenModes": [],
+        "targets": [
+          "aerialist"
+        ],
+        "xValue": 0,
+        "choices": {},
+        "originActionIndex": 0
+      }
+    ],
+    "seedWardFromTop": true,
+    "objective": {
+      "type": "wardPersists",
+      "sourceId": "aerialist",
+      "spellId": "bolt"
+    },
+    "solution": [
+      {
+        "action": "cast",
+        "handId": "edict",
+        "targets": [
+          "opponent"
+        ]
+      },
+      {
+        "action": "resolve"
+      },
+      {
+        "action": "resolve"
+      }
+    ]
+  },
+  {
+    "id": "tw-005",
+    "version": "sb-mtg-training-0.4.0-preview",
+    "title": "APNAP on the Stack",
+    "description": "Both players have Soul Warden. You also control Impact Tremors. On your opponent’s turn, cast Raise the Alarm to create two creatures and see the triggered abilities stack.",
+    "detail": "The active player (opponent) stacks their triggers first. Your triggers go above theirs and resolve first.",
+    "activeActor": "opponent",
+    "currentActor": "player",
+    "passedBy": [
+      "opponent"
+    ],
+    "life": {
+      "player": 3,
+      "opponent": 2
+    },
+    "mana": {
+      "player": {
+        "W": 1,
+        "C": 1
+      },
+      "opponent": {}
+    },
+    "permanents": [
+      {
+        "id": "ward-ours",
+        "cardId": "Soul Warden",
+        "controller": "player",
+        "type": "creature",
+        "zone": "battlefield",
+        "toughness": 1
+      },
+      {
+        "id": "ward-theirs",
+        "cardId": "Soul Warden",
+        "controller": "opponent",
+        "type": "creature",
+        "zone": "battlefield",
+        "toughness": 1
+      },
+      {
+        "id": "tremors",
+        "cardId": "Impact Tremors",
+        "controller": "player",
+        "type": "enchantment",
+        "zone": "battlefield"
+      }
+    ],
+    "hand": [
+      {
+        "id": "alarm",
+        "cardId": "Raise the Alarm",
+        "controller": "player"
+      }
+    ],
+    "stack": [],
+    "objective": {
+      "type": "defeatOpponent"
+    },
+    "solution": [
+      {
+        "action": "cast",
+        "handId": "alarm",
+        "targets": []
+      },
+      {
+        "action": "resolve"
+      },
+      {
+        "action": "resolve"
+      },
+      {
+        "action": "resolve"
+      },
+      {
+        "action": "resolve"
+      }
+    ]
+  },
+  {
+    "id": "tw-006",
+    "version": "sb-mtg-training-0.4.0-preview",
+    "title": "The If Check Happens Twice",
+    "description": "At the beginning of your upkeep, you have 50 life and Test of Endurance. Put its conditional trigger on the stack, then resolve it.",
+    "detail": "Test of Endurance only triggers at 50+ life and checks again upon resolution. A source leaving would not erase a previously created trigger.",
+    "activeActor": "player",
+    "currentActor": "player",
+    "passedBy": [
+      "opponent"
+    ],
+    "life": {
+      "player": 50,
+      "opponent": 10
+    },
+    "mana": {
+      "player": {},
+      "opponent": {}
+    },
+    "permanents": [
+      {
+        "id": "endurance",
+        "cardId": "Test of Endurance",
+        "controller": "player",
+        "type": "enchantment",
+        "zone": "battlefield"
+      }
+    ],
+    "hand": [],
+    "stack": [],
+    "objective": {
+      "type": "testEndurance"
+    },
+    "solution": [
+      {
+        "action": "upkeep",
+        "actor": "player"
+      },
+      {
+        "action": "resolve"
+      }
+    ]
+  }
+]
