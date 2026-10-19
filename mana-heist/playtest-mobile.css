@@ -75,3 +75,19 @@
  .device-qa-case-controls label{min-width:0}
  .device-qa-case-controls button{min-height:48px}
 }
+
+/* Accessible instructions are available to assistive technology even when
+   the optional field guide itself is closed. */
+.card-keyboard-instructions{
+ position:absolute!important;width:1px!important;height:1px!important;
+ padding:0!important;margin:-1px!important;border:0!important;
+ overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;
+}
+/* A keyboard-selected card must rise above the fanned overlapping artwork.
+   Never rely on hover to make a source activatable. */
+body.in-heist #heist #battlefield .land-card.mtg-real-land:focus-visible,
+body.in-heist #heist #hand .land-card.mtg-real-land:focus-visible{
+ position:relative!important;z-index:25!important;
+ outline:3px solid #f9d98e!important;outline-offset:3px!important;
+ box-shadow:0 0 0 4px #102925,0 0 22px #f9d98e66!important;
+}
