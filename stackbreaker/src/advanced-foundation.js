@@ -80,10 +80,12 @@ export function validateModeAndTargets(cardSpec,{chosenModes=[],targets=[]},lega
  demand(typeof legalTarget==='function','Missing target legality callback');
  const modes=cardSpec.modes;
  let slots=cardSpec.targetSlots;
+ let modeSpec=null;
  if(modes){
    demand(plainObject(modes),'Invalid modal card specification');
    demand(chosenModes.length===1&&own(modes,chosenModes[0]),'Unknown or missing selected mode');
-   slots=modes[chosenModes[0]].targetSlots;
+   modeSpec=modes[chosenModes[0]];
+   slots=modeSpec.targetSlots;
  }else demand(chosenModes.length===0,'Modes are not available on this card');
  demand(Array.isArray(slots)&&slots.length<=8,'Unsupported target slots');
  demand(targets.length===slots.length,'Wrong number of targets');
@@ -94,10 +96,12 @@ export function validateModeAndTargets(cardSpec,{chosenModes=[],targets=[]},lega
    demand(legalTarget(slot,target,i,targets)===true,'Illegal spell target');
  }
  // Group IDs on the same card mean those targets must be different, e.g. Arc Trail.
- const distinct=cardSpec.distinctSlotGroups??[];
+ const distinct=modeSpec?.distinctSlotGroups??cardSpec.distinctSlotGroups??[];
  demand(Array.isArray(distinct),'Invalid distinct-target rules');
  for(const group of distinct){
-   demand(Array.isArray(group)&&group.length>=2&&group.every(i=>Number.isInteger(i)&&i>=0&&i<slots.length),'Invalid distinct-target group');
+   demand(Array.isArray(group)&&group.length>=2&&group.every(i=>Number.isInteger(i)&&i>=0),'Invalid distinct-target group');
+   // A card-wide group that only exists in another mode has no effect here.
+   if(group.some(i=>i>=slots.length)){if(modeSpec)continue;throw Error('Invalid distinct-target group');}
    demand(new Set(group.map(i=>targets[i])).size===group.length,'Those targets must differ');
  }
  return {chosenModes:[...chosenModes],targets:[...targets]};
