@@ -23,6 +23,9 @@ import {createSoloSession} from "./solo-session.js";
 import {createSessionBest} from "./session-best.js";
 import {isLairChallenge,createLairRun,completeLairRun,lairDetails} from "./lair.js";
 import {lairFlashEvent,drawLairEffects} from "./lair-visuals.js";
+import {victoryDetails,drawBroodTrailFinale} from "./victory-scenes.js";
+import {VICTORY_HUNT_DESKTOP_AVIF,VICTORY_HUNT_MOBILE_AVIF} from "./victory-art.js";
+import {VictoryFanfare} from "./victory-fanfare.js";
 
 /* HIVE RUN Alpha 0.4 — hand-authored pixel-art minibosses and encounter powers. */
 const $=id=>document.getElementById(id);
@@ -56,6 +59,8 @@ try{selectedMode=localStorage.getItem("hive-mode-v1")==="classic"?"classic":"hun
 $("gameMode").value=selectedMode;
 const STORE="deepcuts-hive-run-best-v4",SOUND_STORE="deepcuts-hive-run-audio-v1",MUSIC_STORE="deepcuts-hive-run-music-v1";
 const soundtrack=new HatcherySoundtrack();
+const victoryFanfare=new VictoryFanfare();
+let victoryOpenedAt=0;
 const bossGate=new BossBriefingGate();
 // Encounter director selects music automatically; no player-facing track previews.
 function setEncounterMusic(encounterType){
@@ -91,7 +96,7 @@ function syncUI(){
  $("trapHelp").textContent=run.encounter?"◇ BOSS · NO TRAP HINTS":
   run.evolutionsChosen<3?"◇ AMBER = LIMITED ESCAPES":"◇ AMBER HINTS ENDED";
  const p=progress(run);
- $("progress").textContent=lairActive()?"LAIR PRACTICE · UNRANKED":run.status==="won"?"HIVE COMPLETE":
+ $("progress").textContent=lairActive()?"LAIR PRACTICE · UNRANKED":run.status==="won"?(run.outcome==="broodmother_defeated"?"THE HIVE REIGNS":"HIVE COMPLETE"):
   run.status==="draft"?"CHOOSE YOUR EVOLUTION":("NEXT MUTATION IN "+p.untilNext+" ENERGY");
  $("evoCountdown").textContent=run.status==="draft"?"READY":p.energy+" / 5 EV";
  $("evoCount").textContent=run.evolutionsChosen+" "+(run.evolutionsChosen===1?"EVOLUTION":"EVOLUTIONS");
@@ -99,7 +104,7 @@ function syncUI(){
  $("lastEvolution").textContent=run.lastMutation?"LAST: "+run.lastMutation.name.toUpperCase():"FIVE COLORS · FIVE POWERS";
  $("stateLabel").textContent=bossGate.phase==="briefing"?"BOSS DOSSIER · PAUSED":
   bossGate.phase==="countdown"?"REGROUP · "+bossGate.seconds:
-  ({ready:"AWAITING PLAYER",running:"IN MOTION",paused:"PAUSED",draft:"EVOLVING",over:"RUN ENDED",won:"HIVE COMPLETE"})[run.status];
+  ({ready:"AWAITING PLAYER",running:"IN MOTION",paused:"PAUSED",draft:"EVOLVING",over:"RUN ENDED",won:run.outcome==="broodmother_defeated"?"VICTORIOUS":"HIVE COMPLETE"})[run.status];
  const playable=run.status==="running";
  $("pauseButton").disabled=!playable||bossGate.blocking||awaitingMutationResume;
  $("wardButton").hidden=!canPlaceWard(run)||bossGate.blocking||awaitingMutationResume;
@@ -190,6 +195,50 @@ function playTone(hz,duration=0.09,volume=.025){
   oscillator.connect(gain).connect(audio.destination);
   oscillator.start();oscillator.stop(audio.currentTime+duration);
  }catch{}
+}
+function victoryVisible(){return !$("victoryOverlay").hidden}
+function hideVictoryCelebration(){
+ $("victoryOverlay").hidden=true;
+ document.documentElement.classList.remove("dominion-victory-active");
+ victoryFanfare.stop();
+}
+function replayVictoryCelebration(){
+ if(!victoryVisible())return false;
+ victoryOpenedAt=performance.now();
+ victoryFanfare.play(state.ctx,state.run.outcome,state.musicOn&&!document.hidden);
+ drawVictoryCelebration(victoryOpenedAt);
+ return true;
+}
+function drawVictoryCelebration(now=performance.now()){
+ if(!victoryVisible()||state.run.outcome!=="perfect_clear")return;
+ const canvas=$("victoryTrailCanvas");
+ const ctx=canvas.getContext("2d");
+ if(ctx)drawBroodTrailFinale(ctx,Math.max(0,now-victoryOpenedAt),prefersReducedMotion());
+}
+function showVictoryCelebration(run){
+ const details=victoryDetails(run);
+ if(!details||lairActive())return false;
+ const overlay=$("victoryOverlay");
+ overlay.classList.toggle("dominion-victory--hunt",details.kind==="hunt");
+ overlay.classList.toggle("dominion-victory--classic",details.kind==="classic");
+ $("victoryHeading").textContent=details.title;
+ $("victoryEyebrow").textContent=details.eyebrow;
+ $("victoryStory").textContent=details.message;
+ $("victoryScore").textContent=padScore(run.score);
+ $("victoryCountLabel").textContent=details.countLabel;
+ $("victoryCount").textContent=String(details.count).padStart(2,"0");
+ $("victoryEvolutions").textContent=String(run.evolutionsChosen).padStart(2,"0");
+ if(details.kind==="hunt"){
+  // Art assets are independent of all Director modules, cheats and shortcuts.
+  const desktop=$("victoryHuntDesktop"),mobile=$("victoryHuntMobile");
+  if(!desktop.getAttribute("src"))desktop.src=VICTORY_HUNT_DESKTOP_AVIF;
+  if(!mobile.getAttribute("src"))mobile.src=VICTORY_HUNT_MOBILE_AVIF;
+ }
+ overlay.hidden=false;
+ document.documentElement.classList.add("dominion-victory-active");
+ replayVictoryCelebration();
+ $("victoryPlayAgain").focus({preventScroll:true});
+ return true;
 }
 function showOverlay(title,description,buttonLabel){
  showLairPicker();
