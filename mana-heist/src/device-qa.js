@@ -4,15 +4,15 @@
 export const DEVICE_QA_KEY="dc-mana-heist-device-qa-v1";
 export const DEVICE_QA_VERSION=1;
 export const DEVICE_QA_CHECKS=Object.freeze([
- {id:"basic-tap",title:"Basic tap and Cast Spell",steps:"Learn Mana → Lesson 1. Tap Island, confirm blue mana enters the cauldron, then Cast Spell. Confirm the lesson can finish."},
- {id:"tap-choice",title:"Mana-choice overlay",steps:"Learn Mana → Lesson 27 (Fellwar Stone). Tap Fellwar Stone, select a mana color, and repeat after Restart. Check choices fit on screen, can scroll, and Cancel works."},
- {id:"life-choice",title:"Life payment feedback",steps:"Learn Mana → Lesson 28 (Talisman). Activate its black mode; check life changes from 2 to 1 and the remaining costs can be paid."},
- {id:"advanced-rack",title:"Advanced battlefield scrolling",steps:"Mana Heist → Galaxy X → stage 451. Swipe the source rack sideways, and confirm all sources can be reached and activated without unintentionally moving the whole page."},
- {id:"portrait",title:"Portrait layout",steps:"On a real phone in portrait, open any stage. Check Cauldron, Cast, Undo, End Turn, mana choices and return controls are visible and clickable with no clipped text."},
- {id:"landscape",title:"Landscape/short-screen layout",steps:"Rotate the real phone or use a short viewport. Open a mana-choice dialog; confirm every action can be scrolled to and nothing is hidden behind the system safe area."},
- {id:"card-inspector",title:"Card inspection and return",steps:"Choose a puzzle with cards in hand. Select a card, open View Card, close it, then play the card using the on-screen button rather than dragging."},
- {id:"save-restore",title:"Local progress survives reload",steps:"Complete a lesson or stage, return to the map, reload this browser and verify the saved result still appears. Undo and Restart should remain responsive."},
- {id:"keyboard",title:"Keyboard and screen reader labels",steps:"With a physical keyboard, Tab to interactive cards and an open mana-choice dialog. Check visible focus, trapped Tab within the dialog, Escape cancellation and restored focus."}
+ {id:"basic-tap",target:{mode:"learn",index:0},title:"Basic tap and Cast Spell",steps:"Learn Mana → Lesson 1. Tap Island, confirm blue mana enters the cauldron, then Cast Spell. Confirm the lesson can finish."},
+ {id:"tap-choice",target:{mode:"learn",index:26},title:"Mana-choice overlay",steps:"Learn Mana → Lesson 27 (Fellwar Stone). Tap Fellwar Stone, select a mana color, and repeat after Restart. Check choices fit on screen, can scroll, and Cancel works."},
+ {id:"life-choice",target:{mode:"learn",index:27},title:"Life payment feedback",steps:"Learn Mana → Lesson 28 (Talisman). Activate its black mode; check life changes from 2 to 1 and the remaining costs can be paid."},
+ {id:"advanced-rack",target:{mode:"heist",index:450},title:"Advanced battlefield scrolling",steps:"Mana Heist → Galaxy X → stage 451. Swipe the source rack sideways, and confirm all sources can be reached and activated without unintentionally moving the whole page."},
+ {id:"portrait",target:{mode:"heist",index:0},title:"Portrait layout",steps:"On a real phone in portrait, open any stage. Check Cauldron, Cast, Undo, End Turn, mana choices and return controls are visible and clickable with no clipped text."},
+ {id:"landscape",target:{mode:"heist",index:450},title:"Landscape/short-screen layout",steps:"Rotate the real phone or use a short viewport. Open a mana-choice dialog; confirm every action can be scrolled to and nothing is hidden behind the system safe area."},
+ {id:"card-inspector",target:{mode:"heist",index:1},title:"Card inspection and return",steps:"Choose a puzzle with cards in hand. Select a card, open View Card, close it, then play the card using the on-screen button rather than dragging."},
+ {id:"save-restore",target:{mode:"learn",index:0},title:"Local progress survives reload",steps:"Complete a lesson or stage, return to the map, reload this browser and verify the saved result still appears. Undo and Restart should remain responsive."},
+ {id:"keyboard",target:{mode:"learn",index:26},title:"Keyboard and screen reader labels",steps:"With a physical keyboard, Tab to interactive cards and an open mana-choice dialog. Check visible focus, trapped Tab within the dialog, Escape cancellation and restored focus."}
 ]);
 export const DEVICE_QA_STATUSES=Object.freeze(["untested","pass","issue","not-applicable"]);
 const contexts={device:["unspecified","phone","tablet","desktop"],browser:["unspecified","safari","chrome","firefox","edge","other"],orientation:["unspecified","portrait","landscape"]};
