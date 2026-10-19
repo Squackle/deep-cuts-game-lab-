@@ -25,8 +25,11 @@ export function cosmeticChoices(type,catalog=MASTERY_CATALOG){
  }));
  // Red has no grant in the frozen 24-achievement catalog; it is a plainly
  // labeled starter frame rather than a fabricated milestone reward.
- return type==='frame'?[...earned,{id:'red',achievementId:null,
-  achievementName:'Starter frame',name:labels.red,starter:true}]:earned;
+ if(type==='frame')return [...earned,{id:'red',achievementId:null,
+  achievementName:'Starter frame',name:labels.red,starter:true}];
+ if(type==='vfx')return [...earned,{id:'black',achievementId:null,
+  achievementName:'Starter spell effect',name:labels.black,starter:true}];
+ return earned;
 }
 export function emptyCosmeticEquip(){
  return {schemaVersion:1,localUnverified:true,title:null,frame:null,vfx:null};
@@ -37,6 +40,7 @@ function grantedIds(ledger,catalog=MASTERY_CATALOG){
 export function hasCosmeticGrant(ledger,type,id,catalog=MASTERY_CATALOG){
  if(!COSMETIC_TYPES.includes(type)||typeof id!=='string'||!id)return false;
  if(type==='frame'&&id==='red')return true; // disclosed free starter frame
+ if(type==='vfx'&&id==='black')return true; // disclosed free starter FX
  const entry=catalog.achievements.find(a=>a.reward?.type===type&&a.reward?.id===id);
  return !!entry&&grantedIds(ledger,catalog).has(entry.id);
 }
