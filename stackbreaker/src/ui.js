@@ -16,7 +16,7 @@ const dailyBound=dailyRoute?bindDailyScenario(dailyEntryForDate(dailyDate),scena
 const dailyIndex=dailyBound?scenarios.findIndex(s=>s.id===dailyBound.puzzleId):-1;
 let dailySession='preview',dailyRecord=null,dailyPracticeMoves=0,dailyExpired=false;
 const isDaily=()=>dailyRoute&&dailyIndex>=0;
-const dailyReady=()=>isDaily()&&!dailyExpired&&['practice','scored'].includes(dailySession)&&game?.status==='playing';
+const dailyReady=()=>isDaily()&&!dailyExpired&&dailyUtcDate()===dailyDate&&['practice','scored'].includes(dailySession)&&game?.status==='playing';
 const scoredDaily=()=>isDaily()&&dailySession==='scored';
 
 const $=id=>document.getElementById(id);
@@ -341,7 +341,7 @@ function updateDailyCountdown(){
 }
 function renderDailyStatus(){
  if(!dailyRoute)return;
- const active=!!dailyBound&&!dailyExpired;
+ const active=!!dailyBound&&!dailyExpired&&dailyUtcDate()===dailyDate;
  $('dailyDate').textContent=active?'Challenge '+dailyDate+' UTC · '+dailyBound.difficulty:
   dailyExpired?'This UTC day has ended. Reload for the next challenge.':
   'No dated puzzle is published for this UTC date. A new manifest is needed.';
