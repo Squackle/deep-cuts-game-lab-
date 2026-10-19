@@ -152,7 +152,7 @@ function validState(s){
 }
 export function createWardGame(scenario){
  const s=clone(scenario);validState(s);
- s.status='playing';s.step=0;s.triggerSerial=0;s.tokenSerial=0;s.events=[];s.history=[];s.wonByTest=false;
+ s.status='playing';s.step=0;s.triggerSerial=0;s.tokenSerial=0;s.events=[];s.history=[];s.wonByTest=false;s.upkeepStarted=false;
  s.priority=createPriorityWindow({activeActor:s.activeActor,currentActor:s.currentActor,
   passedBy:s.passedBy??[],stack:s.stack});
  if(s.seedWardFromTop){
@@ -280,8 +280,8 @@ export function resolveWard(s0,{payWard=false,triggerOrder={}}={}){
  return s;
 }
 export function beginWardUpkeep(s0,actor){
- check(s0.status==='playing'&&s0.activeActor===actor,'Wrong upkeep actor');
- const s=clone(s0),items=[];
+ check(s0.status==='playing'&&s0.activeActor===actor&&!s0.upkeepStarted,'Wrong or repeated upkeep actor');
+ const s=clone(s0),items=[];s.upkeepStarted=true;
  for(const p of s.permanents){
   if(p.cardId!=='Test of Endurance'||p.controller!==actor||p.zone!=='battlefield')continue;
   if(s.life[actor]<50)continue; // intervening-if checks AT trigger time
@@ -289,6 +289,7 @@ export function beginWardUpkeep(s0,actor){
    origin:'upkeep',detail:{recipient:actor}}));
  }
  queue(s,items);
+ s.history.push({action:'upkeep',actor});
  return s;
 }
 export function replayWard(scenario,actions){
