@@ -54,8 +54,9 @@ test("orbital trajectory launches near source, circles pot, tightens to the cent
 });
 test("tapping Simic Growth Chamber and paid filter effects launch one bubble per produced mana unit",()=>{
  const js=read("src/main.js"),orbit=read("src/orbital-mana.js");
- assert.match(js,/getCard\(level,action\.id\)\.kind==="bounce"\?\["G","U"\]/);
- assert.match(js,/action\.type==="activate"\|\|action\.type==="ritual"\?action\.output/);
+ assert.match(js,/state\.manaUnits\.filter\(u=>Number\(u\.id\.slice\(1\)\)>priorSerial\)/);
+ assert.match(js,/const needed=new Map\(\)/);
+ assert.match(js,/const produced=state\.manaUnits\.filter/);
  assert.match(js,/incoming\.forEach\(\(orb,i\)=>launchOrbitMana/);
  assert.match(js,/pendingFlights\.add\(orb\.id\)/);
  assert.match(js,/pendingFlights\.delete\(orb\.id\)/);

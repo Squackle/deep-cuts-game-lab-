@@ -6,8 +6,8 @@
 import {LEVELS} from "./levels.js";
 import {CARDS} from "./engine.js";
 const clamp=(n)=>Math.max(1,Math.min(100,Math.round(n)));
-const PAID=new Set(["signet","bluffs","coffers","nykthos"]);
-const SPECIAL=new Set(["ritual","pyretic","treasure","petal","solring","signet","bluffs","coffers","nykthos","lotus","urborg","ziggurat"]);
+const PAID=new Set(["signet","bluffs","coffers","nykthos","prism","cylix","key","basalt"]);
+const SPECIAL=new Set(["ritual","pyretic","treasure","petal","solring","signet","bluffs","coffers","nykthos","lotus","urborg","ziggurat","desperate","song","rite","geyser","tide","mindstone","vessel","archive","thran","worn","gilded","arcane","prism","cylix","lantern","skyclave","basalt","key","bloom","nyxlotus","chalice"]);
 function profile(level){
  const cards=[...level.field,...level.hand,...level.library].map(i=>i.card);
  const special=new Set(cards.filter(k=>SPECIAL.has(k)));
@@ -21,30 +21,40 @@ function profile(level){
  const restricted=cards.some(k=>k==="ziggurat"||k==="command");
  // A reference route's action count is known only for curated certificate
  // families; for older generated cases this is a stated structural estimate.
- const estimatedActions=level.curated==="mana-masteries-2.0"?
+ const estimatedActions=level.curated==="mana-diversity-3.0"?level.mastery.turns*15+stages+level.mastery.turns-1:
+  level.curated==="mana-masteries-2.0"?
   level.mastery.turns*12+stages+level.mastery.turns-1:
   level.curated==="coffers-1.0"?9:
   level.curated==="capstone-1.0"?14:
   3+stages*3+Math.min(level.field.length,5)+(level.hand.length?1:0);
+ const historyDependent=cards.includes("rite")||cards.includes("tide")||cards.includes("geyser");
  const complexity=level.field.length*1.15+level.hand.length*.9+
   modalities.size*2.6+special.size*3.3+paid.size*5.2+
   stages*10.8+colors.size*2.1+
   (stages-1)*(paid.size*3.4+Math.max(1,special.size)*1.5)+
-  (oneUse?3:0)+(restricted?4:0);
+  (oneUse?3:0)+(restricted?4:0)+(historyDependent?5+2*Math.max(0,stages-2):0);
  const difficulty=estimatedActions*2.45+
   colors.size*2.2+pips*.82+stages*5.2+
   paid.size*4.5+Math.max(0,stages-1)*6.5+
-  (lifeRisk?3:0)+(oneUse?3:0)+(restricted?5:0);
+  (lifeRisk?3:0)+(oneUse?3:0)+(restricted?5:0)+(historyDependent?3*turns:0);
  return {complexity,difficulty,stages,turns,sourceCount:cards.length,
   paidTypes:paid.size,mechanicTypes:modalities.size,colors:colors.size,
   estimatedActions,lifeRisk,oneUse,restricted,pips};
 }
 const benchmark=profile(LEVELS[249]);
+const finalReference=profile(LEVELS[499]);
+// Calibrate midpoint and grand finale independently, without awarding
+// "100" just because a level has six wards. Each metric is based solely on
+// resource/ability structure and estimated execution work, not level ID.
+const normalized=(value,mid,final)=>{
+ if(value<=mid)return clamp(50*value/mid);
+ return clamp(50+50*(value-mid)/Math.max(1,final-mid));
+};
 export function evaluateVault(level){
  const p=profile(level);
  return {
-  complexity:clamp(50*p.complexity/benchmark.complexity),
-  difficulty:clamp(50*p.difficulty/benchmark.difficulty),
+  complexity:normalized(p.complexity,benchmark.complexity,finalReference.complexity),
+  difficulty:normalized(p.difficulty,benchmark.difficulty,finalReference.difficulty),
   methodology:"structural complexity and estimated execution difficulty; calibrated at 50 for the previous Galaxy V finale",
   factors:{sources:p.sourceCount,mechanics:p.mechanicTypes,paidActivations:p.paidTypes,
    wards:p.stages,turns:p.turns,coloredRequirements:p.colors,lifeRisk:p.lifeRisk,

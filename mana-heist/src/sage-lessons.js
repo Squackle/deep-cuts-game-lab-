@@ -51,6 +51,15 @@ export const SAGE_TAG_TO_LESSON=Object.freeze({
  "artifact":18,"mana-rock":18,"ritual":20,"filter":21,"mana-engine":24
 });
 export function relevantLesson(level){
+ // Point challenged players to an actual related existing lesson. These are
+ // fundamentals, not invented lessons for advanced spells not yet taught.
+ const family=level.mastery?.family;
+ if(family==="finale")return 17; // multi-turn full-route planning
+ if(family==="tide")return 3;   // Island land types / dual sources
+ if(family==="geyser")return 17; // opponent-dependent resource planning
+ if(family==="rite")return 22;  // one-shot red-mana rituals
+ if(family==="key")return 14;   // untapping a mana source
+ if(family==="prism")return 19; // paid mana filtering
  const cards=[...level.field,...level.hand,...level.library].map(x=>x.card);
  if(cards.some(x=>x==="ritual"))return 20;
  if(cards.some(x=>x==="pyretic"))return 22;

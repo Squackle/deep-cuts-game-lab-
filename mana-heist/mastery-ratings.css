@@ -30,3 +30,16 @@ body.in-heist #gameScreen>.game-titlebar .mastery-rating{margin:0 auto}
 @media(max-width:380px){
  body.in-heist #gameScreen>.game-titlebar .mastery-rating{font-size:.51rem;padding:3px}
 }
+
+
+/* Scenario state is essential information (opponent's tapped lands, effect
+   duration and Rite graveyard count), not a standing gameplay instruction. */
+body.in-heist .vault-topline{flex-wrap:wrap;gap:5px 8px}
+body.in-heist .mana-scenario-context:not([hidden]){
+ display:inline-block;font:bold .58rem/1.3 system-ui,sans-serif;
+ color:#f2d69a;letter-spacing:.045em;border-bottom:1px solid #d8c58a88;
+ white-space:nowrap;padding:2px 0;
+}
+@media(max-width:650px){
+ body.in-heist .mana-scenario-context:not([hidden]){font-size:.5rem;letter-spacing:0}
+}

@@ -20,6 +20,7 @@ import {SAGE_LESSONS} from "./sage-lessons.js";
 import {LEARN_LEVELS} from "./expanded-learn.js";
 import {certifyCapstone} from "./capstone-certificates.js";
 import {certifyMastery} from "./mastery-certificates.js";
+import {certifyDiverse} from "./mana-variety-certificates.js";
 import {evaluateVault} from "./difficulty-metrics.js";
 import {mountSage} from "./sage-ui.js";
 import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
@@ -42,15 +43,19 @@ function readProgress(){
 }
 const modeKey="dc-mana-heist-mode-v1",learnKey="dc-mana-heist-learn-v1";
 const revisedKey="dc-mana-heist-capstones-v1";
+const varietyKey="dc-mana-heist-variety-v1";
+let varietyBests={};
+try{const d=JSON.parse(localStorage.getItem(varietyKey)||"null");if(d?.v===1&&d.bests)for(const l of LEVELS.filter(l=>l.revision===3)){const best=d.bests[l.id];if(validBest(best))varietyBests[l.id]={turn:best.turn,spentLife:best.spentLife,actions:Number.isInteger(best.actions)?best.actions:999};}}catch{}
+function persistVariety(){try{localStorage.setItem(varietyKey,JSON.stringify({v:1,bests:varietyBests}));}catch{}}
 function readRevised(){
  try{const d=JSON.parse(localStorage.getItem(revisedKey)||"null");
-  return d?.v===1?Object.fromEntries(LEVELS.filter(l=>l.revision&&validBest(d.bests?.[l.id])).map(l=>[l.id,{turn:d.bests[l.id].turn,spentLife:d.bests[l.id].spentLife,actions:Number.isInteger(d.bests[l.id].actions)?d.bests[l.id].actions:999}])):{};}catch{return {};}
+  return d?.v===1?Object.fromEntries(LEVELS.filter(l=>l.revision&&l.revision!==3&&validBest(d.bests?.[l.id])).map(l=>[l.id,{turn:d.bests[l.id].turn,spentLife:d.bests[l.id].spentLife,actions:Number.isInteger(d.bests[l.id].actions)?d.bests[l.id].actions:999}])):{};}catch{return {};}
 }
 let revisedBests=readRevised();
 function displayBests(){
  const out={...progress.bests};
  for(const puzzle of LEVELS)if(puzzle.revision)delete out[puzzle.id];
- return {...out,...revisedBests};
+ return {...out,...revisedBests,...varietyBests};
 }
 function persistRevised(){
  try{localStorage.setItem(revisedKey,JSON.stringify({v:1,bests:revisedBests}));}catch{}
@@ -132,6 +137,8 @@ const returnFromResult=document.createElement("button");
 returnFromResult.type="button";returnFromResult.id="winReturn";
 returnFromResult.textContent="RETURN TO LESSONS";
 el("winPanel").append(returnFromResult);
+const manaContext=document.createElement("span");manaContext.id="manaContext";manaContext.className="mana-scenario-context";
+el("difficulty").after(manaContext);
 returnFromResult.addEventListener("click",()=>showMap());
 function inspectById(id){
  const record=lookup(level,id);
@@ -148,7 +155,7 @@ function proofFor(id){
  if(proofCache.has(id))return proofCache.get(id);
  const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id);
  if(!puzzle)return null;
- const exact=puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
+ const exact=puzzle.revision===3?certifyDiverse(puzzle):puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
  let proof=exact;
  if(exact.status!=="solved"&&puzzle.templateId){
   const source=BASE_LEVELS.find(p=>p.id===puzzle.templateId);
@@ -268,17 +275,28 @@ function perform(action){
  if(action.type!=="tap"){viewEpoch++;pendingFlights.clear();cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();}
  history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type});
  state=out.state;
- manaOrbs=(action.type==="ritual"||action.type==="activate"||action.type==="tap"&&getCard(level,action.id).kind==="bounce")?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
+ manaOrbs=(action.type==="ritual"||action.type==="activate"||action.type==="tap"&&(getCard(level,action.id).kind==="bounce"||state.highTide))?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
  if(!consistent(state.pool,manaOrbs))manaOrbs=reconstruct(state.pool);
  // Floating mana expires at the turn boundary. Reset ALL visual pigment,
  // currents, ripples and glow immediately, even while Canvas is animating.
  // This does not change the reducer, spell costs or playable land state.
  if(action.type==="end"){fluid.clear();currentFluidStage="";}
  // Orbital particles represent output mana, including paired and filtered output.
- const produced=action.type==="tap"
-  ?(getCard(level,action.id).kind==="bounce"?["G","U"]:[action.color])
-  :action.type==="activate"||action.type==="ritual"?action.output:[];
- const incoming=produced.length?manaOrbs.slice(-produced.length):[];
+ // Compare serialized mana units instead of guessing "one per tap".
+ // High Tide may create extra blue while a typed Island produces red/white,
+ // and untap abilities produce no mana at all.
+ const priorSerial=history.at(-1)?.state.manaSerial||0;
+ const produced=state.manaUnits.filter(u=>Number(u.id.slice(1))>priorSerial).map(u=>u.color);
+ const needed=new Map();
+ for(const color of produced)needed.set(color,(needed.get(color)||0)+1);
+ const incoming=[];
+ // The reconstructed pool is color-sorted, not temporal. Select by hue to
+ // animate exactly the units created (important for High Tide blue+red).
+ for(let at=manaOrbs.length-1;at>=0;at--){
+  const orb=manaOrbs[at],count=needed.get(orb.color)||0;
+  if(count>0){incoming.push(orb);needed.set(orb.color,count-1);}
+ }
+ incoming.reverse();
  for(const orb of incoming)pendingFlights.add(orb.id);
  const pendingId=incoming[0]?.id??null;
  if(completed(level,state)){
@@ -288,7 +306,14 @@ function perform(action){
    learnProgress.completed.sort((a,b)=>a-b);learnProgress.last=index;persistLearn();
    message("Practice complete! Select the next exercise or return to Learn Mana.");
   }else{
-   if(level.revision){
+   if(level.revision===3){
+    const best=varietyBests[level.id];
+    if(!best||state.turn<best.turn||
+       (state.turn===best.turn&&state.spentLife<best.spentLife)||
+       (state.turn===best.turn&&state.spentLife===best.spentLife&&state.actions<best.actions))
+      varietyBests[level.id]={turn:state.turn,spentLife:state.spentLife,actions:state.actions};
+    persistVariety();
+   }else if(level.revision){
     const best=revisedBests[level.id];
     if(!best||state.turn<best.turn||
        (state.turn===best.turn&&state.spentLife<best.spentLife)||
@@ -304,9 +329,9 @@ function perform(action){
   }
  }else if(action.type==="end")message("Turn "+state.turn+" · lands untapped · mana emptied.");
  else if(action.type==="play")message(getCard(level,action.id).name+" enters the battlefield"+(state.field.find(f=>f.id===action.id)?.tapped?" tapped.":"."));
- else if(action.type==="tap")message(getCard(level,action.id).kind==="bounce"?"Simic Growth Chamber adds green AND blue mana.":"+1 "+SYMBOL[action.color].name+" mana · land tapped sideways.");
-  else if(action.type==="activate")message(getCard(level,action.id).name+" produces "+action.output.join(" + ")+" mana"+(getCard(level,action.id).v2==="ziggurat"?" (creature spells only).":"."));
- else if(action.type==="ritual")message("Cast "+getCard(level,action.id).name+" from your hand. It goes to your graveyard and adds "+action.output.join(" + ")+" mana.");
+ else if(action.type==="tap")message(getCard(level,action.id).kind==="bounce"?"Simic Growth Chamber adds green AND blue mana.":produced.length>1?"Added "+produced.join(" + ")+" mana (High Tide).":"+1 "+SYMBOL[action.color].name+" mana · land tapped sideways.");
+  else if(action.type==="activate")message(action.untapTarget?getCard(level,action.id).name+" untaps "+getCard(level,action.untapTarget).name+".":action.untapSelf?getCard(level,action.id).name+" untaps after its three-mana payment.":getCard(level,action.id).name+" produces "+produced.join(" + ")+" mana"+(getCard(level,action.id).v2==="ziggurat"?" (creature spells only).":"."));
+ else if(action.type==="ritual")message(getCard(level,action.id).manaSpell?.effect==="highTide"?"High Tide resolves! Islands tapped for mana produce extra blue until the turn ends.":"Cast "+getCard(level,action.id).name+" from your hand. It goes to your graveyard and adds "+produced.join(" + ")+" mana.");
  else if(action.type==="fetch")message("Fetched "+getCard(level,action.targetId).name+". The fetch land is gone.");
  else if(action.type==="cast")message("Spell cast · "+(level.stages.length-state.stage)+" seals remain.");
  landDrag?.cancel();
@@ -330,7 +355,7 @@ function tapLand(id){
  if(completed(level,state))return;
  const onField=state.field.find(f=>f.id===id);
  if(!onField){message("This source is not on the battlefield.",true);return;}
- if(onField.tapped&&getCard(level,id).v2!=="petal"){message(tappedLandMessage(level,state),true);return;}
+ if(onField.tapped&&!["petal","basalt"].includes(getCard(level,id).v2)){message(tappedLandMessage(level,state),true);return;}
  const card=getCard(level,id),possible=actions(level,state).filter(a=>(a.type==="tap"||a.type==="fetch"||a.type==="activate")&&a.id===id);
  if(card.kind==="fetch"){
   if(!possible.length)message("This fetch land has no legal target, or you cannot pay the life cost.",true);
@@ -342,7 +367,7 @@ function tapLand(id){
 function playLand(id){
  lastCardId=id;selectedHandId=null;
  const card=getCard(level,id);
- if(card.kind==="instant"){
+ if(card.manaSpell){
   const rituals=actions(level,state).filter(a=>a.type==="ritual"&&a.id===id);
   if(!rituals.length){message("Make enough mana to pay for this instant before casting it.",true);return;}
   if(rituals.length===1)perform(rituals[0]);
@@ -416,8 +441,8 @@ function syncLandRows(){
   node.style.setProperty("--fan-drop",position.drop+"px");
   node.style.setProperty("--fan-index",String(position.order));
  });
- el("playSelectedLand").disabled=!selectedHandId||!state.hand.includes(selectedHandId)||(!!state.played&&getCard(level,selectedHandId)?.kind!=="instant");
- el("playSelectedLand").textContent=selectedHandId&&getCard(level,selectedHandId)?.kind==="instant"?"CAST MANA SPELL ✦":"PLAY SELECTED LAND ↑";
+ el("playSelectedLand").disabled=!selectedHandId||!state.hand.includes(selectedHandId)||(!!state.played&&!getCard(level,selectedHandId)?.manaSpell);
+ el("playSelectedLand").textContent=selectedHandId&&!!getCard(level,selectedHandId)?.manaSpell?"CAST MANA SPELL ✦":"PLAY SELECTED LAND ↑";
  el("inspectSelected").disabled=!selectedHandId||!state.hand.includes(selectedHandId);
 }
 function selectHand(id){
@@ -452,6 +477,9 @@ function render(pendingId=null){
  el("toggleGuide").textContent=mode==="learn"?"✧ LESSON NOTES":"ⓘ GUIDE";
  el("chapterName").textContent=level.chapter;
  el("difficulty").textContent=["INITIATE","ROOKIE","TACTICIAN","EXPERT","MASTERMIND"][level.rank-1];
+ const ritesInGraveyard=state.graveyard.filter(id=>getCard(level,id)?.name==="Rite of Flame").length;
+ manaContext.textContent=level.opponentTappedLands?"OPPONENT · "+level.opponentTappedLands+" TAPPED LANDS":state.highTide?"HIGH TIDE · EXTRA U ×"+state.highTide:ritesInGraveyard?"RITE MEMORY · "+ritesInGraveyard:"";
+ manaContext.hidden=!manaContext.textContent;
  const rating=evaluateVault(level);
  masteryRating.textContent="C "+rating.complexity+" · D "+rating.difficulty;
  masteryRating.setAttribute("aria-label","Complexity "+rating.complexity+" of 100, estimated difficulty "+rating.difficulty+" of 100");
