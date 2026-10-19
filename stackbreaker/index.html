@@ -1152,6 +1152,80 @@ main{max-width:1640px}
  rotate:27deg;background:linear-gradient(135deg,#e3ffa4,#4cc76a);
  box-shadow:0 0 7px #8bdf83;
 }
+
+
+/* Small ghost cards communicate zone movement without copying actionable DOM. */
+.sb-fx-card-ghost{
+ position:absolute;width:66px;height:89px;z-index:3;
+ margin-left:-33px;margin-top:-44px;
+ display:flex;align-items:flex-end;justify-content:center;
+ border:2px solid var(--spell-hue);border-radius:6px;
+ background:linear-gradient(150deg,#182222,#344f51 55%,#111b20);
+ box-shadow:0 1px 9px #000b,0 0 11px var(--spell-hue);
+ color:var(--spell-hue);opacity:0;
+ animation:sb-fx-card-appear 850ms ease-out var(--fx-delay,0ms) both;
+}
+.sb-fx-card-ghost:before{
+ content:"";position:absolute;inset:6px 5px 28px;
+ border:1px solid var(--spell-hue);border-radius:3px;opacity:.68;
+ background:radial-gradient(ellipse at center,var(--spell-hue),transparent 73%);
+}
+.sb-fx-card-glyph{
+ position:relative;z-index:1;display:block;
+ width:calc(100% - 4px);overflow:hidden;text-overflow:ellipsis;
+ color:#fff5dd;white-space:nowrap;
+ text-align:center;font:800 8px/1.2 system-ui,sans-serif;
+ padding:3px 1px 6px;text-shadow:0 1px 3px #000;
+}
+.sb-fx-card-exile{animation-name:sb-fx-card-banished}
+.sb-fx-card-bounce{animation-name:sb-fx-card-return}
+.sb-fx-card-destroy{animation-name:sb-fx-card-shatter}
+.sb-fx-card-summon,.sb-fx-card-reanimate{animation-name:sb-fx-card-appear}
+.sb-fx-card-draw{animation-name:sb-fx-card-fly-in}
+.sb-fx-card-token,.sb-fx-card-copy{animation-name:sb-fx-card-split}
+.sb-fx-card-scry{animation-name:sb-fx-card-fan}
+@keyframes sb-fx-card-appear{
+ 0%,16%{opacity:0;transform:translateY(31px) scale(.15) rotate(-18deg);filter:blur(6px)}
+ 44%{opacity:.95;transform:translateY(0) scale(.96) rotate(3deg);filter:blur(0)}
+ 75%{opacity:.8;transform:translateY(-6px) scale(1.02)}
+ 100%{opacity:0;transform:translateY(-8px) scale(1.06)}
+}
+@keyframes sb-fx-card-banished{
+ 0%{opacity:.95;transform:scale(1) rotate(0)}
+ 40%{opacity:1;transform:scale(.85) rotate(18deg)}
+ 85%,100%{opacity:0;transform:scale(.06) rotate(245deg);filter:blur(7px)}
+}
+@keyframes sb-fx-card-return{
+ 0%,12%{opacity:.95;transform:translate(0,0) scale(1)}
+ 45%{opacity:.85;transform:translate(calc(var(--fx-card-dx) * .35),calc(var(--fx-card-dy) * .35)) rotate(-12deg) scale(.79)}
+ 100%{opacity:0;transform:translate(var(--fx-card-dx),var(--fx-card-dy)) rotate(-32deg) scale(.2)}
+}
+@keyframes sb-fx-card-shatter{
+ 0%{opacity:.9;transform:scale(1);clip-path:inset(0)}
+ 45%{opacity:1;transform:scale(1.2) rotate(3deg);
+ clip-path:polygon(0 0,100% 0,94% 36%,100% 75%,58% 60%,27% 100%,0 84%)}
+ 100%{opacity:0;transform:scale(.38) rotate(19deg);filter:blur(9px)}
+}
+@keyframes sb-fx-card-fly-in{
+ 0%{opacity:0;transform:translate(var(--fx-card-dx),var(--fx-card-dy)) scale(.4) rotate(-30deg)}
+ 40%{opacity:1}
+ 80%{opacity:.9;transform:translate(calc(var(--fx-card-index) * 21px),0) scale(.95)}
+ 100%{opacity:0;transform:translate(calc(var(--fx-card-index) * 21px),0) scale(1)}
+}
+@keyframes sb-fx-card-split{
+ 0%{opacity:0;transform:translate(0,0) scale(.2)}
+ 30%{opacity:1;transform:translate(0,0) scale(.93)}
+ 73%{opacity:.95;transform:translate(calc((var(--fx-card-index) - 1) * 53px),-8px) scale(.86)}
+ 100%{opacity:0;transform:translate(calc((var(--fx-card-index) - 1) * 53px),-14px) scale(.91)}
+}
+@keyframes sb-fx-card-fan{
+ 0%{opacity:0;transform:translateY(25px) scale(.5)}
+ 39%{opacity:.95;transform:translate(calc((var(--fx-card-index) - 1) * 53px),-12px) rotate(calc((var(--fx-card-index) - 1) * 15deg))}
+ 80%{opacity:.95}
+ 100%{opacity:0;transform:translateY(18px) scale(.55)}
+}
+@media(max-width:480px){.sb-fx-card-ghost{width:48px;height:70px;margin-left:-24px;margin-top:-35px}
+ .sb-fx-card-glyph{font-size:7px}}
 </style></head>
 <body><a class="skip" href="#game">Skip to Stackbreaker game</a>
 <header class="mast"><a class="site-mark" href="/lab/" aria-label="Back to Game Test Lab home">◈ <b>DEEP CUTS</b> / GAME LAB</a><strong class="site-title">STACKBREAKER <small>1.5 · ARCANE OBSERVATORY</small></strong><a class="site-home" href="/lab/" aria-label="Back to Test Lab, choose another game">GAME LAB ↗</a></header>
@@ -2274,6 +2348,25 @@ function renderResolutionFx(root,layer,view,event,anchors,mode){
  };
  const sourcePoint=pulse(source,'origin');
  const impact=pulse(focus,mode,130);
+ // Represent physical card travel independently from the underlying game state.
+ // These are inert silhouettes, never cloned buttons or actual hand/zone cards.
+ const silhouettes={exile:1,summon:1,bounce:1,destroy:1,draw:2,
+  token:3,reanimate:1,copy:2,scry:3};
+ const howMany=silhouettes[mode]||0;
+ for(let i=0;i<howMany;i++){
+  const ghost=el(root,'div','sb-fx-card-ghost sb-fx-card-'+mode,scene);
+  ghost.style.left=px(focus.x);
+  ghost.style.top=px(focus.y);
+  const destination=mode==='bounce'?(anchors.hand||source):source;
+  ghost.style.setProperty?.('--fx-card-dx',px(destination.x-focus.x));
+  ghost.style.setProperty?.('--fx-card-dy',px(destination.y-focus.y));
+  ghost.style.setProperty?.('--fx-card-index',String(i));
+  ghost.style.setProperty?.('--fx-delay',(i*70)+'ms');
+  const glyph=el(root,'span','sb-fx-card-glyph',ghost);
+  glyph.textContent=mode==='token'?'TOKEN':mode==='copy'?'COPY':
+   mode==='draw'?'CARD':mode==='scry'?'SCRY':
+   event.targetCard||(event.changes?.units?.[0]?.card)||event.card||'CARD';
+ }
  // Linear tracer travels from a spell on the stack toward its authoritative target.
  const dx=focus.x-source.x,dy=focus.y-source.y,dist=Math.hypot(dx,dy);
  if(dist>5&&!['wipe','damage-wave'].includes(mode)){
@@ -2407,6 +2500,8 @@ function captureSpellAnchors(root,event){
  const anchors={source:pointRect(source),target:pointRect(target)||healTarget,
   field,affected:(event.changes?.units||[]).map(x=>pointRect(
    findDataNode(root,'[data-unit]','unit',x.id))).filter(Boolean)};
+ const hand=pointRect(root?.getElementById?.('hand'));
+ if(hand)anchors.hand=hand;
  // A creature summon is not targeted; the battlefield is its arrival point.
  if(event.isCreatureSpell&&!anchors.target)anchors.target=field;
  if(['destroyAll','weakenAll','sweepDamage','ward','intervention'].includes(event.effect)&&!anchors.target)
