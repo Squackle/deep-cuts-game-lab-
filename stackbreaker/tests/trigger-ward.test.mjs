@@ -194,5 +194,6 @@ test('Standalone local-only Step 7 UI compiles and declares no account or local 
  assert.ok(!ui.includes('fetch('));
  assert.ok(!ui.includes('dc-stackbreaker-progress-v3'));
  assert.ok(html.includes('id="resolveButton"'));
+ assert.ok(ui.includes('castDecision({append:true})'),'must offer Stifle and Edict responses while ward trigger is pending');
  assert.doesNotThrow(()=>execFileSync(process.execPath,['--check',new URL('../ward/play.js',import.meta.url).pathname],{stdio:'pipe'}));
 });
