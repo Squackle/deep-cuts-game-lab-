@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
 import {RULES_VERSION} from '../src/cards.js';
 import {serializePriorityWindow,deserializePriorityWindow,classicTargetProjection,makeTypedStackEntry} from '../src/advanced-foundation.js';
 import {ADVANCED_PREVIEW_VERSION,createAdvancedGame,castAdvanced,resolveAdvanced,replayAdvanced,
@@ -201,4 +202,16 @@ test('The live advanced case page exists without writing Classic or Daily saves'
  assert.ok(!ui.includes('dc-stackbreaker-daily-local-v1'));
  assert.ok(html.includes('id="resolveButton"'));
  assert.ok(read('src/advanced-stack.js').includes("from './advanced-foundation.js'"));
+});
+test('Advanced live browser modules parse under Node and use real static routes',()=>{
+ const url=new URL('../advanced/play.js',import.meta.url);
+ const core=new URL('../src/advanced-stack.js',import.meta.url);
+ for(const file of [url,core]){
+   assert.doesNotThrow(()=>execFileSync(process.execPath,['--check',file.pathname],{stdio:'pipe'}),file.pathname);
+ }
+ const html=readFileSync(new URL('../advanced/index.html',import.meta.url),'utf8');
+ assert.ok(html.includes('src="./play.js"'));
+ assert.ok(html.includes('href="../"'));
+ assert.ok(html.includes('href="../../lab/"'));
+ assert.ok(!html.includes('dc-stackbreaker-progress-v3'));
 });
