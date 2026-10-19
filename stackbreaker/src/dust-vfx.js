@@ -42,6 +42,20 @@ export function dustParticleLayout(seed='spell',count=24){
  }
  return values;
 }
+/** Keep a ghost wholly within the visible viewport without moving gameplay. */
+export function fitDustBounds(center,requested,viewport,padding=8){
+ if(!center||![center.x,center.y].every(Number.isFinite))return null;
+ const vw=Math.max(1,viewport?.width||1000),vh=Math.max(1,viewport?.height||750);
+ const maxW=Math.max(1,vw-2*padding),maxH=Math.max(1,vh-2*padding);
+ const width=Math.min(maxW,Math.max(60,Math.min(360,requested?.width||175)));
+ const height=Math.min(maxH,Math.max(55,Math.min(230,requested?.height||105)));
+ const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
+ return {
+  x:clamp(center.x,padding+width/2,vw-padding-width/2),
+  y:clamp(center.y,padding+height/2,vh-padding-height/2),
+  width,height
+ };
+}
 // Unlike a real card game move, this only renders a snapshot after the engine
 // has already removed the item. It never modifies the stack or game state.
 export function renderSpellDust(root,layer,event,anchors,mode){
@@ -50,14 +64,16 @@ export function renderSpellDust(root,layer,event,anchors,mode){
  const point=fizzle?anchors?.source:anchors?.target;
  if(!point||![point.x,point.y].every(Number.isFinite))return null;
  const snapshot=anchors?.dustCard;
+ const bounds=fitDustBounds(point,{width:anchors?.dustCard?.rect?.width,height:anchors?.dustCard?.rect?.height},
+  {width:root.documentElement?.clientWidth,height:root.documentElement?.clientHeight});
  const host=root.createElement('div');
  host.className='sb-vfx-dust-host '+(fizzle?'sb-vfx-dust-fizzle':'sb-vfx-dust-counter');
  host.setAttribute('aria-hidden','true');
- host.style.left=point.x+'px';
- host.style.top=point.y+'px';
+ host.style.left=bounds.x+'px';
+ host.style.top=bounds.y+'px';
  const cssProp=(node,key,value)=>node.style.setProperty?node.style.setProperty(key,value):node.style[key]=value;
- cssProp(host,'--dust-width',Math.max(60,Math.min(360,snapshot?.rect?.width||175))+'px');
- cssProp(host,'--dust-height',Math.max(55,Math.min(230,snapshot?.rect?.height||105))+'px');
+ cssProp(host,'--dust-width',bounds.width+'px');
+ cssProp(host,'--dust-height',bounds.height+'px');
  const ghost=root.createElement('div');
  ghost.className='sb-vfx-dust-card';
  const picture=snapshot?.imageSrc;
