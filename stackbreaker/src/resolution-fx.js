@@ -112,6 +112,25 @@ export function renderResolutionFx(root,layer,view,event,anchors,mode){
  };
  const sourcePoint=pulse(source,'origin');
  const impact=pulse(focus,mode,130);
+ // Represent physical card travel independently from the underlying game state.
+ // These are inert silhouettes, never cloned buttons or actual hand/zone cards.
+ const silhouettes={exile:1,summon:1,bounce:1,destroy:1,draw:2,
+  token:3,reanimate:1,copy:2,scry:3};
+ const howMany=silhouettes[mode]||0;
+ for(let i=0;i<howMany;i++){
+  const ghost=el(root,'div','sb-fx-card-ghost sb-fx-card-'+mode,scene);
+  ghost.style.left=px(focus.x);
+  ghost.style.top=px(focus.y);
+  const destination=mode==='bounce'?(anchors.hand||source):source;
+  ghost.style.setProperty?.('--fx-card-dx',px(destination.x-focus.x));
+  ghost.style.setProperty?.('--fx-card-dy',px(destination.y-focus.y));
+  ghost.style.setProperty?.('--fx-card-index',String(i));
+  ghost.style.setProperty?.('--fx-delay',(i*70)+'ms');
+  const glyph=el(root,'span','sb-fx-card-glyph',ghost);
+  glyph.textContent=mode==='token'?'TOKEN':mode==='copy'?'COPY':
+   mode==='draw'?'CARD':mode==='scry'?'SCRY':
+   event.targetCard||(event.changes?.units?.[0]?.card)||event.card||'CARD';
+ }
  // Linear tracer travels from a spell on the stack toward its authoritative target.
  const dx=focus.x-source.x,dy=focus.y-source.y,dist=Math.hypot(dx,dy);
  if(dist>5&&!['wipe','damage-wave'].includes(mode)){
