@@ -161,4 +161,5 @@ test('original Stackbreaker standalone bundle and visual-only controls are intac
  }
  assert.ok(preview.includes('VISUAL PREVIEW ONLY'));
  assert.ok(script.includes('visualFixture:!!data.fxType'));
+ assert.doesNotThrow(()=>new Function(script.replace(/^import[^\n]*\n/,'')),'preview entrypoint must be valid JavaScript');
 });
