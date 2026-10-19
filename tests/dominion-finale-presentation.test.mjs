@@ -137,3 +137,16 @@ test("The regular arcade cannot show an earned finale while a run is active, ove
   }
  }
 });
+
+test("Director can rehearse the same original Brood Trail finale without creating earned results",()=>{
+ const html=read("../director/index.html"),js=read("../director/main.js"),css=read("../director/styles.css");
+ assert.match(html,/id="directorClassicFinaleCanvas"/);
+ assert.match(js,/import \{drawBroodTrailFinale\} from "\.\.\/src\/victory-scenes\.js"/);
+ assert.match(js,/run\.status==="won"&&run\.mode==="classic"/);
+ assert.match(js,/Math\.max\(0,performance\.now\(\)-finaleOpenedAt\)/);
+ assert.match(css,/\.victory-screen--classic \.director-classic-finale-canvas/);
+ assert.match(css,/\.victory-screen--classic \.victory-actions\{/);
+ // In normal arcade only the terminal engine state, NOT a Director session, can open the full finale.
+ const main=read("../src/main.js");
+ assert.doesNotMatch(main,/showcaseDirectorVictory|createDirectorRun|advanceDirectorRun/);
+});
