@@ -558,3 +558,111 @@ main{max-width:1640px}
 @media(prefers-reduced-motion:reduce){
  .sb-vfx-fire-svg,.sb-vfx-fire-svg *{display:none!important;animation:none!important;transition:none!important}
 }
+
+
+/* Spell VFX Step 4: countered stack card fractures into luminous dust;
+   a spell failing on all illegal targets quietly crumbles at its SOURCE. */
+.sb-vfx-dust-host{
+ position:absolute;
+ width:var(--dust-width,175px);
+ height:var(--dust-height,105px);
+ transform:translate(-50%,-50%);
+ pointer-events:none!important;
+ isolation:isolate;
+ z-index:2;
+}
+.sb-vfx-dust-host *{pointer-events:none!important}
+.sb-vfx-dust-card{
+ position:absolute;
+ inset:0;
+ display:flex;
+ flex-direction:column;
+ justify-content:flex-end;
+ overflow:hidden;
+ border-radius:9px;
+ border:1px solid #97c8d9;
+ background:radial-gradient(ellipse at 45% 35%,#39789b,#172334 76%);
+ box-shadow:0 0 9px #79e3f685,0 5px 18px #000a;
+ filter:brightness(1.3);
+ animation:sb-dust-counter-card 880ms ease-in forwards;
+}
+.sb-vfx-dust-card img{
+ position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+ filter:saturate(.9);opacity:.85;
+}
+.sb-vfx-dust-label{
+ position:relative;z-index:1;
+ display:block;white-space:nowrap;
+ overflow:hidden;text-overflow:ellipsis;
+ padding:6px 9px;
+ background:linear-gradient(transparent,#071522ee 36%);
+ color:#f3fdff;font:700 clamp(10px,1vw,14px)/1.2 system-ui,sans-serif;
+ text-shadow:0 1px 4px #000;
+}
+.sb-vfx-dust-fizzle .sb-vfx-dust-card{
+ border-color:#a5adb1;
+ background:linear-gradient(130deg,#333739,#5f6262,#34363a);
+ box-shadow:0 0 8px #a8b3ae47;
+ animation:sb-dust-fizzle-card 650ms ease-out forwards;
+}
+.sb-vfx-dust-fizzle .sb-vfx-dust-card img{
+ filter:grayscale(1) brightness(.7);opacity:.58;
+}
+.sb-vfx-dust-particles{position:absolute;inset:0}
+.sb-vfx-dust-particle{
+ position:absolute;
+ left:50%;top:50%;
+ width:var(--dust-size,3px);height:var(--dust-size,3px);
+ border-radius:35%;
+ background:#d8f5fa;
+ box-shadow:0 0 5px #89dbed;
+ opacity:0;
+ animation:sb-dust-ember 720ms cubic-bezier(.18,.54,.35,1) var(--dust-delay,0ms) both;
+}
+.sb-vfx-dust-fizzle .sb-vfx-dust-particle{
+ background:#9da7a7;
+ box-shadow:0 0 3px #b3b8aa70;
+ animation-name:sb-dust-fizzle-ember;
+ animation-duration:520ms;
+}
+.sb-vfx-dust-link{
+ position:absolute;height:3px;transform-origin:0 50%;pointer-events:none;
+ background:linear-gradient(90deg,#40508a00,#9eddfdbb 60%,#e2faff);
+ box-shadow:0 0 12px #9ed8e8;
+ border-radius:100px;
+ animation:sb-dust-link 530ms ease-out both;
+}
+@keyframes sb-dust-counter-card{
+ 0%,20%{opacity:.95;filter:brightness(1.12);clip-path:inset(0 0 0 0);transform:scale(1)}
+ 33%{opacity:1;filter:brightness(2.6) saturate(.3);transform:scale(1.06)}
+ 52%{opacity:.72;filter:brightness(1.6) grayscale(.7);clip-path:polygon(4% 0,96% 0,100% 14%,94% 44%,100% 74%,91% 100%,16% 100%,0 84%,7% 44%,0 20%)}
+ 78%{opacity:.27;filter:grayscale(1) blur(3px);transform:scale(.91) rotate(-2deg);clip-path:polygon(14% 1%,94% 16%,100% 42%,79% 56%,84% 91%,22% 93%,5% 62%)}
+ 100%{opacity:0;filter:grayscale(1) blur(10px);transform:scale(.62) rotate(-5deg)}
+}
+@keyframes sb-dust-fizzle-card{
+ 0%{opacity:.85;filter:grayscale(.45);transform:scale(1)}
+ 35%{opacity:.65;filter:grayscale(1) blur(1px);transform:scale(.97)}
+ 100%{opacity:0;filter:grayscale(1) blur(8px);transform:scale(.59)}
+}
+@keyframes sb-dust-ember{
+ 0%,23%{opacity:0;transform:translate(0,0) scale(.4)}
+ 38%{opacity:1}
+ 70%{opacity:.78}
+ 100%{opacity:0;transform:translate(var(--dust-x,30px),var(--dust-y,-30px)) scale(.12)}
+}
+@keyframes sb-dust-fizzle-ember{
+ 0%,17%{opacity:0;transform:translate(0,0) scale(.4)}
+ 38%{opacity:.55}
+ 100%{opacity:0;transform:translate(var(--dust-x,30px),var(--dust-y,-30px)) scale(.1)}
+}
+@keyframes sb-dust-link{
+ 0%{opacity:0;filter:brightness(.3);transform:translateY(-50%) scaleX(.02)}
+ 19%{opacity:1;transform:translateY(-50%) scaleX(.3)}
+ 53%{opacity:.92;filter:brightness(2);transform:translateY(-50%) scaleX(1)}
+ 100%{opacity:0;transform:translateY(-50%) scaleX(1)}
+}
+@media(prefers-reduced-motion:reduce){
+ .sb-vfx-dust-host,.sb-vfx-dust-host *,.sb-vfx-dust-link{
+  display:none!important;animation:none!important;transition:none!important
+ }
+}

@@ -2,6 +2,7 @@
 // Rules state is authoritative; no VFX event is written to saved gameplay.
 import {CARDS} from './cards.js';
 import {pyroblastVisualMode,renderPyroblastVfx} from './pyroblast-vfx.js';
+import {dustVisualMode,captureDustCard,renderSpellDust} from './dust-vfx.js';
 
 const pointRect=el=>{
  if(!el||typeof el.getBoundingClientRect!=='function')return null;
@@ -79,7 +80,10 @@ export function captureSpellAnchors(root,event){
   :event.targetKind==='creature'
   ?findDataNode(root,'[data-unit]','unit',event.targetId)
   :null;
- return {source:pointRect(source),target:pointRect(target)};
+ const anchors={source:pointRect(source),target:pointRect(target)};
+ const dustCard=captureDustCard(root,event);
+ if(dustCard)anchors.dustCard=dustCard;
+ return anchors;
 }
 /** Deterministic screen-space bolt: repeatable seed, no game RNG or effects. */
 export function lightningGeometry(source,target,seed='bolt'){
@@ -148,8 +152,11 @@ export function createSpellVfxController(root,view){
   if(!root?.createElement||!root.body)return {played:false,reason:'no-document'};
   const fireMode=pyroblastVisualMode(event);
   if(event.card==='Pyroblast'&&fireMode==='generic')return {played:false,reason:'unverified-pyroblast-outcome'};
-  const mode=fireMode==='generic'?lightningVisualMode(event):fireMode;
-  const misses=mode==='dissipate'||mode==='fire-miss';
+  const boltMode=lightningVisualMode(event);
+  const dustMode=dustVisualMode(event);
+  const mode=fireMode!=='generic'?fireMode:boltMode!=='generic'?boltMode:
+   dustMode!=='none'?dustMode:'generic';
+  const misses=mode==='dissipate'||mode==='fire-miss'||mode==='dust-fizzle';
   if(!misses&&!anchors.target)return {played:false,reason:'no-anchors'};
   const geometry=anchors.target?lightningGeometry(anchors.source,anchors.target,event.sourceStackId):null;
   if(!misses&&!geometry)return {played:false,reason:'overlapping'};
@@ -162,6 +169,18 @@ export function createSpellVfxController(root,view){
   if(mode.startsWith('fire-')){
    if(typeof root.createElementNS!=='function')return {played:false,reason:'no-svg'};
    renderPyroblastVfx(root,layer,view,event,anchors,mode);
+  }else if(mode==='dust-counter'||mode==='dust-fizzle'){
+   // Unlike a successful counter, illegal-target resolution has no recipient.
+   if(mode==='dust-counter'&&anchors.target){
+    const link=root.createElement('div');
+    link.className='sb-vfx-dust-link';
+    link.style.left=anchors.source.x+'px';
+    link.style.top=anchors.source.y+'px';
+    link.style.width=geometry.distance+'px';
+    link.style.transform='translateY(-50%) rotate('+
+     Math.atan2(anchors.target.y-anchors.source.y,anchors.target.x-anchors.source.x)+'rad)';
+    layer.appendChild(link);
+   }
   }else if(mode==='generic'){
    const trace=root.createElement('div');
    trace.className='sb-vfx-trace';
@@ -205,8 +224,10 @@ export function createSpellVfxController(root,view){
     }
    }
   }
+  if(dustMode!=='none')renderSpellDust(root,layer,event,anchors,dustMode);
   root.body.appendChild(layer);cue=layer;
-  const lifetime=mode==='generic'?260:misses?420:mode.startsWith('fire-')?900:800;
+  const lifetime=mode==='generic'?260:mode==='dust-counter'?880:mode==='dust-fizzle'?650:
+   misses?420:mode.startsWith('fire-')?900:800;
   if(typeof view?.setTimeout==='function')clearTimer=view.setTimeout(()=>{
    if(cue===layer){layer.remove();cue=null;}clearTimer=null;
   },lifetime);

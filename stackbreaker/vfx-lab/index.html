@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101b1b">
-<title>Stackbreaker — Pyroblast VFX Preview</title>
+<title>Stackbreaker — Spell Effects Preview</title>
 <link rel="stylesheet" href="../observatory.css">
 <style>
 :root{color-scheme:dark}
@@ -38,19 +38,21 @@ footer{padding:12px 0;font-size:.81rem;color:#afb5a8}
 <script type="module" src="./preview.js"></script>
 </head><body><main>
 <div class="top"><a href="../">← Stackbreaker Classic</a><span class="eyebrow">Deep Cuts Game Lab</span></div>
-<h1>Pyroblast: Fireball Effects</h1>
-<p>See how a resolving Pyroblast could launch a fireball, counter a blue spell, destroy a blue permanent, or fail without falsely showing a successful hit.</p>
-<div class="notice"><strong>VISUAL PREVIEW ONLY.</strong> These are scripted effect fixtures, not playable Pyroblast scenarios. The game's MTG card rules have not changed.</div>
+<h1>Fireball &amp; Counterspell Effects</h1>
+<p>Explore Pyroblast's fireball, a successfully countered spell dissolving into dust, and a spell with no legal targets fizzling into ash.</p>
+<div class="notice"><strong>VISUAL PREVIEW ONLY.</strong> These are scripted spell effect fixtures, not new playable Pyroblast scenarios or changes to Magic rules.</div>
 <div class="arena" aria-label="Pyroblast animation preview stage">
-<div class="card" id="origin"><b>Pyroblast</b><em>Red instant spell · resolving</em><span>R</span></div>
+<div class="card" id="origin"><b id="sourceName">Pyroblast</b><em>Red instant spell · resolving</em><span>R</span></div>
 <div class="card target" id="destination"><b id="targetName">Blue Spell</b><em id="targetInfo">Spell on the stack</em><span id="targetType">Instant</span></div>
 </div>
 <div class="controls" role="group" aria-label="Choose preview outcome">
 <button type="button" data-mode="counter" aria-pressed="false">Counter blue spell</button>
 <button type="button" data-mode="destroy" aria-pressed="false">Destroy blue permanent</button>
 <button type="button" data-mode="resist" aria-pressed="false">Can't be countered</button>
-<button type="button" data-mode="miss" aria-pressed="false">Target no longer legal</button>
+<button type="button" data-mode="miss" aria-pressed="false">Pyroblast: illegal target</button>
+<button type="button" data-mode="dust-counter" aria-pressed="false">Counterspell: dissolve spell</button>
+<button type="button" data-mode="dust-fizzle" aria-pressed="false">Illegal target: fizzle to ash</button>
 </div>
-<p class="status" id="previewStatus" role="status" aria-live="polite">Choose an outcome to play the fireball.</p>
+<p class="status" id="previewStatus" role="status" aria-live="polite">Choose a spell outcome to preview.</p>
 <footer>All animations are cosmetic. They do not cast cards, resolve spells, or change saved progress.</footer>
 </main></body></html>
