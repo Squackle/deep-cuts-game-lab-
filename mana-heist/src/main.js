@@ -19,6 +19,7 @@ import {installCardMagnifier} from "./card-magnifier.js";
 import {SAGE_LESSONS} from "./sage-lessons.js";
 import {BONUS_TRIALS,BONUS_TRIAL_STORAGE_KEY,normalizeBonusBests,betterBonusScore} from "./bonus-trials.js";
 import {PLAYTEST_KEY,PLAYTEST_OPT_KEY,blankPlaytest,normalizePlaytest,beginPlaytest,countPlaytestEvent,finishPlaytest,ratePlaytest,exportPlaytest} from "./playtest-metrics.js";
+import {navigateCardRack} from "./keyboard-rack.js";
 import {DEVICE_QA_KEY,DEVICE_QA_CHECKS,DEVICE_QA_STATUSES,blankDeviceQA,normalizeDeviceQA,setDeviceContext,setDeviceQAResult,summarizeDeviceQA,exportDeviceQA} from "./device-qa.js";
 import {LEARN_LEVELS} from "./expanded-learn.js";
 import {certifyCapstone} from "./capstone-certificates.js";
@@ -75,6 +76,7 @@ function readMode(){try{const m=localStorage.getItem(modeKey);return m==="learn"
 function readLearn(){try{return normalizedLearnProgress(JSON.parse(localStorage.getItem(learnKey)||"null"));}catch{return normalizedLearnProgress(null);}}
 let mode=readMode(),learnProgress=readLearn();
 let progress=readProgress(),index=progress.index,level=LEVELS[index],state=initial(level),history=[],choiceActions=[],selectedMessage="";
+let mapLaunchFocus=null;
 let playtestEnabled=false,playtestData=blankPlaytest(),playtestAttempt=null,pendingRatingKey=null,playtestRatingDone=false;
 try{
  playtestEnabled=localStorage.getItem(PLAYTEST_OPT_KEY)==="yes";
@@ -522,7 +524,7 @@ function syncLandRows(){
   node.dataset.zone=field?"field":"hand";
   const name=card.name;
   node.setAttribute("aria-label",(field?"Tap ":"Tap to play or cast: ")+name+(tapped?", tapped":""));
-  node.title=name+" · "+(field?"tap to produce mana":"tap to play or cast · press I to inspect");
+  node.title=name+" · "+(field?"tap to produce mana":"tap to play or cast")+" · arrow keys move between cards · I inspects";
    node.classList.toggle("hand-selected",!field&&id===selectedHandId);
    if(field)node.removeAttribute("aria-pressed");else node.setAttribute("aria-pressed",String(id===selectedHandId));
   return node;
@@ -664,6 +666,8 @@ function render(pendingId=null){
  selectedMessage="";
 }
 function showMap(){
+ const wasPlaying=document.body.classList.contains("in-heist");
+ const leavingTrial=trialIndex;
  closePlaytest("exit");pendingRatingKey=null;
  sage.hide();fluid.pause();fluid.clear();currentFluidStage="";
  magnifier.hide();
@@ -680,6 +684,15 @@ function showMap(){
  trialIndex=null;
  showModePanels();
  el("campaignScreen").scrollIntoView({block:"start",behavior:"instant"});
+ if(wasPlaying){
+  const focusable=mapLaunchFocus?.isConnected&&!mapLaunchFocus.closest("[hidden]")?mapLaunchFocus:null;
+  const fallback=leavingTrial!==null?el("learnPicker").querySelector('[data-trial-index="'+leavingTrial+'"]'):
+    mode==="learn"?el("learnPicker").querySelector('[data-learn-level="'+index+'"]'):
+    el("chapterPicker").querySelector('[data-level="'+index+'"]');
+  const visible=fallback&&!fallback.closest("[hidden]")?fallback:null;
+  (focusable||visible||document.querySelector('.mode-option[data-mode="'+mode+'"]'))?.focus({preventScroll:true});
+ }
+ mapLaunchFocus=null;
 }
 function showGame(){
  startPlaytest();
@@ -692,6 +705,7 @@ function showGame(){
  el("gameScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
 function load(i,enter=false){
+ if(enter&&el("campaignScreen").contains(document.activeElement))mapLaunchFocus=document.activeElement;
  closePlaytest("exit");pendingRatingKey=null;playtestRatingDone=false;
  fluid.clear();currentFluidStage="";
  magnifier.hide();
@@ -796,6 +810,7 @@ el("battlefield").addEventListener("click",e=>{
  else if(selectedHandId)playLand(selectedHandId);
 });
 for(const id of ["battlefield","hand"])el(id).addEventListener("keydown",e=>{
+ if(navigateCardRack(el(id),e))return;
  if(e.key.toLowerCase()!=="i"||e.altKey||e.ctrlKey||e.metaKey)return;
  const card=e.target.closest('[data-cardid]');
  if(card){e.preventDefault();inspectById(card.dataset.cardid);}
