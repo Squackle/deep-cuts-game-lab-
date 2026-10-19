@@ -123,7 +123,9 @@ test("Full-bleed responsive earned finale UI keeps score and controls outside pa
  assert.match(main,/showVictoryCelebration\(state\.run\)/);
  assert.match(main,/victoryDetails\(run\)/);
  assert.match(main,/victoryFanfare\.play\(state\.ctx,state\.run\.outcome,state\.musicOn&&!document\.hidden\)/);
- assert.match(main,/drawBroodTrailFinale\(ctx,Math\.max\(0,now-victoryOpenedAt\),prefersReducedMotion\(\)\)/);
+ assert.match(main,/drawBroodTrailFinale\(ctx,Math\.max\(0,now-victoryOpenedAt\),reduced\)/);
+ assert.match(main,/VICTORY_PAINT_INTERVAL_MS=1000\/24/);
+ assert.match(main,/if\(lastVictoryDrawAt>=0&&\(reduced\|\|now-lastVictoryDrawAt<VICTORY_PAINT_INTERVAL_MS\)\)return/);
  assert.match(main,/\$\("victoryPlayAgain"\)\.addEventListener\("click"/);
  assert.match(main,/\$\("victoryReturn"\)\.addEventListener\("click"/);
  assert.match(main,/\$\("victoryRewatch"\)\.addEventListener\("click"/);
