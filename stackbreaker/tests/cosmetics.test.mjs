@@ -50,7 +50,7 @@ test('no cosmetic is unlocked without a genuine mastery ledger; defaults remain 
    assert.equal(hasCosmeticGrant(ledger,type,c.id),starter,c.id);
    const denied=equipLocalCosmetic(raw,ledger,type,c.id);
    assert.equal(denied.ok,starter,c.id);
-   assert.equal(denied.equip[type],starter?'red':null);
+   assert.equal(denied.equip[type],starter?(type==='frame'?'red':'black'):null);
   }
   const def=equipLocalCosmetic(raw,ledger,type,null);
   assert.equal(def.ok,true);
