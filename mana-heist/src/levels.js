@@ -2,6 +2,7 @@ import {VERSION} from "./engine.js";
 import {capstoneFor,coffersFor} from "./advanced-capstones.js";
 import {MASTERY_GALAXY_DATA,masteryFor} from "./mastery-galaxies.js";
 import {diverseFor} from "./mana-variety-puzzles.js";
+import {remixFor} from "./certified-remixes.js";
 const cards=list=>list.map(([id,card])=>({id,card}));
 const spell=(name,cost,effect)=>({name,cost,...(effect?{effect}:{})});
 const L=(id,chapter,rank,title,briefing,turnLimit,life,hand,field,library,stages)=>({
@@ -106,5 +107,5 @@ function variant(i){
   templateId:root.id,galaxy:g,world:w
  };
 }
-export const LEVELS=Array.from({length:500},(_,i)=>i>=250?(diverseFor(i)||masteryFor(i)):i<BASE_LEVELS.length?BASE_LEVELS[i]:(capstoneFor(i)||coffersFor(i)||variant(i)));
+export const LEVELS=Array.from({length:500},(_,i)=>i>=250?(remixFor(i)||diverseFor(i)||masteryFor(i)):i<BASE_LEVELS.length?BASE_LEVELS[i]:(capstoneFor(i)||coffersFor(i)||variant(i)));
 if(LEVELS.length!==500||CHAPTERS.length!==50||GALAXIES.length!==10)throw Error("Campaign atlas is incomplete");

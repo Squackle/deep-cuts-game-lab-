@@ -22,6 +22,8 @@ import {LEARN_LEVELS} from "./expanded-learn.js";
 import {certifyCapstone} from "./capstone-certificates.js";
 import {certifyMastery} from "./mastery-certificates.js";
 import {certifyDiverse} from "./mana-variety-certificates.js";
+import {diverseFor} from "./mana-variety-puzzles.js";
+import {certifyRemix,REMIX_KEY,REMIXED_IDS,validateRemixBests} from "./certified-remixes.js";
 import {evaluateVault} from "./difficulty-metrics.js";
 import {mountSage} from "./sage-ui.js";
 import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
@@ -45,21 +47,24 @@ function readProgress(){
 const modeKey="dc-mana-heist-mode-v1",learnKey="dc-mana-heist-learn-v1";
 const revisedKey="dc-mana-heist-capstones-v1";
 const varietyKey="dc-mana-heist-variety-v1";
+let remixBests={};
+try{remixBests=validateRemixBests(JSON.parse(localStorage.getItem(REMIX_KEY)||"null"));}catch{}
+function persistRemix(){try{localStorage.setItem(REMIX_KEY,JSON.stringify({v:1,bests:remixBests}));}catch{}}
 let trialIndex=null,trialBests={};
 try{trialBests=normalizeBonusBests(JSON.parse(localStorage.getItem(BONUS_TRIAL_STORAGE_KEY)||"null"));}catch{}
 function persistBonusTrials(){try{localStorage.setItem(BONUS_TRIAL_STORAGE_KEY,JSON.stringify({v:1,bests:trialBests}));}catch{}}
 let varietyBests={};
-try{const d=JSON.parse(localStorage.getItem(varietyKey)||"null");if(d?.v===1&&d.bests)for(const l of LEVELS.filter(l=>l.revision===3)){const best=d.bests[l.id];if(validBest(best))varietyBests[l.id]={turn:best.turn,spentLife:best.spentLife,actions:Number.isInteger(best.actions)?best.actions:999};}}catch{}
+try{const d=JSON.parse(localStorage.getItem(varietyKey)||"null");if(d?.v===1&&d.bests)for(const l of LEVELS.filter(l=>l.revision===3||l.revision===4)){const best=d.bests[l.id];if(validBest(best))varietyBests[l.id]={turn:best.turn,spentLife:best.spentLife,actions:Number.isInteger(best.actions)?best.actions:999};}}catch{}
 function persistVariety(){try{localStorage.setItem(varietyKey,JSON.stringify({v:1,bests:varietyBests}));}catch{}}
 function readRevised(){
  try{const d=JSON.parse(localStorage.getItem(revisedKey)||"null");
-  return d?.v===1?Object.fromEntries(LEVELS.filter(l=>l.revision&&l.revision!==3&&validBest(d.bests?.[l.id])).map(l=>[l.id,{turn:d.bests[l.id].turn,spentLife:d.bests[l.id].spentLife,actions:Number.isInteger(d.bests[l.id].actions)?d.bests[l.id].actions:999}])):{};}catch{return {};}
+  return d?.v===1?Object.fromEntries(LEVELS.filter(l=>[1,2].includes(l.revision)&&validBest(d.bests?.[l.id])).map(l=>[l.id,{turn:d.bests[l.id].turn,spentLife:d.bests[l.id].spentLife,actions:Number.isInteger(d.bests[l.id].actions)?d.bests[l.id].actions:999}])):{};}catch{return {};}
 }
 let revisedBests=readRevised();
 function displayBests(){
  const out={...progress.bests};
  for(const puzzle of LEVELS)if(puzzle.revision)delete out[puzzle.id];
- return {...out,...revisedBests,...varietyBests};
+ return {...out,...revisedBests,...Object.fromEntries(Object.entries(varietyBests).filter(([id])=>!REMIXED_IDS.includes(id))),...remixBests};
 }
 function persistRevised(){
  try{localStorage.setItem(revisedKey,JSON.stringify({v:1,bests:revisedBests}));}catch{}
@@ -159,7 +164,7 @@ function proofFor(id){
  if(proofCache.has(id))return proofCache.get(id);
  const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id)||BONUS_TRIALS.find(v=>v.id===id);
  if(!puzzle)return null;
- const exact=puzzle.revision===3?certifyDiverse(puzzle):puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
+ const exact=puzzle.revision===4?certifyRemix(puzzle):puzzle.revision===3?certifyDiverse(puzzle):puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
  let proof=exact;
  if(exact.status!=="solved"&&puzzle.templateId){
   const source=BASE_LEVELS.find(p=>p.id===puzzle.templateId);
@@ -175,6 +180,8 @@ function proofFor(id){
 const proofs={get:proofFor};
 const masteryRating=document.createElement("span");masteryRating.id="masteryRating";masteryRating.className="mastery-rating";masteryRating.title="C = structural complexity; D = estimated execution difficulty. Both 1–100, old Galaxy V finale benchmark = 50.";
 el("stageLabel").after(masteryRating);
+const historicalNote=document.createElement("p");historicalNote.className="muted small";historicalNote.setAttribute("aria-live","polite");el("briefing").after(historicalNote);
+const historicalMedals=new Map();
 const lockGlyphs=["✧","⌑","◈","✦","⬡","✶"];
 function persist(){try{localStorage.setItem(storageKey,JSON.stringify({v:2,index:progress.index,bests:progress.bests}));}catch{}}
 function persistLearn(){try{localStorage.setItem(learnKey,JSON.stringify({v:1,completed:learnProgress.completed,last:learnProgress.last}));}catch{}}
@@ -332,7 +339,12 @@ function perform(action){
    learnProgress.completed.sort((a,b)=>a-b);learnProgress.last=index;persistLearn();
    message("Practice complete! Select the next exercise or return to Learn Mana.");
   }else{
-   if(level.revision===3){
+   if(level.revision===4){
+    const best=remixBests[level.id];
+    if(!best||state.turn<best.turn||(state.turn===best.turn&&state.spentLife<best.spentLife)||(state.turn===best.turn&&state.spentLife===best.spentLife&&state.actions<best.actions))
+     remixBests[level.id]={turn:state.turn,spentLife:state.spentLife,actions:state.actions};
+    persistRemix();
+   }else if(level.revision===3){
     const best=varietyBests[level.id];
     if(!best||state.turn<best.turn||
        (state.turn===best.turn&&state.spentLife<best.spentLife)||
@@ -513,6 +525,15 @@ function render(pendingId=null){
  masteryRating.setAttribute("aria-label","Complexity "+rating.complexity+" of 100, estimated difficulty "+rating.difficulty+" of 100");
  el("vaultName").textContent=level.title;
  el("briefing").textContent=level.briefing;
+ const archived=level.revision===4?varietyBests[level.id]:null;
+ if(archived){
+  if(!historicalMedals.has(level.id)){
+   const original=diverseFor(index),oldProof=certifyDiverse(original);
+   historicalMedals.set(level.id,medal(original,{turn:archived.turn,spentLife:archived.spentLife,actions:archived.actions,stage:original.stages.length},oldProof));
+  }
+  historicalNote.textContent="PREVIOUS VERSION · "+"★".repeat(historicalMedals.get(level.id))+" · turn "+archived.turn+", "+archived.spentLife+" life spent · preserved in your archived results. This new board has separate medals.";
+  historicalNote.hidden=false;
+ }else{historicalNote.textContent="";historicalNote.hidden=true;}
  el("turnNumber").textContent=state.turn+" / "+level.turnLimit;
  el("lifeTotal").textContent=state.life;
  el("landDrop").textContent=state.played?"USED":"AVAILABLE";
