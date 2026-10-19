@@ -639,6 +639,11 @@ function loop(time){
 // Unlock on direct interaction; an async score request is too late for autoplay rules.
 document.addEventListener("pointerdown",wakeAudio,{capture:true,passive:true});
 $("primaryButton").addEventListener("click",begin);
+$("victoryPlayAgain").addEventListener("click",()=>{
+ hideVictoryCelebration();state.lastFrame=0;state.accumulator=0;begin();
+});
+$("victoryReturn").addEventListener("click",()=>{hideVictoryCelebration();reset()});
+$("victoryRewatch").addEventListener("click",replayVictoryCelebration);
 $("pauseButton").addEventListener("click",togglePause);
 function activateWard(){
  if(!placeHatchlingWard(state.run))return false;
@@ -654,12 +659,17 @@ $("soundButton").addEventListener("click",()=>{
 });
 $("musicButton").addEventListener("click",()=>{
  state.musicOn=!state.musicOn;
+ if(!state.musicOn)victoryFanfare.stop();
  try{localStorage.setItem(MUSIC_STORE,state.musicOn?"on":"off")}catch{}
  if(state.musicOn)wakeAudio();
  syncSoundtrack();syncUI();
  announce(state.musicOn?(state.ctx?.state==="running"?TRACKS[soundtrack.trackId].name+" playing.":"Music enabled. Use a game control to allow desktop audio."):"Background music muted.");
 });
 document.addEventListener("keydown",event=>{
+ if(victoryVisible()){
+  if(event.key==="Escape"){event.preventDefault();hideVictoryCelebration();reset()}
+  return;
+ }
  if(bossGate.blocking){
   if(event.key==="Tab"&&bossGate.phase==="briefing"){
    event.preventDefault();$("bossBriefingResume").focus({preventScroll:true});
@@ -730,6 +740,7 @@ canvas.addEventListener("pointercancel",event=>{
 });
 document.addEventListener("visibilitychange",()=>{
  if(document.hidden){
+  victoryFanfare.stop();
   if(bossGate.blocking)reopenBossBriefing();
    else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
   soundtrack.stop(); // Also silence title-screen music in hidden tabs.
@@ -740,12 +751,14 @@ window.addEventListener("focus",()=>{
  if(!document.hidden){syncSoundtrack();syncUI()}
 });
 window.addEventListener("pagehide",()=>{
+ victoryFanfare.stop();
  if(bossGate.blocking)reopenBossBriefing();
  else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
  soundtrack.stop();
  state.lastFrame=0;state.accumulator=0;
 });
 window.addEventListener("blur",()=>{
+ victoryFanfare.stop();
  if(bossGate.blocking)reopenBossBriefing();
  else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
  soundtrack.stop();
