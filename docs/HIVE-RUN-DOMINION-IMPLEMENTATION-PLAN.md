@@ -56,9 +56,9 @@ Acceptance specification:
 
 **Owner checkpoint:** review/approve both actual endings in Game Lab before moving to Task 3 signoff or requesting production promotion.
 
-## Task 3 — Final gameplay, UX, and accessibility QA — PLANNED
+## Task 3 — Final gameplay, UX, and accessibility QA — AUTOMATED RELEASE-CANDIDATE QA IN PROGRESS; OWNER DEVICE ACCEPTANCE PENDING
 
-No additional bosses or gameplay systems. Run a release-candidate matrix on Game Lab:
+No additional bosses or gameplay systems. Run a release-candidate matrix on Game Lab. Track the automated checks and still-required physical tests in [DOMINION-2.0-QA-SIGNOFF.md](DOMINION-2.0-QA-SIGNOFF.md). The Task 3 QA pass includes a visual-only 24fps cap for the pixel finale and reduced-motion single-frame draw; gameplay rules stay hive-1.5.4:
 - **Hunt:** all five bosses with the approved seven-segment length, safe spawn / phase transitions, hatchling chase and contact, ability warnings, White/Blue/Black/Red/Green effects and all existing synergies. Validate defensive temporary shortening returns to seven; no unfair boss softlocks, invisible hazards, repeated awards or accidental terminal screens.
 - **Brood Trail:** growth to an actual full-clear, collisions when very long, Green-growth effects, tiny remaining-free-space edge cases, music and honest 6,000-step result.
 - **Inputs/devices:** physical iPhone Safari and Android Chrome in portrait/landscape; desktop Chrome/Edge/Firefox if available; swipe/keyboard; pause/focus/background; Game Only; draft selection; touch hit targets; viewport widths 320/375/390/768/1280+; safe-area and reduced-motion/mute behavior.
