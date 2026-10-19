@@ -212,6 +212,9 @@ export function createSpellVfxController(root,view){
   layer.setAttribute('aria-hidden','true');
   layer.setAttribute('data-vfx-mode',mode);
   layer.setAttribute('data-vfx-outcome',event.outcome||'resolved');
+  // A cosmetic theme is a whitelisted overlay attribute, never a rules input.
+  if(['white','blue','black','red','green','prismatic'].includes(event.cosmeticTheme))
+   layer.setAttribute('data-vfx-theme',event.cosmeticTheme);
   if(event.terminalStatus)layer.setAttribute('data-vfx-terminal',event.terminalStatus);
   if(semantic){
    renderResolutionFx(root,layer,view,event,anchors,mode);
