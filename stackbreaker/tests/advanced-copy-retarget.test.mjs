@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {RULES_VERSION} from '../src/cards.js';
+import {serializePriorityWindow,deserializePriorityWindow,classicTargetProjection,makeTypedStackEntry} from '../src/advanced-foundation.js';
 import {ADVANCED_PREVIEW_VERSION,createAdvancedGame,castAdvanced,resolveAdvanced,replayAdvanced,
   projectClassicTargetId,adaptClassicStackEntry,advancedTargetOptions,ADVANCED_CARDS} from '../src/advanced-stack.js';
 
@@ -141,4 +142,63 @@ test('Mode and target cards have distinct, per-slot legal targets',()=>{
   const abrade={id:'preview',cardId:'Abrade',controller:'player',chosenModes:['artifact']};
   assert.deepEqual(advancedTargetOptions(s,abrade,0).sort(),['relic-one','relic-two']);
   assert.throws(()=>advancedTargetOptions(s,{...abrade,chosenModes:['nope']},0),/valid mode/);
+});
+
+test('Step 6 genuinely uses the Step 5 priority window, resetting passes after cast',()=>{
+ const origin=createAdvancedGame(level('sa-002'));
+ assert.deepEqual(origin.priority.passedBy,['opponent']);
+ assert.equal(origin.priority.currentActor,'player');
+ assert.equal(origin.priority.stack.length,origin.stack.length);
+ const responding=castAdvanced(origin,'twincast',{targets:['bolt']});
+ assert.deepEqual(responding.priority.passedBy,[]);
+ assert.equal(responding.priority.currentActor,'player','caster retains priority');
+ assert.deepEqual(responding.priority.stack.map(x=>x.id),responding.stack.map(x=>x.id));
+ assert.equal(responding.priority.lastEvents.at(-1).type,'spell.cast');
+ assert.equal(responding.priority.lastEvents.at(-1).subjectId,'twincast');
+ const resolved=resolveAdvanced(responding,{newTargets:['opponent']});
+ assert.equal(resolved.priority.currentActor,'player');
+ assert.deepEqual(resolved.priority.passedBy,['opponent'],'scripted opponent passed after resolution');
+ assert.deepEqual(resolved.priority.stack.map(x=>x.id),resolved.stack.map(x=>x.id));
+ assert.equal(resolved.stack.at(-1).kind,'copy');
+ assert.equal(resolved.priority.stack.at(-1).isCast,false);
+ assert.equal(resolved.events.filter(e=>e.type==='spell.cast').length,1);
+ assert.equal(resolved.events.filter(e=>e.type==='spell.copied').length,1);
+ const copyResolved=resolveAdvanced(resolved);
+ assert.equal(copyResolved.status,'won');
+ assert.deepEqual(copyResolved.priority.stack.map(x=>x.id),copyResolved.stack.map(x=>x.id));
+ assert.deepEqual(origin.priority.stack.map(x=>x.id),['bolt'],'transitions are immutable');
+});
+test('Advanced priority snapshots round-trip canonically and reject mismatched rules versions',()=>{
+ const state=castAdvanced(createAdvancedGame(level('sa-002')),'twincast',{targets:['bolt']});
+ const serialized=serializePriorityWindow(state.priority);
+ const restored=deserializePriorityWindow(serialized);
+ assert.deepEqual(restored,state.priority);
+ assert.equal(serializePriorityWindow(restored),serialized);
+ assert.equal(restored.rulesVersion,ADVANCED_PREVIEW_VERSION);
+ assert.throws(()=>deserializePriorityWindow(serialized.replaceAll('sb-mtg-training-0.4.0-preview','sb-mtg-training-0.3.0')),/Wrong advanced rules version/);
+});
+test('Twincast controller legality stays bound to copied spell, not original controller',()=>{
+ const original=createAdvancedGame(level('sa-002'));
+ const before=original.stack[0];
+ const normalized=makeTypedStackEntry(before);
+ assert.deepEqual(normalized.targets,['player']);
+ assert.equal(classicTargetProjection(normalized),'player');
+ let s=castAdvanced(original,'twincast',{targets:['bolt']});
+ s=resolveAdvanced(s,{newTargets:['opponent']});
+ assert.equal(s.stack[0].controller,'opponent');
+ assert.equal(s.stack[1].controller,'player');
+ assert.equal(s.stack[1].isCast,false);
+ assert.equal(s.stack[1].copiedFromId,'bolt');
+});
+test('The live advanced case page exists without writing Classic or Daily saves',()=>{
+ const read=(path)=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
+ const ui=read('advanced/play.js'),html=read('advanced/index.html');
+ assert.match(ui,/import cases from '..\\/data\\/advanced-scenarios.json'/);
+ assert.match(ui,/resolveAdvanced/);
+ assert.match(ui,/createAdvancedGame/);
+ assert.match(html,/LOCAL \\/ UNVERIFIED/);
+ assert.ok(!ui.includes('dc-stackbreaker-progress-v3'));
+ assert.ok(!ui.includes('dc-stackbreaker-daily-local-v1'));
+ assert.match(html,/id="resolveButton"/);
+ assert.match(read('src/advanced-stack.js'),/from '.\\/advanced-foundation.js'/);
 });
