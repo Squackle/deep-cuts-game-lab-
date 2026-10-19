@@ -38,7 +38,7 @@ export function cancelOrbitMana(layer){
  if(set){for(const o of [...set])o.cancel();}
  layer?.querySelectorAll?.(".mh-orbiting,.mh-orbit-impact").forEach(node=>node.remove());
 }
-export function launchOrbitMana({color,sourceRect,destination,layer,index=0,onArrival,duration=1630}){
+export function launchOrbitMana({color,sourceRect,destination,layer,index=0,onArrival,duration=1630,reduced=false}){
  let closed=false,frame=0,particle=null;
  const remove=remember(layer,{cancel(){if(closed)return;closed=true;
   if(frame)cancelAnimationFrame(frame);
@@ -49,7 +49,7 @@ export function launchOrbitMana({color,sourceRect,destination,layer,index=0,onAr
   particle?.remove();remove();onArrival?.();
  };
  if(!layer||!destination||typeof window==="undefined"||!sourceRect||
-    window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){
+    (reduced||window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches)){
   arrive();return;
  }
  const goal=destination.getBoundingClientRect(),source=xy(sourceRect),target={...xy(goal),radius:Math.min(goal.width,goal.height)*.49};
