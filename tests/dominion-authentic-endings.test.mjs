@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
 import {newRun,start,step,turn,chooseMutation,RULES_VERSION,ENDINGS,isPerfectClear} from "../src/engine.js";
 import {spawnMiniboss} from "../src/miniboss.js";
 import {createLairRun,completeLairRun} from "../src/lair.js";
