@@ -46,7 +46,7 @@ test('no cosmetic is unlocked without a genuine mastery ledger; defaults remain 
  assert.deepEqual(sanitizeCosmeticEquip(null,ledger),raw);
  for(const type of COSMETIC_TYPES){
   for(const c of cosmeticChoices(type)){
-   const starter=type==='frame'&&c.id==='red';
+   const starter=(type==='frame'&&c.id==='red')||(type==='vfx'&&c.id==='black');
    assert.equal(hasCosmeticGrant(ledger,type,c.id),starter,c.id);
    const denied=equipLocalCosmetic(raw,ledger,type,c.id);
    assert.equal(denied.ok,starter,c.id);
@@ -66,6 +66,7 @@ test('real Selfless Spirit victory permits first-responder title and white frame
  assert.equal(hasCosmeticGrant(ledger,'title','apprentice'),false);
  assert.equal(hasCosmeticGrant(ledger,'frame','gold'),false);
  assert.equal(hasCosmeticGrant(emptyMasteryLedger(),'frame','red'),true); // free starter, not achievement
+ assert.equal(hasCosmeticGrant(emptyMasteryLedger(),'vfx','black'),true); // free starter effect
  const a=equipLocalCosmetic(emptyCosmeticEquip(),ledger,'title','first-responder');
  assert.equal(a.ok,true);
  const b=equipLocalCosmetic(a.equip,ledger,'frame','white');
