@@ -119,6 +119,23 @@ test('each of 18 reusable FX has an inert color-coded DOM scene and cancels clea
  }
  ctrl.cancel();assert.equal(f.layers.length,0);
 });
+test('zone moves use inert card silhouettes; copies/tokens fan into distinct cards',()=>{
+ const f=dom(),ctrl=createSpellVfxController(f.root,f.view);
+ const anchors={source:{x:90,y:100},target:{x:260,y:230},hand:{x:120,y:600}};
+ const expected={exile:1,bounce:1,summon:1,destroy:1,draw:2,token:3,reanimate:1,copy:2,scry:3};
+ for(const [mode,count] of Object.entries(expected)){
+  const result=ctrl.play({visualFixture:true,fxType:mode,card:'Preview',
+   outcome:'resolved',sourceStackId:'preview',colors:['B']},anchors);
+  assert.equal(result.played,true);
+  const scene=f.layers[0].children.find(c=>c.className.includes('sb-fx-scene'));
+  const ghosts=scene.children.filter(c=>c.className.includes('sb-fx-card-ghost'));
+  assert.equal(ghosts.length,count,mode);
+  assert.ok(ghosts.every(c=>c.children[0].className==='sb-fx-card-glyph'));
+  if(mode==='bounce')assert.equal(ghosts[0].style['--fx-card-dy'],'370px');
+  assert.equal(scene.attrs['data-fx-color'],'B');
+ }
+ ctrl.cancel();
+});
 test('reduced-motion playback and hidden document do not insert new animations',()=>{
  const f=dom();
  f.view.matchMedia=()=>({matches:true});
