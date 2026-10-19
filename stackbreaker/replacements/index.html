@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark">
+<title>Stackbreaker · Replacement &amp; Prevention · Game Lab</title>
+<meta name="description" content="Twenty-four advanced MTG damage replacement and prevention practice puzzles. Local unverified Stackbreaker lessons.">
+<link rel="stylesheet" href="../ward/style.css"><script type="module" src="./play.js"></script>
+</head><body><div class="shell">
+<header><a class="logo" href="../">DEEP CUTS <strong>STACKBREAKER</strong></a>
+<nav aria-label="Advanced lessons"><a href="../advanced/">COPY &amp; RETARGET</a><a href="../ward/">TRIGGERS &amp; WARD</a><a href="../">CLASSIC</a></nav></header>
+<main>
+<section class="intro"><p class="eyebrow">GAME LAB / STEP 08 / ADVANCED RULES</p>
+<h1>PREVENT <em>&amp;</em> REPLACE</h1>
+<p class="lead">If multiple replacement and prevention effects would change the same damage event, the affected player chooses which applies next. Sequence them carefully.</p>
+<span class="local">LOCAL / UNVERIFIED · NO ACCOUNT REWARDS</span></section>
+<section class="cases"><h2>24 CURATED PRACTICE WINDOWS · CHOOSE A CASE</h2><div class="case-grid" id="caseChoices" aria-label="Choose a replacement puzzle"></div></section>
+<div class="layout"><section class="board" aria-label="Damage replacement decision board">
+<p class="eyebrow" id="caseNumber">CASE</p><h2 id="caseName">Loading...</h2>
+<p class="description" id="intro">Choose the order of the applicable effects.</p>
+<div class="stats"><div><small>YOUR LIFE</small><strong id="yourLife"></strong></div>
+<div><small>OPPONENT LIFE</small><strong id="enemyLife"></strong></div>
+<div><small>INCOMING DAMAGE</small><strong id="damage"></strong></div></div>
+<section><h3>AFFECTED OBJECT</h3><div id="battlefield" class="permanents"></div></section>
+<section><h3>APPLICABLE EFFECTS</h3><div id="decision" class="decision" role="group" aria-label="Choose replacement or prevention effect"></div></section>
+<div id="result" class="result" aria-live="polite"></div>
+<div class="controls"><button type="button" id="resetButton" class="secondary">↻ RESTART</button></div>
+<p role="status" aria-live="polite" id="feedback"></p>
+</section><aside><div class="panel"><p class="eyebrow">RULES IN FOCUS</p><h2>ORDER CHANGES OUTCOMES.</h2>
+<p><strong>Furnace of Rath</strong> and <strong>Dictate of the Twin Gods</strong> double damage. <strong>Healing Salve</strong> can prevent the next three damage. <strong>Pariah</strong> redirects damage to the enchanted creature.</p>
+<p>An applicable effect can modify one damage event only once. After each application, determine which effects still apply to the modified event. The affected player or the affected permanent's controller chooses the order.</p>
+<a href="https://magic.wizards.com/en/rules" target="_blank" rel="noopener noreferrer">OFFICIAL MAGIC RULES ↗</a></div>
+<div class="panel"><h3>SEMANTIC EVENTS</h3><ol id="log" aria-label="Replacement event record"></ol></div>
+<div class="panel"><strong>GAME LAB ONLY</strong><p>These are bounded teaching windows, not all-card Magic simulations. Practice wins are not server-verified and do not award account achievements.</p></div></aside></div>
+<section class="lesson"><p class="eyebrow">POST-RESOLUTION</p><h2>WHAT HAPPENED?</h2><p id="lessonText">Complete the damage event to see the ordering result.</p></section>
+</main><footer>STACKBREAKER · DEEP CUTS EDH</footer></div></body></html>
