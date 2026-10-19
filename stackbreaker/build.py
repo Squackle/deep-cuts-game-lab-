@@ -4,12 +4,12 @@ root=Path(__file__).resolve().parent
 html=(root/'template.html').read_text()
 css=(root/'design-tokens.css').read_text()+(root/'styles.css').read_text()+(root/'observatory.css').read_text()
 parts=[]
-for src in ['src/cards.js','src/engine.js','src/galaxies.js','src/commander.js','src/pt-display.js','src/pyroblast-vfx.js','src/dust-vfx.js','src/resolution-fx.js','src/vfx-events.js','src/daily.js','src/ui.js']:
+for src in ['src/cards.js','src/engine.js','src/galaxies.js','src/commander.js','src/pt-display.js','src/pyroblast-vfx.js','src/dust-vfx.js','src/resolution-fx.js','src/vfx-events.js','src/daily.js','src/mastery.js','src/ui.js']:
  s=(root/src).read_text()
  s=re.sub(r'^import .*?;\s*$', '', s, flags=re.M)
  s=re.sub(r'^export\s+', '', s, flags=re.M)
  parts.append(s)
-js='const dailyManifest='+(root/'data/daily-manifest.json').read_text()+';\n'+'\n'.join(parts)
+js='const dailyManifest='+(root/'data/daily-manifest.json').read_text()+';\n'+'const masteryCatalog='+(root/'data/mastery-catalog.json').read_text()+';\n'+'\n'.join(parts)
 puzzles=(root/'data/scenarios.json').read_text()
 expansion=(root/'data/campaign-expansion.json').read_text()
 chapters=(root/'data/chapters.json').read_text()
