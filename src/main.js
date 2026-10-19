@@ -642,7 +642,7 @@ $("primaryButton").addEventListener("click",begin);
 $("victoryPlayAgain").addEventListener("click",()=>{
  hideVictoryCelebration();state.lastFrame=0;state.accumulator=0;begin();
 });
-$("victoryReturn").addEventListener("click",()=>{hideVictoryCelebration();reset()});
+$("victoryReturn").addEventListener("click",()=>{hideVictoryCelebration();reset();$("primaryButton").focus({preventScroll:true})});
 $("victoryRewatch").addEventListener("click",replayVictoryCelebration);
 $("pauseButton").addEventListener("click",togglePause);
 function activateWard(){
@@ -667,7 +667,14 @@ $("musicButton").addEventListener("click",()=>{
 });
 document.addEventListener("keydown",event=>{
  if(victoryVisible()){
-  if(event.key==="Escape"){event.preventDefault();hideVictoryCelebration();reset()}
+  if(event.key==="Tab"){
+   const options=[$("victoryPlayAgain"),$("victoryReturn"),$("victoryRewatch")];
+   const current=options.indexOf(document.activeElement);
+   const next=event.shiftKey?(current<=0?options.length-1:current-1):
+    (current+1)%options.length;
+   event.preventDefault();options[next].focus({preventScroll:true});return;
+  }
+  if(event.key==="Escape"){event.preventDefault();hideVictoryCelebration();reset();$("primaryButton").focus({preventScroll:true})}
   return;
  }
  if(bossGate.blocking){
