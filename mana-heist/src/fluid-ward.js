@@ -112,7 +112,7 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
  const ctx=canvas?.getContext?.("2d",{alpha:true,desynchronized:true});
  if(!ctx||!target)return {
   available:false,sync:()=>{},clear:()=>{},pause:()=>{},resume:()=>{},
-  isStirring:()=>false,lastStirAt:()=>0,burst:()=>{}
+  isStirring:()=>false,lastStirAt:()=>0,burst:()=>{},setReduced:()=>{}
  };
  target.classList.add("fluid-enabled");
  const grid=makeFluidGrid(),off=document.createElement("canvas");
@@ -140,7 +140,8 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
  }
  let active=false,raf=0,lastFrame=0,lastStir=0,drag=null,hover=null;
  let charged=[],appliedIds=new Set(),ripples=[],pulse=0;
- const reduced=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches===true;
+ let manualReduced=false;
+ const reduced=()=>manualReduced||window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches===true;
  function clearGrid(){
   target.classList.remove("ward-breaking","is-stirring");
   drag=null;hover=null;lastStir=0;
@@ -322,8 +323,14 @@ export function installFluidWard({canvas,target,onInteract=()=>{}}){
   if(reduced())render();
  }
 
+ function setReduced(value){
+  const old=reduced();manualReduced=Boolean(value);
+  if(!active)return;
+  if(reduced()){if(raf)cancelAnimationFrame(raf);raf=0;lastFrame=0;render();}
+  else if(old){lastFrame=0;raf=requestAnimationFrame(frame);}
+ }
  return {
-  available:true,sync,clear(){
+  available:true,setReduced,sync,clear(){
    clearGrid();
    target.style.setProperty("--fusion-color",cssForOrbs([]));
    target.dataset.fusionCount="0";

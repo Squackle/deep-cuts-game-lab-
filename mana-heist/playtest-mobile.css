@@ -121,3 +121,36 @@ body.in-heist #heist #hand .land-card.mtg-real-land:focus-visible{
  .guest-backup-actions button{font-size:.69rem;min-height:48px}
  .guest-backup #guestBackupImport{width:100%;min-height:48px}
 }
+
+/* Consolidated Game Lab beta: user-triggered proof hints and visual controls. */
+.hint-ladder{border:1px solid #bca57077;border-radius:10px;margin:15px 0;padding:15px;background:#152c29;color:#f5e7cc}
+.hint-ladder h3{font:700 1rem/1.35 Georgia,serif;color:#efd6a7;margin:0 0 7px}
+.hint-ladder #hintCopy{white-space:pre-line!important;line-height:1.55;font-size:.83rem;overflow-wrap:anywhere;margin:0 0 12px;color:#dce4da}
+.hint-actions{display:flex;gap:9px;flex-wrap:wrap}
+.hint-actions button{min-height:46px;padding:10px 14px;border-radius:8px;border:1px solid #d4b879;background:#27453a;color:#f9e1b3;font-weight:750}
+.hint-actions button:disabled{opacity:.5}
+.hint-actions button:focus-visible,.fx-pref input:focus-visible{outline:3px solid #f4dba2;outline-offset:3px}
+.fx-pref{margin:14px 0 18px;padding:13px 16px;border:1px solid #a9a18a55;border-radius:10px;background:#172b29;color:#eadab7}
+.fx-pref label{display:flex;align-items:center;gap:10px;font-size:.86rem;font-weight:800}
+.fx-pref input{width:21px;height:21px;accent-color:#efd3a0;flex:none}
+.fx-pref p{margin:8px 0 0 31px;font-size:.76rem;line-height:1.45;color:#aebdb5}
+body.mana-reduced-effects .mana-flight,
+body.mana-reduced-effects .mh-orbit-impact,
+body.mana-reduced-effects .ward-breaking,
+body.mana-reduced-effects .ward-charge-arc,
+body.mana-reduced-effects .ward-mana-sector{
+ animation:none!important;transition:none!important;
+}
+@media(max-width:650px){.hint-actions{display:grid;grid-template-columns:1fr 1fr}.hint-actions button{min-height:48px;font-size:.72rem}.fx-pref label{font-size:.79rem}.fx-pref{padding:11px}}
+
+.guest-milestones{border:1px solid #b6a16b66;border-radius:10px;background:#182d29;margin:12px 0 18px;overflow:hidden}
+.guest-milestones>summary{padding:15px 18px;color:#efd4a1;font-weight:800;cursor:pointer;font-size:.82rem}
+.guest-milestones>summary:focus-visible{outline:3px solid #efd4a1;outline-offset:3px}
+.guest-milestones>p{padding:0 18px;color:#b6c7c0;line-height:1.55;font-size:.79rem}
+.guest-milestone-grid{padding:5px 15px 15px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px}
+.guest-milestone{border:1px solid #73877888;border-radius:9px;padding:11px;display:grid;gap:6px;background:#1b2d29;color:#bdc4ba}
+.guest-milestone.earned{background:#26463c;border-color:#e0bd82;color:#e9d6b2}
+.guest-milestone strong{font-size:.83rem;color:#e8ce9d}
+.guest-milestone span{font-size:.74rem;line-height:1.4}
+.guest-milestone small{font-size:.65rem;font-weight:800}
+@media(max-width:650px){.guest-milestone-grid{grid-template-columns:1fr 1fr;gap:7px;padding:10px}.guest-milestone{padding:9px}.guest-milestone strong{font-size:.71rem}}

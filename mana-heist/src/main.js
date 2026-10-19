@@ -1,5 +1,5 @@
 import {LEVELS,CHAPTERS,GALAXIES,BASE_LEVELS} from "./levels.js";
-import {COLORS,CARDS,initial,actions,reduce,completed,getCard,lookup,medal} from "./engine.js";
+import {COLORS,CARDS,initial,actions,reduce,completed,getCard,lookup,medal,key} from "./engine.js";
 import {solve} from "./solver.js";
 import {chapterIndex,stageCode,normalizedBests,validBest} from "./campaign.js";
 import {LEARN_GROUPS,LEARN_COUNT,isLearnLevel,normalizedLearnProgress,nextLearnIndex} from "./learn-track.js";
@@ -20,6 +20,8 @@ import {SAGE_LESSONS} from "./sage-lessons.js";
 import {BONUS_TRIALS,BONUS_TRIAL_STORAGE_KEY,normalizeBonusBests,betterBonusScore} from "./bonus-trials.js";
 import {PLAYTEST_KEY,PLAYTEST_OPT_KEY,blankPlaytest,normalizePlaytest,beginPlaytest,countPlaytestEvent,finishPlaytest,ratePlaytest,exportPlaytest} from "./playtest-metrics.js";
 import {navigateCardRack} from "./keyboard-rack.js";
+import {guestMilestones} from "./guest-milestones.js";
+import {hintConcept,legalContinuation,hintInstruction} from "./verified-hints.js";
 import {MAX_BACKUP_BYTES,readGuestSaves,createGuestBackup,parseGuestBackup,previewGuestRestore,applyGuestRestore} from "./guest-backup.js";
 import {DEVICE_QA_KEY,DEVICE_QA_CHECKS,DEVICE_QA_STATUSES,blankDeviceQA,normalizeDeviceQA,setDeviceContext,setDeviceQAResult,summarizeDeviceQA,exportDeviceQA} from "./device-qa.js";
 import {LEARN_LEVELS} from "./expanded-learn.js";
@@ -129,6 +131,11 @@ function renderDeviceQA(){
  updateDeviceQAStatus();
 }
 let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null;
+let reducedFx=false;
+const reducedFxKey="dc-mana-heist-reduced-effects-v1";
+try{reducedFx=localStorage.getItem(reducedFxKey)==="yes";}catch{}
+el("reducedFxToggle").checked=reducedFx;
+document.body.classList.toggle("mana-reduced-effects",reducedFx);
 let autoCastEnabled=false;
 try{autoCastEnabled=localStorage.getItem("dc-mana-heist-auto-cast")==="yes";}catch{}
 el("autoCastToggle").checked=autoCastEnabled;
@@ -173,6 +180,13 @@ const fluid=installFluidWard({
  canvas:el("wardFluidCanvas"),target:el("wardTarget"),
  onInteract:()=>{if(autoCastEnabled&&autoTimer!==null)el("autoCastLabel").textContent="STIR THE WATER · AUTO-CAST WHEN IT SETTLES";}
 });
+fluid.setReduced(reducedFx);
+el("reducedFxToggle").addEventListener("change",e=>{
+ reducedFx=Boolean(e.target.checked);
+ document.body.classList.toggle("mana-reduced-effects",reducedFx);
+ try{localStorage.setItem(reducedFxKey,reducedFx?"yes":"no");}catch{}
+ fluid.setReduced(reducedFx);
+});
 el("wardTarget").dataset.preloadedMixes=String(PRELOADED_MIX_COUNT);
 let currentFluidStage="";
 function chargeWard({pendingId=null,animateId=null}={}){
@@ -183,7 +197,7 @@ function chargeWard({pendingId=null,animateId=null}={}){
   svg:el("wardManaRing"),count:el("wardChargeCount"),
   cost:level.stages[state.stage]?.cost||{},orbs:manaOrbs,
   pendingId,pendingIds:[...pendingFlights],animateId,open:completed(level,state),
-  fluid:fluid.available
+  fluid:fluid.available,reduced:reducedFx
  });
  fluid.sync(result.charged,{reset:isNewStage});
  return result;
@@ -246,6 +260,48 @@ const masteryRating=document.createElement("span");masteryRating.id="masteryRati
 el("stageLabel").after(masteryRating);
 const historicalNote=document.createElement("p");historicalNote.className="muted small";historicalNote.setAttribute("aria-live","polite");el("briefing").after(historicalNote);
 const historicalMedals=new Map();
+// Optional P05 Hint Ladder: each level is user-unlocked; Hint 3 is never
+// shown unless a reducer-validated continuation from this exact state exists.
+const hintPanel=document.createElement("section");hintPanel.id="hintLadder";hintPanel.className="hint-ladder";
+hintPanel.setAttribute("aria-label","Optional three-step mana hints");
+const hintHeading=document.createElement("h3");hintHeading.textContent="SAGE’S THREE CLUES";
+const hintCopy=document.createElement("p");hintCopy.id="hintCopy";hintCopy.setAttribute("aria-live","polite");
+hintCopy.textContent="Clues start hidden. Reveal them one at a time, only when you want help.";
+const hintActions=document.createElement("div");hintActions.className="hint-actions";
+const hintReveal=document.createElement("button");hintReveal.type="button";hintReveal.id="hintReveal";
+hintReveal.textContent="REVEAL HINT 1";
+const hintReset=document.createElement("button");hintReset.type="button";hintReset.id="hintReset";
+hintReset.textContent="HIDE HINTS";hintReset.hidden=true;
+hintActions.append(hintReveal,hintReset);hintPanel.append(hintHeading,hintCopy,hintActions);
+el("wardDescription").after(hintPanel);
+let hintStamp="",hintStep=0;
+function resetHintLadder(){
+ hintStep=0;
+ hintCopy.textContent="Clues start hidden. Reveal them one at a time, only when you want help.";
+ hintCopy.style.whiteSpace="pre-line";hintReveal.textContent="REVEAL HINT 1";
+ hintReveal.disabled=false;hintReset.hidden=true;
+}
+function syncHintLadder(){
+ const stamp=level.id+"|"+key(state);
+ if(stamp!==hintStamp){hintStamp=stamp;resetHintLadder();}
+}
+hintReset.addEventListener("click",()=>resetHintLadder());
+hintReveal.addEventListener("click",()=>{
+ syncHintLadder();
+ const next=Math.min(3,hintStep+1);
+ if(next===1){hintCopy.textContent=hintConcept(level,state);}
+ else{
+  let route={status:"inconclusive",actions:[]};
+  try{route=legalContinuation(level,state,proofFor(level.id),{maxStates:12000});}
+  catch{route={status:"inconclusive",actions:[]};}
+  hintCopy.textContent=hintInstruction(level,state,route,next===3);
+ }
+ hintStep=next;
+ hintReset.hidden=false;
+ hintReveal.textContent=next<3?"REVEAL HINT "+(next+1):"ALL HINTS REVEALED";
+ hintReveal.disabled=next===3;
+});
+
 const lockGlyphs=["✧","⌑","◈","✦","⬡","✶"];
 function persist(){try{localStorage.setItem(storageKey,JSON.stringify({v:2,index:progress.index,bests:progress.bests}));}catch{}}
 function persistLearn(){try{localStorage.setItem(learnKey,JSON.stringify({v:1,completed:learnProgress.completed,last:learnProgress.last}));}catch{}}
@@ -364,7 +420,7 @@ function rejectCast(){
 
  if(!stage)return;
  const missing=missingMana(state.pool,stage.cost);
- flashWard({vault:el("heist").querySelector(".vault-card"),ward:el("lockGlyph"),costRow:el("wardCost"),button:null,pool:null,missing});
+ flashWard({vault:el("heist").querySelector(".vault-card"),ward:el("lockGlyph"),costRow:el("wardCost"),button:null,pool:null,missing,reduced:reducedFx});
  message(failureText(missing),true);
 }
 function perform(action){
@@ -453,7 +509,7 @@ function perform(action){
   const epoch=viewEpoch;
   incoming.forEach((orb,i)=>launchOrbitMana({
    color:produced[i],sourceRect,layer:el("manaTravelLayer"),index:i,
-   destination:el("wardTarget"),
+   destination:el("wardTarget"),reduced:reducedFx,
    onArrival:()=>{if(epoch!==viewEpoch)return;
     pendingFlights.delete(orb.id);
     chargeWard({animateId:orb.id});
@@ -584,6 +640,7 @@ function teachingCue(){
  return state.turn<level.turnLimit?"End turn: lands untap and floating mana disappears.":"Final turn. Undo or restart for another solution.";
 }
 function render(pendingId=null){
+ syncHintLadder();
  const isWin=completed(level,state),proof=mode==="learn"&&trialIndex===null?{turn:level.turnLimit,spentLife:0}:proofs.get(level.id),stage=level.stages[state.stage];
  el("stageLabel").textContent=trialIndex!==null?"BONUS TRIAL "+(trialIndex+1)+" / "+BONUS_TRIALS.length:mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
  el("returnMap").textContent=mode==="learn"?(trialIndex!==null?"← TRIALS":"← LESSONS"):"← MAP";
@@ -666,7 +723,22 @@ function render(pendingId=null){
  choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap battlefield lands for mana; tap a hand card to play it or cast a ritual.",[]);
  selectedMessage="";
 }
+function renderGuestMilestones(){
+ const outcome=guestMilestones({bests:displayBests(),learnCompleted:learnProgress.completed,
+  bonusBests:trialBests,remixBests});
+ const root=el("guestMilestoneGrid");root.replaceChildren();
+ for(const badge of outcome.badges){
+  const item=document.createElement("div");
+  item.className="guest-milestone"+(badge.earned?" earned":"");
+  const heading=document.createElement("strong");
+  heading.textContent=(badge.earned?"★ ":"◇ ")+badge.name;
+  const explanation=document.createElement("span");explanation.textContent=badge.meaning;
+  const status=document.createElement("small");status.textContent=badge.earned?"EARNED ON THIS DEVICE":"NOT YET EARNED";
+  item.append(heading,explanation,status);root.append(item);
+ }
+}
 function showMap(){
+ renderGuestMilestones();
  const wasPlaying=document.body.classList.contains("in-heist");
  const leavingTrial=trialIndex;
  closePlaytest("exit");pendingRatingKey=null;

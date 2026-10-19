@@ -108,6 +108,10 @@ Every package produces: a scoped design/spec or implementation, deterministic te
 9. **Public gate:** NEVER promote Magic assets / gameplay to public Deep Cuts EDH or attach accounts, D1, scores, ads or production ranks without separate review and explicit authorization.
 10. **Doc upkeep:** mark each package `NOT STARTED`, `IN PROGRESS`, `PREVIEW VERIFIED`, `LAB MERGED`, `BLOCKED`, or `OWNER APPROVED FOR PUBLIC` with PR/commit evidence. Do not check it off because code exists in the old prototype.
 
+## Consolidated prelaunch Game Lab progress note — October 19, 2026
+
+Following the owner's request to deploy the remaining phases together, the isolated Mana Heist workstream packaged **three independently testable partial capabilities in one release**: [state-verified three-step optional hints (P05), reduced animated effects (P12) and derived guest milestones (P13)](release/CONSOLIDATED-PRELAUNCH-BUNDLE-20261019.md). Existing save export/import, keyboard/mobile changes, QA collection and 500-stage replay coverage remain unchanged. This does **not** mark P01–P15 complete: the 500-stage curriculum lacks independent human curation/calibration, full rules audit remains open, real device and 15–20-person beta evidence are missing, and P01 image/brand rights remain BLOCKED. G1, G2, G3 and P15 public promotion therefore remain BLOCKED. Read the bundle release record for an explicit 15-package gap ledger and rollback.
+
 ## Status ledger for future agents
 
 | Package | Status | Evidence |
