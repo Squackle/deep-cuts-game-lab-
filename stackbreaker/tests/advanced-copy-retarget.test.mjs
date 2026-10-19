@@ -193,12 +193,12 @@ test('Twincast controller legality stays bound to copied spell, not original con
 test('The live advanced case page exists without writing Classic or Daily saves',()=>{
  const read=(path)=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
  const ui=read('advanced/play.js'),html=read('advanced/index.html');
- assert.match(ui,/import cases from '..\\/data\\/advanced-scenarios.json'/);
- assert.match(ui,/resolveAdvanced/);
- assert.match(ui,/createAdvancedGame/);
- assert.match(html,/LOCAL \\/ UNVERIFIED/);
+ assert.ok(ui.includes("import cases from '../data/advanced-scenarios.json'"));
+ assert.ok(ui.includes('resolveAdvanced'));
+ assert.ok(ui.includes('createAdvancedGame'));
+ assert.ok(html.includes('LOCAL / UNVERIFIED'));
  assert.ok(!ui.includes('dc-stackbreaker-progress-v3'));
  assert.ok(!ui.includes('dc-stackbreaker-daily-local-v1'));
- assert.match(html,/id="resolveButton"/);
- assert.match(read('src/advanced-stack.js'),/from '.\\/advanced-foundation.js'/);
+ assert.ok(html.includes('id="resolveButton"'));
+ assert.ok(read('src/advanced-stack.js').includes("from './advanced-foundation.js'"));
 });
