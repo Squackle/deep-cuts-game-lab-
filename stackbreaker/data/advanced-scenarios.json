@@ -1,0 +1,300 @@
+[
+  {
+    "id": "sa-001",
+    "version": "sb-mtg-training-0.4.0-preview",
+    "title": "Return to Sender",
+    "tier": "Apprentice",
+    "intro": "Your opponent's Lightning Bolt will deal lethal damage. Redirect the original spell to its caster.",
+    "lesson": "Redirect changes targets at resolution; it does not recast the spell.",
+    "life": {
+      "player": 3,
+      "opponent": 3
+    },
+    "mana": {
+      "U": 2
+    },
+    "permanents": [],
+    "hand": [
+      {
+        "id": "redirect",
+        "cardId": "Redirect"
+      }
+    ],
+    "stack": [
+      {
+        "id": "bolt",
+        "kind": "spell",
+        "cardId": "Lightning Bolt",
+        "controller": "opponent",
+        "sourceId": null,
+        "isCast": true,
+        "chosenModes": [],
+        "targets": [
+          "player"
+        ],
+        "xValue": 0,
+        "choices": {},
+        "originActionIndex": 0
+      }
+    ],
+    "objective": {
+      "type": "win"
+    },
+    "solution": [
+      {
+        "action": "cast",
+        "handId": "redirect",
+        "targets": [
+          "bolt"
+        ],
+        "chosenModes": [],
+        "xValue": 0
+      },
+      {
+        "action": "resolve",
+        "newTargets": [
+          "opponent"
+        ]
+      },
+      {
+        "action": "resolve",
+        "newTargets": null
+      }
+    ]
+  },
+  {
+    "id": "sa-002",
+    "version": "sb-mtg-training-0.4.0-preview",
+    "title": "The Echo Goes First",
+    "tier": "Apprentice",
+    "intro": "Copy the lethal Lightning Bolt and point only the copy at your opponent. The copy resolves before the original.",
+    "lesson": "A copied spell is on the stack but is not cast; the original keeps its target.",
+    "life": {
+      "player": 3,
+      "opponent": 3
+    },
+    "mana": {
+      "U": 2
+    },
+    "permanents": [],
+    "hand": [
+      {
+        "id": "twincast",
+        "cardId": "Twincast"
+      }
+    ],
+    "stack": [
+      {
+        "id": "bolt",
+        "kind": "spell",
+        "cardId": "Lightning Bolt",
+        "controller": "opponent",
+        "sourceId": null,
+        "isCast": true,
+        "chosenModes": [],
+        "targets": [
+          "player"
+        ],
+        "xValue": 0,
+        "choices": {},
+        "originActionIndex": 0
+      }
+    ],
+    "objective": {
+      "type": "win"
+    },
+    "solution": [
+      {
+        "action": "cast",
+        "handId": "twincast",
+        "targets": [
+          "bolt"
+        ],
+        "chosenModes": [],
+        "xValue": 0
+      },
+      {
+        "action": "resolve",
+        "newTargets": [
+          "opponent"
+        ]
+      },
+      {
+        "action": "resolve",
+        "newTargets": null
+      }
+    ]
+  },
+  {
+    "id": "sa-003",
+    "version": "sb-mtg-training-0.4.0-preview",
+    "title": "Two Targets, One Window",
+    "tier": "Investigator",
+    "intro": "Arc Trail aims two damage at you and one at your creature. Redirect both targets: first to your opponent, then to their creature.",
+    "lesson": "Arc Trail has two different targets. Choosing new targets considers the complete resulting set.",
+    "life": {
+      "player": 2,
+      "opponent": 2
+    },
+    "mana": {
+      "U": 2
+    },
+    "permanents": [
+      {
+        "id": "ally",
+        "type": "creature",
+        "cardId": "Grizzly Bears",
+        "controller": "player",
+        "zone": "battlefield",
+        "toughness": 2,
+        "damage": 0
+      },
+      {
+        "id": "enemy",
+        "type": "creature",
+        "cardId": "Llanowar Elves",
+        "controller": "opponent",
+        "zone": "battlefield",
+        "toughness": 1,
+        "damage": 0
+      }
+    ],
+    "hand": [
+      {
+        "id": "redirect",
+        "cardId": "Redirect"
+      }
+    ],
+    "stack": [
+      {
+        "id": "trail",
+        "kind": "spell",
+        "cardId": "Arc Trail",
+        "controller": "opponent",
+        "sourceId": null,
+        "isCast": true,
+        "chosenModes": [],
+        "targets": [
+          "player",
+          "ally"
+        ],
+        "xValue": 0,
+        "choices": {},
+        "originActionIndex": 0
+      }
+    ],
+    "objective": {
+      "type": "win"
+    },
+    "solution": [
+      {
+        "action": "cast",
+        "handId": "redirect",
+        "targets": [
+          "trail"
+        ],
+        "chosenModes": [],
+        "xValue": 0
+      },
+      {
+        "action": "resolve",
+        "newTargets": [
+          "opponent",
+          "enemy"
+        ]
+      },
+      {
+        "action": "resolve",
+        "newTargets": null
+      }
+    ]
+  },
+  {
+    "id": "sa-004",
+    "version": "sb-mtg-training-0.4.0-preview",
+    "title": "The Mode Cannot Change",
+    "tier": "Mastermind",
+    "intro": "Your Abrade is already targeting one of two enemy artifacts. Copy it, retarget only the copy to the second artifact, and destroy both.",
+    "lesson": "A copy retains its chosen Abrade mode. Copying a spell doesn't permit choosing a different mode.",
+    "life": {
+      "player": 10,
+      "opponent": 10
+    },
+    "mana": {
+      "U": 2
+    },
+    "permanents": [
+      {
+        "id": "relic-one",
+        "type": "artifact",
+        "cardId": "Sol Ring",
+        "controller": "opponent",
+        "zone": "battlefield"
+      },
+      {
+        "id": "relic-two",
+        "type": "artifact",
+        "cardId": "Arcane Signet",
+        "controller": "opponent",
+        "zone": "battlefield"
+      }
+    ],
+    "hand": [
+      {
+        "id": "twincast",
+        "cardId": "Twincast"
+      }
+    ],
+    "stack": [
+      {
+        "id": "abrade",
+        "kind": "spell",
+        "cardId": "Abrade",
+        "controller": "player",
+        "sourceId": null,
+        "isCast": true,
+        "chosenModes": [
+          "artifact"
+        ],
+        "targets": [
+          "relic-one"
+        ],
+        "xValue": 0,
+        "choices": {},
+        "originActionIndex": 0
+      }
+    ],
+    "objective": {
+      "type": "destroyArtifacts",
+      "ids": [
+        "relic-one",
+        "relic-two"
+      ]
+    },
+    "solution": [
+      {
+        "action": "cast",
+        "handId": "twincast",
+        "targets": [
+          "abrade"
+        ],
+        "chosenModes": [],
+        "xValue": 0
+      },
+      {
+        "action": "resolve",
+        "newTargets": [
+          "relic-two"
+        ]
+      },
+      {
+        "action": "resolve",
+        "newTargets": null
+      },
+      {
+        "action": "resolve",
+        "newTargets": null
+      }
+    ]
+  }
+]
