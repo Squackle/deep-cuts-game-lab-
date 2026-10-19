@@ -876,6 +876,47 @@ el("winNext").addEventListener("click",()=>{
  if(mode==="learn"){const next=nextLearnIndex(index);if(next!==null)load(next,true);else showMap();return;}
  if(index+1<LEVELS.length)load(index+1,true);else showMap();
 });
+// All checklist outcomes come from explicit tester actions. Opening a
+// suggested stage never automatically changes its QA result or player medals.
+for(const [field,id] of [["device","deviceQaDevice"],["browser","deviceQaBrowser"],["orientation","deviceQaOrientation"]]){
+ el(id).addEventListener("change",e=>{
+  deviceQa=setDeviceContext(deviceQa,field,e.target.value);saveDeviceQA();updateDeviceQAStatus();
+ });
+}
+el("deviceQaChecks").addEventListener("change",e=>{
+ const selector=e.target.closest("select[data-qa-case]");
+ if(!selector)return;
+ deviceQa=setDeviceQAResult(deviceQa,selector.dataset.qaCase,selector.value);
+ saveDeviceQA();updateDeviceQAStatus();
+});
+el("deviceQaChecks").addEventListener("click",e=>{
+ const button=e.target.closest("button[data-qa-launch]");
+ if(!button)return;
+ const item=DEVICE_QA_CHECKS.find(c=>c.id===button.dataset.qaLaunch);
+ if(!item?.target)return;
+ trialIndex=null;
+ selectMode(item.target.mode);
+ load(item.target.index,true);
+});
+el("deviceQaCopy").addEventListener("click",async()=>{
+ const report=exportDeviceQA(deviceQa);
+ try{
+  if(!navigator.clipboard?.writeText)throw Error("Clipboard API unavailable");
+  await navigator.clipboard.writeText(report);
+  el("deviceQaExportText").hidden=true;
+  el("deviceQaMessage").textContent="Manual QA report copied. Share it only if you choose; results are not sent automatically.";
+ }catch{
+  const area=el("deviceQaExportText");area.value=report;area.hidden=false;area.focus();area.select();
+  el("deviceQaMessage").textContent="Clipboard unavailable. Select and copy the manual test report below.";
+ }
+});
+el("deviceQaClear").addEventListener("click",()=>{
+ if(!window.confirm("Reset only the manual device QA checklist on this browser? Game progress and playtest counts will remain untouched."))return;
+ deviceQa=blankDeviceQA();saveDeviceQA();renderDeviceQA();
+ el("deviceQaExportText").hidden=true;
+ el("deviceQaMessage").textContent="Manual device QA checklist reset; all nine results are Not tested. Game and playtest data are unchanged.";
+});
+renderDeviceQA();
 load(mode==="learn"?learnProgress.last:index);
 showMap();
 showModePanels();
