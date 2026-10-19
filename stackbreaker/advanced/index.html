@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Stackbreaker · Copy & Retarget · Game Lab</title>
+<meta name="description" content="Practice Stackbreaker advanced Magic rules: copying spells, choosing new targets and preserving spell modes. Local unverified Game Lab preview.">
+<link rel="stylesheet" href="./style.css">
+<script type="module" src="./play.js"></script>
+</head>
+<body>
+<a href="#game" class="skip">Skip to the puzzle</a>
+<div class="shell">
+<header class="top">
+  <a class="brand" href="../">← STACKBREAKER <span>CLASSIC</span></a>
+  <a class="lab" href="../../lab/">GAME LAB ↗</a>
+</header>
+<section class="hero" aria-labelledby="pageTitle">
+  <p class="eyebrow">ADVANCED STUDY · PREVIEW 0.4 · LOCAL / UNVERIFIED</p>
+  <h1 id="pageTitle">COPY <span>&</span> RETARGET</h1>
+  <p>One spell on the stack. One response that changes the outcome. Learn why copying a spell is not casting it — and why its choices matter.</p>
+</section>
+<main id="game">
+ <section class="case-library" aria-label="Choose an advanced study">
+  <p class="eyebrow">FOUR REAL-CARD INTERACTION STUDIES</p>
+  <div id="caseChoices" class="case-choices" role="group" aria-label="Available cases"></div>
+ </section>
+ <div class="board">
+  <section class="case-detail" aria-labelledby="caseName">
+    <div class="detail-heading"><div><p class="eyebrow" id="caseNumber">CASE 01 / 04</p><h2 id="caseName">Loading...</h2></div><span class="tier" id="tier"></span></div>
+    <p id="intro"></p>
+    <div class="life-row"><div class="life player"><span>YOUR LIFE</span><strong id="yourLife">3</strong></div><div class="life enemy"><span>OPPONENT</span><strong id="enemyLife">3</strong></div><div class="mana"><span>MANA IN POOL</span><strong id="mana"></strong></div></div>
+    <section aria-label="Battlefield permanents"><h3>BATTLEFIELD</h3><div id="battlefield" class="permanents"></div></section>
+    <section aria-label="Spells on the stack"><h3>THE STACK <small>top resolves first</small></h3><ol id="stack" class="stack"></ol></section>
+    <section aria-label="Your hand"><h3>YOUR RESPONSE</h3><div id="hand" class="hand"></div></section>
+    <div id="decision" class="decision" role="group" aria-label="Current legal decisions"></div>
+    <div id="result" class="result" aria-live="polite"></div>
+    <div class="action-row"><button type="button" id="resolveButton" class="primary">PASS / RESOLVE TOP →</button><button type="button" id="resetButton" class="secondary">↻ RESTART CASE</button></div>
+    <p id="feedback" role="status" aria-live="polite" class="feedback"></p>
+  </section>
+  <aside class="guide" aria-label="Rules and event log">
+   <div class="rule-card"><p class="eyebrow">RULES IN FOCUS</p>
+    <h2>IT'S NOT A SECOND CAST.</h2>
+    <p>Twincast copies the original spell onto the stack. The copy inherits its modes, chosen targets and other cast-time choices. You may change legal targets for that copy when it is made.</p>
+    <p>Redirect changes the target of an existing spell. Its mode cannot change. The spell's own controller determines target legality.</p>
+    <p>For multi-target spells, each slot matters. Two Arc Trail targets must remain different.</p>
+    <a href="https://magic.wizards.com/en/rules" target="_blank" rel="noopener noreferrer">OFFICIAL MAGIC RULES ↗</a>
+   </div>
+   <div class="rule-card log-card"><h3>ACTION RECORD</h3><ol id="log" aria-label="Recent game actions"></ol></div>
+   <div class="note"><strong>GAME LAB ONLY</strong><p>These four scenarios use a limited deterministic two-player engine. They do not simulate all Magic rules, priority choices or Commander decks. No public achievements, verified scores or account progress are awarded.</p></div>
+  </aside>
+ </div>
+ <section class="lesson" aria-live="polite"><p class="eyebrow">AFTER THE EXCHANGE</p><h2>WHAT CHANGED?</h2><p id="lessonText">Complete a case to reveal the relevant copy and target interaction.</p></section>
+</main>
+<footer>STACKBREAKER · DEEP CUTS EDH <a href="../">RETURN TO CLASSIC ↗</a></footer>
+</div>
+</body>
+</html>
