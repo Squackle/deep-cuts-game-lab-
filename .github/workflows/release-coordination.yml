@@ -8,10 +8,25 @@ permissions:
   contents: read
   pull-requests: read
 jobs:
+  # Required by the protected main-branch gate: release-coordination must fail
+  # if any current unified game engine, catalog or syntax test fails.
+  game-lab-suite:
+    uses: ./.github/workflows/lab-catalog.yml
+    permissions:
+      contents: read
+
   release-coordination:
+    needs: game-lab-suite
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # Never let an unsuccessful prerequisite be treated as a skipped/green
+      # required check. A failed/cancelled suite must make this job fail.
+      - name: Require the full Game Lab test suite to pass
+        env:
+          SUITE_RESULT: ${{ needs.game-lab-suite.result }}
+        run: test "$SUITE_RESULT" = "success"
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
