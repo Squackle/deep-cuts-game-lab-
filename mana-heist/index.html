@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#111b19"><meta name="description" content="Mana Heist: Crack the Vault. Explore 500 mana puzzles across ten galaxies and 50 worlds, plus 28 Learn Mana lessons. Solo Game Lab playtest.">
 <title>Game Lab | Mana Heist</title><link rel="icon" type="image/svg+xml" href="/lab/favicon.svg">
 <link rel="stylesheet" href="/lab/presence.css"><script defer src="/lab/presence.js"></script>
-<link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./tabletop-immersion.css"><link rel="stylesheet" href="./mode-paths.css"><script type="module" src="./src/main.js"></script>
+<link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./tabletop-immersion.css"><link rel="stylesheet" href="./mode-paths.css"><link rel="stylesheet" href="./playtest-mobile.css"><script type="module" src="./src/main.js"></script>
 </head>
 <body>
 <a href="#campaignScreen" class="skip">Skip to campaign</a>
@@ -34,6 +34,16 @@
   <div class="campaign-track" aria-label="Campaign map"><div class="path-line" aria-hidden="true"></div><div id="chapterPicker" class="chapter-picker" role="group" aria-label="Stages in the current chapter"></div></div>
   <div class="overworld-footer"><p id="mapHint" role="status" class="muted">All vaults are open. Choose any stage to begin.</p><div id="worldPips" class="world-pips" aria-label="Worlds in the current galaxy"></div></div>
   </div>
+  <details class="local-playtest" id="playtestPanel">
+   <summary>✧ OPTIONAL PLAYTEST NOTES · ON THIS DEVICE ONLY</summary>
+   <div class="local-playtest-content">
+    <p>Help check which Mana Heist vaults feel difficult. With your permission, this browser will count attempts, wins, restarts, Undo, unsuccessful casts, time spent, and optional 1–5 difficulty ratings. Nothing is transmitted or associated with your profile. The report only includes puzzle IDs, rule revisions and aggregate counts.</p>
+    <label class="local-playtest-toggle"><input id="playtestOptIn" type="checkbox"> Collect anonymous-in-the-export playtest counts on this device</label>
+    <div class="local-playtest-actions"><button id="playtestCopy" type="button">COPY LOCAL REPORT</button><button id="playtestClear" type="button">CLEAR PLAYTEST NOTES</button></div>
+    <p id="playtestStatus" role="status" aria-live="polite">Playtest notes are off until you enable them.</p>
+    <textarea id="playtestExportText" aria-label="Local playtest report for manual copying" readonly hidden rows="6"></textarea>
+   </div>
+  </details>
  </section>
  <div id="gameScreen" hidden>
   <div class="game-titlebar"><button type="button" id="returnMap">← MAP</button><span id="stageLabel" class="stage-label">STAGE 1:1</span><button type="button" class="info-link" id="toggleGuide" aria-controls="gameNotes" aria-expanded="false">ⓘ GUIDE</button></div>

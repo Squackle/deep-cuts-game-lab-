@@ -18,6 +18,7 @@ import {installCardInspector} from "./card-inspector.js";
 import {installCardMagnifier} from "./card-magnifier.js";
 import {SAGE_LESSONS} from "./sage-lessons.js";
 import {BONUS_TRIALS,BONUS_TRIAL_STORAGE_KEY,normalizeBonusBests,betterBonusScore} from "./bonus-trials.js";
+import {PLAYTEST_KEY,PLAYTEST_OPT_KEY,blankPlaytest,normalizePlaytest,beginPlaytest,countPlaytestEvent,finishPlaytest,ratePlaytest,exportPlaytest} from "./playtest-metrics.js";
 import {LEARN_LEVELS} from "./expanded-learn.js";
 import {certifyCapstone} from "./capstone-certificates.js";
 import {certifyMastery} from "./mastery-certificates.js";
@@ -73,6 +74,27 @@ function readMode(){try{const m=localStorage.getItem(modeKey);return m==="learn"
 function readLearn(){try{return normalizedLearnProgress(JSON.parse(localStorage.getItem(learnKey)||"null"));}catch{return normalizedLearnProgress(null);}}
 let mode=readMode(),learnProgress=readLearn();
 let progress=readProgress(),index=progress.index,level=LEVELS[index],state=initial(level),history=[],choiceActions=[],selectedMessage="";
+let playtestEnabled=false,playtestData=blankPlaytest(),playtestAttempt=null,pendingRatingKey=null,playtestRatingDone=false;
+try{
+ playtestEnabled=localStorage.getItem(PLAYTEST_OPT_KEY)==="yes";
+ playtestData=normalizePlaytest(JSON.parse(localStorage.getItem(PLAYTEST_KEY)||"null"));
+}catch{}
+el("playtestOptIn").checked=playtestEnabled;
+function savePlaytest(){try{localStorage.setItem(PLAYTEST_KEY,JSON.stringify(playtestData));}catch{}}
+function startPlaytest(){
+ if(!playtestEnabled||playtestAttempt||completed(level,state))return;
+ playtestAttempt=beginPlaytest(level,performance.now());
+}
+function notePlaytest(event){if(playtestEnabled&&playtestAttempt)playtestAttempt=countPlaytestEvent(playtestAttempt,event);}
+function closePlaytest(status){
+ if(!playtestAttempt)return;
+ const attempt=playtestAttempt;playtestAttempt=null;
+ if(!playtestEnabled)return;
+ playtestData=finishPlaytest(playtestData,attempt,status,performance.now());
+ savePlaytest();
+ if(status==="win"){pendingRatingKey=attempt.key;playtestRatingDone=false;}
+}
+
 let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null,selectedHandId=null;
 let autoCastEnabled=false;
 try{autoCastEnabled=localStorage.getItem("dc-mana-heist-auto-cast")==="yes";}catch{}
@@ -149,6 +171,15 @@ el("winPanel").append(returnFromResult);
 const manaContext=document.createElement("span");manaContext.id="manaContext";manaContext.className="mana-scenario-context";
 el("difficulty").after(manaContext);
 returnFromResult.addEventListener("click",()=>showMap());
+const difficultyReview=document.createElement("div");difficultyReview.id="playtestRating";difficultyReview.className="playtest-rating";difficultyReview.hidden=true;
+const ratingLabel=document.createElement("span");ratingLabel.textContent="Optional playtest feedback: how hard did this vault feel? 1 = easy · 5 = very hard";
+difficultyReview.append(ratingLabel);
+for(let i=1;i<=5;i++){
+ const button=document.createElement("button");button.type="button";button.dataset.playtestRating=String(i);
+ button.textContent=String(i);button.setAttribute("aria-label","Rate difficulty "+i+" of 5");
+ difficultyReview.append(button);
+}
+el("winPanel").append(difficultyReview);
 function inspectById(id){
  const record=lookup(level,id);
  if(!record)return false;
@@ -267,12 +298,20 @@ function desc(action){
  }
  return "End this turn";
 }
+let choiceReturnFocus=null;
 function choices(title,help,moves){
+ const wasVisible=!el("actionBox").hidden;
+ if(moves.length&&!wasVisible)choiceReturnFocus=document.activeElement;
  choiceActions=moves;
  el("actionBox").hidden=moves.length===0;
  el("actionTitle").textContent=title;
  el("choices").innerHTML='<p class="muted small">'+help+'</p>'+moves.map((action,i)=>'<button class="choice-button" type="button" data-choice="'+i+'">'+desc(action)+'</button>').join("");
  if(!moves.length)el("choices").innerHTML='<p class="muted">'+help+'</p>';
+ if(moves.length&&!wasVisible)el("dismissChoices").focus({preventScroll:true});
+ if(!moves.length&&wasVisible){
+  const previous=choiceReturnFocus;choiceReturnFocus=null;
+  if(previous?.isConnected&&document.body.classList.contains("in-heist"))previous.focus({preventScroll:true});
+ }
 }
 function message(text,error=false){
  const item=el("feedback");
@@ -283,6 +322,7 @@ function message(text,error=false){
  }
 }
 function rejectCast(){
+ notePlaytest("failedCast");
  const stage=level.stages[state.stage];
  if(stage&&state.manaUnits?.some(u=>u.restriction)&&!actions(level,state).some(a=>a.type==="cast")){
   const matching=COLORS.every(c=>(state.pool[c]||0)>=(stage.cost[c]||0));
@@ -301,6 +341,7 @@ function perform(action){
  cancelAuto();
  if(action.type!=="tap"){viewEpoch++;pendingFlights.clear();cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();}
  history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type});
+ notePlaytest("action");
  state=out.state;
  manaOrbs=(action.type==="ritual"||action.type==="activate"||action.type==="tap"&&(getCard(level,action.id).kind==="bounce"||state.highTide))?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
  if(!consistent(state.pool,manaOrbs))manaOrbs=reconstruct(state.pool);
@@ -327,6 +368,7 @@ function perform(action){
  for(const orb of incoming)pendingFlights.add(orb.id);
  const pendingId=incoming[0]?.id??null;
  if(completed(level,state)){
+  closePlaytest("win");
   magnifier.hide();
   if(trialIndex!==null){
    const proof=proofs.get(level.id),record={turn:state.turn,spentLife:state.spentLife,actions:state.actions,
@@ -568,6 +610,7 @@ function render(pendingId=null){
  endButton.title=finalTurn?"No more turns. Tap for advice on this puzzle.":"End turn and untap your lands";
  endButton.setAttribute("aria-label",finalTurn?"Final turn. No further turns allowed. Tap for Undo or Restart advice.":"End turn and untap lands");
  el("winPanel").hidden=!isWin;
+ difficultyReview.hidden=!(isWin&&playtestEnabled&&pendingRatingKey&&!playtestRatingDone);
  if(isWin){
   if(trialIndex!==null){
    const best=trialBests[level.id],stars=medal(level,state,proof);
@@ -591,6 +634,7 @@ function render(pendingId=null){
  selectedMessage="";
 }
 function showMap(){
+ closePlaytest("exit");pendingRatingKey=null;
  sage.hide();fluid.pause();fluid.clear();currentFluidStage="";
  magnifier.hide();
  invalidateStagePrintings();
@@ -608,6 +652,7 @@ function showMap(){
  el("campaignScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
 function showGame(){
+ startPlaytest();
  fluid.resume();
  document.body.classList.add("in-heist");
  document.body.classList.toggle("is-training",mode==="learn");
@@ -617,6 +662,7 @@ function showGame(){
  el("gameScreen").scrollIntoView({block:"start",behavior:"instant"});
 }
 function load(i,enter=false){
+ closePlaytest("exit");pendingRatingKey=null;playtestRatingDone=false;
  fluid.clear();currentFluidStage="";
  magnifier.hide();
  cancelAuto();viewEpoch++;pendingFlights.clear();
@@ -731,9 +777,58 @@ landDrag=installLandDragging({
  onHint:(text,error=false)=>message(text,error)
 });
 el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a)perform(a);});
+// Mana-choice sheets must remain usable by keyboard and screen readers on
+// small screens, not just visually centered above the battlefield.
+el("actionBox").addEventListener("keydown",e=>{
+ if(e.key!=="Tab"||el("actionBox").hidden)return;
+ const controls=[...el("actionBox").querySelectorAll('button:not([disabled])')];
+ if(!controls.length)return;
+ const first=controls[0],last=controls.at(-1);
+ if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+ else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+});
+el("playtestOptIn").addEventListener("change",e=>{
+ playtestEnabled=Boolean(e.target.checked);
+ try{localStorage.setItem(PLAYTEST_OPT_KEY,playtestEnabled?"yes":"no");}catch{}
+ if(playtestEnabled&&document.body.classList.contains("in-heist"))startPlaytest();
+ if(!playtestEnabled){playtestAttempt=null;pendingRatingKey=null;difficultyReview.hidden=true;}
+ el("playtestStatus").textContent=playtestEnabled?"Local playtest counts enabled. Nothing is transmitted automatically.":"Playtest notes are off. Existing local counts remain until you clear them.";
+});
+el("playtestCopy").addEventListener("click",async()=>{
+ const report=exportPlaytest(playtestData);
+ try{
+  if(!navigator.clipboard?.writeText)throw Error("Clipboard API unavailable");
+  await navigator.clipboard.writeText(report);
+  el("playtestExportText").hidden=true;
+  el("playtestStatus").textContent="Local report copied. Paste it into your playtest feedback when you choose.";
+ }catch{
+  const area=el("playtestExportText");
+  area.value=report;area.hidden=false;area.focus();area.select();
+  el("playtestStatus").textContent="Clipboard access is unavailable. Select and copy the report shown below.";
+ }
+});
+el("playtestClear").addEventListener("click",()=>{
+ if(!window.confirm("Clear ALL optional local playtest notes? Campaign medals and lesson completion are unaffected."))return;
+ playtestData=blankPlaytest();savePlaytest();playtestAttempt=null;pendingRatingKey=null;
+ if(playtestEnabled&&document.body.classList.contains("in-heist"))startPlaytest();
+ el("playtestExportText").hidden=true;
+ el("playtestStatus").textContent="Local playtest notes cleared. Your campaign and lesson saves were not changed.";
+});
+difficultyReview.addEventListener("click",e=>{
+ const selected=e.target.closest("[data-playtest-rating]");
+ if(!selected||!pendingRatingKey||!playtestEnabled||playtestRatingDone)return;
+ const rating=Number(selected.dataset.playtestRating);
+ if(!Number.isInteger(rating)||rating<1||rating>5)return;
+ playtestData=ratePlaytest(playtestData,pendingRatingKey,rating);
+ savePlaytest();playtestRatingDone=true;pendingRatingKey=null;
+ difficultyReview.hidden=true;
+ message("Thanks. Difficulty rating saved on this device only.");
+});
+
 el("endTurn").addEventListener("click",()=>{const a=actions(level,state).find(a=>a.type==="end");if(a)perform(a);else message(finalTurnMessage(level,state),true);});
 el("undo").addEventListener("click",()=>{
  if(!history.length)return;
+ notePlaytest("undo");
  cancelAuto();viewEpoch++;pendingFlights.clear();
  let prev=history.pop();
  // An automatic cast is a consequence of the previous manual move.
@@ -744,7 +839,7 @@ el("undo").addEventListener("click",()=>{
  message("Previous move undone, including any automatically cast wards.");
 });
 window.addEventListener("resize",()=>{if(document.body.classList.contains("in-heist"))syncLandRows();},{passive:true});
-el("reset").addEventListener("click",()=>{sage.onRestart(level);load(index);});
+el("reset").addEventListener("click",()=>{closePlaytest("restart");sage.onRestart(level);load(index);startPlaytest();});
 el("skip").addEventListener("click",showMap);
 el("winNext").addEventListener("click",()=>{
  if(trialIndex!==null){showMap();return;}

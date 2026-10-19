@@ -1,0 +1,47 @@
+/* Game Lab-only voluntary playtest notes and narrow-screen choice usability. */
+.local-playtest{
+ margin:24px 0 8px;border:1px solid #ad9e7866;background:#142624;border-radius:12px;
+ color:#f3e9d5;overflow:hidden;
+}
+.local-playtest>summary{cursor:pointer;padding:15px 18px;font-weight:800;font-size:.83rem;letter-spacing:.05em;color:#e2c18b}
+.local-playtest>summary:focus-visible,.local-playtest button:focus-visible,.local-playtest input:focus-visible{outline:3px solid #e2c18b;outline-offset:3px}
+.local-playtest-content{padding:0 18px 16px;max-width:840px}
+.local-playtest-content p{line-height:1.55;font-size:.82rem;color:#c1cfca}
+.local-playtest-toggle{display:flex;gap:10px;align-items:flex-start;padding:12px 0;font-size:.85rem}
+.local-playtest-toggle input{width:20px;height:20px;flex:none;accent-color:#dfbd82;margin:0}
+.local-playtest-actions{display:flex;gap:9px;flex-wrap:wrap}
+.local-playtest-actions button{min-height:46px;padding:10px 13px;border-radius:8px;border:1px solid #bfa878;background:#283e38;color:#f1d7a4;font-weight:800;cursor:pointer}
+.local-playtest #playtestClear{border-color:#bb898080;color:#e4c6bb}
+.local-playtest #playtestExportText{width:100%;padding:12px;resize:vertical;min-height:110px;font:12px/1.4 monospace;background:#0a1a1b;color:#e8eadf;border:1px solid #bea77d;border-radius:8px}
+.local-playtest #playtestStatus{min-height:1.5em}
+.playtest-rating{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:10px 0 0}
+.playtest-rating>span{font-size:.77rem;color:#ebd6aa;flex-basis:100%}
+.playtest-rating button{min-width:42px;min-height:44px;border-radius:7px;border:1px solid #d2b77e;background:#27453f;color:#f3ddaf;font-weight:850}
+.playtest-rating button:focus-visible{outline:3px solid #ffe1a5;outline-offset:2px}
+@media(max-width:650px){
+ .local-playtest{margin:16px 0}
+ .local-playtest>summary{font-size:.72rem;line-height:1.4}
+ .local-playtest-actions{display:grid;grid-template-columns:1fr 1fr}
+ .local-playtest-actions button{font-size:.69rem;min-height:48px}
+ body.in-heist #heist #actionBox:not([hidden]){
+  width:min(430px,calc(100vw - 20px))!important;
+  max-width:calc(100vw - 20px)!important;
+  max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 32px)!important;
+  padding:16px 12px calc(14px + env(safe-area-inset-bottom,0px))!important;
+  overscroll-behavior:contain!important;
+  z-index:90!important;
+ }
+ body.in-heist #heist #actionBox .choice-button{
+  min-height:48px!important;font-size:max(.84rem,14px)!important;
+  line-height:1.4!important;white-space:normal!important;
+  overflow-wrap:anywhere!important;
+ }
+ body.in-heist #heist #actionBox .choice-close{min-width:44px!important;min-height:44px!important}
+}
+@media(max-height:510px) and (max-width:760px){
+ body.in-heist #heist #actionBox:not([hidden]){
+  max-height:calc(100dvh - 16px)!important;
+  padding-top:9px!important;
+ }
+ body.in-heist #heist #actionBox .choice-button{min-height:44px!important}
+}
