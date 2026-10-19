@@ -777,6 +777,54 @@ landDrag=installLandDragging({
  onHint:(text,error=false)=>message(text,error)
 });
 el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a)perform(a);});
+// Mana-choice sheets must remain usable by keyboard and screen readers on
+// small screens, not just visually centered above the battlefield.
+el("actionBox").addEventListener("keydown",e=>{
+ if(e.key!=="Tab"||el("actionBox").hidden)return;
+ const controls=[...el("actionBox").querySelectorAll('button:not([disabled])')];
+ if(!controls.length)return;
+ const first=controls[0],last=controls.at(-1);
+ if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+ else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+});
+el("playtestOptIn").addEventListener("change",e=>{
+ playtestEnabled=Boolean(e.target.checked);
+ try{localStorage.setItem(PLAYTEST_OPT_KEY,playtestEnabled?"yes":"no");}catch{}
+ if(playtestEnabled&&document.body.classList.contains("in-heist"))startPlaytest();
+ if(!playtestEnabled){playtestAttempt=null;pendingRatingKey=null;difficultyReview.hidden=true;}
+ el("playtestStatus").textContent=playtestEnabled?"Local playtest counts enabled. Nothing is transmitted automatically.":"Playtest notes are off. Existing local counts remain until you clear them.";
+});
+el("playtestCopy").addEventListener("click",async()=>{
+ const report=exportPlaytest(playtestData);
+ try{
+  if(!navigator.clipboard?.writeText)throw Error("Clipboard API unavailable");
+  await navigator.clipboard.writeText(report);
+  el("playtestExportText").hidden=true;
+  el("playtestStatus").textContent="Local report copied. Paste it into your playtest feedback when you choose.";
+ }catch{
+  const area=el("playtestExportText");
+  area.value=report;area.hidden=false;area.focus();area.select();
+  el("playtestStatus").textContent="Clipboard access is unavailable. Select and copy the report shown below.";
+ }
+});
+el("playtestClear").addEventListener("click",()=>{
+ if(!window.confirm("Clear ALL optional local playtest notes? Campaign medals and lesson completion are unaffected."))return;
+ playtestData=blankPlaytest();savePlaytest();playtestAttempt=null;pendingRatingKey=null;
+ if(playtestEnabled&&document.body.classList.contains("in-heist"))startPlaytest();
+ el("playtestExportText").hidden=true;
+ el("playtestStatus").textContent="Local playtest notes cleared. Your campaign and lesson saves were not changed.";
+});
+difficultyReview.addEventListener("click",e=>{
+ const selected=e.target.closest("[data-playtest-rating]");
+ if(!selected||!pendingRatingKey||!playtestEnabled||playtestRatingDone)return;
+ const rating=Number(selected.dataset.playtestRating);
+ if(!Number.isInteger(rating)||rating<1||rating>5)return;
+ playtestData=ratePlaytest(playtestData,pendingRatingKey,rating);
+ savePlaytest();playtestRatingDone=true;pendingRatingKey=null;
+ difficultyReview.hidden=true;
+ message("Thanks. Difficulty rating saved on this device only.");
+});
+
 el("endTurn").addEventListener("click",()=>{const a=actions(level,state).find(a=>a.type==="end");if(a)perform(a);else message(finalTurnMessage(level,state),true);});
 el("undo").addEventListener("click",()=>{
  if(!history.length)return;
