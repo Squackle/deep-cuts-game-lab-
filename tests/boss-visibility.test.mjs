@@ -64,5 +64,5 @@ test("Rift and egg warnings are unmistakable without changing hazard collision r
   drawTerrain(ctx,{terrain:[{kind,pos:{x:7,y:9},warningMs:400,lifeMs:2500}]},20);
   assert.ok(colors.includes(expected),kind+" should have a bright telegraphed accent");
  }
- assert.equal(RULES_VERSION,"hive-1.5.3","visibility pass changes no deterministic gameplay");
+ assert.equal(RULES_VERSION,"hive-1.5.4","visibility pass changes no deterministic gameplay");
 });
