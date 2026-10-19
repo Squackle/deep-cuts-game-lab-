@@ -21,9 +21,15 @@ Acceptance specification:
 
 **Status:** owner decision locked; balance code already implemented/tested in Game Lab. No new Task 1 implementation needed unless tests expose a defect.
 
-## Task 2 — Implement TWO legitimate final victory endings — NOT YET IMPLEMENTED
+## Task 2 — Implement TWO legitimate final victory endings — 2A BUILT IN GAME LAB; 2B PENDING
 
-### 2A. Engine event contract, separate from UI
+### 2A. Engine event contract, separate from UI — LAB IMPLEMENTED (hive-1.5.4)
+
+**Delivery 2026-10-19:** Game Lab's deterministic engine now distinguishes `perfect_clear`, `broodmother_defeated`, `step_limit`, `death`, and separate unranked `lair_practice` completions. The legitimate Hunt finale triggers at the Broodmother's final capture at evolution 12, once, without another draft. The real classic board-fill checks occupied enterable cells, excluding permanent rock but not temporary hazard tiles. The 6,000-step boundary ends without claiming perfect clear. The local replay regression verifier validates an explicitly claimed outcome and emits the actual one; public integration must require that field and server replay equivalence. Task 2B's high-quality victory art/audio is NOT part of this release.
+
+**Do not mistake Task 2A's temporary text overlay for the completed two-cinematic finale.**
+
+### 2A. Acceptance specification (implemented)
 
 1. Introduce an explicit deterministic terminal outcome/event, distinguishing `perfect_clear`, `broodmother_defeated`, `step_limit`, `death`, and `lair_practice` without relying on an `endReason` string. Keep score, seed, ticks and replay results consistent; avoid repeated victory events.
 2. **Predator Hunt:** ONLY the third, actual captured phase of the Broodmother during ordinary Arcade Hunt awards the final boss score/energy **once** and ends the run immediately as an authentic win. Do not open a new mutation draft, spawn new prey, run a new boss cycle or process additional steps after the victory. The Lair's unranked practice completion must stay separate.
