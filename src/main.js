@@ -563,11 +563,17 @@ function loop(time){
     saveBest();syncUI();
     playTone(state.run.status==="won"?720:135,.2,.03);
     const final=state.run.status==="won";
-    showOverlay(lairActive()?(final?"LAIR CONQUERED":"ENCOUNTER LOST"):(final?"HIVE COMPLETE!":"GAME OVER"),
+    const outcome=state.run.outcome;
+    const endTitle=lairActive()?(final?"LAIR CONQUERED":"ENCOUNTER LOST"):
+     outcome==="perfect_clear"?"HIVE COMPLETE!":
+     outcome==="broodmother_defeated"?"THE HIVE REIGNS!":
+     outcome==="step_limit"?"EXPEDITION ENDED":"GAME OVER";
+    showOverlay(endTitle,
      lairActive()?state.run.endReason+" Practice is unranked. Select another boss or retry.":
       state.run.endReason+" Final score: "+state.run.score.toLocaleString()+". Session best: "+state.sessionBest.toLocaleString()+".",
      lairActive()?"RETRY BOSS ↺":"PLAY AGAIN ↺");
-    announce((final?"Win! ":"Game over. ")+state.run.endReason+" Final score "+state.run.score+". Saved on this device only.");
+    announce((final?"Victory! ":outcome==="step_limit"?"Expedition finished. ":"Game over. ")+
+     state.run.endReason+" Final score "+state.run.score+". Saved on this device only.");
    }
   }
   if(catchUps===3)state.accumulator=Math.min(state.accumulator,effectiveTickMs(state.run));
