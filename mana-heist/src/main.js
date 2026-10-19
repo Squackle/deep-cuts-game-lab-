@@ -19,6 +19,7 @@ import {installCardMagnifier} from "./card-magnifier.js";
 import {SAGE_LESSONS} from "./sage-lessons.js";
 import {BONUS_TRIALS,BONUS_TRIAL_STORAGE_KEY,normalizeBonusBests,betterBonusScore} from "./bonus-trials.js";
 import {PLAYTEST_KEY,PLAYTEST_OPT_KEY,blankPlaytest,normalizePlaytest,beginPlaytest,countPlaytestEvent,finishPlaytest,ratePlaytest,exportPlaytest} from "./playtest-metrics.js";
+import {DEVICE_QA_KEY,DEVICE_QA_CHECKS,DEVICE_QA_STATUSES,blankDeviceQA,normalizeDeviceQA,setDeviceContext,setDeviceQAResult,summarizeDeviceQA,exportDeviceQA} from "./device-qa.js";
 import {LEARN_LEVELS} from "./expanded-learn.js";
 import {certifyCapstone} from "./capstone-certificates.js";
 import {certifyMastery} from "./mastery-certificates.js";
@@ -95,7 +96,36 @@ function closePlaytest(status){
  if(status==="win"){pendingRatingKey=attempt.key;playtestRatingDone=false;}
 }
 
-let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null,selectedHandId=null;
+let deviceQa=blankDeviceQA();
+try{deviceQa=normalizeDeviceQA(JSON.parse(localStorage.getItem(DEVICE_QA_KEY)||"null"));}catch{}
+function saveDeviceQA(){try{localStorage.setItem(DEVICE_QA_KEY,JSON.stringify(deviceQa));}catch{}}
+function updateDeviceQAStatus(){
+ const s=summarizeDeviceQA(deviceQa);
+ el("deviceQaStatus").textContent=s.reviewed+" / "+s.total+" checked · "+s.pass+" passed · "+s.issue+" needs fixing · "+s.untested+" not tested. Manual self-report only.";
+}
+function renderDeviceQA(){
+ const root=el("deviceQaChecks");
+ root.replaceChildren();
+ for(const [field,id] of [["device","deviceQaDevice"],["browser","deviceQaBrowser"],["orientation","deviceQaOrientation"]])el(id).value=deviceQa[field];
+ const statuses=[["untested","Not tested"],["pass","Pass"],["issue","Needs fixing"],["not-applicable","Not applicable"]];
+ for(const item of DEVICE_QA_CHECKS){
+  const card=document.createElement("section");card.className="device-qa-case";
+  const title=document.createElement("h3");title.textContent=item.title;
+  const details=document.createElement("p");details.textContent=item.steps;
+  const controls=document.createElement("div");controls.className="device-qa-case-controls";
+  const label=document.createElement("label");label.textContent="Your test result";
+  const select=document.createElement("select");select.dataset.qaCase=item.id;
+  select.setAttribute("aria-label",item.title+" — your device test result");
+  for(const [value,name] of statuses){const opt=document.createElement("option");opt.value=value;opt.textContent=name;select.append(opt);}
+  select.value=deviceQa.checks[item.id];label.append(select);
+  const launch=document.createElement("button");launch.type="button";launch.dataset.qaLaunch=item.id;
+  launch.textContent="OPEN TEST STAGE →";
+  launch.setAttribute("aria-label","Open test stage for "+item.title);
+  controls.append(label,launch);card.append(title,details,controls);root.append(card);
+ }
+ updateDeviceQAStatus();
+}
+let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null;
 let autoCastEnabled=false;
 try{autoCastEnabled=localStorage.getItem("dc-mana-heist-auto-cast")==="yes";}catch{}
 el("autoCastToggle").checked=autoCastEnabled;
