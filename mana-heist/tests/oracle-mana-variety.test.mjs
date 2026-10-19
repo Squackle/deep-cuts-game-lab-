@@ -5,6 +5,7 @@ import {LEVELS} from "../src/levels.js";
 import {CARDS,actions,initial,reduce,validate,completed} from "../src/engine.js";
 import {certifyMastery} from "../src/mastery-certificates.js";
 import {certifyDiverse} from "../src/mana-variety-certificates.js";
+import {certifyRemix} from "../src/certified-remixes.js";
 import {replay} from "../src/solver.js";
 import {SOURCES} from "../src/mana-engine-v2.js";
 
@@ -13,13 +14,13 @@ test("all 250 mastery vaults have legal varied solution routes, not all Dark Rit
  for(let i=250;i<500;i++){
   const l=LEVELS[i];
   assert.equal(validate(l),true,l.id);
-  const proof=l.revision===3?certifyDiverse(l):certifyMastery(l);
+  const proof=l.revision===4?certifyRemix(l):l.revision===3?certifyDiverse(l):certifyMastery(l);
   assert.equal(proof?.status,"solved",l.id);
   assert.ok(replay(l,proof.actions).ok,l.id);
   families.add(l.mastery.family||"black-engine");
   boardFingerprints.add(l.field.map(x=>x.card).sort().join("|")+";"+l.hand.map(x=>x.card).join("|"));
  }
- assert.deepEqual([...families].sort(),["black-engine","finale","geyser","key","prism","rite","tide"].sort());
+ assert.deepEqual([...families].sort(),["black-engine","finale","geyser","key","prism","rite","tide","borrowed-filter","talisman-turns","survival-chain","life-ledger","final-precision"].sort());
  assert.ok(boardFingerprints.size>=18,"genuine mechanically distinct boards required: "+boardFingerprints.size);
  const last=LEVELS[499];assert.equal(last.stages.length,6);
  assert.equal(last.mastery.family,"finale");
