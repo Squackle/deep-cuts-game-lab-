@@ -68,7 +68,7 @@
         "puzzleRevision",
         "utcDate"
       ],
-      "acceptedActionDefinition": "each authorized state-changing player decision: tap land, play land, cast/activate, pass priority, make separate mandatory payment decision; mode/target/payment selections within a single cast are recorded in action args and count once",
+      "acceptedActionDefinition": "each accepted, authorized state-changing player decision: tap land, play land, cast/activate, pass priority, make separate mandatory payment decision; mode/target/payment selections within a single cast are recorded in action args and count once",
       "tiebreaker": "none, no leaderboard in this plan",
       "negativeResult": "records a failed attempt; can continue practicing without verified credit",
       "solved": "objectiveMet after replay under pinned version"
