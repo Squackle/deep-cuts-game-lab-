@@ -1,7 +1,9 @@
-// Stackbreaker advanced COPY/RETARGET preview. Isolated from the 0.3 Classic resolver.
+import {ADVANCED_RULES_PREVIEW,makeTypedStackEntry,fromClassicStackEntry,classicTargetProjection,validateModeAndTargets,createPriorityWindow,putStackObject,passPriority,canonicalStackJson} from './advanced-foundation.js';
+// Stackbreaker copy/retarget reducer built ON Step 5's typed priority foundation.
+// Isolated from the Classic 0.3 resolver.
 // A deliberately bounded TWO-player response-window subset, not a complete Magic engine.
 // Rules references: Wizards Comprehensive Rules 115.7, 601.2, 608.2b, 707.2, 707.10, 707.10c.
-export const ADVANCED_PREVIEW_VERSION = 'sb-mtg-training-0.4.0-preview';
+export const ADVANCED_PREVIEW_VERSION = ADVANCED_RULES_PREVIEW;
 export const ADVANCED_CARDS = Object.freeze({
   'Twincast': {type:'Instant', cost:{U:2}, effect:'copy', modes:null, targets:['instantOrSorcerySpell']},
   'Redirect': {type:'Instant', cost:{U:2}, effect:'retarget', modes:null, targets:['spell']},
@@ -46,27 +48,27 @@ function targetSetLegal(s,item,targets,{previous=null}={}) {
   if(!Array.isArray(targets)||targets.length!==specs.length||targets.some(x=>typeof x!=='string'))return false;
   // Arc Trail's second target must be different. Evaluate the complete new target
   // set, not intermediate choices, so swapping Arc Trail targets is legal (115.7e).
-  if(specs.includes('anotherAny')&&targets[0]===targets[1])return false;
-  return targets.every((id,i)=>{
-    if(previous&&previous[i]===id)return true; // An unchanged target may already be illegal (115.7d).
-    return targetLegal(s,item,id,specs[i]);
-  });
+  try{
+    const card=ADVANCED_CARDS[item.cardId];
+    const spec=card.modes
+      ? {modes:Object.fromEntries(Object.entries(card.modes).map(([name,mode])=>[name,{targetSlots:mode.targets}])),
+          distinctSlotGroups:[]}
+      : {targetSlots:card.targets,distinctSlotGroups:specs.includes('anotherAny')?[[0,1]]:[]};
+    validateModeAndTargets(spec,{chosenModes:item.chosenModes??[],targets},(slot,id,i)=>{
+      // Unchanged old targets can remain even when currently illegal (115.7d).
+      // Any newly chosen target is legal for the spell's controller.
+      return previous?.[i]===id||targetLegal(s,item,id,slot);
+    });
+    return true;
+  }catch{return false;}
 }
 export function advancedTargetOptions(s,item,slot=0) {
   const specs=targetRules(item),type=specs[slot];assert(!!type,'Unknown target slot');
   const all=[...['player','opponent'],...s.permanents.map(x=>x.id),...s.stack.map(x=>x.id)];
   return all.filter(id=>targetLegal(s,item,id,type));
 }
-export function projectClassicTargetId(item) {
-  return Array.isArray(item.targets)&&item.targets.length===1?item.targets[0]:null;
-}
-export function adaptClassicStackEntry(entry) {
-  assert(entry&&typeof entry.id==='string'&&typeof entry.card==='string','Invalid legacy entry');
-  return {id:entry.id,kind:entry.spell===false?'ability':'spell',cardId:entry.card,
-    controller:entry.controller,sourceId:entry.sourceId||null,isCast:entry.spell!==false,
-    chosenModes:[],targets:entry.targetId==null?[]:[entry.targetId],xValue:0,
-    choices:{},originActionIndex:0};
-}
+export function projectClassicTargetId(item){return classicTargetProjection(item);}
+export function adaptClassicStackEntry(entry){return fromClassicStackEntry(entry);}
 function validateState(s) {
   assert(s?.version===ADVANCED_PREVIEW_VERSION,'Wrong advanced preview version');
   assert(s.life&&Number.isInteger(s.life.player)&&Number.isInteger(s.life.opponent),'Invalid lives');
@@ -79,6 +81,7 @@ function validateState(s) {
   for(const x of s.stack) {
     assert(who(x.controller)&&!!ADVANCED_CARDS[x.cardId]&&['spell','copy'].includes(x.kind),'Unsupported stack entry');
     assert(x.kind!=='copy'||x.isCast===false,'A spell copy is NOT cast');
+    makeTypedStackEntry(x);
     assert(targetSetLegal(s,x,x.targets),'Invalid starting stack targets');
   }
   for(const x of s.hand)assert(!!ADVANCED_CARDS[x.cardId]&&ADVANCED_CARDS[x.cardId].type==='Instant','Unsupported preview hand card');
@@ -88,6 +91,10 @@ export function createAdvancedGame(scenario) {
   const s=copy(scenario);
   validateState(s);
   s.step=0;s.copySerial=0;s.status='playing';s.events=[];s.log=['Opponent has passed priority.'];s.history=[];
+  s.priority=createPriorityWindow({
+    activeActor:'opponent',currentActor:'player',passedBy:['opponent'],
+    stack:s.stack.map(makeTypedStackEntry)
+  });
   return s;
 }
 function addEvent(s,type,subjectId,other={}) {
@@ -127,6 +134,8 @@ export function castAdvanced(s0,handId,{targets=[],chosenModes=[],xValue=0}={}) 
   assert(targetSetLegal(s0,item,targets),'Illegal spell target/mode');
   const s=copy(s0),after=pay(s,card.cost);
   s.mana=after;s.hand=s.hand.filter(x=>x.id!==handId);
+  // Step 5 priority contract: caster retains priority, and the pass chain resets.
+  s.priority=putStackObject(s.priority,'player',item);
   s.stack.push(item);s.step++;
   addEvent(s,'spell.cast',item.id,{cardId:item.cardId});
   s.history.push({action:'cast',handId,targets:copy(targets),chosenModes:copy(chosenModes),xValue});
@@ -189,7 +198,16 @@ export function resolveAdvanced(s0,options={}) {
   }else if(newTargets!=null&&(!original||!['copy','retarget'].includes(effect))) {
     assert(false,'No legal spell to retarget');
   }
-  const s=copy(s0),item=s.stack.pop();s.step++;
+  const s=copy(s0);
+  // Apply priority through the shared Step 5 model, not an ad-hoc stack pop.
+  // The opponent's always-pass policy is explicit and deterministic here.
+  let progress=passPriority(s.priority,'player');
+  if(progress.outcome.type==='awaiting-opponent')
+    progress=passPriority(progress.state,'opponent');
+  assert(progress.outcome.type==='resolve-top','Resolution requires both priority passes');
+  assert(progress.outcome.item.id===top.id,'Priority stack diverged from the effect engine');
+  s.priority=progress.state;
+  const item=s.stack.pop();s.step++;
   if(effect==='copy'||effect==='retarget') {
     const target=s.stack.find(x=>x.id===item.targets[0]);
     if(target) {
@@ -210,7 +228,19 @@ export function resolveAdvanced(s0,options={}) {
     if(target)addEvent(s,'spell.resolved',item.id,{isCast:item.isCast});
     else addEvent(s,'spell.fizzled',item.id);
   }else if(effectResolve(s,item))addEvent(s,'spell.resolved',item.id,{isCast:item.isCast});
+  // Keep the shared typed stack consistent after copies, target changes and
+  // counterspells, without conflating spell-copied with spell-cast events.
+  s.priority.stack=s.stack.map(makeTypedStackEntry);
+  assert(canonicalStackJson(s.priority.stack)===canonicalStackJson(s.stack.map(makeTypedStackEntry)),
+    'Advanced priority stack is out of sync');
   closeIfFinished(s);
+  if(s.status==='playing'){
+    // In the curated opponent-always-passes training window, opponent holds
+    // priority after resolution (active player), passes, and player can respond.
+    const opponentPass=passPriority(s.priority,'opponent');
+    assert(opponentPass.outcome.type==='awaiting-opponent','Opponent pass failed');
+    s.priority=opponentPass.state;
+  }
   s.history.push({action:'resolve',newTargets:newTargets==null?null:copy(newTargets)});
   return s;
 }
