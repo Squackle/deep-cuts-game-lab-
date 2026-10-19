@@ -1269,6 +1269,44 @@ main{max-width:1640px}
  .daily-result textarea{width:100%}
 }
 @media(prefers-reduced-motion:reduce){.daily-banner *{scroll-behavior:auto!important;transition:none!important}}
+
+
+/* Step 3: actual-engine-state mastery ledger. Local / unverified preview only. */
+.mastery-panel{
+ margin:16px 0 20px;border:1px solid #92774786;border-radius:14px;
+ background:linear-gradient(145deg,#1d3031,#101c22);
+ color:#ebdec5;overflow:hidden
+}
+.mastery-panel summary{
+ display:flex;justify-content:space-between;align-items:center;gap:12px;
+ padding:15px 18px;cursor:pointer;list-style:none;flex-wrap:wrap;
+ font:700 .87rem/1.35 system-ui,sans-serif;letter-spacing:.04em
+}
+.mastery-panel summary::-webkit-details-marker{display:none}
+.mastery-panel summary:before{content:"▸";color:#e6c68a}
+.mastery-panel[open] summary:before{content:"▾"}
+.mastery-panel summary:focus-visible{outline:3px solid #f8d28f;outline-offset:-3px}
+.mastery-panel summary small{display:block;font-size:.64rem;margin-top:3px;color:#b8bdaf;letter-spacing:.06em}
+.mastery-panel summary strong{color:#e8d29f;font-size:.79rem}
+.mastery-content{border-top:1px solid #aa957038;padding:12px 16px 16px}
+#masterySummary{margin:0 0 8px;color:#d2e3d2;font-size:.88rem}
+.mastery-caveat{font-size:.75rem;line-height:1.5;color:#b2b7b2;max-width:760px}
+.mastery-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px;list-style:none;padding:0;margin:16px 0 0}
+.mastery-item{display:flex;align-items:center;gap:10px;border:1px solid #6c877557;border-radius:10px;padding:12px 10px;background:#1e302f}
+.mastery-item.is-unlocked{border-color:#e2b86a;background:linear-gradient(145deg,#46513c,#26332b)}
+.mastery-item.is-locked{opacity:.72;background:#172222;border-style:dashed}
+.mastery-symbol{font-size:1.6rem;color:#c9a76a;line-height:1;flex-shrink:0}
+.mastery-info{display:flex;flex-direction:column;min-width:0;gap:4px;flex:1}
+.mastery-info strong{font:700 .82rem/1.2 system-ui,sans-serif;color:#f2e8d3}
+.mastery-info small{font:.7rem/1.45 system-ui,sans-serif;color:#bfc6bf}
+.mastery-state{font:700 .66rem/1.35 system-ui,sans-serif;max-width:120px;color:#cfb986;text-align:right}
+.mastery-item.is-unlocked .mastery-state{color:#fff1a2}
+@media(max-width:500px){
+ .mastery-panel summary{padding:13px 12px}
+ .mastery-content{padding:12px}
+ .mastery-list{grid-template-columns:1fr}
+ .mastery-state{max-width:100px}
+}
 </style></head>
 <body><a class="skip" href="#game">Skip to Stackbreaker game</a>
 <header class="mast"><a class="site-mark" href="/lab/" aria-label="Back to Game Test Lab home">◈ <b>DEEP CUTS</b> / GAME LAB</a><strong class="site-title">STACKBREAKER <small>1.5 · ARCANE OBSERVATORY</small></strong><a class="site-home" href="/lab/" aria-label="Back to Test Lab, choose another game">GAME LAB ↗</a></header>
@@ -1302,8 +1340,409 @@ main{max-width:1640px}
 <div class="game-controls"><div class="result-mini" id="resultMini" aria-live="polite"><b id="resultEyebrow">YOUR MOVE</b><span id="resultTitle">Tap lands, then drag your spell.</span></div><button type="button" class="pass-button" id="passButton">PASS / RESOLVE →</button><button type="button" class="minor-button" id="undoButton">↶ UNDO</button><button type="button" class="minor-button" id="restartButton">↻ RESET</button><div class="level-arrows"><button type="button" class="prev-button" id="prevButton" aria-label="Previous level">← PREV</button><button type="button" class="next-button" id="nextButton" aria-label="Next level">NEXT →</button></div></div>
 <div id="live" class="sr-only" role="status" aria-live="polite"></div><section id="worldMap" class="world-map" role="dialog" aria-modal="true" aria-labelledby="worldMapTitle" aria-hidden="true" hidden><header class="world-map-header"><div><p>STACKBREAKER · CAMPAIGN</p><h2 id="worldMapTitle">GALAXY ATLAS</h2></div><button id="closeMapButton" type="button" aria-label="Close chapter map">✕ CLOSE</button></header><nav class="galaxy-tabs" id="galaxyTabs" aria-label="Choose galaxy"></nav><nav class="world-tabs" id="worldTabs" aria-label="Choose a world"></nav><div id="worldStage" class="world-stage"></div><footer class="world-map-footer"><span id="worldMapProgress"></span><span>Navigate five galaxies, twenty-five worlds and ten levels each · choose any stage · victories plant a flag ★</span></footer></section>
 </section>
-<section class="study-notes" id="notes"><div class="notes-head"><div><p class="eyebrow">THE TRAINING FILE</p><h1>ONE TURN TO LIVE.</h1><p><a href="./daily/" aria-label="Play Daily Stackbreaker, local unverified challenge">✦ PLAY DAILY STACKBREAKER — NEW UTC CHALLENGE ↗</a></p><p><a href="./final-turn/" aria-label="Play the new Final Turn lifecycle drill">✦ TRY FINAL TURN 2.0 — NEW PLAYABLE DRILL ↗</a></p><p id="scenarioIntro"></p></div><div class="progress"><b id="completed">0 / 250 SOLVED</b><span>COMMANDER SINGLETON PRACTICE</span></div></div><div class="notes-grid"><div class="notes-box"><h2>Your objective</h2><p id="objectiveLong"></p><button type="button" id="hintButton" aria-expanded="false">◇ REVEAL HINT</button><p id="hintText" hidden></p></div><div class="notes-box"><h2>Why it worked</h2><p id="resultExplanation">Finish a case to reveal its rules explanation.</p><div id="resultStars" class="result-stars"></div></div><div class="notes-box"><h2>Resolution log</h2><ol id="log" aria-label="Action and stack resolution log"></ol></div></div>
-<footer><div><b>STACKBREAKER · <span id="version"></span></b><p>An unofficial educational Magic rules trainer; not affiliated with or endorsed by Wizards of the Coast or Scryfall. Card images and artwork provided by Scryfall, © Wizards of the Coast; card artwork © respective artists. Card-image previews and links open Scryfall. Commander-style singleton for each participant (except basic lands), with distinct choices in each hand. Limited two-player training windows, not a full 100-card Commander deck, multiplayer engine or judge ruling.</p></div><a href="/">← GAME LAB HOME</a></footer></section></main><div id="cardPreview" class="card-preview" hidden role="group" aria-label="Scryfall full card preview"><img id="cardPreviewImage" alt=""/><div id="cardPreviewLabel" class="card-preview-title"></div><small id="cardPreviewCredit"></small><a id="cardPreviewLink" href="https://scryfall.com/" target="_blank" rel="noopener noreferrer" tabindex="-1">Scryfall card reference</a></div><script>const dailyManifest={
+<section class="study-notes" id="notes"><div class="notes-head"><div><p class="eyebrow">THE TRAINING FILE</p><h1>ONE TURN TO LIVE.</h1><p><a href="./daily/" aria-label="Play Daily Stackbreaker, local unverified challenge">✦ PLAY DAILY STACKBREAKER — NEW UTC CHALLENGE ↗</a></p><p><a href="./final-turn/" aria-label="Play the new Final Turn lifecycle drill">✦ TRY FINAL TURN 2.0 — NEW PLAYABLE DRILL ↗</a></p><p id="scenarioIntro"></p></div><div class="progress"><b id="completed">0 / 250 SOLVED</b><span>COMMANDER SINGLETON PRACTICE</span></div></div><details id="masteryPanel" class="mastery-panel" aria-label="Local mastery achievements">
+ <summary><span>✦ STACKBREAKER MASTERY <small>LOCAL / UNVERIFIED</small></span><strong id="masteryCount">0 / 24 LOCAL MILESTONES</strong></summary>
+ <div class="mastery-content">
+  <p id="masterySummary">Mastery achievements begin with new wins. Existing campaign stars are preserved.</p>
+  <p class="mastery-caveat">These are local progress previews, not verified profile rewards. Advanced-rule and server-verified Daily achievements remain locked. Cosmetic equipment arrives in a later development step.</p>
+  <ol id="masteryList" class="mastery-list" aria-label="Achievements and milestone progress"></ol>
+ </div>
+</details>
+<div class="notes-grid"><div class="notes-box"><h2>Your objective</h2><p id="objectiveLong"></p><button type="button" id="hintButton" aria-expanded="false">◇ REVEAL HINT</button><p id="hintText" hidden></p></div><div class="notes-box"><h2>Why it worked</h2><p id="resultExplanation">Finish a case to reveal its rules explanation.</p><div id="resultStars" class="result-stars"></div></div><div class="notes-box"><h2>Resolution log</h2><ol id="log" aria-label="Action and stack resolution log"></ol></div></div>
+<footer><div><b>STACKBREAKER · <span id="version"></span></b><p>An unofficial educational Magic rules trainer; not affiliated with or endorsed by Wizards of the Coast or Scryfall. Card images and artwork provided by Scryfall, © Wizards of the Coast; card artwork © respective artists. Card-image previews and links open Scryfall. Commander-style singleton for each participant (except basic lands), with distinct choices in each hand. Limited two-player training windows, not a full 100-card Commander deck, multiplayer engine or judge ruling.</p></div><a href="/">← GAME LAB HOME</a></footer></section></main><div id="cardPreview" class="card-preview" hidden role="group" aria-label="Scryfall full card preview"><img id="cardPreviewImage" alt=""/><div id="cardPreviewLabel" class="card-preview-title"></div><small id="cardPreviewCredit"></small><a id="cardPreviewLink" href="https://scryfall.com/" target="_blank" rel="noopener noreferrer" tabindex="-1">Scryfall card reference</a></div><script>const masteryCatalog={
+  "schemaVersion": 1,
+  "catalogVersion": 1,
+  "status": "local-unverified-game-lab-ledger",
+  "verification": "LOCAL / UNVERIFIED — no authenticated profile unlocks",
+  "achievements": [
+    {
+      "id": "first-response",
+      "metric": "classic-win",
+      "threshold": 1,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "first-responder"
+      },
+      "name": "First Response",
+      "description": "Win your first Classic puzzle",
+      "status": "local-eligible"
+    },
+    {
+      "id": "ten-responses",
+      "metric": "distinct-classic-wins",
+      "threshold": 10,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "apprentice"
+      },
+      "name": "Ten Responses",
+      "description": "Win distinct Classic puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "fifty-solutions",
+      "metric": "distinct-classic-wins",
+      "threshold": 50,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "tactician"
+      },
+      "name": "Fifty Solutions",
+      "description": "Win distinct Classic puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "centurion",
+      "metric": "distinct-classic-wins",
+      "threshold": 100,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "veteran"
+      },
+      "name": "Centurion",
+      "description": "Win distinct Classic puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "galactic-explorer",
+      "metric": "completed-worlds",
+      "threshold": 1,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "explorer"
+      },
+      "name": "World Explorer",
+      "description": "Finish all 10 puzzles in a world",
+      "status": "local-eligible"
+    },
+    {
+      "id": "five-galaxies",
+      "metric": "galaxies-with-completion",
+      "threshold": 5,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "frame",
+        "id": "prismatic"
+      },
+      "name": "Fivefold Explorer",
+      "description": "Finish a world in each of the five galaxies",
+      "status": "local-eligible"
+    },
+    {
+      "id": "campaign-conqueror",
+      "metric": "distinct-classic-wins",
+      "threshold": 250,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "conqueror"
+      },
+      "name": "Classic Solver",
+      "description": "Win distinct Classic puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "clean-stack",
+      "metric": "distinct-clean-wins",
+      "threshold": 10,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "clean-stack"
+      },
+      "name": "Clean Stack",
+      "description": "Win distinct puzzles without hints or undo",
+      "status": "local-eligible"
+    },
+    {
+      "id": "perfect-window",
+      "metric": "three-star-classic-wins",
+      "threshold": 1,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "frame",
+        "id": "white"
+      },
+      "name": "Perfect Window",
+      "description": "Earn three stars on distinct puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "perfect-ten",
+      "metric": "three-star-classic-wins",
+      "threshold": 10,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "vfx",
+        "id": "white"
+      },
+      "name": "Perfect Window",
+      "description": "Earn three stars on distinct puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "countermage",
+      "metric": "distinct-solved-with-counter",
+      "threshold": 5,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "countermage"
+      },
+      "name": "Countermage",
+      "description": "Successfully counter spells during winning puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "counter-archmage",
+      "metric": "distinct-solved-with-counter",
+      "threshold": 25,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "vfx",
+        "id": "blue"
+      },
+      "name": "Countermage",
+      "description": "Successfully counter spells during winning puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "shield-bearer",
+      "metric": "distinct-solved-with-protection",
+      "threshold": 10,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "frame",
+        "id": "green"
+      },
+      "name": "Shield Bearer",
+      "description": "Grant protection during winning puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "lifeline",
+      "metric": "distinct-solved-with-lifegain",
+      "threshold": 10,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "vfx",
+        "id": "green"
+      },
+      "name": "Lifeline",
+      "description": "Gain life during winning puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "banisher",
+      "metric": "distinct-solved-with-exile",
+      "threshold": 10,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": null,
+      "reward": {
+        "type": "frame",
+        "id": "black"
+      },
+      "name": "Banisher",
+      "description": "Exile permanents during winning puzzles",
+      "status": "local-eligible"
+    },
+    {
+      "id": "stack-surgeon",
+      "metric": "distinct-advanced-retarget-wins",
+      "threshold": 5,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": "advanced-v0.4+",
+      "reward": {
+        "type": "title",
+        "id": "stack-surgeon"
+      },
+      "name": "Stack Surgeon",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "future-advanced"
+    },
+    {
+      "id": "copycat",
+      "metric": "distinct-advanced-copy-wins",
+      "threshold": 5,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": "advanced-v0.4+",
+      "reward": {
+        "type": "vfx",
+        "id": "red"
+      },
+      "name": "Copycat",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "future-advanced"
+    },
+    {
+      "id": "modal-master",
+      "metric": "distinct-advanced-modal-wins",
+      "threshold": 5,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": "advanced-v0.4+",
+      "reward": {
+        "type": "title",
+        "id": "modal-master"
+      },
+      "name": "Modal Master",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "future-advanced"
+    },
+    {
+      "id": "trigger-technician",
+      "metric": "distinct-advanced-trigger-wins",
+      "threshold": 5,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": "advanced-v0.4+",
+      "reward": {
+        "type": "title",
+        "id": "trigger-technician"
+      },
+      "name": "Trigger Technician",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "future-advanced"
+    },
+    {
+      "id": "ward-specialist",
+      "metric": "distinct-advanced-ward-paid-wins",
+      "threshold": 5,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": "advanced-v0.4+",
+      "reward": {
+        "type": "frame",
+        "id": "blue"
+      },
+      "name": "Ward Specialist",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "future-advanced"
+    },
+    {
+      "id": "replacement-scholar",
+      "metric": "distinct-advanced-replacement-wins",
+      "threshold": 5,
+      "distinctBy": "puzzleIdAndRevision",
+      "requireCompletedWin": true,
+      "requiresServerVerification": false,
+      "engineGate": "advanced-v0.4+",
+      "reward": {
+        "type": "title",
+        "id": "replacement-scholar"
+      },
+      "name": "Replacement Scholar",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "future-advanced"
+    },
+    {
+      "id": "daily-first",
+      "metric": "distinct-verified-daily-wins",
+      "threshold": 1,
+      "distinctBy": "utcDate",
+      "requireCompletedWin": true,
+      "requiresServerVerification": true,
+      "engineGate": null,
+      "reward": {
+        "type": "frame",
+        "id": "gold"
+      },
+      "name": "Daily First",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "server-required"
+    },
+    {
+      "id": "seven-dates",
+      "metric": "distinct-verified-daily-wins",
+      "threshold": 7,
+      "distinctBy": "utcDate",
+      "requireCompletedWin": true,
+      "requiresServerVerification": true,
+      "engineGate": null,
+      "reward": {
+        "type": "vfx",
+        "id": "prismatic"
+      },
+      "name": "Seven Dates",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "server-required"
+    },
+    {
+      "id": "monthly-rhythm",
+      "metric": "distinct-verified-daily-wins",
+      "threshold": 20,
+      "distinctBy": "utcDate",
+      "requireCompletedWin": true,
+      "requiresServerVerification": true,
+      "engineGate": null,
+      "reward": {
+        "type": "title",
+        "id": "daily-adept"
+      },
+      "name": "Monthly Rhythm",
+      "description": "Complete this milestone when its rules/verification are supported",
+      "status": "server-required"
+    }
+  ]
+}
+;
+const dailyManifest={
   "schemaVersion": 1,
   "manifestVersion": 1,
   "resetAt": "00:00:00Z",
@@ -5894,6 +6333,172 @@ function dailyShareText(entry,result){
 
 
 
+// Game Lab only. This records observed engine transitions for LOCAL / UNVERIFIED
+// mastery previews. It NEVER signs results, awards public profile items, or uses VFX.
+const MASTERY_STORAGE_KEY='dc-stackbreaker-mastery-local-v1';
+const MASTERY_CATALOG=masteryCatalog;
+const compatibleId=id=>/^(?:sb-\d{2}|sg-\d{3})$/.test(String(id||''));
+const keyFor=(id,revision=1)=>id+'@'+revision;
+function emptyMasteryLedger(){
+ return {schemaVersion:1,catalogVersion:1,localUnverified:true,wins:{}};
+}
+function emptyMasteryRun(){
+ return {schemaVersion:1,transitionCount:0,events:[],clean:true};
+}
+const event=(idx,events,type,subjectId,causeId,extra={})=>{
+ const eventIndex=events.length;
+ events.push({eventId:idx+':'+eventIndex,actionIndex:idx,eventIndex,
+  type,subjectId:String(subjectId??''),causeId:String(causeId??''),...extra});
+};
+function observeMasteryTransition(before,after,actionIndex=0){
+ if(before?.status!=='playing'||!after||!Number.isSafeInteger(actionIndex)||actionIndex<0)return [];
+ const gameFields=['step','status','currentActor','passCount','mana','landPlayed','used','hand',
+  'lands','stack','units','enchantments','life','preventedSpellDamage'];
+ if(gameFields.every(field=>JSON.stringify(before[field])===JSON.stringify(after[field])))return [];
+ const result=[],cause=after.stack?.at(-1)?.id||before.stack?.at(-1)?.id||'action';
+ event(actionIndex,result,'action.accepted',before.id,cause);
+ if(after.step>before.step&&after.used?.length===before.used?.length)
+  event(actionIndex,result,'priority.passed',before.id,'pass');
+ const oldLand=new Map((before.lands||[]).map(x=>[x.id,x]));
+ for(const item of after.lands||[]){
+  const old=oldLand.get(item.id);
+  if(!old){event(actionIndex,result,'land.played',item.id,item.id);continue;}
+  if(!old.tapped&&item.tapped)event(actionIndex,result,'mana.tapped',item.id,item.id);
+ }
+ const oldStack=new Map((before.stack||[]).map(x=>[x.id,x]));
+ for(const item of after.stack||[])if(!oldStack.has(item.id)&&item.controller==='player'){
+  event(actionIndex,result,item.spell===false?'ability.activated':'spell.cast',item.id,item.id,{card:item.card});
+ }
+ const oldTop=before.stack?.at(-1);
+ const removedTop=oldTop&&!after.stack?.some(x=>x.id===oldTop.id);
+ if(removedTop){
+  event(actionIndex,result,'spell.resolved',oldTop.id,oldTop.id,{card:oldTop.card,spell:oldTop.spell!==false});
+  const c=CARDS[oldTop.card];
+  const target=before.stack.find(x=>x.id===oldTop.targetId);
+  if(c?.effect==='counter'&&target&&!after.stack.some(x=>x.id===target.id))
+   event(actionIndex,result,'spell.countered',target.id,oldTop.id,{card:target.card});
+ }
+ const beforeUnits=new Map((before.units||[]).map(x=>[x.id,x]));
+ for(const x of after.units||[]){
+  const prior=beforeUnits.get(x.id);
+  if(!prior){if(x.zone==='battlefield')event(actionIndex,result,'permanent.entered',x.id,cause,{card:x.card});continue;}
+  if(prior.zone!==x.zone)event(actionIndex,result,'permanent.zone_changed',x.id,cause,{from:prior.zone,to:x.zone,card:x.card});
+  if((!prior.hexproof&&x.hexproof)||(!prior.indestructible&&x.indestructible))
+   event(actionIndex,result,'protection.granted',x.id,cause);
+  if((x.powerBoost||0)!==(prior.powerBoost||0)||(x.toughnessBoost||0)!==(prior.toughnessBoost||0))
+   event(actionIndex,result,'stats.changed',x.id,cause);
+ }
+ for(const player of ['player','opponent']){
+  const delta=(after.life?.[player]||0)-(before.life?.[player]||0);
+  if(delta)event(actionIndex,result,'life.changed',player,cause,{delta});
+ }
+ if(after.status==='won'&&objectiveMet(after))event(actionIndex,result,'puzzle.completed',before.id,'objective',{outcome:'won'});
+ return result;
+}
+function appendMasteryTransition(run,before,after){
+ const safe=run||emptyMasteryRun(),events=observeMasteryTransition(before,after,safe.transitionCount);
+ if(!events.length)return safe;
+ return {...safe,transitionCount:safe.transitionCount+1,events:[...safe.events,...events]};
+}
+function markMasteryRunUnclean(run){return {...(run||emptyMasteryRun()),clean:false};}
+function masteryRunIsValid(run){
+ if(!run||run.schemaVersion!==1||!Array.isArray(run.events))return false;
+ return run.events.every(e=>e&&typeof e.type==='string'&&
+  Number.isSafeInteger(e.actionIndex)&&Number.isSafeInteger(e.eventIndex));
+}
+function completeMasteryWin(ledger,scenario,after,run,scenarios){
+ if(after?.status!=='won'||!objectiveMet(after)||!scenario||!compatibleId(scenario.id)||
+   scenario.version!==RULES_VERSION||!masteryRunIsValid(run)||
+   !run.events.some(e=>e.type==='puzzle.completed'&&e.subjectId===scenario.id))
+  return {ledger,added:false,newUnlocks:[]};
+ const initial=ledger||emptyMasteryLedger();
+ const id=keyFor(scenario.id,1);
+ const old=initial.wins[id];
+ const types=new Set(run.events.map(e=>e.type));
+ const withCounter=types.has('spell.countered');
+ const withProtection=types.has('protection.granted');
+ const withLifeGain=run.events.some(e=>e.type==='life.changed'&&e.delta>0);
+ const withExile=run.events.some(e=>e.type==='permanent.zone_changed'&&e.to==='exile');
+ const par=scenario.par||2;
+ const stars=(after.used?.length||0)<=par?3:(after.used?.length||0)===par+1?2:1;
+ const scenarioIndex=scenarios.findIndex(s=>s.id===scenario.id);
+ if(scenarioIndex<0)return {ledger,added:false,newUnlocks:[]};
+ const record={
+  id:scenario.id,revision:1,rulesVersion:RULES_VERSION,
+  worldIndex:Math.floor(scenarioIndex/10),
+  galaxyIndex:Math.floor(scenarioIndex/50),
+  maxStars:Math.max(old?.maxStars||0,stars),
+  clean:!!(old?.clean||run.clean),
+  counter:!!(old?.counter||withCounter),
+  protection:!!(old?.protection||withProtection),
+  lifegain:!!(old?.lifegain||withLifeGain),
+  exile:!!(old?.exile||withExile)
+ };
+ const updated={...initial,wins:{...initial.wins,[id]:record}};
+ const prior=evaluateMastery(initial,MASTERY_CATALOG);
+ const current=evaluateMastery(updated,MASTERY_CATALOG);
+ const newUnlocks=current.filter((a,i)=>a.unlocked&&!prior[i].unlocked).map(a=>a.id);
+ return {ledger:updated,added:!old,newUnlocks};
+}
+function evaluateMastery(ledger,catalog=MASTERY_CATALOG){
+ const wins=Object.values(ledger?.wins||{}).filter(w=>w&&compatibleId(w.id)&&w.rulesVersion===RULES_VERSION);
+ const distinct=new Map(wins.map(w=>[keyFor(w.id,w.revision),w]));
+ const records=[...distinct.values()];
+ const worldCounts=new Map();
+ for(const r of records)worldCounts.set(r.worldIndex,(worldCounts.get(r.worldIndex)||0)+1);
+ const completedWorlds=[...worldCounts].filter(([world,count])=>Number.isInteger(world)&&count>=10).map(([world])=>world);
+ const metrics={
+  'classic-win':records.length,
+  'distinct-classic-wins':records.length,
+  'completed-worlds':completedWorlds.length,
+  'galaxies-with-completion':new Set(completedWorlds.map(world=>Math.floor(world/5))).size,
+  'distinct-clean-wins':records.filter(x=>x.clean).length,
+  'three-star-classic-wins':records.filter(x=>x.maxStars>=3).length,
+  'distinct-solved-with-counter':records.filter(x=>x.counter).length,
+  'distinct-solved-with-protection':records.filter(x=>x.protection).length,
+  'distinct-solved-with-lifegain':records.filter(x=>x.lifegain).length,
+  'distinct-solved-with-exile':records.filter(x=>x.exile).length
+ };
+ return catalog.achievements.map(a=>{
+  const eligible=!a.engineGate&&!a.requiresServerVerification&&a.status==='local-eligible';
+  const count=eligible?Math.min(a.threshold,metrics[a.metric]||0):0;
+  return {id:a.id,name:a.name,description:a.description,
+   reward:a.reward,threshold:a.threshold,progress:count,
+   unlocked:eligible&&count>=a.threshold,
+   lockedReason:eligible?null:a.requiresServerVerification?'Needs server-verified Daily wins':'Advanced rules not yet implemented',
+   localUnverified:true};
+ });
+}
+function safeMasteryLoad(raw){
+ if(!raw||raw.schemaVersion!==1||raw.catalogVersion!==1||raw.localUnverified!==true||
+  !raw.wins||typeof raw.wins!=='object'||Array.isArray(raw.wins))return emptyMasteryLedger();
+ const wins={};
+ for(const [key,value] of Object.entries(raw.wins).slice(0,250)){
+  if(!value||!compatibleId(value.id)||key!==keyFor(value.id,value.revision)||
+   value.revision!==1||value.rulesVersion!==RULES_VERSION||
+   !Number.isInteger(value.worldIndex)||value.worldIndex<0||value.worldIndex>=25||
+   !Number.isInteger(value.galaxyIndex)||value.galaxyIndex<0||value.galaxyIndex>=5||
+   !Number.isInteger(value.maxStars)||value.maxStars<1||value.maxStars>3)continue;
+  wins[key]={id:value.id,revision:1,rulesVersion:RULES_VERSION,
+   worldIndex:value.worldIndex,galaxyIndex:value.galaxyIndex,maxStars:value.maxStars,
+   clean:value.clean===true,counter:value.counter===true,
+   protection:value.protection===true,lifegain:value.lifegain===true,exile:value.exile===true};
+ }
+ return {...emptyMasteryLedger(),wins};
+}
+function readLocalMastery(store){
+ try{return safeMasteryLoad(JSON.parse(store.getItem(MASTERY_STORAGE_KEY)||'null'));}
+ catch{return emptyMasteryLedger();}
+}
+function writeLocalMastery(store,ledger){
+ try{store.setItem(MASTERY_STORAGE_KEY,JSON.stringify(safeMasteryLoad(ledger)));return true;}
+ catch{return false;}
+}
+
+
+
+
+
 
 
 
@@ -8176,6 +8781,9 @@ const dailyDate=dailyUtcDate();
 const dailyBound=dailyRoute?bindDailyScenario(dailyEntryForDate(dailyDate),scenarios):null;
 const dailyIndex=dailyBound?scenarios.findIndex(s=>s.id===dailyBound.puzzleId):-1;
 let dailySession='preview',dailyRecord=null,dailyPracticeMoves=0,dailyExpired=false;
+let masteryLedger=readLocalMastery(localStorage);
+let masteryRun=emptyMasteryRun();
+let masteryTransitionHistory=[];
 const isDaily=()=>dailyRoute&&dailyIndex>=0;
 const dailyReady=()=>isDaily()&&!dailyExpired&&dailyUtcDate()===dailyDate&&['practice','scored'].includes(dailySession)&&game?.status==='playing';
 const scoredDaily=()=>isDaily()&&dailySession==='scored';
@@ -8327,7 +8935,8 @@ function changeCase(n,force=false){
  spellVfx.cancel();closeWorldMap(false);clearDragFeedback();
  index=Math.max(0,Math.min(scenarios.length-1,n));selectedWorld=Math.floor(index/10);selectedGalaxy=Math.floor(index/50);
  if(!dailyRoute)try{localStorage.setItem('dc-stackbreaker-last-level',String(index));}catch{}
- game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;render();
+ game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;
+ masteryRun=emptyMasteryRun();masteryTransitionHistory=[];render();
 }
 function shortCard(u){
  const gone=u.zone!=='battlefield';const ability=game.hand.find(a=>a.sourceId===u.id&&!game.used.includes(a.id));
@@ -8484,7 +9093,28 @@ function render(){closeCardPreview();const s=game,p=scenarios[index],worldIndex=
  renderPlayPrompt();$('completed').textContent=Object.keys(progress).filter(id=>scenarios.some(s=>s.id===id)).length+' / '+scenarios.length+' SOLVED';$('log').innerHTML=s.log.slice(-14).reverse().map(x=>`<li>${esc(x)}</li>`).join('');$('version').textContent=RULES_VERSION;$('live').textContent=s.log.at(-1)||'Tap a land to produce mana.';
  if(dragSession)paintLegalDragTargets();
  refreshHandArrows();
+ renderMasteryPanel();
  if(dailyRoute)renderDailyStatus();
+}
+
+function renderMasteryPanel(){
+ const panel=$('masteryPanel');
+ if(!panel)return;
+ const items=evaluateMastery(masteryLedger);
+ const won=items.filter(x=>x.unlocked);
+ $('masteryCount').textContent=won.length+' / '+items.length+' LOCAL MILESTONES';
+ $('masterySummary').textContent=Object.keys(masteryLedger.wins).length+
+  ' unique Classic puzzles recorded since mastery was introduced · LOCAL / UNVERIFIED';
+ $('masteryList').innerHTML=items.map(a=>{
+  const title=esc(a.name);
+  const description=esc(a.description);
+  const state=a.lockedReason?'FUTURE · '+esc(a.lockedReason):
+   a.unlocked?'UNLOCKED LOCALLY':a.progress+' / '+a.threshold;
+  return '<li class="mastery-item '+(a.unlocked?'is-unlocked':a.lockedReason?'is-locked':'')+'">'+
+   '<span class="mastery-symbol" aria-hidden="true">'+(a.unlocked?'✦':a.lockedReason?'◇':'✧')+'</span>'+
+   '<span class="mastery-info"><strong>'+title+'</strong><small>'+description+'</small></span>'+
+   '<span class="mastery-state">'+state+'</span></li>';
+ }).join('');
 }
 
 function updateDailyCountdown(){
@@ -8575,7 +9205,22 @@ function pushState(s){
   dailyRecord=dailyAcceptedTransition(dailyRecord,game,s);
   writeLocalDaily(localStorage,dailyRecord);
  }else if(dailyRoute&&JSON.stringify(game)!==JSON.stringify(s))dailyPracticeMoves++;
+ let unlocked=[];
+ if(!dailyRoute){
+  masteryTransitionHistory.push(masteryRun);
+  masteryRun=appendMasteryTransition(masteryRun,game,s);
+  if(game.status==='playing'&&s.status==='won'){
+   const completed=completeMasteryWin(masteryLedger,scenarios[index],s,masteryRun,scenarios);
+   masteryLedger=completed.ledger;
+   writeLocalMastery(localStorage,masteryLedger);
+   unlocked=completed.newUnlocks;
+  }
+ }
  history.push(structuredClone(game));game=s;pendingPlay=null;armedCard=null;render();
+ if(unlocked.length){
+  const names=unlocked.map(id=>MASTERY_CATALOG.achievements.find(a=>a.id===id)?.name||id);
+  notify('✦ LOCAL MASTERY UNLOCK: '+names.join(', ')+' · UNVERIFIED PREVIEW');
+ }
 }
 function applyLand(id){
  if(dailyRoute&&!dailyReady())return;
@@ -8615,7 +9260,15 @@ function applyPass(){
   }
  }catch(e){notify(e.message)}
 }
-function undo(){if(dailyRoute&&dailySession!=='practice')return;spellVfx.cancel();pendingPlay=null;armedCard=null;if(!history.length){render();return;}game=history.pop();if(dailyRoute)dailyPracticeMoves=Math.max(0,dailyPracticeMoves-1);render()}
+function undo(){
+ if(dailyRoute&&dailySession!=='practice')return;
+ spellVfx.cancel();pendingPlay=null;armedCard=null;
+ if(!history.length){render();return;}
+ game=history.pop();
+ if(!dailyRoute)masteryRun=markMasteryRunUnclean(masteryTransitionHistory.pop()||emptyMasteryRun());
+ if(dailyRoute)dailyPracticeMoves=Math.max(0,dailyPracticeMoves-1);
+ render();
+}
 $('lands').addEventListener('click',e=>{const btn=e.target.closest('[data-land]');if(btn)applyLand(btn.dataset.land)});
 $('battlefield').addEventListener('click',e=>{
  const unit=e.target.closest('[data-unit]');if(!unit)return;
@@ -8707,7 +9360,7 @@ document.addEventListener('keydown',e=>{
 
 $('passButton').addEventListener('click',applyPass);$('undoButton').addEventListener('click',undo);$('restartButton').addEventListener('click',()=>{if(dailyRoute){if(dailySession==='practice')startDailyPractice();}else changeCase(index);});$('prevButton').addEventListener('click',()=>changeCase(index-1));$('nextButton').addEventListener('click',()=>{if(index<scenarios.length-1)changeCase(index+1)});
 $('scenarioSelect').addEventListener('change',e=>changeCase(Number(e.target.value)));
-$('hintButton').addEventListener('click',()=>{if(dailyRoute&&dailySession!=='practice')return;hint=!hint;render()});
+$('hintButton').addEventListener('click',()=>{if(dailyRoute&&dailySession!=='practice')return;hint=!hint;if(hint&&!dailyRoute)masteryRun=markMasteryRunUnclean(masteryRun);render()});
 // Desktop: legal targets get a soft glow; the one under the dragged card
 // brightens to confirm that releasing here will cast the spell at it.
 $('hand').addEventListener('dragstart',e=>{const source=e.target.closest('[data-drag-card]');if(!source||game.status!=='playing'){e.preventDefault();return;}

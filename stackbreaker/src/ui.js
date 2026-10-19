@@ -7,6 +7,7 @@ import campaignExpansion from '../data/campaign-expansion.json' with {type:'json
 import {GALAXIES,makeWorlds,generateStages} from './galaxies.js';
 import {commanderScenario,HAND_SIZE} from './commander.js';
 import {dailyUtcDate,dailyCountdown,dailyEntryForDate,bindDailyScenario,localDailyStart,dailyAcceptedTransition,readLocalDaily,writeLocalDaily,dailyShareText} from './daily.js';
+import {MASTERY_CATALOG,readLocalMastery,writeLocalMastery,emptyMasteryRun,appendMasteryTransition,markMasteryRunUnclean,completeMasteryWin,evaluateMastery} from './mastery.js';
 const extraStages=generateStages([...coreScenarios,...campaignExpansion]);
 const scenarios=[...coreScenarios,...campaignExpansion,...extraStages].map((scenario,i)=>commanderScenario(scenario,i));
 const chapters=makeWorlds();
@@ -15,6 +16,9 @@ const dailyDate=dailyUtcDate();
 const dailyBound=dailyRoute?bindDailyScenario(dailyEntryForDate(dailyDate),scenarios):null;
 const dailyIndex=dailyBound?scenarios.findIndex(s=>s.id===dailyBound.puzzleId):-1;
 let dailySession='preview',dailyRecord=null,dailyPracticeMoves=0,dailyExpired=false;
+let masteryLedger=readLocalMastery(localStorage);
+let masteryRun=emptyMasteryRun();
+let masteryTransitionHistory=[];
 const isDaily=()=>dailyRoute&&dailyIndex>=0;
 const dailyReady=()=>isDaily()&&!dailyExpired&&dailyUtcDate()===dailyDate&&['practice','scored'].includes(dailySession)&&game?.status==='playing';
 const scoredDaily=()=>isDaily()&&dailySession==='scored';
@@ -166,7 +170,8 @@ function changeCase(n,force=false){
  spellVfx.cancel();closeWorldMap(false);clearDragFeedback();
  index=Math.max(0,Math.min(scenarios.length-1,n));selectedWorld=Math.floor(index/10);selectedGalaxy=Math.floor(index/50);
  if(!dailyRoute)try{localStorage.setItem('dc-stackbreaker-last-level',String(index));}catch{}
- game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;render();
+ game=createGame(scenarios[index]);history=[];hint=false;pendingPlay=null;armedCard=null;
+ masteryRun=emptyMasteryRun();masteryTransitionHistory=[];render();
 }
 function shortCard(u){
  const gone=u.zone!=='battlefield';const ability=game.hand.find(a=>a.sourceId===u.id&&!game.used.includes(a.id));
@@ -323,7 +328,28 @@ function render(){closeCardPreview();const s=game,p=scenarios[index],worldIndex=
  renderPlayPrompt();$('completed').textContent=Object.keys(progress).filter(id=>scenarios.some(s=>s.id===id)).length+' / '+scenarios.length+' SOLVED';$('log').innerHTML=s.log.slice(-14).reverse().map(x=>`<li>${esc(x)}</li>`).join('');$('version').textContent=RULES_VERSION;$('live').textContent=s.log.at(-1)||'Tap a land to produce mana.';
  if(dragSession)paintLegalDragTargets();
  refreshHandArrows();
+ renderMasteryPanel();
  if(dailyRoute)renderDailyStatus();
+}
+
+function renderMasteryPanel(){
+ const panel=$('masteryPanel');
+ if(!panel)return;
+ const items=evaluateMastery(masteryLedger);
+ const won=items.filter(x=>x.unlocked);
+ $('masteryCount').textContent=won.length+' / '+items.length+' LOCAL MILESTONES';
+ $('masterySummary').textContent=Object.keys(masteryLedger.wins).length+
+  ' unique Classic puzzles recorded since mastery was introduced · LOCAL / UNVERIFIED';
+ $('masteryList').innerHTML=items.map(a=>{
+  const title=esc(a.name);
+  const description=esc(a.description);
+  const state=a.lockedReason?'FUTURE · '+esc(a.lockedReason):
+   a.unlocked?'UNLOCKED LOCALLY':a.progress+' / '+a.threshold;
+  return '<li class="mastery-item '+(a.unlocked?'is-unlocked':a.lockedReason?'is-locked':'')+'">'+
+   '<span class="mastery-symbol" aria-hidden="true">'+(a.unlocked?'✦':a.lockedReason?'◇':'✧')+'</span>'+
+   '<span class="mastery-info"><strong>'+title+'</strong><small>'+description+'</small></span>'+
+   '<span class="mastery-state">'+state+'</span></li>';
+ }).join('');
 }
 
 function updateDailyCountdown(){
@@ -414,7 +440,22 @@ function pushState(s){
   dailyRecord=dailyAcceptedTransition(dailyRecord,game,s);
   writeLocalDaily(localStorage,dailyRecord);
  }else if(dailyRoute&&JSON.stringify(game)!==JSON.stringify(s))dailyPracticeMoves++;
+ let unlocked=[];
+ if(!dailyRoute){
+  masteryTransitionHistory.push(masteryRun);
+  masteryRun=appendMasteryTransition(masteryRun,game,s);
+  if(game.status==='playing'&&s.status==='won'){
+   const completed=completeMasteryWin(masteryLedger,scenarios[index],s,masteryRun,scenarios);
+   masteryLedger=completed.ledger;
+   writeLocalMastery(localStorage,masteryLedger);
+   unlocked=completed.newUnlocks;
+  }
+ }
  history.push(structuredClone(game));game=s;pendingPlay=null;armedCard=null;render();
+ if(unlocked.length){
+  const names=unlocked.map(id=>MASTERY_CATALOG.achievements.find(a=>a.id===id)?.name||id);
+  notify('✦ LOCAL MASTERY UNLOCK: '+names.join(', ')+' · UNVERIFIED PREVIEW');
+ }
 }
 function applyLand(id){
  if(dailyRoute&&!dailyReady())return;
@@ -454,7 +495,15 @@ function applyPass(){
   }
  }catch(e){notify(e.message)}
 }
-function undo(){if(dailyRoute&&dailySession!=='practice')return;spellVfx.cancel();pendingPlay=null;armedCard=null;if(!history.length){render();return;}game=history.pop();if(dailyRoute)dailyPracticeMoves=Math.max(0,dailyPracticeMoves-1);render()}
+function undo(){
+ if(dailyRoute&&dailySession!=='practice')return;
+ spellVfx.cancel();pendingPlay=null;armedCard=null;
+ if(!history.length){render();return;}
+ game=history.pop();
+ if(!dailyRoute)masteryRun=markMasteryRunUnclean(masteryTransitionHistory.pop()||emptyMasteryRun());
+ if(dailyRoute)dailyPracticeMoves=Math.max(0,dailyPracticeMoves-1);
+ render();
+}
 $('lands').addEventListener('click',e=>{const btn=e.target.closest('[data-land]');if(btn)applyLand(btn.dataset.land)});
 $('battlefield').addEventListener('click',e=>{
  const unit=e.target.closest('[data-unit]');if(!unit)return;
@@ -546,7 +595,7 @@ document.addEventListener('keydown',e=>{
 
 $('passButton').addEventListener('click',applyPass);$('undoButton').addEventListener('click',undo);$('restartButton').addEventListener('click',()=>{if(dailyRoute){if(dailySession==='practice')startDailyPractice();}else changeCase(index);});$('prevButton').addEventListener('click',()=>changeCase(index-1));$('nextButton').addEventListener('click',()=>{if(index<scenarios.length-1)changeCase(index+1)});
 $('scenarioSelect').addEventListener('change',e=>changeCase(Number(e.target.value)));
-$('hintButton').addEventListener('click',()=>{if(dailyRoute&&dailySession!=='practice')return;hint=!hint;render()});
+$('hintButton').addEventListener('click',()=>{if(dailyRoute&&dailySession!=='practice')return;hint=!hint;if(hint&&!dailyRoute)masteryRun=markMasteryRunUnclean(masteryRun);render()});
 // Desktop: legal targets get a soft glow; the one under the dragged card
 // brightens to confirm that releasing here will cast the spell at it.
 $('hand').addEventListener('dragstart',e=>{const source=e.target.closest('[data-drag-card]');if(!source||game.status!=='playing'){e.preventDefault();return;}
