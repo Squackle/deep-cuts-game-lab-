@@ -68,7 +68,10 @@ test("revision-four metrics never blend with historical revision-three stage met
  assert.match(json,/mh-251@3/);
  assert.match(json,/mh-251@4/);
  assert.match(json,/"sampleAttempts": 2/);
- assert.doesNotMatch(json,/userAgent|timestamp|email|userId|sessionId|actionTrace/);
+ const parsed=JSON.parse(json);
+ for(const entry of parsed.vaults)assert.deepEqual(Object.keys(entry).sort(),
+  ["puzzle","attempts","wins","exits","restarts","undos","failedCasts","seconds","ratings"].sort(),
+  "exports contain only allowed aggregate fields");
 });
 
 test("invalid browser storage records, negative totals and identity keys are dropped",()=>{
