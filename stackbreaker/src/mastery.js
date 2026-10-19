@@ -1,10 +1,10 @@
 import {CARDS,RULES_VERSION} from './cards.js';
+import {objectiveMet} from './engine.js';
 import masteryCatalog from '../data/mastery-catalog.json' with {type:'json'};
 // Game Lab only. This records observed engine transitions for LOCAL / UNVERIFIED
 // mastery previews. It NEVER signs results, awards public profile items, or uses VFX.
 export const MASTERY_STORAGE_KEY='dc-stackbreaker-mastery-local-v1';
 export const MASTERY_CATALOG=masteryCatalog;
-const clone=value=>JSON.parse(JSON.stringify(value));
 const compatibleId=id=>/^(?:sb-\d{2}|sg-\d{3})$/.test(String(id||''));
 const keyFor=(id,revision=1)=>id+'@'+revision;
 export function emptyMasteryLedger(){
@@ -20,7 +20,9 @@ const event=(idx,events,type,subjectId,causeId,extra={})=>{
 };
 export function observeMasteryTransition(before,after,actionIndex=0){
  if(before?.status!=='playing'||!after||!Number.isSafeInteger(actionIndex)||actionIndex<0)return [];
- if(JSON.stringify(before)===JSON.stringify(after))return [];
+ const gameFields=['step','status','currentActor','passCount','mana','landPlayed','used','hand',
+  'lands','stack','units','enchantments','life','preventedSpellDamage'];
+ if(gameFields.every(field=>JSON.stringify(before[field])===JSON.stringify(after[field])))return [];
  const result=[],cause=after.stack?.at(-1)?.id||before.stack?.at(-1)?.id||'action';
  event(actionIndex,result,'action.accepted',before.id,cause);
  if(after.step>before.step&&after.used?.length===before.used?.length)
@@ -58,7 +60,7 @@ export function observeMasteryTransition(before,after,actionIndex=0){
   const delta=(after.life?.[player]||0)-(before.life?.[player]||0);
   if(delta)event(actionIndex,result,'life.changed',player,cause,{delta});
  }
- if(after.status==='won')event(actionIndex,result,'puzzle.completed',before.id,'objective',{outcome:'won'});
+ if(after.status==='won'&&objectiveMet(after))event(actionIndex,result,'puzzle.completed',before.id,'objective',{outcome:'won'});
  return result;
 }
 export function appendMasteryTransition(run,before,after){
@@ -73,7 +75,7 @@ export function masteryRunIsValid(run){
   Number.isSafeInteger(e.actionIndex)&&Number.isSafeInteger(e.eventIndex));
 }
 export function completeMasteryWin(ledger,scenario,after,run,scenarios){
- if(after?.status!=='won'||!scenario||!compatibleId(scenario.id)||
+ if(after?.status!=='won'||!objectiveMet(after)||!scenario||!compatibleId(scenario.id)||
    scenario.version!==RULES_VERSION||!masteryRunIsValid(run)||
    !run.events.some(e=>e.type==='puzzle.completed'&&e.subjectId===scenario.id))
   return {ledger,added:false,newUnlocks:[]};
