@@ -94,6 +94,8 @@ export function renderResolutionFx(root,layer,view,event,anchors,mode){
  layer.style.setProperty?.('--spell-hue',spellColor(event.colors));
  const scene=el(root,'div','sb-fx-scene sb-fx-'+mode,layer);
  scene.setAttribute('aria-hidden','true');
+ const color=event.colors?.find(c=>['W','U','B','R','G'].includes(c))||'C';
+ scene.setAttribute('data-fx-color',color);
  scene.style.setProperty?.('--spell-hue',spellColor(event.colors));
  const family={
   heal:'✦',exile:'◇',summon:'✧',bounce:'↶',shield:'⬡',destroy:'✕',
