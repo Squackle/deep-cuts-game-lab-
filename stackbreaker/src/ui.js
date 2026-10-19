@@ -8,6 +8,7 @@ import {GALAXIES,makeWorlds,generateStages} from './galaxies.js';
 import {commanderScenario,HAND_SIZE} from './commander.js';
 import {dailyUtcDate,dailyCountdown,dailyEntryForDate,bindDailyScenario,localDailyStart,dailyAcceptedTransition,readLocalDaily,writeLocalDaily,dailyShareText} from './daily.js';
 import {MASTERY_CATALOG,readLocalMastery,writeLocalMastery,emptyMasteryRun,appendMasteryTransition,markMasteryRunUnclean,completeMasteryWin,evaluateMastery} from './mastery.js';
+import {COSMETIC_TYPES,COSMETIC_META,cosmeticChoices,emptyCosmeticEquip,readCosmeticEquip,writeCosmeticEquip,equipLocalCosmetic,effectiveCosmeticEquip,cosmeticAppearanceOnly,hasCosmeticGrant} from './cosmetics.js';
 const extraStages=generateStages([...coreScenarios,...campaignExpansion]);
 const scenarios=[...coreScenarios,...campaignExpansion,...extraStages].map((scenario,i)=>commanderScenario(scenario,i));
 const chapters=makeWorlds();
@@ -17,6 +18,7 @@ const dailyBound=dailyRoute?bindDailyScenario(dailyEntryForDate(dailyDate),scena
 const dailyIndex=dailyBound?scenarios.findIndex(s=>s.id===dailyBound.puzzleId):-1;
 let dailySession='preview',dailyRecord=null,dailyPracticeMoves=0,dailyExpired=false;
 let masteryLedger=readLocalMastery(localStorage);
+let localCosmetics=readCosmeticEquip(localStorage,masteryLedger);
 let masteryRun=emptyMasteryRun();
 let masteryTransitionHistory=[];
 const isDaily=()=>dailyRoute&&dailyIndex>=0;
@@ -329,6 +331,7 @@ function render(){closeCardPreview();const s=game,p=scenarios[index],worldIndex=
  if(dragSession)paintLegalDragTargets();
  refreshHandArrows();
  renderMasteryPanel();
+ renderCosmeticGallery();
  if(dailyRoute)renderDailyStatus();
 }
 
@@ -352,6 +355,53 @@ function renderMasteryPanel(){
  }).join('');
 }
 
+function renderCosmeticGallery(){
+ const gallery=$('cosmeticGallery');
+ if(!gallery)return;
+ localCosmetics=effectiveCosmeticEquip(localCosmetics,masteryLedger);
+ const appearance=cosmeticAppearanceOnly(localCosmetics);
+ const preview=$('cosmeticsPreview');
+ preview.setAttribute('data-frame',appearance.frame);
+ preview.setAttribute('data-vfx',appearance.vfx);
+ $('cosmeticsTitle').textContent=appearance.label;
+ $('cosmeticsPreviewText').textContent=
+  (appearance.frame==='none'?'Default':'Equipped '+appearance.frame)+' frame · '+
+  (appearance.vfx==='none'?'default':'Equipped '+appearance.vfx)+' spell effects · LOCAL / UNVERIFIED';
+ const titles={title:'TITLES',frame:'MANA FRAMES',vfx:'SPELL EFFECT STYLES'};
+ gallery.innerHTML=COSMETIC_TYPES.map(type=>{
+  const options=[{id:null,name:'Default',achievementId:null},...cosmeticChoices(type)];
+  return '<section class="cosmetics-group" aria-label="'+titles[type]+'"><h3>'+titles[type]+'</h3><div class="cosmetics-options">'+
+   options.map(option=>{
+    const id=option.id;
+    const owned=id===null||hasCosmeticGrant(masteryLedger,type,id);
+    const selected=localCosmetics[type]===id;
+    const lockedLabel=owned?(selected?'EQUIPPED':'EQUIP'):'LOCKED';
+    const action=id===null?'':esc(id);
+    const swatch=type==='title'?'✧':'✦';
+    return '<button type="button" class="cosmetic-choice" data-cosmetic-type="'+type+
+     '" data-cosmetic-id="'+action+'" aria-pressed="'+String(selected)+'"'+(owned?'':' disabled')+
+     ' aria-label="'+esc(option.name)+' — '+lockedLabel+'">'+
+     '<span><span class="cosmetic-swatch" aria-hidden="true">'+swatch+'</span> '+esc(option.name)+'</span>'+
+     '<small>'+lockedLabel+'</small></button>';
+   }).join('')+'</div></section>';
+ }).join('');
+}
+function equipSelectedCosmetic(type,id){
+ const result=equipLocalCosmetic(localCosmetics,masteryLedger,type,id);
+ if(!result.ok){$('cosmeticStatus').textContent=result.reason;return;}
+ if(!writeCosmeticEquip(localStorage,result.equip,masteryLedger)){
+  $('cosmeticStatus').textContent='Local storage unavailable; this change was not saved.';return;
+ }
+ localCosmetics=result.equip;
+ renderCosmeticGallery();
+ $('cosmeticStatus').textContent=id===null?'Default '+type+' restored · LOCAL / UNVERIFIED':
+  (COSMETIC_META[id]||id)+' equipped locally · LOCAL / UNVERIFIED';
+}
+function decoratedSpellEvent(event){
+ if(!event)return event;
+ const effective=effectiveCosmeticEquip(localCosmetics,masteryLedger);
+ return {...event,cosmeticTheme:effective.vfx};
+}
 function updateDailyCountdown(){
  if(!dailyRoute)return;
  $('dailyCountdown').textContent=dailyCountdown();
@@ -470,7 +520,7 @@ function applyLand(id){
   pushState(after);
   if(actuallyTapped&&point){
    try{
-    spellVfx.play({card:land.card,fxType:'tap',verifiedTap:true,colors:[LANDS[land.card]?.mana||'C'],
+    spellVfx.play({card:land.card,fxType:'tap',verifiedTap:true,cosmeticTheme:effectiveCosmeticEquip(localCosmetics,masteryLedger).vfx,colors:[LANDS[land.card]?.mana||'C'],
      sourceStackId:id,outcome:'resolved'},
      {source:point,target:point});
    }catch(_vfxError){}
@@ -491,7 +541,7 @@ function applyPass(){
   pushState(after);
   if(event){
    notify(describeSpellVfxForA11y(event));
-   try{spellVfx.play(event,anchors)}catch(_vfxError){}
+   try{spellVfx.play(decoratedSpellEvent(event),anchors)}catch(_vfxError){}
   }
  }catch(e){notify(e.message)}
 }
@@ -593,6 +643,12 @@ document.addEventListener('keydown',e=>{
  else if(!e.shiftKey&&document.activeElement===focusable.at(-1)){e.preventDefault();focusable[0].focus();}
 });
 
+$('cosmeticGallery').addEventListener('click',e=>{
+ const button=e.target.closest('button[data-cosmetic-type]');
+ if(!button||button.disabled)return;
+ const id=button.dataset.cosmeticId||null;
+ equipSelectedCosmetic(button.dataset.cosmeticType,id);
+});
 $('passButton').addEventListener('click',applyPass);$('undoButton').addEventListener('click',undo);$('restartButton').addEventListener('click',()=>{if(dailyRoute){if(dailySession==='practice')startDailyPractice();}else changeCase(index);});$('prevButton').addEventListener('click',()=>changeCase(index-1));$('nextButton').addEventListener('click',()=>{if(index<scenarios.length-1)changeCase(index+1)});
 $('scenarioSelect').addEventListener('change',e=>changeCase(Number(e.target.value)));
 $('hintButton').addEventListener('click',()=>{if(dailyRoute&&dailySession!=='practice')return;hint=!hint;if(hint&&!dailyRoute)masteryRun=markMasteryRunUnclean(masteryRun);render()});
