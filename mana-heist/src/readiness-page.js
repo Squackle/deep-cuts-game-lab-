@@ -21,7 +21,7 @@ function download(content,filename,type){
 function paintRow(row){
  const tr=document.createElement("tr");
  const id=document.createElement("td"),link=document.createElement("a");
- link.href="./?vault="+encodeURIComponent(row.id);
+ link.href="./";
  // Link to a game route, not a claim that the main game's router supports
  // query-launching a vault. Explain inspection happens within the game.
  link.textContent=row.id+" · "+row.title;link.title="Open Mana Heist campaign to choose this vault";
