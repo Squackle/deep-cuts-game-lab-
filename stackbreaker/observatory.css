@@ -666,3 +666,17 @@ main{max-width:1640px}
   display:none!important;animation:none!important;transition:none!important
  }
 }
+
+
+/* VFX final pass: leaner dust on small screens and high-contrast accessibility. */
+@media(max-width:480px){
+ .sb-vfx-dust-particle:nth-child(n+17){display:none}
+ .sb-vfx-dust-host{max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px)}
+ .sb-vfx-dust-card{box-shadow:0 0 5px #79e3f644,0 3px 10px #0009}
+ .sb-vfx-bolt-glow{filter:drop-shadow(0 0 5px #74cdff)}
+ .sb-vfx-fire-orb{filter:drop-shadow(0 0 8px #ff8c1e)}
+}
+@media(forced-colors:active){
+ .sb-vfx-layer{forced-color-adjust:none}
+ .sb-vfx-dust-label{background:#111;color:#fff}
+}
