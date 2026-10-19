@@ -15,7 +15,7 @@ function example(){
  const capstone=LEVELS.find(l=>l.revision===1||l.revision===2);
  assert.ok(capstone,"versioned scored capstone for archival export");
  return {
-  campaign:{v:2,index:123,bests:{"mh-001":base("mh-001",1,0),"mh-250":base("mh-250",2,0)}},
+  campaign:{v:2,index:123,bests:{"mh-01":base("mh-01",1,0),"mh-250":base("mh-250",2,0)}},
   capstones:{v:1,bests:{[capstone.id]:scored(2,1,15)}},
   variety:{v:1,bests:{"mh-251":scored(2,1,9)}},
   remixes:{v:1,bests:{"mh-251":scored(1,0,5)}},
@@ -70,9 +70,9 @@ test("revised-board medals and archived version-three scores remain distinct",()
 });
 test("import merges better records, keeps stronger current ones and unions lesson completion",()=>{
  const local=example(),incoming=example();
- local.campaign.bests["mh-001"]=base("mh-001",1,0);
- incoming.campaign.bests["mh-001"]=base("mh-001",2,1);
- incoming.campaign.bests["mh-002"]=base("mh-002",1,0);
+ local.campaign.bests["mh-01"]=base("mh-01",1,0);
+ incoming.campaign.bests["mh-01"]=base("mh-01",2,1);
+ incoming.campaign.bests["mh-02"]=base("mh-02",1,0);
  incoming.campaign.index=499;
  local.learn.completed=[0,1,26];local.learn.last=26;
  incoming.learn.completed=[0,1,2,27];incoming.learn.last=27;
@@ -80,8 +80,8 @@ test("import merges better records, keeps stronger current ones and unions lesso
  const result=previewGuestRestore(local,parseGuestBackup(createGuestBackup(incoming)));
  assert.equal(result.changed,true);
  assert.equal(result.sections.campaign.index,123,"existing active last stage stays");
- assert.deepEqual(result.sections.campaign.bests["mh-001"],base("mh-001",1,0));
- assert.deepEqual(result.sections.campaign.bests["mh-002"],base("mh-002",1,0));
+ assert.deepEqual(result.sections.campaign.bests["mh-01"],base("mh-01",1,0));
+ assert.deepEqual(result.sections.campaign.bests["mh-02"],base("mh-02",1,0));
  assert.deepEqual(result.sections.learn.completed,[0,1,2,26,27]);
  assert.equal(result.sections.learn.last,26);
  assert.equal(result.addedLessons,2);
@@ -93,7 +93,7 @@ test("import merges better records, keeps stronger current ones and unions lesso
 test("unsupported/wrong version and incomplete or oversized backup files are rejected before writes",()=>{
  const valid=JSON.parse(createGuestBackup(example()));
  const mutator=fn=>{const data=structuredClone(valid);fn(data);return JSON.stringify(data);};
- assert.throws(()=>parseGuestBackup("not json"),/valid JSON/);
+ assert.throws(()=>parseGuestBackup("not valid json"),/valid JSON/);
  assert.throws(()=>parseGuestBackup("{}"),/supported Mana Heist/);
  assert.throws(()=>parseGuestBackup("x".repeat(MAX_BACKUP_BYTES+1)),/oversized/);
  assert.throws(()=>parseGuestBackup(mutator(d=>d.version=2)),/supported Mana Heist/);
@@ -104,28 +104,28 @@ test("unsupported/wrong version and incomplete or oversized backup files are rej
 });
 test("malformed, unknown and impossible stage results are discarded not applied",()=>{
  const incoming=example();
- incoming.campaign.bests["mh-001"]={turn:0,spentLife:0};
+ incoming.campaign.bests["mh-01"]={turn:0,spentLife:0};
  incoming.campaign.bests["fake-stage"]={turn:1,spentLife:0};
  incoming.campaign.bests["__proto__"]={turn:1,spentLife:0};
  incoming.learn.completed=[0,0,27,28,999,-1,"4"];
- incoming.capstones.bests["mh-001"]=scored(1,0,1);
- incoming.variety.bests["mh-001"]=scored(1,0,1);
- incoming.remixes.bests["mh-001"]=scored(1,0,1);
+ incoming.capstones.bests["mh-01"]=scored(1,0,1);
+ incoming.variety.bests["mh-01"]=scored(1,0,1);
+ incoming.remixes.bests["mh-01"]=scored(1,0,1);
  incoming.remixes.bests["mh-251"]=scored(50,0,1);
  incoming.bonus.bests["mh-bonus-01"].stars=8;
  const sections=parseGuestBackup(createGuestBackup(incoming));
- assert.equal(Object.hasOwn(sections.campaign.bests,"mh-001"),false);
+ assert.equal(Object.hasOwn(sections.campaign.bests,"mh-01"),false);
  assert.equal(Object.hasOwn(sections.campaign.bests,"fake-stage"),false);
- assert.equal(Object.hasOwn(sections.capstones.bests,"mh-001"),false);
- assert.equal(Object.hasOwn(sections.variety.bests,"mh-001"),false);
- assert.equal(Object.hasOwn(sections.remixes.bests,"mh-001"),false);
+ assert.equal(Object.hasOwn(sections.capstones.bests,"mh-01"),false);
+ assert.equal(Object.hasOwn(sections.variety.bests,"mh-01"),false);
+ assert.equal(Object.hasOwn(sections.remixes.bests,"mh-01"),false);
  assert.equal(Object.hasOwn(sections.remixes.bests,"mh-251"),false);
  assert.equal(Object.hasOwn(sections.bonus.bests,"mh-bonus-01"),false);
  assert.deepEqual(sections.learn.completed,[0,27]);
 });
 test("only approved progress keys are written, unrelated local data is untouched",()=>{
  const old=example(),incoming=example();
- incoming.campaign.bests["mh-003"]=base("mh-003",1,0);
+ incoming.campaign.bests["mh-03"]=base("mh-03",1,0);
  const source=storage({"dc-mana-heist-playtest-v1":"KEEP METRICS","dc-mana-heist-playtest-optin-v1":"yes","dc-mana-heist-device-qa-v1":"KEEP QA"});
  for(const [name,key] of Object.entries(SAVE_KEYS))source.setItem(key,JSON.stringify(old[name]));
  const plan=previewGuestRestore(readGuestSaves(key=>source.getItem(key)),incoming);
@@ -134,7 +134,7 @@ test("only approved progress keys are written, unrelated local data is untouched
  assert.equal(source.getItem("dc-mana-heist-playtest-v1"),"KEEP METRICS");
  assert.equal(source.getItem("dc-mana-heist-device-qa-v1"),"KEEP QA");
  assert.equal(source.getItem("dc-mana-heist-playtest-optin-v1"),"yes");
- assert.deepEqual(Object.keys(JSON.parse(source.getItem(SAVE_KEYS.campaign)).bests).sort(),["mh-001","mh-003","mh-250"].sort());
+ assert.deepEqual(Object.keys(JSON.parse(source.getItem(SAVE_KEYS.campaign)).bests).sort(),["mh-01","mh-03","mh-250"].sort());
  assert.deepEqual(JSON.parse(source.getItem(SAVE_KEYS.learn)).completed,[0,1,26]);
 });
 test("storage failures roll back previously written progress keys where possible",()=>{
