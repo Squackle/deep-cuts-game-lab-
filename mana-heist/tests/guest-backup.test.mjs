@@ -94,7 +94,7 @@ test("unsupported/wrong version and incomplete or oversized backup files are rej
  const valid=JSON.parse(createGuestBackup(example()));
  const mutator=fn=>{const data=structuredClone(valid);fn(data);return JSON.stringify(data);};
  assert.throws(()=>parseGuestBackup("not valid json"),/valid JSON/);
- assert.throws(()=>parseGuestBackup("{}"),/supported Mana Heist/);
+ assert.throws(()=>parseGuestBackup('{"hello":"world"}'),/supported Mana Heist/);
  assert.throws(()=>parseGuestBackup("x".repeat(MAX_BACKUP_BYTES+1)),/oversized/);
  assert.throws(()=>parseGuestBackup(mutator(d=>d.version=2)),/supported Mana Heist/);
  assert.throws(()=>parseGuestBackup(mutator(d=>delete d.sections.learn)),/sections are incomplete/);
