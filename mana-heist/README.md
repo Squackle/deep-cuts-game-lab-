@@ -10,6 +10,10 @@
 
 > **Latest lab UX (Tabletop Flow, Oct 15):** Curved selectable card hand, battlefield ABOVE hand, readable rotated/tapped lands, mana poured into the optional-to-stir cauldron, **deliberate Cast Spell by default**, optional auto-cast, short contextual prompts, and a collapsed optional field guide. Select a land and press Play selected land (or drag it onto the battlefield). View Card or focus + I opens the full printing. Generic costs now display Magic's numbered symbol, not the colorless diamond. All 250 IDs and the v2 guest save key are preserved. This is the isolated Game Lab prototype; it is not the rights-cleared public 1.0 release.
 
+## Borrowed Colors — opponent mana and life-risk lessons (Oct 19, 2026)
+
+The Game Lab Learn Mana track now has **28** exercises. Lessons 27–28 teach *Fellwar Stone* (an explicit hypothetical opponent-land color snapshot: no imaginary colors or colorless) and *Talisman of Dominance* (colorless with no damage versus blue/black with one damage, represented as unprevented life loss in the Lab). Both use real mana actions with source-specific notes, tests, and independent unstarred lesson progress. The **500 scored vaults and their existing guest medals remain unchanged**. See [rules, verification, limitations and rollback](release/OPPONENT-MANA-LESSONS-20261019.md).
+
 ## Oracle-backed mana variety — six tactical families (Oct 17, 2026)
 
 The repeated Galaxy VI–X black-mana circuit has been **replaced in the Game Lab test branch** with five genuine mana strategies per 10-vault world, plus a black-mana-engine minority family and a completely redesigned six-ward finale. Cards include genuine High Tide/Island scaling, opponent-dependent Mana Geyser, accumulating Rite of Flame, paid Signet/Lens/Bluffs conversions, Thran Dynamo, Gilded Lotus, Nyx Lotus, Chromatic Lantern, Basalt Monolith and Voltaic Key. Final vault mh-500 now uses **High Tide, Mana Geyser and Rite of Flame across three turns**, not three identical Dark Rituals. Every changed vault has a constructive legal-action replay test; these are not optimality or empirical difficulty proofs.
