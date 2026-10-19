@@ -20,6 +20,7 @@ import {SAGE_LESSONS} from "./sage-lessons.js";
 import {BONUS_TRIALS,BONUS_TRIAL_STORAGE_KEY,normalizeBonusBests,betterBonusScore} from "./bonus-trials.js";
 import {PLAYTEST_KEY,PLAYTEST_OPT_KEY,blankPlaytest,normalizePlaytest,beginPlaytest,countPlaytestEvent,finishPlaytest,ratePlaytest,exportPlaytest} from "./playtest-metrics.js";
 import {navigateCardRack} from "./keyboard-rack.js";
+import {guestMilestones} from "./guest-milestones.js";
 import {hintConcept,legalContinuation,hintInstruction} from "./verified-hints.js";
 import {MAX_BACKUP_BYTES,readGuestSaves,createGuestBackup,parseGuestBackup,previewGuestRestore,applyGuestRestore} from "./guest-backup.js";
 import {DEVICE_QA_KEY,DEVICE_QA_CHECKS,DEVICE_QA_STATUSES,blankDeviceQA,normalizeDeviceQA,setDeviceContext,setDeviceQAResult,summarizeDeviceQA,exportDeviceQA} from "./device-qa.js";
@@ -722,7 +723,22 @@ function render(pendingId=null){
  choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap battlefield lands for mana; tap a hand card to play it or cast a ritual.",[]);
  selectedMessage="";
 }
+function renderGuestMilestones(){
+ const outcome=guestMilestones({bests:displayBests(),learnCompleted:learnProgress.completed,
+  bonusBests:trialBests,remixBests});
+ const root=el("guestMilestoneGrid");root.replaceChildren();
+ for(const badge of outcome.badges){
+  const item=document.createElement("div");
+  item.className="guest-milestone"+(badge.earned?" earned":"");
+  const heading=document.createElement("strong");
+  heading.textContent=(badge.earned?"★ ":"◇ ")+badge.name;
+  const explanation=document.createElement("span");explanation.textContent=badge.meaning;
+  const status=document.createElement("small");status.textContent=badge.earned?"EARNED ON THIS DEVICE":"NOT YET EARNED";
+  item.append(heading,explanation,status);root.append(item);
+ }
+}
 function showMap(){
+ renderGuestMilestones();
  const wasPlaying=document.body.classList.contains("in-heist");
  const leavingTrial=trialIndex;
  closePlaytest("exit");pendingRatingKey=null;
