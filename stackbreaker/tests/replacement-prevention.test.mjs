@@ -89,7 +89,7 @@ test('Replay refuses extra moves, unknown actions and incorrect rules versions',
  assert.throws(()=>replayReplacement(scene(0),[{action:'unlimited'}]),/Invalid replay action/);
  assert.throws(()=>replayReplacement(scene(0),Array(31).fill({action:'choose',effectId:'shield',actor:'player'})),/Invalid replay length/);
  let s=replayReplacement(scene(0),scene(0).solution);
- assert.throws(()=>chooseReplacement(s,{effectId:'double',actor:'player'}),/closed/);
+ assert.throws(()=>chooseReplacement(s,{effectId:'double',actor:'player'}),/already ended/);
 });
 test('Step 8 is Lab-only, keeps the 250 Classic IDs and does not write saves',()=>{
  const core=JSON.parse(read('data/scenarios.json'));
