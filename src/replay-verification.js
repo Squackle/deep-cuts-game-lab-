@@ -38,5 +38,11 @@ export function replayScore(seed,events,expected,mode="hunt"){
  if(!keys.every(k=>Number.isInteger(expected[k])&&expected[k]===run[k]))
   return {ok:false,reason:"Score or evolution tally does not match replay."};
  if(run.runTicks!==expected.ticks)return {ok:false,reason:"Step count does not match replay."};
- return {ok:true,score:run.score,kills:run.kills,evolutions:run.evolutionsChosen,ticks:run.runTicks};
+ // New 1.5.4 callers can verify the exact outcome as well as the score. Legacy
+ // local test fixtures without 'outcome' remain valid. Public server integration
+ // must REQUIRE it when adopting this rules version.
+ if(expected.outcome!==undefined&&expected.outcome!==run.outcome)
+  return {ok:false,reason:"Terminal outcome does not match replay."};
+ return {ok:true,score:run.score,kills:run.kills,evolutions:run.evolutionsChosen,
+  ticks:run.runTicks,outcome:run.outcome};
 }
