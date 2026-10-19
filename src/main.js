@@ -60,7 +60,8 @@ $("gameMode").value=selectedMode;
 const STORE="deepcuts-hive-run-best-v4",SOUND_STORE="deepcuts-hive-run-audio-v1",MUSIC_STORE="deepcuts-hive-run-music-v1";
 const soundtrack=new HatcherySoundtrack();
 const victoryFanfare=new VictoryFanfare();
-let victoryOpenedAt=0;
+let victoryOpenedAt=0,lastVictoryDrawAt=-Infinity;
+const VICTORY_PAINT_INTERVAL_MS=1000/24;
 const bossGate=new BossBriefingGate();
 // Encounter director selects music automatically; no player-facing track previews.
 function setEncounterMusic(encounterType){
@@ -199,21 +200,30 @@ function playTone(hz,duration=0.09,volume=.025){
 function victoryVisible(){return !$("victoryOverlay").hidden}
 function hideVictoryCelebration(){
  $("victoryOverlay").hidden=true;
+ lastVictoryDrawAt=-Infinity;
  document.documentElement.classList.remove("dominion-victory-active");
  victoryFanfare.stop();
 }
 function replayVictoryCelebration(){
  if(!victoryVisible())return false;
- victoryOpenedAt=performance.now();
+ victoryOpenedAt=performance.now();lastVictoryDrawAt=-Infinity;
  victoryFanfare.play(state.ctx,state.run.outcome,state.musicOn&&!document.hidden);
  drawVictoryCelebration(victoryOpenedAt);
  return true;
 }
 function drawVictoryCelebration(now=performance.now()){
  if(!victoryVisible()||state.run.outcome!=="perfect_clear")return;
+ // Thousands of tiny retro pixels are deliberately drawn: cap this
+ // visual-only renderer at 24fps on phones. Never redraw when reduced-motion
+ // is active after the first frame; this does NOT throttle the game simulation.
+ const reduced=prefersReducedMotion();
+ if(lastVictoryDrawAt>=0&&(reduced||now-lastVictoryDrawAt<VICTORY_PAINT_INTERVAL_MS))return;
  const canvas=$("victoryTrailCanvas");
  const ctx=canvas.getContext("2d");
- if(ctx)drawBroodTrailFinale(ctx,Math.max(0,now-victoryOpenedAt),prefersReducedMotion());
+ if(ctx){
+  drawBroodTrailFinale(ctx,Math.max(0,now-victoryOpenedAt),reduced);
+  lastVictoryDrawAt=now;
+ }
 }
 function showVictoryCelebration(run){
  const details=victoryDetails(run);
