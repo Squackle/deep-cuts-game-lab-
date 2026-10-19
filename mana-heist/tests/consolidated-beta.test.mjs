@@ -14,7 +14,8 @@ test("step 1 gives a conceptual cost clue but no solution sequence",()=>{
  const p=LEVELS[0],state=initial(p),clue=hintConcept(p,state);
  assert.match(clue,/Ward 1/);assert.match(clue,/blue/);
  assert.doesNotMatch(clue,/1\. (Tap|Play|Cast)/);
- assert.match(hintConcept(LEVELS[9],initial(LEVELS[9])),/colorless|Generic/);
+ const genericScenario=structuredClone(LEVELS[0]);genericScenario.stages[0].cost={C:1,N:1};
+ assert.match(hintConcept(genericScenario,initial(genericScenario)),/colorless|Generic/);
 });
 test("steps 2 and 3 only display reducer-verifiable actions from THIS board and current position",()=>{
  for(const p of [LEVELS[0],LEVELS[1],LEARN_LEVELS[0],BONUS_TRIALS[0],LEVELS[250]]){
