@@ -57,3 +57,19 @@ test("mode-specific save key does not replace the existing 250-stage v2 bests",(
  assert.doesNotMatch(js,/Math\.min\(progress\.index,highestUnlocked/);
  assert.doesNotMatch(js,/Crack the previous stage to unlock/);
 });
+
+
+test("first-load campaign and lessons agree with current playable inventory",()=>{
+ const html=read("index.html");
+ assert.match(html,/Explore 500 mana puzzles across ten galaxies and 50 worlds, plus 26 Learn Mana lessons/);
+ assert.match(html,/All 500 vaults are unsealed across ten galaxies/);
+ assert.match(html,/0 \/ 500 CRACKED/);
+ assert.match(html,/0 \/ 26 COMPLETED/);
+ assert.match(html,/original 18 foundations and eight advanced lessons/);
+ assert.doesNotMatch(html,/Solve 250 land-and-mana vault puzzles/);
+ assert.doesNotMatch(html,/All 250 vaults are unsealed/);
+ assert.doesNotMatch(html,/0 \/ 250 CRACKED|0 \/ 18 COMPLETED/);
+ const overworld=read("src/overworld.js");
+ assert.match(overworld,/LEVELS\.filter\(l=>bests\[l\.id\]\)\.length\+" \/ "\+LEVELS\.length/);
+ assert.match(overworld,/for\(let i=0;i<GALAXIES\.length;i\+\+\)/);
+});
