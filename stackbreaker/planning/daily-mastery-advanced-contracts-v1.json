@@ -1,0 +1,536 @@
+{
+  "schemaVersion": 1,
+  "status": "step-1-contract-not-implemented",
+  "effectiveUtcDate": "2026-10-19",
+  "rulesVersions": {
+    "classic": "sb-mtg-training-0.3.0",
+    "advancedCandidate": "sb-mtg-training-0.4.0",
+    "advancedStatus": "PROPOSED_NOT_IMPLEMENTED"
+  },
+  "storage": {
+    "classicProgressKey": "dc-stackbreaker-progress-v3",
+    "classicLastLevelKey": "dc-stackbreaker-last-level",
+    "existingIds": "sb-01..sb-30 and sg-031..sg-250",
+    "untouched": true,
+    "labDailyPreviewKey": "dc-stackbreaker-daily-local-v1",
+    "labMasteryPreviewKey": "dc-stackbreaker-mastery-local-v1",
+    "note": "new preview keys must never be called authenticated profile progress"
+  },
+  "daily": {
+    "reset": "00:00:00Z",
+    "dateKey": "YYYY-MM-DD",
+    "timezone": "UTC",
+    "timeSource": {
+      "lab": "device clock (UNVERIFIED)",
+      "web": "trusted server date"
+    },
+    "curatedMin": 90,
+    "contentSelection": "explicit versioned immutable date manifest, not live random choice",
+    "puzzleContent": {
+      "required": [
+        "utcDate",
+        "puzzleId",
+        "puzzleRevision",
+        "rulesVersion",
+        "scenarioDigest",
+        "difficulty",
+        "manifestVersion"
+      ],
+      "neverRetroactivelyReassign": true,
+      "upcomingSolutionsPublic": false
+    },
+    "attempts": {
+      "practice": {
+        "unlimited": true,
+        "hints": true,
+        "undo": true,
+        "qualifies": false
+      },
+      "scored": {
+        "oneStartPerAccountPerUtcDate": true,
+        "undo": false,
+        "hints": false,
+        "retry": false,
+        "refreshResumesOnly": true,
+        "invalidActionConsumesMove": false,
+        "eligibilityStartsOnExplicitStart": true
+      }
+    },
+    "score": {
+      "fields": [
+        "completed",
+        "acceptedActionCount",
+        "castAndActivationCount",
+        "priorityPassCount",
+        "hintUsed",
+        "undoUsed",
+        "rulesVersion",
+        "puzzleRevision",
+        "utcDate"
+      ],
+      "acceptedActionDefinition": "each authorized state-changing player decision: tap land, play land, cast/activate, pass priority, make separate mandatory payment decision; mode/target/payment selections within a single cast are recorded in action args and count once",
+      "tiebreaker": "none, no leaderboard in this plan",
+      "negativeResult": "records a failed attempt; can continue practicing without verified credit",
+      "solved": "objectiveMet after replay under pinned version"
+    },
+    "sharing": {
+      "spoilerFree": true,
+      "fields": [
+        "utcDate",
+        "difficulty",
+        "won",
+        "acceptedActionCount",
+        "verificationLabel"
+      ],
+      "exclude": [
+        "puzzleId",
+        "cardName",
+        "lineOfPlay",
+        "solution"
+      ]
+    },
+    "guestVerification": "local-only/unverified",
+    "serverVerification": "required before profile credit"
+  },
+  "mastery": {
+    "catalogVersion": 1,
+    "achievementCount": 24,
+    "achievements": [
+      {
+        "id": "first-response",
+        "metric": "classic-win",
+        "threshold": 1,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": null,
+        "reward": {
+          "type": "title",
+          "id": "first-responder"
+        }
+      },
+      {
+        "id": "ten-responses",
+        "metric": "distinct-classic-wins",
+        "threshold": 10,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": null,
+        "reward": {
+          "type": "title",
+          "id": "apprentice"
+        }
+      },
+      {
+        "id": "fifty-solutions",
+        "metric": "distinct-classic-wins",
+        "threshold": 50,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": null,
+        "reward": {
+          "type": "title",
+          "id": "tactician"
+        }
+      },
+      {
+        "id": "centurion",
+        "metric": "distinct-classic-wins",
+        "threshold": 100,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": null,
+        "reward": {
+          "type": "title",
+          "id": "veteran"
+        }
+      },
+      {
+        "id": "galactic-explorer",
+        "metric": "completed-worlds",
+        "threshold": 1,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": null,
+        "reward": {
+          "type": "title",
+          "id": "explorer"
+        }
+      },
+      {
+        "id": "five-galaxies",
+        "metric": "galaxies-with-completion",
+        "threshold": 5,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": null,
+        "reward": {
+          "type": "frame",
+          "id": "prismatic"
+        }
+      },
+      {
+        "id": "campaign-conqueror",
+        "metric": "distinct-classic-wins",
+        "threshold": 250,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": null,
+        "reward": {
+          "type": "title",
+          "id": "conqueror"
+        }
+      },
+      {
+        "id": "clean-stack",
+        "metric": "distinct-clean-wins",
+        "threshold": 10,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": null,
+        "reward": {
+          "type": "title",
+          "id": "clean-stack"
+        }
+      },
+      {
+        "id": "perfect-window",
+        "metric": "three-star-classic-wins",
+        "threshold": 1,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": null,
+        "reward": {
+          "type": "frame",
+          "id": "white"
+        }
+      },
+      {
+        "id": "perfect-ten",
+        "metric": "three-star-classic-wins",
+        "threshold": 10,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": null,
+        "reward": {
+          "type": "vfx",
+          "id": "white"
+        }
+      },
+      {
+        "id": "countermage",
+        "metric": "distinct-solved-with-counter",
+        "threshold": 5,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": null,
+        "reward": {
+          "type": "title",
+          "id": "countermage"
+        }
+      },
+      {
+        "id": "counter-archmage",
+        "metric": "distinct-solved-with-counter",
+        "threshold": 25,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": null,
+        "reward": {
+          "type": "vfx",
+          "id": "blue"
+        }
+      },
+      {
+        "id": "shield-bearer",
+        "metric": "distinct-solved-with-protection",
+        "threshold": 10,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": null,
+        "reward": {
+          "type": "frame",
+          "id": "green"
+        }
+      },
+      {
+        "id": "lifeline",
+        "metric": "distinct-solved-with-lifegain",
+        "threshold": 10,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": null,
+        "reward": {
+          "type": "vfx",
+          "id": "green"
+        }
+      },
+      {
+        "id": "banisher",
+        "metric": "distinct-solved-with-exile",
+        "threshold": 10,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": null,
+        "reward": {
+          "type": "frame",
+          "id": "black"
+        }
+      },
+      {
+        "id": "stack-surgeon",
+        "metric": "distinct-advanced-retarget-wins",
+        "threshold": 5,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": "advanced-v0.4+",
+        "reward": {
+          "type": "title",
+          "id": "stack-surgeon"
+        }
+      },
+      {
+        "id": "copycat",
+        "metric": "distinct-advanced-copy-wins",
+        "threshold": 5,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": "advanced-v0.4+",
+        "reward": {
+          "type": "vfx",
+          "id": "red"
+        }
+      },
+      {
+        "id": "modal-master",
+        "metric": "distinct-advanced-modal-wins",
+        "threshold": 5,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": "advanced-v0.4+",
+        "reward": {
+          "type": "title",
+          "id": "modal-master"
+        }
+      },
+      {
+        "id": "trigger-technician",
+        "metric": "distinct-advanced-trigger-wins",
+        "threshold": 5,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": "advanced-v0.4+",
+        "reward": {
+          "type": "title",
+          "id": "trigger-technician"
+        }
+      },
+      {
+        "id": "ward-specialist",
+        "metric": "distinct-advanced-ward-paid-wins",
+        "threshold": 5,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": "advanced-v0.4+",
+        "reward": {
+          "type": "frame",
+          "id": "blue"
+        }
+      },
+      {
+        "id": "replacement-scholar",
+        "metric": "distinct-advanced-replacement-wins",
+        "threshold": 5,
+        "distinctBy": "puzzleIdAndRevision",
+        "requireCompletedWin": true,
+        "requiresServerVerification": false,
+        "engineGate": "advanced-v0.4+",
+        "reward": {
+          "type": "title",
+          "id": "replacement-scholar"
+        }
+      },
+      {
+        "id": "daily-first",
+        "metric": "distinct-verified-daily-wins",
+        "threshold": 1,
+        "distinctBy": "utcDate",
+        "requireCompletedWin": true,
+        "requiresServerVerification": true,
+        "engineGate": null,
+        "reward": {
+          "type": "frame",
+          "id": "gold"
+        }
+      },
+      {
+        "id": "seven-dates",
+        "metric": "distinct-verified-daily-wins",
+        "threshold": 7,
+        "distinctBy": "utcDate",
+        "requireCompletedWin": true,
+        "requiresServerVerification": true,
+        "engineGate": null,
+        "reward": {
+          "type": "vfx",
+          "id": "prismatic"
+        }
+      },
+      {
+        "id": "monthly-rhythm",
+        "metric": "distinct-verified-daily-wins",
+        "threshold": 20,
+        "distinctBy": "utcDate",
+        "requireCompletedWin": true,
+        "requiresServerVerification": true,
+        "engineGate": null,
+        "reward": {
+          "type": "title",
+          "id": "daily-adept"
+        }
+      }
+    ],
+    "grants": {
+      "idempotencyKey": "userId + achievementId",
+      "scoreProof": "server-replayed completion; never VFX or client badge",
+      "localPreviewLabel": "UNVERIFIED / LOCAL PREVIEW"
+    },
+    "cosmetics": {
+      "titles": [
+        "first-responder",
+        "apprentice",
+        "tactician",
+        "veteran",
+        "explorer",
+        "conqueror",
+        "clean-stack",
+        "countermage",
+        "stack-surgeon",
+        "modal-master",
+        "trigger-technician",
+        "replacement-scholar",
+        "daily-adept"
+      ],
+      "frames": [
+        "white",
+        "blue",
+        "black",
+        "red",
+        "green",
+        "prismatic",
+        "gold"
+      ],
+      "vfx": [
+        "white",
+        "blue",
+        "black",
+        "red",
+        "green",
+        "prismatic"
+      ],
+      "equipValidation": "whitelisted server-owned grant (website only)",
+      "animationOptOut": true,
+      "privacyDefault": "equipped title/frame public after user choice; progress private"
+    }
+  },
+  "replay": {
+    "schemaVersion": 1,
+    "envelopeRequired": [
+      "schemaVersion",
+      "rulesVersion",
+      "contentVersion",
+      "puzzleId",
+      "puzzleRevision",
+      "puzzleDigest",
+      "actor",
+      "actionIndex",
+      "actionId",
+      "args",
+      "stateHashBefore",
+      "stateHashAfter",
+      "semanticEvents"
+    ],
+    "eventRequired": [
+      "eventId",
+      "actionIndex",
+      "eventIndex",
+      "type",
+      "subjectId",
+      "causeId"
+    ],
+    "hashing": "canonical stable JSON -> SHA-256; audit only, NEVER client proof of legitimacy",
+    "replayAuth": "website verifies authenticated owner and replays under pinned engine; Lab never authenticates",
+    "maxActionsCandidate": 140,
+    "copyBehavior": "copy not cast; unique IDs and event origin",
+    "legacyAdapter": "old targetId accepted as singleton targets list; no in-place migration of classic state"
+  },
+  "semanticEventTypes": [
+    "puzzle.started",
+    "puzzle.completed",
+    "action.accepted",
+    "priority.passed",
+    "mana.tapped",
+    "land.played",
+    "spell.cast",
+    "ability.activated",
+    "spell.resolved",
+    "spell.countered",
+    "spell.copied",
+    "targets.changed",
+    "mode.chosen",
+    "permanent.entered",
+    "permanent.zone_changed",
+    "stats.changed",
+    "life.changed",
+    "protection.granted",
+    "trigger.created",
+    "trigger.resolved",
+    "ward.triggered",
+    "ward.paid",
+    "ward.countered_spell",
+    "replacement.applied",
+    "damage.prevented",
+    "daily.attempt_started",
+    "daily.attempt_finished"
+  ],
+  "websiteOnly": {
+    "approvalRequired": true,
+    "accountOwnerFromSession": true,
+    "d1Migrations": "design only; no writes in Step 1",
+    "apiCandidate": [
+      "GET /api/stackbreaker/daily/:utcDate",
+      "POST /api/stackbreaker/daily/attempts",
+      "POST /api/stackbreaker/daily/attempts/:id/finish",
+      "GET /api/my-profile/mastery",
+      "PATCH /api/my-profile/mastery/equip"
+    ],
+    "authProof": "replay with pinned rules and manifest digest, transactionally record unique user/date",
+    "publicLeaderboard": false
+  },
+  "stage": {
+    "current": 1,
+    "total": 10,
+    "next": 2,
+    "source": "GitHub issue #96",
+    "scope": "Stackbreaker planning artifacts only"
+  }
+}
