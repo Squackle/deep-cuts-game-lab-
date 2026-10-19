@@ -53,5 +53,5 @@ export const replacementScenarios=sets.flatMap((part,k)=>
    explanation:'The affected player or affected permanent controller orders simultaneous prevention and replacement effects. Each effect modifies this one damage event at most once.',
    solution:solution.map(action),wrongLine:wrong.map(action)
   };
- })));
+ }));
 export default replacementScenarios;
