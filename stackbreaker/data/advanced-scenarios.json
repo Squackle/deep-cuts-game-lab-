@@ -227,14 +227,14 @@
       {
         "id": "relic-one",
         "type": "artifact",
-        "cardId": "Relic A",
+        "cardId": "Sol Ring",
         "controller": "opponent",
         "zone": "battlefield"
       },
       {
         "id": "relic-two",
         "type": "artifact",
-        "cardId": "Relic B",
+        "cardId": "Arcane Signet",
         "controller": "opponent",
         "zone": "battlefield"
       }
