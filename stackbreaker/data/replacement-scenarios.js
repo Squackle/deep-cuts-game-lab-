@@ -41,7 +41,7 @@ export const replacementScenarios=sets.flatMap((part,k)=>
   if(part.kind==='redirect'||part.kind==='redirectDouble'){
    effects.splice(0,effects.length,shield('player'),redirect());
    if(part.kind==='redirectDouble')effects.push(double());
-   wrong=['redirect'];
+   wrong=part.kind==='redirectDouble'?['redirect','double']:['redirect'];
   }
   return{
    id,title:part.name+(variant?' · Variant B':' · Variant A'),
