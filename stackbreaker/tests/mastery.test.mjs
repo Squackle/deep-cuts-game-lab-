@@ -70,7 +70,7 @@ test('genuine engine win records only one puzzle with counter tag and never a vi
  const result=completeMasteryWin(emptyMasteryLedger(),scenario,state,run,scenarios);
  assert.equal(result.added,true);
  assert.equal(result.ledger.wins['sb-02@1'].counter,true);
- assert.deepEqual(result.newUnlocks,['first-response']);
+ assert.deepEqual(result.newUnlocks,['first-response','perfect-window']);
  const repeated=completeMasteryWin(result.ledger,scenario,state,run,scenarios);
  assert.equal(repeated.added,false);
  assert.deepEqual(repeated.newUnlocks,[]);
