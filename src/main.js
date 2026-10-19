@@ -93,7 +93,7 @@ function syncUI(){
  $("collectionLabel").textContent=run.mode==="classic"?"ORBS":"CAPTURES";
  $("populationLabel").textContent=run.mode==="classic"?"SWARM LENGTH":"PREY ON BOARD";
  $("playerAids").hidden=run.mode==="classic";
- $("mercyStatus").textContent=run.mercy>0?"◆ INSTINCT READY · 1 FREE PREY DODGE":"◆ INSTINCT USED";
+ $("mercyStatus").textContent=run.mercy>0?(run.lairBoss?"◆ INSTINCT READY · 1 FREE BOSS DODGE":"◆ INSTINCT READY · 1 FREE PREY DODGE"):"◆ INSTINCT USED";
  $("trapHelp").textContent=run.encounter?"◇ BOSS · NO TRAP HINTS":
   run.evolutionsChosen<3?"◇ AMBER = LIMITED ESCAPES":"◇ AMBER HINTS ENDED";
  const p=progress(run);

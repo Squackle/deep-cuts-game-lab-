@@ -19,7 +19,7 @@ export function createLairRun(kind,cols=18,rows=22){
  run.enemies=[];run.food=null;run.orbIn=10000000;run.respawnIn=0;
  run.energy=0;run.earnedEnergy=0;run.evolutionsChosen=spec.evolution;run.stage=spec.evolution+1;
  run.tickMs=PLAYER_BASE_TICK_MS; // Identical real-time movement cadence across all five Lair bosses.
- run.openingGraceMs=0;run.mercy=0;
+ run.openingGraceMs=0;run.mercy=1; // Same one-use Instinct as Hunt, applicable to boss contact only in unranked practice.
  setBiome(run);run.biomeNoticeMs=0;
  if(!spawnMiniboss(run,kind))throw Error("No safe spawn for Lair boss");
  run.lairBoss=kind;

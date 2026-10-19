@@ -23,7 +23,7 @@ test("five selectable Lair bosses match original encounter difficulty and correc
   assert.equal(run.enemies[0].kind,spec.id);
   assert.equal(run.food,null);
   assert.equal(run.energy,0);
-  assert.equal(run.mercy,0);
+  assert.equal(run.mercy,1);
   assert.equal(run.biome,lairDetails(spec.id).biome);
   assert.equal(lairDetails(spec.id).name,BRIEFINGS[spec.id].name);
   assert.ok(!run.body.some(p=>p.x===run.enemies[0].pos.x&&p.y===run.enemies[0].pos.y));
