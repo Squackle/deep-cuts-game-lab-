@@ -12,9 +12,11 @@ import {drawSuperBurger} from "./super-burger-art.js";
 import {HIVE_FINALE_WEBP} from "./finale-art.js";
 import {HIVE_FINALE_DESKTOP_AVIF,HIVE_FINALE_MOBILE_AVIF} from "./high-resolution-finale-art.js";
 import {HIVE_MOBILE_FINALE_WEBP} from "./mobile-finale-art.js";
+import {drawBroodTrailFinale} from "../src/victory-scenes.js";
 const $=id=>document.getElementById(id);
 const canvas=$("directorCanvas"),ctx=canvas.getContext("2d",{alpha:false}),CELL=20;
 let art=null,bg=null,run=null,last=0,accumulator=0,paused=false,lastStatus="";
+let finaleOpenedAt=0;
 const cheatPreview=$("directorBurgerPreview").getContext("2d");
 drawSuperBurger(cheatPreview,0,0,32,0);
 function syncCheatUI(){
@@ -48,6 +50,7 @@ function update(){
   const victory=$("directorVictory");
   const isHunt=run.mode==="hunt";
   victory.classList.toggle("victory-screen--hunt",isHunt);
+  victory.classList.toggle("victory-screen--classic",!isHunt);
   // Modern browsers get the full-resolution poster; the previously deployed
   // tiny WebP is only a fallback on old devices without AVIF support.
   const desktopImage='image-set(url("'+HIVE_FINALE_DESKTOP_AVIF+
@@ -64,6 +67,7 @@ function update(){
 }
 function startScene(){
  run=createDirectorRun(config());paused=false;last=0;accumulator=0;
+ finaleOpenedAt=performance.now();
  $("bossOptions").hidden=run.mode==="classic";
  update();draw();
  canvas.focus({preventScroll:true});
@@ -71,6 +75,7 @@ function startScene(){
 function showFinale(){
  if(!run?.directorSession)return;
  showcaseDirectorVictory(run);paused=false;last=0;accumulator=0;
+ finaleOpenedAt=performance.now();
  update();draw();
 }
 function drawSwarm(){
@@ -111,6 +116,13 @@ function draw(){
  drawPlayerLocator(ctx,run.body[0],run.direction,CELL,"below");
  drawSwarm();
  drawPlayerLocator(ctx,run.body[0],run.direction,CELL,"above");
+ // Same original pixel artwork as an EARNED Brood Trail clear, but unranked here.
+ if(run.status==="won"&&run.mode==="classic"){
+  const canvas=$("directorClassicFinaleCanvas"),preview=canvas.getContext("2d");
+  if(preview)drawBroodTrailFinale(preview,
+   Math.max(0,performance.now()-finaleOpenedAt),
+   window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches??false);
+ }
 }
 function loop(time){
  if(!last)last=time;
