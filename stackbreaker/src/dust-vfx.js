@@ -55,8 +55,9 @@ export function renderSpellDust(root,layer,event,anchors,mode){
  host.setAttribute('aria-hidden','true');
  host.style.left=point.x+'px';
  host.style.top=point.y+'px';
- host.style.setProperty('--dust-width',Math.max(60,Math.min(360,snapshot?.rect?.width||175))+'px');
- host.style.setProperty('--dust-height',Math.max(55,Math.min(230,snapshot?.rect?.height||105))+'px');
+ const cssProp=(node,key,value)=>node.style.setProperty?node.style.setProperty(key,value):node.style[key]=value;
+ cssProp(host,'--dust-width',Math.max(60,Math.min(360,snapshot?.rect?.width||175))+'px');
+ cssProp(host,'--dust-height',Math.max(55,Math.min(230,snapshot?.rect?.height||105))+'px');
  const ghost=root.createElement('div');
  ghost.className='sb-vfx-dust-card';
  const picture=snapshot?.imageSrc;
@@ -77,10 +78,10 @@ export function renderSpellDust(root,layer,event,anchors,mode){
  for(const p of dustParticleLayout(event.sourceStackId+':'+(event.targetId||''))){
   const particle=root.createElement('span');
   particle.className='sb-vfx-dust-particle';
-  particle.style.setProperty('--dust-x',p.x+'px');
-  particle.style.setProperty('--dust-y',p.y+'px');
-  particle.style.setProperty('--dust-delay',p.delay+'ms');
-  particle.style.setProperty('--dust-size',p.size+'px');
+  cssProp(particle,'--dust-x',p.x+'px');
+  cssProp(particle,'--dust-y',p.y+'px');
+  cssProp(particle,'--dust-delay',p.delay+'ms');
+  cssProp(particle,'--dust-size',p.size+'px');
   ash.appendChild(particle);
  }
  host.appendChild(ash);
