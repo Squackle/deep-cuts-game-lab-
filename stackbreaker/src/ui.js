@@ -375,7 +375,7 @@ function renderCosmeticGallery(){
     const id=option.id;
     const owned=id===null||hasCosmeticGrant(masteryLedger,type,id);
     const selected=localCosmetics[type]===id;
-    const lockedLabel=owned?(selected?'EQUIPPED':'EQUIP'):'LOCKED';
+    const lockedLabel=owned?(selected?'EQUIPPED':option.starter?'STARTER · EQUIP':'EQUIP'):'LOCKED';
     const action=id===null?'':esc(id);
     const swatch=type==='title'?'✧':'✦';
     return '<button type="button" class="cosmetic-choice" data-cosmetic-type="'+type+
