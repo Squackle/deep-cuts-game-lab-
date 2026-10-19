@@ -122,7 +122,7 @@ test('the live region is updated independently of visual effects and keyboard fo
 });
 test('compiled Classic standalone bundle has all new polish, with original saves untouched',()=>{
  const build=read('build.py'),html=read('index.html'),css=read('observatory.css');
- assert.match(build,/'src\/dust-vfx\.js','src\/vfx-events\.js'/);
+ assert.match(build,/'src\/dust-vfx\.js','src\/resolution-fx\.js','src\/vfx-events\.js'/);
  assert.ok(html.includes('function describeSpellVfxForA11y('));
  assert.ok(html.includes('function fitDustBounds('));
  assert.ok(html.includes('<style>'+read('design-tokens.css')+read('styles.css')+css+'</style>'));
