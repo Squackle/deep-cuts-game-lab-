@@ -680,3 +680,111 @@ main{max-width:1640px}
  .sb-vfx-layer{forced-color-adjust:none}
  .sb-vfx-dust-label{background:#111;color:#fff}
 }
+
+
+/* Stackbreaker unified resolution effects: CSS/SVG-free light FX for all five
+   mana colors. Their semantic modes are verified against real game state or
+   confined to the marked visual-only preview. */
+.sb-fx-scene{--spell-hue:#dadfdd;position:absolute;inset:0;
+ pointer-events:none!important;overflow:hidden;contain:layout style paint;
+ color:var(--spell-hue);z-index:4}
+.sb-fx-scene *{pointer-events:none!important;box-sizing:border-box}
+.sb-fx-pulse{
+ position:absolute;width:64px;height:64px;
+ transform:translate(-50%,-50%) scale(.12);
+ border:2px solid var(--spell-hue);
+ border-radius:50%;
+ background:radial-gradient(circle,#ffffff16 0%,transparent 68%);
+ box-shadow:0 0 13px var(--spell-hue),inset 0 0 16px var(--spell-hue);
+ opacity:0;
+ animation:sb-fx-bloom 820ms cubic-bezier(.13,.47,.22,1) var(--fx-delay,0ms) both;
+}
+.sb-fx-rune{position:absolute;inset:0;display:grid;place-items:center;
+ font:800 29px/1 Georgia,serif;color:var(--spell-hue);text-shadow:0 0 9px var(--spell-hue)}
+.sb-fx-particle{
+ position:absolute;border-radius:50%;width:5px;height:5px;
+ background:var(--spell-hue);box-shadow:0 0 6px var(--spell-hue);
+ transform:translate(-50%,-50%);opacity:0;
+ animation:sb-fx-sparks 750ms ease-out var(--fx-delay,0ms) both
+}
+.sb-fx-travel{
+ position:absolute;height:4px;transform-origin:0 50%;border-radius:999px;
+ background:linear-gradient(90deg,transparent 0%,var(--spell-hue) 35%,#fff 65%,transparent 100%);
+ box-shadow:0 0 8px var(--spell-hue);opacity:0;
+ animation:sb-fx-beam 690ms cubic-bezier(.2,.6,.2,1) both;
+}
+.sb-fx-caption{
+ position:absolute;transform:translate(-50%,-50%);
+ color:#fff4cb;white-space:nowrap;
+ font:900 22px/1 system-ui,sans-serif;text-shadow:0 0 9px var(--spell-hue),0 2px 4px #000;
+ opacity:0;animation:sb-fx-caption 800ms ease-out both;
+}
+.sb-fx-wave{
+ position:absolute;width:90px;height:90px;
+ border:4px solid var(--spell-hue);border-radius:50%;
+ box-shadow:0 0 22px var(--spell-hue);
+ transform:translate(-50%,-50%) scale(.1);opacity:0;
+ animation:sb-fx-wave 840ms ease-out both;
+}
+.sb-fx-exile .sb-fx-pulse,.sb-fx-reanimate .sb-fx-pulse{
+ border-style:dashed;border-width:3px;border-radius:42%;
+ animation-name:sb-fx-portal;
+}
+.sb-fx-bounce .sb-fx-travel{animation-direction:reverse}
+.sb-fx-shield .sb-fx-pulse{border-radius:27%;border-width:4px}
+.sb-fx-destroy .sb-fx-pulse{border-radius:13%;transform:translate(-50%,-50%) rotate(25deg) scale(.1)}
+.sb-fx-weaken,.sb-fx-wipe{filter:saturate(.68)}
+.sb-fx-summon .sb-fx-pulse,.sb-fx-token .sb-fx-pulse{border-style:double;border-width:6px}
+.sb-fx-heal .sb-fx-particle,.sb-fx-buff .sb-fx-particle{
+ animation-name:sb-fx-rise;
+}
+.sb-fx-tap .sb-fx-pulse{border-radius:30%;transform-origin:center}
+@keyframes sb-fx-bloom{
+ 0%{transform:translate(-50%,-50%) scale(.12);opacity:0}
+ 27%{transform:translate(-50%,-50%) scale(.45);opacity:1}
+ 63%{transform:translate(-50%,-50%) scale(1.16);opacity:.9}
+ 100%{transform:translate(-50%,-50%) scale(1.56);opacity:0}
+}
+@keyframes sb-fx-portal{
+ 0%{transform:translate(-50%,-50%) rotate(0) scale(.14);opacity:0}
+ 27%{opacity:.95}
+ 68%{transform:translate(-50%,-50%) rotate(150deg) scale(1.3);opacity:.88}
+ 100%{transform:translate(-50%,-50%) rotate(280deg) scale(.05);opacity:0}
+}
+@keyframes sb-fx-sparks{
+ 0%,18%{transform:translate(-50%,-50%) scale(.3);opacity:0}
+ 37%{opacity:1}
+ 100%{transform:translate(calc(-50% + var(--fx-dx,20px)),calc(-50% + var(--fx-dy,-25px))) scale(.1);opacity:0}
+}
+@keyframes sb-fx-rise{
+ 0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}
+ 30%{opacity:1}
+ 100%{opacity:0;transform:translate(calc(-50% + var(--fx-dx,10px)),calc(-100% + var(--fx-dy,-25px))) scale(.1)}
+}
+@keyframes sb-fx-beam{
+ 0%,5%{opacity:0;clip-path:inset(0 100% 0 0)}
+ 22%{opacity:.9}
+ 57%{opacity:.95;clip-path:inset(0 0 0 0)}
+ 100%{opacity:0;clip-path:inset(0 0 0 0)}
+}
+@keyframes sb-fx-caption{
+ 0%,22%{opacity:0;transform:translate(-50%,-36%) scale(.7)}
+ 46%{opacity:1;transform:translate(-50%,-62%) scale(1.1)}
+ 79%{opacity:.92;transform:translate(-50%,-108%)}
+ 100%{opacity:0;transform:translate(-50%,-155%)}
+}
+@keyframes sb-fx-wave{
+ 0%{transform:translate(-50%,-50%) scale(.1);opacity:0}
+ 36%{opacity:.95}
+ 100%{transform:translate(-50%,-50%) scale(6.8);opacity:0}
+}
+@media(max-width:480px){
+ .sb-fx-particle:nth-of-type(n+55){display:none}
+ .sb-fx-pulse{width:48px;height:48px}
+ .sb-fx-rune{font-size:22px}
+ .sb-fx-caption{font-size:16px}
+ .sb-fx-wave{width:65px;height:65px}
+}
+@media(prefers-reduced-motion:reduce){
+ .sb-fx-scene,.sb-fx-scene *{display:none!important;animation:none!important;transition:none!important}
+}
