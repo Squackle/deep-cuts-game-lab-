@@ -23,9 +23,13 @@ const siteParentOrigin=()=>{
  }catch{}
  return null;
 };
+const siteOriginAllowed=origin=>origin==='https://deep-cuts-edh.pages.dev'
+ ||/^https:\/\/[a-z0-9-]+\.deep-cuts-edh\.pages\.dev$/.test(origin);
 const sendSite=message=>{
- const origin=siteParentOrigin();
- if(siteRanked&&origin)window.parent.postMessage(message,origin);
+ // Referrer-Policy may intentionally remove the parent's origin in an iframe.
+ // These messages carry NO credentials, account IDs, or trusted success claims;
+ // only the website's own server verifies the submitted public move.
+ if(siteRanked)window.parent.postMessage(message,siteParentOrigin()||'*');
 };
 const dailyDate=dailyUtcDate();
 const dailyBound=dailyRoute?bindDailyScenario(dailyEntryForDate(dailyDate),scenarios):null;
@@ -738,7 +742,7 @@ if(dailyRoute){
 fetchScryfallCatalog();
 if(siteRanked){
  window.addEventListener('message',event=>{
-  if(event.source!==window.parent||event.origin!==siteParentOrigin())return;
+  if(event.source!==window.parent||!siteOriginAllowed(event.origin))return;
   const data=event.data;
   if(!data||typeof data!=='object')return;
   if(data.type==='dc-sb-ranked-state'){
