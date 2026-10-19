@@ -15,7 +15,7 @@ function captureFixture(kind="skitter"){
  return run;
 }
 test("Hunt has a seven-segment baseline; Brood Trail still grows without a cap",()=>{
- assert.equal(RULES_VERSION,"hive-1.5.3");
+ assert.equal(RULES_VERSION,"hive-1.5.4");
  assert.equal(HUNT_SWARM_LENGTH,7);
  for(const mode of ["hunt","classic"]){
   const r=newRun({seed:1,mode});
