@@ -1413,6 +1413,28 @@ main{max-width:1640px}
  .cosmetics-preview{transition:none!important}
  .sb-vfx-layer[data-vfx-theme]{display:none!important;animation:none!important}
 }
+/* Production Daily: exactly the original gameplay, with website-owned header and scoring.
+   Suppress duplicate Lab/daily marketing only in ?daily=1&siteRanked=1. */
+body.site-ranked-embed{background:#071214;overflow-x:hidden}
+body.site-ranked-embed .mast,
+body.site-ranked-embed .daily-banner,
+body.site-ranked-embed .study-notes{display:none!important}
+body.site-ranked-embed main{max-width:none;margin:0}
+body.site-ranked-embed #game{
+  height:800px;min-height:0;max-width:none;overflow:hidden;
+  grid-template-rows:auto minmax(0,1fr) auto minmax(190px,.42fr) auto;
+  gap:7px;padding:4px clamp(4px,.7vw,12px) 10px
+}
+@media(max-width:840px){
+ body.site-ranked-embed #game{
+   height:880px;grid-template-rows:auto minmax(0,1fr) auto minmax(245px,.55fr) auto
+ }
+}
+@media(max-width:500px){
+ body.site-ranked-embed #game{height:900px;gap:5px;grid-template-rows:auto minmax(0,1fr) auto minmax(270px,.62fr) auto}
+ body.site-ranked-embed .game-controls button{min-height:42px}
+}
+
 </style></head>
 <body><a class="skip" href="#game">Skip to Stackbreaker game</a>
 <header class="mast"><a class="site-mark" href="/lab/" aria-label="Back to Game Test Lab home">◈ <b>DEEP CUTS</b> / GAME LAB</a><strong class="site-title">STACKBREAKER <small>1.5 · ARCANE OBSERVATORY</small></strong><a class="site-home" href="/lab/" aria-label="Back to Test Lab, choose another game">GAME LAB ↗</a></header>
@@ -8998,6 +9020,7 @@ const chapters=makeWorlds();
 const routeParams=new URLSearchParams(window.location.search);
 const dailyRoute=routeParams.get('daily')==='1';
 const siteRanked=dailyRoute&&routeParams.get('siteRanked')==='1'&&window.parent!==window;
+if(siteRanked)document.body.classList.add('site-ranked-embed');
 let rankedBusy=false;
 const siteParentOrigin=()=>{
  try{
@@ -9744,5 +9767,16 @@ if(siteRanked){
    rankedBusy=false;notify('Move rejected. Recover the official state from the website before retrying.');
   }
  });
+ // This is a purely presentational message: the website never trusts it for scores.
+ const reportLayout=()=>{
+  if(!siteRanked)return;
+  const height=Math.ceil(document.body.getBoundingClientRect().height);
+  if(height>=500&&height<=3000)sendSite({type:'dc-sb-ranked-layout',height});
+ };
+ const frameObserver=new ResizeObserver(()=>requestAnimationFrame(reportLayout));
+ frameObserver.observe(document.body);
+ window.addEventListener('resize',reportLayout,{passive:true});
+ window.addEventListener('load',reportLayout,{once:true});
+ requestAnimationFrame(reportLayout);
  sendSite({type:'dc-sb-ranked-ready',day:dailyDate,puzzleId:dailyBound?.puzzleId||null});
 }</script></body></html>
