@@ -439,8 +439,8 @@ function renderDailyStatus(){
  $('dailyDate').textContent=active?'Challenge '+dailyDate+' UTC · '+dailyBound.difficulty:
   dailyExpired?'This UTC day has ended. Reload for the next challenge.':
   'No dated puzzle is published for this UTC date. A new manifest is needed.';
- $('dailyStart').disabled=siteRanked||!active;$('dailyPractice').disabled=!active;
- if(siteRanked){$('dailyStart').hidden=true;$('dailyCopy').hidden=true;}
+ $('dailyStart').disabled=siteRanked||!active;$('dailyPractice').disabled=siteRanked||!active;
+ if(siteRanked){$('dailyStart').hidden=true;$('dailyPractice').hidden=true;$('dailyCopy').hidden=true;}
  $('dailyStart').textContent=dailyRecord?dailyRecord.status==='playing'?'RESUME LOCAL SCORED ATTEMPT':'VIEW RECORDED ATTEMPT':'START LOCAL SCORED ATTEMPT';
  $('scenarioSelect').closest('.mission-picker')?.classList.toggle('daily-picker-locked',true);
  const summary=dailySession==='scored'&&dailyRecord?
@@ -459,6 +459,7 @@ function renderDailyStatus(){
  }
 }
 function startDailyPractice(){
+ if(siteRanked){notify('Your one official run is controlled by the website. Normal Stackbreaker remains unlimited outside Daily.');return;}
  if(!dailyBound||dailyExpired)return;
  dailySession='practice';dailyPracticeMoves=0;
  changeCase(dailyIndex,true);
