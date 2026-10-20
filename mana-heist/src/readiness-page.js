@@ -20,12 +20,11 @@ function download(content,filename,type){
 }
 function paintRow(row){
  const tr=document.createElement("tr");
- const id=document.createElement("td"),link=document.createElement("a");
- link.href="./";
- // Link to a game route, not a claim that the main game's router supports
- // query-launching a vault. Explain inspection happens within the game.
- link.textContent=row.id+" · "+row.title;link.title="Open Mana Heist campaign to choose this vault";
- id.append(link);tr.append(id);
+ // Vault IDs remain inspectable labels rather than fake deep links.
+ // A visitor can return to the actual game using the separate header link.
+ const id=document.createElement("td");
+ id.textContent=row.id+" · "+row.title;
+ tr.append(id);
  for(const text of [
   "G"+row.galaxy+" · W"+row.world,
   row.origin,
