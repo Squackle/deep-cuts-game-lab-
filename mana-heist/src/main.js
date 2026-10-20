@@ -130,7 +130,7 @@ function renderDeviceQA(){
  }
  updateDeviceQAStatus();
 }
-let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null;
+let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null,selectedHandId=null;
 let reducedFx=false;
 const reducedFxKey="dc-mana-heist-reduced-effects-v1";
 try{reducedFx=localStorage.getItem(reducedFxKey)==="yes";}catch{}
