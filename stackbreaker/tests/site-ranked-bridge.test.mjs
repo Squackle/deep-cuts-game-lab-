@@ -6,7 +6,7 @@ const src=readFileSync(new URL('../src/ui.js',import.meta.url),'utf8');
 test('Canonical Stackbreaker site-ranked bridge changes only Daily route; Classic game stays identical',()=>{
  assert.ok(src.includes("routeParams.get('daily')==='1'"));
  assert.ok(src.includes("routeParams.get('siteRanked')==='1'&&window.parent!==window"));
- assert.ok(src.includes("event.source!==window.parent||event.origin!==siteParentOrigin()"));
+ assert.ok(src.includes("event.source!==window.parent||!siteOriginAllowed(event.origin)"));
  assert.ok(src.includes("data.type==='dc-sb-ranked-state'"));
  assert.ok(src.includes("type:'dc-sb-ranked-move'"));
  assert.ok(src.includes("type:'tap',landId:id"));
@@ -18,7 +18,7 @@ test('Canonical Stackbreaker site-ranked bridge changes only Daily route; Classi
  assert.ok(src.includes("dailyRecord=siteRanked?null:readLocalDaily"));
  assert.ok(src.includes("$('dailyStart').hidden=true"));
  assert.ok(src.includes("localUnverified:false"));
- assert.ok(src.includes("window.parent.postMessage(message,origin)"));
+ assert.ok(src.includes("window.parent.postMessage(message,siteParentOrigin()||'*')"));
 });
 test('Original full gameplay module still builds as browser JavaScript',()=>{
  const path=new URL('../src/ui.js',import.meta.url).pathname;
