@@ -15,6 +15,7 @@ const chapters=makeWorlds();
 const routeParams=new URLSearchParams(window.location.search);
 const dailyRoute=routeParams.get('daily')==='1';
 const siteRanked=dailyRoute&&routeParams.get('siteRanked')==='1'&&window.parent!==window;
+if(siteRanked)document.body.classList.add('site-ranked-embed');
 let rankedBusy=false;
 const siteParentOrigin=()=>{
  try{
@@ -765,5 +766,16 @@ if(siteRanked){
    notify('Server rejected or could not verify action. Refresh to recover your official attempt.');
   }
  });
+ // This is a purely presentational message: the website never trusts it for scores.
+ const reportLayout=()=>{
+  if(!siteRanked)return;
+  const height=Math.ceil(document.body.getBoundingClientRect().height);
+  if(height>=500&&height<=3000)sendSite({type:'dc-sb-ranked-layout',height});
+ };
+ const frameObserver=new ResizeObserver(()=>requestAnimationFrame(reportLayout));
+ frameObserver.observe(document.body);
+ window.addEventListener('resize',reportLayout,{passive:true});
+ window.addEventListener('load',reportLayout,{once:true});
+ requestAnimationFrame(reportLayout);
  sendSite({type:'dc-sb-ranked-ready',day:dailyDate,puzzleId:dailyBound?.puzzleId||null});
 }
