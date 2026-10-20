@@ -1,6 +1,6 @@
 // P03/P06-P10 release-readiness baseline. Explicitly separates measured
 // board STRUCTURE, legal winning-route REPLAY, and unmeasured human quality.
-// No network, localStorage, score writes, art assets, or player analytics.
+// No network calls, browser storage, score writes, art assets, or player analytics.
 import {LEVELS,BASE_LEVELS,GALAXIES,CHAPTERS} from "./levels.js";
 import {CARDS,VERSION,validate} from "./engine.js";
 import {solve,replay} from "./solver.js";
