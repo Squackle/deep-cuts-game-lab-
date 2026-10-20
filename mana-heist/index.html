@@ -116,7 +116,15 @@
      </div>
     </div>
     <div id="stageList" class="stage-list" aria-label="Ward progress"></div>
-    <div id="winPanel" class="win" hidden role="status"><span aria-hidden="true">✦</span><div><b id="winTitle">VAULT CRACKED</b><p id="winCopy"></p></div><button id="winNext" type="button">NEXT VAULT →</button></div>
+    <section id="winPanel" class="win" hidden role="dialog" aria-modal="true" aria-labelledby="winTitle" aria-describedby="winCopy">
+      <div class="win-head"><span class="win-emblem" aria-hidden="true">✦</span><div class="win-heading"><h2 id="winTitle">VAULT CRACKED</h2><p id="winCopy"></p></div></div>
+      <div id="winStats" class="win-stats" aria-label="Your solve summary">
+       <div class="win-stat"><span>TURN</span><strong id="winStatTurn">—</strong></div>
+       <div class="win-stat"><span>LIFE SPENT</span><strong id="winStatLife">—</strong></div>
+       <div class="win-stat"><span id="winStatExtraLabel">REFERENCE</span><strong id="winStatExtra">—</strong></div>
+      </div>
+      <div class="win-actions" id="winActions"><button id="winNext" type="button">NEXT VAULT →</button></div>
+     </section>
    </section>
    <div class="controlbar"><button type="button" id="endTurn" class="primary">END TURN <span>↗</span></button><button id="undo" type="button">↶ UNDO</button><button id="reset" type="button">⟲ RESTART</button><button id="skip" type="button">← MAP</button></div>
    <section class="table-card" aria-labelledby="battleTitle">
