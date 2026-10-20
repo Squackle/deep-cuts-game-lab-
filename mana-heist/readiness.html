@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111b19">
+<meta name="description" content="Mana Heist Game Lab — 500 vault structural review inventory and independent readiness gates.">
+<title>Mana Heist | Vault Readiness Audit</title>
+<link rel="stylesheet" href="./readiness.css">
+<script type="module" src="./src/readiness-page.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to audit report</a>
+<header class="bar"><a href="./">← MANA HEIST</a><span>DEEP CUTS GAME LAB · DEVELOPMENT AUDIT</span></header>
+<main id="main">
+ <p class="eyebrow">BETA READINESS · EVIDENCE FIRST</p>
+ <h1>The 500-vault audit</h1>
+ <p class="intro">A source-derived inventory of every vault's structure, teaching lineage and review candidates. Similar boards and repeated design families are <strong>questions for a human reviewer</strong>, not proof of bad puzzles. Difficulty scores are estimates, not measured player results.</p>
+ <section class="notice" aria-label="Evidence limitations">
+  <h2>What this report does—and does not—prove</h2>
+  <p>This page analyzes the current 500 puzzle definitions. It does <strong>not</strong> run the expensive winning-route check in your browser. The repository's offline audit command verifies legal reference replays, and its test checks run in CI. Even successful legal replays do not establish globally optimal routes, strategy uniqueness, beginner comprehension, accessibility, or a public release license.</p>
+ </section>
+ <section id="summary" aria-label="Campaign summary"><p role="status" id="auditStatus">Reading puzzle structures…</p><div id="auditMetrics" class="metrics"></div></section>
+ <section class="gates" aria-label="Outstanding release gates">
+  <h2>Independent gates still open</h2>
+  <div class="gate-grid">
+   <div><strong>RULES (G1)</strong><span>Oracle applicability and supported simplifications still need final review</span></div>
+   <div><strong>CONTENT (G2)</strong><span>Human quality, variety, difficulty and 500-stage teaching review incomplete</span></div>
+   <div><strong>HUMANS (G3)</strong><span>Real-device testing and approximately 15–20-person beta not completed</span></div>
+   <div><strong>RIGHTS &amp; PROMOTION</strong><span>Artwork/branding approval and separate public-release authorization outstanding</span></div>
+  </div>
+ </section>
+ <section class="inventory" aria-label="Inspectable vault inventory">
+  <div class="inventory-head"><h2>Inspect vaults</h2><p>Review candidates are not automatic design defects. Export metadata for offline review.</p></div>
+  <div class="controls">
+   <label>Galaxy <select id="auditGalaxy"><option value="all">All 10 galaxies</option></select></label>
+   <label>Review focus <select id="auditFilter"><option value="all">All vaults</option><option value="template">Inherited template route</option><option value="lineage">Large repeated family</option><option value="similar">Similar board structure</option><option value="revised">Changed score revision</option></select></label>
+   <label>Find a vault <input id="auditSearch" type="search" placeholder="ID, title, family" autocomplete="off"></label>
+  </div>
+  <p id="auditMatchCount" class="muted" role="status" aria-live="polite"></p>
+  <div class="export-row"><button type="button" id="auditDownloadCsv">DOWNLOAD ALL 500 · CSV</button><button type="button" id="auditDownloadJson">DOWNLOAD ALL 500 · JSON</button></div>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Vault review table" aria-describedby="auditMatchCount">
+   <table><thead><tr><th scope="col">Vault</th><th scope="col">Galaxy / World</th><th scope="col">Origin</th><th scope="col">Strategy family</th><th scope="col">Board twins</th><th scope="col">Cost / D</th><th scope="col">Review candidates</th></tr></thead><tbody id="auditTable"></tbody></table>
+  </div>
+ </section>
+ <footer>Game Lab development information only. No player records collected, scores changed, or public-launch clearance implied. <a href="./">Return to Mana Heist</a>.</footer>
+</main>
+</body>
+</html>
