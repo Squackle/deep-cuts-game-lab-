@@ -288,3 +288,25 @@
 .hand-row,.hand-row.many{height:100%!important;align-self:stretch!important;align-items:stretch!important;min-height:0}
 .hand-card,.hand-row.many .hand-card{height:100%!important;max-height:100%!important;align-self:stretch!important}
 .hand-card img.hand-image,.hand-card .image-pending{height:100%!important;max-height:100%;object-fit:contain}
+
+/* Readable local card faces while artwork loads or a provider is unavailable.
+   Scope to fallback spans: successfully loaded prints remain unchanged. */
+.image-pending.card-fallback,
+.battle-card .battle-card-face .image-pending.card-fallback{
+ display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;
+ gap:5px;padding:7px 5px;overflow:hidden;box-sizing:border-box;
+ background:linear-gradient(145deg,#30483f,#122729);color:#f4e7c8;
+ border:1px solid #bda46b;border-radius:5px;text-align:left;white-space:normal;
+ font:normal clamp(9px,1vw,12px)/1.25 system-ui,sans-serif;
+}
+.card-fallback strong{font-weight:800;color:#f5d58e;overflow-wrap:anywhere}
+.card-fallback small{font-size:.85em;color:#cddfd3}
+.card-fallback .fallback-rules{font-size:.9em;overflow:hidden}
+.card-fallback>b{margin-top:auto;align-self:flex-end}
+.stack-art .card-fallback{padding:2px;font-size:8px}
+.stack-art .card-fallback>*:not(strong){display:none}
+.land-card .card-fallback{padding-bottom:22px}
+/* Text-only lands need intrinsic height; artwork is normally absolute. */
+.land-card:has(.card-fallback){min-height:42px}
+.land-card .image-pending.card-fallback{position:static;width:100%;height:auto;min-height:20px;padding:2px 3px;font-size:9px}
+.land-card .card-fallback>*:not(strong){display:none}
