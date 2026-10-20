@@ -1,0 +1,74 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {LEVELS} from "../src/levels.js";
+import {LEARN_LEVELS} from "../src/expanded-learn.js";
+import {BONUS_TRIALS} from "../src/bonus-trials.js";
+const read=p=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
+test("compact victory markup groups status, three solve details, and paired next/map actions",()=>{
+ const html=read("index.html");
+ assert.match(html,/<section id="winPanel" class="win" hidden role="dialog" aria-modal="true"/);
+ assert.match(html,/aria-labelledby="winTitle" aria-describedby="winCopy"/);
+ assert.match(html,/class="win-head"/);
+ assert.match(html,/class="win-stats" aria-label="Your solve summary"/);
+ assert.match(html,/id="winStatTurn"/);
+ assert.match(html,/id="winStatLife"/);
+ assert.match(html,/id="winStatExtra"/);
+ assert.match(html,/id="winStatExtraLabel"/);
+ assert.match(html,/<div class="win-actions" id="winActions"><button id="winNext"/);
+ assert.equal((html.match(/id="winNext"/g)||[]).length,1);
+ assert.equal((html.match(/id="winPanel"/g)||[]).length,1);
+});
+test("win navigation still calls map, next vault, and handles lessons and bonus trials",()=>{
+ const main=read("src/main.js");
+ assert.match(main,/el\("winActions"\)\.append\(returnFromResult\)/);
+ assert.match(main,/returnFromResult\.addEventListener\("click",\(\)=>showMap\(\)\)/);
+ assert.match(main,/el\("winNext"\)\.addEventListener\("click"/);
+ assert.match(main,/mode==="learn"/);
+ assert.match(main,/trialIndex!==null/);
+ assert.match(main,/el\("winStatTurn"\)\.textContent=String\(state\.turn\)/);
+ assert.match(main,/el\("winStatLife"\)\.textContent=String\(state\.spentLife\)/);
+ assert.match(main,/el\("winStats"\)\.hidden=!isWin/);
+ assert.match(main,/if\(isWin&&!wasWin\)el\("winNext"\)\.focus/);
+ assert.match(main,/el\("winPanel"\)\.addEventListener\("keydown"/);
+});
+test("opt-in playtest ratings remain isolated, explicit and horizontal",()=>{
+ const source=read("src/main.js");
+ assert.match(source,/difficultyReview\.hidden=!\(isWin&&playtestEnabled&&pendingRatingKey&&!playtestRatingDone\)/);
+ assert.match(source,/ratingButtons\.className="playtest-rating-choices"/);
+ assert.match(source,/ratingButtons\.setAttribute\("role","group"\)/);
+ assert.match(source,/for\(let i=1;i<=5;i\+\+\)/);
+ assert.match(source,/button\.dataset\.playtestRating=String\(i\)/);
+ assert.match(source,/ratingButtons\.append\(button\)/);
+ assert.match(source,/playtestData=ratePlaytest\(playtestData,pendingRatingKey,rating\)/);
+ assert.match(source,/difficultyReview\.hidden=true/);
+ assert.match(read("victory-layout.css"),/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)!important/);
+});
+test("wins fit standard screen heights; very short/zoomed screens have only a safety scroll",()=>{
+ const main=read("src/main.js");
+ const css=read("victory-layout.css");
+ assert.match(main,/victoryStyle\.href=new URL\("\.\.\/victory-layout\.css",import\.meta\.url\)\.href/);
+ assert.ok(main.indexOf('document.head.append(victoryStyle)')>main.indexOf('document.head.append(difficultyStyle)'),"new styles should override old overlays");
+ assert.match(css,/top:50%!important;left:50%!important/);
+ assert.match(css,/max-height:calc\(100dvh - 20px/);
+ assert.match(css,/overflow-x:hidden!important;overflow-y:auto!important/);
+ assert.match(css,/#winStats\[hidden\]/);
+ assert.match(css,/#playtestRating\[hidden\]/);
+ assert.match(css,/#winReturn\[hidden\]/);
+ assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+ assert.match(css,/grid-template-columns:minmax\(0,1\.15fr\) minmax\(0,\.85fr\)/);
+ assert.match(css,/@media\(max-height:470px\)/);
+ assert.match(css,/@media\(max-width:390px\)/);
+ assert.match(css,/min-height:44px!important/);
+});
+test("victory-only visual change preserves all puzzle definitions and progress keys",()=>{
+ assert.equal(LEVELS.length,500);
+ assert.equal(LEARN_LEVELS.length,28);
+ assert.equal(BONUS_TRIALS.length,2);
+ const source=read("src/main.js");
+ assert.match(source,/lastCardId=null,selectedHandId=null/,"the earlier game-breaking level-button bug must remain fixed");
+ for(const item of ["dc-mana-heist-landfall-v2","dc-mana-heist-learn-v1","REMIX_KEY","BONUS_TRIAL_STORAGE_KEY"])
+  assert.ok(source.includes(item),item);
+ const css=read("victory-layout.css");
+ assert.doesNotMatch(css,/\.overworld-stage|#chapterPicker|#learnPicker|#battlefield|#actionBox/);
+});

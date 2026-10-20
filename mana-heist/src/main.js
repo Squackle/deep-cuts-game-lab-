@@ -44,6 +44,10 @@ sageStyle.href=new URL("../sage-and-card-fixes.css",import.meta.url).href;
 document.head.append(sageStyle);
 const difficultyStyle=document.createElement("link");difficultyStyle.rel="stylesheet";
 difficultyStyle.href=new URL("../mastery-ratings.css",import.meta.url).href;document.head.append(difficultyStyle);
+// Applied after legacy modal styles to preserve the compact victory layout.
+const victoryStyle=document.createElement("link");victoryStyle.rel="stylesheet";
+victoryStyle.href=new URL("../victory-layout.css",import.meta.url).href;
+document.head.append(victoryStyle);
 const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"◇"},N:{name:"Generic",color:"#bec5bd",icon:"1"}};
 const storageKey="dc-mana-heist-landfall-v2";
 function readProgress(){
@@ -214,19 +218,31 @@ const sage=mountSage({stage:el("heist").querySelector(".vault-stage"),
 const returnFromResult=document.createElement("button");
 returnFromResult.type="button";returnFromResult.id="winReturn";
 returnFromResult.textContent="RETURN TO LESSONS";
-el("winPanel").append(returnFromResult);
+el("winActions").append(returnFromResult);
 const manaContext=document.createElement("span");manaContext.id="manaContext";manaContext.className="mana-scenario-context";
 el("difficulty").after(manaContext);
 returnFromResult.addEventListener("click",()=>showMap());
 const difficultyReview=document.createElement("div");difficultyReview.id="playtestRating";difficultyReview.className="playtest-rating";difficultyReview.hidden=true;
-const ratingLabel=document.createElement("span");ratingLabel.textContent="Optional playtest feedback: how hard did this vault feel? 1 = easy · 5 = very hard";
-difficultyReview.append(ratingLabel);
+const ratingLabel=document.createElement("span");ratingLabel.textContent="Optional · How hard was this puzzle? 1 easy — 5 hard";
+const ratingButtons=document.createElement("div");ratingButtons.className="playtest-rating-choices";
+ratingButtons.setAttribute("role","group");ratingButtons.setAttribute("aria-label","Rate this puzzle from 1 easy to 5 very hard");
+difficultyReview.append(ratingLabel,ratingButtons);
 for(let i=1;i<=5;i++){
  const button=document.createElement("button");button.type="button";button.dataset.playtestRating=String(i);
  button.textContent=String(i);button.setAttribute("aria-label","Rate difficulty "+i+" of 5");
- difficultyReview.append(button);
+ ratingButtons.append(button);
 }
 el("winPanel").append(difficultyReview);
+ // Keep keyboard Tab traversal inside the visible modal; the underlying
+ // tabletop should not receive focus while the victory panel is open.
+el("winPanel").addEventListener("keydown",e=>{
+ if(e.key!=="Tab"||el("winPanel").hidden)return;
+ const buttons=[...el("winPanel").querySelectorAll("button:not(:disabled)")].filter(b=>!b.hidden&&!b.closest("[hidden]"));
+ if(!buttons.length)return;
+ const first=buttons[0],last=buttons.at(-1);
+ if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+ else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+});
 function inspectById(id){
  const record=lookup(level,id);
  if(!record)return false;
@@ -699,25 +715,35 @@ function render(pendingId=null){
  endButton.innerHTML=finalTurn?'FINAL TURN <span aria-hidden="true">✕</span>':'END TURN <span aria-hidden="true">↗</span>';
  endButton.title=finalTurn?"No more turns. Tap for advice on this puzzle.":"End turn and untap your lands";
  endButton.setAttribute("aria-label",finalTurn?"Final turn. No further turns allowed. Tap for Undo or Restart advice.":"End turn and untap lands");
- el("winPanel").hidden=!isWin;
+ const winPanel=el("winPanel"),wasWin=!winPanel.hidden;
+ winPanel.hidden=!isWin;
  difficultyReview.hidden=!(isWin&&playtestEnabled&&pendingRatingKey&&!playtestRatingDone);
+ el("winStats").hidden=!isWin||(mode==="learn"&&trialIndex===null);
  if(isWin){
+  el("winStatTurn").textContent=String(state.turn);
+  el("winStatLife").textContent=String(state.spentLife);
+  el("winStatExtraLabel").textContent=trialIndex!==null?"BEST MEDAL":"REFERENCE";
+  el("winStatExtra").textContent=trialIndex!==null?
+   String(trialBests[level.id]?.stars||medal(level,state,proof))+" ★":
+   proof?.status==="solved"&&Number.isFinite(proof.turn)?
+   "T"+proof.turn+" / "+proof.spentLife:"LEGAL ROUTE";
   if(trialIndex!==null){
    const best=trialBests[level.id],stars=medal(level,state,proof);
    el("winTitle").textContent="★".repeat(stars)+" BONUS VAULT OPEN";
-   el("winCopy").textContent="Local trial result: turn "+state.turn+", "+state.spentLife+" life spent, "+state.actions+" moves. Best medal: "+(best?.stars||stars)+" star(s). Not part of your 500 campaign rankings.";
+   el("winCopy").textContent=state.actions+" moves · Optional bonus challenge, separate from campaign rankings.";
   }else if(mode==="learn"){
    el("winTitle").textContent="✧ LESSON COMPLETE";
    el("winCopy").textContent=SAGE_LESSONS[index]?.why||"Practice complete. Your new mana skill is ready for the next lesson.";
   }else{
    const score=medal(level,state,proof);
    el("winTitle").textContent="★".repeat(score)+" VAULT CRACKED";
-   el("winCopy").textContent=level.revision?"You solved a complex mana circuit using real card abilities. Your result is measured against a certified legal route, not a claimed globally optimal solution.":"Solved turn "+state.turn+" · "+state.spentLife+" life spent · perfect line: turn "+proof.turn+" / "+proof.spentLife+" life spent";
+   el("winCopy").textContent=level.revision?"Reference is a verified legal route, not guaranteed optimal.":"Every ward opened. Compare your result to the reference below.";
   }
  }
  el("skip").textContent="← MAP";
  el("winNext").textContent=trialIndex!==null?"BACK TO BONUS TRIALS →":mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
  returnFromResult.hidden=!isWin;returnFromResult.textContent=trialIndex!==null?"← BONUS TRIALS":mode==="learn"?"← LESSONS":"← VAULT MAP";
+ if(isWin&&!wasWin)el("winNext").focus({preventScroll:true});
  sage.render({mode:trialIndex!==null?"bonus":mode,index,level,state,finished:isWin});
  if(mode==="heist")renderOverworld({world,bests:displayBests(),index,proofs,medal});
  choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap battlefield lands for mana; tap a hand card to play it or cast a ritual.",[]);
