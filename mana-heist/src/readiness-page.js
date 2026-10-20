@@ -61,6 +61,10 @@ function bootstrap(){
  }
  function refresh(){
   const g=el("auditGalaxy").value,focus=el("auditFilter").value,q=el("auditSearch").value.trim().toLowerCase();
+  // Original first 18 stage IDs are mh-01..mh-18, whereas later IDs are
+  // three-digit. Accept mh-001 aliases without ever changing saved IDs.
+  const numeric=/^mh-0*([1-9][0-9]*)$/.exec(q);
+  const canonical=numeric?"mh-"+String(Number(numeric[1])).padStart(Number(numeric[1])<=18?2:3,"0"):null;
   const filtered=report.rows.filter(row=>
    (g==="all"||String(row.galaxy)===g)&&
    (focus==="all"||
@@ -68,7 +72,7 @@ function bootstrap(){
     focus==="lineage"&&row.flags.includes("REPEATED_FAMILY")||
     focus==="similar"&&row.flags.includes("SIMILAR_BOARD")||
     focus==="revised"&&row.revision>0)&&
-   (!q||(row.id+" "+row.title+" "+row.family+" "+row.origin).toLowerCase().includes(q)));
+   (!q||row.id===canonical||(row.id+" "+row.title+" "+row.family+" "+row.origin).toLowerCase().includes(q)));
   el("auditTable").replaceChildren(...filtered.map(paintRow));
   el("auditMatchCount").textContent="Showing "+filtered.length+" of 500 vaults. These are structural review candidates, not verified duplicates.";
  }
