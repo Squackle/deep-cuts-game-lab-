@@ -11,6 +11,8 @@ test("visual interpolation moves smoothly between deterministic neighboring grid
  assert.deepEqual(smoothBody(before,after,0),before);
  assert.deepEqual(smoothBody(before,after,0.5),[{x:5.5,y:6},{x:4.5,y:6},{x:3.5,y:6}]);
  assert.equal(smoothBody(before,after,1),after,"No allocation after interpolation completes");
+ assert.deepEqual(smoothBody([{x:5,y:5}],[{x:5,y:4}],.25),[{x:5,y:4.75}],
+  "Vertical and corner transitions are smoothed on the same cell grid");
  assert.equal(motionPhase(75,150),.5);
  assert.equal(motionPhase(900,150),1);
  assert.equal(motionPhase(-50,150),0);
