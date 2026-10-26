@@ -81,4 +81,5 @@ test("game main keeps authoritative queue/step but renders smoothed swarm",()=>{
  assert.match(src,/paintBackdrop\(context,canvas,arenaBackground/);
  assert.match(src,/drawConnectedSpine\(body\)/);
  assert.match(src,/motionPhase\(state\.accumulator,effectiveTickMs\(run\)\)/);
+ assert.match(src,/state\.visualBefore=null/,"New runs and resumes must cancel stale animations");
 });
