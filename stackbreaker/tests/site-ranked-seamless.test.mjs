@@ -8,7 +8,12 @@ test('Only ranked embedded Daily hides duplicate Lab header, hero and non-game n
  assert.match(page,/body\.site-ranked-embed \.daily-banner,/);
  assert.match(page,/body\.site-ranked-embed \.study-notes/);
  assert.ok(!page.includes('body:not(.site-ranked-embed) .daily-banner{display:none}'));
- assert.ok(page.includes('body.site-ranked-embed #game'));
+ assert.ok(page.includes('body.site-ranked-embed{--head-h:0px}'),
+  'Embed should use the same full board viewport as regular Stackbreaker');
+ assert.ok(!page.includes('body.site-ranked-embed #game{'),
+  'No alternate Daily grid, height, padding or land-tap area styling');
+ assert.ok(!page.includes('body.site-ranked-embed main{max-width:none'),
+  'Daily must inherit the regular Classic content width');
  for(const text of [page,source]){
   assert.ok(text.includes("if(siteRanked)document.body.classList.add('site-ranked-embed')"));
   assert.ok(text.includes("dc-sb-ranked-layout"));
