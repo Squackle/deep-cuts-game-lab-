@@ -108,3 +108,36 @@ function drawCavern(ctx,w,h,biome){
  }
  ctx.fillStyle='rgba(3,8,11,.28)';ctx.fillRect(0,0,w,h);
 }
+
+/**
+ * Static terrain scenery is unchanged on most animation frames. Render it to
+ * a private offscreen surface once per biome/asset state, then blit that
+ * surface each frame. Fallback to the original painter if the browser cannot
+ * create a 2D offscreen context. The authoritative engine is untouched.
+ */
+export function createCachedBackdrop(createSurface=()=>{
+ if(typeof OffscreenCanvas!=="undefined")return new OffscreenCanvas(1,1);
+ return typeof document!=="undefined"?document.createElement("canvas"):null;
+}){
+ let surface=null,ctx=null,key="";
+ return (destination,canvas,image,cols,rows,cellSize,biome=1)=>{
+  const ready=!!(image?.complete&&image.naturalWidth>0);
+  const nextKey=[canvas.width,canvas.height,cols,rows,cellSize,biome,ready].join("/");
+  if(!ctx||nextKey!==key){
+   if(!surface){
+    surface=createSurface();
+    ctx=surface?.getContext?.("2d",{alpha:false})||null;
+   }
+   if(!ctx){
+    drawLevelBackground(destination,canvas,image,cols,rows,cellSize,biome);
+    return;
+   }
+   surface.width=canvas.width;surface.height=canvas.height;
+   // Resizing a canvas clears its state. Request the new context explicitly.
+   ctx=surface.getContext("2d",{alpha:false})||ctx;
+   drawLevelBackground(ctx,surface,image,cols,rows,cellSize,biome);
+   key=nextKey;
+  }
+  destination.drawImage(surface,0,0);
+ };
+}
