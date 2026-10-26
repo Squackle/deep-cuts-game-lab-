@@ -1,0 +1,830 @@
+{
+  "format": "mana-heist-campaign-decisions",
+  "version": 1,
+  "engineVersion": "mh-landfall-0.2.0",
+  "analysisVersion": "mh-strategy-graph-1",
+  "scope": "All 500 legal reference routes; complete graphs only for the explicit selected IDs. Reference menus are descriptions, not proven strategic choices. No scalar human-difficulty score.",
+  "budgets": {
+    "maxStates": 15000,
+    "maxEdges": 200000
+  },
+  "summary": {
+    "vaults": 500,
+    "legalReferenceReplays": 500,
+    "graphSelected": 41,
+    "graphComplete": 26,
+    "graphInconclusive": 15,
+    "graphUnsolvable": 0,
+    "humanPlaytests": 0,
+    "empiricalDifficulty": "not-calibrated"
+  },
+  "galaxies": [
+    {
+      "galaxy": 1,
+      "vaults": 50,
+      "meanEstimatedDifficulty": 34.8,
+      "meanReferenceActions": 7.3,
+      "meanChoiceVisits": 5.26,
+      "meanDistinctMenus": 5.06,
+      "meanConsecutiveWardCasts": 1.02
+    },
+    {
+      "galaxy": 2,
+      "vaults": 50,
+      "meanEstimatedDifficulty": 33.34,
+      "meanReferenceActions": 7.2,
+      "meanChoiceVisits": 5.58,
+      "meanDistinctMenus": 5.38,
+      "meanConsecutiveWardCasts": 1
+    },
+    {
+      "galaxy": 3,
+      "vaults": 50,
+      "meanEstimatedDifficulty": 38,
+      "meanReferenceActions": 8.62,
+      "meanChoiceVisits": 6.84,
+      "meanDistinctMenus": 6.48,
+      "meanConsecutiveWardCasts": 1.16
+    },
+    {
+      "galaxy": 4,
+      "vaults": 50,
+      "meanEstimatedDifficulty": 39.68,
+      "meanReferenceActions": 9.74,
+      "meanChoiceVisits": 8.18,
+      "meanDistinctMenus": 7.98,
+      "meanConsecutiveWardCasts": 1.12
+    },
+    {
+      "galaxy": 5,
+      "vaults": 50,
+      "meanEstimatedDifficulty": 43.14,
+      "meanReferenceActions": 10.78,
+      "meanChoiceVisits": 9.24,
+      "meanDistinctMenus": 9.02,
+      "meanConsecutiveWardCasts": 1.16
+    },
+    {
+      "galaxy": 6,
+      "vaults": 50,
+      "meanEstimatedDifficulty": 54.98,
+      "meanReferenceActions": 16.06,
+      "meanChoiceVisits": 14.38,
+      "meanDistinctMenus": 13.82,
+      "meanConsecutiveWardCasts": 1.98
+    },
+    {
+      "galaxy": 7,
+      "vaults": 50,
+      "meanEstimatedDifficulty": 68.52,
+      "meanReferenceActions": 30.86,
+      "meanChoiceVisits": 29.08,
+      "meanDistinctMenus": 22.1,
+      "meanConsecutiveWardCasts": 1.98
+    },
+    {
+      "galaxy": 8,
+      "vaults": 50,
+      "meanEstimatedDifficulty": 72.62,
+      "meanReferenceActions": 31.94,
+      "meanChoiceVisits": 29.3,
+      "meanDistinctMenus": 22.38,
+      "meanConsecutiveWardCasts": 1.98
+    },
+    {
+      "galaxy": 9,
+      "vaults": 50,
+      "meanEstimatedDifficulty": 86.06,
+      "meanReferenceActions": 47.4,
+      "meanChoiceVisits": 44.62,
+      "meanDistinctMenus": 24.94,
+      "meanConsecutiveWardCasts": 1.98
+    },
+    {
+      "galaxy": 10,
+      "vaults": 50,
+      "meanEstimatedDifficulty": 90.24,
+      "meanReferenceActions": 48.98,
+      "meanChoiceVisits": 45.34,
+      "meanDistinctMenus": 26.04,
+      "meanConsecutiveWardCasts": 1.98
+    }
+  ],
+  "graphs": [
+    {
+      "id": "mh-01",
+      "legacyEstimatedDifficulty": 17,
+      "referenceActions": 2,
+      "referenceChoiceMenus": 0,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 3,
+      "edges": 2,
+      "metrics": {
+        "shortestActions": 2,
+        "minimumCriticalCommitments": 0,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 0,
+        "referenceDeferredCommitments": 0,
+        "referenceDecisionPatterns": 0,
+        "referencePrematureEndOpportunities": 0
+      }
+    },
+    {
+      "id": "mh-02",
+      "legacyEstimatedDifficulty": 17,
+      "referenceActions": 3,
+      "referenceChoiceMenus": 0,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 4,
+      "edges": 3,
+      "metrics": {
+        "shortestActions": 3,
+        "minimumCriticalCommitments": 0,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 0,
+        "referenceDeferredCommitments": 0,
+        "referenceDecisionPatterns": 0,
+        "referencePrematureEndOpportunities": 0
+      }
+    },
+    {
+      "id": "mh-03",
+      "legacyEstimatedDifficulty": 32,
+      "referenceActions": 7,
+      "referenceChoiceMenus": 4,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 32,
+      "edges": 41,
+      "metrics": {
+        "shortestActions": 7,
+        "minimumCriticalCommitments": 0,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 0,
+        "referenceDeferredCommitments": 0,
+        "referenceDecisionPatterns": 0,
+        "referencePrematureEndOpportunities": 1
+      }
+    },
+    {
+      "id": "mh-04",
+      "legacyEstimatedDifficulty": 32,
+      "referenceActions": 6,
+      "referenceChoiceMenus": 1,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 18,
+      "edges": 19,
+      "metrics": {
+        "shortestActions": 6,
+        "minimumCriticalCommitments": 2,
+        "minimumDeferredCommitments": 1,
+        "referenceCriticalCommitments": 2,
+        "referenceDeferredCommitments": 1,
+        "referenceDecisionPatterns": 2,
+        "referencePrematureEndOpportunities": 3
+      }
+    },
+    {
+      "id": "mh-05",
+      "legacyEstimatedDifficulty": 34,
+      "referenceActions": 7,
+      "referenceChoiceMenus": 4,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 55,
+      "edges": 91,
+      "metrics": {
+        "shortestActions": 7,
+        "minimumCriticalCommitments": 1,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 1,
+        "referenceDeferredCommitments": 0,
+        "referenceDecisionPatterns": 1,
+        "referencePrematureEndOpportunities": 3
+      }
+    },
+    {
+      "id": "mh-06",
+      "legacyEstimatedDifficulty": 19,
+      "referenceActions": 3,
+      "referenceChoiceMenus": 2,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 6,
+      "edges": 5,
+      "metrics": {
+        "shortestActions": 3,
+        "minimumCriticalCommitments": 2,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 2,
+        "referenceDeferredCommitments": 0,
+        "referenceDecisionPatterns": 2,
+        "referencePrematureEndOpportunities": 0
+      }
+    },
+    {
+      "id": "mh-07",
+      "legacyEstimatedDifficulty": 40,
+      "referenceActions": 9,
+      "referenceChoiceMenus": 7,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 82,
+      "edges": 159,
+      "metrics": {
+        "shortestActions": 9,
+        "minimumCriticalCommitments": 3,
+        "minimumDeferredCommitments": 2,
+        "referenceCriticalCommitments": 6,
+        "referenceDeferredCommitments": 4,
+        "referenceDecisionPatterns": 6,
+        "referencePrematureEndOpportunities": 5
+      }
+    },
+    {
+      "id": "mh-08",
+      "legacyEstimatedDifficulty": 36,
+      "referenceActions": 7,
+      "referenceChoiceMenus": 4,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 75,
+      "edges": 119,
+      "metrics": {
+        "shortestActions": 7,
+        "minimumCriticalCommitments": 1,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 4,
+        "referenceDeferredCommitments": 2,
+        "referenceDecisionPatterns": 4,
+        "referencePrematureEndOpportunities": 3
+      }
+    },
+    {
+      "id": "mh-09",
+      "legacyEstimatedDifficulty": 32,
+      "referenceActions": 8,
+      "referenceChoiceMenus": 4,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 36,
+      "edges": 50,
+      "metrics": {
+        "shortestActions": 8,
+        "minimumCriticalCommitments": 2,
+        "minimumDeferredCommitments": 1,
+        "referenceCriticalCommitments": 3,
+        "referenceDeferredCommitments": 1,
+        "referenceDecisionPatterns": 3,
+        "referencePrematureEndOpportunities": 3
+      }
+    },
+    {
+      "id": "mh-10",
+      "legacyEstimatedDifficulty": 32,
+      "referenceActions": 7,
+      "referenceChoiceMenus": 3,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 36,
+      "edges": 53,
+      "metrics": {
+        "shortestActions": 7,
+        "minimumCriticalCommitments": 0,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 0,
+        "referenceDeferredCommitments": 0,
+        "referenceDecisionPatterns": 0,
+        "referencePrematureEndOpportunities": 3
+      }
+    },
+    {
+      "id": "mh-11",
+      "legacyEstimatedDifficulty": 34,
+      "referenceActions": 7,
+      "referenceChoiceMenus": 4,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 55,
+      "edges": 91,
+      "metrics": {
+        "shortestActions": 7,
+        "minimumCriticalCommitments": 1,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 1,
+        "referenceDeferredCommitments": 0,
+        "referenceDecisionPatterns": 1,
+        "referencePrematureEndOpportunities": 3
+      }
+    },
+    {
+      "id": "mh-12",
+      "legacyEstimatedDifficulty": 17,
+      "referenceActions": 4,
+      "referenceChoiceMenus": 1,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 7,
+      "edges": 6,
+      "metrics": {
+        "shortestActions": 4,
+        "minimumCriticalCommitments": 1,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 1,
+        "referenceDeferredCommitments": 0,
+        "referenceDecisionPatterns": 1,
+        "referencePrematureEndOpportunities": 0
+      }
+    },
+    {
+      "id": "mh-13",
+      "legacyEstimatedDifficulty": 34,
+      "referenceActions": 8,
+      "referenceChoiceMenus": 3,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 49,
+      "edges": 77,
+      "metrics": {
+        "shortestActions": 8,
+        "minimumCriticalCommitments": 0,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 0,
+        "referenceDeferredCommitments": 0,
+        "referenceDecisionPatterns": 0,
+        "referencePrematureEndOpportunities": 4
+      }
+    },
+    {
+      "id": "mh-14",
+      "legacyEstimatedDifficulty": 39,
+      "referenceActions": 9,
+      "referenceChoiceMenus": 7,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 82,
+      "edges": 159,
+      "metrics": {
+        "shortestActions": 9,
+        "minimumCriticalCommitments": 3,
+        "minimumDeferredCommitments": 2,
+        "referenceCriticalCommitments": 6,
+        "referenceDeferredCommitments": 4,
+        "referenceDecisionPatterns": 5,
+        "referencePrematureEndOpportunities": 5
+      }
+    },
+    {
+      "id": "mh-15",
+      "legacyEstimatedDifficulty": 37,
+      "referenceActions": 9,
+      "referenceChoiceMenus": 5,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 118,
+      "edges": 258,
+      "metrics": {
+        "shortestActions": 9,
+        "minimumCriticalCommitments": 1,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 3,
+        "referenceDeferredCommitments": 0,
+        "referenceDecisionPatterns": 3,
+        "referencePrematureEndOpportunities": 4
+      }
+    },
+    {
+      "id": "mh-16",
+      "legacyEstimatedDifficulty": 48,
+      "referenceActions": 10,
+      "referenceChoiceMenus": 8,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 546,
+      "edges": 1208,
+      "metrics": {
+        "shortestActions": 10,
+        "minimumCriticalCommitments": 0,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 0,
+        "referenceDeferredCommitments": 0,
+        "referenceDecisionPatterns": 0,
+        "referencePrematureEndOpportunities": 0
+      }
+    },
+    {
+      "id": "mh-17",
+      "legacyEstimatedDifficulty": 39,
+      "referenceActions": 9,
+      "referenceChoiceMenus": 7,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 459,
+      "edges": 1053,
+      "metrics": {
+        "shortestActions": 9,
+        "minimumCriticalCommitments": 2,
+        "minimumDeferredCommitments": 2,
+        "referenceCriticalCommitments": 4,
+        "referenceDeferredCommitments": 4,
+        "referenceDecisionPatterns": 4,
+        "referencePrematureEndOpportunities": 5
+      }
+    },
+    {
+      "id": "mh-18",
+      "legacyEstimatedDifficulty": 52,
+      "referenceActions": 16,
+      "referenceChoiceMenus": 12,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 12018,
+      "edges": 39939,
+      "metrics": {
+        "shortestActions": 16,
+        "minimumCriticalCommitments": 0,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 0,
+        "referenceDeferredCommitments": 0,
+        "referenceDecisionPatterns": 0,
+        "referencePrematureEndOpportunities": 0
+      }
+    },
+    {
+      "id": "mh-050",
+      "legacyEstimatedDifficulty": 36,
+      "referenceActions": 7,
+      "referenceChoiceMenus": 6,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 322,
+      "edges": 731,
+      "metrics": {
+        "shortestActions": 7,
+        "minimumCriticalCommitments": 1,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 1,
+        "referenceDeferredCommitments": 0,
+        "referenceDecisionPatterns": 1,
+        "referencePrematureEndOpportunities": 1
+      }
+    },
+    {
+      "id": "mh-100",
+      "legacyEstimatedDifficulty": 39,
+      "referenceActions": 9,
+      "referenceChoiceMenus": 7,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 252,
+      "edges": 593,
+      "metrics": {
+        "shortestActions": 9,
+        "minimumCriticalCommitments": 3,
+        "minimumDeferredCommitments": 2,
+        "referenceCriticalCommitments": 6,
+        "referenceDeferredCommitments": 4,
+        "referenceDecisionPatterns": 6,
+        "referencePrematureEndOpportunities": 5
+      }
+    },
+    {
+      "id": "mh-109",
+      "legacyEstimatedDifficulty": 33,
+      "referenceActions": 9,
+      "referenceChoiceMenus": 7,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 1645,
+      "edges": 8129,
+      "metrics": {
+        "shortestActions": 7,
+        "minimumCriticalCommitments": 5,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 6,
+        "referenceDeferredCommitments": 0,
+        "referenceDecisionPatterns": 5,
+        "referencePrematureEndOpportunities": 0
+      }
+    },
+    {
+      "id": "mh-110",
+      "legacyEstimatedDifficulty": 44,
+      "referenceActions": 10,
+      "referenceChoiceMenus": 9,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 2431,
+      "edges": 11515,
+      "metrics": {
+        "shortestActions": 8,
+        "minimumCriticalCommitments": 0,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 0,
+        "referenceDeferredCommitments": 0,
+        "referenceDecisionPatterns": 0,
+        "referencePrematureEndOpportunities": 0
+      }
+    },
+    {
+      "id": "mh-150",
+      "legacyEstimatedDifficulty": 44,
+      "referenceActions": 10,
+      "referenceChoiceMenus": 9,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 2401,
+      "edges": 11473,
+      "metrics": {
+        "shortestActions": 9,
+        "minimumCriticalCommitments": 0,
+        "minimumDeferredCommitments": 0,
+        "referenceCriticalCommitments": 0,
+        "referenceDeferredCommitments": 0,
+        "referenceDecisionPatterns": 0,
+        "referencePrematureEndOpportunities": 0
+      }
+    },
+    {
+      "id": "mh-200",
+      "legacyEstimatedDifficulty": 49,
+      "referenceActions": 13,
+      "referenceChoiceMenus": 11,
+      "graphStatus": "inconclusive",
+      "reason": "state-budget",
+      "states": 15000,
+      "edges": 69248,
+      "metrics": null
+    },
+    {
+      "id": "mh-250",
+      "legacyEstimatedDifficulty": 50,
+      "referenceActions": 14,
+      "referenceChoiceMenus": 11,
+      "graphStatus": "inconclusive",
+      "reason": "state-budget",
+      "states": 15000,
+      "edges": 63590,
+      "metrics": null
+    },
+    {
+      "id": "mh-251",
+      "legacyEstimatedDifficulty": 46,
+      "referenceActions": 7,
+      "referenceChoiceMenus": 5,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 147,
+      "edges": 420,
+      "metrics": {
+        "shortestActions": 7,
+        "minimumCriticalCommitments": 4,
+        "minimumDeferredCommitments": 3,
+        "referenceCriticalCommitments": 4,
+        "referenceDeferredCommitments": 4,
+        "referenceDecisionPatterns": 4,
+        "referencePrematureEndOpportunities": 0
+      }
+    },
+    {
+      "id": "mh-252",
+      "legacyEstimatedDifficulty": 57,
+      "referenceActions": 17,
+      "referenceChoiceMenus": 15,
+      "graphStatus": "inconclusive",
+      "reason": "state-budget",
+      "states": 15000,
+      "edges": 56748,
+      "metrics": null
+    },
+    {
+      "id": "mh-253",
+      "legacyEstimatedDifficulty": 56,
+      "referenceActions": 17,
+      "referenceChoiceMenus": 14,
+      "graphStatus": "inconclusive",
+      "reason": "state-budget",
+      "states": 15000,
+      "edges": 68650,
+      "metrics": null
+    },
+    {
+      "id": "mh-254",
+      "legacyEstimatedDifficulty": 55,
+      "referenceActions": 17,
+      "referenceChoiceMenus": 17,
+      "graphStatus": "inconclusive",
+      "reason": "state-budget",
+      "states": 15000,
+      "edges": 50186,
+      "metrics": null
+    },
+    {
+      "id": "mh-255",
+      "legacyEstimatedDifficulty": 55,
+      "referenceActions": 16,
+      "referenceChoiceMenus": 14,
+      "graphStatus": "inconclusive",
+      "reason": "state-budget",
+      "states": 15000,
+      "edges": 67816,
+      "metrics": null
+    },
+    {
+      "id": "mh-256",
+      "legacyEstimatedDifficulty": 53,
+      "referenceActions": 14,
+      "referenceChoiceMenus": 10,
+      "graphStatus": "inconclusive",
+      "reason": "state-budget",
+      "states": 15000,
+      "edges": 52950,
+      "metrics": null
+    },
+    {
+      "id": "mh-300",
+      "legacyEstimatedDifficulty": 55,
+      "referenceActions": 17,
+      "referenceChoiceMenus": 17,
+      "graphStatus": "inconclusive",
+      "reason": "state-budget",
+      "states": 15000,
+      "edges": 50186,
+      "metrics": null
+    },
+    {
+      "id": "mh-301",
+      "legacyEstimatedDifficulty": 53,
+      "referenceActions": 11,
+      "referenceChoiceMenus": 7,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 545,
+      "edges": 1669,
+      "metrics": {
+        "shortestActions": 11,
+        "minimumCriticalCommitments": 4,
+        "minimumDeferredCommitments": 2,
+        "referenceCriticalCommitments": 4,
+        "referenceDeferredCommitments": 2,
+        "referenceDecisionPatterns": 4,
+        "referencePrematureEndOpportunities": 5
+      }
+    },
+    {
+      "id": "mh-304",
+      "legacyEstimatedDifficulty": 65,
+      "referenceActions": 28,
+      "referenceChoiceMenus": 15,
+      "graphStatus": "inconclusive",
+      "reason": "state-budget",
+      "states": 15000,
+      "edges": 53581,
+      "metrics": null
+    },
+    {
+      "id": "mh-350",
+      "legacyEstimatedDifficulty": 66,
+      "referenceActions": 28,
+      "referenceChoiceMenus": 16,
+      "graphStatus": "inconclusive",
+      "reason": "state-budget",
+      "states": 15000,
+      "edges": 50767,
+      "metrics": null
+    },
+    {
+      "id": "mh-351",
+      "legacyEstimatedDifficulty": 59,
+      "referenceActions": 16,
+      "referenceChoiceMenus": 15,
+      "graphStatus": "complete",
+      "reason": null,
+      "states": 8743,
+      "edges": 40527,
+      "metrics": {
+        "shortestActions": 16,
+        "minimumCriticalCommitments": 7,
+        "minimumDeferredCommitments": 7,
+        "referenceCriticalCommitments": 8,
+        "referenceDeferredCommitments": 8,
+        "referenceDecisionPatterns": 8,
+        "referencePrematureEndOpportunities": 7
+      }
+    },
+    {
+      "id": "mh-400",
+      "legacyEstimatedDifficulty": 70,
+      "referenceActions": 29,
+      "referenceChoiceMenus": 17,
+      "graphStatus": "inconclusive",
+      "reason": "state-budget",
+      "states": 15000,
+      "edges": 50767,
+      "metrics": null
+    },
+    {
+      "id": "mh-401",
+      "legacyEstimatedDifficulty": 65,
+      "referenceActions": 23,
+      "referenceChoiceMenus": 19,
+      "graphStatus": "inconclusive",
+      "reason": "state-budget",
+      "states": 15000,
+      "edges": 67520,
+      "metrics": null
+    },
+    {
+      "id": "mh-450",
+      "legacyEstimatedDifficulty": 82,
+      "referenceActions": 43,
+      "referenceChoiceMenus": 16,
+      "graphStatus": "inconclusive",
+      "reason": "state-budget",
+      "states": 15000,
+      "edges": 47920,
+      "metrics": null
+    },
+    {
+      "id": "mh-451",
+      "legacyEstimatedDifficulty": 71,
+      "referenceActions": 32,
+      "referenceChoiceMenus": 25,
+      "graphStatus": "inconclusive",
+      "reason": "state-budget",
+      "states": 15000,
+      "edges": 65853,
+      "metrics": null
+    },
+    {
+      "id": "mh-500",
+      "legacyEstimatedDifficulty": 100,
+      "referenceActions": 65,
+      "referenceChoiceMenus": 60,
+      "graphStatus": "inconclusive",
+      "reason": "state-budget",
+      "states": 15000,
+      "edges": 44841,
+      "metrics": null
+    }
+  ],
+  "provenance": {
+    "workingSourceDirty": true,
+    "sourceCommit": "50be4e6735749b8dc090b75373407da7c1f9ef23",
+    "sourceHashes": {
+      "advanced-capstones.js": "0f21938af4949c1a3560239da2794118cd9da9bd35cd6d3b9ff0b910ce6dd5e2",
+      "auto-cast.js": "91480f55d35b32ea071da0a7bf0b509f6f9cc357739b46cff025fecb484b335b",
+      "bonus-trials.js": "cf9c88d140fcf04ad5f97743e3429f6ced27496377a3444bcc5b861b4b4a0c5a",
+      "campaign-decision-audit.js": "1fd85db4c16b65e7b3175ba4b1a63336fe3eaad4a9496e32e4e810a6f147268c",
+      "campaign.js": "5115406fef13471db839a89a750d29102da428ea55c37e7de61f793965e8ac4d",
+      "capstone-certificates.js": "46a8a814a9cb8d8a442855c9f72c0753313d29e437455a1f6b93e87970256889",
+      "card-inspector.js": "c9237d594457e722211b2808c5fd3f59c4cc3cc7601a486478e2654a99ca6383",
+      "card-magnifier.js": "14090ab3a55740595f2930d25ea2611211ceee1355c0db3029f69131ebf5ecdb",
+      "card-references.js": "358435deed26b3058596595098ea8b35c4b54fc7fc05e3820158e28136ec2d08",
+      "certified-remixes.js": "746ebd10a7a2fa6db3f5af19405a44d5f0a6253f629a4b603055a9ae8040e0f6",
+      "device-qa.js": "ce22305f9d8b8fa3e36f24727bb5ad31666c0e5c1b20074278095b8576edddd6",
+      "difficulty-metrics.js": "7d310815b545c26673e373ef8ec7f4af588efd1d8a982a395ed266605d7c6f3a",
+      "drag-lands.js": "e8b0029c4bedd5826f5ab42fb7894d9844f17a82ccffbad04c517ce603b686f6",
+      "engine.js": "7bd426ca6a1b5b07479a3e9c27298e1f1ef11b3d25b8bb38513047948f42c874",
+      "expanded-learn.js": "adee82411aa4f0bca781a8bf79b26680eaccc92c94b54f27888db4dbace95ed1",
+      "fluid-palette.js": "aabf115e5bbdab9b8f40c95e01ebf41e108fee49e89e1203085d1bc111ca37a5",
+      "fluid-ward.js": "2b4396f8ced70b0b2abef3df8647b4653540cc1ef17e9b25ed91497347669062",
+      "guest-backup.js": "dd487c5522402e6f0594c86efb2b92185e362112dbcae405f23050f8c4117f03",
+      "guest-milestones.js": "6c894863009c0779d65d6e2b9266751d8e65ce8d7f07bd1124712171da7f2b09",
+      "hand-fan-layout.js": "8d3cfac4e0b533a00ff837f988484abf322f2872fcf5f8910b9ddb1712813b07",
+      "keyboard-rack.js": "7176d7cdaca3e69e60309541ee503e9e483e3489484dcf241478b8a999f75df3",
+      "land-art.js": "95b012fcbe3961aa5f5220fae9a5c00447877ea58c9c57cbe536d56048de4a4d",
+      "learn-track.js": "27a062b75ad4e45232bdb058b3683afd6b33fb7f66216a685326863c8e83b4de",
+      "levels.js": "84be2fb01fb97267fa66a7dd6048408480b534ba8248edbf13356d80bb86c144",
+      "main.js": "fc028ce0ae0386b4118044ecc4267856c46ff1e20351ed13421697bad1bddfec",
+      "mana-engine-test.js": "c11ede6176304cedb488bb103193f9042f7d9ea02129f8eb5db5f502ff15e110",
+      "mana-engine-v2.js": "73e33e80b0b64fee415cdb46118f018825028e28888c3452238c56a55bdc9b5e",
+      "mana-lab-scenarios.js": "bb554490b3467d7ce29dcfd58fc671e4fe4b70f57f1161c5f49f8c639d9501c3",
+      "mana-orbs.js": "fbbb93dd680dfb64635451e83eecf97b2c7fd322b16a2c1387e953de9bec6684",
+      "mana-variety-certificates.js": "f153b6056f302d6151a2c26580189cd02c2c7ba778655d85c829dfb9ec1ba9b0",
+      "mana-variety-puzzles.js": "407a31f06a6b5d847f06a10a904609b5072012cfbe86062e1760b2fd5381bbac",
+      "mastery-certificates.js": "bca87dde6f352ada25f85f6526235616e1e6254411522df988acb9df8f9b8bbc",
+      "mastery-galaxies.js": "00a745f0c9139a03d471f6b0920af794c79d70bd987188e076033cdc09d34eec",
+      "orbital-mana.js": "52507da324337aa598378fd58c193db3ad3389bdcde72b3c6dd6072aa7eb86f5",
+      "overworld.js": "a0decadf84a4c35990130f9aee5b4613b604937afebf516a9d0e6b1b34d57f42",
+      "pigment-mixer.js": "719480fd497a921af96c78435350297af73174cad1c35e8f7107f7794863ab92",
+      "playtest-metrics.js": "891100c3cc1de28f0b929f3c33c4c2287b7c19e775ccdc3375fc3327f7954696",
+      "printing-art.js": "f0c5e6c4a0b37e57e9e7e0ce23345e6761bb8dc4e6a93007f77cd73b261a8e40",
+      "readiness-audit.js": "50956eca6579d8155e6e5a6e6ec010e3abcf2d0d9a289c608a0302d3b8a1931a",
+      "readiness-page.js": "5b2e25da39a16d4d566f6a5d7e5823281c744c2b48ef7f30dd9f343395b29cb6",
+      "route-decision-profile.js": "0b9b574889b5020853d9183e5805cf16d62df37994c62351145cdc70094878c8",
+      "sage-lessons.js": "dda4cf8a3491acbf0fe9f0ce4fbcfa1eabb8ea09f1df10cd0fe819d993758ad3",
+      "sage-ui.js": "b95eaf46f4aa3b8d22b4ce99e5fa8d8fe351211d01331470483d0858e7e28e6a",
+      "scryfall-cards.js": "f7de1c8ad28109770d022dbc9f76b8ac178231d018dbcccb0e293a8dbf9a96cd",
+      "solver.js": "f9f13d32c055442819c5f5bad82dcceecc6ddb010f0aa2b3299148deba5f2cfc",
+      "strategy-graph.js": "d8756d66bb299f4cc3b3761ff2dd5d458921f73426f3fd8d7d52ce47c0df2cab",
+      "turn-guidance.js": "ebcc9643d3db3c65cc3fdc10ecf282a5f8c72d27f8bd580a1065e9a597d9fa42",
+      "verified-hints.js": "e2303ec2afd98899b59a83058ea3b806a8cc9e5dc503d248ebf5771a8c7a8179",
+      "ward-charge.js": "8aa1fbfc4f813c9fd81d158cdd531ee0ef4f91f9ba7675f41a7f99735ed37a55",
+      "ward-feedback.js": "bd2be625782b614a182fe9c60b1fd9c99ed4b0f0bcc447012ec6098643135a85"
+    }
+  }
+}

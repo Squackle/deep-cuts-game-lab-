@@ -1,0 +1,7 @@
+puzzle_id,engine_version,build_sha,tester_label,experience,assist_mode,attempt,completed,elapsed_seconds,hints_used,restarts,perceived_difficulty_1_to_5,clarity_1_to_5,notes
+mh-03,mh-landfall-0.2.0,,,,manual,1,,,,,,,
+mh-09,mh-landfall-0.2.0,,,,manual,1,,,,,,,
+mh-109,mh-landfall-0.2.0,,,,manual,1,,,,,,,
+mh-110,mh-landfall-0.2.0,,,,manual,1,,,,,,,
+mh-251,mh-landfall-0.2.0,,,,manual,1,,,,,,,
+mh-301,mh-landfall-0.2.0,,,,manual,1,,,,,,,
