@@ -58,9 +58,9 @@ try{
    const title=await page.locator("#vaultName").evaluate(node=>{
     const range=document.createRange();range.selectNodeContents(node);return range.getBoundingClientRect().toJSON();
    });
-   for(const id of ["endTurn","undo","reset"]){
-    const control=await page.locator("#"+id).boundingBox();
-    assert.ok(!title||!control||Math.min(title.x+title.width,control.x+control.width)<=Math.max(title.x,control.x)||Math.min(title.y+title.height,control.y+control.height)<=Math.max(title.y,control.y),"title overlaps "+id);
+   for(const id of ["#endTurn","#undo","#reset",".auto-option"]){
+    const control=await page.locator(id).boundingBox();
+    assert.ok(!title||!control||Math.min(title.x+title.width,control.x+control.width)<=Math.max(title.x,control.x)||Math.min(title.y+title.height,control.y+control.height)<=Math.max(title.y,control.y),"title overlaps "+id+" at "+width+" "+JSON.stringify({title,control}));
    }
    for(const label of await page.locator("#heist .stats>div:nth-child(-n+2) small").all())assert.equal(await label.isVisible(),true);
    if(process.env.SCREENSHOT_DIR){mkdirSync(process.env.SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:resolve(process.env.SCREENSHOT_DIR,`${level.id}-${width}.png`)});}
@@ -86,6 +86,7 @@ try{
       await page.locator(`[data-choice="${choice}"]`).click();
      }
     }
+    assert.ok(await page.locator("#heist").evaluate(e=>e.scrollTop===0&&e.scrollLeft===0),"keyboard focus must not scroll the fixed tabletop");
     const next=reduce(level,state,move);assert.ok(next.ok,next.error);state=next.state;
     assert.equal(await page.locator("#lifeTotal").textContent(),String(state.life));
     assert.equal(await page.locator("#turnNumber").textContent(),state.turn+" / "+level.turnLimit);
