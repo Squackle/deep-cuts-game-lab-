@@ -464,3 +464,28 @@ body.in-heist #gameNotes .notes-heading #returnFromGuide:focus-visible{
  outline:3px solid #e3d49c;
  outline-offset:3px;
 }
+
+/* Keep the vault name out of the mobile stats/action row. Absolute positions
+   previously put the title underneath Final Turn/Undo/Restart. */
+@media(max-width:650px){
+ body.in-heist #heist .vault-card>h2{
+  top:calc(env(safe-area-inset-top,0px) + 94px)!important;
+  left:12px!important;right:12px!important;width:auto!important;min-width:0!important;
+  font-size:.85rem!important;line-height:1.2!important;
+ }
+ body.in-heist #heist .table-card:not(.hand-card){
+  top:max(calc(env(safe-area-inset-top,0px) + 114px),14dvh)!important;
+ }
+ body.in-heist #heist .stats{left:9px!important;gap:8px!important}
+ body.in-heist #heist .stats small{
+  display:block!important;font-size:.46rem!important;opacity:1!important;
+ }
+}
+
+@media(max-width:650px) and (max-height:670px){
+ body.in-heist #heist .vault-card>h2{right:144px!important;top:92px!important;font-size:.75rem!important}
+}
+/* Reserve the toolbar's space for long vault names on wider screens too. */
+@media(min-width:651px){
+ body.in-heist #heist .vault-card>h2{left:22%!important;right:280px!important;width:auto!important;min-width:0!important}
+}
