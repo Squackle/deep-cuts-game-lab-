@@ -30,6 +30,7 @@ import {certifyMastery} from "./mastery-certificates.js";
 import {certifyDiverse} from "./mana-variety-certificates.js";
 import {diverseFor} from "./mana-variety-puzzles.js";
 import {certifyRemix,REMIX_KEY,REMIXED_IDS,validateRemixBests} from "./certified-remixes.js";
+import {DECISION_LADDER} from "./decision-ladder.js";
 import {evaluateVault} from "./difficulty-metrics.js";
 import {mountSage} from "./sage-ui.js";
 import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
@@ -48,6 +49,8 @@ difficultyStyle.href=new URL("../mastery-ratings.css",import.meta.url).href;docu
 const victoryStyle=document.createElement("link");victoryStyle.rel="stylesheet";
 victoryStyle.href=new URL("../victory-layout.css",import.meta.url).href;
 document.head.append(victoryStyle);
+const decisionStyle=document.createElement("link");decisionStyle.rel="stylesheet";
+decisionStyle.href=new URL("../decision-ladder.css",import.meta.url).href;document.head.append(decisionStyle);
 const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"◇"},N:{name:"Generic",color:"#bec5bd",icon:"1"}};
 const storageKey="dc-mana-heist-landfall-v2";
 function readProgress(){
@@ -60,6 +63,7 @@ const varietyKey="dc-mana-heist-variety-v1";
 let remixBests={};
 try{remixBests=validateRemixBests(JSON.parse(localStorage.getItem(REMIX_KEY)||"null"));}catch{}
 function persistRemix(){try{localStorage.setItem(REMIX_KEY,JSON.stringify({v:1,bests:remixBests}));}catch{}}
+let decisionIndex=null; // Unscored, session-only sample progression.
 let trialIndex=null,trialBests={};
 try{trialBests=normalizeBonusBests(JSON.parse(localStorage.getItem(BONUS_TRIAL_STORAGE_KEY)||"null"));}catch{}
 function persistBonusTrials(){try{localStorage.setItem(BONUS_TRIAL_STORAGE_KEY,JSON.stringify({v:1,bests:trialBests}));}catch{}}
@@ -213,7 +217,7 @@ const magnifier=installCardMagnifier({
  canShow:()=>document.body.classList.contains("in-heist")&&!completed(level,state)
 });
 const sage=mountSage({stage:el("heist").querySelector(".vault-stage"),
- goToLesson:i=>{selectMode("learn");load(i,true);}
+ goToLesson:i=>{decisionIndex=null;trialIndex=null;selectMode("learn");load(i,true);}
 });
 const returnFromResult=document.createElement("button");
 returnFromResult.type="button";returnFromResult.id="winReturn";
@@ -256,7 +260,7 @@ const proofCache=new Map();
 const sourceProofCache=new Map();
 function proofFor(id){
  if(proofCache.has(id))return proofCache.get(id);
- const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id)||BONUS_TRIALS.find(v=>v.id===id);
+ const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id)||BONUS_TRIALS.find(v=>v.id===id)||DECISION_LADDER.find(v=>v.id===id);
  if(!puzzle)return null;
  const exact=puzzle.revision===4?certifyRemix(puzzle):puzzle.revision===3?certifyDiverse(puzzle):puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
  let proof=exact;
@@ -289,6 +293,9 @@ hintReveal.textContent="REVEAL HINT 1";
 const hintReset=document.createElement("button");hintReset.type="button";hintReset.id="hintReset";
 hintReset.textContent="HIDE HINTS";hintReset.hidden=true;
 hintActions.append(hintReveal,hintReset);hintPanel.append(hintHeading,hintCopy,hintActions);
+const decisionPlan=document.createElement("section");decisionPlan.id="decisionPlan";decisionPlan.hidden=true;
+ decisionPlan.setAttribute("aria-label","Complete ward plan");
+ el("wardDescription").after(decisionPlan);
 el("wardDescription").after(hintPanel);
 let hintStamp="",hintStep=0;
 function resetHintLadder(){
@@ -363,6 +370,19 @@ function renderLearn(){
   text.append(label,status);button.append(number,text);list.append(button);
  });
  trials.append(head,list);root.append(trials);
+ const decisions=document.createElement("section");decisions.className="learn-group";
+ const heading=document.createElement("h3");heading.textContent="DECISION LAB · FIVE SAMPLE VAULTS";
+ const description=document.createElement("p");description.textContent="From color matching to interlocking resource decisions. Unscored practice; difficulty order awaits player calibration. Your campaign and lesson saves are unchanged.";
+ const picks=document.createElement("div");picks.className="learn-exercises";
+ DECISION_LADDER.forEach((p,i)=>{
+  const button=document.createElement("button");button.type="button";button.className="learn-exercise";button.dataset.decisionIndex=String(i);
+  const number=document.createElement("span");number.className="learn-number";number.textContent="D"+(i+1);
+  const copy=document.createElement("span");copy.className="learn-exercise-copy";
+  const name=document.createElement("strong");name.textContent=p.title;
+  const detail=document.createElement("small");detail.textContent=p.decision.focus;
+  copy.append(name,detail);button.append(number,copy);picks.append(button);
+ });
+ decisions.append(heading,description,picks);root.append(decisions);
 }
 function showModePanels(){
  const learn=mode==="learn",heist=mode==="heist";
@@ -475,7 +495,9 @@ function perform(action){
  if(completed(level,state)){
   closePlaytest("win");
   magnifier.hide();
-  if(trialIndex!==null){
+  if(decisionIndex!==null){
+   message("Decision vault opened. Unscored practice; no campaign or lesson save was changed.");
+  }else if(trialIndex!==null){
    const proof=proofs.get(level.id),record={turn:state.turn,spentLife:state.spentLife,actions:state.actions,
     stars:medal(level,state,proof)};
    if(betterBonusScore(record,trialBests[level.id]))trialBests[level.id]=record;
@@ -648,6 +670,7 @@ function teachingCue(){
  if(completed(level,state))return "Vault opened. Nice work!";
  if(state.manaUnits?.some(u=>u.restriction)&&!actions(level,state).some(a=>a.type==="cast"))return "Some mana can only pay for creature spells. This vault may need a different mana source.";
  if(chooseAutomaticCast(level,state))return "Your mana matches the cost. Cast to spend it.";
+ if(decisionIndex!==null)return level.decision.focus;
  if(index===0)return "Tap your Island. Turning a land sideways makes mana.";
  if(index===1)return state.hand.length?"Play your Mountain from your hand.":"Tap your Mountain for red mana.";
  if(index===2)return state.hand.length&&!state.played?"Play a land from your hand.":state.field.some(f=>!f.tapped)?"Tap a land to make mana.":"End your turn to untap your lands.";
@@ -657,10 +680,10 @@ function teachingCue(){
 }
 function render(pendingId=null){
  syncHintLadder();
- const isWin=completed(level,state),proof=mode==="learn"&&trialIndex===null?{turn:level.turnLimit,spentLife:0}:proofs.get(level.id),stage=level.stages[state.stage];
- el("stageLabel").textContent=trialIndex!==null?"BONUS TRIAL "+(trialIndex+1)+" / "+BONUS_TRIALS.length:mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
- el("returnMap").textContent=mode==="learn"?(trialIndex!==null?"← TRIALS":"← LESSONS"):"← MAP";
- el("toggleGuide").textContent=mode==="learn"&&trialIndex===null?"✧ LESSON NOTES":"ⓘ GUIDE";
+ const isWin=completed(level,state),proof=mode==="learn"&&trialIndex===null&&decisionIndex===null?{turn:level.turnLimit,spentLife:0}:proofs.get(level.id),stage=level.stages[state.stage];
+ el("stageLabel").textContent=decisionIndex!==null?"D"+(decisionIndex+1)+" / "+DECISION_LADDER.length:trialIndex!==null?"BONUS TRIAL "+(trialIndex+1)+" / "+BONUS_TRIALS.length:mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
+ el("returnMap").textContent=mode==="learn"?(decisionIndex!==null?"← DECISIONS":trialIndex!==null?"← TRIALS":"← LESSONS"):"← MAP";
+ el("toggleGuide").textContent=decisionIndex!==null?"WARD PLAN":mode==="learn"&&trialIndex===null?"✧ LESSON NOTES":"ⓘ GUIDE";
  el("chapterName").textContent=level.chapter;
  el("difficulty").textContent=["INITIATE","ROOKIE","TACTICIAN","EXPERT","MASTERMIND"][level.rank-1];
  const ritesInGraveyard=state.graveyard.filter(id=>getCard(level,id)?.name==="Rite of Flame").length;
@@ -669,10 +692,21 @@ function render(pendingId=null){
  manaContext.textContent=[opponentInfo,paletteInfo].filter(Boolean).join(" · ")||(state.highTide?"HIGH TIDE · EXTRA U ×"+state.highTide:ritesInGraveyard?"RITE MEMORY · "+ritesInGraveyard:"");
  manaContext.hidden=!manaContext.textContent;
  const rating=evaluateVault(level);
+ masteryRating.hidden=decisionIndex!==null;
  masteryRating.textContent="C "+rating.complexity+" · D "+rating.difficulty;
  masteryRating.setAttribute("aria-label","Complexity "+rating.complexity+" of 100, estimated difficulty "+rating.difficulty+" of 100");
  el("vaultName").textContent=level.title;
  el("briefing").textContent=level.briefing;
+ decisionPlan.hidden=decisionIndex===null;
+ decisionPlan.replaceChildren();
+ if(decisionIndex!==null){
+  const heading=document.createElement("h3");heading.textContent="PLAN EVERY WARD";decisionPlan.append(heading);
+  level.stages.forEach((spell,i)=>{
+   const row=document.createElement("p"),name=document.createElement("strong"),cost=document.createElement("span");
+   name.textContent=(i+1)+". "+spell.name+" · ";
+   cost.innerHTML=costHtml(spell.cost);row.append(name,cost);decisionPlan.append(row);
+  });
+ }
  const archived=level.revision===4?varietyBests[level.id]:null;
  if(archived){
   if(!historicalMedals.has(level.id)){
@@ -690,7 +724,7 @@ function render(pendingId=null){
  el("wardCounter").textContent=isWin?"VAULT OPEN":"WARD "+(state.stage+1)+" OF "+level.stages.length;
  el("wardName").textContent=isWin?"The seal is broken":stage.name;
  el("wardCost").innerHTML=isWin?"":costHtml(stage.cost);
- el("wardDescription").textContent=isWin?(mode==="learn"?"Practice complete; your learning progress is saved separately.":"The heist is complete. Your best route is preserved on this device."):stage.effect==="untap"?"Casting this heist spell also untaps one land you choose.":"Numbers show generic mana costs, payable with any kind of mana; a diamond requires truly colorless mana.";
+ el("wardDescription").textContent=decisionIndex!==null?(isWin?level.decision.why:level.decision.focus):isWin?(mode==="learn"?"Practice complete; your learning progress is saved separately.":"The heist is complete. Your best route is preserved on this device."):stage.effect==="untap"?"Casting this heist spell also untaps one land you choose.":"Numbers show generic mana costs, payable with any kind of mana; a diamond requires truly colorless mana.";
  const finalTurn=!isWin&&isFinalTurn(level,state);
  const neededMana=isWin?"":requiredManaText(level,state);
  el("lessonPrompt").textContent=teachingCue();
@@ -727,7 +761,10 @@ function render(pendingId=null){
    String(trialBests[level.id]?.stars||medal(level,state,proof))+" ★":
    proof?.status==="solved"&&Number.isFinite(proof.turn)?
    "T"+proof.turn+" / "+proof.spentLife:"LEGAL ROUTE";
-  if(trialIndex!==null){
+  if(decisionIndex!==null){
+   el("winTitle").textContent="DECISION VAULT OPEN";
+   el("winCopy").textContent=level.decision.why;
+  }else if(trialIndex!==null){
    const best=trialBests[level.id],stars=medal(level,state,proof);
    el("winTitle").textContent="★".repeat(stars)+" BONUS VAULT OPEN";
    el("winCopy").textContent=state.actions+" moves · Optional bonus challenge, separate from campaign rankings.";
@@ -741,10 +778,10 @@ function render(pendingId=null){
   }
  }
  el("skip").textContent="← MAP";
- el("winNext").textContent=trialIndex!==null?"BACK TO BONUS TRIALS →":mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
- returnFromResult.hidden=!isWin;returnFromResult.textContent=trialIndex!==null?"← BONUS TRIALS":mode==="learn"?"← LESSONS":"← VAULT MAP";
+ el("winNext").textContent=decisionIndex!==null?(decisionIndex+1<DECISION_LADDER.length?"NEXT DECISION →":"BACK TO DECISIONS →"):trialIndex!==null?"BACK TO BONUS TRIALS →":mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
+ returnFromResult.hidden=!isWin;returnFromResult.textContent=decisionIndex!==null?"← DECISIONS":trialIndex!==null?"← BONUS TRIALS":mode==="learn"?"← LESSONS":"← VAULT MAP";
  if(isWin&&!wasWin)el("winNext").focus({preventScroll:true});
- sage.render({mode:trialIndex!==null?"bonus":mode,index,level,state,finished:isWin});
+ sage.render({mode:decisionIndex!==null?"decision":trialIndex!==null?"bonus":mode,index,level,state,finished:isWin});
  if(mode==="heist")renderOverworld({world,bests:displayBests(),index,proofs,medal});
  choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap battlefield lands for mana; tap a hand card to play it or cast a ritual.",[]);
  selectedMessage="";
@@ -766,7 +803,7 @@ function renderGuestMilestones(){
 function showMap(){
  renderGuestMilestones();
  const wasPlaying=document.body.classList.contains("in-heist");
- const leavingTrial=trialIndex;
+ const leavingTrial=trialIndex,leavingDecision=decisionIndex;
  closePlaytest("exit");pendingRatingKey=null;
  sage.hide();fluid.pause();fluid.clear();currentFluidStage="";
  magnifier.hide();
@@ -774,18 +811,19 @@ function showMap(){
  cancelAuto();viewEpoch++;pendingFlights.clear();
  cardInspector.hide({restore:false});
  landDrag?.cancel();
- document.body.classList.remove("in-heist","is-training");
+ document.body.classList.remove("in-heist","is-training","is-decision-lab");
  el("gameNotes").hidden=true;el("gameNotes").open=false;
   el("toggleGuide").setAttribute("aria-expanded","false");
  el("actionBox").hidden=true;
  cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();
  el("gameScreen").hidden=true;el("campaignScreen").hidden=false;
- trialIndex=null;
+ trialIndex=null;decisionIndex=null;
  showModePanels();
  el("campaignScreen").scrollIntoView({block:"start",behavior:"instant"});
  if(wasPlaying){
   const focusable=mapLaunchFocus?.isConnected&&!mapLaunchFocus.closest("[hidden]")?mapLaunchFocus:null;
-  const fallback=leavingTrial!==null?el("learnPicker").querySelector('[data-trial-index="'+leavingTrial+'"]'):
+  const fallback=leavingDecision!==null?el("learnPicker").querySelector('[data-decision-index="'+leavingDecision+'"]'):
+    leavingTrial!==null?el("learnPicker").querySelector('[data-trial-index="'+leavingTrial+'"]'):
     mode==="learn"?el("learnPicker").querySelector('[data-learn-level="'+index+'"]'):
     el("chapterPicker").querySelector('[data-level="'+index+'"]');
   const visible=fallback&&!fallback.closest("[hidden]")?fallback:null;
@@ -813,16 +851,18 @@ function load(i,enter=false){
  lastCardId=null;selectedHandId=null;
  landDrag?.cancel();
  if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(mode==="learn"&&!isLearnLevel(i)))return false;
+ document.body.classList.toggle("is-decision-lab",decisionIndex!==null);
  index=i;world=chapterIndex(index);
- level=trialIndex!==null?BONUS_TRIALS[trialIndex]:mode==="learn"?LEARN_LEVELS[index]:LEVELS[index];state=initial(level);history=[];selectedMessage="";
+ level=decisionIndex!==null?DECISION_LADDER[decisionIndex]:trialIndex!==null?BONUS_TRIALS[trialIndex]:mode==="learn"?LEARN_LEVELS[index]:LEVELS[index];state=initial(level);history=[];selectedMessage="";
  startStagePrintings(level);
  el("battlefield").replaceChildren();el("hand").replaceChildren();
  manaOrbs=reconstruct(state.pool);cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();
- if(mode==="learn"&&trialIndex===null){learnProgress.last=index;persistLearn();}
+ if(decisionIndex!==null){/* Practice has no score or completion persistence. */}
+ else if(mode==="learn"&&trialIndex===null){learnProgress.last=index;persistLearn();}
  else {progress.index=index;persist();}
  render();
  if(!el("gameNotes").hidden)renderCardReferences(el("cardGallery"),level);
- message((trialIndex!==null?"Bonus Trial "+(trialIndex+1):mode==="learn"?"Learn Mana "+(index+1):"Stage "+stageCode(index))+" · "+teachingCue());
+ message((decisionIndex!==null?"Decision Lab "+(decisionIndex+1):trialIndex!==null?"Bonus Trial "+(trialIndex+1):mode==="learn"?"Learn Mana "+(index+1):"Stage "+stageCode(index))+" · "+teachingCue());
  if(enter)showGame();
  return true;
 }
@@ -851,6 +891,12 @@ el("worldPips").addEventListener("click",e=>{
 el("campaignScreen").addEventListener("click",e=>{
  const pick=e.target.closest(".mode-option[data-mode]");
  if(pick){selectMode(pick.dataset.mode);return;}
+ const decision=e.target.closest("[data-decision-index]");
+ if(decision&&mode==="learn"){
+  const n=Number(decision.dataset.decisionIndex);
+  if(Number.isInteger(n)&&n>=0&&n<DECISION_LADDER.length){decisionIndex=n;trialIndex=null;load(n,true);}
+  return;
+ }
  const bonus=e.target.closest("[data-trial-index]");
  if(bonus&&mode==="learn"){const n=Number(bonus.dataset.trialIndex);if(Number.isInteger(n)&&n>=0&&n<BONUS_TRIALS.length){trialIndex=n;load(26+n,true);}return;}
  const exercise=e.target.closest("[data-learn-level]");
@@ -986,6 +1032,7 @@ window.addEventListener("resize",()=>{if(document.body.classList.contains("in-he
 el("reset").addEventListener("click",()=>{closePlaytest("restart");sage.onRestart(level);load(index);startPlaytest();});
 el("skip").addEventListener("click",showMap);
 el("winNext").addEventListener("click",()=>{
+ if(decisionIndex!==null){if(decisionIndex+1<DECISION_LADDER.length){decisionIndex++;load(decisionIndex,true);}else showMap();return;}
  if(trialIndex!==null){showMap();return;}
  if(mode==="learn"){const next=nextLearnIndex(index);if(next!==null)load(next,true);else showMap();return;}
  if(index+1<LEVELS.length)load(index+1,true);else showMap();
@@ -1008,7 +1055,7 @@ el("deviceQaChecks").addEventListener("click",e=>{
  if(!button)return;
  const item=DEVICE_QA_CHECKS.find(c=>c.id===button.dataset.qaLaunch);
  if(!item?.target)return;
- trialIndex=null;
+ trialIndex=null;decisionIndex=null;
  selectMode(item.target.mode);
  load(item.target.index,true);
 });

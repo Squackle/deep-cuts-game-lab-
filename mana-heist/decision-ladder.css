@@ -1,0 +1,23 @@
+/* Only the opt-in Decision Lab. Existing campaign styling is not replaced. */
+body.is-decision-lab.in-heist #heist .vault-stage{
+ z-index:20!important;pointer-events:none;
+}
+body.is-decision-lab.in-heist #heist .ward-info,
+body.is-decision-lab.in-heist #heist #wardTarget{pointer-events:auto}
+/* A raised hand must not swallow Cast on short screens. */
+@media(max-width:650px){
+body.is-decision-lab.in-heist #heist .stats{top:50px!important}
+body.is-decision-lab.in-heist #heist .stats small{display:block!important;font-size:.45rem!important}
+body.is-decision-lab.in-heist #heist .vault-card>h2{
+ top:calc(env(safe-area-inset-top,0px) + 92px)!important;
+ font-size:.8rem!important;
+}
+body.is-decision-lab.in-heist #heist .table-card:not(.hand-card){top:116px!important}
+}
+#decisionPlan{padding:12px;border:1px solid #d8bd8577;border-radius:10px;background:#142e2a}
+#decisionPlan p{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:10px 0}
+#decisionPlan p>span{display:inline-flex;flex-wrap:wrap;gap:4px}
+#decisionPlan h3{margin:0 0 8px;color:#e8d5a9}
+/* The legacy vault isolates its children below the hand's stacking context.
+   Let the practice cauldron's explicit layer participate in the tabletop. */
+body.is-decision-lab.in-heist #heist .vault-card{isolation:auto!important}
