@@ -11,6 +11,7 @@ import {certifyRemix} from "./certified-remixes.js";
 import {evaluateVault} from "./difficulty-metrics.js";
 
 export const AUDIT_VERSION=1;
+export const BOARD_FINGERPRINT_VERSION=2;
 const sorted=(items)=>items.slice().sort();
 const count=(items)=>Object.fromEntries([...new Set(items)].sort().map(item=>[item,items.filter(x=>x===item).length]));
 const stringKeys=o=>Object.keys(o||{}).sort().map(k=>k+":"+o[k]).join(",");
@@ -18,13 +19,13 @@ const groupKey=p=>p.templateId?"inherited:"+p.templateId:
  p.mastery?.family?"mastery:"+p.revision+":"+p.mastery.family:
  p.curated?"curated:"+p.curated:
  "original:"+p.id;
-const snapshot=list=>sorted((list||[]).map(c=>c.card));
+const snapshot=(list,p)=>sorted((list||[]).map(c=>JSON.stringify([c.card,p.charges?.[c.id]||0])));
 export function boardFingerprint(p){
  // Excludes title, flavor, board instance IDs and cosmetic ordering; labels
  // "similar boards" for reviewer inspection, NEVER "same winning strategy".
  return JSON.stringify({
-  field:snapshot(p.field),hand:snapshot(p.hand),library:snapshot(p.library),
-  wards:(p.stages||[]).map(x=>stringKeys(x.cost)),
+  field:snapshot(p.field,p),hand:snapshot(p.hand,p),library:snapshot(p.library,p),
+  wards:(p.stages||[]).map(x=>({cost:stringKeys(x.cost),effect:x.effect||null,spellType:x.spellType||"sorcery"})),
   life:p.life,turnLimit:p.turnLimit,devotion:stringKeys(p.devotion),
   opponentLandColors:sorted(p.opponentLandColors||[]),
   commanderColors:sorted(p.commanderColors||[]),
@@ -101,11 +102,11 @@ function finalize(rows){
   humanCurriculumReviewed:0,physicalDeviceReviewed:0,empiricalDifficultySamples:0
  };
  return {format:"mana-heist-readiness-audit",version:AUDIT_VERSION,
-  engineVersion:VERSION,
+  engineVersion:VERSION,boardFingerprintVersion:BOARD_FINGERPRINT_VERSION,
   caveat:"Automated board similarity is a REVIEW CANDIDATE, not demonstrated strategic duplication. A legal route is NOT proof of uniqueness, optimality, educational merit, automatic casting, or human/device QA. Difficulty values are structural estimates, not player observations.",
   summary,galaxies,rows};
 }
-function referenceFor(level,cache){
+export function referenceFor(level,cache){
  if(level.revision===4)return {kind:"authored-remix-v4",proof:certifyRemix(level)};
  if(level.revision===3)return {kind:"constructed-variety-v3",proof:certifyDiverse(level)};
  if(level.revision===2)return {kind:"constructed-mastery-v2",proof:certifyMastery(level)};
@@ -114,14 +115,17 @@ function referenceFor(level,cache){
  if(!cache.has(source))return {kind:"none",proof:null};
  return {kind:level.templateId?"inherited-template":"original-solver",proof:cache.get(source)};
 }
-export function auditLegalRoutes(puzzles=LEVELS,{maxStates=200000}={}){
- const data=structuralAudit(puzzles),cache=new Map();
- // Solve only original teaching boards once, then replay legal routes on all
- // derived templates; every revised family has its own constructive proof.
+export function createReferenceCache({maxStates=200000}={}){
+ const cache=new Map();
+ // Solve the originals once; the audit and decision profiler share references.
  for(const base of BASE_LEVELS){
   try{cache.set(base.id,solve(base,{maxStates}));}
   catch(e){cache.set(base.id,{status:"inconclusive",reason:String(e.message||e)});}
  }
+ return cache;
+}
+export function auditLegalRoutes(puzzles=LEVELS,{maxStates=200000}={}){
+ const data=structuralAudit(puzzles),cache=createReferenceCache({maxStates});
  for(let i=0;i<puzzles.length;i++){
   const p=puzzles[i],r=data.rows[i];
   try{
