@@ -319,7 +319,7 @@ function selectMutation(color,inputEvent){
  visualBurst={color,until:performance.now()+1150};
  hideMutationDraft($("mutationOverlay"));
  if(state.run.status==="draft"){showDraftScreen();return}
- state.accumulator=0;state.lastFrame=0;state.pointer=null;
+ state.accumulator=0;state.lastFrame=0;state.pointer=null;state.visualBefore=null;
  setEncounterMusic(musicForRun());
  playTone({W:540,U:670,B:330,R:790,G:475}[color],.18,.045);
  if(state.run.encounter){
@@ -368,6 +368,7 @@ function begin(){
    $("rankedNotice").textContent="SOLO EXPERIMENT · NO ONLINE RANKING";
   }
   lastCapture=null;visualBurst=null;lastEncounterSeen=null;lairBurst=null;
+  state.visualBefore=null;
  }
  start(state.run);
  clearMutationResume();
@@ -385,7 +386,7 @@ function reset(){
  state.run=lairActive()?createLairRun(selectedLairBoss,COLS,ROWS):newRun({cols:COLS,rows:ROWS,mode:selectedMode});
  state.day="";loadBest();
  lastCapture=null;visualBurst=null;lastEncounterSeen=null;lairBurst=null;
- state.accumulator=0;state.lastFrame=0;state.pointer=null;
+ state.accumulator=0;state.lastFrame=0;state.pointer=null;state.visualBefore=null;
  hideMutationDraft($("mutationOverlay"));
  showOverlay(lairActive()?lairTitle():MODES[selectedMode].name.toUpperCase(),
  lairActive()?"Practice one boss in a repeatable, unranked encounter.":MODES[selectedMode].description,
@@ -401,7 +402,7 @@ function togglePause(){
   showOverlay("RUN PAUSED","Your swarm will wait here until you're ready.","RESUME RUN ▶");
   announce("Game paused.");
  }else if(state.run.status==="paused"){
-  start(state.run);hideOverlay();state.accumulator=0;state.lastFrame=0;
+  start(state.run);hideOverlay();state.accumulator=0;state.lastFrame=0;state.visualBefore=null;
   announce("Game resumed.");
  }
  syncSoundtrack();syncUI();
