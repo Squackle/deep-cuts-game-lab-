@@ -35,7 +35,9 @@ const sendSite=message=>{
 const dailyDate=dailyUtcDate();
 const dailyBound=dailyRoute?bindDailyScenario(dailyEntryForDate(dailyDate),scenarios):null;
 const dailyIndex=dailyBound?scenarios.findIndex(s=>s.id===dailyBound.puzzleId):-1;
-let dailySession='preview',dailyRecord=null,dailyPracticeMoves=0,dailyExpired=false;
+// A daily puzzle is immediately playable with the exact Classic controls.
+// Ranked scoring remains an explicit separate start; practice cannot submit scores.
+let dailySession=dailyRoute?'practice':'preview',dailyRecord=null,dailyPracticeMoves=0,dailyExpired=false;
 let masteryLedger=readLocalMastery(localStorage);
 let localCosmetics=readCosmeticEquip(localStorage,masteryLedger);
 let masteryRun=emptyMasteryRun();
