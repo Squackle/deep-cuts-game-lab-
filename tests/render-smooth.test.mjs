@@ -18,18 +18,58 @@ test("visual interpolation moves smoothly between deterministic neighboring grid
  assert.equal(motionPhase(-50,150),0);
  assert.deepEqual(after,[{x:6,y:6},{x:5,y:6},{x:4,y:6}],"Never mutate real hitboxes");
 });
-test("instant snap for reduced motion, teleports, body growth and corrupted positions",()=>{
+test("smooth one-segment growth and keep the new tail anchored while body moves",()=>{
+ const before=[{x:5,y:5},{x:4,y:5},{x:3,y:5}];
+ const after=[{x:6,y:5},{x:5,y:5},{x:4,y:5},{x:3,y:5}];
+ assert.deepEqual(smoothBody(before,after,0),[...before,{x:3,y:5}]);
+ assert.deepEqual(smoothBody(before,after,.5),[
+  {x:5.5,y:5},{x:4.5,y:5},{x:3.5,y:5},{x:3,y:5}
+ ]);
+ assert.equal(smoothBody(before,after,1),after);
+ assert.equal(smoothBody(before,after,.5,{enabled:false}),after);
+ assert.deepEqual(before,[{x:5,y:5},{x:4,y:5},{x:3,y:5}]);
+ assert.deepEqual(after,[{x:6,y:5},{x:5,y:5},{x:4,y:5},{x:3,y:5}]);
+});
+test("still snap safely for teleports, shrinking, multi-growth and invalid tail",()=>{
  const a=[{x:2,y:2},{x:1,y:2}];
  const b=[{x:3,y:2},{x:2,y:2}];
  assert.equal(smoothBody(a,b,.5,{enabled:false}),b);
- const grown=[...b,{x:1,y:2}];
- assert.equal(smoothBody(a,grown,.5),grown);
+ const validGrowth=[...b,{x:1,y:2}];
+ assert.deepEqual(smoothBody(a,validGrowth,.5),[
+  {x:2.5,y:2},{x:1.5,y:2},{x:1,y:2}
+ ]);
+ const wrongTail=[...b,{x:0,y:2}];
+ assert.equal(smoothBody(a,wrongTail,.5),wrongTail);
+ const twoNewSegments=[...validGrowth,{x:0,y:2}];
+ assert.equal(smoothBody(a,twoNewSegments,.5),twoNewSegments);
+ const shrink=[{x:3,y:2}];
+ assert.equal(smoothBody(a,shrink,.5),shrink);
  const jump=[{x:12,y:2},{x:2,y:2}];
  assert.equal(smoothBody(a,jump,.5),jump);
  const broken=[{x:NaN,y:2},{x:2,y:2}];
  assert.equal(smoothBody(a,broken,.5),broken);
- assert.equal(smoothBody(a,b,.5,{enabled:false}),b);
  assert.equal(motionPhase(NaN,150),1);
+});
+test("real Brood Trail orb grants next-tick growth without snapping render",()=>{
+ const run=newRun({seed:10,mode:"classic"});
+ run.body=[{x:8,y:10},{x:7,y:10},{x:6,y:10}];
+ run.direction="right";run.turnQueue=[];
+ run.food={x:9,y:10};
+ start(run);
+ const length=run.body.length;
+ step(run);
+ assert.equal(run.brood,1);
+ assert.equal(run.body.length,length,"Orb collection schedules rather than immediately adds length");
+ assert.equal(run.growthDebt,1);
+ const before=run.body.map(p=>({...p}));
+ step(run);
+ assert.equal(run.body.length,length+1,"Next movement consumes growth debt");
+ assert.equal(run.growthDebt,0);
+ const mid=smoothBody(before,run.body,.5);
+ assert.equal(mid.length,run.body.length);
+ assert.equal(mid[0].x,before[0].x+.5);
+ assert.deepEqual(mid.at(-1),before.at(-1),"New tail emerges at the old tail position");
+ assert.deepEqual(run.body.at(-1),before.at(-1),"Engine collision state stays exact");
 });
 
 function mockContext(){
