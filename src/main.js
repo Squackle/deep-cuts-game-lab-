@@ -2,7 +2,8 @@ import {BIOMES,drawTerrain} from "./environments.js";
 import {MODES,boardKey} from "./modes.js";
 import {newRun,start,pause,turn,step,progress,MUTATIONS,COLORS,chooseMutation,effectiveTickMs,activeEffects} from "./engine.js";
 import {loadCreatureArt,variantForSegment} from "./creature-sprites.js";
-import {drawLevelBackground,loadLevelBackground,levelForStage} from "./level-background.js";
+import {createCachedBackdrop,loadLevelBackground,levelForStage} from "./level-background.js";
+import {smoothBody,motionPhase} from "./render-motion.js";
 import {drawBroodPickup} from "./pickups.js";
 import {HatcherySoundtrack,TRACKS,trackForEncounter} from "./soundtrack.js";
 import {canPlayMusic,resumeFromGesture} from "./audio-activation.js";
@@ -33,6 +34,7 @@ const canvas=$("gameCanvas");
 const context=canvas.getContext("2d",{alpha:false});
 const gameOnly=createGameOnlyMode({doc:document,win:window,root:$("game"),button:$("fullscreenButton")});
 const CELLS=20,COLS=18,ROWS=22;
+const paintBackdrop=createCachedBackdrop();
 const WUBRG_COLORS=["#e7d8b4","#65a9d5","#7e6a88","#dd684a","#75ad7b"];
 let creatureArt=null;
 let arenaBackground=null;
@@ -69,7 +71,7 @@ function setEncounterMusic(encounterType){
  syncSoundtrack();syncUI();
 }
 const state={run:newRun({cols:COLS,rows:ROWS,mode:selectedMode}),best:0,sessionBest:0,audio:false,musicOn:false,ctx:null,
- lastFrame:0,accumulator:0,lastAnnouncement:"",pointer:null};
+ lastFrame:0,accumulator:0,visualBefore:null,lastAnnouncement:"",pointer:null};
 try{state.best=Math.max(0,Number(localStorage.getItem(bestKey()))||0);
  state.audio=localStorage.getItem(SOUND_STORE)==="on";
  state.musicOn=localStorage.getItem(MUSIC_STORE)==="on";
@@ -503,7 +505,9 @@ function drawArtCreature(part,kind,id,heading){
 function draw(){
  if(!context)return;
  const run=state.run;
- drawLevelBackground(context,canvas,arenaBackground,COLS,ROWS,CELLS,run.biome);
+ paintBackdrop(context,canvas,arenaBackground,COLS,ROWS,CELLS,run.biome);
+ const body=run.status==="running"?smoothBody(state.visualBefore,run.body,
+  motionPhase(state.accumulator,effectiveTickMs(run)),{enabled:!prefersReducedMotion()}):run.body;
  drawTerrain(context,run,CELLS);
  drawHatchlingWards(context,run,CELLS);
  // The brood is a gameplay target; keep it conspicuous over busy art.
@@ -517,19 +521,19 @@ function draw(){
   drawBurrowWarning(context,run.encounter.telegraph,CELLS);
  }
  // The head tile is framed independently from the detailed creature sprite.
- drawPlayerLocator(context,run.body[0],run.direction,CELLS,"below");
+ drawPlayerLocator(context,body[0],run.direction,CELLS,"below");
  // A single outlined spine connects the independently colored WUBRG plates.
  // Draw back-to-front so the pointed head stays visible over the neck.
- if(creatureArt)drawConnectedSpine(run.body);
+ if(creatureArt)drawConnectedSpine(body);
  for(let i=run.body.length-1;i>=0;i--){
-  const part=run.body[i],next=run.body[i+1];
-  const heading=i===0?(run.turnQueue[0]??run.direction):orientation(next??run.body[i-1],part);
+  const part=body[i],next=run.body[i+1];
+  const heading=i===0?(run.turnQueue[0]??run.direction):orientation(next??run.body[i-1],run.body[i]);
   const kind=i===0?"head":i===run.body.length-1?"tail":"body";
   const id=variantForSegment(Math.max(0,i-1));
   if(creatureArt)drawArtCreature(part,kind,id,heading);
   else drawCreaturePiece(part,kind,id,heading);
  }
- drawPlayerLocator(context,run.body[0],run.turnQueue[0]??run.direction,CELLS,"above");
+ drawPlayerLocator(context,body[0],run.turnQueue[0]??run.direction,CELLS,"above");
  drawQueuedTurn(context,run.body[0],run.turnQueue[0],COLS,ROWS,CELLS);
  renderMutationEffects(context,run,CELLS,performance.now(),visualBurst,prefersReducedMotion());
  drawLairEffects(context,run,CELLS,performance.now(),lairBurst,prefersReducedMotion());
@@ -574,7 +578,10 @@ function loop(time){
    const currentTick=effectiveTickMs(state.run);
    const prevBrood=state.run.brood,prevEvent=state.run.eventSerial,prevKills=state.run.kills,prevScore=state.run.score;
    const enemyBefore=state.run.enemies.map(e=>({id:e.id,pos:{...e.pos}}));
+   const bodyBefore=state.run.body.map(p=>({x:p.x,y:p.y})),movesBefore=state.run.moves;
    step(state.run);
+   // Never change the authoritative engine; animation is for presentation.
+   state.visualBefore=state.run.moves>movesBefore?bodyBefore:null;
    if(lairActive())completeLairRun(state.run);
    state.accumulator=Math.max(0,state.accumulator-currentTick);
    catchUps++;
