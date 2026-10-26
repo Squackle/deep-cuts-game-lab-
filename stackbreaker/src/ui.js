@@ -1,3 +1,4 @@
+import {renderCardFallback} from './card-fallback.js';
 import {CARDS,LANDS,RULES_VERSION,cardLink} from './cards.js';
 import {createGame,tapLand,playLand,activate,pass,paymentOptions,legalActions,legalTargets,creaturePower,creatureToughness,labelTarget} from './engine.js';
 import {presentCreaturePT} from './pt-display.js';
@@ -35,7 +36,9 @@ const sendSite=message=>{
 const dailyDate=dailyUtcDate();
 const dailyBound=dailyRoute?bindDailyScenario(dailyEntryForDate(dailyDate),scenarios):null;
 const dailyIndex=dailyBound?scenarios.findIndex(s=>s.id===dailyBound.puzzleId):-1;
-let dailySession='preview',dailyRecord=null,dailyPracticeMoves=0,dailyExpired=false;
+// Daily practice is immediately playable with the original Classic controls.
+// Verified site-ranked scoring still requires an explicit server-approved start.
+let dailySession=dailyRoute?'practice':'preview',dailyRecord=null,dailyPracticeMoves=0,dailyExpired=false;
 let masteryLedger=readLocalMastery(localStorage);
 let localCosmetics=readCosmeticEquip(localStorage,masteryLedger);
 let masteryRun=emptyMasteryRun();
@@ -62,11 +65,25 @@ const imageUrl=(name,size='small')=>{
 };
 const printedText=(name)=>scryfallCatalog.get(name)?.oracle||CARDS[name]?.oracle||LANDS[name]?.oracle||'';
 const linkToCard=(name)=>scryfallCatalog.get(name)?.page||cardLink(name);
+const failedCardImages=new Set();
+function fallbackCard(name,className=''){
+ return renderCardFallback(name,CARDS[name]||LANDS[name]||{},className,printedText(name));
+}
 const thumb=(name,kind='small',className='')=>{
  const url=imageUrl(name,kind);
- return url?`<img class="${className}" data-preview="${esc(name)}" src="${esc(url)}" alt="${esc(name)} card image from Scryfall" loading="eager" draggable="false">`:
- `<span class="image-pending ${className}" data-preview="${esc(name)}" aria-label="Preview ${esc(name)} card">${kind==='art'?'◈':'✧'}</span>`;
+ return url&&!failedCardImages.has(url)?`<img class="${className}" data-preview="${esc(name)}" src="${esc(url)}" alt="${esc(name)} card image from Scryfall" loading="eager" draggable="false">`:
+ fallbackCard(name,className);
 };
+// A cached image URL can fail independently of the metadata API. Replace just
+// that element, preserving an in-progress drag, target choice and game state.
+document.addEventListener('error',event=>{
+ const img=event.target;
+ if(!(img instanceof HTMLImageElement)||!img.dataset.preview)return;
+ failedCardImages.add(img.src);
+ const holder=document.createElement('span');
+ holder.innerHTML=fallbackCard(img.dataset.preview,img.className);
+ img.replaceWith(holder.firstElementChild);
+},true);
 function cardFromScryfall(c){
  const face=c.card_faces?.[0]||c;
  const image=c.image_uris||face.image_uris||{};
