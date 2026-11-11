@@ -39,9 +39,10 @@ function weightedPick(rng, cards, weights, prefer) {
 }
 
 /** tier: 'battle' | 'elite' | 'boss' | 'shrine'. forced: card ids that must appear (tutorial). */
-export function generatePack(seed, { tier = 'battle', forced = [], step = 0, evo = NO_EVO, creaturesOnly = false, ...poolOpts } = {}) {
+export function generatePack(seed, { tier = 'battle', forced = [], step = 0, evo = NO_EVO, creaturesOnly = false, only = null, ...poolOpts } = {}) {
   const rng = makeRng(seed);
-  const pool = cardPool({ ...poolOpts, step, tier, evo }).filter(c => !creaturesOnly || c.kind === 'creature');
+  if (creaturesOnly) only = 'creature';
+  const pool = cardPool({ ...poolOpts, step, tier, evo }).filter(c => !only || c.kind === only);
   const weights = rarityWeights(step);
   const picked = forced.map(resolveCard).filter(c => c && c.reference);
   const strong = c => c.kind === 'spell' ? c.cost >= 2 : graftRating(c, evo) >= creatureBudget(step, tier) - 3;
@@ -49,13 +50,13 @@ export function generatePack(seed, { tier = 'battle', forced = [], step = 0, evo
     const sigs = new Set(picked.map(signature));
     let cands = pool.filter(c => !picked.includes(c) && filter(c) && !sigs.has(signature(c)));
     if (!cands.length) cands = pool.filter(c => !picked.includes(c) && filter(c));
-    if (!cands.length) cands = rewardCards().filter(c => !picked.includes(c) && filter(c) && (!creaturesOnly || c.kind === 'creature') && (c.kind === 'spell' ? c.cost <= 1 : graftRating(c, evo) <= creatureBudget(step, tier)));
+    if (!cands.length) cands = rewardCards().filter(c => !picked.includes(c) && filter(c) && (!only || c.kind === only) && (c.kind === 'spell' ? c.cost <= 1 : graftRating(c, evo) <= creatureBudget(step, tier)));
     if (cands.length) picked.push(weightedPick(rng, cands, weights, prefer));
   };
   const ANY = () => true;
   if (tier === 'elite' || tier === 'boss') take(ANY, strong);  // elite/boss: one card near the top of the budget
-  if (!picked.some(c => c.kind === 'creature')) take(c => c.kind === 'creature');
-  if (!creaturesOnly && !picked.some(c => c.kind === 'spell')) take(c => c.kind === 'spell');
-  for (let guard = 0; picked.length < 3 && guard < 6; guard++) take(creaturesOnly ? c => c.kind === 'creature' : ANY);
+  if (only !== 'spell' && !picked.some(c => c.kind === 'creature')) take(c => c.kind === 'creature');
+  if (only !== 'creature' && !picked.some(c => c.kind === 'spell')) take(c => c.kind === 'spell');
+  for (let guard = 0; picked.length < 3 && guard < 6; guard++) take(only ? c => c.kind === only : ANY);
   return picked.map(c => ({ c, k: next(rng) })).sort((a, b) => a.k - b.k).map(o => o.c.id).slice(0, 3);
 }

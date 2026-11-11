@@ -7,8 +7,11 @@ import { generatePack, MAX_SPELL_LEVEL } from './rewards.js';
 import { resolveCard } from '../cards/catalog.js';
 import { stepOf } from './power.js';
 import { SHRINES, rollShrine, offeringCost, MAX_SPARK_FONTS, MAX_MANA_FONTS } from './shrines.js';
+import { encounterBenchmarks, recordEncounter, newScoring } from './scoring.js';
+import { journalNote, newJournal } from './journal.js';
+import { rollEvent, EVENTS, resolveEvent } from './events.js';
 
-export const RUN_VERSION = 3;
+export const RUN_VERSION = 4;
 export const TUTORIAL_CARD = 'mtg:typhoid-rats';  // real 1/1 Deathtouch: Blank 1/1 -> 2/2 Deathtouch
 export const CHALLENGES = {
   paperThin: { name: 'Paper Thin', text: 'Your Spark is 2 instead of 6.' },
@@ -26,7 +29,8 @@ export function newRun({ seed, unlocks = {}, challenges = [], tutorial = false }
   const run = {
     v: RUN_VERSION, seed: seed >>> 0, name: STARTING_NAME, evo: newEvolution(), spellbook: [], sparkBonus: 0, manaBonus: 0, sparkFonts: 0,
     act: 0, map: generateMap(seed, { act: 0, tutorial }), current: null, visited: [], phase: 'map', battle: null, pending: null, shrine: null,
-    unlocks: { ...unlocks }, challenges: challenges.slice(), tutorial, hp: null, wardNext: 0, actHistory: [],
+    unlocks: { ...unlocks }, challenges: challenges.slice(), tutorial, hp: null, wardNext: 0, actHistory: [], event: null, eventsSeen: [],
+    scoring: newScoring(), journal: newJournal(),
     stats: { battlesWon: 0, kills: 0, damageDealt: 0, damageTaken: 0, spellsCast: 0, turns: 0, cardsAbsorbed: 0, spellsLearned: 0, elitesDefeated: 0, bossesDefeated: 0, flawless: 0 },
     startedAt: Date.now(),
   };
@@ -46,6 +50,7 @@ export function enterNode(run, nodeId) {
   const node = nodeById(run.map, nodeId);
   run.current = nodeId; run.visited.push(nodeId);
   if (node.type === 'shrine') { run.phase = 'shrine'; run.shrine = { options: rollShrine(shrineView(run), node.seed), node: nodeId }; return run; }
+  if (node.type === 'event') { run.phase = 'event'; run.event = { id: rollEvent(eventView(run), node.seed), node: nodeId }; return run; }
   const base = templateFor(run.act, node.type, node.depth, node.seed);
   const extra = reinforcements(run.act, node.type, node.depth, run.evo, node.seed);
   const tpl = extra.length ? { ...base, enemies: [...base.enemies, ...extra] } : base;
@@ -53,7 +58,8 @@ export function enterNode(run, nodeId) {
   const battle = createBattle({ evo: run.evo, stats: runStats(run), spellbook: run.spellbook, encounter: enc, seed: node.seed, heroName: run.name, startHp: run.hp, act: run.act });
   if (run.wardNext) { const h = battle.units.find(u => u.hero); h.statuses.shield = (h.statuses.shield || 0) + run.wardNext; run.wardNext = 0; }
   if (run.challenges.includes('feral')) for (const u of battle.units) if (u.side === 'enemy') u.power += 1;
-  battle.nodeType = node.type; battle.reinforced = extra.length;
+  battle.nodeType = node.type; battle.reinforced = extra.length; battle.nodeId = nodeId;
+  battle.bench = encounterBenchmarks(node.type, run.act, enc.enemies.length);
   run.battle = battle; run.phase = 'battle';
   return run;
 }
@@ -62,6 +68,7 @@ const shrineView = run => ({ ...run, wounds: woundsOf(run), maxHp: maxHpOf(run) 
 export function concludeBattle(run) {
   const b = run.battle; if (!b) throw new Error('No battle');
   for (const k of ['kills', 'damageDealt', 'damageTaken', 'spellsCast', 'turns']) run.stats[k] += b.stats[k];
+  recordEncounter(run, b, run.act + ':' + run.current);
   if (b.phase === 'lost') { run.phase = 'lost'; run.hp = 0; run.lastBattle = summarize(b); run.battle = null; return { outcome: 'lost' }; }
   if (b.phase !== 'won') throw new Error('Battle not finished');
   const hero = b.units.find(u => u.hero); const max = maxHpOf(run);
@@ -69,7 +76,7 @@ export function concludeBattle(run) {
   if (b.stats.damageTaken === 0) run.stats.flawless++;
   if (b.nodeType === 'elite') run.stats.elitesDefeated++;
   const isBoss = b.nodeType === 'boss';
-  if (isBoss) { run.stats.bossesDefeated++; setHp(run, max); }                 // act boss: full recovery
+  if (isBoss) { run.stats.bossesDefeated++; setHp(run, max); journalNote(run, 'boss', { name: b.name }); }                 // act boss: full recovery
   else setHp(run, hero.hp + Math.ceil((max - hero.hp) * RECOVERY));          // otherwise: half the missing health returns
   const tier = isBoss ? 'boss' : b.nodeType === 'elite' ? 'elite' : 'battle';
   const forced = b.nodeType === 'tutorial' ? [TUTORIAL_CARD] : [];
@@ -87,6 +94,7 @@ export function chooseReward(run, cardId, releaseIndex) {
   let change;
   const maxBefore = maxHpOf(run);
   if (card.kind === 'creature') {
+    if (run.pending.tier === 'archivist') throw new Error('The Archivist trades spells only');
     let released = null;
     if (graftsFull(run)) {
       const idx = Number(releaseIndex);
@@ -95,7 +103,9 @@ export function chooseReward(run, cardId, releaseIndex) {
       const keep = run.evo.absorbed.filter((_, i) => i !== idx).map(a => resolveCard(a.cardId));
       run.evo = rebuild(keep);
     }
-    const res = absorb(run.evo, card); run.evo = res.evo; change = { kind: 'absorb', ...res.change, released };
+    const res = absorb(run.evo, card); const stageBefore = run.evo.absorbed.length;
+    run.evo = res.evo; change = { kind: 'absorb', ...res.change, released };
+    journalNote(run, 'graft', { cardId: card.id, name: card.name, power: card.power, toughness: card.toughness, gained: res.change.gained, released, firstGraft: stageBefore === 0 && !released });
     run.stats.cardsAbsorbed++;
     setHp(run, run.hp + (maxHpOf(run) - maxBefore));   // new toughness/Spark arrives as fresh health
   } else {
@@ -103,6 +113,7 @@ export function chooseReward(run, cardId, releaseIndex) {
     const e = run.spellbook.find(s => s.id === cardId);
     if (e) { e.level = Math.min(MAX_SPELL_LEVEL, e.level + 1); change = { kind: 'empower', cardId, level: e.level }; }
     else { run.spellbook.push({ id: cardId, level: 1 }); change = { kind: 'learn', cardId, level: 1 }; }
+    journalNote(run, 'spell', { cardId, name: card.name, level: change.level });
     run.stats.spellsLearned++;
   }
   finishReward(run);
@@ -119,6 +130,7 @@ function finishReward(run) {
   run.actHistory.push({ act: run.act, visited: run.visited.slice() });
   if (run.act + 1 >= ACT_COUNT) { run.phase = 'won'; return; }
   run.act++; run.map = generateMap(run.seed, { act: run.act }); run.current = null; run.visited = []; run.phase = 'map'; run.actIntro = run.act;
+  journalNote(run, 'act', { act: run.act });
 }
 
 /** Wayshrine choice. `arg`: for 'inscribe' the spell id; for 'graftsmith' the absorbed index to sever. */
@@ -146,7 +158,7 @@ export function shrineChoice(run, choice, arg) {
       if (!Number.isInteger(idx) || idx < 0 || idx >= list.length) throw new Error('Choose a graft to sever');
       const keep = list.filter((_, i) => i !== idx).map(a => resolveCard(a.cardId));
       if (keep.some(c => !c)) throw new Error('A graft could not be resolved');
-      const severed = list[idx];
+      const severed = list[idx]; journalNote(run, 'release', { cardId: severed.cardId, name: severed.name, by: 'graftsmith' });
       const maxBefore = maxHpOf(run);
       const rebuilt = rebuild(keep); run.evo = { ...rebuilt, colors: rebuilt.colors };
       setHp(run, run.hp - (maxBefore - maxHpOf(run)));
@@ -157,4 +169,17 @@ export function shrineChoice(run, choice, arg) {
   }
   throw new Error('Unknown shrine choice');
 }
-export { availableNodes, MAX_SPARK_FONTS };
+const eventView = run => ({ ...run, wounds: woundsOf(run), maxHp: maxHpOf(run) });
+
+/** v0.6 special encounter choice. Deterministic, explicit costs, one-time. */
+export function eventChoice(run, choice, arg) {
+  if (run.phase !== 'event' || !run.event) throw new Error('No event here');
+  const node = nodeById(run.map, run.current);
+  const res = resolveEvent(run, run.event.id, choice, arg, { seed: node.seed, packOpts: packOpts(run), setHp: hp => setHp(run, hp), maxHp: () => maxHpOf(run) });
+  run.eventsSeen.push(run.event.id); journalNote(run, 'event', { id: run.event.id, choice });
+  run.event = null;
+  if (!run.pending) run.phase = 'map'; else run.phase = 'reward';
+  return res;
+}
+
+export { availableNodes, MAX_SPARK_FONTS, EVENTS };

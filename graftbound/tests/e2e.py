@@ -33,7 +33,9 @@ def click_tile(pg, x, y):
     cx, cy = tile_xy(pg, x, y); pg.mouse.click(cx, cy); time.sleep(0.1); idle(pg)
 def win_battle(pg):
     pg.evaluate("(()=>{const b=window.__LC.battle.s; b.units.filter(u=>u.side==='enemy').forEach(u=>u.hp=0); b.phase='won'; window.__LC.battle.checkEnd();})()")
-    return wait_phase(pg, 'reward', 20)
+    ok = wait_phase(pg, 'reward', 20)
+    if wait_screen(pg, ".result [data-go]", 10): pg.click(".result [data-go]")   # v0.6 encounter score record
+    return ok
 def pass_intro(pg):
     if wait_screen(pg, ".intro [data-go]", 10): pg.click(".intro [data-go]")
     return wait_screen(pg, "g.node.avail")
@@ -61,6 +63,7 @@ with sync_playwright() as p:
     pg.locator("g.node.avail").first.dispatch_event("click"); time.sleep(1.2); idle(pg)
     info = binfo(pg); check("start: The Blank 1/1, no abilities, 7 health", info['p']['power'] == 1 and info['p']['kw'] == {} and info['p']['maxHp'] == 7, info['p'])
     pg.evaluate("document.getElementById('hint').classList.remove('show')")  # tutorial hint may cover the top of the board
+    time.sleep(1.5)  # v0.6: let the camera finish easing from the map view before projecting tile coordinates
     # pick a foe whose tile is not covered by HUD panels (the plate sits over the top-left of the board)
     cand = [e for e in info['enemies'] if pg.evaluate(f"(()=>{{const [x,y]={tile_xy(pg, e['x'], e['y'])}; const el=document.elementFromPoint(x,y); return el && el.id==='gl';}})()")]
     en = (cand or info['enemies'])[0]; x, y = tile_xy(pg, en['x'], en['y']); pg.mouse.move(x - 30, y); pg.mouse.move(x, y, steps=4)
@@ -125,7 +128,7 @@ with sync_playwright() as p:
     pg.goto(URL); wait_screen(pg, "text=Continue Adventure", 40)
     check("v0.4 save loads at /graftbound/ with an update notice", "v0.4 adventure continues" in pg.inner_text("#toast") or pg.evaluate("window.__LC.loadInfo.migrated"))
     pg.click("text=Continue Adventure"); wait_screen(pg, "g.node.avail")
-    check("legacy grafts kept exactly; legacy card shown as Legacy", pg.evaluate("window.__LC.run.evo.absorbed.map(a=>a.cardId).join()") == "nightcap_toad,galecrest_roc" and pg.evaluate("window.__LC.run.v") == 3)
+    check("legacy grafts kept exactly; legacy card shown as Legacy", pg.evaluate("window.__LC.run.evo.absorbed.map(a=>a.cardId).join()") == "nightcap_toad,galecrest_roc" and pg.evaluate("window.__LC.run.v") == 4)
     pg.locator("g.node.avail").first.dispatch_event("click"); time.sleep(1.2); idle(pg)
     check("migrated adventure is playable (battle starts)", pg.evaluate("!!window.__LC.battle.s"))
     check("no page errors (desktop)", not errs, errs[:3])

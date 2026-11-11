@@ -1,6 +1,7 @@
 // Whole-adventure simulator (3 acts, 24 nodes). A naive bot walks the map, fights with botPlay and picks
 // rewards by a scoring policy. Numbers are DIRECTIONAL — not a substitute for human playtests.
-import { newRun, enterNode, concludeBattle, chooseReward, shrineChoice, runStats, graftsFull } from '../src/engine/run.js';
+import { newRun, enterNode, concludeBattle, chooseReward, shrineChoice, runStats, graftsFull, eventChoice } from '../src/engine/run.js';
+import { eventChoices } from '../src/engine/events.js';
 import { availableNodes } from '../src/engine/campaign.js';
 import { resolveCard } from '../src/cards/catalog.js';
 import { graftRating } from '../src/engine/power.js';
@@ -26,6 +27,11 @@ export function simulateRun(seed, { policy = 'greedy' } = {}) {
       const o = run.shrine.options;
       const pick = o.includes('restoration') && run.hp < runStats(run).maxHealth * 0.6 ? 'restoration' : o.find(x => ['spark', 'offering', 'arcane'].includes(x)) || o[0];
       shrineChoice(run, pick, pick === 'inscribe' ? run.spellbook.find(s => s.level < 3).id : pick === 'graftsmith' ? 0 : undefined);
+    }
+    if (run.phase === 'event') {   // v0.6: take the stated bargain when available (no-arg choices), else walk on
+      const ch = eventChoices({ ...run, maxHp: runStats(run).maxHealth }, run.event.id).filter(c => c.available);
+      const c = ch.find(x => x.id === 'sacrifice' && run.hp > runStats(run).maxHealth * 0.7) || ch.find(x => x.id === 'leave');
+      eventChoice(run, c.id);
     }
     if (run.phase === 'battle') {
       const boss = run.battle.nodeType === 'boss';

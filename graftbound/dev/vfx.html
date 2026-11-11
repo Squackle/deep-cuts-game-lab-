@@ -3,7 +3,7 @@
 // Dev: fire any spell VFX at a far target. ?fx=lightningBolt&speed=1&q=balanced&theme=hollow&auto=1
 import { loadAssets } from '../src/rendering/sprites.js';
 import { Scene } from '../src/rendering/scene.js';
-import { VFX } from '../src/rendering/vfx.js';
+import { VFX, SPELL_VFX } from '../src/rendering/vfx.js';
 import { buildEncounter } from '../src/engine/encounters.js';
 import { ACTS } from '../src/data/encounters.js';
 const q = new URLSearchParams(location.search);
@@ -14,7 +14,8 @@ sc.addUnit({ uid: 1, side: 'player', x: 2, y: 7 }, 'blank').dir = [0.6, -1];
 sc.addUnit({ uid: 2, side: 'enemy', x: 6, y: 1 }, 'hound'); sc.addUnit({ uid: 3, side: 'enemy', x: 5, y: 2 }, 'grub');
 let last = performance.now(); (function loop(t) { sc.frame(Math.min(0.05, (t - last) / 1000)); last = t; requestAnimationFrame(loop); })(last);
 const fire = name => { const from = sc.centerPos(1), to = sc.centerPos(2); sc.play(1, 'cast'); const tiles = [[-1, 0], [0, 0], [1, 0], [0, -1], [0, 1]].map(([dx, dy]) => { const w = sc.world(6 + dx, 1 + dy); return [w[0], 0, w[2]]; }); VFX[name](sc, { from, to, target: 2, tiles, uid: 1, uidFrom: 1 }); };
-for (const k of Object.keys(VFX)) { const b = document.createElement('button'); b.textContent = k; b.onclick = () => fire(k); document.getElementById('b').append(b); }
+// v0.6 gallery: one button per curated real spell (dev-only; never touches saves or scores).
+for (const [name, k] of Object.entries(SPELL_VFX)) { const b = document.createElement('button'); b.textContent = name; b.dataset.fx = k; b.onclick = () => fire(k); document.getElementById('b').append(b); }
 window.__fire = fire; window.__sc = sc;
 if (q.get('auto')) setTimeout(() => fire(q.get('fx') || 'lightningBolt'), 800);
 </script></body></html>

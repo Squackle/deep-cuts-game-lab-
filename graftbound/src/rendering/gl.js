@@ -5,6 +5,8 @@
 // "crawling"/moire stripes that nearest-neighbour sampling of 32px stone produced at the board's far edge.
 import { STRIDE } from './geometry.js';
 export const MAX_LIGHTS = 8;
+/** Floats per sprite vertex: center3 corner2 size2 uv4 fx4 sway1 (v0.6 added sway). */
+export const SPR_FLOATS = 16;
 
 const COMMON = `
 uniform vec3 uSunDir; uniform vec3 uSunCol; uniform vec3 uAmbTop; uniform vec3 uAmbBot; uniform vec3 uFog; uniform vec2 uFogR;
@@ -81,11 +83,16 @@ void main(){
   o = vec4(applyFog(col, vW), vC.a * uAlpha);
 }`;
 const SPR_VS = `#version 300 es
-in vec3 aCenter; in vec2 aCorner; in vec2 aSize; in vec4 aUV; in vec4 aFx;
-uniform mat4 uVP; uniform vec3 uRight;
+in vec3 aCenter; in vec2 aCorner; in vec2 aSize; in vec4 aUV; in vec4 aFx; in float aSway;
+uniform mat4 uVP; uniform vec3 uRight; uniform float uWindT;
 out vec2 vUV; out vec4 vFx; out vec3 vW; out vec4 vRect;
 void main(){
   vec3 w = aCenter + uRight * (aCorner.x - 0.5) * aSize.x + vec3(0.0, aCorner.y * aSize.y, 0.0);
+  // v0.6 wind: anchored canopy sway. Displacement grows with height² so the base never moves; irregular (two
+  // incommensurate sines) and phase-offset per plant by its world position. aSway = 0 for every unit sprite.
+  float ph = aCenter.x * 1.37 + aCenter.z * 0.91;
+  float gust = sin(uWindT * 0.83 + ph) * 0.7 + sin(uWindT * 1.91 + ph * 2.3) * 0.3;
+  w += uRight * (aCorner.y * aCorner.y) * aSway * gust;
   vW = w; vUV = mix(aUV.xy, aUV.zw, vec2(aCorner.x, 1.0 - aCorner.y)); vRect = aUV; vFx = aFx;
   gl_Position = uVP * vec4(w, 1.0);
 }`;
@@ -270,19 +277,21 @@ export function createRenderer(canvas) {
   function drawSprites(batches, depthOnly, cam) {
     const p = P.spr; gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.u.uVP, false, depthOnly ? cam.lightVP : cam.vp); gl.uniform3fv(p.u.uRight, depthOnly ? cam.lightRight : cam.right);
+    if (p.u.uWindT) gl.uniform1f(p.u.uWindT, R.windT || 0);
     gl.uniform1f(p.u.uDepthOnly, depthOnly ? 1 : 0); gl.uniform3fv(p.u.uCamFwd, cam.fwd); gl.uniform3fv(p.u.uOutlineCol, R.outlineCol || [1, 0.85, 0.4]);
     setCommon(p, cam, depthOnly);
     gl.bindBuffer(gl.ARRAY_BUFFER, sprBuf);
     for (const b of batches) {
       if (!b.count) continue;
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, b.tex.t); gl.uniform1i(p.u.uTex, 0); gl.uniform2f(p.u.uTexel, 1 / b.tex.w, 1 / b.tex.h);
-      gl.bufferData(gl.ARRAY_BUFFER, b.data.subarray(0, b.count * 15), gl.STREAM_DRAW);
-      const B = 60, a = p.a;
+      gl.bufferData(gl.ARRAY_BUFFER, b.data.subarray(0, b.count * SPR_FLOATS), gl.STREAM_DRAW);
+      const B = SPR_FLOATS * 4, a = p.a;
       gl.enableVertexAttribArray(a.aCenter); gl.vertexAttribPointer(a.aCenter, 3, gl.FLOAT, false, B, 0);
       gl.enableVertexAttribArray(a.aCorner); gl.vertexAttribPointer(a.aCorner, 2, gl.FLOAT, false, B, 12);
       gl.enableVertexAttribArray(a.aSize); gl.vertexAttribPointer(a.aSize, 2, gl.FLOAT, false, B, 20);
       gl.enableVertexAttribArray(a.aUV); gl.vertexAttribPointer(a.aUV, 4, gl.FLOAT, false, B, 28);
       gl.enableVertexAttribArray(a.aFx); gl.vertexAttribPointer(a.aFx, 4, gl.FLOAT, false, B, 44);
+      if (a.aSway !== undefined && a.aSway >= 0) { gl.enableVertexAttribArray(a.aSway); gl.vertexAttribPointer(a.aSway, 1, gl.FLOAT, false, B, 60); }
       gl.drawArrays(gl.TRIANGLES, 0, b.count);
     }
     for (let i = 0; i < 8; i++) gl.disableVertexAttribArray(i);

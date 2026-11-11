@@ -5,7 +5,7 @@ import { ACTS } from '../data/encounters.js';
 
 export const NODE_TYPES = {
   battle: { name: 'Skirmish', glyph: '⚔' }, elite: { name: 'Elite Lair', glyph: '☠' }, shrine: { name: 'Wayshrine', glyph: '✧' },
-  boss: { name: 'Boss', glyph: '♛' }, tutorial: { name: 'The Waking Glade', glyph: '⚔' },
+  boss: { name: 'Boss', glyph: '♛' }, event: { name: 'Mystery', glyph: '?' }, tutorial: { name: 'The Waking Glade', glyph: '⚔' },
 };
 export const ACT_COUNT = ACTS.length;
 export function generateMap(seed, { act = 0, tutorial = false } = {}) {
@@ -27,6 +27,11 @@ export function generateMap(seed, { act = 0, tutorial = false } = {}) {
     if (d === 6) row.forEach((n, i) => (n.type = i === 0 ? 'battle' : n.type === 'shrine' ? 'shrine' : 'elite'));
     layers.push(row);
   }
+  // v0.6 special encounters: 1–2 per act, placed with a SEPARATE rng so battle/elite/shrine layout is unchanged.
+  const er = makeRng((seed ^ 0xe7e7e7 ^ (act * 131)) >>> 0);
+  const swap = (d, pref, keepBattle = true) => { const row = layers[d]; const i = row.findIndex((n, k) => n.type === 'battle' && (pref == null || k === pref)); if (i >= 0 && (!keepBattle || row.filter(n => n.type === 'battle').length > 1)) { row[i].type = 'event'; return true; } return false; };
+  const shrineSwap = () => { const total = layers.flat().filter(n => n.type === 'shrine').length; if (total <= 2) return false; for (const d of [4, 3, 5]) { const n = layers[d].find(x => x.type === 'shrine'); if (n) { n.type = 'event'; return true; } } return false; };
+  const roll = next(er); (swap(4, null) || swap(3, null) || swap(5, null) || swap(4, null, false) || swap(3, null, false) || shrineSwap() || swap(2, null, false)); if (roll < 0.5) swap(2, layers[2].length - 1);
   layers.push([{ type: 'boss' }]);
   const nodes = []; let id = 0;
   layers.forEach((row, d) => row.forEach((n, i) => {

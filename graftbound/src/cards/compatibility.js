@@ -19,9 +19,9 @@ const COLOR_MAP = { W: 'radiant', U: 'tide', B: 'umbral', R: 'ember', G: 'verdan
 /** Explicit, reviewed spell adaptations: { effect template, number bonus, gem cost, vfx id, honest note }.
  *  v0.5 costs were raised because spells now reach the whole battlefield. */
 export const SPELL_ADAPTATIONS = {
-  'Shock':              { effect: 'ember_dart', cost: 1, vfx: 'spark',      note: 'Adapted: 2 damage to one foe anywhere on the battlefield.' },
+  'Shock':              { effect: 'ember_dart', cost: 1, vfx: 'shock',      note: 'Adapted: 2 damage to one foe anywhere on the battlefield.' },
   'Lightning Bolt':     { effect: 'ember_dart', bonus: 1, cost: 2, vfx: 'lightningBolt', note: 'Adapted: 3 damage to one foe anywhere on the battlefield (costs 2 gems here).' },
-  'Flame Slash':        { effect: 'ember_dart', bonus: 2, cost: 3, vfx: 'fire',  note: 'Adapted: 4 damage to one foe (costs 3 gems here).' },
+  'Flame Slash':        { effect: 'ember_dart', bonus: 2, cost: 3, vfx: 'flameSlash',  note: 'Adapted: 4 damage to one foe (costs 3 gems here).' },
   'Arc Lightning':      { effect: 'chain_lightning', bonus: -1, cost: 3, vfx: 'chain', note: 'Adapted: 2 damage, then 1 arcs to up to two nearby foes (the real card divides 3 damage).' },
   'Fireball':           { effect: 'starfall', cost: 4, vfx: 'fireball', note: 'Adapted: a fixed blast — 4 to the target tile and 2 to adjacent foes. X is not modeled.' },
   'Giant Growth':       { effect: 'sap_surge', cost: 1, vfx: 'growth',  note: 'Adapted: +3 power until end of turn (the toughness bonus is not modeled).' },
@@ -29,7 +29,7 @@ export const SPELL_ADAPTATIONS = {
   'Infest':             { effect: 'venom_mist', cost: 2, vfx: 'poison', note: 'Adapted: Poison 2 to foes in a 3×3 area (instead of −2/−2 to all creatures).' },
   'Raise the Alarm':    { effect: 'call_sproutling', cost: 2, vfx: 'summon', note: 'Adapted: summon one 2/2 Soldier ally beside you for this battle (instead of two 1/1s).' },
   'Healing Hands':      { effect: 'mending_rain', cost: 2, vfx: 'heal',  note: 'Adapted: heal 4 and cleanse poison and weakness; card draw is not modeled.' },
-  'Healing Salve':      { effect: 'mending_rain', bonus: -1, cost: 1, vfx: 'heal', note: 'Adapted: heal 3 and cleanse.' },
+  'Healing Salve':      { effect: 'mending_rain', bonus: -1, cost: 1, vfx: 'salve', note: 'Adapted: heal 3 and cleanse.' },
   'Feat of Resistance': { effect: 'barkskin', cost: 1, vfx: 'shield', note: 'Adapted: a 3-point shield; counters and protection are not modeled.' },
   'Frost Breath':       { effect: 'rootsnare', cost: 2, vfx: 'frost', note: 'Adapted: 1 damage and Stun one foe (one target, not two).' },
 };

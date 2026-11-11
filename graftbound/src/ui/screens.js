@@ -15,6 +15,14 @@ import { rarityWeights } from '../engine/rewards.js';
 import { GAME } from '../config.js';
 import { kwChips, STAGE } from './battle-ui.js';
 import { ICON } from './icons.js';
+import { EVENTS, eventChoices, EVENT_COST } from '../engine/events.js';
+import { expeditionTotals } from '../engine/scoring.js';
+import { SCORE } from '../data/scoring.js';
+import { graftHistory } from '../engine/journal.js';
+import { composePlayerSheet } from '../rendering/evolution-visuals.js';
+import { newEvolution } from '../engine/evolution.js';
+import { RANKED_CHALLENGES, ACTIVE_CHALLENGE } from '../engine/ranked.js';
+import { NODE_TYPES as NT } from '../engine/campaign.js';
 
 const $ = id => document.getElementById(id);
 const TARGET = { enemy: 'One foe, anywhere', self: 'Yourself', tile: 'Any tile (area)', empty: 'Empty tile' };
@@ -25,6 +33,8 @@ const ACT_LORE = [
   'Below the Hollow the roots burn. The Ashen Warrens are a furnace where the Pyre Matron hatches her kin in lava.',
   'Past the furnace, the world was never finished. In the Fractured Nexus, the Unwritten waits to copy whatever you have become.',
 ];
+const NODE_TIP = { battle: 'Skirmish: a normal battle, then a booster of 3 real cards. Scored.', tutorial: 'Your first battle. Scored.', elite: 'Elite Lair: harder foes, a stronger booster, ×1.25 score.',
+  shrine: 'Wayshrine: one offering, no battle. Not scored.', event: 'Mystery: a special encounter with an explicit choice. Not scored.', boss: 'Act boss: multi-phase fight, full heal after, ×1.5 score.' };
 export function showScreen(html, cls = '') { const el = $('screen'); el.className = 'screen show ' + cls; el.innerHTML = html; return el; }
 export function hideScreen() { const el = $('screen'); el.className = 'screen'; el.innerHTML = ''; }
 
@@ -38,6 +48,7 @@ export function titleScreen(app) {
       <nav class="menu">
         ${hasRun ? `<button type="button" class="btn primary" data-a="continue">Continue Adventure${app.run.act ? ` <small>· Act ${ACT_ROMAN[app.run.act]}</small>` : ''}</button>` : ''}
         <button type="button" class="btn ${hasRun ? '' : 'primary'}" data-a="new">${hasRun ? 'Begin a New Adventure' : 'Begin Adventure'}</button>
+        <button type="button" class="btn" data-a="ranked">Ranked Expedition <small>· preview</small></button>
         <button type="button" class="btn" data-a="challenges">Challenges${meta.unlocks.firstVictory ? '' : ' <small>· locked</small>'}</button>
         <div class="menu-row"><button type="button" class="btn small" data-a="codex">Codex</button><button type="button" class="btn small" data-a="ach">Achievements</button><button type="button" class="btn small" data-a="stats">Records</button><button type="button" class="btn small" data-a="settings">Settings</button></div>
       </nav>
@@ -45,7 +56,7 @@ export function titleScreen(app) {
     </div>`, 'title');
   el.querySelector('.menu').addEventListener('click', e => {
     const a = e.target.closest('[data-a]'); if (!a) return; app.audio.unlock(); app.audio.play('click');
-    ({ continue: () => app.resume(), new: () => (hasRun ? app.confirm('Abandon your current adventure? It will count as a loss.', 'Abandon', () => app.newRun([])) : app.newRun([])), challenges: () => challengesModal(app), codex: () => codexModal(app), ach: () => achievementsModal(app), stats: () => statsModal(app), settings: () => settingsModal(app) })[a.dataset.a]();
+    ({ ranked: () => rankedModal(app), continue: () => app.resume(), new: () => (hasRun ? app.confirm('Abandon your current adventure? It will count as a loss.', 'Abandon', () => app.newRun([])) : app.newRun([])), challenges: () => challengesModal(app), codex: () => codexModal(app), ach: () => achievementsModal(app), stats: () => statsModal(app), settings: () => settingsModal(app) })[a.dataset.a]();
   });
 }
 function revealLines(el, app) {
@@ -110,7 +121,26 @@ function achievementsModal(app) {
 function statsModal(app) {
   const s = app.meta.stats;
   const rows = [['Adventures begun', s.runs], ['Adventures completed', s.wins], ['Grafts unraveled', s.losses], ['Furthest act reached', ACT_ROMAN[s.bestAct || 0]], ['Battles won', s.battlesWon], ['Creatures grafted', s.cardsAbsorbed], ['Spells cast', s.spellsCast], ['Foes defeated', s.kills], ['Greatest power', s.highestPower], ['Greatest toughness', s.highestToughness]];
-  app.openModal(`<h2>Records</h2><table class="stats">${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table><div class="modal-actions"><button type="button" class="btn" data-close>Close</button></div>`);
+  app.openModal(`<h2>Records</h2><table class="stats">${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>
+    ${recordsHTML(app)}
+    <div class="modal-actions"><button type="button" class="btn" data-close>Close</button></div>`, 'wide');
+}
+/** v0.6 local personal records + leaderboard preview. Clearly labeled: local, unverified, unranked. */
+export function recordsHTML(app) {
+  const rec = app.meta.records || {}; const keys = Object.keys(rec);
+  const rows = keys.map(k => { const r = rec[k]; return `<tr><td>${esc(r.label || k)}</td><td>${r.best ? r.best.total.toLocaleString() : '—'}</td><td>${r.best ? r.best.actions : '—'}</td><td>${r.best ? r.best.damage : '—'}</td><td>${r.fewestActions ?? '—'}</td><td>${r.lowestDamage ?? '—'}</td><td>${r.completions || 0}</td></tr>`; }).join('');
+  return `<h3>Personal records <small class="badge-local">LOCAL · UNVERIFIED · UNRANKED</small></h3>
+    ${keys.length ? `<table class="stats lb"><tr><th>Mode</th><th>Best score</th><th>Actions</th><th>Damage</th><th>Fewest actions (encounter)</th><th>Lowest damage (expedition)</th><th>Completions</th></tr>${rows}</table>` : '<p class="muted">Finish an adventure or a Ranked Expedition preview to record your first score.</p>'}
+    <p class="small">These records live only in this browser. Verified leaderboards, achievements and expedition history will belong to your existing DeepCutsEDH profile on <b>deep-cuts-edh.pages.dev</b> once the separately reviewed integration launches. Local results are never uploaded or converted into verified records.</p>`;
+}
+export function rankedModal(app) {
+  const c = RANKED_CHALLENGES[ACTIVE_CHALLENGE];
+  const m = app.openModal(`<div class="parch-record"><small class="sh-brand">${GAME.title} · Ranked Expedition</small><h2>${esc(c.name)}</h2>
+    <p>Every competitor gets the same blank 1/1, the same challenge seed, the same maps, encounters and reward rules. Your choices — and how efficiently you win — decide the score.</p>
+    <table class="stats"><tr><td>Challenge</td><td>${esc(c.id)} · rev ${c.revision}</td></tr><tr><td>Rules</td><td>${esc(c.rulesVersion)}</td></tr><tr><td>Card pool</td><td>${esc(c.cardPoolVersion)}</td></tr><tr><td>Scoring</td><td>${esc(c.scoringVersion)}</td></tr></table>
+    <p class="note-warn"><b>Game Lab preview — unranked.</b> This build plays the real challenge and records a replay, then verifies it locally. It is <b>not</b> submitted anywhere. Verified rankings require a DeepCutsEDH profile and will be hosted on the main website after a separate, approved launch. You never need to sign in to play here.</p>
+    <div class="modal-actions"><button type="button" class="btn" data-close>Back</button><button type="button" class="btn primary" data-go>Begin Ranked Preview</button></div></div>`, 'wide');
+  m.querySelector('[data-go]').addEventListener('click', () => { app.closeModal(); const go = () => app.newRanked(); if (app.run) app.confirm('Starting a Ranked Expedition ends your current adventure (it counts as a loss).', 'Begin', go); else go(); });
 }
 export function settingsModal(app) {
   const st = app.meta.settings;
@@ -118,6 +148,8 @@ export function settingsModal(app) {
   const m = app.openModal(`<h2>Settings</h2>
     <label class="row"><span>Graphics</span>${sel('graphics', [['auto', 'Auto'], ['high', 'High — shadows, depth of field, bloom'], ['balanced', 'Balanced'], ['performance', 'Performance — no shadows or post']])}</label>
     <label class="row"><span>Animation speed</span>${sel('animSpeed', [['normal', 'Normal'], ['fast', 'Fast'], ['instant', 'Instant']])}</label>
+    <label class="toggle"><input type="checkbox" data-k="autoEnd" ${st.autoEnd !== false ? 'checked' : ''}><span>Auto-End Turn <small class="muted">— ends your turn when no legal move, attack, spell or interaction remains</small></span></label>
+    <label class="toggle"><input type="checkbox" data-k="ambient" ${st.ambient !== false ? 'checked' : ''}><span>Ambient wind &amp; swaying foliage</span></label>
     <label class="toggle"><input type="checkbox" data-k="sound" ${st.sound ? 'checked' : ''}><span>Sound effects</span></label>
     <label class="toggle"><input type="checkbox" data-k="music" ${st.music ? 'checked' : ''}><span>Music</span></label>
     <p class="muted small">Renderer: ${esc(app.scene ? app.scene.r.qName : '—')} · ${GAME.title} v${GAME.version}${app.scene && app.scene.reduced ? ' · reduced motion (from your system setting)' : ''}</p>
@@ -140,8 +172,8 @@ export function mapScreen(app) {
   const nodes = map.nodes.map(n => {
     const t = NODE_TYPES[n.type]; const cls = [n.type, avail.has(n.id) ? 'avail' : '', run.visited.includes(n.id) ? 'done' : '', n.id === run.current ? 'here' : ''].join(' ');
     const label = n.type === 'boss' ? map.boss : t.name;
-    return `<g class="node ${cls}" data-node="${n.id}" transform="translate(${nx(n)} ${depthY(n.depth)})" tabindex="${avail.has(n.id) ? 0 : -1}" role="button" aria-label="${esc(label)}">
-      <circle r="${n.type === 'boss' ? 6.5 : 4.6}"/><text y="1.7">${t.glyph}</text>${avail.has(n.id) || n.type === 'boss' ? `<text class="lbl" y="${n.type === 'boss' ? 11 : 9}">${esc(label)}</text>` : ''}</g>`;
+    return `<g class="node ${cls}" data-node="${n.id}" data-tip="${esc(NODE_TIP[n.type] || label)}" transform="translate(${nx(n)} ${depthY(n.depth)})" tabindex="${avail.has(n.id) ? 0 : -1}" role="button" aria-label="${esc(label + ' — ' + (NODE_TIP[n.type] || ''))}">
+      <title>${esc(label + ' — ' + (NODE_TIP[n.type] || ''))}</title><circle r="${n.type === 'boss' ? 6.5 : 4.6}"/><text y="1.7">${t.glyph}</text>${avail.has(n.id) || n.type === 'boss' ? `<text class="lbl" y="${n.type === 'boss' ? 11 : 9}">${esc(label)}</text>` : ''}</g>`;
   }).join('');
   const st = runStats(run), ap = deriveAppearance(run.evo); const wounds = woundsOf(run);
   const el = showScreen(`
@@ -150,7 +182,7 @@ export function mapScreen(app) {
         <header><small>${GAME.title} · Act ${ACT_ROMAN[run.act]} of III</small><h2>${esc(map.region)}</h2>
           <div class="actbar">${[0, 1, 2].map(a => `<i class="${a < run.act ? 'done' : a === run.act ? 'cur' : ''}">${ACT_ROMAN[a]}</i>`).join('')}</div></header>
         <svg viewBox="0 0 100 ${H}" class="map-svg"><g class="paths">${lines.join('')}</g>${nodes}</svg>
-        <p class="map-legend"><span>⚔ Skirmish</span><span>☠ Elite — stronger rewards</span><span>✧ Wayshrine</span><span>♛ Act boss</span></p>
+        <p class="map-legend"><span>⚔ Skirmish</span><span>☠ Elite — stronger rewards</span><span>✧ Wayshrine</span><span>? Mystery — a special encounter</span><span>♛ Act boss</span></p>
       </section>
       <aside class="map-side">
         <div class="mini-plate" data-sheet tabindex="0" role="button">
@@ -367,10 +399,90 @@ export function sheetModal(app) {
         <p class="rules-note"><b>Permanent</b>: grafts, spells and Spark. <b>Between battles</b>: wounds — a victory restores half your missing health; act bosses and Restoration restore all. <b>Temporary</b>: shields, poison, stuns, power changes.</p>
       </section>
     </div>
-    <div class="modal-actions"><button type="button" class="btn primary" data-close>Close</button></div>`, 'wide');
+    <div class="modal-actions"><button type="button" class="btn" data-journal>Evolution Journal</button><button type="button" class="btn primary" data-close>Close</button></div>`, 'wide');
+  const jb = document.querySelector('#modal [data-journal]'); if (jb) jb.addEventListener('click', () => { app.closeModal(); journalModal(app); });
 }
 
-export function endScreen(app, { won, earned }) {
+const KIND_LINE = { start: () => 'Woke as The Blank — a 1/1 with no abilities.', boss: e => `Defeated ${esc(e.name)}.`, act: e => `Entered Act ${ACT_ROMAN[e.act]} · ${esc(ACTS[e.act].name)}.`,
+  graft: e => `Grafted <b>${esc(e.name)}</b> (+${e.power}/+${e.toughness})${e.gained && e.gained.length ? ' — gained ' + esc(e.gained.map(k => KEYWORDS[k].name).join(', ')) : ''}${e.released ? ' · released ' + esc(e.released) : ''}.${e.firstGraft ? ' <em>First graft.</em>' : ''}${e.firstKeyword ? ` <em>First ability: ${esc(KEYWORDS[e.firstKeyword].name)}.</em>` : ''}${e.stage && e.stage !== 'blank' ? ` <em>Became ${esc(STAGE[e.stage])}.</em>` : ''}`,
+  release: e => `Released ${esc(e.name)} (${e.by === 'exchange' ? 'Graft Exchange' : 'Graftsmith'}).`, spell: e => `${e.level > 1 ? 'Empowered' : 'Inscribed'} ${esc(getCard(e.cardId) ? getCard(e.cardId).name : e.cardId)}${e.level > 1 ? ' to level ' + e.level : ''}.`,
+  event: e => `Met ${esc(EVENTS[e.id] ? EVENTS[e.id].name : e.id)} — chose “${esc(e.choice)}”.` };
+const sheetCanvas = (app, evo, scale = 3) => {
+  const src = composePlayerSheet(app.assets, deriveAppearance(evo)); const c = document.createElement('canvas'); c.width = 48 * scale; c.height = 48 * scale;
+  const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(src, 0, 0, 48, 48, 0, 0, 48 * scale, 48 * scale); c.className = 'journal-sprite'; return c;
+};
+/** v0.6 Evolution Journal: current creature, graft history, spells, timeline and before/after. */
+export function journalModal(app) {
+  const run = app.run; if (!run) return;
+  const st = runStats(run), ap = deriveAppearance(run.evo); const hist = graftHistory(run);
+  const traits = Object.values(ap.slots).map(p => p.part + (p.tier > 1 ? ' II' : '')).concat(ap.effects);
+  const m = app.openModal(`<div class="journal"><small class="sh-brand">${GAME.title} · Evolution Journal</small><h2>${esc(run.name)} <small>${STAGE[ap.stage]}</small></h2>
+    <section class="j-now"><div class="j-compare"><figure data-fig="before"><figcaption>The Blank · 1/1</figcaption></figure><span class="j-arrow">→</span><figure data-fig="now"><figcaption>Now · ${run.evo.power}/${run.evo.toughness}</figcaption></figure></div>
+      <table class="stats"><tr><td>Power / Toughness</td><td>${run.evo.power}/${run.evo.toughness}</td></tr><tr><td>Health</td><td>${run.hp}/${st.maxHealth}</td></tr><tr><td>Abilities</td><td>${esc(Object.keys(run.evo.keywords).map(k => keywordLabel(k, run.evo.keywords[k])).join(', ') || 'none')}</td></tr>
+      <tr><td>Visible traits</td><td>${esc(traits.join(', ') || 'unmarked parchment')}</td></tr><tr><td>Stage</td><td>${STAGE[ap.stage]}</td></tr><tr><td>Grafts (active / ever)</td><td>${run.evo.absorbed.length} / ${hist.length}</td></tr></table></section>
+    <h3>Graft history</h3><ol class="hist">${hist.map(h => `<li class="${h.active ? '' : 'gone'}"><span class="n">${h.i}</span><b>${esc(h.name)}</b><small>+${h.power}/+${h.toughness}${h.gained && h.gained.length ? ' · ' + esc(h.gained.map(k => KEYWORDS[k].name).join(', ')) : ''} · ${h.reconstructed ? 'acquired before v0.6' : `Act ${ACT_ROMAN[h.act]}${h.node != null ? ', node ' + h.node : ''}`} · ${h.active ? 'active' : 'released'}</small></li>`).join('') || '<li class="muted">No grafts yet.</li>'}</ol>
+    <h3>Spellbook</h3><ul class="sh-kw">${run.spellbook.map(sp => `<li><b>${esc(getCard(sp.id).name)}${sp.level > 1 ? ' · Lv ' + sp.level : ''}</b></li>`).join('') || '<li class="muted">Empty.</li>'}</ul>
+    <h3>Timeline</h3><ol class="timeline">${(run.journal ? run.journal.entries : []).map(e => `<li>${(KIND_LINE[e.kind] || (() => esc(e.kind)))(e)}</li>`).join('')}</ol>
+    <p class="small muted">Local adventure journal. Verified expedition history will appear on your DeepCutsEDH profile only after server verification.</p></div>
+    <div class="modal-actions"><button type="button" class="btn primary" data-close>Close</button></div>`, 'wide');
+  m.querySelector('[data-fig="before"]').prepend(sheetCanvas(app, newEvolution())); m.querySelector('[data-fig="now"]').prepend(sheetCanvas(app, run.evo));
+}
+
+/** v0.6 special encounter screen. Every cost is shown before you choose; Graft Exchange previews what you lose. */
+export function eventScreen(app) {
+  const run = app.run; const id = run.event.id; const E = EVENTS[id]; const view = { ...run, maxHp: runStats(run).maxHealth };
+  const ch = eventChoices(view, id);
+  const el = showScreen(`<div class="shrine event act-${ACTS[run.act].theme}"><div class="shrine-glow"></div><h2>${esc(E.glyph)} ${esc(E.name)}</h2>
+    <p class="rw-sub">${esc(E.text)}</p>
+    <div class="shrine-opts">${ch.map(c => `<button type="button" class="opt" data-c="${c.id}" ${c.available ? '' : 'disabled'} data-tip="${esc(c.text)}"><b>${esc(c.label)}</b><span>${esc(c.text)}</span>${c.available ? '' : '<small>Not available right now</small>'}</button>`).join('')}</div>
+    <p class="muted small">${ICON.heart} ${run.hp}/${view.maxHp} health · ${run.evo.absorbed.length}/${graftCapacity(run)} grafts · Special encounters are never scored.</p></div>`, 'shrinescr');
+  app.audio.play('shrine');
+  return new Promise(res => el.querySelector('.shrine-opts').addEventListener('click', e => {
+    const b = e.target.closest('[data-c]'); if (!b || b.disabled) return; const c = b.dataset.c; app.audio.play('click');
+    if (id === 'graftExchange' && c === 'exchange') {
+      const m = app.openModal(`<h2>The Graft Exchange</h2><p>Choose a graft to release. You will lose exactly what is listed, then choose a replacement from a creature-only pack.</p>
+        <div class="release">${run.evo.absorbed.map((a, i) => { const ac = getCard(a.cardId); return `<button type="button" class="btn" data-g="${i}">${esc(a.name)} <small>lose +${a.power}/+${a.toughness}${ac && ac.keywords && Object.keys(ac.keywords).length ? ' and ' + esc(Object.keys(ac.keywords).map(k => KEYWORDS[k].name).join(', ')) : ''}</small></button>`; }).join('')}</div>
+        <div class="modal-actions"><button type="button" class="btn" data-close>Back</button></div>`);
+      m.addEventListener('click', ev => { const g = ev.target.closest('[data-g]'); if (g) { app.confirm(`Release ${run.evo.absorbed[+g.dataset.g].name}? This removes its power, toughness and abilities now.`, 'Release', () => res({ choice: c, arg: +g.dataset.g })); } });
+    } else if (id === 'archivist' && c === 'trade') {
+      const m = app.openModal(`<h2>The Wandering Archivist</h2><p>Which page do you give away? It leaves your spellbook (and any levels it had).</p>
+        <div class="release">${run.spellbook.map(sp => `<button type="button" class="btn" data-sp="${esc(sp.id)}">${esc(getCard(sp.id).name)} <small>Lv ${sp.level}</small></button>`).join('')}</div>
+        <div class="modal-actions"><button type="button" class="btn" data-close>Back</button></div>`);
+      m.addEventListener('click', ev => { const t = ev.target.closest('[data-sp]'); if (t) { app.closeModal(); res({ choice: c, arg: t.dataset.sp }); } });
+    } else res({ choice: c });
+  }));
+}
+
+/** v0.6 encounter result — an adventurer's tournament record, not a web dashboard. */
+export function encounterResultScreen(app, entry, { verifiedNote = '' } = {}) {
+  const best = app.meta.records && app.meta.records[app.recordKey()] ;
+  const el = showScreen(`<div class="result-wrap"><section class="parch-record result">
+    <small class="sh-brand">${GAME.title} · Record of the ${entry.nodeType === 'boss' ? 'Boss' : entry.nodeType === 'elite' ? 'Elite Lair' : 'Encounter'}</small>
+    <h2>${entry.total ? 'Encounter Cleared' : 'Encounter Lost'}</h2><p class="rw-sub dark">${esc(entry.name)}</p>
+    <table class="score"><tr><td>Victory</td><td>+${entry.victory.toLocaleString()}</td></tr>
+      <tr><td>Efficiency <small>${entry.actions} actions · par ${entry.parActions}</small></td><td>+${entry.efficiency}</td></tr>
+      <tr><td>Damage avoided <small>${entry.damage} damage taken · budget ${entry.damageBudget}</small></td><td>+${entry.avoidance}</td></tr>
+      ${entry.multiplier !== 1 ? `<tr><td>${entry.nodeType === 'boss' ? 'Boss' : 'Elite'} multiplier</td><td>×${entry.multiplier}</td></tr>` : ''}
+      <tr class="tot"><td>Total</td><td>${entry.total.toLocaleString()} points</td></tr></table>
+    <p class="small">${entry.turns} turns · ${entry.tiles} tiles moved · ${entry.actions} accepted actions (auto-ended turns, inspecting and rejected clicks never count).</p>
+    <p class="small">${best && best.best ? `Local best expedition: ${best.best.total.toLocaleString()}.` : ''} <span class="badge-local">${esc(verifiedNote || 'LOCAL · PROVISIONAL')}</span></p>
+    <div class="modal-actions center"><button type="button" class="btn primary" data-go>Continue</button></div></section></div>`, 'resultscr');
+  return new Promise(res => { const b = el.querySelector('[data-go]'); b.focus({ preventScroll: true }); b.addEventListener('click', () => res()); });
+}
+
+export function scoreBreakdownHTML(run, extra = {}) {
+  const t = expeditionTotals(run); const e = (run.scoring && run.scoring.encounters) || [];
+  return `<section class="parch-record end-record"><h3>Expedition Record ${run.ranked ? `<small>${esc(run.ranked.challengeId)} · rev ${run.ranked.revision}</small>` : '<small>Adventure</small>'}</h3>
+    <div class="end-total">${t.total.toLocaleString()} <small>points</small></div>
+    <table class="score"><tr><th>Encounter</th><th>Actions</th><th>Damage</th><th>Eff.</th><th>Avoid.</th><th>Score</th></tr>
+    ${e.map(x => `<tr><td>${esc(ACT_ROMAN[x.act])} · ${esc(x.name)}${x.multiplier !== 1 ? ` ×${x.multiplier}` : ''}</td><td>${x.actions}/${x.parActions}</td><td>${x.damage}/${x.damageBudget}</td><td>+${x.efficiency}</td><td>+${x.avoidance}</td><td>${x.total.toLocaleString()}</td></tr>`).join('')}
+    ${t.completionBonus ? `<tr><td colspan="5">Expedition completed</td><td>+${t.completionBonus.toLocaleString()}</td></tr>` : ''}
+    <tr class="tot"><td>Total</td><td>${t.actions}</td><td>${t.damage}</td><td colspan="2">${t.turns} turns</td><td>${t.total.toLocaleString()}</td></tr></table>
+    ${extra.newBest ? '<p class="new-best">★ New local personal best</p>' : ''}
+    <p class="small">${run.ranked ? (extra.verifiedLocally ? '✔ Replay re-verified locally from the challenge definition. ' : '✖ Local replay verification failed — this result is not eligible. ') : ''}<span class="badge-local">LOCAL · UNRANKED — not submitted</span></p>
+    ${run.scoring && run.migratedFromV05 ? '<p class="small muted">Battles before the v0.6 update were not scored.</p>' : ''}</section>`;
+}
+export function endScreen(app, { won, earned, extra = {} }) {
   const run = app.run; const s = run.stats;
   const el = showScreen(`<div class="end ${won ? 'won' : 'lost'}">
     <small class="presents">${GAME.title}</small>
@@ -379,7 +491,8 @@ export function endScreen(app, { won, earned }) {
     <div class="end-pt">${run.evo.power}/${run.evo.toughness}</div>
     <div class="chips center">${kwChips(run.evo.keywords)}</div>
     <table class="stats"><tr><td>Battles won</td><td>${s.battlesWon}</td></tr><tr><td>Bosses defeated</td><td>${s.bossesDefeated || 0}</td></tr><tr><td>Creatures grafted</td><td>${s.cardsAbsorbed}</td></tr><tr><td>Spells learned</td><td>${s.spellsLearned}</td></tr><tr><td>Foes defeated</td><td>${s.kills}</td></tr></table>
+    ${scoreBreakdownHTML(run, extra)}
     ${earned.length ? `<h3>Achievements</h3><ul class="ach">${earned.map(a => `<li class="got"><b>${a.name}</b><span>${a.text}</span></li>`).join('')}</ul>` : ''}
-    <div class="modal-actions center"><button type="button" class="btn primary" data-a="again">New Adventure</button><button type="button" class="btn" data-a="title">Title</button></div></div>`, 'endscr');
-  return new Promise(res => el.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (b) res(b.dataset.a); }));
+    <div class="modal-actions center"><button type="button" class="btn" data-a="journal">Evolution Journal</button><button type="button" class="btn primary" data-a="again">New Adventure</button><button type="button" class="btn" data-a="title">Title</button></div></div>`, 'endscr');
+  return new Promise(res => el.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (!b) return; if (b.dataset.a === 'journal') { journalModal(app); return; } res(b.dataset.a); }));
 }

@@ -41,6 +41,37 @@ export async function lightningBolt(sc, { from, to, target, big = true }) {
   (async () => { for (let i = 0; i < 4; i++) { await sleep(sc, 60); const p = add(to, [R() * 0.6, Math.random() * 0.4, R() * 0.6]); sc.addBolt({ a: p, b: add(p, [R() * 0.4, R() * 0.3, R() * 0.4]), life: 0.06, width: 0.015, col: ELECTRIC, segs: 3 }); } })();
 }
 export const spark = (sc, o) => lightningBolt(sc, { ...o, big: false });
+/** Shock — FAST: no buildup; a single crisp crack with one small fork, a white pop and a short-lived spark spray. */
+export async function shock(sc, { from, to, target }) {
+  const hand = add(from, [0, 0.25, 0]); const Y = [1, 0.95, 0.55];
+  sc.fx.burst(hand, Y, 8, { speed: 0.6, up: 0.3, size: 7, grav: 0, life: 0.15 });
+  sc.addBolt({ a: hand, b: to, life: 0.14, width: 0.035, col: Y, branches: 1, segs: 7, grow: 0.03 });
+  await sleep(sc, 50);
+  sc.light(to, [1, 0.97, 0.75], 1.8, 0.18, 2.2); sc.fx.burst(to, [1, 1, 0.85], 14, { speed: 2.4, up: 1, size: 6, life: 0.22, grav: -6 });
+  if (target != null) sc.hit(target, Y, false, true);
+}
+/** Flame Slash — a curved crescent blade of fire sweeps across the target, leaving a burning arc. */
+export async function flameSlash(sc, { from, to, target }) {
+  const O = [1, 0.48, 0.12], hand = add(from, [0, 0.25, 0]);
+  sc.light(hand, O, 1.8, 0.35, 1.4); sc.fx.burst(hand, [1, 0.7, 0.3], 10, { speed: 0.8, up: 0.6, size: 9, grav: 0, life: 0.25 });
+  await sleep(sc, 120);
+  const dx = to[0] - hand[0], dz = to[2] - hand[2], L = Math.hypot(dx, dz) || 1, nx = -dz / L, nz = dx / L;
+  const steps = 14;
+  await sc.tween(0.26, k => { const i = Math.floor(k * steps); for (let j = 0; j < 2; j++) { const t = (i + j * 0.5) / steps, sw = Math.sin(t * Math.PI) * 0.9;
+    const p = [hand[0] + dx * t + nx * sw, hand[1] + (to[1] - hand[1]) * t + 0.15 * Math.sin(t * Math.PI), hand[2] + dz * t + nz * sw];
+    sc.fx.emit({ pos: p, vel: [nx * 0.4, 0.3, nz * 0.4], col: [1, 0.55 + Math.random() * 0.3, 0.15, 1], size: 26, life: 0.35, drag: 3 }, true); } });
+  const arc = []; for (let k = 0; k <= 10; k++) { const a = -1 + k / 5; arc.push(add(to, [nx * a * 0.6 - dx / L * (1 - a * a) * 0.3, 0.2 + (1 - a * a) * 0.35, nz * a * 0.6 - dz / L * (1 - a * a) * 0.3])); }
+  for (let k = 0; k < arc.length - 1; k++) sc.addBolt({ a: arc[k], b: arc[k + 1], life: 0.3, width: 0.06, col: O, segs: 2 });
+  sc.fx.burst(to, [1, 0.75, 0.3], 30, { speed: 2.2, up: 1.6, size: 12 }); sc.light(to, O, 3, 0.4, 2.4);
+  if (target != null) sc.hit(target, O, true); if (!sc.reduced) sc.shake(0.08);
+}
+/** Healing Salve — a small, quick restorative pulse: glowing droplets fall and one gentle protective ring. */
+export async function salve(sc, { from }) {
+  const W = [0.75, 1, 0.8];
+  for (let i = 0; i < 14; i++) sc.fx.emit({ pos: [from[0] + (Math.random() - 0.5) * 0.5, 1.2 + Math.random() * 0.3, from[2] + (Math.random() - 0.5) * 0.5], vel: [0, -2.4, 0], col: [0.8, 1, 0.85, 1], size: 9, life: 0.45, drag: 0.2 }, true);
+  sc.addRing({ pos: [from[0], 0.03, from[2]], r0: 0.15, r1: 0.55, life: 0.35, col: W, width: 0.05 });
+  sc.light(add(from, [0, 0.5, 0]), W, 1.8, 0.4, 1.2); await sleep(sc, 140);
+}
 export async function chain(sc, o) { return lightningBolt(sc, { ...o, big: false }); }
 export async function chainHop(sc, a, b, target) {
   sc.addBolt({ a, b, life: 0.2, width: 0.04, col: ELECTRIC, branches: 1, grow: 0.05 });
@@ -104,6 +135,7 @@ export async function shield(sc, { from, uid }) {
 /** Growth: verdant spiral and a muscle-pulse of the sprite. */
 export async function growth(sc, { from, uid }) {
   const G = [0.5, 1, 0.4]; sc.fx.swirl(add(from, [0, 0.3, 0]), () => add(from, [0, 0.4, 0]), G, 50, 0.6); sc.light(add(from, [0, 0.6, 0]), G, 2.4, 0.6, 1.5);
+  for (let v = 0; v < 4; v++) { const a = v * Math.PI / 2 + 0.4; const base = [from[0] + Math.cos(a) * 0.45, 0.02, from[2] + Math.sin(a) * 0.45]; sc.addBolt({ a: base, b: add(base, [-Math.cos(a) * 0.3, 0.9, -Math.sin(a) * 0.3]), life: 0.5, width: 0.03, col: [0.35, 0.85, 0.3], segs: 5, grow: 0.25 }); }
   const v = sc.units.get(uid); if (v) { const s0 = v.scale; await sc.tween(0.35, k => { v.scale = s0 * (1 + Math.sin(k * Math.PI) * 0.18); }); v.scale = s0; }
 }
 /** Drain: a dark bolt strikes, then motes of life stream back into the caster. */
@@ -121,6 +153,9 @@ export async function summon(sc, { to }) {
 }
 export async function wind(sc, { from, to, target }) { await sc.projectile(add(from, [0, 0.2, 0]), to, [0.85, 0.95, 1], 0.25, 0.1, { size: 22 }); if (target != null) sc.hit(target, [0.85, 0.95, 1], false); }
 
-export const VFX = { lightningBolt, spark, chain, fire, fireball, frost, poison, heal, shield, growth, drain, summon, wind };
+export const VFX = { lightningBolt, spark, shock, chain, fire, flameSlash, fireball, frost, poison, heal, salve, shield, growth, drain, summon, wind };
+/** The 13 curated real spells and their unique VFX identities (dev/vfx.html gallery + tests). */
+export const SPELL_VFX = { 'Shock': 'shock', 'Lightning Bolt': 'lightningBolt', 'Flame Slash': 'flameSlash', 'Arc Lightning': 'chain', 'Fireball': 'fireball', 'Giant Growth': 'growth',
+  'Drain Life': 'drain', 'Infest': 'poison', 'Raise the Alarm': 'summon', 'Healing Hands': 'heal', 'Healing Salve': 'salve', 'Feat of Resistance': 'shield', 'Frost Breath': 'frost' };
 /** Template/legacy effect -> default visual family (used when a card has no explicit vfx). */
 export const DEFAULT_VFX = { ember_dart: 'fire', chain_lightning: 'chain', starfall: 'fireball', venom_mist: 'poison', mending_rain: 'heal', barkskin: 'shield', sap_surge: 'growth', soul_siphon: 'drain', call_sproutling: 'summon', rootsnare: 'frost', gale_push: 'wind', blink_step: 'teleport' };

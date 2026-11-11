@@ -51,7 +51,7 @@ const E = {
 const TYPE_EMBLEM = { Angel: 'roc', Bird: 'bird', Drake: 'drake', Dragon: 'drake', Djinn: 'wisp', Thopter: 'bird', Rat: 'leech', Snake: 'adder', Cat: 'lynx', Bear: 'brute', Beast: 'brute',
   Dinosaur: 'wyrm', Wurm: 'wyrm', Thrull: 'brute', Elephant: 'boar', Ox: 'boar', Giant: 'brute', Ogre: 'brute', Unicorn: 'stag', Centaur: 'stag', Elemental: 'wisp', Spirit: 'wisp',
   Vampire: 'owl', Aetherborn: 'wisp', Zombie: 'brute', Goblin: 'mantis', Elf: 'heron', Merfolk: 'heron', Sable: 'lynx', Knight: 'knight', Soldier: 'knight', Human: 'knight', Wizard: 'owl' };
-const VFX_EMBLEM = { lightningBolt: 'bolt', spark: 'bolt', chain: 'bolt', fire: 'flame', fireball: 'star', frost: 'root', poison: 'mist', heal: 'rain', shield: 'shield', growth: 'sap', drain: 'siphon', summon: 'sprout' };
+const VFX_EMBLEM = { lightningBolt: 'bolt', spark: 'bolt', shock: 'bolt', chain: 'bolt', fire: 'flame', flameSlash: 'flame', salve: 'rain', fireball: 'star', frost: 'root', poison: 'mist', heal: 'rain', shield: 'shield', growth: 'sap', drain: 'siphon', summon: 'sprout' };
 function emblemFor(card) {
   if (card.kind === 'spell') return VFX_EMBLEM[card.vfx] || card.art || 'star';
   if (card.art) return card.art;
