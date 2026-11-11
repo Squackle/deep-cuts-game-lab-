@@ -81,14 +81,15 @@ test("Unified catalog paths are local, existing and free from traversal",()=>{
  }
 });
 
-test("three playable game covers remain first-party, meaningful, and without external images",()=>{
+test("four playable game covers remain first-party, meaningful, and without external images",()=>{
  const cards=[
   ["hive-run","alien","game-hive"],
   ["stackbreaker","spellcaster","game-stack"],
-  ["mana-heist","Stone vault","game-mana"]
+  ["mana-heist","Stone vault","game-mana"],
+  ["graftbound","winged armored monster","game-graftbound"]
  ];
  const css=read("lab/lab.css");
- assert.equal((hub.match(/class="game-cover"/g)||[]).length,3);
+ assert.equal((hub.match(/class="game-cover"/g)||[]).length,4);
  for(const [name,subject,card] of cards){
   assert.match(hub,new RegExp('class="game-card '+card+'"'));
   assert.ok(hub.includes('src="./covers/'+name+'.svg"'),name+" image path");
@@ -98,6 +99,9 @@ test("three playable game covers remain first-party, meaningful, and without ext
   assert.match(svg,/role="img" aria-label=/);
   assert.doesNotMatch(svg,/<script|<foreignObject|onload=|<image|href="https?:/i);
  }
+ assert.match(hub,/GRAFT<em>BOUND\.<\/em>/);
+ assert.match(hub,/v0\.6 · 3 acts/);
+ assert.doesNotMatch(hub,/game-art-living|living-card-mark/);
  assert.match(css,/\.game-cover\{display:block/);
  assert.match(css,/\.game-card:hover \.game-cover/);
  assert.match(css,/prefers-reduced-motion:reduce/);
