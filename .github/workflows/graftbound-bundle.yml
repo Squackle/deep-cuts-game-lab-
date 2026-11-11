@@ -1,0 +1,146 @@
+# Read-only handoff for GRAFTBOUND development assistants. Never deploys or changes repository files.
+name: GRAFTBOUND source bundle
+
+on:
+  push:
+    branches:
+      - main
+      - 'game/graftbound-**'
+    paths:
+      - 'graftbound/**'
+      - 'living-card/**'
+      - 'lab/**'
+      - 'AGENTS.md'
+      - 'docs/**'
+      - '.github/workflows/graftbound-bundle.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Unit tests (recorded, never blocks bundle)
+        shell: bash
+        run: |
+          if [ ! -f graftbound/package.json ]; then
+            printf 'NOT RUN: graftbound/package.json not found\nEXIT_CODE=NOT_RUN\n' > test-results.txt
+          else
+            cd graftbound
+            set +e
+            npm test > ../test-results.txt 2>&1
+            status=$?
+            printf '\nEXIT_CODE=%s\n' "$status" >> ../test-results.txt
+            exit 0
+          fi
+      - name: Build UTF-8 source bundles
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+
+          roots = [
+              'graftbound', 'living-card', 'lab', 'AGENTS.md',
+              'docs/SHARED-GAME-LAB.md',
+              'docs/TEST-FIRST-RELEASE-POLICY.md',
+              'docs/MAIN-SITE-PROMOTION.md',
+          ]
+          binary_exts = {
+              '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico', '.zip',
+              '.woff', '.woff2', '.ttf', '.otf', '.mp3', '.ogg', '.wav',
+              '.mp4', '.webm', '.pdf', '.wasm', '.bin', '.7z', '.gz',
+          }
+          private_names = {'.env', '.env.local', 'credentials.json', 'secrets.json'}
+          private_exts = {'.pem', '.key', '.p12', '.pfx'}
+          ignored_dirs = {'.git', 'node_modules', '__pycache__', 'dist', '.venv'}
+          paths = []
+          for root in roots:
+              path = Path(root)
+              if path.is_file():
+                  paths.append(path)
+              elif path.is_dir():
+                  for directory, subdirs, filenames in os.walk(path):
+                      subdirs[:] = sorted(d for d in subdirs if d not in ignored_dirs)
+                      paths.extend(Path(directory) / filename for filename in sorted(filenames))
+          paths = sorted(set(paths), key=lambda p: p.as_posix())
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          branch = os.environ['GITHUB_REF_NAME']
+          sha = os.environ['GITHUB_SHA']
+          header = (f'REPOSITORY: {repo}\nBRANCH: {branch}\n'
+                    f'COMMIT SHA: {sha}\n').encode('utf-8')
+          max_size = 380_000  # Always below the ~400 KB upload limit, including metadata.
+          contents, omitted, private, included = [], [], [], []
+          for path in paths:
+              name = path.as_posix()
+              if path.name in private_names or path.name.startswith('.env.') or path.suffix.lower() in private_exts:
+                  private.append(name)
+                  continue
+              if path.suffix.lower() in binary_exts:
+                  omitted.append(name)
+                  continue
+              raw = path.read_bytes()
+              if b'\x00' in raw:
+                  omitted.append(name)
+                  continue
+              try:
+                  raw.decode('utf-8')
+              except UnicodeDecodeError:
+                  omitted.append(name)
+                  continue
+              block = (f'===== FILE: {name} =====\n'.encode('utf-8')
+                       + raw + (b'' if raw.endswith(b'\n') else b'\n')
+                       + b'===== END FILE =====\n\n')
+              if len(header) + 64 + len(block) > max_size:
+                  raise ValueError(f'{name} is too large for one text part; split this source before bundling')
+              contents.append((name, block))
+              included.append((name, len(raw), hashlib.sha256(raw).hexdigest()))
+
+          chunks = []
+          current = bytearray()
+          for name, block in contents:
+              if current and len(header) + 64 + len(current) + len(block) > max_size:
+                  chunks.append(bytes(current))
+                  current.clear()
+              current.extend(block)
+          if current:
+              chunks.append(bytes(current))
+
+          out = Path('bundle')
+          out.mkdir(exist_ok=True)
+          for idx, chunk in enumerate(chunks, 1):
+              part_header = header + f'PART: {idx}/{len(chunks)}\n\n'.encode('utf-8')
+              data = part_header + chunk
+              if len(data) > max_size:
+                  raise ValueError(f'part {idx} is too large ({len(data)} bytes)')
+              (out / f'graftbound-part{idx}.txt').write_bytes(data)
+
+          tests = Path('test-results.txt').read_bytes() if Path('test-results.txt').exists() else b'NOT RUN\n'
+          # Readable test output without dropping the actual exit code line.
+          (out / 'graftbound-tests.txt').write_bytes(header + b'\n' + tests[-20_000:])
+          manifest = [header.decode('utf-8'),
+                      f'PARTS: {len(chunks)}\nINCLUDED TEXT FILES: {len(included)}\n',
+                      '\n===== INCLUDED FILES (path | bytes | SHA256) =====\n']
+          manifest.extend(f'{p} | {n} | {digest}\n' for p, n, digest in included)
+          manifest.append('\n===== OMITTED BINARY / NON-UTF8 PATHS =====\n')
+          manifest.extend(f'{p}\n' for p in omitted)
+          manifest.append('\n===== OMITTED PRIVATE-NAME PATHS =====\n')
+          manifest.extend(f'{p}\n' for p in private)
+          (out / 'graftbound-manifest.txt').write_text(''.join(manifest), encoding='utf-8')
+          print(f'{len(included)} text files in {len(chunks)} parts; {len(omitted)} binary/non-UTF8 and {len(private)} private-name paths excluded')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: graftbound-bundle-${{ github.ref_name == 'main' && 'main' || 'branch' }}-${{ github.sha }}
+          path: bundle/
+          if-no-files-found: error
+          retention-days: 30
