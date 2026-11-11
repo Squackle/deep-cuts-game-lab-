@@ -1,0 +1,2 @@
+import { winRate } from './sim.mjs';
+for (const p of process.argv.slice(2)) { const r = winRate(+process.env.N||30, { policy: p }); const lost = r.runs.filter(x=>!x.won).map(x=>x.act+'.'+x.depth); console.log(p, 'win', r.rate.toFixed(2), 'reach act2', r.actReached[1].toFixed(2), 'act3', r.actReached[2].toFixed(2), 'turns/battle', r.avgTurns.toFixed(1), 'final P/T', (r.runs.reduce((a,x)=>a+x.power,0)/r.runs.length).toFixed(1)+'/'+(r.runs.reduce((a,x)=>a+x.toughness,0)/r.runs.length).toFixed(1), 'deaths at', lost.slice(0,14).join(' ')); }

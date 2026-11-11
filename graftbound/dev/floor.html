@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><title>GRAFTBOUND · floor check</title><style>html,body{margin:0;height:100%;background:#000}canvas{width:100%;height:100%;display:block}</style></head>
+<body><canvas id="c"></canvas><script type="module">
+// Dev: renders an arena. ?before=1 reproduces the v0.4 floor (coplanar foundation + no filtered atlas).
+// ?theme=hollow|warrens|nexus  ?q=high|balanced|performance  ?zoom=1  ?yaw=0.785
+import { loadAssets } from '../src/rendering/sprites.js';
+import { Scene } from '../src/rendering/scene.js';
+import { DEBUG } from '../src/rendering/environment.js';
+import { buildEncounter } from '../src/engine/encounters.js';
+import { ACTS } from '../src/data/encounters.js';
+const q = new URLSearchParams(location.search); const before = q.get('before') === '1';
+DEBUG.legacyFloor = before;
+const assets = await loadAssets(); const sc = new Scene(document.getElementById('c'), assets); sc.setQuality(q.get('q') || 'high');
+if (before) sc.r.atlasBlur = sc.r.atlas;
+const theme = q.get('theme') || 'hollow'; const act = { hollow: 0, warrens: 1, nexus: 2 }[theme];
+const enc = buildEncounter(ACTS[act].mid[0], 4242, 'battle');
+sc.loadArena(enc, 7, theme); sc.zoom = +(q.get('zoom') || 1); sc.yaw = sc.yawTarget = +(q.get('yaw') || Math.PI / 4);
+enc.enemies.forEach((e, i) => sc.addUnit({ uid: i + 2, side: 'enemy', x: e.x, y: e.y }, { grub: 'grub', hound: 'hound', moth: 'moth', archer: 'archer', tortoise: 'warden', cinderling: 'cinderling', emberseer: 'emberseer', ashbrute: 'ashbrute', riftstalker: 'riftstalker', nullwarden: 'nullwarden', shardling: 'shardling', hexer: 'hexer', harpooner: 'harpooner' }[e.defId] || 'grub'));
+sc.addUnit({ uid: 1, side: 'player', x: enc.playerStart.x, y: enc.playerStart.y }, 'blank');
+let last = performance.now(); (function loop(t) { sc.frame(Math.min(0.05, (t - last) / 1000)); last = t; requestAnimationFrame(loop); })(last);
+window.__sc = sc;
+</script></body></html>
