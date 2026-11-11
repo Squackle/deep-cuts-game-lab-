@@ -5,6 +5,7 @@ import { resolveCard } from '../cards/catalog.js';
 import { inBounds, unitAt, tileAt, T, manhattan } from '../core/grid.js';
 import { dealDamage, heal, addShield, addStatus, enemies, alive, player, enterTiles } from './abilities.js';
 import { ENEMIES } from '../data/enemies.js';
+import { TERRAIN_RULES } from '../data/terrain.js';
 const getCard = id => resolveCard(id);
 export const effectOf = id => { const c = resolveCard(id); return (c && c.effect) || id; };
 
@@ -113,5 +114,29 @@ export function castSpellEffect(s, ev, id, level, tx, ty) {
       break;
     }
     default: throw new Error('Unknown spell ' + id);
+  }
+  elementalInteraction(s, ev, id, tx, ty);
+}
+
+/** v0.6: a deliberately small set of spell–terrain interactions. Element comes from the card's VFX identity. */
+const ELEMENT_BY_VFX = { fire: 'fire', fireball: 'fire', flameSlash: 'fire', lightningBolt: 'lightning', spark: 'lightning', chain: 'lightning', frost: 'frost' };
+const ELEMENT_BY_EFFECT = { ember_dart: 'fire', starfall: 'fire', chain_lightning: 'lightning', rootsnare: 'frost' };
+export function spellElement(id) { const c = getCard(id); return (c && ELEMENT_BY_VFX[c.vfx]) || ELEMENT_BY_EFFECT[effectOf(id)] || null; }
+const near = (a, b, r) => Math.abs(a.x - b.x) <= r && Math.abs(a.y - b.y) <= r;
+function elementalInteraction(s, ev, id, tx, ty) {
+  const el = spellElement(id); if (!el || s.phase === 'lost') return;
+  if (el === 'fire') {   // fire burns brambles away (target tile; Fireball/Starfall: the whole blast)
+    const r = effectOf(id) === 'starfall' ? 1 : 0; const burned = [];
+    for (let y = ty - r; y <= ty + r; y++) for (let x = tx - r; x <= tx + r; x++) if (inBounds(s, x, y) && tileAt(s, x, y) === T.BRAMBLE && (r === 0 || manhattan({ x, y }, { x: tx, y: ty }) <= 1)) { s.terrain[y * s.w + x] = T.FLOOR; burned.push({ x, y }); }
+    if (burned.length) ev.push({ t: 'terrain', tiles: burned, kind: 'burn' });
+  }
+  if (el === 'frost' && inBounds(s, tx, ty) && tileAt(s, tx, ty) === T.LAVA) {   // frost hardens lava for a while
+    const i = ty * s.w + tx; s.terrain[i] = T.FLOOR; (s.cooled = s.cooled || []).push({ i, until: s.turn + TERRAIN_RULES.frost.coolRounds - 1 });   // solid this round and the next
+    ev.push({ t: 'terrain', tiles: [{ x: tx, y: ty }], kind: 'cool' });
+  }
+  if (el === 'lightning') {   // lightning near a charged crystal makes it discharge once
+    const c = (s.crystals || []).find(k => k.charged && near(k, { x: tx, y: ty }, 1)); if (!c) return;
+    c.charged = false; ev.push({ t: 'crystal', x: c.x, y: c.y, kind: 'discharge' });
+    for (const e of enemies(s).filter(e => near(e, c, TERRAIN_RULES.crystal.dischargeRadius))) dealDamage(s, ev, player(s), e, TERRAIN_RULES.crystal.dischargeDamage, { kind: 'spell' });
   }
 }

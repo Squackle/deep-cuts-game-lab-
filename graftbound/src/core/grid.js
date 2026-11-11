@@ -1,6 +1,7 @@
 // Grid helpers: terrain, pathing, line of sight. Pure functions over a battle-like {w,h,terrain,units}.
 // Terrain: FLOOR, ROCK (blocks ground units), BRAMBLE (1 dmg on entry), LEYLINE (+1 mana),
-// LAVA (Act II: 2 dmg on entry and when ending a turn on it), RIFT (Act III: pulses for 3 on even rounds).
+// LAVA (Act II: damage on entry and when ending a turn on it), RIFT (Act III: pulses on even rounds).
+// Exact numbers live in src/data/terrain.js. Crystals (v0.6) are objects on FLOOR tiles (battle.crystals), not terrain.
 export const T = { FLOOR: 0, ROCK: 1, BRAMBLE: 2, LEYLINE: 3, LAVA: 4, RIFT: 5 };
 export const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 export const inBounds = (s, x, y) => x >= 0 && y >= 0 && x < s.w && y < s.h;

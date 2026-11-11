@@ -17,7 +17,7 @@ test('compatibility: keyword-only creatures become playable; anything unmodeled 
   assert.match(toGameCard(normalizeCard(F.LLANOWAR_ELVES)).reasons[0], /unmodeled rules text/);
   assert.match(toGameCard(normalizeCard(F.REACH_SPIDER)).reasons.join(), /unsupported keyword: Reach/);
   assert.ok(!toGameCard(normalizeCard(F.STAR_POWER)).ok);
-  const shock = toGameCard(normalizeCard(F.SHOCK)); assert.ok(shock.ok); assert.equal(shock.card.vfx, 'spark');
+  const shock = toGameCard(normalizeCard(F.SHOCK)); assert.ok(shock.ok); assert.equal(shock.card.vfx, 'shock');
 });
 test('adapter: caching, spacing, failure codes (offline / 404 / 429 / bad id)', async () => {
   let t = 0; const calls = []; const slept = [];

@@ -3,13 +3,25 @@
 import { reachable, pathTo, distanceField, manhattan, unitAt, inBounds, tileAt, T, DIRS, lineOfSight } from '../core/grid.js';
 import { ENEMIES } from '../data/enemies.js';
 import { player, enemies, allies, alive, attackExchange, dealDamage, addShield, addStatus, enterTiles, strikePower, has } from './abilities.js';
+import { TERRAIN_RULES } from '../data/terrain.js';
 
 const cmpTile = (a, b) => a.y - b.y || a.x - b.x;
-const hazard = (s, t) => { const k = tileAt(s, t.x, t.y); return k === T.LAVA || k === T.RIFT ? 1 : 0; };
+const hazard = (s, t) => { const k = tileAt(s, t.x, t.y); return (k === T.LAVA || k === T.RIFT ? 1 : 0) + (t.hz || 0); };
+/** Hazard damage a ground unit would take walking a path (v0.6: enemies understand terrain). */
+export function pathDamage(s, u, path) {
+  if (has(u, 'flying')) return 0; let d = 0;
+  for (let i = 1; i < path.length; i++) { const t = tileAt(s, path[i].x, path[i].y); d += t === T.BRAMBLE ? TERRAIN_RULES.bramble.enterDamage : t === T.LAVA ? TERRAIN_RULES.lava.enterDamage : 0; }
+  return d;
+}
 function stops(s, e) {
   const map = reachable(s, e, e.statuses.rooted ? 0 : e.move);
-  return { map, list: [...map.values()].filter(v => v.stop) };
+  // Never choose a destination whose path would kill this unit outright; prefer cheaper-hazard routes on ties.
+  const list = [...map.values()].filter(v => v.stop).map(v => { v.hz = pathDamage(s, e, pathTo(map, v.x, v.y)); return v; }).filter(v => v.cost === 0 || v.hz < e.hp);
+  return { map, list };
 }
+const BOSS_PHASES = { thornmother: ['Rootbound', 'Barkskin Awakening', 'The Briar Crown'], matron: ['Smouldering', 'Rising Magma', 'Pyre Unbound'], unwritten: ['The Mirror', 'Redaction', 'The Blank Page'] };
+export const bossPhaseOf = e => (e.hp > e.maxHp * 2 / 3 ? 1 : e.hp > e.maxHp / 3 ? 2 : 3);
+export const bossPhaseName = (e, ph = bossPhaseOf(e)) => (BOSS_PHASES[ENEMIES[e.defId].ai] || [])[ph - 1] || '';
 function approach(s, e, target, list) {
   const df = distanceField(s, target, has(e, 'flying'));
   return list.slice().sort((a, b) => (df[a.y * s.w + a.x] - df[b.y * s.w + b.x]) || (hazard(s, a) - hazard(s, b)) || (a.cost - b.cost) || cmpTile(a, b))[0];
@@ -149,20 +161,26 @@ export function planEnemy(s, e) {
     case 'thornmother': {
       if (e.slam) { meleeIfAdjacent(hero); break; }
       if (manhattan(e, hero) > 1) go(approach(s, e, hero, list));
-      const phase = (e.cycle || 0) % 2;
+      const phase = (e.cycle || 0) % 2, bp = bossPhaseOf(e);
       if (!e.barked && e.hp <= e.maxHp / 2) plan.actions.push({ type: 'bark', amount: 5 });
-      if (phase === 1 && (e.summons || 0) < 3 && enemies(s).length < 4) plan.actions.push({ type: 'summon', defId: 'hound', n: 1 });
+      // Counters the build: fliers draw Thornbow archers (arrows hit fliers); ground builds draw hounds.
+      const kin = has(hero, 'flying') ? 'archer' : 'hound';
+      if (phase === 1 && (e.summons || 0) < 3 && enemies(s).length < 4) plan.actions.push({ type: 'summon', defId: kin, n: 1 });
       else plan.actions.push({ type: 'slam', tiles: slamTiles(s, hero, e.barked || plan.actions.some(a => a.type === 'bark')), damage: slamDamage(def, hero), kind: 'root' });
+      if (bp >= 2 && phase === 1 && !has(hero, 'flying')) plan.actions.push({ type: 'briars', n: 2 });   // every other turn from phase 2: briars around ground builds; fire burns them
       meleeIfAdjacent(hero); break;
     }
     case 'matron': {
       if (e.slam) { meleeIfAdjacent(hero); break; }
       if (manhattan(e, hero) > 1) go(approach(s, e, hero, list));
-      const phase = (e.cycle || 0) % 2;
-      if (phase === 0) plan.actions.push({ type: 'slam', tiles: crossTiles(s, hero, posAfter()), damage: bossBlastDamage(hero), kind: 'fire' });
+      const phase = (e.cycle || 0) % 2, bp = bossPhaseOf(e);
+      if (phase === 0) { plan.actions.push({ type: 'slam', tiles: crossTiles(s, hero, posAfter()), damage: bossBlastDamage(hero), kind: 'fire' }); if (bp === 3) plan.actions.push({ type: 'lava', n: 1 }); }
       else {
-        if (enemies(s).filter(x => x.defId === 'cinderling').length < 3) plan.actions.push({ type: 'summon', defId: 'cinderling', n: 2 });
-        plan.actions.push({ type: 'lava', n: 2 });
+        // Counters the build: spell-heavy heroes face a Harpooner (it closes distance); others face bursting Cinderlings.
+        const spellHeavy = s.spellbook.length >= 3;
+        if (spellHeavy && !enemies(s).some(x => x.defId === 'harpooner')) plan.actions.push({ type: 'summon', defId: 'harpooner', n: 1 });
+        else if (enemies(s).filter(x => x.defId === 'cinderling').length < 3) plan.actions.push({ type: 'summon', defId: 'cinderling', n: 2 });
+        plan.actions.push({ type: 'lava', n: bp >= 2 ? 3 : 2 });
       }
       meleeIfAdjacent(hero); break;
     }
@@ -171,9 +189,12 @@ export function planEnemy(s, e) {
       if (copy) plan.actions.push({ type: 'mirror', keyword: copy });
       if (e.slam) { if (manhattan(e, hero) > 1) go(approach(s, e, hero, list)); meleeIfAdjacent(hero); break; }
       if (manhattan(e, hero) > 1) go(approach(s, e, hero, list));
-      const phase = (e.cycle || 0) % 2;
-      if (phase === 0) plan.actions.push({ type: 'slam', tiles: crossTiles(s, hero, posAfter()), damage: bossBlastDamage(hero), kind: 'void' });
+      const phase = (e.cycle || 0) % 2, bp = bossPhaseOf(e);
+      if (phase === 0 || bp === 3) plan.actions.push({ type: 'slam', tiles: crossTiles(s, hero, posAfter()), damage: bossBlastDamage(hero), kind: 'void' });
       else if (enemies(s).filter(x => x.defId === 'riftstalker').length < 2) plan.actions.push({ type: 'summon', defId: 'riftstalker', n: 1 });
+      // Redaction: from phase 2, TEMPORARILY suppresses one of your abilities during your next turn (never permanent).
+      const red = bp >= 2 && phase === 1 && !hero.suppressed && MIRROR_ORDER.concat(['deathtouch']).find(k => hero.keywords[k]);
+      if (red) plan.actions.push({ type: 'redact', keyword: red });
       meleeIfAdjacent(hero); break;
     }
   }
@@ -189,7 +210,8 @@ export function previewIntent(s, e) {
   }
   const main = a.find(x => x.type === 'attack') || a.find(x => x.type === 'harpoon') || a.find(x => x.type === 'spit') || a.find(x => x.type === 'hex') || a.find(x => x.type === 'aim') || a.find(x => x.type === 'slam') || a.find(x => x.type === 'summon') || a.find(x => x.type === 'guard') || a.find(x => x.type === 'stunned');
   return { uid: e.uid, kind: main ? main.type : 'move', damage: (main && main.damage) || 0, poison: (main && main.poison) || 0, weaken: (main && main.weaken) || 0, ground: !!(main && main.ground),
-    tiles: (main && main.type === 'aim') ? main.tiles : [], to: plan.to, target: main && main.target, mirror: (a.find(x => x.type === 'mirror') || {}).keyword };
+    tiles: (main && main.type === 'aim') ? main.tiles : [], to: plan.to, target: main && main.target, mirror: (a.find(x => x.type === 'mirror') || {}).keyword,
+    redact: (a.find(x => x.type === 'redact') || {}).keyword, briars: !!a.find(x => x.type === 'briars'), phase: e.boss ? bossPhaseOf(e) : 0 };
 }
 
 function resolvePending(s, ev, e) {
@@ -236,6 +258,13 @@ export function actEnemy(s, ev, e) {
         const tiles = ENEMIES[e.defId].ai === 'thornmother' ? slamTiles(s, hero, e.barked) : ENEMIES[e.defId].ai === 'seer' ? areaTiles(s, hero, 1).filter(t => !(t.x === e.x && t.y === e.y)) : crossTiles(s, hero, e);
         e.slam = { tiles, damage: a.damage, kind: a.kind }; ev.push({ t: 'aim', uid: e.uid, tiles, slam: true, kind: a.kind }); break;
       }
+      case 'briars': {
+        const cand = areaTiles(s, hero, 1).filter(t => tileAt(s, t.x, t.y) === T.FLOOR && !unitAt(s, t.x, t.y)).sort(cmpTile).slice(0, a.n);
+        for (const t of cand) s.terrain[t.y * s.w + t.x] = T.BRAMBLE;
+        if (cand.length) ev.push({ t: 'terrain', tiles: cand, kind: 'bramble' });
+        break;
+      }
+      case 'redact': if (hero.keywords[a.keyword]) { hero.suppressed = { [a.keyword]: hero.keywords[a.keyword] }; delete hero.keywords[a.keyword]; ev.push({ t: 'redact', uid: e.uid, keyword: a.keyword }); } break;
       case 'lava': {
         const cand = areaTiles(s, hero, 2).filter(t => tileAt(s, t.x, t.y) === T.FLOOR && !unitAt(s, t.x, t.y) && !(t.x === hero.x && t.y === hero.y))
           .sort((p, q) => manhattan(p, hero) - manhattan(q, hero) || cmpTile(p, q)).slice(0, a.n);
@@ -251,14 +280,20 @@ export function actEnemy(s, ev, e) {
             if (inBounds(s, x, y) && tileAt(s, x, y) !== T.ROCK && tileAt(s, x, y) !== T.LAVA && !unitAt(s, x, y)) spots.push({ x, y });
           }
           if (!spots.length) break;
-          const u = spawnEnemy(s, a.defId, spots[0].x, spots[0].y); e.summons = (e.summons || 0) + 1;
+          const u = spawnEnemy(s, a.defId, spots[0].x, spots[0].y); u.summoned = true; e.summons = (e.summons || 0) + 1;
           ev.push({ t: 'summon', uid: u.uid, defId: a.defId, x: u.x, y: u.y, by: e.uid });
         }
         break;
       }
     }
   }
-  if (['thornmother', 'matron', 'unwritten'].includes(ENEMIES[e.defId].ai)) e.cycle = (e.cycle || 0) + 1;
+  if (['thornmother', 'matron', 'unwritten'].includes(ENEMIES[e.defId].ai)) { e.cycle = (e.cycle || 0) + 1; announcePhase(ev, e); }
+}
+
+/** Phase transitions are announced once, deterministically, from health thresholds (66% / 33%). */
+export function announcePhase(ev, e) {
+  if (!alive(e) || !e.boss) return; const ph = bossPhaseOf(e);
+  if ((e.phaseSeen || 1) < ph) { e.phaseSeen = ph; ev.push({ t: 'bossPhase', uid: e.uid, phase: ph, text: bossPhaseName(e, ph) }); }
 }
 
 export function actAlly(s, ev, a) {

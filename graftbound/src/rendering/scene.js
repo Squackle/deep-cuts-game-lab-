@@ -1,10 +1,10 @@
 // HD-2D battle scene: perspective three-quarter camera, themed 3D environment, billboard pixel sprites with
 // directional facing + animation state, dynamic lights, particles, procedural lightning/ring FX meshes,
 // tweens, picking and screen projection. Consumes game state; never decides game outcomes.
-import { createRenderer } from './gl.js';
+import { createRenderer, SPR_FLOATS } from './gl.js';
 import { mul, perspective, ortho, lookAt, xform, invert, I } from './math.js';
 import { Geo } from './geometry.js';
-import { buildEnvironment } from './environment.js';
+import { buildEnvironment, swayFor, WIND } from './environment.js';
 import { Particles } from './particles.js';
 
 export const PX = 1 / 19;
@@ -28,7 +28,7 @@ export class Scene {
     this.overlay = null; this.danger = null; this.hazard = null; this.blobs = null; this.fxMesh = null; this.ambientT = 0; this.dof = 1;
     this.bolts = []; this.rings = []; this.theme = 'hollow'; this.mote = [0.8, 1, 0.55];
     this.r.env = { sunDir: norm([-0.55, 0.75, -0.38]), sunCol: [0.9, 0.76, 0.58], ambTop: [0.34, 0.42, 0.44], ambBot: [0.12, 0.13, 0.1], fog: [0.07, 0.11, 0.1], fogR: [7.5, 15] };
-    this.sprBuf = new Float32Array(15 * 6 * 500);
+    this.sprBuf = new Float32Array(SPR_FLOATS * 6 * 500); this.ambientOn = true;
   }
   setQuality(name) { this.r.setQuality(name); this.fx.density = this.r.q.particles * (this.reduced ? 0.5 : 1); }
   world(x, y) { return [x - this.w / 2 + 0.5, 0, y - this.h / 2 + 0.5]; }
@@ -164,8 +164,8 @@ export class Scene {
     const tx = Math.floor(x + this.w / 2), ty = Math.floor(z + this.h / 2);
     return tx < 0 || ty < 0 || tx >= this.w || ty >= this.h ? null : { x: tx, y: ty };
   }
-  pushQuad(buf, n, center, wdt, hgt, uv, fx) {
-    for (const [cx, cy] of [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]]) { buf.set([center[0], center[1], center[2], cx, cy, wdt, hgt, uv[0], uv[1], uv[2], uv[3], fx[0], fx[1], fx[2], fx[3]], n * 15); n++; }
+  pushQuad(buf, n, center, wdt, hgt, uv, fx, sway = 0) {
+    for (const [cx, cy] of [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]]) { buf.set([center[0], center[1], center[2], cx, cy, wdt, hgt, uv[0], uv[1], uv[2], uv[3], fx[0], fx[1], fx[2], fx[3], sway], n * SPR_FLOATS); n++; }
     return n;
   }
   buildSprites(dt) {
@@ -189,7 +189,7 @@ export class Scene {
         v.flash = Math.max(0, v.flash - dt * 4);
         off = this.pushQuad(this.sprBuf, off, c, wdt, hgt, flip ? [u1, v0, u0, v1] : [u0, v0, u1, v1], [v.flash, v.dissolve, v.outline, v.flashCold]);
       }
-      batches.push({ tex, data: this.sprBuf.subarray(start * 15), count: off - start });
+      batches.push({ tex, data: this.sprBuf.subarray(start * SPR_FLOATS), count: off - start });
     }
     const fs = man.foliage.frames, ft = this.foliageTex; const start = off;
     const fx0 = this.focus[0], fz0 = this.focus[2];
@@ -197,9 +197,9 @@ export class Scene {
       const fr = fs[p.kind]; if (!fr) continue; const s = p.s || 1;
       const along = (p.x - fx0) * fwdH[0] + (p.z - fz0) * fwdH[1], side = Math.abs((p.x - fx0) * rH[0] + (p.z - fz0) * rH[1]);
       const tall = fr.h * s > 40; const fade = tall && along < -2.5 && side < 7.5 ? Math.min(1, (-along - 2.5) * 0.9 + 0.55) : 0;
-      off = this.pushQuad(this.sprBuf, off, [p.x, p.y || 0, p.z], fr.w * PX * s, fr.h * PX * HCOMP * s, [fr.x / ft.w, fr.y / ft.h, (fr.x + fr.w) / ft.w, (fr.y + fr.h) / ft.h], [0, fade, 0, 0]);
+      off = this.pushQuad(this.sprBuf, off, [p.x, p.y || 0, p.z], fr.w * PX * s, fr.h * PX * HCOMP * s, [fr.x / ft.w, fr.y / ft.h, (fr.x + fr.w) / ft.w, (fr.y + fr.h) / ft.h], [0, fade, 0, 0], swayFor(p.kind, { reduced: this.reduced, enabled: this.ambientOn, quality: this.r.qName }));
     }
-    batches.push({ tex: ft, data: this.sprBuf.subarray(start * 15), count: off - start });
+    batches.push({ tex: ft, data: this.sprBuf.subarray(start * SPR_FLOATS), count: off - start });
     return batches;
   }
   /** Builds the additive FX mesh: lightning ribbons (glow + white core) and ground rings/glyphs. */
@@ -255,7 +255,7 @@ export class Scene {
     this.fxLights = this.fxLights.filter(l => (l.life -= dt) > 0);
     for (const l of this.fxLights) l.intensity = l.base * Math.min(1, l.life / l.maxLife * 2);
     const st = this.static.lights.map(l => ({ ...l, intensity: l.intensity * (1 - (l.flicker || 0) * (0.5 + 0.5 * Math.sin(this.time * 13 + l.pos[0] * 7) * Math.sin(this.time * 7.3 + l.pos[2]))) }));
-    this.r.lights = [...this.fxLights, ...st]; this.r.time = this.time;
+    this.r.lights = [...this.fxLights, ...st]; this.r.time = this.time; this.r.windT = this.time;
     const cam = this.computeCamera();
     const bg = new Geo();
     for (const v of this.units.values()) { if (v.hidden) continue; const r = 0.26 * v.scale * v.spawnK * (['thornmother', 'matron', 'unwritten'].includes(v.key) ? 1.8 : 1) * (1 - v.dissolve); for (let k = 0; k < 12; k++) { const a0 = k / 12 * 6.283, a1 = (k + 1) / 12 * 6.283; bg.tri([v.pos[0], 0.011, v.pos[2]], [v.pos[0] + Math.cos(a1) * r, 0.011, v.pos[2] + Math.sin(a1) * r * 0.8], [v.pos[0] + Math.cos(a0) * r, 0.011, v.pos[2] + Math.sin(a0) * r * 0.8], [[0, 0, 0, 0.42], [0, 0, 0, 0], [0, 0, 0, 0]]); } }
@@ -279,8 +279,11 @@ export class Scene {
   }
   ambient(dt) {
     this.ambientT -= dt; if (this.ambientT > 0) return; this.ambientT = 0.05;
-    const r = Math.random, m = this.mote;
-    this.fx.emit({ pos: [(r() - 0.5) * 16, -0.3 + r() * 2.5, (r() - 0.5) * 16], vel: [(r() - 0.5) * 0.2, this.theme === 'warrens' ? 0.35 : 0.12, (r() - 0.5) * 0.2], col: [...m, 0.8], size: 5 + r() * 5, life: 3 + r() * 2, drag: 0 });
+    const r = Math.random, m = this.mote, W = WIND[this.theme] || WIND.hollow;
+    // v0.6: a sparse, consistent breeze. Total ambient rate is capped (WIND.rate) and halved for reduced motion.
+    const rate = W.rate * (this.reduced ? 0.4 : 1) * (this.ambientOn ? 1 : 0.4);
+    if (r() < rate) { const leaf = r() < W.leafChance; this.fx.emit({ pos: [-9 + r() * 6, -0.2 + r() * 2.4, (r() - 0.5) * 16],
+      vel: [W.dir[0] * (0.25 + r() * 0.15), W.rise + (leaf ? -0.05 : 0), W.dir[1] * (0.25 + r() * 0.15)], col: leaf ? [...W.leaf, 0.85] : [...m, 0.7], size: leaf ? 9 + r() * 4 : 4 + r() * 4, life: 5 + r() * 3, drag: 0, grav: leaf ? -0.04 : 0 }); }
     for (const e of this.static.emitters) {
       if (e.kind === 'ley' && r() < 0.35) this.fx.emit({ pos: [e.pos[0] + (r() - 0.5) * 0.6, 0.05, e.pos[2] + (r() - 0.5) * 0.6], vel: [0, 0.5 + r() * 0.4, 0], col: [1, 0.8, 0.35, 0.9], size: 7, life: 1.2, drag: 0.2 });
       if (e.kind === 'rift' && r() < 0.5) this.fx.emit({ pos: [e.pos[0] + (r() - 0.5) * 0.7, 0.05, e.pos[2] + (r() - 0.5) * 0.7], vel: [(r() - 0.5) * 0.3, 0.7 + r() * 0.5, (r() - 0.5) * 0.3], col: [0.75, 0.4, 1, 0.9], size: 8, life: 1, drag: 0.3 });

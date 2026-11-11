@@ -42,7 +42,9 @@ export function buildEncounter(template, seed, kind = 'battle') {
     place(template.rifts || 0, T.RIFT, [2, 6]);
     place(template.leylines || 0, T.LEYLINE, [3, 7]);
     if (!connected(terrain, w, h, playerStart)) continue;
-    return { name: template.name, kind, w, h, terrain, playerStart, enemies: enemySpots, boss: !!template.boss };
+    const crystals = [];   // v0.6: crystals sit on plain floor, never on hazards, never on a unit
+    for (let i = 0, k = 0; i < (template.crystals || 0) && k < 200; k++) { const x = int(rng, w), y = 2 + int(rng, 5); if (free(x, y) && !crystals.some(c => c.x === x && c.y === y)) { crystals.push({ x, y }); reserved.add(y * w + x); i++; } }
+    return { name: template.name, kind, w, h, terrain, playerStart, enemies: enemySpots, boss: !!template.boss, crystals };
   }
   throw new Error('Could not build arena');
 }

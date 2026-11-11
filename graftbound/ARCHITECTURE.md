@@ -1,4 +1,4 @@
-# GRAFTBOUND architecture (v0.5)
+# GRAFTBOUND architecture (v0.6)
 
 ```
 src/core       rng, grid (terrain incl. LAVA/RIFT, pathing, line of sight)
@@ -18,3 +18,17 @@ src/audio      synthesized SFX + per-act music
 - The simulation is deterministic and DOM-free. Rendering and VFX only consume events and never decide outcomes.
 - Spell events carry a `vfx` identity, so Lightning Bolt and Shock look different even though they share a damage template.
 - Saves: run v3, meta v4. See `docs/MIGRATION-v0.5.md`.
+
+## v0.6 additions
+
+**Rules modules (all pure and DOM-free; the main site's server-side score checker imports a pinned copy of them):**
+- `engine/legal.js`: one legal-action evaluator, used for auto-end.
+- `engine/describe.js`: tooltip and hazard-path text built from `data/terrain.js`.
+- `engine/scoring.js` with `data/scoring.js`: the versioned scoring model.
+- `engine/ranked.js`: challenge definitions, the replay format, `applyDecision`, `applySegment`, `replayRun` and verified achievements.
+- `engine/events.js`: the special encounters.
+- `engine/journal.js`: the evolution journal.
+
+**Recording.** All player battle input goes through `BattleUI.exec()`, which calls the engine and then `app.record()`. Map, shrine, event and reward choices are recorded in `main.js`. A ranked run's log replays to an identical state.
+
+**Saves.** run v4, meta v5.

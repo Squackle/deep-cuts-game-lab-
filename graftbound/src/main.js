@@ -7,7 +7,9 @@ import { BattleUI } from './ui/battle-ui.js';
 import * as UI from './ui/screens.js';
 import { esc, COLOR } from './ui/cards.js';
 import { createStore } from './engine/save.js';
-import { newRun, enterNode, concludeBattle, chooseReward, skipReward, shrineChoice } from './engine/run.js';
+import { newRun, enterNode, concludeBattle, chooseReward, skipReward, shrineChoice, eventChoice } from './engine/run.js';
+import { startRanked, replayRun, verifiedAchievements } from './engine/ranked.js';
+import { expeditionTotals } from './engine/scoring.js';
 import { evaluateAchievements, recordRunEnd } from './engine/progression.js';
 import { deriveAppearance } from './engine/appearance.js';
 import { newEvolution } from './engine/evolution.js';
@@ -79,7 +81,25 @@ class App {
   }
   applySettings() {
     this.audio.setSfx(this.meta.settings.sound); this.audio.setMusic(this.meta.settings.music);
-    if (this.scene) { this.scene.setQuality(this.autoDowngraded || this.pickQuality()); this.scene.speed = this.animFactor(); }
+    if (this.scene) { this.scene.setQuality(this.autoDowngraded || this.pickQuality()); this.scene.speed = this.animFactor(); this.scene.ambientOn = this.meta.settings.ambient !== false; }
+  }
+  /** Ranked replay recorder: called only AFTER the engine accepted a decision. Adventure runs record nothing. */
+  record(d) {
+    const r = this.run; if (!r || !r.ranked) return;
+    const clean = Object.fromEntries(Object.entries(d).filter(([, v]) => v !== undefined));
+    (r.ranked.log = r.ranked.log || []).push({ seq: r.ranked.seq, ...clean }); r.ranked.seq++;
+  }
+  recordKey(run = this.run) { return run && run.ranked ? `ranked:${run.ranked.challengeId}:${run.ranked.revision}:${run.ranked.rulesVersion}` : 'adventure:v0.6'; }
+  /** LOCAL personal records only (never uploaded). Returns whether this is a new best. */
+  saveRecords(run) {
+    const t = expeditionTotals(run); const k = this.recordKey(run); const recs = this.meta.records = this.meta.records || {};
+    const r = recs[k] = recs[k] || { label: run.ranked ? `Ranked preview · ${run.ranked.challengeId}` : 'Adventure (v0.6 scoring)', completions: 0 };
+    const better = !r.best || t.total > r.best.total || (t.total === r.best.total && t.actions < r.best.actions);
+    if (better) r.best = { total: t.total, actions: t.actions, damage: t.damage, turns: t.turns, acts: t.actsCompleted, completed: t.completed };
+    if (t.completed) { r.completions++; r.lowestDamage = r.lowestDamage == null ? t.damage : Math.min(r.lowestDamage, t.damage); }
+    const enc = (run.scoring ? run.scoring.encounters : []).filter(e => e.total > 0);
+    if (enc.length) r.fewestActions = Math.min(r.fewestActions ?? Infinity, ...enc.map(e => e.actions));
+    this.saveMeta(); return better && t.total > 0;
   }
   autoQuality(dt) {
     if (this.meta.settings.graphics !== 'auto' || !dt) return;
@@ -133,12 +153,13 @@ class App {
     const inRun = !!this.run;
     const m = this.openModal(`<small class="sh-brand">${GAME.title}</small><h2>Paused</h2><div class="menu">
       <button type="button" class="btn primary" data-close>Resume</button>
-      ${inRun ? '<button type="button" class="btn" data-a="sheet">Character Sheet &amp; Spellbook</button>' : ''}
+      ${inRun ? '<button type="button" class="btn" data-a="sheet">Character Sheet &amp; Spellbook</button><button type="button" class="btn" data-a="journal">Evolution Journal</button>' : ''}
       <button type="button" class="btn" data-a="settings">Settings</button>
       ${inRun ? '<button type="button" class="btn" data-a="quit">Save &amp; Return to Title</button><button type="button" class="btn danger" data-a="abandon">Abandon Adventure</button>' : ''}</div>`);
     m.addEventListener('click', e => {
       const a = e.target.closest('[data-a]'); if (!a) return;
       if (a.dataset.a === 'sheet') { this.closeModal(); this.openSheet(); }
+      if (a.dataset.a === 'journal') { this.closeModal(); UI.journalModal(this); }
       if (a.dataset.a === 'settings') { this.closeModal(); UI.settingsModal(this); }
       if (a.dataset.a === 'quit') { this.closeModal(); this.save(); this.toTitle(); }
       if (a.dataset.a === 'abandon') this.confirm('Abandon this adventure? It will count as a loss.', 'Abandon', () => this.endRun(false));
@@ -155,6 +176,12 @@ class App {
     this.scene.zoom = 1.75; this.scene.focusTarget = [0.5, 0.2, 0.5]; this.scene.dof = 1.4;
   }
   toTitle() { this.setMode('title'); this.showcase(); UI.titleScreen(this); }
+  async newRanked() {
+    if (this.run) { recordRunEnd(this.meta, this.run, false); this.saveMeta(); }
+    this.run = startRanked(); this.run.ranked.log = []; this.earnedThisRun = []; this.save();
+    this.toast('<b>Ranked preview</b><small>Same seed and rules for everyone. Local and unranked in the Game Lab.</small>');
+    this.goMap();
+  }
   async newRun(challenges = []) {
     if (this.run) { recordRunEnd(this.meta, this.run, false); this.saveMeta(); }
     this.run = newRun({ seed: hashSeed(Date.now() + ':' + Math.random()), unlocks: this.meta.unlocks, challenges, tutorial: !this.meta.tutorialDone });
@@ -170,6 +197,7 @@ class App {
     if (r.phase === 'battle') return this.runBattle(false);
     if (r.phase === 'reward') return this.reward();
     if (r.phase === 'shrine') return this.shrine();
+    if (r.phase === 'event') return this.event();
     if (r.phase === 'won' || r.phase === 'lost') return this.endRun(r.phase === 'won');
     this.goMap();
   }
@@ -180,25 +208,38 @@ class App {
     }
     this.setMode('map'); this.showcase(); this.scene.zoom = 1.9; this.scene.focusTarget = [1.4, 0.3, 0.5];
     const id = await UI.mapScreen(this);
-    enterNode(this.run, id); this.save();
+    enterNode(this.run, id); this.record({ type: 'node', node: id }); this.save();
     if (this.run.phase === 'shrine') return this.shrine();
+    if (this.run.phase === 'event') return this.event();
     return this.runBattle(true);
   }
   async shrine() {
     this.setMode('map');
     const { choice, arg } = await UI.shrineScreen(this);
     let res; try { res = shrineChoice(this.run, choice, arg); } catch (err) { this.toast(`<b>Can't</b> ${esc(err.message)}`, 'short'); return this.shrine(); }
-    this.save();
+    this.record({ type: 'shrine', choice, arg }); this.save();
     const msg = { restoration: '<b>Restored</b><small>All wounds mended; 3 shield next battle</small>', spark: '<b>+3 Spark</b><small>Maximum health increased</small>', arcane: '<b>Arcane Font</b><small>+1 maximum mana</small>', inscribe: `<b>Inscribed</b><small>${res.cardId ? esc(getCard(res.cardId).name) + ' is now level ' + res.level : ''}</small>` }[res.kind];
     if (msg) { this.toast(msg); this.audio.play('heal'); return this.goMap(); }
     return this.reward();
+  }
+  async event() {
+    this.setMode('map');
+    const { choice, arg } = await UI.eventScreen(this);
+    let res; try { res = eventChoice(this.run, choice, arg); } catch (err) { this.closeModal(); this.toast(`<b>Can't</b> ${esc(err.message)}`, 'short'); return this.event(); }
+    this.closeModal(); this.record({ type: 'event', choice, arg }); this.save();
+    const msg = { leave: '<b>You walk on</b>', well: '<b>The well takes its price</b><small>−3 Spark · +1 maximum and starting mana</small>' }[res.kind];
+    if (msg) this.toast(msg);
+    if (this.run.phase === 'reward') return this.reward();
+    return this.goMap();
   }
   async runBattle(fresh) {
     UI.hideScreen(); this.setMode('battle');
     await this.battle.start(this.run, this.run.battle, { fresh });
     const attacks = this.run.battle.stats.attacks; const act = this.run.act;
     const out = concludeBattle(this.run);
+    const entry = this.run.scoring && this.run.scoring.encounters.at(-1);
     if (out.outcome === 'lost') { this.save(); await new Promise(r => setTimeout(r, 600)); return this.endRun(false); }
+    if (entry && entry.key === act + ':' + this.run.current) { this.setMode('reward'); await UI.encounterResultScreen(this, entry, { verifiedNote: this.run.ranked ? 'RANKED PREVIEW · PROVISIONAL · UNSUBMITTED' : 'LOCAL · PROVISIONAL' }); }
     if (this.run.lastBattle.nodeType === 'tutorial') this.meta.tutorialDone = true;
     this.collect(evaluateAchievements(this.meta, { event: out.boss ? 'bossDown' : 'battleWon', act, elite: out.elite, battleStats: out.battleStats, attacks, run: this.run, evo: this.run.evo }));
     if (out.boss) this.collect(evaluateAchievements(this.meta, { event: 'battleWon', elite: false, battleStats: out.battleStats, attacks, run: this.run, evo: this.run.evo }));
@@ -212,12 +253,13 @@ class App {
     if (!heroView) this.showcase(); else { this.scene.focusTarget = [heroView.pos[0], 0.3, heroView.pos[2]]; this.scene.zoom = 1.6; }
     this.scene.dof = 1.6;
     if (!this.run.pending.cards.length) { this.run.pending = null; this.run.phase = 'map'; this.save(); return this.goMap(); }
+    if (this.run.phase === 'won') return this.endRun(true);
     const { choice, rect, release } = await UI.rewardScreen(this, this.run.pending.cards, { tier: this.run.pending.tier, severed: this.run.pending.severed });
-    if (choice === 'skip') { skipReward(this.run); this.save(); this.toast('<b>+1 Spark</b>'); }
+    if (choice === 'skip') { skipReward(this.run); this.record({ type: 'skip' }); this.save(); this.toast('<b>+1 Spark</b>'); }
     else {
       const evoBefore = this.run.evo; let change;
       try { change = chooseReward(this.run, choice, release); } catch (err) { this.toast(`<b>Can't</b> ${esc(err.message)}`, 'short'); return this.reward(); }
-      this.save();
+      this.record({ type: 'reward', card: choice, release }); this.save();
       await this.absorbSequence(choice, change, rect, evoBefore);
       this.collect(evaluateAchievements(this.meta, { event: 'evolve', run: this.run, evo: this.run.evo })); this.saveMeta();
     }
@@ -274,7 +316,7 @@ class App {
       sc.fx.burst(sc.centerPos(uid), col, 80, { speed: 3, up: 2.5, size: 16 }); sc.fx.burst(sc.centerPos(uid), [1, 0.95, 0.7], 40, { speed: 1.6, up: 3, size: 10 });
       this.traitFx(uid, evoBefore);
       const kws = [...change.gained, ...change.raised].map(kw => keywordLabel(kw, this.run.evo.keywords[kw]));
-      this.bigText(`<div class="bt-pt">${evoBefore.power}/${evoBefore.toughness} <i>→</i> <b>${this.run.evo.power}/${this.run.evo.toughness}</b></div>${kws.length ? `<div class="bt-kw">${esc(kws.join(' · '))}</div>` : ''}${change.resonance ? `<div class="bt-res">Resonance +${change.resonance * 2} Spark</div>` : ''}${change.released ? `<div class="bt-src">${esc(change.released)} was released</div>` : ''}${this.traitLine(evoBefore)}<div class="bt-src">${esc(card.name)} is grafted to you</div><small class="bt-skip">tap to continue</small>`, COLOR[card.color].glow);
+      this.bigText(`<div class="bt-pt">${evoBefore.power}/${evoBefore.toughness} <i>→</i> <b>${this.run.evo.power}/${this.run.evo.toughness}</b></div>${kws.length ? `<div class="bt-kw">${esc(kws.join(' · '))}</div>` : ''}${change.resonance ? `<div class="bt-res">Resonance +${change.resonance * 2} Spark</div>` : ''}${change.released ? `<div class="bt-src">${esc(change.released)} was released</div>` : ''}${this.traitLine(evoBefore)}<div class="bt-src">${esc(card.name)} is grafted to you · recorded in your Journal</div><small class="bt-skip">tap to continue</small>`, COLOR[card.color].glow);
     } else {
       v.flash = 0.6; sc.fx.burst(sc.centerPos(uid), col, 40, { speed: 2, up: 2 });
       this.bigText(`<div class="bt-kw">${esc(change.kind === 'empower' ? `${card.name} · Level ${change.level}` : card.name)}</div><div class="bt-src">${change.kind === 'empower' ? 'Spell empowered' : 'Inscribed in your spellbook'}</div><small class="bt-skip">tap to continue</small>`, COLOR[card.color].glow);
@@ -288,11 +330,16 @@ class App {
     const run = this.run; this.battle.stop();
     recordRunEnd(this.meta, run, won);
     this.collect(won ? evaluateAchievements(this.meta, { event: 'runWon', run, evo: run.evo }) : []);
+    const extra = { newBest: this.saveRecords(run) };
+    if (run.ranked) {   // re-run the recorded decisions from the challenge definition, exactly as a server would
+      try { const r = replayRun(run.ranked.challengeId, run.ranked.log || [], { revision: run.ranked.revision }); extra.verifiedLocally = r.totals.total === expeditionTotals(run).total && r.run.phase === run.phase; extra.achievements = verifiedAchievements(r.run); }
+      catch (err) { extra.verifiedLocally = false; extra.verifyError = String(err.message || err); console.warn('Local replay verification failed:', err); }
+    }
     this.meta.tutorialDone = true; this.saveMeta();
     this.setMode('end'); this.showcase();
     const all = (this.earnedThisRun || []).slice();
     this.store.saveRun(null);
-    const a = await UI.endScreen(this, { won, earned: all });
+    const a = await UI.endScreen(this, { won, earned: all, extra });
     this.run = null;
     if (a === 'again') this.newRun([]); else this.toTitle();
   }

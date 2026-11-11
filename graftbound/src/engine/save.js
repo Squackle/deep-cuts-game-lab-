@@ -7,6 +7,8 @@ import { RUN_VERSION } from './run.js';
 import { META_VERSION, newMeta, DEFAULT_SETTINGS } from './progression.js';
 import { STARTING_NAME, deriveStats } from './evolution.js';
 import { rollShrine } from './shrines.js';
+import { newScoring } from './scoring.js';
+import { reconstructJournal } from './journal.js';
 
 export const KEYS = { run: 'deepcutsedh.livingcard.run', meta: 'deepcutsedh.livingcard.meta' };
 const BAK = '.bak', BAD = '.corrupt', PRE = '.pre-v';
@@ -48,11 +50,24 @@ export const RUN_MIGRATIONS = {
     else r.shrine = null;
     return r;
   },
+  /** v0.5 -> v0.6. Additive only: scoring ledger (empty — earlier battles were never scored and are NOT
+   *  back-filled), a journal reconstructed from the existing graft list, event fields, battle counters. */
+  3: r => {
+    r.v = 4; r.scoring = r.scoring || newScoring(); r.journal = r.journal || reconstructJournal(r);
+    r.event = null; r.eventsSeen = r.eventsSeen || []; r.migratedFromV05 = true;
+    if (r.battle) {
+      r.battle.v = 4; r.battle.crystals = r.battle.crystals || []; r.battle.cooled = r.battle.cooled || [];
+      for (const k of ['actions', 'moves', 'tilesMoved', 'interactions']) r.battle.stats[k] = r.battle.stats[k] || 0;
+      r.battle.unscored = true;   // a battle already in progress at upgrade time is not scored (partial counters)
+    }
+    return r;
+  },
 };
 export const META_MIGRATIONS = {
   1: m => { m.v = 2; m.settings = { ...DEFAULT_SETTINGS, ...(m.settings || {}) }; return m; },
   2: m => { m.v = 3; return m; },
   3: m => { m.v = 4; if (m.settings) delete m.settings.contentMode; return m; },
+  4: m => { m.v = 5; m.settings = { ...DEFAULT_SETTINGS, ...(m.settings || {}) }; m.records = m.records || {}; return m; },
 };
 export function migrate(data, from, to, table) {
   let v = from;
@@ -72,7 +87,9 @@ export function validateRun(r) {
   if (!Array.isArray(r && r.spellbook) || r.spellbook.some(s => !resolveCard(s.id) || !isNum(s.level))) errs.push('spellbook');
   if (!r || !r.map || !Array.isArray(r.map.nodes) || !r.map.nodes.length) errs.push('map');
   if (r && !(isNum(r.act) && r.act >= 0 && r.act <= 2)) errs.push('act');
-  if (r && !['map', 'battle', 'reward', 'shrine', 'won', 'lost'].includes(r.phase)) errs.push('phase');
+  if (r && !['map', 'battle', 'reward', 'shrine', 'event', 'won', 'lost'].includes(r.phase)) errs.push('phase');
+  if (r && r.phase === 'event' && (!r.event || typeof r.event.id !== 'string')) errs.push('event');
+  if (r && (!r.scoring || !Array.isArray(r.scoring.encounters))) errs.push('scoring');
   if (r && r.phase === 'battle' && (!r.battle || !Array.isArray(r.battle.units) || !r.battle.units.some(u => u.hero))) errs.push('battle');
   if (r && r.phase === 'reward' && (!r.pending || !Array.isArray(r.pending.cards) || !r.pending.cards.every(resolveCard))) errs.push('reward');
   if (r && r.phase === 'shrine' && (!r.shrine || !Array.isArray(r.shrine.options))) errs.push('shrine');

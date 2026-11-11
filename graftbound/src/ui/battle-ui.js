@@ -1,5 +1,8 @@
 // Battle HUD, input (mouse / touch / keyboard) and event playback onto the HD-2D scene.
-import { moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, intents, canAttack, player, enemies, hazardPreview } from '../engine/combat.js';
+import { moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, intents, canAttack, player, enemies, hazardPreview, interact, interactOptions, crystalAt } from '../engine/combat.js';
+import { getLegalPlayerActions, shouldAutoEnd } from '../engine/legal.js';
+import { describeTile, pathWarning } from '../engine/describe.js';
+import { bossPhaseOf, bossPhaseName } from '../engine/ai.js';
 import { castBlockReason, spellCost, rangeLabel, formatSpellText } from '../engine/spells.js';
 import { reachable, pathTo, key, unitAt, T, tileAt } from '../core/grid.js';
 import { ENEMIES } from '../data/enemies.js';
@@ -14,7 +17,7 @@ import { esc } from './cards.js';
 
 const $ = id => document.getElementById(id);
 const SPELL_COL = { ember: [1, 0.55, 0.2], verdant: [0.5, 1, 0.4], tide: [0.4, 0.8, 1], umbral: [0.75, 0.45, 1], radiant: [1, 0.9, 0.5] };
-const SPELL_SFX = { lightningBolt: 'thunder', spark: 'zap', chain: 'thunder', fire: 'fireboom', fireball: 'fireboom', frost: 'frost', poison: 'poison', heal: 'heal', shield: 'block', growth: 'spell', drain: 'spell', summon: 'spell', wind: 'spell' };
+const SPELL_SFX = { lightningBolt: 'thunder', spark: 'zap', shock: 'zap', flameSlash: 'fireboom', salve: 'heal', chain: 'thunder', fire: 'fireboom', fireball: 'fireboom', frost: 'frost', poison: 'poison', heal: 'heal', shield: 'block', growth: 'spell', drain: 'spell', summon: 'spell', wind: 'spell' };
 export const STAGE = { blank: 'Blank', stirring: 'Stirring', awakened: 'Awakened', ascendant: 'Ascendant' };
 const NO_COUNTER = { boss: 'Bosses never strike back — watch their telegraphs', flying: 'Flying — it cannot reach you', 'first strike': 'First Strike — no strike back', stunned: 'Stunned — no strike back', 'no power': 'Too weak to strike back' };
 export function kwChips(keywords, cls = '') {
@@ -28,6 +31,21 @@ export class BattleUI {
     this.bindInput();
   }
   get scene() { return this.app.scene; }
+  /** Every player action goes through here: the engine validates it, THEN it is recorded (ranked replay). */
+  exec(d) {
+    const s = this.s; let ev;
+    switch (d.type) {
+      case 'move': ev = movePlayer(s, d.x, d.y); break;
+      case 'attack': ev = attack(s, d.uid); break;
+      case 'cast': ev = cast(s, d.id, d.x, d.y); break;
+      case 'interact': ev = interact(s, d.x, d.y); break;
+      case 'end': ev = endTurn(s); break;
+      default: throw new Error('Unknown action');
+    }
+    this.app.record(d);
+    if (d.type !== 'end') this.autoEnds = 0;
+    return ev;
+  }
   wait(ms) { return new Promise(r => setTimeout(r, ms / this.app.animFactor())); }
   async start(run, s, { fresh }) {
     this.run = run; this.s = s; this.spell = null; this.hover = null; this.pendingTap = null;
@@ -45,7 +63,7 @@ export class BattleUI {
         if (s.reinforced) { await this.banner(`The world answers your strength · +${s.reinforced} foe${s.reinforced > 1 ? 's' : ''}`, 'foe'); this.app.hint('reinforced', 'The stronger you become, the more foes answer. Reinforcements never have extra health — just more of them.'); }
         this.busy = false;
       }
-      this.refresh(); this.tutorialHints('start'); this.checkEnd();
+      this.refresh(); this.tutorialHints('start'); this.checkEnd(); this.maybeAutoEnd();
     });
   }
   stop() { $('hud').classList.add('hidden'); $('labels').innerHTML = ''; this.labels.clear(); this.s = null; }
@@ -55,6 +73,8 @@ export class BattleUI {
       const ap = deriveAppearance(this.run.evo);
       v = this.scene.addUnit(u, 'blank'); this.scene.setUnitTexture(u.uid, composePlayerSheet(this.app.assets, ap), ap.size);
       v.aura = ap.effects.includes('aura') ? ap.glow : null;
+      v.hover = u.keywords.flying ? 0.28 : 0;   // v0.6: fliers levitate; trample builds plant heavier steps (see play())
+      v.style = { flying: !!u.keywords.flying, trample: !!u.keywords.trample, deathtouch: !!u.keywords.deathtouch, doubleStrike: !!u.keywords.doubleStrike, lifelink: !!u.keywords.lifelink };
     } else v = this.scene.addUnit(u, u.defId === 'sproutling' ? 'sproutling' : ENEMIES[u.defId].sprite);
     const el = document.createElement('div'); el.className = 'ulabel ' + (u.side === 'player' ? 'player' : 'enemy'); $('labels').appendChild(el); this.labels.set(u.uid, el);
     return v;
@@ -89,9 +109,10 @@ export class BattleUI {
   intentText(it) {
     const tgt = it.target && this.s.units.find(u => u.uid === it.target);
     const who = tgt && !tgt.hero ? ' your ' + tgt.name : ' you';
-    return ({ attack: `Will strike${who} for ${it.damage}`, spit: `Will spit for ${it.damage} and poison ${it.poison}`, hex: `Will curse you: ${it.damage} damage and −${it.weaken} power on your next turn`,
+    return (({ attack: `Will strike${who} for ${it.damage}`, spit: `Will spit for ${it.damage} and poison ${it.poison}`, hex: `Will curse you: ${it.damage} damage and −${it.weaken} power on your next turn`,
       harpoon: `Harpoon: ${it.damage} damage${it.ground ? ' and Grounds you (no flying next turn)' : ''}`, aim: 'Will take aim along a line', fire: `Fires ${it.damage} along the red line`,
-      slam: `${it.damage} to every red tile${it.extra ? ` (and strikes for ${it.extra} if adjacent)` : ''}`, summon: 'Will summon reinforcements', guard: 'Will shield adjacent allies', stunned: 'Stunned — loses its next action' })[it.kind] || 'Will move';
+      slam: `${it.damage} to every red tile${it.extra ? ` (and strikes for ${it.extra} if adjacent)` : ''}`, summon: 'Will summon reinforcements', guard: 'Will shield adjacent allies', stunned: 'Stunned — loses its next action' })[it.kind] || 'Will move')
+      + (it.redact ? ` · Redaction: your ${KEYWORDS[it.redact].name} is suppressed during your next turn (it returns after)` : '') + (it.briars ? ' · Briars will sprout around you (fire burns them)' : '') + (it.mirror ? ` · Will copy your ${KEYWORDS[it.mirror].name}` : '');
   }
   renderHUD() {
     const s = this.s; const p = player(s); const d = this.disp.get(p.uid) || { hp: p.hp, maxHp: p.maxHp, shield: 0 };
@@ -99,12 +120,12 @@ export class BattleUI {
     $('plate').innerHTML = `
       <div class="pl-top"><div><div class="pl-name">${esc(this.run.name)}</div><div class="pl-stage">${STAGE[ap.stage]} · ${this.run.evo.absorbed.length} graft${this.run.evo.absorbed.length === 1 ? '' : 's'}</div></div>
       <div class="pl-pt" title="Power / Toughness"><span class="${d.empowered ? 'buff' : d.weakened ? 'debuff' : ''}">${Math.max(0, p.power + (d.empowered || 0) - (d.weakened || 0))}</span>/<span>${p.toughness}</span></div></div>
-      <div class="pl-hp"><div class="bar"><i style="width:${(d.hp / d.maxHp) * 100}%"></i>${d.shield ? `<u style="width:${Math.min(100, d.shield / d.maxHp * 100)}%"></u>` : ''}</div>
+      <div class="pl-hp" tabindex="0" data-tip="Health ${d.hp}/${d.maxHp}${d.shield ? ` · shield ${d.shield} absorbs damage first` : ''}. Wounds carry between battles."><div class="bar"><i style="width:${(d.hp / d.maxHp) * 100}%"></i>${d.shield ? `<u style="width:${Math.min(100, d.shield / d.maxHp * 100)}%"></u>` : ''}</div>
       <span>${ICON.heart}${d.hp}<small>/${d.maxHp}</small>${d.shield ? ` <em class="shd">${ICON.shield}${d.shield}</em>` : ''}</span></div>
-      <div class="pl-res"><span class="mana" title="Mana">${Array.from({ length: Math.max(s.p.maxMana, this.dispMana) }, (_, i) => `<i class="${i < this.dispMana ? 'on' : ''}">${ICON.gem}</i>`).join('')}</span>
-      <span class="moves" title="Movement left">${ICON.move}${s.phase === 'player' ? s.p.moveLeft : 0}</span>
-      <span class="atk ${s.p.attacksLeft > 0 && s.phase === 'player' ? 'on' : ''}" title="Attacks left">${ICON.sword}${s.phase === 'player' ? s.p.attacksLeft : 0}</span></div>
-      <div class="pl-kw">${kwChips(p.keywords)}${d.poison ? `<span class="chip bad">${ICON.poison}Poison ${d.poison}</span>` : ''}${d.grounded ? `<span class="chip bad">${ICON.hook}Grounded</span>` : ''}</div>`;
+      <div class="pl-res"><span class="mana" tabindex="0" data-tip="Mana ${this.dispMana}/${s.p.maxMana}. Spells cost gems. You regain ${s.p.regen} each turn${s.p.arcane ? `; Arcane adds +${s.p.arcane} to spell numbers` : ''}.">${Array.from({ length: Math.max(s.p.maxMana, this.dispMana) }, (_, i) => `<i class="${i < this.dispMana ? 'on' : ''}">${ICON.gem}</i>`).join('')}</span>
+      <span class="moves" tabindex="0" data-tip="Movement left this turn (tiles). Brambles and lava hurt ground units that enter them.">${ICON.move}${s.phase === 'player' ? s.p.moveLeft : 0}</span>
+      <span class="atk ${s.p.attacksLeft > 0 && s.phase === 'player' ? 'on' : ''}" tabindex="0" data-tip="Attacks left this turn. Attacking ends your movement unless you have Vigilance.">${ICON.sword}${s.phase === 'player' ? s.p.attacksLeft : 0}</span></div>
+      <div class="pl-kw">${kwChips(p.keywords)}${d.poison ? `<span class="chip bad" tabindex="0" data-tip="Poison: lose ${d.poison} health at the start of your turn, then it drops by 1.">${ICON.poison}Poison ${d.poison}</span>` : ''}${d.grounded ? `<span class="chip bad" tabindex="0" data-tip="Grounded: no flying and −1 movement this turn.">${ICON.hook}Grounded</span>` : ''}${p.suppressed ? `<span class="chip bad" tabindex="0" data-tip="Redacted by the Unwritten for this turn only. It returns when your turn ends.">✖ ${esc(Object.keys(p.suppressed).map(k => KEYWORDS[k].name).join(', '))}</span>` : ''}</div>`;
     $('enc-turn').textContent = s.phase === 'player' ? `Turn ${s.turn} · Your move` : `Turn ${s.turn} · Foes act`;
     const tray = $('tray');
     if (!s.spellbook.length) tray.innerHTML = `<div class="tray-empty">${ICON.book}<span>Your spellbook is empty</span></div>`;
@@ -115,7 +136,7 @@ export class BattleUI {
         <span class="sp-text">${esc(formatSpellText(e.id, e.level, s.p.arcane))}</span><kbd>${i + 1}</kbd></button>`;
     }).join('');
     $('endTurn').disabled = this.busy || s.phase !== 'player';
-    $('endTurn').classList.toggle('glow', s.phase === 'player' && !this.busy && s.p.attacksLeft === 0 && (s.p.moveLeft === 0 || !moveOptions(s).length));
+    $('endTurn').classList.toggle('glow', s.phase === 'player' && !this.busy && !getLegalPlayerActions(s).any);
   }
   refresh() {
     if (!this.s) return;
@@ -185,7 +206,7 @@ export class BattleUI {
     const def = ENEMIES[u.defId]; const it = this.intents.find(i => i.uid === u.uid);
     el.innerHTML = def ? `
       <div class="in-head"><b>${esc(u.name)}</b><em class="role">${esc(def.role)}</em>${u.legendary ? '<em class="leg">Legendary</em>' : ''}<span class="pt">${u.power}/${u.toughness}</span></div>
-      <div class="in-hp">${ICON.heart}${u.hp}/${u.maxHp}${u.statuses.shield ? ` · ${ICON.shield}${u.statuses.shield}` : ''}</div>
+      <div class="in-hp">${ICON.heart}${u.hp}/${u.maxHp}${u.statuses.shield ? ` · ${ICON.shield}${u.statuses.shield}` : ''}${u.boss ? ` · Phase ${bossPhaseOf(u)}/3 · ${esc(bossPhaseName(u))}` : ''}</div>
       ${Object.keys(u.keywords).length ? `<div class="in-kw">${kwChips(u.keywords)}</div>` : ''}
       <p>${esc(def.blurb)}</p>${it ? `<p class="in-intent">${esc(this.intentText(it))}</p>` : ''}${this.previewHTML(preview)}` : '';
     el.classList.toggle('show', !!el.innerHTML);
@@ -246,8 +267,28 @@ export class BattleUI {
       else if (u && u.side === 'enemy') { const plan = this.autoAttackPlan(u); if (plan) preview = this.simulate(c => { if (plan.move) movePlayer(c, plan.to.x, plan.to.y); attack(c, u.uid); }); }
     }
     if (u && u.side === 'enemy') this.showInspect(u, preview);
+    else if (!u && !this.spell) this.showTile(t);
     else if (preview) { $('inspect').innerHTML = `<div class="in-head"><b>${esc(getCard(this.spell).name)}</b></div>${this.previewHTML(preview)}`; $('inspect').classList.add('show'); }
     else this.showInspect(null);
+  }
+  /** v0.6 terrain/object inspection: what it is, what it does, when, and the damage — from live rules. */
+  showTile(t) {
+    const s = this.s, el = $('inspect'); const rows = describeTile(s, t.x, t.y); const w = s.phase === 'player' ? pathWarning(s, t.x, t.y) : null;
+    el.innerHTML = rows.map(r => `<div class="in-head"><b>${esc(r.name)}</b><em class="role ${r.kind}">${r.kind === 'hazard' ? 'Hazard' : r.kind === 'benefit' ? 'Benefit' : ''}</em></div><p>${esc(r.text)}</p><p class="muted small">${esc(r.when)}</p>`).join('')
+      + (w ? `<div class="preview"><span class="take">${esc(w.text)}${w.lethal ? ' This would defeat you.' : ''}</span></div>` : '')
+      + (interactOptions(s).some(o => o.x === t.x && o.y === t.y) ? '<div class="preview"><span class="safe">Click / tap to attune this crystal.</span></div>' : '');
+    el.classList.add('show');
+  }
+  maybeAutoEnd() {
+    const s = this.s; const enabled = this.app.meta.settings.autoEnd !== false;
+    if (this.autoEnding || !shouldAutoEnd(s, { busy: this.busy, targeting: !!this.spell, enabled })) return;
+    if ((this.autoEnds || 0) >= 25) return;   // safety valve: a long stun-lock never loops unattended
+    this.autoEnding = true; this.app.status('No actions left — your turn ends');
+    setTimeout(async () => {
+      this.autoEnding = false;
+      if (!this.s || !shouldAutoEnd(this.s, { busy: this.busy, targeting: !!this.spell, enabled: this.app.meta.settings.autoEnd !== false })) { this.app.status(''); return; }
+      this.autoEnds = (this.autoEnds || 0) + 1; await this.doEndTurn();
+    }, 520 / Math.min(this.app.animFactor(), 10));
   }
   cancel() { this.spell = null; this.pendingTap = null; this.refresh(); }
   reject(msg) { this.audio.play('nope'); this.app.toast(`<b>Can't</b> ${esc(msg)}`, 'short'); }
@@ -257,7 +298,7 @@ export class BattleUI {
     const why = castBlockReason(this.s, id); if (why) { this.flashTray(id); this.reject(why); return; }
     this.audio.play('click');
     const opts = castOptions(this.s, id);
-    if (getCard(id).target === 'self') { this.spell = null; this.act(() => cast(this.s, id, opts[0].x, opts[0].y)); return; }
+    if (getCard(id).target === 'self') { this.spell = null; this.act(() => this.exec({ type: 'cast', id, x: opts[0].x, y: opts[0].y })); return; }
     this.spell = id; this.pendingTap = null; this.refresh();
     this.app.hint('target', 'Spells reach any foe on the battlefield — no need to walk closer. Pick a highlighted target; right-click or Esc to cancel.');
   }
@@ -272,21 +313,40 @@ export class BattleUI {
     if (s.phase !== 'player') { this.reject('Wait for the foes to finish'); return; }
     const tag = key(t.x, t.y) + (this.spell || '');
     if (this.spell) {
-      if (castOptions(s, this.spell).some(o => o.x === t.x && o.y === t.y)) { if (this.needConfirm(isTouch, tag)) return; const id = this.spell; this.spell = null; this.act(() => cast(s, id, t.x, t.y)); }
+      if (castOptions(s, this.spell).some(o => o.x === t.x && o.y === t.y)) { if (this.needConfirm(isTouch, tag)) return; const id = this.spell; this.spell = null; this.act(() => this.exec({ type: 'cast', id, x: t.x, y: t.y })); }
       else this.reject(`${getCard(this.spell).name} can't target that tile`);
       return;
     }
     const u = unitAt(s, t.x, t.y);
     if (u && u.side === 'enemy') {
       const plan = this.autoAttackPlan(u);
-      if (plan) { if (this.needConfirm(isTouch, tag)) return; this.act(() => { const ev = []; if (plan.move) ev.push(...movePlayer(s, plan.to.x, plan.to.y)); if (s.phase === 'player') ev.push(...attack(s, u.uid)); return ev; }); }
+      if (plan) {
+        const warn = plan.move ? pathWarning(s, plan.to.x, plan.to.y) : null;
+        if (warn && !this.warnOk(tag, warn)) return;
+        if (!warn && this.needConfirm(isTouch, tag)) return;
+        this.act(() => { const ev = []; if (plan.move) ev.push(...this.exec({ type: 'move', x: plan.to.x, y: plan.to.y })); if (s.phase === 'player') ev.push(...this.exec({ type: 'attack', uid: u.uid })); return ev; });
+      }
       else { this.showInspect(u); this.reject(s.p.attacksLeft <= 0 ? 'You already attacked this turn' : `${u.name} is out of reach this turn`); }
       return;
     }
-    if (u && u.hero) { this.app.openSheet(); return; }
-    if (moveOptions(s).some(o => o.x === t.x && o.y === t.y)) { if (this.needConfirm(isTouch, tag)) return; this.act(() => movePlayer(s, t.x, t.y)); }
+    if (u && u.hero && !interactOptions(s).some(o => o.x === t.x && o.y === t.y)) { this.app.openSheet(); return; }
+    if (interactOptions(s).some(o => o.x === t.x && o.y === t.y)) { if (this.needConfirm(isTouch, tag)) return; this.act(() => this.exec({ type: 'interact', x: t.x, y: t.y })); return; }
+    if (moveOptions(s).some(o => o.x === t.x && o.y === t.y)) {
+      const warn = pathWarning(s, t.x, t.y);
+      if (warn) { if (!this.warnOk(tag, warn)) return; }
+      else if (this.needConfirm(isTouch, tag)) return;
+      this.act(() => this.exec({ type: 'move', x: t.x, y: t.y }));
+    }
+    else if (!u && isTouch) { this.showTile(t); }
     else if (s.p.moveLeft <= 0) this.reject('No movement left this turn');
     else this.reject('Too far, or blocked');
+  }
+  /** Hazard confirmation: the first click/tap shows the warning; a deliberate second one confirms. */
+  warnOk(tag, w) {
+    if (this.pendingWarn === tag) { this.pendingWarn = null; return true; }
+    this.pendingWarn = tag; this.pendingTap = null; this.audio.play('nope');
+    this.app.toast(`<b>Hazard</b> ${esc(w.text)}${w.lethal ? ' This would defeat you.' : ''}<small>Click or tap the same tile again to confirm.</small>`, 'short');
+    return false;
   }
   async act(fn) {
     if (this.busy) return;
@@ -295,12 +355,12 @@ export class BattleUI {
     try { ev = await fn(); } catch (err) { this.busy = false; this.reject(err.message || 'Not allowed'); this.refresh(); return; }
     this.app.save(); this.renderHUD();
     await this.play(ev);
-    this.busy = false; this.syncDisp(); this.refresh(); this.tutorialHints('after'); this.checkEnd();
+    this.busy = false; this.syncDisp(); this.refresh(); this.tutorialHints('after'); this.checkEnd(); this.maybeAutoEnd();
   }
   async doEndTurn() {
     if (this.busy || !this.s || this.s.phase !== 'player') return;
     this.spell = null; this.audio.play('click');
-    await this.act(() => endTurn(this.s));
+    await this.act(() => this.exec({ type: 'end' }));
   }
   checkEnd() { if (!this.s) return; if (this.s.phase === 'won' || this.s.phase === 'lost') { const r = this.s.phase; const done = this.done; this.done = null; if (done) setTimeout(() => done(r), 300 / this.app.animFactor()); } }
   float(uid, text, cls) {
@@ -319,14 +379,14 @@ export class BattleUI {
   /** Spell playback: the spell's own VFX identity runs; damage events that follow appear at the impact moment. */
   async playSpell(e, rest) {
     const sc = this.scene; const c = getCard(e.id); const kind = e.vfx && VFX[e.vfx] ? e.vfx : (DEFAULT_VFX[c.effect || e.id] || 'fire');
-    sc.play(e.uid, 'cast'); this.audio.play(kind === 'lightningBolt' || kind === 'spark' || kind === 'chain' ? 'charge' : 'spell');
+    sc.play(e.uid, 'cast'); this.audio.play(kind === 'lightningBolt' || kind === 'chain' ? 'charge' : kind === 'shock' ? 'zap' : 'spell');
     const from = sc.centerPos(e.uid); const to = e.target != null && sc.units.get(e.target) ? sc.centerPos(e.target) : [...this.tile(e.x, e.y)];
     if (e.target == null) to[1] = 0.3;
     const tgtView = e.target != null && sc.units.get(e.target) ? e.target : null;
     if (tgtView) sc.face(sc.units.get(e.uid), sc.units.get(tgtView).pos);
     const tiles = []; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const w = this.tile(e.x + dx, e.y + dy); tiles.push([w[0], 0, w[2]]); }
     if (kind === 'teleport') return;
-    if (kind === 'lightningBolt' || kind === 'spark' || kind === 'chain') setTimeout(() => this.audio.play('crackle'), 120 / this.app.animFactor());
+    if (kind === 'lightningBolt' || kind === 'chain') setTimeout(() => this.audio.play('crackle'), 120 / this.app.animFactor());
     await VFX[kind](sc, { from, to, target: tgtView, tiles, uid: e.uid, uidFrom: e.uid });
     this.audio.play(SPELL_SFX[kind] || 'spell');
   }
@@ -346,13 +406,19 @@ export class BattleUI {
         case 'push': await sc.slide(e.uid, e.path); break;
         case 'attack':
           if (e.ranged) { const a = sc.centerPos(e.uid), b = sc.centerPos(e.target); sc.play(e.uid, 'attack'); sc.face(sc.units.get(e.uid), b); await sc.projectile(a, b, [1, 0.85, 0.5], 0.2); }
-          else await sc.lunge(e.uid, e.target);
+          else {
+            const v = sc.units.get(e.uid), st = v && v.style;
+            if (st && st.deathtouch) sc.fx.swirl(sc.centerPos(e.uid), () => sc.centerPos(e.target), [0.75, 0.35, 1], 18, 0.4);
+            await sc.lunge(e.uid, e.target);
+            if (st && st.trample) { if (!sc.reduced) sc.shake(0.09); const w = sc.centerPos(e.target); sc.fx.burst([w[0], 0.05, w[2]], [0.55, 0.45, 0.3], 16, { speed: 1.6, up: 0.8, size: 14 }); }
+          }
           break;
         case 'counter': await this.wait(e.first ? 40 : 110); await sc.lunge(e.uid, e.target); this.float(e.uid, e.first ? 'First Strike!' : 'Strikes back', 'note'); break;
         case 'noCounter': this.float(e.uid, esc(NO_COUNTER[e.reason] || 'No strike back'), 'note'); break;
         case 'capped': this.float(e.uid, `Unyielding: ${e.from} → ${e.to}`, 'note'); break;
         case 'armored': au.play('armor'); this.float(e.uid, `▣ −${e.amount}`, 'blocked'); break;
         case 'damage': {
+          if (e.kind === 'strike2') { const atk = events.slice(0, idx).reverse().find(x => x.t === 'attack'); if (atk) { this.float(atk.uid, 'Double Strike!', 'note'); await sc.lunge(atk.uid, e.uid); } }
           if (d) { d.hp = e.deathtouch ? 0 : Math.max(0, d.hp - e.amount); d.shield = Math.max(0, d.shield - e.blocked); }
           const big = e.amount >= 4 || e.deathtouch;
           const already = e.kind === 'spell' && events[idx - 1] && (events[idx - 1].t === 'spell' || events[idx - 1].t === 'chain');
@@ -365,7 +431,7 @@ export class BattleUI {
           this.renderLabel(e.uid); if (this.isHero(e.uid)) this.renderHUD();
           await this.wait(big ? 230 : 140); break;
         }
-        case 'heal': if (d) d.hp += e.amount; au.play('heal'); this.float(e.uid, `+${e.amount}${e.kind === 'lifelink' ? ' Lifelink' : e.kind === 'regenerate' ? ' Regenerate' : ''}`, 'heal'); sc.fx.burst(sc.centerPos(e.uid), [0.5, 1, 0.5], 14, { speed: 0.8, up: 1.5, grav: 1 }); this.renderLabel(e.uid); this.renderHUD(); await this.wait(140); break;
+        case 'heal': if (d) d.hp += e.amount; au.play('heal'); if (e.kind === 'lifelink') { const atk = events.slice(0, idx).reverse().find(x => x.t === 'attack' && x.uid === e.uid); if (atk && sc.units.get(atk.target)) sc.fx.swirl(sc.centerPos(atk.target), () => sc.centerPos(e.uid), [1, 0.45, 0.5], 22, 0.6); } this.float(e.uid, `+${e.amount}${e.kind === 'lifelink' ? ' Lifelink' : e.kind === 'regenerate' ? ' Regenerate' : ''}`, 'heal'); sc.fx.burst(sc.centerPos(e.uid), [0.5, 1, 0.5], 14, { speed: 0.8, up: 1.5, grav: 1 }); this.renderLabel(e.uid); this.renderHUD(); await this.wait(140); break;
         case 'shield': if (d) d.shield = e.total; if (e.kind !== 'barkskin') au.play('block'); this.float(e.uid, `${ICON.shield}+${e.amount}${e.kind === 'ward' ? ' Bulwark' : ''}`, 'shieldf'); this.renderLabel(e.uid); this.renderHUD(); await this.wait(120); break;
         case 'status': {
           if (d) d[e.status] = e.total;
@@ -394,10 +460,27 @@ export class BattleUI {
           await this.wait(220); break;
         }
         case 'riftPulse': au.play('zap'); for (const t of e.tiles) { const w = this.tile(t.x, t.y); sc.addRing({ pos: [w[0], 0.04, w[2]], r0: 0.05, r1: 0.6, life: 0.4, col: [0.75, 0.4, 1], width: 0.1, spokes: 4 }); sc.fx.burst([w[0], 0.2, w[2]], [0.75, 0.4, 1], 12, { speed: 1.2, up: 2 }); } await this.wait(220); break;
-        case 'terrain': { for (const t of e.tiles) { const w = this.tile(t.x, t.y); sc.fx.burst([w[0], 0.1, w[2]], [1, 0.5, 0.15], 18, { speed: 1, up: 2.4 }); } this.scene.refreshTerrain(this.s, this.s.rng.s ^ 0x77); au.play('fireboom'); this.float(this.s.units.find(u => u.hero).uid, 'The ground melts!', 'warn'); await this.wait(240); break; }
+        case 'terrain': {
+          const C = { lava: [1, 0.5, 0.15], burn: [1, 0.6, 0.2], cool: [0.7, 0.9, 1], bramble: [0.4, 0.8, 0.3] }[e.kind] || [1, 0.5, 0.15];
+          for (const t of e.tiles) { const w = this.tile(t.x, t.y); sc.fx.burst([w[0], 0.1, w[2]], C, 18, { speed: 1, up: 2.4 }); }
+          this.scene.refreshTerrain(this.s, this.s.rng.s ^ 0x77); au.play(e.kind === 'cool' ? 'frost' : e.kind === 'bramble' ? 'spell' : 'fireboom');
+          const hero = this.s.units.find(u => u.hero);
+          if (hero) this.float(hero.uid, { lava: 'The ground melts!', burn: 'The brambles burn away', cool: 'The lava hardens', bramble: 'Briars erupt!' }[e.kind] || 'The ground shifts', e.kind === 'cool' || e.kind === 'burn' ? 'note' : 'warn');
+          await this.wait(240); break;
+        }
+        case 'crystal': {
+          const w = this.tile(e.x, e.y); const c = e.kind === 'discharge' ? [0.7, 0.85, 1] : [0.55, 0.75, 1];
+          sc.fx.burst([w[0], 0.5, w[2]], c, e.kind === 'discharge' ? 50 : 30, { speed: 2, up: 2 }); sc.light([w[0], 0.6, w[2]], c, 3, 0.4, 2.4);
+          if (e.kind === 'discharge') for (let k = 0; k < 6; k++) { const a = k / 6 * 6.283; sc.addBolt({ a: [w[0], 0.6, w[2]], b: [w[0] + Math.cos(a) * 1.2, 0.2, w[2] + Math.sin(a) * 1.2], life: 0.2, width: 0.03, col: c, segs: 5 }); }
+          au.play(e.kind === 'discharge' ? 'thunder' : 'shrine'); this.scene.refreshTerrain(this.s, this.s.rng.s ^ 0x77);
+          const hero = this.s.units.find(u => u.hero); if (hero) this.float(hero.uid, e.kind === 'discharge' ? 'Crystal discharge!' : 'Crystal attuned', 'note');
+          await this.wait(220); break;
+        }
+        case 'redact': { sc.screenFlash([0.85, 0.8, 1], 0.25); const h = this.s.units.find(u => u.hero); if (h) this.float(h.uid, `${KEYWORDS[e.keyword].name} redacted (this turn)`, 'warn'); au.play('spell'); await this.wait(300); break; }
+        case 'restored': this.float(e.uid, `${KEYWORDS[e.keyword].name} restored`, 'note'); break;
         case 'summon': { const u = this.s.units.find(x => x.uid === e.uid); if (u) { if (e.ally) await VFX.summon(sc, { to: this.tile(e.x, e.y) }); this.disp.set(u.uid, { hp: u.maxHp, maxHp: u.maxHp, shield: 0, poison: 0, stunned: 0, empowered: 0 }); this.addUnitView({ ...u, x: e.x, y: e.y }); this.renderLabel(u.uid); await sc.spawn(u.uid); } break; }
         case 'mirror': { sc.screenFlash([0.85, 0.8, 1], 0.25); this.float(e.uid, `Copies your ${KEYWORDS[e.keyword].name}!`, 'warn'); au.play('spell'); await this.wait(300); break; }
-        case 'bossPhase': sc.screenFlash([0.6, 0.35, 0.15], 0.3); await this.banner(e.text || 'The foe changes', 'boss'); break;
+        case 'bossPhase': sc.screenFlash([0.6, 0.35, 0.15], 0.3); if (!sc.reduced) sc.shake(0.12); await this.banner(e.phase ? `Phase ${e.phase} · ${e.text}` : (e.text || 'The foe changes'), 'boss'); break;
         case 'stunnedSkip': this.float(e.uid, 'Stunned', 'note'); await this.wait(200); break;
         case 'victory': au.play('victory'); await this.banner('Victory', 'win'); break;
         case 'defeat': au.play('defeat'); await this.banner('The graft unravels', 'lose'); break;

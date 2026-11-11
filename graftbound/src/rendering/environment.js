@@ -25,6 +25,19 @@ export const THEMES = {
     trees: ['crystal'], small: ['shard', 'shard', 'mushroom'], torch: [0.7, 0.45, 1], mote: [0.75, 0.6, 1] },
 };
 const at = (x, y, z, ...r) => chain(M(x, y, z), ...r);
+
+/** v0.6 ambient wind. Sway amplitudes are deliberately tiny (world units at the top of the sprite). Rocks,
+ *  crystals and rigid props never sway. Reduced motion or the Ambient setting turns it off entirely. */
+export const SWAY = { pine: 0.05, oak: 0.06, deadtree: 0.02, bush: 0.03, fern: 0.035, grass: 0.04, ashgrass: 0.03, bramble: 0.02, mushroom: 0, crystal: 0, shard: 0 };
+export const WIND = {
+  hollow: { dir: [0.92, 0.38], rise: 0.04, rate: 0.35, leafChance: 0.18, leaf: [0.55, 0.62, 0.25] },
+  warrens: { dir: [0.7, 0.71], rise: 0.22, rate: 0.3, leafChance: 0.25, leaf: [0.45, 0.42, 0.4] },
+  nexus: { dir: [0.5, 0.86], rise: 0.12, rate: 0.25, leafChance: 0, leaf: [0.7, 0.6, 1] },
+};
+export function swayFor(kind, { reduced = false, enabled = true, quality = 'high' } = {}) {
+  if (reduced || !enabled) return 0;
+  return (SWAY[kind] || 0) * (quality === 'performance' ? 0.6 : 1);
+}
 const W = [1, 1, 1, 1];
 
 export function buildEnvironment(battle, seed = 1, themeId = 'hollow') {
@@ -61,6 +74,11 @@ export function buildEnvironment(battle, seed = 1, themeId = 'hollow') {
     if (t === TILE.BRAMBLE) { foliage.push({ kind: 'bramble', x: cx - 0.18, z: cz + 0.12, s: 0.75 }); foliage.push({ kind: 'bramble', x: cx + 0.2, z: cz - 0.14, s: 0.6 }); }
     if (t === TILE.LEYLINE) { lights.push({ pos: [cx, 0.35, cz], col: [1, 0.78, 0.35], radius: 1.8, intensity: 0.9, flicker: 0.15, prio: 1 }); emitters.push({ kind: 'ley', pos: [cx, 0.02, cz] }); }
     if (t === TILE.RIFT) { lights.push({ pos: [cx, 0.35, cz], col: [0.7, 0.35, 1], radius: 2, intensity: 1.1, flicker: 0.3, prio: 2 }); emitters.push({ kind: 'rift', pos: [cx, 0.02, cz] }); }
+  }
+  for (const c of battle.crystals || []) {   // v0.6 interactive crystals (charged glow; spent = dull shard)
+    const cx = ox + c.x, cz = oz + c.y;
+    foliage.push({ kind: c.charged ? 'crystal' : 'shard', x: cx, z: cz, s: c.charged ? 0.6 : 0.9 });
+    if (c.charged) { lights.push({ pos: [cx, 0.6, cz], col: [0.55, 0.75, 1], radius: 2, intensity: 1.1, flicker: 0.12, prio: 2 }); emitters.push({ kind: 'rift', pos: [cx, 0.05, cz] }); }
   }
   const R = 13, N = 26;
   const hgt = (x, z) => { const d = Math.max(Math.abs(x) - w / 2 - 0.4, Math.abs(z) - h / 2 - 0.4); return d < 0 ? -0.4 : -0.42 + Math.sin(x * 0.7 + seed) * 0.12 + Math.cos(z * 0.6) * 0.1 - Math.min(1.2, d * 0.04) - (themeId === 'nexus' ? Math.min(4, d * 0.35) : 0); };

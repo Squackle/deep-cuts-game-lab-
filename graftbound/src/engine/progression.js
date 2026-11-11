@@ -1,11 +1,12 @@
 // Permanent, between-run progression: statistics, achievements, unlocks, settings. Never auto-resets.
-export const META_VERSION = 4;
-export const DEFAULT_SETTINGS = { sound: true, music: true, graphics: 'auto', animSpeed: 'normal' };
+export const META_VERSION = 5;
+export const DEFAULT_SETTINGS = { sound: true, music: true, graphics: 'auto', animSpeed: 'normal', autoEnd: true, ambient: true };
 export function newMeta() {
   return {
     v: META_VERSION, tutorialDone: false, introSeen: false, hints: {}, seen: {}, achievements: {}, unlocks: {},
     stats: { runs: 0, wins: 0, losses: 0, battlesWon: 0, cardsAbsorbed: 0, spellsCast: 0, kills: 0, bestDepth: 0, bestAct: 0, highestPower: 1, highestToughness: 1 },
     settings: { ...DEFAULT_SETTINGS },
+    records: {},   // v0.6 LOCAL personal records (unverified; never uploaded)
   };
 }
 export const ACHIEVEMENTS = [

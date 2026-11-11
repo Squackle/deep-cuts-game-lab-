@@ -2,6 +2,7 @@
 // and append presentation events to `ev`. No rendering, no randomness.
 import { unitAt, T, tileAt, manhattan, isFlying } from '../core/grid.js';
 import { ENEMIES } from '../data/enemies.js';
+import { TERRAIN_RULES } from '../data/terrain.js';
 
 export const has = (u, kw) => kw === 'flying' ? isFlying(u) : !!(u.keywords && u.keywords[kw]);
 export const kv = (u, kw) => (u.keywords && u.keywords[kw]) || 0;
@@ -127,12 +128,12 @@ export function attackExchange(s, ev, atk, def) {
     else if (alive(def) && why !== 'ranged' && why !== 'dead') ev.push({ t: 'noCounter', uid: def.uid, reason: why });
   }
 }
-/** Movement side effects for ground units: brambles 1, lava 2 on each entered tile. */
+/** Movement side effects for ground units: bramble and lava damage on each entered tile (see data/terrain.js). */
 export function enterTiles(s, ev, u, path) {
   if (has(u, 'flying')) return;
   for (let i = 1; i < path.length && alive(u); i++) {
     const t = tileAt(s, path[i].x, path[i].y);
-    if (t === T.BRAMBLE) dealDamage(s, ev, null, u, 1, { kind: 'bramble' });
-    if (t === T.LAVA) dealDamage(s, ev, null, u, 2, { kind: 'lava' });
+    if (t === T.BRAMBLE) dealDamage(s, ev, null, u, TERRAIN_RULES.bramble.enterDamage, { kind: 'bramble' });
+    if (t === T.LAVA) dealDamage(s, ev, null, u, TERRAIN_RULES.lava.enterDamage, { kind: 'lava' });
   }
 }
