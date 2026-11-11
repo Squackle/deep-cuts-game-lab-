@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset="utf-8"><title>GRAFTBOUND · evolution gallery</title>
+<style>body{margin:0;background:#13261d;color:#ecdfbf;font:13px Georgia,serif;display:flex;flex-wrap:wrap;gap:10px;padding:12px}
+figure{margin:0;width:208px;text-align:center}canvas{image-rendering:pixelated;width:192px;height:192px;background:radial-gradient(#2c5236,#0d1a14);border:1px solid #8a6a26;border-radius:8px}
+figcaption{margin-top:4px;line-height:1.25}b{color:#e9c972}</style></head><body>
+<script type="module">
+// Dev tool: composed player sprites for sample builds using the game's real compositor. ?b=id,id,...
+import { loadAssets } from '../src/rendering/sprites.js';
+import { composePlayerSheet } from '../src/rendering/evolution-visuals.js';
+import { deriveAppearance } from '../src/engine/appearance.js';
+import { newEvolution, absorb } from '../src/engine/evolution.js';
+import { installReferenceSet } from '../src/cards/reference-set.js';
+import { resolveCard } from '../src/cards/catalog.js';
+installReferenceSet();
+const assets = await loadAssets();
+const B = (label, ids) => ({ label, ids });
+const q = new URLSearchParams(location.search).get('b');
+const builds = q ? [B('custom', q.split(','))] : [
+  B('The Blank', []), B('+ Typhoid Rats', ['mtg:typhoid-rats']), B('+ Nightcap Toad', ['nightcap_toad']),
+  B('+ Serra Angel', ['nightcap_toad', 'mtg:serra-angel']), B('Knight', ['mtg:youthful-knight', 'mtg:skyknight-legionnaire']),
+  B('Dinosaur', ['mtg:war-mammoth', 'mtg:colossal-dreadmaw']), B('Night hunter', ['mtg:vampire-nighthawk', 'mtg:typhoid-rats', 'mtg:child-of-night']),
+  B('Mage', ['mtg:storm-crow', 'inkwell_wisp', 'hollow_owl']), B('Chimera', ['mtg:serra-angel', 'mtg:charging-monstrosaur', 'mtg:vampire-nighthawk', 'mtg:grizzly-bears', 'mtg:wind-drake']),
+  B('Fortress', ['cairnshell_tortoise', 'cairnshell_tortoise', 'mtg:glory-seeker', 'mtg:rumbling-baloth']),
+];
+for (const b of builds) {
+  let e = newEvolution(); for (const id of b.ids) e = absorb(e, resolveCard(id)).evo;
+  const ap = deriveAppearance(e); const sheet = composePlayerSheet(assets, ap);
+  const c = document.createElement('canvas'); c.width = 48; c.height = 48; const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
+  x.drawImage(sheet, 0, 0, 48, 48, 0, 0, 48, 48);
+  const f = document.createElement('figure'); f.append(c);
+  const cap = document.createElement('figcaption');
+  cap.innerHTML = `<b>${b.label}</b> ${e.power}/${e.toughness}<br>${Object.keys(e.keywords).join(', ') || '—'}<br><small>${Object.values(ap.slots).map(p => p.part).concat(ap.effects).join(', ') || 'unmarked'}</small>`;
+  f.append(cap); document.body.append(f);
+}
+</script></body></html>
