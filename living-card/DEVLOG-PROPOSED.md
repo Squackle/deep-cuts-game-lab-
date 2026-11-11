@@ -1,2 +1,0 @@
-## 2026-11-12 — GRAFTBOUND v0.4 (proposed; not committed)
-Sandbox reset; restored v0.3 from the session record and verified it (84/84 unit tests; balance sims and asset counts identical). Applied the GRAFTBOUND name and tagline to the title, page metadata, loading screen, menus, booster, cards, sheet and end screens. Added an adventure introduction. Directory, route and save keys unchanged (`living-card`). Browser e2e: see HANDOFF.md. Not deployed.

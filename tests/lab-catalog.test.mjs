@@ -6,7 +6,7 @@ const read=x=>fs.readFileSync(x,"utf8");
 const hub=read("lab/index.html");
 const root=read("index.html");
 
-test("Game Lab preserves three playable games and one honest in-development slot",()=>{
+test("Game Lab preserves four playable games and a redirect for GRAFTBOUNDs former route",()=>{
  for(const [name,route,file] of [
   ["Hive Run","/","index.html"],
   ["Stackbreaker","/stackbreaker/","stackbreaker/index.html"],
@@ -16,13 +16,13 @@ test("Game Lab preserves three playable games and one honest in-development slot
   assert.ok(hub.includes('href="'+route+'"'),name+" route missing");
   assert.ok(hub.includes(name.split(" ")[0]),name+" title not shown");
  }
- assert.equal((hub.match(/class="game-card game-/g)||[]).length,4,"Three existing games plus one development slot");
- assert.ok(fs.existsSync("living-card/index.html"),"The Living Card staging route must exist");
- assert.match(hub,/href="\/living-card\/"/);
- assert.match(hub,/IN DEVELOPMENT/);
- assert.match(hub,/The playable build is not yet integrated/);
- assert.doesNotMatch(read("living-card/index.html"),/\<script|fetch\(|\/api\/|localStorage/);
- assert.match(read("living-card/index.html"),/not yet playable/);
+ assert.equal((hub.match(/class="game-card game-/g)||[]).length,4,"Three existing games plus GRAFTBOUND");
+ assert.ok(fs.existsSync("graftbound/index.html"),"GRAFTBOUND playable entry must exist");
+ assert.match(hub,/href="\/graftbound\/"/);
+ assert.match(hub,/PLAYTEST GRAFTBOUND/);
+ assert.ok(fs.existsSync("living-card/index.html"),"Old GRAFTBOUND redirect route must exist");
+ assert.match(read("living-card/index.html"),/location\.replace\(\x27\/graftbound\/\x27/);
+ assert.doesNotMatch(read("living-card/index.html"),/src="\.\/src\/main\.js"/);
  assert.match(hub,/FOUR PROJECTS/);
  assert.match(hub,/ONE TEST LAB/);
  assert.match(hub,/No sign-in needed/);

@@ -1,0 +1,29 @@
+// Enemy definitions (v0.5, three acts). Health = toughness. Difficulty comes from tactics, not inflated pools.
+// role: the tactical identity shown to the player. counters: which build it is designed to pressure.
+export const ENEMIES = {
+  // ── Act I · The Forgotten Hollow ─────────────────────────────────────────
+  grub:     { act: 0, name: 'Mire Grub',        role: 'Brute',      power: 1, toughness: 2, move: 2, ai: 'melee',      sprite: 'grub',     blurb: 'Slow. Bites anything adjacent.' },
+  hound:    { act: 0, name: 'Bramble Hound',    role: 'Skirmisher', power: 2, toughness: 2, move: 3, ai: 'flanker',    sprite: 'hound',    pack: true, blurb: 'Pack hunter: +1 power when another foe is beside its target. Circles to the side opposite its packmates.' },
+  archer:   { act: 0, name: 'Thornbow Sentry',  role: 'Marksman',   power: 1, toughness: 2, move: 2, ai: 'archer',     sprite: 'archer',   aimDamage: 3, aimRange: 6, blurb: 'Aims along a line, fires next turn. Arrows hit fliers too. Step out of the red.' },
+  tortoise: { act: 0, name: 'Cairnback Warden', role: 'Guardian',   power: 1, toughness: 5, move: 1, ai: 'guardian',   sprite: 'warden',   guard: 2, blurb: 'Shields adjacent allies each turn. Kill what it protects first — or go around.' },
+  moth:     { act: 0, name: 'Hexwing Moth',     role: 'Caster',     power: 1, toughness: 1, move: 3, ai: 'skirmisher', sprite: 'moth',     keywords: { flying: 1 }, poison: 2, spitRange: 3, blurb: 'Flies. Spits poison from range 3 and keeps its distance.' },
+  hexer:    { act: 0, name: 'Briar Hexer',      role: 'Caster',     power: 1, toughness: 3, move: 2, ai: 'hexer',      sprite: 'hexer',    hexRange: 4, weaken: 2, blurb: 'Curses from range 4: deals 1 and Weakens you (−2 power during your next turn).' },
+  alpha:    { act: 0, name: 'Gloamfang Alpha',  role: 'Assassin',   power: 4, toughness: 7, move: 3, ai: 'melee',      sprite: 'alpha',    keywords: { firstStrike: 1, doubleStrike: 1 }, elite: true, blurb: 'Elite. First Strike and Double Strike — it bites twice before you land a blow. Spells and fliers avoid its fangs.' },
+  thornmother: { act: 0, name: 'The Thornmother', role: 'Summoner', power: 3, toughness: 18, move: 1, ai: 'thornmother', sprite: 'thornmother', legendary: true, boss: true, keywords: { spines: 2 },
+    slamDamage: 4, strikeCap: 5, blurb: 'Legendary. Ancient Heartwood: no single strike deals more than 5. Spines 2. Lashes anything beside her, telegraphs Root Slams, calls hounds and grows bark below half health. Bosses never strike back.' },
+  // ── Act II · The Ashen Warrens ───────────────────────────────────────────
+  cinderling: { act: 1, name: 'Cinderling',      role: 'Bomber',     power: 2, toughness: 2, move: 3, ai: 'melee',      sprite: 'cinderling', burst: 2, blurb: 'Bursts when it dies: 2 damage to everything adjacent. Kill it from range or with spells.' },
+  ashbrute:   { act: 1, name: 'Ashbound Brute',  role: 'Bulwark',    power: 3, toughness: 6, move: 2, ai: 'melee',      sprite: 'ashbrute',   keywords: { armor: 1 }, blurb: 'Armor 1: each strike against it deals 1 less. Spells ignore armor.' },
+  harpooner:  { act: 1, name: 'Skyhook Harpooner', role: 'Anti-air', power: 2, toughness: 3, move: 2, ai: 'harpooner',  sprite: 'harpooner',  harpoonRange: 5, blurb: 'Harpoons from range 5 with sight. Double damage to fliers and Grounds them for a turn.' },
+  emberseer:  { act: 1, name: 'Emberseer',       role: 'Artillery',  power: 1, toughness: 4, move: 2, ai: 'seer',       sprite: 'emberseer',  blastDamage: 3, blurb: 'Marks a 3×3 area around you, then rains fire on it next turn. Keep moving.' },
+  champion:   { act: 1, name: 'Obsidian Champion', role: 'Duelist',  power: 5, toughness: 12, move: 2, ai: 'melee',      sprite: 'champion',   keywords: { firstStrike: 1, armor: 1 }, elite: true, blurb: 'Elite. First Strike and Armor 1. Punishes careless melee; burn it down with spells.' },
+  matron:     { act: 1, name: 'The Pyre Matron', role: 'Tyrant',     power: 4, toughness: 28, move: 1, ai: 'matron',    sprite: 'matron',     legendary: true, boss: true, keywords: { armor: 1 }, strikeCap: 6,
+    blurb: 'Legendary. Armor 1; no strike deals more than 6. Breathes fire down a row and a column (telegraphed), births Cinderlings and turns the ground near you to lava.' },
+  // ── Act III · The Fractured Nexus ────────────────────────────────────────
+  riftstalker:{ act: 2, name: 'Rift Stalker',    role: 'Assassin',   power: 3, toughness: 4, move: 0, ai: 'stalker',    sprite: 'riftstalker', blurb: 'Steps through the rift to the tile behind you every turn, then strikes. Positioning does not save you — killing it does.' },
+  nullwarden: { act: 2, name: 'Null Warden',     role: 'Silencer',   power: 2, toughness: 7, move: 1, ai: 'guardian',   sprite: 'nullwarden',  guard: 2, spellTax: 1, blurb: 'While it stands, your spells cost 1 more mana. Shields allies.' },
+  shardling:  { act: 2, name: 'Shardling',       role: 'Harrier',    power: 2, toughness: 2, move: 3, ai: 'hexer',      sprite: 'shardling',   keywords: { flying: 1 }, hexRange: 4, weaken: 2, blurb: 'Flies. Fires shards from range 4: 1 damage and −2 power on your next turn.' },
+  sentinel:   { act: 2, name: 'Nexus Sentinel',  role: 'Juggernaut', power: 6, toughness: 15, move: 3, ai: 'melee',     sprite: 'sentinel',    keywords: { armor: 2, firstStrike: 1 }, elite: true, blurb: 'Elite. Armor 2 and First Strike — small strikes barely scratch it and it hits first. Spells, Deathtouch and fliers get around it.' },
+  unwritten:  { act: 2, name: 'The Unwritten',   role: 'Mirror',     power: 5, toughness: 36, move: 2, ai: 'unwritten', sprite: 'unwritten',   legendary: true, boss: true, strikeCap: 7,
+    blurb: 'Legendary. No strike deals more than 7. Copies one of your abilities each cycle, telegraphs Erasure along your row and column, and calls Rift Stalkers.' },
+};

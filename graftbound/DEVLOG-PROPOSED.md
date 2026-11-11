@@ -1,0 +1,12 @@
+## GRAFTBOUND v0.5.0 — overhaul (proposed DEVLOG entry; not committed)
+- **Renamed:** `living-card/` → `graftbound/`; `/living-card/` is now a redirect stub.
+- **Floor fix:** the coplanar foundation was z-fighting with the tiles; the terrain atlas is now pre-filtered.
+- **Cards:** real Magic only (63-card curated pool); legacy cards preserved for old saves.
+- **Booster:** new wrapper and opening sequence; mobile carousel.
+- **Wayshrines:** 6 offerings, with up to 4 per shrine.
+- **Rebalance:** health formula, Resonance, wounds, graft capacity, power-rated packs, boss rework.
+- **Spell VFX library:** five-phase Lightning Bolt, plus 12 other families.
+- **Spells:** no spell range limit; spell costs raised.
+- **Campaign:** three acts / 24 nodes with Ashen Warrens and Fractured Nexus, 10 new enemies (incl. elites) and 2 new bosses.
+- **Saves:** run v3 / meta v4 migrations.
+- **Tests:** 79 unit tests and the browser suite; see `graftbound/HANDOFF.md`. Not deployed.

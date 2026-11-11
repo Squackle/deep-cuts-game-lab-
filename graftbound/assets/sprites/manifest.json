@@ -1,0 +1,402 @@
+{
+ "cols": 4,
+ "views": [
+  "front",
+  "back"
+ ],
+ "anims": {
+  "idle": {
+   "row": 0,
+   "frames": 4,
+   "fps": 4,
+   "loop": true
+  },
+  "walk": {
+   "row": 1,
+   "frames": 4,
+   "fps": 10,
+   "loop": true
+  },
+  "attack": {
+   "row": 2,
+   "frames": 4,
+   "fps": 12,
+   "loop": false
+  },
+  "cast": {
+   "row": 3,
+   "frames": 3,
+   "fps": 8,
+   "loop": false
+  },
+  "hurt": {
+   "row": 4,
+   "frames": 2,
+   "fps": 8,
+   "loop": false
+  }
+ },
+ "sprites": {
+  "blank": {
+   "w": 48,
+   "h": 48,
+   "file": "blank.png",
+   "mask": "blank_mask.png",
+   "pivotY": 45
+  },
+  "grub": {
+   "w": 32,
+   "h": 24,
+   "file": "grub.png",
+   "hover": 0,
+   "pivotY": 21
+  },
+  "hound": {
+   "w": 40,
+   "h": 32,
+   "file": "hound.png",
+   "hover": 0,
+   "pivotY": 29
+  },
+  "archer": {
+   "w": 32,
+   "h": 40,
+   "file": "archer.png",
+   "hover": 0,
+   "pivotY": 37
+  },
+  "warden": {
+   "w": 44,
+   "h": 40,
+   "file": "warden.png",
+   "hover": 0,
+   "pivotY": 37
+  },
+  "moth": {
+   "w": 44,
+   "h": 36,
+   "file": "moth.png",
+   "hover": 1,
+   "pivotY": 33
+  },
+  "hexer": {
+   "w": 32,
+   "h": 44,
+   "file": "hexer.png",
+   "hover": 0,
+   "pivotY": 41
+  },
+  "alpha": {
+   "w": 52,
+   "h": 40,
+   "file": "alpha.png",
+   "hover": 0,
+   "pivotY": 37
+  },
+  "thornmother": {
+   "w": 72,
+   "h": 80,
+   "file": "thornmother.png",
+   "hover": 0,
+   "pivotY": 77
+  },
+  "sproutling": {
+   "w": 24,
+   "h": 24,
+   "file": "sproutling.png",
+   "hover": 0,
+   "pivotY": 21
+  },
+  "cinderling": {
+   "w": 28,
+   "h": 30,
+   "file": "cinderling.png",
+   "hover": 0,
+   "pivotY": 27
+  },
+  "ashbrute": {
+   "w": 44,
+   "h": 44,
+   "file": "ashbrute.png",
+   "hover": 0,
+   "pivotY": 41
+  },
+  "harpooner": {
+   "w": 40,
+   "h": 40,
+   "file": "harpooner.png",
+   "hover": 0,
+   "pivotY": 37
+  },
+  "emberseer": {
+   "w": 32,
+   "h": 44,
+   "file": "emberseer.png",
+   "hover": 0,
+   "pivotY": 41
+  },
+  "champion": {
+   "w": 48,
+   "h": 52,
+   "file": "champion.png",
+   "hover": 0,
+   "pivotY": 49
+  },
+  "matron": {
+   "w": 72,
+   "h": 80,
+   "file": "matron.png",
+   "hover": 0,
+   "pivotY": 77
+  },
+  "riftstalker": {
+   "w": 44,
+   "h": 34,
+   "file": "riftstalker.png",
+   "hover": 0,
+   "pivotY": 31
+  },
+  "nullwarden": {
+   "w": 44,
+   "h": 40,
+   "file": "nullwarden.png",
+   "hover": 0,
+   "pivotY": 37
+  },
+  "shardling": {
+   "w": 44,
+   "h": 36,
+   "file": "shardling.png",
+   "hover": 1,
+   "pivotY": 33
+  },
+  "sentinel": {
+   "w": 52,
+   "h": 60,
+   "file": "sentinel.png",
+   "hover": 1,
+   "pivotY": 57
+  },
+  "unwritten": {
+   "w": 72,
+   "h": 84,
+   "file": "unwritten.png",
+   "hover": 0,
+   "pivotY": 81
+  }
+ },
+ "parts": {
+  "wings": {
+   "1": {
+    "behind": "parts/wings_1_behind.png",
+    "front": "parts/wings_1_front.png"
+   },
+   "2": {
+    "behind": "parts/wings_2_behind.png",
+    "front": "parts/wings_2_front.png"
+   }
+  },
+  "shell": {
+   "1": {
+    "front": "parts/shell_1_front.png"
+   },
+   "2": {
+    "front": "parts/shell_2_front.png"
+   }
+  },
+  "spikes": {
+   "1": {
+    "behind": "parts/spikes_1_behind.png",
+    "front": "parts/spikes_1_front.png"
+   },
+   "2": {
+    "behind": "parts/spikes_2_behind.png",
+    "front": "parts/spikes_2_front.png"
+   }
+  },
+  "horns": {
+   "1": {
+    "front": "parts/horns_1_front.png"
+   },
+   "2": {
+    "front": "parts/horns_2_front.png"
+   }
+  },
+  "antlers": {
+   "1": {
+    "behind": "parts/antlers_1_behind.png",
+    "front": "parts/antlers_1_front.png"
+   }
+  },
+  "crown": {
+   "1": {
+    "front": "parts/crown_1_front.png"
+   }
+  },
+  "tail": {
+   "1": {
+    "behind": "parts/tail_1_behind.png",
+    "front": "parts/tail_1_front.png"
+   }
+  },
+  "blades": {
+   "1": {
+    "behind": "parts/blades_1_behind.png",
+    "front": "parts/blades_1_front.png"
+   }
+  },
+  "claws": {
+   "1": {
+    "behind": "parts/claws_1_behind.png",
+    "front": "parts/claws_1_front.png"
+   }
+  },
+  "tusks": {
+   "1": {
+    "behind": "parts/tusks_1_behind.png",
+    "front": "parts/tusks_1_front.png"
+   }
+  },
+  "beak": {
+   "1": {
+    "behind": "parts/beak_1_behind.png",
+    "front": "parts/beak_1_front.png"
+   }
+  },
+  "armor": {
+   "1": {
+    "front": "parts/armor_1_front.png"
+   },
+   "2": {
+    "front": "parts/armor_2_front.png"
+   }
+  },
+  "venom": {
+   "1": {
+    "front": "parts/venom_1_front.png"
+   }
+  },
+  "moss": {
+   "1": {
+    "front": "parts/moss_1_front.png"
+   }
+  },
+  "eyes": {
+   "1": {
+    "front": "parts/eyes_1_front.png"
+   }
+  },
+  "tendrils": {
+   "1": {
+    "front": "parts/tendrils_1_front.png"
+   }
+  },
+  "mark0": {
+   "1": {
+    "front": "parts/mark0_1_front.png"
+   }
+  },
+  "mark1": {
+   "1": {
+    "front": "parts/mark1_1_front.png"
+   }
+  },
+  "mark2": {
+   "1": {
+    "front": "parts/mark2_1_front.png"
+   }
+  }
+ },
+ "foliage": {
+  "size": [
+   305,
+   64
+  ],
+  "frames": {
+   "pine": {
+    "x": 0,
+    "y": 0,
+    "w": 40,
+    "h": 64
+   },
+   "oak": {
+    "x": 41,
+    "y": 0,
+    "w": 56,
+    "h": 64
+   },
+   "bush": {
+    "x": 98,
+    "y": 48,
+    "w": 24,
+    "h": 16
+   },
+   "fern": {
+    "x": 123,
+    "y": 50,
+    "w": 20,
+    "h": 14
+   },
+   "grass": {
+    "x": 144,
+    "y": 56,
+    "w": 12,
+    "h": 8
+   },
+   "mushroom": {
+    "x": 157,
+    "y": 52,
+    "w": 12,
+    "h": 12
+   },
+   "bramble": {
+    "x": 170,
+    "y": 46,
+    "w": 28,
+    "h": 18
+   },
+   "deadtree": {
+    "x": 199,
+    "y": 0,
+    "w": 44,
+    "h": 64
+   },
+   "crystal": {
+    "x": 244,
+    "y": 8,
+    "w": 32,
+    "h": 56
+   },
+   "shard": {
+    "x": 277,
+    "y": 48,
+    "w": 14,
+    "h": 16
+   },
+   "ashgrass": {
+    "x": 292,
+    "y": 56,
+    "w": 12,
+    "h": 8
+   }
+  }
+ },
+ "materials": {
+  "flag": 1,
+  "flagmoss": 2,
+  "grass": 3,
+  "dirt": 4,
+  "brick": 5,
+  "rock": 6,
+  "bark": 7,
+  "leaves": 8,
+  "cliff": 9,
+  "rune": 10,
+  "water": 11,
+  "moss": 12,
+  "basalt": 13,
+  "lava": 14,
+  "crystal": 15,
+  "ash": 16
+ }
+}

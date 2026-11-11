@@ -1,0 +1,5 @@
+# OPTIONAL server-side redirect for Cloudflare Pages. Only add these lines if the Game Lab repo already uses a
+# root `_redirects` file (it is a shared file — coordinate first). Cloudflare Pages keeps the query string.
+/living-card        /graftbound/        301
+/living-card/       /graftbound/        301
+/living-card/*      /graftbound/:splat  301
