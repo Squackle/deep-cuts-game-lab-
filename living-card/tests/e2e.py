@@ -5,7 +5,7 @@ LC_QUERY adds query params (e.g. "&cards=original")."""
 import time, json, sys, os
 from playwright.sync_api import sync_playwright
 CH = os.environ.get('LC_CHROMIUM', "/opt/pw-browsers/chromium-1228/chrome-linux64/chrome")
-BASE = os.environ.get('LC_URL', "http://localhost:8765/living-card/index.html")
+BASE = os.environ.get('LC_URL', "http://localhost:8765/living-card/play.html")
 URL = BASE + "?gfx=performance&anim=instant&live=0" + os.environ.get('LC_QUERY', '')
 ARGS = ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"]
 SHOTS = os.environ.get('LC_SHOTS', os.path.expanduser('~/shots'))
