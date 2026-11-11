@@ -28,7 +28,7 @@ with sync_playwright() as p:
     pg = b.new_page(viewport={"width": 1180, "height": 760})
     pg.route("https://api.scryfall.com/**", lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps(card_json(parse_qs(urlparse(r.request.url).query)['exact'][0]))))
     pg.route("https://cards.scryfall.io/**", lambda r: r.fulfill(status=200, content_type='image/png', body=mock_png(r.request.url.rsplit('/', 1)[1][:-4].replace('-', ' '))))
-    pg.goto("http://localhost:8765/living-card/index.html?gfx=performance&anim=fast"); pg.wait_for_selector("text=Begin Adventure", timeout=40000)
+    pg.goto("http://localhost:8765/living-card/play.html?gfx=performance&anim=fast"); pg.wait_for_selector("text=Begin Adventure", timeout=40000)
     pg.click("text=Begin Adventure"); pg.wait_for_selector(".intro [data-go]"); pg.click(".intro [data-go]")
     pg.wait_for_selector("g.node.avail"); pg.locator("g.node.avail").first.dispatch_event("click"); time.sleep(2)
     pg.evaluate("(()=>{const L=window.__LC; const b=L.battle.s; b.units.filter(u=>u.side==='enemy').forEach(u=>u.hp=0); b.phase='won'; L.battle.checkEnd();})()")
