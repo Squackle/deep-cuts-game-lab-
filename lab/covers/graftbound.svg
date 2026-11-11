@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="GRAFTBOUND original fantasy cover: a glowing blank creature evolving into an armored winged beast among ancient forest ruins">
+<defs>
+ <linearGradient id="night" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071712"/><stop offset=".44" stop-color="#194235"/><stop offset="1" stop-color="#080f16"/></linearGradient>
+ <radialGradient id="halo"><stop stop-color="#e8e2b0" stop-opacity=".92"/><stop offset=".26" stop-color="#a7e7a5" stop-opacity=".52"/><stop offset=".68" stop-color="#4ab6ac" stop-opacity=".2"/><stop offset="1" stop-color="#52c4a4" stop-opacity="0"/></radialGradient>
+ <radialGradient id="gate"><stop stop-color="#2e7160"/><stop offset=".5" stop-color="#123c34"/><stop offset="1" stop-color="#061914"/></radialGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#fff0bb"/><stop offset=".44" stop-color="#c5a256"/><stop offset="1" stop-color="#705028"/></linearGradient>
+ <linearGradient id="wing" x1=".1" y1="0" x2=".8" y2="1"><stop stop-color="#a9d59e"/><stop offset=".22" stop-color="#537e68"/><stop offset=".74" stop-color="#203e36"/><stop offset="1" stop-color="#0b2421"/></linearGradient>
+ <linearGradient id="body" x1=".2" y1="0" x2=".75" y2="1"><stop stop-color="#b7cab0"/><stop offset=".32" stop-color="#4f7868"/><stop offset=".8" stop-color="#19352d"/><stop offset="1" stop-color="#0b1c1b"/></linearGradient>
+ <linearGradient id="stone" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#38463b"/><stop offset="1" stop-color="#111e19"/></linearGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="12"/></filter>
+ <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity=".85"/></filter>
+ <filter id="smoke"><feGaussianBlur stdDeviation="4"/></filter>
+</defs>
+<rect width="960" height="540" fill="url(#night)"/>
+<path d="M0 180 80 70 151 212 248 40 312 203 425 92 545 220 631 48 723 210 811 80 960 188V540H0Z" fill="#071b19"/>
+<path d="M0 303 139 174 267 315 372 164 504 328 647 195 768 315 870 141 960 283V540H0Z" fill="#0b2924"/>
+<ellipse cx="490" cy="304" rx="394" ry="304" fill="url(#halo)"/>
+<g fill="none" stroke="#102c27" stroke-width="20" stroke-linejoin="round">
+ <path d="M61 540Q104 258 6 108M54 345Q115 219 199 157M881 540Q843 282 967 77M888 350Q822 207 735 141"/>
+</g>
+<g stroke="#426e59" stroke-opacity=".35" fill="none"><path d="M85 430Q183 324 193 123M883 446Q766 337 769 121" stroke-width="5"/><path d="M95 372Q42 282 7 252M864 382Q909 302 949 260" stroke-width="4"/></g>
+<!-- ancient arch gate -->
+<g filter="url(#shadow)">
+ <path d="M286 472V201Q286 60 483 54Q680 60 680 201V472H629V207Q629 110 483 105Q337 110 337 207V472Z" fill="url(#stone)" stroke="#6b785f" stroke-width="7"/>
+ <path d="M339 459V203Q339 110 484 107Q626 111 626 203V459Z" fill="url(#gate)" stroke="#9bc79d" stroke-opacity=".35" stroke-width="4"/>
+ <path d="M308 197Q326 82 482 83Q646 85 657 196" stroke="url(#gold)" stroke-width="8" fill="none"/>
+ <path d="M308 197v231M657 197v231" stroke="#bfac71" stroke-opacity=".65" stroke-width="6" fill="none"/>
+ <path d="M293 277h42m-42 78h42m297-78h46m-46 78h46" stroke="#a6a477" stroke-width="7"/>
+</g>
+<ellipse cx="487" cy="293" rx="202" ry="183" fill="url(#halo)" opacity=".6"/>
+<!-- spectral wings, each with distinct silhouette -->
+<g filter="url(#shadow)" stroke="#89b799" stroke-width="4" stroke-linejoin="round">
+ <path d="M462 260Q346 136 208 93L245 171 172 172 256 230 197 255Q297 272 402 351L461 317Z" fill="url(#wing)"/>
+ <path d="M507 260Q635 133 776 94L729 176 804 172 717 238 770 272Q663 274 559 352L499 318Z" fill="url(#wing)"/>
+ <path d="M463 271Q342 201 208 93M443 287Q334 249 197 255M507 271Q645 196 776 94M527 290Q636 252 770 272" fill="none" stroke="#b7c98a" stroke-opacity=".48" stroke-width="3"/>
+</g>
+<!-- thorned tail and roots -->
+<path d="M524 372Q640 365 649 440Q632 488 554 478L587 458Q614 440 588 414Q556 394 532 408" fill="#2a4b3a" stroke="#a9b97f" stroke-width="5"/>
+<!-- evolved hero -->
+<g filter="url(#shadow)" stroke-linejoin="round">
+ <path d="M443 322 401 393 418 469 459 462 463 401M524 322 563 391 549 470 508 463 500 401" fill="#18342d" stroke="#719c79" stroke-width="8"/>
+ <path d="M433 260Q458 241 488 238Q519 238 542 259L560 362 526 428 453 428 419 362Z" fill="url(#body)" stroke="#bdc18d" stroke-width="7"/>
+ <path d="M432 272 389 296 375 351 403 364 442 313M541 272 587 293 596 350 566 364 532 315" fill="#264e42" stroke="#849e77" stroke-width="7"/>
+ <path d="M381 342 360 368 365 389 387 374 399 388 415 352M567 345 556 378 578 387 589 370 610 381 600 341" fill="#a7bd95" stroke="#dec98e" stroke-width="4"/>
+ <path d="M440 275 467 243 509 243 538 275 526 327 483 349 443 328Z" fill="#1d3733" stroke="url(#gold)" stroke-width="7"/>
+ <path d="M447 252 428 185 463 214 482 246M520 252 544 178 558 215 538 264" fill="#668a6e" stroke="#c3c08b" stroke-width="6"/>
+ <path d="M444 261Q486 243 527 261L519 304 486 323 451 304Z" fill="#365e51" stroke="#d3bd7e" stroke-width="5"/>
+ <path d="M453 276 473 280 468 292 451 287M517 276 495 280 501 293 519 288" fill="#f4df97" stroke="none"/>
+ <path d="M475 306 486 315 498 306" fill="none" stroke="#dfbe72" stroke-width="4"/>
+ <path d="M463 348 487 365 510 348 529 394 484 411 440 394Z" fill="#244b40" stroke="url(#gold)" stroke-width="5"/>
+ <path d="M484 365 500 381 484 397 468 381Z" fill="#e9cf7d" stroke="#faf1b7" stroke-width="3"/>
+</g>
+<!-- a glowing blank ancestor from which the monster evolved -->
+<g transform="translate(119 355)" filter="url(#shadow)">
+ <ellipse cx="0" cy="104" rx="87" ry="17" fill="#030d09" opacity=".75"/>
+ <path d="M-37 51Q-36-13 0-20Q36-13 37 51L23 88H-23Z" fill="#e8ddba" stroke="#f9edc7" stroke-width="5"/>
+ <path d="M-18 18Q0 9 18 18" fill="none" stroke="#a5a088" stroke-width="3"/>
+ <circle cx="-12" cy="29" r="4" fill="#6f7567"/><circle cx="12" cy="29" r="4" fill="#6f7567"/>
+ <path d="M-8 48Q0 55 8 48" stroke="#849282" stroke-width="2" fill="none"/>
+ <path d="M-18 81 -33 102M18 81 33 102" stroke="#e6ddba" stroke-width="10" stroke-linecap="round"/>
+ <rect x="-42" y="121" width="84" height="29" rx="6" fill="#1b3026" stroke="url(#gold)" stroke-width="2"/><text y="142" text-anchor="middle" font-family="Georgia,serif" font-weight="bold" font-size="19" fill="#f0dcaa">1 / 1</text>
+</g>
+<!-- floating original card-shaped graft runes -->
+<g stroke="url(#gold)" stroke-width="4" fill="#14352d" filter="url(#shadow)">
+ <g transform="translate(737 311) rotate(19)"><rect x="-57" y="-79" width="114" height="158" rx="8"/><rect x="-46" y="-65" width="92" height="125" rx="4" stroke="#719b80" stroke-width="2"/><path d="M0-45 30 4 0 49-30 4Z" fill="#568a69"/><circle r="9" fill="#e9d384" stroke="none"/></g>
+ <g transform="translate(843 409) rotate(-16)"><rect x="-45" y="-64" width="90" height="128" rx="8"/><rect x="-34" y="-51" width="68" height="99" rx="4" stroke="#719b80" stroke-width="2"/><path d="M0-28 22 0 0 30-22 0Z" fill="#6d7d9a"/><circle r="6" fill="#e9d384" stroke="none"/></g>
+</g>
+<!-- golden and green orbiting magic -->
+<g fill="none" stroke-linecap="round">
+ <path d="M170 464Q302 505 462 473T762 394" stroke="#d9d084" stroke-width="6" opacity=".6"/>
+ <path d="M234 341Q301 162 420 149M567 145Q711 207 731 304" stroke="#9ceac4" stroke-width="4" opacity=".65" stroke-dasharray="4 15"/>
+ <path d="M236 473Q420 544 718 446" stroke="#a4d7a1" stroke-width="18" opacity=".25" filter="url(#glow)"/>
+</g>
+<g fill="#e6d891">
+ <circle cx="220" cy="350" r="6"/><circle cx="280" cy="188" r="4"/><circle cx="380" cy="100" r="4"/><circle cx="630" cy="120" r="5"/><circle cx="764" cy="234" r="4"/><circle cx="795" cy="341" r="5"/><circle cx="698" cy="458" r="4"/>
+</g>
+<g fill="#abf1cc" opacity=".85">
+ <circle cx="176" cy="173" r="3"/><circle cx="260" cy="115" r="4"/><circle cx="716" cy="167" r="4"/><circle cx="892" cy="169" r="3"/><circle cx="904" cy="355" r="4"/><circle cx="81" cy="267" r="4"/>
+</g>
+<path d="M0 481Q230 445 458 501Q710 455 960 471V540H0Z" fill="#091b17" opacity=".82"/>
+<path d="M0 506Q175 478 362 518Q613 479 960 513V540H0Z" fill="#071310"/>
+<rect width="960" height="540" fill="none" stroke="#b69e64" stroke-opacity=".3" stroke-width="8"/>
+</svg>

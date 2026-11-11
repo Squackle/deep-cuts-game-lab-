@@ -32,14 +32,8 @@ h1 em,h3 em{color:var(--gold);font-style:italic}
 .game-hive .game-art{background:#102c20}
 .game-stack .game-art{background:#19283f}
 .game-mana .game-art{background:#292d31}
-.game-living .game-art{background:radial-gradient(circle at 50% 50%,#76674b 0%,#33452d 34%,#14251d 74%)}
-.game-art-living{display:flex;align-items:center;justify-content:center;isolation:isolate}
-.living-glow{position:absolute;width:235px;height:170px;top:4px;left:calc(50% - 117px);background:radial-gradient(ellipse,#d5b36a5c,transparent 67%);filter:blur(18px);pointer-events:none}
-.living-rewards{position:absolute;display:flex;gap:17px;transform:translateY(-10px)}
-.living-rewards span{display:block;width:73px;height:112px;border:1px solid #b89c63aa;border-radius:7px;background:linear-gradient(145deg,#725d39,#272c22 65%);box-shadow:0 13px 15px #050b0995}
-.living-rewards span:first-child{transform:rotate(-17deg) translateX(11px)}.living-rewards span:last-child{transform:rotate(17deg) translateX(-11px)}
-.living-card-mark{z-index:1;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:86px;height:124px;border:3px double #efdcad;border-radius:8px;background:linear-gradient(145deg,#253c30,#101a17);box-shadow:0 10px 19px #020905b3;color:#e9cd8e}
-.living-rune{font:42px Georgia,serif;line-height:1}.living-stats{font:700 14px Georgia,serif;letter-spacing:.1em}
+.game-graftbound .game-art{background:#122b24}
+.game-graftbound .game-cover{object-position:center 50%}
 .status-dev{color:#f5d99d}.status-dev i{background:#dfb369}
 .game-card:hover .game-cover{transform:scale(1.025);filter:saturate(1.09)}
 .game-body{padding:22px 21px 20px;display:flex;flex-direction:column;gap:11px;flex:1}
