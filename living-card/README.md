@@ -1,31 +1,37 @@
-# The Living Card — Game Lab integration slot
+# GRAFTBOUND — Deep Cuts Game Lab (internal slot: `living-card/`)
 
-**Status: Reserved integration path; not a playable build.**
+*Begin as nothing. Become everything.*
 
-- Lab route: `/living-card/`
-- Future URL on the Lab production branch: https://deep-cuts-game-lab.pages.dev/living-card/
-- Repository: `Squackle/deep-cuts-game-lab-`
-- Owned directory: `living-card/**`
-- Existing standalone prototype has been reported by Claude as `games/living-card/**` in a separate ZIP. It has **not** been inspected, imported, verified, or deployed by this setup.
-- The current `index.html` is a truthful staging page and MUST be replaced with a tested working entry when the game is integrated.
+An HD-2D tactical RPG. You begin as **The Blank**, a powerless 1/1 creature. After each victory you open a three-card booster of real Magic: The Gathering cards, adapted to this game's rules. **Graft** a creature into yourself (its power, toughness and abilities add to yours, and your pixel-art body visibly changes) or inscribe a spell into your spellbook.
 
-## Project goal
+> Status: **v0.4 Game Lab playtest build.** The directory, route (`/living-card/`) and localStorage keys (`deepcutsedh.livingcard.*`) intentionally keep the original internal name. See `HANDOFF.md`.
 
-An HD-2D fantasy tactical RPG with 2D creature sprites and dimensional environments. Begin as a blank 1/1; win battles; reveal a three-card reward pack; absorb creature cards to add power/toughness and supported abilities, or learn spells; visibly evolve; continue a non-daily campaign.
+## Run
+```bash
+# from the Game Lab repo root
+python3 -m http.server 8765
+# open http://localhost:8765/living-card/
+```
+There is no build step and there are no runtime dependencies. It needs WebGL2.
+Dev URL overrides: `?gfx=high|balanced|performance`, `?anim=normal|fast|instant`, `?cards=reference|original`, `?live=0`.
 
-## Guidance for the incoming Claude developer
+## Test
+```bash
+cd living-card
+npm test                          # 84 unit tests (Node 20+)
+python3 tools/build_assets.py     # rebuild all pixel art deterministically
+python3 tests/e2e.py              # browser flows (server on :8765 from repo root; Playwright + Chromium; LC_CHROMIUM=path to override)
+LC_QUERY="&cards=original" python3 tests/e2e.py
+```
 
-1. Read repository-root `AGENTS.md`, `docs/SHARED-GAME-LAB.md`, `docs/TEST-FIRST-RELEASE-POLICY.md`, and this file. Inspect current `main` and open PRs.
-2. Do **not** overwrite existing projects (`src/**`, `stackbreaker/**`, `mana-heist/**`, production website, or shared `lab/**` catalog).
-3. Use a fresh `game/living-card-*` branch. All gameplay code/assets/tests belong under `living-card/**`. Coordinate shared catalog/CI changes separately.
-4. Integrate the actual prototype from the ZIP; identify functional vs. placeholder features. Preserve tested code; migrate from `games/living-card/` to `living-card/` carefully.
-5. Keep rules/state independent from graphics; prefer modular HD-2D renderer with real original sprite assets. Avoid claiming polished art when using placeholders.
-6. Provide direct URL playtest and run automated and browser tests. Minimum end-to-end acceptance: blank 1/1 → victory → three-card choice → absorb 2/2 deathtouch → 3/3 deathtouch in the next fight → save/restore.
-7. Scryfall-linked card metadata in other games is **not** blanket permission to use Wizards/Scryfall assets in a new distributed game. Maintain a replaceable content adapter and resolve rights before public promotion.
-8. Local Lab progress is never a public profile, score, or verified leaderboards. No Lab-to-production D1/auth/payment connections.
-9. Record changes, tests, limitations and next work in a scoped development log. Coordinate root `DEVLOG.md` edits to avoid overlapping other agents.
-10. A Lab preview is not a production Arcade release. Public site promotion requires a separate explicit approval.
+## Dev tools
+`dev/bench.html` (HD-2D benchmark scene) · `dev/evolution.html` (evolution sprite gallery) · `tools/preview_real_cards.py` (booster with **mocked** Scryfall data) · `tools/shot.py`.
 
-## Handoff boundary
 
-The placeholder HTML contains no gameplay engine, scripts, or third-party dependencies. Its purpose is to reserve the route, make the new game discoverable with honest status, and establish the correct file ownership. Once Claude's source is provided, replace this entry with the actual tested game. Do not call the placeholder a playable release.
+## Game Lab integration rules (preserved from PR #136)
+
+- The route remains `/living-card/`; this is a separate, unranked Game Lab prototype, not the production DeepCutsEDH Arcade.
+- Read root `AGENTS.md`, `docs/SHARED-GAME-LAB.md`, `docs/TEST-FIRST-RELEASE-POLICY.md` and the existing `living-card/AGENTS.md` before editing. Keep all GRAFTBOUND code, assets, and tests inside `living-card/**` and use scoped `game/living-card-*` branches.
+- Do not edit Hive Run, Stackbreaker, Mana Heist, the shared `lab/**` catalog or CI, the production site, accounts, ranked scores, subscriptions or D1 without separate authorization.
+- Local Lab save data is not an authoritative user identity or public leaderboard. A Lab release does not authorize production promotion.
+- Prior Scryfall-backed experiments are not blanket licenses to distribute Wizards/Scryfall content in new games; retain the original-art and replaceable-data boundaries and review rights before any production promotion.
