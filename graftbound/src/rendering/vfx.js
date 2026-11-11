@@ -9,9 +9,10 @@ const R = () => Math.random() - 0.5;
 const ELECTRIC = [0.62, 0.82, 1], ELECTRIC_CORE = [0.95, 0.98, 1];
 
 /** Lightning Bolt — flagship: charge → intensify → branching release → impact → dissipation (~1 s at normal speed). */
-export async function lightningBolt(sc, { from, to, target, big = true }) {
-  const fast = sc.speed >= 50; const hand = add(from, [0, 0.25, 0]);
-  if (fast) { sc.addBolt({ a: hand, b: to, life: 0.25, width: 0.07, col: ELECTRIC, branches: 3 }); sc.hit(target, ELECTRIC, true); return; }
+export async function lightningBolt(sc, { from, to, target, big = true, charged = false }) {
+  const fast = sc.speed >= 50; const hand = charged ? from : add(from, [0, 0.25, 0]);
+  if (fast) { sc.addBolt({ a: hand, b: to, life: 0.25, width: 0.07, col: ELECTRIC, branches: 3 }); if (target != null) sc.hit(target, ELECTRIC, big, true); return; }
+  if (!charged) {
   // Phase 1 — charge: particles converge on the casting point, small arcs flicker over the body.
   const charge = sc.light(hand, ELECTRIC, 1.6, 0.9, 0.6);
   sc.fx.swirl(hand, () => hand, ELECTRIC, big ? 70 : 30, 0.45);
@@ -24,6 +25,9 @@ export async function lightningBolt(sc, { from, to, target, big = true }) {
   if (!sc.reduced) sc.shake(0.03);
   await sleep(sc, big ? 160 : 60);
   clearInterval(arcs);
+  }
+  // v0.7 release: a body discharge flash at the caster, then the bolt leaves the casting point.
+  sc.fx.burst(hand, ELECTRIC_CORE, big ? 20 : 8, { speed: 1.4, up: 0.4, size: 9, grav: 0, life: 0.2 });
   // Phase 3 — release: a jagged, branching bolt grows from caster to target.
   sc.addBolt({ a: hand, b: to, life: big ? 0.38 : 0.22, width: big ? 0.07 : 0.045, col: ELECTRIC, branches: big ? 5 : 1, segs: big ? 16 : 10, grow: big ? 0.09 : 0.06 });
   if (big) sc.addBolt({ a: hand, b: to, life: 0.3, width: 0.03, col: ELECTRIC, branches: 2, segs: 12, grow: 0.11 });
@@ -42,20 +46,21 @@ export async function lightningBolt(sc, { from, to, target, big = true }) {
 }
 export const spark = (sc, o) => lightningBolt(sc, { ...o, big: false });
 /** Shock — FAST: no buildup; a single crisp crack with one small fork, a white pop and a short-lived spark spray. */
-export async function shock(sc, { from, to, target }) {
-  const hand = add(from, [0, 0.25, 0]); const Y = [1, 0.95, 0.55];
-  sc.fx.burst(hand, Y, 8, { speed: 0.6, up: 0.3, size: 7, grav: 0, life: 0.15 });
+export async function shock(sc, { from, to, target, charged = false }) {
+  const hand = charged ? from : add(from, [0, 0.25, 0]); const Y = [1, 0.95, 0.55];
+  sc.fx.burst(hand, Y, charged ? 5 : 8, { speed: 0.6, up: 0.3, size: 7, grav: 0, life: 0.15 });
   sc.addBolt({ a: hand, b: to, life: 0.14, width: 0.035, col: Y, branches: 1, segs: 7, grow: 0.03 });
   await sleep(sc, 50);
   sc.light(to, [1, 0.97, 0.75], 1.8, 0.18, 2.2); sc.fx.burst(to, [1, 1, 0.85], 14, { speed: 2.4, up: 1, size: 6, life: 0.22, grav: -6 });
   if (target != null) sc.hit(target, Y, false, true);
 }
 /** Flame Slash — a curved crescent blade of fire sweeps across the target, leaving a burning arc. */
-export async function flameSlash(sc, { from, to, target }) {
-  const O = [1, 0.48, 0.12], hand = add(from, [0, 0.25, 0]);
+export async function flameSlash(sc, { from, to, target, charged = false }) {
+  const O = [1, 0.48, 0.12], hand = charged ? from : add(from, [0, 0.25, 0]);
   sc.light(hand, O, 1.8, 0.35, 1.4); sc.fx.burst(hand, [1, 0.7, 0.3], 10, { speed: 0.8, up: 0.6, size: 9, grav: 0, life: 0.25 });
-  await sleep(sc, 120);
+  if (!charged) await sleep(sc, 120);
   const dx = to[0] - hand[0], dz = to[2] - hand[2], L = Math.hypot(dx, dz) || 1, nx = -dz / L, nz = dx / L;
+  sc.addBolt({ a: hand, b: to, life: 0.18, width: 0.022, col: O, segs: 3, grow: 0.2 });   // v0.7: the blade's searing path leaves the caster's arm
   const steps = 14;
   await sc.tween(0.26, k => { const i = Math.floor(k * steps); for (let j = 0; j < 2; j++) { const t = (i + j * 0.5) / steps, sw = Math.sin(t * Math.PI) * 0.9;
     const p = [hand[0] + dx * t + nx * sw, hand[1] + (to[1] - hand[1]) * t + 0.15 * Math.sin(t * Math.PI), hand[2] + dz * t + nz * sw];
@@ -67,7 +72,7 @@ export async function flameSlash(sc, { from, to, target }) {
 }
 /** Healing Salve — a small, quick restorative pulse: glowing droplets fall and one gentle protective ring. */
 export async function salve(sc, { from }) {
-  const W = [0.75, 1, 0.8];
+  const W = [0.75, 1, 0.8]; from = [from[0], 0, from[2]];   // self-release: a pulse around the caster's feet and body
   for (let i = 0; i < 14; i++) sc.fx.emit({ pos: [from[0] + (Math.random() - 0.5) * 0.5, 1.2 + Math.random() * 0.3, from[2] + (Math.random() - 0.5) * 0.5], vel: [0, -2.4, 0], col: [0.8, 1, 0.85, 1], size: 9, life: 0.45, drag: 0.2 }, true);
   sc.addRing({ pos: [from[0], 0.03, from[2]], r0: 0.15, r1: 0.55, life: 0.35, col: W, width: 0.05 });
   sc.light(add(from, [0, 0.5, 0]), W, 1.8, 0.4, 1.2); await sleep(sc, 140);
@@ -78,80 +83,89 @@ export async function chainHop(sc, a, b, target) {
   await sleep(sc, 70); sc.fx.burst(b, ELECTRIC_CORE, 14, { speed: 1.6, up: 1 }); sc.light(b, ELECTRIC, 2.2, 0.3, 2); if (target != null) sc.hit(target, ELECTRIC, false, true);
 }
 /** Fire: flame buildup → glowing projectile with ember trail → explosive impact. */
-export async function fire(sc, { from, to, target }) {
-  const hand = add(from, [0, 0.2, 0]); const ORANGE = [1, 0.5, 0.15];
-  sc.fx.swirl(hand, () => hand, [1, 0.6, 0.2], 40, 0.4); sc.light(hand, ORANGE, 2, 0.5, 1.4);
-  await sleep(sc, 220);
+export async function fire(sc, { from, to, target, charged = false }) {
+  const hand = charged ? from : add(from, [0, 0.2, 0]); const ORANGE = [1, 0.5, 0.15];
+  if (!charged) { sc.fx.swirl(hand, () => hand, [1, 0.6, 0.2], 40, 0.4); sc.light(hand, ORANGE, 2, 0.5, 1.4); await sleep(sc, 220); }
   await sc.projectile(hand, to, ORANGE, 0.32, 0.6, { embers: true, size: 40 });
   sc.fx.burst(to, [1, 0.75, 0.3], 44, { speed: 2.6, up: 2.2, size: 15 }); sc.fx.burst(to, [0.3, 0.12, 0.05], 16, { speed: 1, up: 1.5, size: 22, grav: 1 });
   sc.addRing({ pos: [to[0], 0.03, to[2]], r0: 0.1, r1: 1.1, life: 0.4, col: ORANGE, width: 0.12 });
   sc.light(to, ORANGE, 3.6, 0.5, 2.6); if (!sc.reduced) sc.shake(0.12); if (target != null) sc.hit(target, ORANGE, true);
 }
 /** Fireball: a meteor falls on the area, telegraph ring, big blast. */
-export async function fireball(sc, { from, to, tiles = [] }) {
-  const ORANGE = [1, 0.5, 0.15];
-  sc.fx.swirl(add(from, [0, 0.3, 0]), () => add(from, [0, 0.3, 0]), ORANGE, 50, 0.45);
-  sc.addRing({ pos: [to[0], 0.03, to[2]], r0: 1.3, r1: 1.2, life: 0.6, col: [1, 0.35, 0.1], width: 0.06 });
-  await sleep(sc, 240);
-  await sc.projectile([to[0] + 1.8, 5.5, to[2] - 1.8], to, ORANGE, 0.4, 0, { embers: true, size: 60 });
+export async function fireball(sc, { from, to, tiles = [], charged = false }) {
+  const ORANGE = [1, 0.5, 0.15]; const hand = charged ? from : add(from, [0, 0.3, 0]);
+  if (!charged) { sc.fx.swirl(hand, () => hand, ORANGE, 50, 0.45); await sleep(sc, 240); }
+  sc.addRing({ pos: [to[0], 0.03, to[2]], r0: 1.3, r1: 1.2, life: 0.6, col: [1, 0.35, 0.1], width: 0.06 });   // target telegraph
+  sc.fx.burst(hand, [1, 0.8, 0.4], 18, { speed: 1.6, up: 0.6, size: 12, life: 0.25 });                       // launch flare at the caster
+  await sc.projectile(hand, to, ORANGE, 0.42, 0.9, { embers: true, size: 60 });
   sc.screenFlash([1, 0.7, 0.4], 0.32); if (!sc.reduced) sc.shake(0.24);
   for (const t of tiles) sc.fx.burst([t[0], 0.2, t[2]], [1, 0.7, 0.25], 16, { speed: 1.8, up: 2.4, size: 14 });
   sc.addRing({ pos: [to[0], 0.03, to[2]], r0: 0.2, r1: 1.8, life: 0.5, col: ORANGE, width: 0.2 });
   sc.light(to, ORANGE, 5, 0.6, 3);
 }
 /** Frost: cold gathers, a crystal lance flies straight, impact shatters into shards and rime. */
-export async function frost(sc, { from, to, target }) {
-  const ICE = [0.6, 0.9, 1], hand = add(from, [0, 0.2, 0]);
-  sc.fx.swirl(hand, () => hand, ICE, 34, 0.4); sc.light(hand, ICE, 1.8, 0.5, 1.2); await sleep(sc, 200);
-  await sc.projectile(hand, to, [0.8, 0.95, 1], 0.2, 0.1, { size: 26 });
+export async function frost(sc, { from, to, target, charged = false }) {
+  const ICE = [0.6, 0.9, 1], hand = charged ? from : add(from, [0, 0.2, 0]);
+  if (!charged) { sc.fx.swirl(hand, () => hand, ICE, 34, 0.4); sc.light(hand, ICE, 1.8, 0.5, 1.2); await sleep(sc, 200); }
+  for (let i = 0; i < 26; i++) { const k = Math.random(); sc.fx.emit({ pos: lerp(hand, to, k * 0.15), vel: [(to[0] - hand[0]) * (2.4 + Math.random()) + R() * 0.6, (to[1] - hand[1]) * 2 + R() * 0.5, (to[2] - hand[2]) * (2.4 + Math.random()) + R() * 0.6], col: [0.8, 0.95, 1, 0.9], size: 10 + Math.random() * 10, life: 0.35, drag: 1.2 }, true); }
+  await sc.projectile(hand, to, [0.8, 0.95, 1], 0.2, 0.05, { size: 26 });
   for (let i = 0; i < 26; i++) sc.fx.emit({ pos: add(to, [R() * 0.3, 0, R() * 0.3]), vel: [R() * 2.4, 1 + Math.random() * 2.6, R() * 2.4], col: [0.85, 0.97, 1, 1], size: 8 + Math.random() * 6, life: 0.6, grav: -7, drag: 0.6 }, true);
   sc.addRing({ pos: [to[0], 0.03, to[2]], r0: 0.1, r1: 0.9, life: 0.5, col: ICE, width: 0.1, spokes: 6 });
   sc.light(to, ICE, 3, 0.45, 2.2); if (target != null) sc.hit(target, ICE, false, true); if (!sc.reduced) sc.shake(0.06);
 }
 /** Poison: a lobbed glob bursts into a lingering, drifting toxic cloud over the area. */
-export async function poison(sc, { from, to, tiles = [] }) {
-  const TOX = [0.55, 1, 0.3];
-  await sc.projectile(add(from, [0, 0.2, 0]), to, TOX, 0.4, 1.4, { size: 28 });
+export async function poison(sc, { from, to, tiles = [], charged = false }) {
+  const TOX = [0.55, 1, 0.3]; const hand = charged ? from : add(from, [0, 0.2, 0]);
+  for (let i = 0; i < 10; i++) sc.fx.emit({ pos: hand, vel: [R() * 0.6, 0.3 + Math.random() * 0.3, R() * 0.6], col: [0.55, 0.8, 0.35, 0.7], size: 16, life: 0.5, drag: 1 }, true);   // expelled spores
+  await sc.projectile(hand, to, TOX, 0.4, 1.4, { size: 28 });
   sc.addRing({ pos: [to[0], 0.03, to[2]], r0: 0.2, r1: 1.5, life: 0.7, col: TOX, width: 0.08, spokes: 3 });
   for (const t of tiles.length ? tiles : [to]) for (let i = 0; i < 9; i++) sc.fx.emit({ pos: [t[0] + R() * 0.8, 0.1 + Math.random() * 0.3, t[2] + R() * 0.8], vel: [R() * 0.3, 0.25 + Math.random() * 0.3, R() * 0.3], col: [0.45 + Math.random() * 0.2, 0.9, 0.25, 0.75], size: 26 + Math.random() * 22, life: 1.6, drag: 0.4 }, true);
   sc.light(to, TOX, 2.8, 0.8, 1.4);
 }
 /** Healing: warm light rises from expanding rings at the caster's feet. */
-export async function heal(sc, { from }) {
+export async function heal(sc, { from, charged = false }) {
   const GOLD = [1, 0.9, 0.55];
+  if (charged) { for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + 0.3; sc.addBolt({ a: [from[0] + Math.cos(a) * 0.5, 1.6, from[2] + Math.sin(a) * 0.5], b: [from[0], from[1], from[2]], life: 0.45, width: 0.05, col: GOLD, segs: 2, grow: 0.12 }); } from = [from[0], 0, from[2]]; }   // golden beams converge, then the blessing spreads from the feet
   sc.addRing({ pos: [from[0], 0.03, from[2]], r0: 0.1, r1: 1.0, life: 0.6, col: GOLD, width: 0.07 });
   setTimeout(() => sc.addRing({ pos: [from[0], 0.03, from[2]], r0: 0.1, r1: 0.7, life: 0.5, col: [0.7, 1, 0.6], width: 0.05 }), 140 / sc.speed);
   for (let i = 0; i < 40; i++) sc.fx.emit({ pos: [from[0] + R() * 0.7, 0.05 + Math.random() * 0.2, from[2] + R() * 0.7], vel: [0, 1 + Math.random() * 1.3, 0], col: [1, 0.9 + R() * 0.1, 0.55, 1], size: 9 + Math.random() * 6, life: 0.9, drag: 0.3 }, true);
   sc.light(add(from, [0, 0.6, 0]), GOLD, 2.6, 0.8, 1.6); await sleep(sc, 260);
 }
 /** Protection: a shimmering hexagonal ward forms around the caster. */
-export async function shield(sc, { from, uid }) {
+export async function shield(sc, { from, uid, charged = false }) {
   const BLUE = [0.55, 0.8, 1];
+  if (charged) { sc.addRing({ pos: [from[0], from[1], from[2]], r0: 0.05, r1: 0.7, life: 0.35, col: BLUE, width: 0.05, spokes: 6, seg: 6 }); from = [from[0], 0, from[2]]; }   // the ward expands outward from inside the body
   sc.addRing({ pos: [from[0], 0.03, from[2]], r0: 0.75, r1: 0.6, life: 0.7, col: BLUE, width: 0.08, spokes: 6, seg: 6 });
   for (let i = 0; i < 36; i++) { const a = (i / 36) * Math.PI * 2; sc.fx.emit({ pos: [from[0] + Math.cos(a) * 0.55, 0.1 + Math.random() * 0.9, from[2] + Math.sin(a) * 0.55], vel: [0, 0.4, 0], col: [0.7, 0.9, 1, 1], size: 7, life: 0.8, drag: 0.5 }, true); }
   if (uid != null) { const v = sc.units.get(uid); if (v) { v.flash = 0.7; v.flashCold = 1; } }
   sc.light(add(from, [0, 0.6, 0]), BLUE, 2.4, 0.7, 1.4); await sleep(sc, 220);
 }
 /** Growth: verdant spiral and a muscle-pulse of the sprite. */
-export async function growth(sc, { from, uid }) {
-  const G = [0.5, 1, 0.4]; sc.fx.swirl(add(from, [0, 0.3, 0]), () => add(from, [0, 0.4, 0]), G, 50, 0.6); sc.light(add(from, [0, 0.6, 0]), G, 2.4, 0.6, 1.5);
+export async function growth(sc, { from, uid, charged = false }) {
+  const G = [0.5, 1, 0.4];
+  if (!charged) sc.fx.swirl(add(from, [0, 0.3, 0]), () => add(from, [0, 0.4, 0]), G, 50, 0.6);
+  else sc.fx.burst(from, G, 30, { speed: 1.8, up: 1.2, size: 10, grav: 0, life: 0.4 });   // the gathered energy surges through the body
+  sc.light(add(from, [0, 0.3, 0]), G, 2.4, 0.6, 1.5); from = [from[0], 0, from[2]];
   for (let v = 0; v < 4; v++) { const a = v * Math.PI / 2 + 0.4; const base = [from[0] + Math.cos(a) * 0.45, 0.02, from[2] + Math.sin(a) * 0.45]; sc.addBolt({ a: base, b: add(base, [-Math.cos(a) * 0.3, 0.9, -Math.sin(a) * 0.3]), life: 0.5, width: 0.03, col: [0.35, 0.85, 0.3], segs: 5, grow: 0.25 }); }
   const v = sc.units.get(uid); if (v) { const s0 = v.scale; await sc.tween(0.35, k => { v.scale = s0 * (1 + Math.sin(k * Math.PI) * 0.18); }); v.scale = s0; }
 }
 /** Drain: a dark bolt strikes, then motes of life stream back into the caster. */
-export async function drain(sc, { from, to, target, uidFrom }) {
-  const RED = [0.9, 0.2, 0.35]; await sc.projectile(add(from, [0, 0.2, 0]), to, RED, 0.28, 0.3, { size: 30 });
+export async function drain(sc, { from, to, target, uidFrom, charged = false }) {
+  const RED = [0.9, 0.2, 0.35]; const hand = charged ? from : add(from, [0, 0.2, 0]);
+  sc.addBolt({ a: hand, b: to, life: 0.9, width: 0.03, col: [0.55, 0.15, 0.45], segs: 8, grow: 0.25 });   // dark tether from caster to target
+  await sc.projectile(hand, to, RED, 0.28, 0.3, { size: 30 });
   if (target != null) sc.hit(target, RED, false);
   sc.fx.swirl(to, () => sc.centerPos(uidFrom), [1, 0.4, 0.5], 40, 0.9); sc.light(to, RED, 2.4, 0.5, 1.6);
 }
 /** Summoning: a rotating ground glyph and a rising column precede materialization. */
-export async function summon(sc, { to }) {
+export async function summon(sc, { from, to, charged = false }) {
   const G = [1, 0.9, 0.55];
+  if (charged && from) { await sc.projectile(from, [to[0], 0.4, to[2]], G, 0.28, 0.6, { size: 22 }); sc.fx.burst([to[0], 0.2, to[2]], G, 16, { speed: 1, up: 1.5 }); return; }   // magic travels to the spot; the circle forms when the Soldier materializes
   sc.addRing({ pos: [to[0], 0.03, to[2]], r0: 0.55, r1: 0.5, life: 0.9, col: G, width: 0.06, spokes: 8, spin: 3 });
   for (let i = 0; i < 30; i++) sc.fx.emit({ pos: [to[0] + R() * 0.5, 0.05, to[2] + R() * 0.5], vel: [0, 1.8 + Math.random(), 0], col: [1, 0.95, 0.7, 1], size: 9, life: 0.6, drag: 0.2 }, true);
   sc.light(add(to, [0, 0.5, 0]), G, 2.4, 0.8, 1.6); await sleep(sc, 300);
 }
-export async function wind(sc, { from, to, target }) { await sc.projectile(add(from, [0, 0.2, 0]), to, [0.85, 0.95, 1], 0.25, 0.1, { size: 22 }); if (target != null) sc.hit(target, [0.85, 0.95, 1], false); }
+export async function wind(sc, { from, to, target, charged = false }) { await sc.projectile(charged ? from : add(from, [0, 0.2, 0]), to, [0.85, 0.95, 1], 0.25, 0.1, { size: 22 }); if (target != null) sc.hit(target, [0.85, 0.95, 1], false); }
 
 export const VFX = { lightningBolt, spark, shock, chain, fire, flameSlash, fireball, frost, poison, heal, salve, shield, growth, drain, summon, wind };
 /** The 13 curated real spells and their unique VFX identities (dev/vfx.html gallery + tests). */

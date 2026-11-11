@@ -1,21 +1,48 @@
-<!doctype html><html><head><meta charset="utf-8"><title>GRAFTBOUND · spell VFX</title><style>html,body{margin:0;height:100%;background:#000}canvas{width:100%;height:100%;display:block}#b{position:fixed;left:8px;top:8px;display:flex;gap:6px;flex-wrap:wrap}button{font:13px Georgia;padding:6px 10px}</style></head>
-<body><canvas id="c"></canvas><div id="b"></div><script type="module">
-// Dev: fire any spell VFX at a far target. ?fx=lightningBolt&speed=1&q=balanced&theme=hollow&auto=1
+<!doctype html><html><head><meta charset="utf-8"><title>GRAFTBOUND · spell casting gallery</title>
+<style>html,body{margin:0;height:100%;background:#000;color:#ecdfbf;font:13px Georgia}canvas{width:100%;height:100%;display:block}
+#ui{position:fixed;left:8px;top:8px;right:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}#ui button,#ui select{font:13px Georgia;padding:5px 9px}
+#ui .sp.on{outline:2px solid #e9c972}#note{position:fixed;left:8px;bottom:8px;background:#0b1610cc;padding:6px 10px;border:1px solid #8a6a26;border-radius:6px}</style></head>
+<body><canvas id="c"></canvas><div id="ui"></div><div id="note">Dev only: never touches saves, rewards or scores.</div><script type="module">
+// v0.7 spell casting gallery. Every curated spell through the real pipeline (gather → intensify → release → impact).
+// ?fx=lightningBolt&speed=0.25&form=winged&q=balanced&theme=hollow&auto=1&stage=charge
 import { loadAssets } from '../src/rendering/sprites.js';
 import { Scene } from '../src/rendering/scene.js';
-import { VFX, SPELL_VFX } from '../src/rendering/vfx.js';
+import { SPELL_VFX } from '../src/rendering/vfx.js';
+import { castSpellVisual, charge } from '../src/rendering/casting.js';
+import { composePlayerSheet } from '../src/rendering/evolution-visuals.js';
+import { deriveAppearance } from '../src/engine/appearance.js';
+import { newEvolution, absorb } from '../src/engine/evolution.js';
+import { installReferenceSet } from '../src/cards/reference-set.js';
 import { buildEncounter } from '../src/engine/encounters.js';
 import { ACTS } from '../src/data/encounters.js';
+installReferenceSet();
 const q = new URLSearchParams(location.search);
-const assets = await loadAssets(); const sc = new Scene(document.getElementById('c'), assets); sc.setQuality(q.get('q') || 'balanced'); sc.speed = +(q.get('speed') || 1);
-const theme = q.get('theme') || 'hollow'; const enc = buildEncounter(ACTS[{ hollow: 0, warrens: 1, nexus: 2 }[theme]].tutorial ? ACTS[0].tutorial[0] : ACTS[1].early[0], 11, 'battle');
-sc.loadArena(enc, 5, theme); sc.zoom = 1.25;
-sc.addUnit({ uid: 1, side: 'player', x: 2, y: 7 }, 'blank').dir = [0.6, -1];
-sc.addUnit({ uid: 2, side: 'enemy', x: 6, y: 1 }, 'hound'); sc.addUnit({ uid: 3, side: 'enemy', x: 5, y: 2 }, 'grub');
+const assets = await loadAssets(); const sc = new Scene(document.getElementById('c'), assets); sc.setQuality(q.get('q') || 'balanced');
+sc.reduced = q.get('reduced') === '1';
+const theme = q.get('theme') || 'hollow'; const act = { hollow: 0, warrens: 1, nexus: 2 }[theme];
+sc.loadArena(buildEncounter(ACTS[act].mid[0], 11, 'battle'), 5, theme); sc.zoom = 1.3;
+const FORMS = { blank: [], small: ['mtg:typhoid-rats'], winged: ['mtg:typhoid-rats', 'mtg:wind-drake', 'mtg:storm-crow'], horned: ['mtg:war-mammoth', 'mtg:colossal-dreadmaw'], armored: ['mtg:youthful-knight', 'mtg:glory-seeker', 'mtg:pillarfield-ox', 'mtg:rumbling-baloth'] };
+let form = q.get('form') || 'blank', fx = q.get('fx') || 'lightningBolt';
+function setForm(f) {
+  form = f; sc.removeUnit(1); const evo = FORMS[f].reduce((e, id) => absorb(e, id).evo, newEvolution()); const ap = deriveAppearance(evo);
+  const v = sc.addUnit({ uid: 1, side: 'player', x: 2, y: 7 }, 'blank'); sc.setUnitTexture(1, composePlayerSheet(assets, ap), ap.size); v.dir = [0.6, -1];
+  v.hover = evo.keywords.flying ? 0.28 : 0; v.style = { flying: !!evo.keywords.flying, armored: !!ap.slots.body || ap.size >= 1.45 }; v.castAt = ap.slots.head ? 'head' : 'chest';
+}
+sc.addUnit({ uid: 2, side: 'enemy', x: 6, y: 1 }, 'hound'); sc.addUnit({ uid: 3, side: 'enemy', x: 5, y: 2 }, 'grub'); setForm(form);
 let last = performance.now(); (function loop(t) { sc.frame(Math.min(0.05, (t - last) / 1000)); last = t; requestAnimationFrame(loop); })(last);
-const fire = name => { const from = sc.centerPos(1), to = sc.centerPos(2); sc.play(1, 'cast'); const tiles = [[-1, 0], [0, 0], [1, 0], [0, -1], [0, 1]].map(([dx, dy]) => { const w = sc.world(6 + dx, 1 + dy); return [w[0], 0, w[2]]; }); VFX[name](sc, { from, to, target: 2, tiles, uid: 1, uidFrom: 1 }); };
-// v0.6 gallery: one button per curated real spell (dev-only; never touches saves or scores).
-for (const [name, k] of Object.entries(SPELL_VFX)) { const b = document.createElement('button'); b.textContent = name; b.dataset.fx = k; b.onclick = () => fire(k); document.getElementById('b').append(b); }
-window.__fire = fire; window.__sc = sc;
-if (q.get('auto')) setTimeout(() => fire(q.get('fx') || 'lightningBolt'), 800);
+const SELF = new Set(['growth', 'heal', 'salve', 'shield']);
+const args = k => { const to = SELF.has(k) ? sc.centerPos(1) : k === 'summon' ? [...sc.world(3, 6)] : sc.centerPos(2); if (k === 'summon') to[1] = 0.3;
+  const tiles = [[-1, 0], [0, 0], [1, 0], [0, -1], [0, 1]].map(([dx, dy]) => { const w = sc.world(6 + dx, 1 + dy); return [w[0], 0, w[2]]; });
+  return { kind: k, uid: 1, to, target: SELF.has(k) || k === 'summon' || k === 'fireball' || k === 'poison' ? null : 2, tiles }; };
+const fire = async (k = fx) => { fx = k; await castSpellVisual(sc, args(k)); };
+const chargeOnly = async (k = fx) => { const done = await charge(sc, { uid: 1, kind: k, toward: sc.units.get(2).pos }); setTimeout(done, 1200 / sc.speed); };
+const ui = document.getElementById('ui');
+const sel = (opts, val, on) => { const s = document.createElement('select'); for (const [v, l] of opts) s.add(new Option(l, v, false, v === val)); s.onchange = () => on(s.value); ui.append(s); return s; };
+sel(Object.keys(FORMS).map(f => [f, 'Form: ' + f]), form, setForm);
+sel([['0.25', 'Speed ¼ (inspect stages)'], ['1', 'Normal'], ['2.2', 'Fast'], ['100', 'Instant']], q.get('speed') || '1', v => { sc.speed = +v; }); sc.speed = +(q.get('speed') || 1);
+sel([['0', 'Motion: full'], ['1', 'Reduced motion']], sc.reduced ? '1' : '0', v => { sc.reduced = v === '1'; });
+for (const [name, k] of Object.entries(SPELL_VFX)) { const b = document.createElement('button'); b.className = 'sp'; b.textContent = name; b.dataset.fx = k; b.onclick = () => { ui.querySelectorAll('.sp').forEach(x => x.classList.toggle('on', x === b)); fire(k); }; ui.append(b); }
+const cb = document.createElement('button'); cb.textContent = 'Charge stage only'; cb.onclick = () => chargeOnly(); ui.append(cb);
+window.__fire = fire; window.__charge = chargeOnly; window.__sc = sc; window.__setForm = setForm;
+if (q.get('auto')) setTimeout(() => (q.get('stage') === 'charge' ? chargeOnly(fx) : fire(fx)), 800);
 </script></body></html>

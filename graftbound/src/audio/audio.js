@@ -49,6 +49,13 @@ export class Audio {
       case 'fireboom': this.noise(0.5, { freq: 700, vol: 0.5, sweep: 0.2 }); this.tone(80, 0.5, { vol: 0.4, slide: 0.5 }); break;
       case 'frost': this.noise(0.4, { freq: 6000, vol: 0.2, q: 3, sweep: 0.6 }); [1568, 2093, 2637].forEach((f, i) => this.tone(f, 0.25, { vol: 0.05, delay: 0.05 + i * 0.04, verb: 0.6 })); break;
       case 'poison': this.noise(0.8, { freq: 500, vol: 0.18, q: 2, sweep: 0.6 }); this.tone(140, 0.6, { type: 'sawtooth', vol: 0.04, slide: 0.8 }); break;
+      // v0.7 element-specific casting cues (stage 1 "gather"); short, quiet and non-repeating in feel.
+      case 'castFire': this.noise(0.45, { freq: 700, vol: 0.12, sweep: 3, q: 2 }); this.tone(110, 0.45, { type: 'sawtooth', vol: 0.03, slide: 2 }); break;
+      case 'castFrost': this.noise(0.4, { freq: 5000, vol: 0.08, q: 4, sweep: 1.6 }); [1760, 2349].forEach((f, i) => this.tone(f, 0.3, { vol: 0.03, delay: 0.1 + i * 0.08, verb: 0.6 })); break;
+      case 'castDark': this.tone(98, 0.5, { type: 'sawtooth', vol: 0.05, slide: 1.4 }); this.noise(0.5, { freq: 300, vol: 0.1, q: 3, sweep: 2 }); break;
+      case 'castHoly': [523, 784].forEach((f, i) => this.tone(f, 0.5, { vol: 0.05, attack: 0.15, delay: i * 0.06, verb: 0.8 })); break;
+      case 'castNature': this.noise(0.45, { freq: 400, vol: 0.1, q: 1.5, sweep: 2.5, type: 'lowpass' }); this.tone(196, 0.45, { type: 'triangle', vol: 0.05, slide: 1.5 }); break;
+      case 'castArcane': this.tone(330, 0.4, { vol: 0.05, slide: 2, verb: 0.6 }); this.tone(495, 0.4, { vol: 0.03, slide: 2, delay: 0.05, verb: 0.6 }); break;
       case 'spell': this.noise(0.35, { freq: 2500, vol: 0.18, sweep: 0.3, q: 4 }); this.tone(660, 0.35, { type: 'sine', vol: 0.15, slide: 1.5, verb: 0.6 }); break;
       case 'fire': this.noise(0.25, { freq: 3000, vol: 0.2, sweep: 0.2, q: 6 }); break;
       case 'aim': this.tone(1200, 0.12, { type: 'square', vol: 0.05 }); this.tone(1500, 0.12, { type: 'square', vol: 0.05, delay: 0.1 }); break;

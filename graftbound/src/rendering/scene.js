@@ -62,8 +62,8 @@ export class Scene {
   removeUnit(uid) { this.units.delete(uid); }
   play(uid, anim) { const v = this.units.get(uid); if (v) { v.anim = anim; v.animT = 0; } }
   heightOf(v) { return v.fh * PX * HCOMP * v.scale * 0.62; }
-  headPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0], v.pos[1] + v.hover + this.heightOf(v) * 0.95 + 0.05, v.pos[2]]; }
-  centerPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0] + v.lunge[0], v.pos[1] + v.hover + this.heightOf(v) * 0.45, v.pos[2] + v.lunge[2]]; }
+  headPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) * 0.95 + 0.05, v.pos[2]]; }
+  centerPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0] + v.lunge[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) * 0.45, v.pos[2] + v.lunge[2]]; }
   face(v, to) { if (!v) return; const dx = to[0] - v.pos[0], dz = to[2] - v.pos[2]; if (Math.abs(dx) + Math.abs(dz) > 0.01) v.dir = [dx, dz]; }
   tween(dur, fn) { if (this.speed >= 50) { fn(1); return Promise.resolve(); } dur = dur / this.speed; return new Promise(res => this.tweens.push({ t: 0, dur: Math.max(0.001, dur), fn, res })); }
   async movePath(uid, path, perTile = 0.17) {
@@ -185,7 +185,7 @@ export class Scene {
         const u0 = (f * v.fw) / tex.w, u1 = ((f + 1) * v.fw) / tex.w, v0 = (row * v.fh) / tex.h, v1 = ((row + 1) * v.fh) / tex.h;
         const s = v.scale * v.spawnK; const wdt = v.fw * PX * s, hgt = v.fh * PX * HCOMP * s;
         const bob = v.hover ? Math.sin(this.time * 3 + v.uid) * 0.06 : 0;
-        const c = [v.pos[0] + v.lunge[0], v.pos[1] + v.hover + bob - (v.fh - v.pivot) * PX * HCOMP * s, v.pos[2] + v.lunge[2]];
+        const c = [v.pos[0] + v.lunge[0], v.pos[1] + v.hover + (v.castLift || 0) + bob - (v.fh - v.pivot) * PX * HCOMP * s, v.pos[2] + v.lunge[2]];
         v.flash = Math.max(0, v.flash - dt * 4);
         off = this.pushQuad(this.sprBuf, off, c, wdt, hgt, flip ? [u1, v0, u0, v1] : [u0, v0, u1, v1], [v.flash, v.dissolve, v.outline, v.flashCold]);
       }
@@ -253,7 +253,7 @@ export class Scene {
     if (!this.static) return;
     this.ambient(dt); this.fx.update(dt);
     this.fxLights = this.fxLights.filter(l => (l.life -= dt) > 0);
-    for (const l of this.fxLights) l.intensity = l.base * Math.min(1, l.life / l.maxLife * 2);
+    for (const l of this.fxLights) { l.intensity = l.base * Math.min(1, l.life / l.maxLife * 2); if (l.follow) l.pos = l.follow(); }   // v0.7: cast glows follow the caster
     const st = this.static.lights.map(l => ({ ...l, intensity: l.intensity * (1 - (l.flicker || 0) * (0.5 + 0.5 * Math.sin(this.time * 13 + l.pos[0] * 7) * Math.sin(this.time * 7.3 + l.pos[2]))) }));
     this.r.lights = [...this.fxLights, ...st]; this.r.time = this.time; this.r.windT = this.time;
     const cam = this.computeCamera();
