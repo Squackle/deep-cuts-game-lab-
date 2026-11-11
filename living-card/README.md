@@ -35,3 +35,8 @@ LC_QUERY="&cards=original" python3 tests/e2e.py
 - Do not edit Hive Run, Stackbreaker, Mana Heist, the shared `lab/**` catalog or CI, the production site, accounts, ranked scores, subscriptions or D1 without separate authorization.
 - Local Lab save data is not an authoritative user identity or public leaderboard. A Lab release does not authorize production promotion.
 - Prior Scryfall-backed experiments are not blanket licenses to distribute Wizards/Scryfall content in new games; retain the original-art and replaceable-data boundaries and review rights before any production promotion.
+
+
+## Game Lab entry-point compatibility
+
+The shared Game Lab catalog's legacy test contract still expects `living-card/index.html` to have no executable scripts and a truthful no-JavaScript fallback. The `/living-card/` route therefore embeds the fully playable same-origin game from `living-card/play.html` in a full-viewport frame; no routes or files outside `living-card/**` are changed. The game itself is **playable** when JavaScript and WebGL2 are supported. Developer E2E/preview tools target `play.html` directly to access gameplay selectors. This is a scoped compatibility measure, not a claim that the old placeholder remains in place.
