@@ -6,7 +6,7 @@ const read=x=>fs.readFileSync(x,"utf8");
 const hub=read("lab/index.html");
 const root=read("index.html");
 
-test("One Game Lab directory links exactly three real playable routes",()=>{
+test("Game Lab preserves three playable games and one honest in-development slot",()=>{
  for(const [name,route,file] of [
   ["Hive Run","/","index.html"],
   ["Stackbreaker","/stackbreaker/","stackbreaker/index.html"],
@@ -16,14 +16,20 @@ test("One Game Lab directory links exactly three real playable routes",()=>{
   assert.ok(hub.includes('href="'+route+'"'),name+" route missing");
   assert.ok(hub.includes(name.split(" ")[0]),name+" title not shown");
  }
- assert.equal((hub.match(/class="game-card game-/g)||[]).length,3,"No extra fictitious games");
- assert.match(hub,/THREE GAMES/);
+ assert.equal((hub.match(/class="game-card game-/g)||[]).length,4,"Three existing games plus one development slot");
+ assert.ok(fs.existsSync("living-card/index.html"),"The Living Card staging route must exist");
+ assert.match(hub,/href="\/living-card\/"/);
+ assert.match(hub,/IN DEVELOPMENT/);
+ assert.match(hub,/The playable build is not yet integrated/);
+ assert.doesNotMatch(read("living-card/index.html"),/\<script|fetch\(|\/api\/|localStorage/);
+ assert.match(read("living-card/index.html"),/not yet playable/);
+ assert.match(hub,/FOUR PROJECTS/);
  assert.match(hub,/ONE TEST LAB/);
  assert.match(hub,/No sign-in needed/);
  assert.match(hub,/TEST BUILDS, NOT PUBLIC RELEASES/);
 });
 
-test("Hive Run remains root game and links to all three games, without moving its scripts",()=>{
+test("Hive Run remains root game and links to the Lab, without moving its scripts",()=>{
  assert.match(root,/id="gameCanvas"/);
  assert.match(root,/src="\.\/src\/main\.js"/);
  assert.match(root,/href="\/lab\/"/);
@@ -75,7 +81,7 @@ test("Unified catalog paths are local, existing and free from traversal",()=>{
  }
 });
 
-test("three original themed covers are first-party, meaningful, and do not depend on external images",()=>{
+test("three playable game covers remain first-party, meaningful, and without external images",()=>{
  const cards=[
   ["hive-run","alien","game-hive"],
   ["stackbreaker","spellcaster","game-stack"],
