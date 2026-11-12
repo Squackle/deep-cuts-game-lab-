@@ -65,8 +65,8 @@ export function castSpellEffect(s, ev, id, level, tx, ty) {
   const p = player(s); const n = spellNumbers(id, level, s.p.arcane);
   const target = unitAt(s, tx, ty);
   const c = getCard(id);
-  const evAt = ev.length; const channel = s.p.channel || 0;
-  if (channel) { for (let i = 0; i < n.length; i++) if (!NO_ARCANE.has(effectOf(id))) n[i] += channel; s.p.channel = 0; }   // Channel: this spell +1
+  const evAt = ev.length; const channel = s.p.channel || 0; const boost = channel + (s.p.conduit || 0);
+  if (boost) { for (let i = 0; i < n.length; i++) if (!NO_ARCANE.has(effectOf(id))) n[i] += boost; s.p.channel = 0; s.p.conduit = 0; }   // Channel: this spell +1
   ev.push({ t: 'spell', id, uid: p.uid, x: tx, y: ty, target: target ? target.uid : null, vfx: c.vfx || effectOf(id), channeled: !!channel });
   const spellDamage = { kind: 'spell', element: spellElement(id) };
   switch (effectOf(id)) {
@@ -150,7 +150,7 @@ function elementalInteraction(s, ev, id, tx, ty) {
   const el = spellElement(id); if (!el || s.phase === 'lost') return;
   if (el === 'fire') {   // fire burns brambles away (target tile; Fireball/Starfall: the whole blast)
     const r = effectOf(id) === 'starfall' ? 1 : 0; const burned = [];
-    for (let y = ty - r; y <= ty + r; y++) for (let x = tx - r; x <= tx + r; x++) if (inBounds(s, x, y) && tileAt(s, x, y) === T.BRAMBLE && (r === 0 || manhattan({ x, y }, { x: tx, y: ty }) <= 1)) { s.terrain[y * s.w + x] = T.FLOOR; burned.push({ x, y }); }
+    for (let y = ty - r; y <= ty + r; y++) for (let x = tx - r; x <= tx + r; x++) if (inBounds(s, x, y) && (tileAt(s, x, y) === T.BRAMBLE || tileAt(s, x, y) === T.SPORES) && (r === 0 || manhattan({ x, y }, { x: tx, y: ty }) <= 1)) { s.terrain[y * s.w + x] = T.FLOOR; burned.push({ x, y }); }
     if (burned.length) ev.push({ t: 'terrain', tiles: burned, kind: 'burn' });
   }
   if (el === 'frost' && inBounds(s, tx, ty) && tileAt(s, tx, ty) === T.LAVA) {   // frost hardens lava for a while

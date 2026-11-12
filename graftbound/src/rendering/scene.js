@@ -88,9 +88,16 @@ export class Scene {
     const v = this.units.get(uid), t = this.units.get(targetUid); if (!v || !t) return;
     this.face(v, t.pos); v.anim = 'attack'; v.animT = 0;
     const dx = t.pos[0] - v.pos[0], dz = t.pos[2] - v.pos[2], l = Math.hypot(dx, dz) || 1;
-    await this.tween(0.11, k => { v.lunge = [-dx / l * 0.1 * k, 0, -dz / l * 0.1 * k]; });
-    await this.tween(0.08, k => { const e = ease(k); v.lunge = [dx / l * (0.42 * e - 0.1), 0, dz / l * (0.42 * e - 0.1)]; });
-    const back = v.lunge.slice(); this.tween(0.2, k => { v.lunge = back.map(c => c * (1 - k)); });
+    // Attack silhouette follows evolved body mass: armored foes visibly plant, fliers dart.
+    // Pure presentation; no attack timings or server/replay decisions depend on this.
+    const heavy = !!v.style?.armored || (v.scale || 1) > 1.18;
+    const flying = !!v.style?.flying;
+    const reach = this.reduced ? 0.16 : heavy ? 0.3 : flying ? 0.54 : 0.42;
+    const windup = this.reduced ? 0.045 : heavy ? 0.17 : flying ? 0.075 : 0.11;
+    await this.tween(windup, k => { v.lunge = [-dx / l * 0.1 * k, 0, -dz / l * 0.1 * k]; });
+    if (heavy && !this.reduced) this.addRing({ pos: [v.pos[0], 0.035, v.pos[2]], r0: 0.1, r1: 0.35, life: 0.2, col: [0.75, 0.63, 0.42], width: 0.03 });
+    await this.tween(this.reduced ? 0.05 : 0.08, k => { const e = ease(k); v.lunge = [dx / l * (reach * e - 0.1), 0, dz / l * (reach * e - 0.1)]; });
+    const back = v.lunge.slice(); this.tween(this.reduced ? 0.07 : 0.2, k => { v.lunge = back.map(c => c * (1 - k)); });
   }
   hit(uid, color = [1, 0.6, 0.3], big = false, cold = false) {
     const v = this.units.get(uid); if (!v) return;

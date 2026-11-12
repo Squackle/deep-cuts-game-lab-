@@ -11,8 +11,9 @@ import { encounterBenchmarks, recordEncounter, newScoring } from './scoring.js';
 import { journalNote, newJournal } from './journal.js';
 import { rollEvent, EVENTS, resolveEvent } from './events.js';
 import { newClock } from './clock.js';
+import { combatSpellbook, refreshLoadout, BASE_HAND_CAPACITY } from './loadout.js';
 
-export const RUN_VERSION = 5;
+export const RUN_VERSION = 6;
 export const TUTORIAL_CARD = 'mtg:typhoid-rats';  // real 1/1 Deathtouch: Blank 1/1 -> 2/2 Deathtouch
 export const CHALLENGES = {
   paperThin: { name: 'Paper Thin', text: 'Your Spark is 2 instead of 6.' },
@@ -28,7 +29,7 @@ export const graftsFull = run => run.evo.absorbed.length >= graftCapacity(run);
 
 export function newRun({ seed, unlocks = {}, challenges = [], tutorial = false }) {
   const run = {
-    v: RUN_VERSION, seed: seed >>> 0, name: STARTING_NAME, evo: newEvolution(), spellbook: [], sparkBonus: 0, manaBonus: 0, sparkFonts: 0,
+    v: RUN_VERSION, seed: seed >>> 0, name: STARTING_NAME, evo: newEvolution(), spellbook: [], handCapacity: BASE_HAND_CAPACITY, equippedSpellIds: [], sparkBonus: 0, manaBonus: 0, sparkFonts: 0,
     act: 0, map: generateMap(seed, { act: 0, tutorial }), current: null, visited: [], phase: 'map', battle: null, pending: null, shrine: null,
     unlocks: { ...unlocks }, challenges: challenges.slice(), tutorial, hp: null, wardNext: 0, actHistory: [], event: null, eventsSeen: [],
     scoring: newScoring(), journal: newJournal(), clock: newClock(false),
@@ -56,7 +57,7 @@ export function enterNode(run, nodeId) {
   const extra = reinforcements(run.act, node.type, node.depth, run.evo, node.seed, { spellbook: run.spellbook, stats: runStats(run) });
   const tpl = extra.length ? { ...base, enemies: [...base.enemies, ...extra] } : base;
   const enc = buildEncounter(tpl, node.seed, node.type);
-  const battle = createBattle({ evo: run.evo, stats: runStats(run), spellbook: run.spellbook, encounter: enc, seed: node.seed, heroName: run.name, startHp: run.hp, act: run.act });
+  const battle = createBattle({ evo: run.evo, stats: runStats(run), spellbook: combatSpellbook(run), encounter: enc, seed: node.seed, heroName: run.name, startHp: run.hp, act: run.act });
   if (run.wardNext) { const h = battle.units.find(u => u.hero); h.statuses.shield = (h.statuses.shield || 0) + run.wardNext; run.wardNext = 0; }
   if (run.challenges.includes('feral')) for (const u of battle.units) if (u.side === 'enemy') u.power += 1;
   battle.nodeType = node.type; battle.reinforced = extra.length; battle.nodeId = nodeId;
@@ -114,10 +115,11 @@ export function chooseReward(run, cardId, releaseIndex) {
     if (run.pending.tier === 'graftsmith') throw new Error('The Graftsmith offers creatures only');
     const e = run.spellbook.find(s => s.id === cardId);
     if (e) { e.level = Math.min(MAX_SPELL_LEVEL, e.level + 1); change = { kind: 'empower', cardId, level: e.level }; }
-    else { run.spellbook.push({ id: cardId, level: 1 }); change = { kind: 'learn', cardId, level: 1 }; }
+    else { run.spellbook.push({ id: cardId, level: 1 }); if ((run.equippedSpellIds || []).length < (run.handCapacity || BASE_HAND_CAPACITY)) (run.equippedSpellIds ||= []).push(cardId); change = { kind: 'learn', cardId, level: 1 }; }
     journalNote(run, 'spell', { cardId, name: card.name, level: change.level });
     run.stats.spellsLearned++;
   }
+  refreshLoadout(run);
   finishReward(run);
   return change;
 }

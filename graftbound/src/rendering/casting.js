@@ -63,6 +63,23 @@ export function castOrigin(sc, uid, kind) {
 const sleep = (sc, ms) => new Promise(r => setTimeout(r, ms / Math.max(0.01, sc.speed)));
 const secs = (sc, ms) => ms / 1000 / Math.max(0.01, sc.speed);
 
+/** A distinct cast signature for every curated spell. Purely cosmetic: no rules, saves or RNG state read.
+ *  Spokes alter the light geometry, while pulse tempo shifts the charging silhouette. */
+export const CAST_SIGNATURES = Object.freeze({
+  shock: [3,0.3], lightningBolt: [7,1.0], chain: [5,0.7],
+  fire: [5,0.7], fireball: [9,1.1], flameSlash: [2,0.5], pyroclasm: [12,1.3],
+  growth: [6,0.7], titanic: [8,1], snakeskin: [4,0.45],
+  frost: [6,0.85], drain: [5,-0.7], disfigure: [3,-0.35], poison: [9,-0.3],
+  summon: [8,0.6], heal: [10,0.5], salve: [4,0.35], shield: [6,0.2], wind: [4,1.5],
+});
+export function castSignature(sc, kind, at, power) {
+  if (sc.reduced || sc.speed >= 50 || !sc.addRing || !at) return;
+  const [spokes, speed] = CAST_SIGNATURES[kind] || [6,0.5];
+  const col = profileFor(kind).col;
+  sc.addRing({ pos: at, r0: 0.05, r1: Math.min(0.6, 0.2 + power * 0.11),
+    life: 0.26, col, width: 0.026, spokes, seg: spokes * 2, spin: speed });
+}
+
 /** Stages 1 + 2: magic converges on the casting point, then concentrates. Resolves with a cleanup function. */
 export async function charge(sc, { uid, kind, audio = null, toward = null, power = 1 }) {
   const P = profileFor(kind), reduced = !!sc.reduced;
@@ -71,7 +88,7 @@ export async function charge(sc, { uid, kind, audio = null, toward = null, power
   if (toward && sc.face) sc.face(v, toward);
   if (sc.play) sc.play(uid, 'cast');
   if (audio) audio.play(P.cue);
-  const k = reduced ? 0.5 : 1, n = Math.round(Math.min(P.motes * 1.6, P.motes * (0.7 + 0.3 * power)) * (reduced ? 0.4 : 1));
+  const k = reduced ? 0.5 : 1, n = Math.min(48, Math.round(Math.min(P.motes * 1.6, P.motes * (0.7 + 0.3 * power)) * (reduced ? 0.3 : Math.max(0.2, sc.fx?.density ?? 1))));
   const timers = [];
   // stage 1 — gather: element-coloured motes converge on the casting point; a faint glow follows the body
   const glow = sc.light(origin(), P.col, 1.3, secs(sc, P.gather + P.build) + 0.2, 0.5); glow.follow = origin;
@@ -85,6 +102,7 @@ export async function charge(sc, { uid, kind, audio = null, toward = null, power
   if (v.style && v.style.flying && !reduced) sc.tween(P.gather / 1000, t => { v.castLift = 0.12 * t; });
   await sleep(sc, P.gather * k);
   // stage 2 — intensify: the glow brightens, a concentrated core / arcs form, powerful spells lean the camera in
+  castSignature(sc, kind, origin(), power);
   glow.radius = (1.6 + P.tier * 0.8) * (0.8 + 0.2 * power); glow.base = (0.9 + P.tier * 0.6) * (0.8 + 0.2 * power);
   if (P.core) sc.addRing({ pos: origin(), r0: 0.05, r1: (0.22 + 0.06 * P.tier) * (0.75 + 0.25 * power), life: secs(sc, P.build) + 0.05, col: P.col, width: 0.05, spin: 6, seg: 16 });
   if (P.arcs && !reduced) {

@@ -7,4 +7,9 @@ export const TERRAIN_RULES = {
   leyline: { manaBonus: 1 },
   crystal: { manaGain: 2, dischargeDamage: 2, dischargeRadius: 1 },
   frost: { coolRounds: 2 },
+  ice: { slowNextMovement: 1 },       // crossing ice chills walkers (ground only), for their next action
+  spores: { poisonOnEnter: 1 },       // poisonous mushroom field; fire clears it
+  unstable: { pulseDamage: 2, every: 2 }, // telegraphed stone fissures, no permanent softlock
+  conduit: { spellBonus: 1 },        // standing here at turn start empowers one spell this turn
+  crumble: { enterDamage: 1 },      // one-shot falling stone, becomes ordinary floor after entry
 };

@@ -10,6 +10,11 @@ export function describeTile(s, x, y) {
   if (t === T.BRAMBLE) add('Brambles', `Thorny ground. Deals ${R.bramble.enterDamage} damage to a ground unit that enters it.`, 'When entered (fliers are immune). Fire burns brambles away.', 'hazard');
   if (t === T.LAVA) add('Lava', `Molten rock. Deals ${R.lava.enterDamage} damage on entry and ${R.lava.endTurnDamage} if you end your turn on it.`, 'On entry and at end of turn. Fliers are immune. Frost hardens it for ' + R.frost.coolRounds + ' rounds.', 'hazard');
   if (t === T.RIFT) add('Rift', `A tear in the world. Pulses for ${R.rift.pulseDamage} damage to whoever stands on it.`, `End of every ${R.rift.pulseEvery}nd round${s && riftsPulseThisRound(s) ? ' — it pulses THIS round' : ''}. Hits fliers too.`, 'hazard');
+  if (t === T.ICE) add('Glass ice', `Slippery frost. Ground walkers entering become Chilled, losing ${R.ice.slowNextMovement} movement on their next action.`, 'On entry; flying units are immune.', 'hazard');
+  if (t === T.SPORES) add('Spore bed', `Toxic mushrooms give ${R.spores.poisonOnEnter} poison on entry. Fire clears the spores.`, 'On entry; flying units are immune.', 'hazard');
+  if (t === T.UNSTABLE) add('Unstable stone', `Fractured stone strikes for ${R.unstable.pulseDamage} damage on every ${R.unstable.every}nd round, alongside rifts.`, riftsPulseThisRound(s) ? 'Will collapse THIS round.' : 'Telegraphed next round.', 'hazard');
+  if (t === T.CONDUIT) add('Arcane conduit', `Start your turn here to empower your next spell by +${R.conduit.spellBonus}.`, 'At the start of your turn.', 'benefit');
+  if (t === T.CRUMBLE) add('Crumbling tile', `A one-use brittle slab. Deals ${R.crumble.enterDamage} damage when a walker enters, then collapses into ordinary floor.`, 'Once; flying units avoid the pressure.', 'hazard');
   if (t === T.LEYLINE) add('Leyline', `Ancient channel of power. Start your turn here for +${R.leyline.manaBonus} mana (may exceed your maximum by 1).`, 'At the start of your turn.', 'benefit');
   if (t === T.ROCK) add('Rock', 'Impassable for ground units. Fliers pass over it. Does not block spells.', 'Always.', 'info');
   const cooled = s && (s.cooled || []).find(c => c.i === y * s.w + x);
@@ -24,12 +29,12 @@ export function describeTile(s, x, y) {
 export function pathWarning(s, x, y) {
   const p = player(s); if (!p || isFlying(p)) return null;
   const map = reachable(s, p, s.p.moveLeft); if (!map.has(x + ',' + y)) return null;
-  const path = pathTo(map, x, y); let enter = 0; const tiles = [];
-  for (let i = 1; i < path.length; i++) { const t = tileAt(s, path[i].x, path[i].y); const d = t === T.BRAMBLE ? R.bramble.enterDamage : t === T.LAVA ? R.lava.enterDamage : 0; if (d) { enter += d; tiles.push({ ...path[i], damage: d }); } }
+  const path = pathTo(map, x, y); let enter = 0, poison = 0; const tiles = [];
+  for (let i = 1; i < path.length; i++) { const t = tileAt(s, path[i].x, path[i].y); const d = t === T.BRAMBLE ? R.bramble.enterDamage : t === T.LAVA ? R.lava.enterDamage : t === T.CRUMBLE ? R.crumble.enterDamage : 0; if (t === T.SPORES) poison += R.spores.poisonOnEnter; if (d) { enter += d; tiles.push({ ...path[i], damage: d }); } }
   const end = tileAt(s, x, y);
-  const endTurn = end === T.LAVA ? R.lava.endTurnDamage : (end === T.RIFT && riftsPulseThisRound(s)) ? R.rift.pulseDamage : 0;
-  if (!enter && !endTurn) return null;
+  const endTurn = end === T.LAVA ? R.lava.endTurnDamage : (end === T.RIFT && riftsPulseThisRound(s)) ? R.rift.pulseDamage : (end === T.UNSTABLE && riftsPulseThisRound(s)) ? R.unstable.pulseDamage : 0;
+  if (!enter && !endTurn && !poison) return null;
   const shield = p.statuses.shield || 0;
   return { enter, endTurn, tiles, shield, lethal: enter > 0 && enter - shield >= p.hp,
-    text: [enter ? `This path crosses hazards: ${enter} damage${shield ? ` (your ${shield} shield absorbs first)` : ''}.` : '', endTurn ? `Ending your turn there costs ${endTurn} more.` : ''].filter(Boolean).join(' ') };
+    text: [enter ? `This path crosses hazards: ${enter} damage${shield ? ` (your ${shield} shield absorbs first)` : ''}.` : '', endTurn ? `Ending your turn there costs ${endTurn} more.` : '', poison ? `This path also adds ${poison} poison (damage at the start of a later turn, not blocked by shields).` : ''].filter(Boolean).join(' ') };
 }

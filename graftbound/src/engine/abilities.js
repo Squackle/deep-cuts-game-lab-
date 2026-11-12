@@ -147,5 +147,12 @@ export function enterTiles(s, ev, u, path) {
     const t = tileAt(s, path[i].x, path[i].y);
     if (t === T.BRAMBLE) dealDamage(s, ev, null, u, TERRAIN_RULES.bramble.enterDamage, { kind: 'bramble' });
     if (t === T.LAVA) dealDamage(s, ev, null, u, TERRAIN_RULES.lava.enterDamage, { kind: 'lava' });
+    if (t === T.ICE && !(u.statuses.chilled || 0)) addStatus(s, ev, u, 'chilled', 1);
+    if (t === T.SPORES) addStatus(s, ev, u, 'poison', TERRAIN_RULES.spores.poisonOnEnter);
+    if (t === T.CRUMBLE) {
+      dealDamage(s, ev, null, u, TERRAIN_RULES.crumble.enterDamage, { kind: 'crumble' });
+      s.terrain[path[i].y * s.w + path[i].x] = T.FLOOR;
+      ev.push({ t: 'terrain', tiles: [path[i]], kind: 'crumble' });
+    }
   }
 }
