@@ -116,7 +116,10 @@ export async function castSpellVisual(sc, { kind, uid, to, target = null, tiles 
     const from = castOrigin(sc, uid, kind);
     if (!instant && P.tier >= 1 && !P.self) sc.light(lerp(from, to || from, 0.3), P.col, 2.2 * (0.8 + 0.2 * power), 0.25, 1.4);   // brief directional light
     await fn(sc, { from, to: to || from, target, tiles, uid, uidFrom: uid, charged: true, power });
-    if (!instant) impactAmplifier(sc, P, to || from, power);
+    if (!instant) {
+      impactAmplifier(sc, P, to || from, power);
+      aftermathSigil(sc, kind, to || from, power);
+    }
   } catch (err) { if (typeof console !== 'undefined') console.warn('Spell VFX failed (gameplay unaffected):', err); }
   finally { cleanup(); }
 }
@@ -131,6 +134,42 @@ export function impactAmplifier(sc, P, at, power) {
   if (power > 1.3 && !sc.reduced && sc.shake) sc.shake(Math.min(MAX_SHAKE, 0.05 * power * power));
   const linger = Math.round(Math.min(18, 6 * power) * (sc.reduced ? 0.4 : 1));   // lingering, non-blocking dissipation
   for (let i = 0; i < linger; i++) sc.fx.emit({ pos: [at[0] + R() * 0.8, (at[1] || 0.3) + R() * 0.4, at[2] + R() * 0.8], vel: [R() * 0.2, 0.25 + Math.random() * 0.3, R() * 0.2], col: [...P.col, 0.8], size: 5 + Math.random() * 4, life: 0.9 + Math.random() * 0.7, drag: 0.4 });
+}
+
+/** Brief, original elemental residue at the impact site. Presentation only: no lasting floor
+ *  object, no collision state, no rule changes. Reduced motion/instant modes skip it.
+ *  Each spell identity has an authored silhouette, not just a recolored explosion. */
+export const AFTERMATH_SIGILS = Object.freeze({
+  shock: 'spark', lightningBolt: 'storm', chain: 'storm',
+  fire: 'embers', fireball: 'inferno', flameSlash: 'embers', pyroclasm: 'inferno',
+  growth: 'roots', titanic: 'roots', snakeskin: 'roots',
+  frost: 'snowflake', drain: 'void', disfigure: 'void', poison: 'spores',
+  summon: 'sunburst', heal: 'sunburst', salve: 'sunburst', shield: 'ward', wind: 'wind',
+});
+const RESIDUE = Object.freeze({
+  spark: { spokes: 3, seg: 8, spin: 0, radius: 0.42 },
+  storm: { spokes: 7, seg: 9, spin: 3, radius: 0.85 },
+  embers: { spokes: 5, seg: 8, spin: 1, radius: 0.6 },
+  inferno: { spokes: 12, seg: 18, spin: 2, radius: 1.12 },
+  roots: { spokes: 8, seg: 8, spin: 0.5, radius: 0.86 },
+  snowflake: { spokes: 6, seg: 12, spin: 0, radius: 0.85 },
+  void: { spokes: 5, seg: 7, spin: -2, radius: 0.75 },
+  spores: { spokes: 9, seg: 12, spin: 1, radius: 0.65 },
+  sunburst: { spokes: 10, seg: 12, spin: 0.5, radius: 0.8 },
+  ward: { spokes: 6, seg: 6, spin: 0, radius: 0.78 },
+  wind: { spokes: 4, seg: 15, spin: 4, radius: 0.85 },
+});
+export function aftermathSigil(sc, kind, at, power = 1) {
+  if (sc.reduced || sc.speed >= 50 || !sc.addRing) return;
+  const shape = RESIDUE[AFTERMATH_SIGILS[kind]];
+  if (!shape || !at || !Number.isFinite(at[0]) || !Number.isFinite(at[2])) return;
+  const col = profileFor(kind).col;
+  const radius = Math.min(1.8, shape.radius * (0.78 + 0.22 * power));
+  sc.addRing({ pos: [at[0], 0.045, at[2]], r0: radius * 0.55, r1: radius,
+    life: 0.7, col, width: 0.035, spokes: shape.spokes, seg: shape.seg, spin: shape.spin });
+  // One inner echo is intentionally cheaper than extra particles and reads on low settings.
+  if (power >= 1.4) sc.addRing({ pos: [at[0], 0.05, at[2]], r0: 0.08, r1: radius * 0.6,
+    life: 0.48, col, width: 0.025, spokes: shape.spokes, seg: shape.seg });
 }
 
 /** UI safety net: resolve no later than `ms` even if an effect hangs (e.g. a throttled background tab). */

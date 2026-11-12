@@ -137,6 +137,29 @@ export function buildEnvironment(battle, seed = 1, themeId = 'hollow') {
     foliage.push({ kind, x, z, y: hgt(x, z), s: 0.7 + rnd() * 0.4 });
     if (kind === 'mushroom' && lights.length < 12) lights.push({ pos: [x, hgt(x, z) + 0.25, z], col: [0.35, 0.95, 0.85], radius: 1.4, intensity: 0.6, flicker: 0.1, prio: 0 });
   }
+  // Encounter identity: side-stage wardstones for elites; crown of rune obelisks for bosses.
+  // They sit OUTSIDE the navigable grid and are decorative only, so pathing, saves and
+  // score calculation stay deterministic and completely unchanged.
+  if (battle.kind === 'elite' || battle.kind === 'boss') {
+    const boss = battle.kind === 'boss';
+    const accent = themeId === 'warrens' ? [1, 0.42, 0.13] : themeId === 'nexus' ? [0.69, 0.48, 1] : [0.48, 0.96, 0.65];
+    const positions = [[-w / 2 - 1.45, -h / 3], [w / 2 + 1.45, -h / 3],
+      ...boss ? [[-w / 2 - 1.45, h / 3], [w / 2 + 1.45, h / 3]] : []];
+    for (const [x, z] of positions) {
+      const hStone = boss ? 2.6 : 1.85;
+      g.material(th.rock, q => q.with(at(x, 0.05, z, RY(Math.PI / 4)),
+        r => r.box(0, 0.14, 0, 0.9, 0.32, 0.9, [0.61, 0.58, 0.53, 1])));
+      g.material(th.wall, q => q.with(at(x, 0.3, z, RY(Math.PI / 4)),
+        r => r.box(0, hStone / 2, 0, boss ? 0.65 : 0.5, hStone, boss ? 0.65 : 0.5, [0.88, 0.84, 0.79, 1])));
+      g.material(themeId === 'nexus' ? MAT.crystal : MAT.rune,
+        q => q.with(at(x, 0.32 + hStone, z, RY(Math.PI / 4)),
+          r => r.cylinder(0, boss ? 0.36 : 0.23, boss ? 0.65 : 0.45, boss ? 6 : 5, [1, 1, 1, 1])));
+      lights.push({ pos: [x, 0.7 + hStone, z], col: accent, radius: boss ? 2.7 : 2.0,
+        intensity: boss ? 0.85 : 0.6, flicker: 0.13, prio: 1 });
+      emitters.push({ kind: themeId === 'warrens' ? 'fire' : themeId === 'nexus' ? 'rift' : 'ley',
+        pos: [x, 0.25 + hStone, z] });
+    }
+  }
   for (let k = 0; k < 4; k++) {
     const x = -3 + k * 2.2 + rnd(), z = -2 + rnd() * 4, wdt = 0.5 + rnd() * 0.5, tilt = 1.6;
     const top = [x - tilt, 6, z - tilt * 0.6], bot = [x, -0.2, z];

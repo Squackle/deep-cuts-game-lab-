@@ -12,7 +12,7 @@ def quad_legs(s, cx, base, P, r, span=7, w=2, h=5):
             for k in range(w): s.put(x + k, base - y, c, R[0])
 # ── Act I ──
 def draw_grub(s, P, back):
-    base = s.h - 3; cx = 16 + P['lean']
+    base = s.h - 3; cx = s.w // 2 - 3 + P['lean']
     for i in range(4, -1, -1):
         wob = math.sin((i + P['leg'] * 2) * 1.3) * 0.6
         s.ellipse(cx + 1 + i * 3.4, base - 4 + wob + P['bob'] * (i % 2), 4.4 - i * 0.45, 4 - i * 0.4 - P['squash'] * 0.3, 'grub')
@@ -202,7 +202,7 @@ def draw_unwritten(s, P, back):
     if not back:
         s.ellipse(cx, hy, 5, 5, 'void'); s.px(cx - 1, hy - 1, RAMPS['crystal'][4]); s.px(cx, hy, RAMPS['white'][4])
 ENEMY_SPRITES = {
-  'grub': (draw_grub, 32, 24, 0), 'hound': (draw_hound, 40, 32, 0), 'archer': (draw_archer, 32, 40, 0), 'warden': (draw_warden, 44, 40, 0),
+  'grub': (draw_grub, 44, 24, 0), 'hound': (draw_hound, 40, 32, 0), 'archer': (draw_archer, 32, 40, 0), 'warden': (draw_warden, 44, 40, 0),
   'moth': (draw_moth, 44, 36, 1), 'hexer': (draw_hexer, 32, 44, 0), 'alpha': (draw_alpha, 52, 40, 0), 'thornmother': (draw_thornmother, 72, 80, 0),
   'sproutling': (draw_sprout, 24, 24, 0),
   'cinderling': (draw_cinderling, 28, 30, 0), 'ashbrute': (draw_ashbrute, 44, 44, 0), 'harpooner': (draw_harpooner, 40, 40, 0),

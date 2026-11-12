@@ -1,5 +1,5 @@
 // Battle HUD, input (mouse / touch / keyboard) and event playback onto the HD-2D scene.
-import { moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, intents, canAttack, player, enemies, hazardPreview, interact, interactOptions, crystalAt, guard, channel, guardValue, stanceBlockReason } from '../engine/combat.js';
+import { moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, intents, canAttack, player, enemies, hazardPreview, interact, interactOptions, crystalAt, guard, channel, guardValue, stanceBlockReason, stanceMovementCost } from '../engine/combat.js';
 import { TACTICS } from '../data/tactics.js';
 import { getLegalPlayerActions, shouldAutoEnd } from '../engine/legal.js';
 import { describeTile, pathWarning } from '../engine/describe.js';
@@ -146,7 +146,10 @@ export class BattleUI {
   renderHand(s) {
     const tray = $('tray');
     if (!s.spellbook.length) { tray.innerHTML = `<div class="tray-empty">${ICON.book}<span>Your spellbook is empty</span></div>`; return; }
+    const scrollX = tray.scrollLeft;
     tray.classList.toggle('many', s.spellbook.length > 5);
+    tray.classList.toggle('overflowing', s.spellbook.length > 7);
+    tray.setAttribute('aria-label', `Spell hand, ${s.spellbook.length} spells, horizontally scroll to see more`);
     tray.innerHTML = s.spellbook.map((e, i) => {
       const c = getCard(e.id); const why = this.busy ? 'Wait…' : castBlockReason(s, e.id); const cost = spellCost(s, e.id);
       const state = s.p.cast[e.id] ? 'used' : s.p.silenced === e.id ? 'silenced' : why && /mana/i.test(why) ? 'nomana' : why ? 'off' : 'ready';
@@ -159,6 +162,7 @@ export class BattleUI {
         <span class="hc-state">${esc(label)}</span><kbd>${i + 1}</kbd>
         <span class="hc-info" data-inspect="${esc(e.id)}" role="button" tabindex="-1" aria-label="Inspect ${esc(c.name)}">i</span></button>`;
     }).join('');
+    tray.scrollLeft = scrollX;
   }
   showHandPreview(id) {
     if (!this.s || !this.s.spellbook.some(e => e.id === id)) return;
@@ -173,12 +177,12 @@ export class BattleUI {
     el.classList.add('show');
   }
   hideHandPreview() { const el = $('hand-readout'); if (el) el.classList.remove('show'); }
-  /** Tactical stances require an unspent attack and one movement point. */
+  /** Guard requires the full unspent movement budget; Channel requires one movement point. */
   renderStances(s) {
     let el = $('stances'); if (!el) { el = document.createElement('div'); el.id = 'stances'; el.className = 'stances'; $('hud').appendChild(el); }
     const p = player(s); const gv = guardValue(p);
-    const b = (kind, label, tip, key) => { const why = this.busy ? 'Wait…' : stanceBlockReason(s, kind); return `<button type="button" class="stance ${why ? 'off' : ''} ${p.statuses[kind] || (kind === 'channel' && s.p.channel) ? 'on' : ''}" data-stance="${kind}" data-tip="${esc(tip + (why ? ' — ' + why : ''))}" aria-label="${esc(label + '. ' + tip + (why ? '. ' + why : ''))}"><b>${label}</b><span class="stance-cost">${ICON.move}${TACTICS[kind].moveCost} · ${ICON.sword}1</span><kbd>${key}</kbd></button>`; };
-    el.innerHTML = b('guard', `${ICON.shield} Guard ${gv}`, `Spend ${TACTICS.guard.moveCost} movement and your attack. Until your next turn, every hit from a foe deals ${gv} less (2 + toughness ÷ ${TACTICS.guard.perToughness}, max ${TACTICS.guard.max}); telegraphed slams, breath and aimed arrows are at least halved. Hazards and poison are not reduced.`, 'G')
+    const b = (kind, label, tip, key) => { const why = this.busy ? 'Wait…' : stanceBlockReason(s, kind); return `<button type="button" class="stance ${why ? 'off' : ''} ${p.statuses[kind] || (kind === 'channel' && s.p.channel) ? 'on' : ''}" data-stance="${kind}" data-tip="${esc(tip + (why ? ' — ' + why : ''))}" aria-label="${esc(label + '. ' + tip + (why ? '. ' + why : ''))}"><b>${label}</b><span class="stance-cost">${ICON.move}${kind === 'guard' ? 'ALL ' + stanceMovementCost(s, 'guard') : TACTICS[kind].moveCost} · ${ICON.sword}1</span><kbd>${key}</kbd></button>`; };
+    el.innerHTML = b('guard', `${ICON.shield} Guard ${gv}`, `Spend ALL ${stanceMovementCost(s, 'guard')} movement and your attack (you must Guard before moving). Until your next turn, every hit from a foe deals ${gv} less (2 + toughness ÷ ${TACTICS.guard.perToughness}, max ${TACTICS.guard.max}); telegraphed slams, breath and aimed arrows are at least halved. Hazards and poison are not reduced.`, 'G')
       + b('channel', `${ICON.gem} Channel`, `Spend ${TACTICS.channel.moveCost} movement and your attack: +${TACTICS.channel.mana} mana now (may exceed your max by 1) and your next spell this turn gains +${TACTICS.channel.spellBonus}.`, 'H');
   }
   refresh() {
@@ -258,6 +262,7 @@ export class BattleUI {
       <p class="in-stats">Movement ${u.move} · Base attack ${u.power}${currentPower !== u.power ? ` → <b>${currentPower} buffed</b>` : ''} · ${friendly ? 'Friendly' : 'Hostile'}</p>
       ${Object.keys(u.keywords || {}).length ? `<div class="in-kw">${kwChips(u.keywords)}</div>` : ''}
       ${statuses ? `<div class="in-status">${statuses}</div>` : ''}
+      ${def?.affinity ? `<div class="in-affinity"><span>Resists ${esc(def.affinity.resist)} spells −1 damage</span><span>Weak to ${esc(def.affinity.weak)} spells +1 damage</span></div>` : ''}
       <p>${esc(friendly ? (u.hero ? 'Your evolving graftbound form.' : 'A Soldier summoned by Raise the Alarm. It acts automatically when your turn ends. Friendly-target spells can enhance or shield it.') : (def?.blurb || ''))}</p>
       ${it ? `<p class="in-intent">${esc(this.intentText(it))}</p>` : ''}${this.previewHTML(preview)}`;
     el.classList.add('show');
@@ -546,11 +551,26 @@ export class BattleUI {
         }
         case 'stance': {
           const c = e.kind === 'guard' ? [0.55, 0.8, 1] : [0.75, 0.6, 1]; sc.play(e.uid, 'cast');
-          sc.addRing({ pos: [sc.units.get(e.uid).pos[0], 0.03, sc.units.get(e.uid).pos[2]], r0: 0.1, r1: 0.7, life: 0.45, col: c, width: 0.07, spokes: e.kind === 'guard' ? 6 : 3, seg: e.kind === 'guard' ? 6 : 28 });
-          sc.light(sc.centerPos(e.uid), c, 2.2, 0.4, 1.4); au.play(e.kind === 'guard' ? 'block' : 'castArcane');
+          const position = sc.units.get(e.uid)?.pos;
+          if (position) {
+            const base = [position[0], 0.035, position[2]];
+            // Guard spends the ENTIRE movement budget: visibly lock the hero inside a six-sided ward.
+            sc.addRing({ pos: base, r0: 0.08, r1: e.kind === 'guard' ? 0.83 : 0.65,
+              life: e.kind === 'guard' ? 0.7 : 0.45, col: c, width: 0.09,
+              spokes: e.kind === 'guard' ? 6 : 3, seg: e.kind === 'guard' ? 6 : 28 });
+            if (e.kind === 'guard' && !sc.reduced) {
+              sc.addRing({ pos: [base[0], 0.16, base[2]], r0: 0.17, r1: 0.62,
+                life: 0.8, col: c, width: 0.045, spokes: 6, seg: 6, spin: 0.5 });
+              sc.fx.burst([base[0], 0.27, base[2]], c, 12, { speed: 0.55, up: 0.4, life: 0.6 });
+            }
+          }
+          sc.light(sc.centerPos(e.uid), c, e.kind === 'guard' ? 2.9 : 2.2, 0.55, 1.4);
+          au.play(e.kind === 'guard' ? 'block' : 'castArcane');
           this.float(e.uid, e.kind === 'guard' ? `Guard −${e.amount} per hit` : `Channel: next spell +${e.amount}`, 'note'); await this.wait(260); break;
         }
         case 'guarded': this.float(e.uid, `Guarded −${e.amount}`, 'blocked'); break;
+        case 'resisted': this.float(e.uid, `${e.element} resist −${e.amount}`, 'blocked'); break;
+        case 'weakpoint': this.float(e.uid, `${e.element} weak +${e.amount}`, 'dmg'); break;
         case 'silence': { const h = this.s.units.find(u => u.hero); if (h) this.float(h.uid, `${getCard(e.spell).name} silenced (this turn)`, 'warn'); sc.screenFlash([0.85, 0.8, 1], 0.2); au.play('spell'); await this.wait(280); break; }
         case 'redact': { sc.screenFlash([0.85, 0.8, 1], 0.25); const h = this.s.units.find(u => u.hero); if (h) this.float(h.uid, `${KEYWORDS[e.keyword].name} redacted (this turn)`, 'warn'); au.play('spell'); await this.wait(300); break; }
         case 'restored': this.float(e.uid, `${KEYWORDS[e.keyword].name} restored`, 'note'); break;

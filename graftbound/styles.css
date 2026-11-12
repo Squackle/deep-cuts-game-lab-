@@ -396,3 +396,39 @@ body[data-mode="reward"] .hint { top: 6px; } body[data-mode="reward"] .toast { t
 .book-controls span {font:700 13px var(--sans);}
 @media(min-width:761px) and (prefers-reduced-motion:no-preference) {.open-book.turn {animation:book-turn .22s ease-out;}@keyframes book-turn{0%{filter:brightness(.88);transform:perspective(900px) rotateY(-2deg)}100%{filter:none;transform:none}}}
 @media(max-width:600px){.open-book{grid-template-columns:1fr;}.book-left{border-right:0;border-bottom:5px solid #9a7546;}.book-right{min-height:220px;}.book-art .lc-card{--cw:165px;}.book-page{padding:15px;}}
+
+/* Selective, explicitly shown elemental matchups (never blanket color immunity). */
+.in-affinity { display:flex; flex-wrap:wrap; gap:6px; margin:9px 0; }
+.in-affinity span { padding:4px 7px; border-radius:5px; font:700 11px var(--sans); background:#192c2c; border:1px solid #45645c; color:#c7f1dd; }
+.in-affinity span + span { background:#37241b; border-color:#a46b4f; color:#ffcdaf; }
+
+/* ── v1.0 pack identity and readable, scrollable hand ───────────────────── */
+.reward { position:relative; isolation:isolate; overflow:hidden; }
+.reward::before { content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:radial-gradient(ellipse at 50% 35%, rgba(125,166,104,.15), transparent 52%),
+    repeating-radial-gradient(circle at 50% 48%,transparent 0 42px,rgba(198,173,109,.045) 44px 46px,transparent 48px 76px); }
+.reward.tier-elite::before,.reward.tier-graftsmith::before { background:radial-gradient(ellipse at 50% 42%,rgba(114,159,180,.24),transparent 58%),repeating-conic-gradient(from 10deg at 50% 38%,rgba(215,192,143,.045) 0 10deg,transparent 10deg 30deg); }
+.reward.tier-boss::before { background:radial-gradient(ellipse at 50% 35%,rgba(191,80,55,.25),transparent 60%),repeating-conic-gradient(from 0deg at 50% 32%,rgba(255,190,104,.05) 0 3deg,transparent 3deg 19deg); }
+.reward.tier-primer::before,.reward.tier-archivist::before { background:radial-gradient(ellipse at 50% 34%,rgba(114,109,191,.21),transparent 55%),repeating-radial-gradient(circle at 50% 50%,rgba(220,194,140,.055) 0 2px,transparent 3px 64px); }
+.rw-omen {margin:7px auto 0;max-width:34rem;text-align:center;color:#d6c6a0; font:italic clamp(13px,1.4vw,16px)/1.4 var(--serif);text-shadow:0 2px 8px #000;}
+.pk-etch {color:#e8ce7e;opacity:.62;filter:drop-shadow(0 0 4px #fff1b25e);pointer-events:none;}
+.tier-elite .pk-etch,.tier-graftsmith .pk-etch {color:#b9ddec;opacity:.9;}
+.tier-boss .pk-etch {color:#ffc093;opacity:1;filter:drop-shadow(0 0 8px #fa7b4377);}
+.tier-primer .pk-etch,.tier-archivist .pk-etch {color:#d7c4ff;opacity:.88;}
+.tier-boss .pack:not(.open) .pk-etch {animation:boss-engraving 2.4s ease-in-out infinite alternate;transform-origin:50% 50%;}
+@keyframes boss-engraving {from{opacity:.66;filter:drop-shadow(0 0 2px #ffab5077)}to{opacity:1;filter:drop-shadow(0 0 14px #ffab50cf)}}
+.tier-boss .pack-rank {color:#ffbd85;letter-spacing:.2em;}
+.tier-elite .pack-rank {color:#d4efff;letter-spacing:.18em;}
+.tier-boss .slot.revealed .rays,.tier-elite .slot.revealed .rays {filter:saturate(1.15);}
+.tray.overflowing {scrollbar-color:#b3995c #15261a;scrollbar-width:thin;scroll-padding:0 32px;}
+.tray.overflowing:focus-within {outline:1px solid #b3995c66;outline-offset:-1px;}
+@media(max-width:760px){.rw-omen{padding:0 14px;font-size:12px}.pack-rank{font-size:10px;max-width:80vw;overflow:hidden;text-overflow:ellipsis}}
+@media(prefers-reduced-motion:reduce){.tier-boss .pack:not(.open) .pk-etch{animation:none}}
+
+/* ── v1.0 interactive character anatomy markers ── */
+.sh-portrait { position:relative; isolation:isolate; }
+.sh-portrait .trait-pins {position:absolute;inset:0;z-index:4;pointer-events:none;}
+.sh-portrait .trait-pin {position:absolute;translate:-50% -50%;width:29px;height:29px;border-radius:50%;cursor:pointer;pointer-events:auto; border:1px solid #ecd59a; color:#ffeec0;background:radial-gradient(circle,#638465,#183622 66%); box-shadow:0 0 13px #c3e49b70,0 2px 8px #000a; font-size:18px;transition:scale .15s ease, box-shadow .15s;}
+.sh-portrait .trait-pin:hover,.sh-portrait .trait-pin:focus-visible,.sh-portrait .trait-pin[aria-pressed="true"] {scale:1.16;outline:2px solid #ffe2a0;box-shadow:0 0 18px #ecffb5c7,0 2px 8px #000a;}
+.trait-detail {min-height:2.5em;max-width:360px;margin:8px auto 0;font:13px/1.5 var(--sans);color:#e9d9b4;}
+@media(max-width:600px){.sh-portrait .trait-pin{width:26px;height:26px;font-size:16px;}}
