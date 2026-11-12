@@ -21,7 +21,7 @@ Source scope: `graftbound/**` only. The DeepCutsEDH production site, profiles, D
 
 ## Release gates and known limits
 - Run `cd graftbound && npm test`, `python3 tools/audit_sprite_bounds.py --strict`, syntax checks and deterministic simulation.
-- On GitHub Actions, `tests/scryfall-live-ci.test.mjs` runs `node tools/verify-real-pool.mjs` against live Scryfall for every curated card; it is **skipped offline** and needs review of its actual CI output.
+- On GitHub Actions, `tests/zzz-scryfall-live-ci.test.mjs` runs `node tools/verify-real-pool.mjs` against live Scryfall for every curated card; it is **skipped offline** and needs review of its actual CI output.
 - Attempt browser suites in isolation: `python3 tests/e2e_v08.py`, then `e2e_v06.py`, then `e2e.py`. Browser tests inaccessible because Chromium is blocked from navigating localhost in the build environment: do not claim passes without log evidence. No physical hardware QA.
 - Full bespoke painted enemy artwork and physical-device frame pacing remain separate specialist/acceptance tasks. This release retains the original hand-built sprites and offers animation polish, not a commissioned redraw.
 - Site-side PR #133 uses an older ranked rules verifier and must **not** be merged unchanged; no site promotion is authorized.
