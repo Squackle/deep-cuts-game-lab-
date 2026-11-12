@@ -88,7 +88,7 @@ export function cardHTML(cardId, opts = {}) {
   const strip = `<div class="ingame"><b>In GRAFTBOUND</b> ${esc(gameSummary(c, opts.level || 1, opts.arcane || 0))}${cmp ? `<span class="cmp">${cmp}</span>` : ''}</div>`;
   if (c.reference && CONFIG.SHOW_REFERENCE_IMAGES && c.sourceInfo.live && c.sourceInfo.image && c.sourceInfo.image.normal) {
     return `<div class="lc-card ${c.kind} real r-${esc(c.rarity)} ${opts.extraClass || ''}" data-card="${esc(c.id)}">
-      <div class="face front realface"><img class="real-img" src="${esc(c.sourceInfo.image.normal)}" alt="${esc(c.name)}" draggable="false" loading="lazy" onerror="this.closest('.lc-card').classList.add('img-failed')">${strip}</div>
+      <div class="face front realface"><img class="real-img" src="${esc(c.sourceInfo.image.normal)}" alt="${esc(c.name)}" draggable="false" loading="lazy" onerror="this.closest('.lc-card').classList.add('img-failed')">${opts.level > 1 ? `<span class="level-seal">LEVEL ${opts.level}</span>` : ''}${strip}</div>
       <div class="face back">${backHTML()}</div></div>`;
   }
   const col = COLOR[c.color] || COLOR.verdant; const r = RARITY[c.rarity] || RARITY.common;
@@ -106,6 +106,7 @@ export function cardHTML(cardId, opts = {}) {
       <div class="rules">${rules}</div>
       ${c.kind === 'creature' ? `<div class="pt">${c.power}/${c.toughness}</div>` : ''}
       <div class="origin">${legacy ? 'Legacy · v0.4' : 'Magic card'}</div>
+      ${opts.level > 1 && c.kind === 'spell' ? `<span class="level-seal">LEVEL ${opts.level}</span>` : ''}
       ${strip}
     </div>
     <div class="face back">${backHTML()}</div>

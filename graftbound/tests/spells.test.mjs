@@ -56,3 +56,29 @@ test('every real spell has VFX identity, adaptation note and fully formatted tex
   for (const c of rewardCards().filter(c => c.kind === 'spell')) { assert.ok(c.vfx, c.name); assert.match(c.adaptationNote, /Adapted/); assert.ok(!/\{/.test(formatSpellText(c.id)), c.name); }
   assert.equal(rewardCards().find(c => c.name === 'Lightning Bolt').vfx, 'lightningBolt'); assert.notEqual(rewardCards().find(c => c.name === 'Shock').vfx, 'fire');
 });
+
+test('friendly target spells empower and shield Raise the Alarm Soldiers without affecting the caster', () => {
+  const s = S(['t.....', '......', '......', '..P...'], { t: 'tortoise' },
+    ['raise-the-alarm', 'giant-growth', 'titanic-growth', 'feat-of-resistance', 'snakeskin-veil']);
+  cast(s, 'mtg:raise-the-alarm', 2, 2);
+  const soldier = s.units.find(u => u.side === 'player' && !u.hero);
+  assert.equal(soldier.name, 'Soldier'); assert.equal(soldier.power, 2);
+  const p = player(s);
+  assert.ok(castOptions(s, 'mtg:giant-growth').some(t => t.x === soldier.x && t.y === soldier.y));
+  assert.ok(castOptions(s, 'mtg:feat-of-resistance').some(t => t.x === soldier.x && t.y === soldier.y));
+  cast(s, 'mtg:giant-growth', soldier.x, soldier.y);
+  assert.equal(soldier.statuses.empowered, 3); assert.ok(!p.statuses.empowered);
+  cast(s, 'mtg:feat-of-resistance', soldier.x, soldier.y);
+  assert.equal(soldier.statuses.shield, 3); assert.equal(p.statuses.shield || 0, 0);
+  cast(s, 'mtg:snakeskin-veil', p.x, p.y);
+  assert.equal(p.statuses.shield, 2);
+  assert.throws(() => cast(s, 'mtg:titanic-growth', 1, 1), /Not a valid target/);
+});
+
+test('leveled-up Pyroclasm actually deals more damage and its text reflects the upgrade', () => {
+  const s = S(['tt....', '......', 'P.....'], { t: 'tortoise' }, ['pyroclasm']);
+  s.spellbook[0].level = 2;
+  assert.match(formatSpellText('mtg:pyroclasm', 2), /3/);
+  cast(s, 'mtg:pyroclasm', player(s).x, player(s).y);
+  assert.deepEqual(enemies(s).map(e => e.hp), [2, 2]);
+});

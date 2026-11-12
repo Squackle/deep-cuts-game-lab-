@@ -9,7 +9,7 @@ const R = () => Math.random() - 0.5;
 
 /** Per-spell charge identity. tier: 0 quick, 1 normal, 2 powerful. Times are ms at normal speed. */
 export const CAST_PROFILE = {
-  shock:         { col: [1, 0.95, 0.55], gather: 70,  build: 40,  tier: 0, motes: 10, arcs: 1, cue: 'zap',        origin: 'hands' },
+  shock:         { col: [1, 0.95, 0.55], gather: 70,  build: 40,  tier: 0, motes: 10, arcs: 1, cue: 'crackle',        origin: 'hands' },
   lightningBolt: { col: [0.62, 0.82, 1], gather: 300, build: 220, tier: 2, motes: 60, arcs: 4, cue: 'charge',     origin: 'chest', core: true },
   flameSlash:    { col: [1, 0.5, 0.15],  gather: 200, build: 120, tier: 1, motes: 34, embers: true, cue: 'castFire', origin: 'hands' },
   chain:         { col: [0.62, 0.82, 1], gather: 200, build: 120, tier: 1, motes: 36, arcs: 3, cue: 'charge',     origin: 'chest', core: true },
@@ -20,6 +20,7 @@ export const CAST_PROFILE = {
   summon:        { col: [1, 0.9, 0.55],  gather: 180, build: 100, tier: 1, motes: 30, cue: 'castHoly',   origin: 'chest' },
   heal:          { col: [1, 0.88, 0.5],  gather: 240, build: 120, tier: 1, motes: 40, cue: 'castHoly',   origin: 'hands', self: true },
   salve:         { col: [0.75, 1, 0.8],  gather: 90,  build: 40,  tier: 0, motes: 14, cue: 'castHoly',   origin: 'hands', self: true },
+  snakeskin:     { col: [0.52, 0.97, 0.45], gather: 170, build: 100, tier: 1, motes: 26, cue: 'castNature', origin: 'hands' },
   shield:        { col: [0.55, 0.8, 1],  gather: 200, build: 110, tier: 1, motes: 34, cue: 'castArcane', origin: 'chest', self: true },
   frost:         { col: [0.65, 0.92, 1], gather: 220, build: 120, tier: 1, motes: 36, cue: 'castFrost',  origin: 'mouth' },
   fire:          { col: [1, 0.5, 0.15],  gather: 200, build: 100, tier: 1, motes: 30, embers: true, cue: 'castFire', origin: 'hands' },

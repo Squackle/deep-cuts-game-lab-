@@ -26,7 +26,7 @@ import { NODE_TYPES as NT } from '../engine/campaign.js';
 import { formatDuration } from '../engine/clock.js';
 
 const $ = id => document.getElementById(id);
-const TARGET = { enemy: 'One foe, anywhere', self: 'Yourself', tile: 'Any tile (area)', empty: 'Empty tile' };
+const TARGET = { enemy: 'One foe, anywhere', ally: 'Friendly creature, anywhere', self: 'Yourself', tile: 'Any tile (area)', empty: 'Empty tile' };
 const LOGO = `<h1 class="logo" aria-label="${GAME.title}"><span class="logo-sigil">${ICON.sigil}</span><span class="logo-word">GRAFT<b>BOUND</b></span></h1>`;
 const ACT_ROMAN = ['I', 'II', 'III'];
 const ACT_LORE = [
@@ -220,7 +220,7 @@ export function rewardScreen(app, cards, { tier, severed }) {
       <h2 class="rw-title">${titles[tier] || titles.battle}</h2>
       <p class="rw-sub" id="rw-sub">${severed ? `You severed <b>${esc(severed)}</b>. ` : ''}Touch the seal to break it</p>
       <div class="pack-stage" id="pstage">
-        <button type="button" class="pack ${tier}" id="pack" aria-label="Break the seal and open the booster">
+        <button type="button" class="pack ${tier}" id="pack" aria-label="Break the seal and open the booster"><span class="pack-rank">${tier === 'elite' ? 'ELITE · ENCHANTED' : tier === 'boss' ? 'BOSS · MYTHIC HOARD' : 'COMMON · FIELD PACK'}</span>
           <span class="pk-shadow"></span>
           <span class="pk-body">
             <svg class="pk-art" viewBox="0 0 200 300" aria-hidden="true">
@@ -274,7 +274,7 @@ export function rewardScreen(app, cards, { tier, severed }) {
   stage.addEventListener('pointermove', e => { if (pack.classList.contains('open')) return; const r = stage.getBoundingClientRect(); pack.style.setProperty('--rx', ((e.clientY - r.top) / r.height - 0.5) * -14 + 'deg'); pack.style.setProperty('--ry', ((e.clientX - r.left) / r.width - 0.5) * 18 + 'deg'); });
   stage.addEventListener('pointerleave', () => { pack.style.setProperty('--rx', '0deg'); pack.style.setProperty('--ry', '0deg'); });
   return new Promise(res => {
-    let opened = false, opening = null;
+    let opened = false, opening = null, claimed = false;
     const wait = ms => new Promise(r => setTimeout(r, instant ? 0 : fast ? ms * 0.35 : ms));
     const open = () => opening || (opening = (async () => {
       if (opened) return; opened = true;
@@ -307,7 +307,19 @@ export function rewardScreen(app, cards, { tier, severed }) {
       fan.querySelectorAll('.slot').forEach(s => s.classList.toggle('sel', s === slot)); showDetail(slot.dataset.id);
       if (matchMedia('(max-width: 760px)').matches) $('rw-detail').scrollIntoView({ behavior: instant ? 'auto' : 'smooth', block: 'nearest' });
     });
-    fan.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('slot')) { e.preventDefault(); e.target.click(); } });
+    fan.addEventListener('dblclick', e => {
+      if (claimed || !opened) return;
+      const slot = e.target.closest('.slot'); if (!slot || !slot.classList.contains('revealed')) return;
+      const id = slot.dataset.id;
+      fan.querySelectorAll('.slot').forEach(s => s.classList.toggle('sel', s === slot));
+      showDetail(id);
+      const take = $('rw-detail')?.querySelector('[data-take]'); if (take && !take.disabled) take.click();
+    });
+    fan.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('slot')) {
+      e.preventDefault(); if (e.key === 'Enter' && e.target.classList.contains('revealed') && e.target.classList.contains('sel')) {
+        const take = $('rw-detail')?.querySelector('[data-take]'); if (take && !take.disabled) take.click();
+      } else e.target.click();
+    } });
     $('rw-reveal').addEventListener('click', async () => { await open(); fan.querySelectorAll('.slot').forEach((s, i) => setTimeout(() => reveal(s), instant ? 0 : fast ? 60 * i : 180 + i * 220)); });
     const sk = $('rw-skip'); if (sk) sk.addEventListener('click', () => app.confirm('Leave all three cards behind and gain +1 Spark (+1 max health) instead?', 'Leave them', () => res({ choice: 'skip' })));
     const showDetail = id => {
@@ -324,13 +336,14 @@ export function rewardScreen(app, cards, { tier, severed }) {
           ${sourcePanelHTML(id)}<button type="button" class="btn primary big" data-take ${full ? 'disabled' : ''}>Graft ${esc(c.name)}</button>`;
       } else {
         const e = run.spellbook.find(s => s.id === id);
-        body = `<div class="becomes"><span class="lbl">${e ? `Empower to level ${e.level + 1}` : 'New spell'}</span><p class="sptext">${esc(formatSpellText(id, e ? e.level + 1 : 1, arcane))}</p><span class="hp">${ICON.gem} ${c.cost} mana · ${TARGET[c.target]} · ${rangeLabel(id, e ? e.level + 1 : 1)} · once per turn</span></div>
+        body = `<div class="becomes"><span class="lbl">${e ? `Empower to level ${e.level + 1}` : 'New spell'}</span>${e ? `<div class="upgrade-comparison"><span><b>Now · Lv ${e.level}</b>${esc(formatSpellText(id, e.level, arcane))}</span><span><b>After · Lv ${e.level + 1}</b>${esc(formatSpellText(id, e.level + 1, arcane))}</span></div>` : ''}<p class="sptext">${esc(formatSpellText(id, e ? e.level + 1 : 1, arcane))}</p><span class="hp">${ICON.gem} ${c.cost} mana · ${TARGET[c.target]} · ${rangeLabel(id, e ? e.level + 1 : 1)} · once per turn</span></div>
           ${sourcePanelHTML(id)}<button type="button" class="btn primary big" data-take>${e ? 'Empower' : 'Inscribe'} ${esc(c.name)}</button>`;
       }
       const det = $('rw-detail'); det.innerHTML = body; det.classList.add('show');
       const take = det.querySelector('[data-take]');
       det.addEventListener('change', ev => { if (ev.target.name === 'rel') take.disabled = false; });
       take.addEventListener('click', async () => {
+        if (claimed || take.disabled) return; claimed = true; take.disabled = true;
         const rel = det.querySelector('input[name="rel"]:checked');
         const slot = fan.querySelector(`.slot[data-id="${CSS.escape(id)}"]`);
         fan.querySelectorAll('.slot').forEach(s => s.classList.add(s === slot ? 'chosen' : 'discard'));
@@ -360,7 +373,7 @@ export function shrineScreen(app) {
       m.addEventListener('click', ev => { const s = ev.target.closest('[data-sev]'); if (s) { app.closeModal(); res({ choice: c, arg: +s.dataset.sev }); } });
     } else if (c === 'inscribe') {
       const m = app.openModal(`<h2>Inscription Altar</h2><p>Empower one spell by a level.</p>
-        <div class="release">${run.spellbook.filter(s => s.level < 3).map(s => `<button type="button" class="btn" data-sp="${esc(s.id)}">${esc(getCard(s.id).name)} <small>Lv ${s.level} → ${s.level + 1}</small></button>`).join('')}</div>
+        <div class="release">${run.spellbook.filter(s => s.level < 3).map(s => `<button type="button" class="btn" data-sp="${esc(s.id)}">${esc(getCard(s.id).name)} <small>Lv ${s.level} → ${s.level + 1}</small><span class="upgrade-sub">${esc(formatSpellText(s.id, s.level, runStats(run).arcane))} → ${esc(formatSpellText(s.id, s.level + 1, runStats(run).arcane))}</span></button>`).join('')}</div>
         <div class="modal-actions"><button type="button" class="btn" data-close>Back</button></div>`);
       m.addEventListener('click', ev => { const s = ev.target.closest('[data-sp]'); if (s) { app.closeModal(); res({ choice: c, arg: s.dataset.sp }); } });
     } else res({ choice: c });
@@ -376,11 +389,12 @@ export function sheetModal(app) {
     return `<li style="--frame:${col.frame}"><span class="n">${i + 1}</span><b>${esc(a.name || (c && c.name) || a.cardId)}${c && c.legacy ? ' <em class="lg">legacy</em>' : ''}</b><small>${esc(bits)}</small></li>`;
   }).join('');
   const visible = Object.entries(ap.slots).map(([, p]) => `${p.part}${p.tier > 1 ? ' II' : ''}`).concat(ap.effects);
-  app.openModal(`
+  const m = app.openModal(`
     <div class="sheet">
       <section class="sh-main">
         <small class="sh-brand">${GAME.title} · Act ${ACT_ROMAN[run.act]}</small>
         <h2>${esc(run.name)} <small>${STAGE[ap.stage]}</small></h2>
+        <figure class="sh-portrait" data-character-portrait aria-label="Your current evolved character"><figcaption>Current form · ${esc(visible.join(', ') || 'The Blank')}</figcaption></figure>
         <div class="sh-pt"><div><span>${run.evo.power}</span><small>Power</small></div><div><span>${run.evo.toughness}</span><small>Toughness</small></div></div>
         <dl class="sh-derived">
           <dt>${ICON.heart} Health</dt><dd>${run.hp}/${st.maxHealth} <small>= ${st.spark} Spark + ${run.evo.toughness} toughness</small></dd>
@@ -393,7 +407,7 @@ export function sheetModal(app) {
         <h3>Abilities</h3>
         <ul class="sh-kw">${Object.entries(run.evo.keywords).map(([k, v]) => `<li><b>${KEYWORDS[k].glyph} ${esc(keywordLabel(k, v))}</b><span>${esc(KEYWORDS[k].text)}</span></li>`).join('') || '<li class="muted">None yet. Graft creatures to gain abilities.</li>'}</ul>
         <h3>Spellbook</h3>
-        <ul class="sh-kw">${run.spellbook.map(s => { const c = getCard(s.id); return `<li><b>${esc(c.name)}${s.level > 1 ? ` · Lv ${s.level}` : ''} <em>${c.cost} mana · ${TARGET[c.target]} · ${rangeLabel(s.id, s.level)}</em></b><span>${esc(formatSpellText(s.id, s.level, st.arcane))}</span></li>`; }).join('') || '<li class="muted">Empty. Choose spell cards from boosters.</li>'}</ul>
+        <p><button type="button" class="btn primary" data-open-spellbook>Open the Spellbook · ${run.spellbook.length} spells</button></p>
       </section>
       <section class="sh-hist"><h3>Grafts</h3><ol class="hist">${hist || '<li class="muted">Nothing yet. You are a blank 1/1.</li>'}</ol>
         <h3>Form</h3><p class="small">${visible.length ? 'Visible traits: ' + esc(visible.join(', ')) : 'Unmarked parchment.'}${ap.dormant.length ? `<br><span class="muted">Dormant: ${esc(ap.dormant.join(', '))}</span>` : ''}</p>
@@ -401,7 +415,50 @@ export function sheetModal(app) {
       </section>
     </div>
     <div class="modal-actions"><button type="button" class="btn" data-journal>Evolution Journal</button><button type="button" class="btn primary" data-close>Close</button></div>`, 'wide');
+  m.querySelector('[data-character-portrait]')?.prepend(sheetCanvas(app, run.evo, 4));
+  m.querySelector('[data-open-spellbook]')?.addEventListener('click', () => { app.closeModal(); spellbookModal(app); });
   const jb = document.querySelector('#modal [data-journal]'); if (jb) jb.addEventListener('click', () => { app.closeModal(); journalModal(app); });
+}
+
+/** A page-turning, two-facing-page spellbook. It presents the actual upgraded effect, not base card text. */
+export function spellbookModal(app) {
+  const run = app.run; if (!run) return;
+  let page = 0, color = 'all';
+  const filters = ['all', 'radiant', 'tide', 'umbral', 'ember', 'verdant'];
+  const st = runStats(run);
+  const m = app.openModal(`<div class="book-wrap"><div class="book-header"><small>${GAME.title} · Inscribed spells</small><h2>The Spellbook</h2></div>
+    <div class="book-filter" role="group" aria-label="Filter spell colors">${filters.map(x => `<button type="button" data-color="${x}" aria-pressed="${x === color}">${x}</button>`).join('')}</div>
+    <div class="open-book" id="open-book" aria-live="polite"><section class="book-page book-left" id="book-left"></section><section class="book-page book-right" id="book-right"></section></div>
+    <div class="book-controls"><button type="button" class="btn" data-prev>Previous page</button><span id="book-num"></span><button type="button" class="btn" data-next>Next page</button></div>
+    <div class="modal-actions"><button type="button" class="btn" data-back>Character Sheet</button><button type="button" class="btn primary" data-close>Close</button></div></div>`, 'wide');
+  const filtered = () => run.spellbook.filter(e => color === 'all' || getCard(e.id)?.color === color);
+  const render = () => {
+    const pages = filtered(), length = pages.length;
+    if (page >= length) page = Math.max(0, length - 1);
+    if (!length) {
+      m.querySelector('#book-left').innerHTML = '<h3>No inscriptions</h3><p>Choose spell cards from boosters to write your first page.</p>';
+      m.querySelector('#book-right').innerHTML = '<p class="book-empty">An untouched page awaits.</p>';
+    } else {
+      const entry = pages[page], c = getCard(entry.id);
+      m.querySelector('#book-left').innerHTML = `<small>Folio ${page + 1}</small><h3>${esc(c.name)}</h3><div class="book-art">${cardHTML(entry.id, { level:entry.level,arcane:st.arcane,uid:'folio'+page })}</div>`;
+      m.querySelector('#book-right').innerHTML = `<small>${esc(c.color)} magic · Level ${entry.level}</small><h3>${esc(c.name)}</h3><p class="book-cost">${ICON.gem}${c.cost} GRAFTBOUND mana · ${esc(rangeLabel(entry.id,entry.level))} · ${esc(TARGET[c.target])}</p>
+        <p class="book-effect">${esc(formatSpellText(entry.id,entry.level,st.arcane))}</p><h4>Inscription level</h4><p>Level ${entry.level} ${entry.level < 3 ? `· Next level: ${esc(formatSpellText(entry.id,entry.level+1,st.arcane))}` : '· Mastered'}</p>
+        <p class="book-rule">${esc(c.adaptationNote || 'GRAFTBOUND adaptation, not official Magic rules.')}</p>`;
+    }
+    m.querySelector('#book-num').textContent = length ? `Page ${page + 1} of ${length}` : 'Empty';
+    m.querySelector('[data-prev]').disabled = !length || page === 0;
+    m.querySelector('[data-next]').disabled = !length || page >= length - 1;
+    m.querySelectorAll('[data-color]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.color === color)));
+    m.querySelector('#open-book').classList.remove('turn'); void m.querySelector('#open-book').offsetWidth; m.querySelector('#open-book').classList.add('turn');
+  };
+  m.addEventListener('click', e => {
+    const target = e.target.closest('button'); if (!target) return;
+    if (target.dataset.color) { color = target.dataset.color; page = 0; render(); }
+    if (target.hasAttribute('data-next')) { page++; render(); }
+    if (target.hasAttribute('data-prev')) { page--; render(); }
+    if (target.hasAttribute('data-back')) { app.closeModal(); sheetModal(app); }
+  });
+  render();
 }
 
 const KIND_LINE = { start: () => 'Woke as The Blank — a 1/1 with no abilities.', boss: e => `Defeated ${esc(e.name)}.`, act: e => `Entered Act ${ACT_ROMAN[e.act]} · ${esc(ACTS[e.act].name)}.`,

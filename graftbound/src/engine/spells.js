@@ -38,6 +38,7 @@ export function spellCost(s, id) {
 export function spellTargets(s, id, level = 1) {
   const c = getCard(id), p = player(s), out = [];
   if (c.target === 'self') return [{ x: p.x, y: p.y }];
+  if (c.target === 'ally') return s.units.filter(u => u.side === 'player' && u.hp > 0).map(u => ({ x: u.x, y: u.y }));
   if (c.target === 'enemy') return enemies(s).map(e => ({ x: e.x, y: e.y }));
   const range = spellRange(id, level);
   for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) {
@@ -69,8 +70,8 @@ export function castSpellEffect(s, ev, id, level, tx, ty) {
   ev.push({ t: 'spell', id, uid: p.uid, x: tx, y: ty, target: target ? target.uid : null, vfx: c.vfx || effectOf(id), channeled: !!channel });
   switch (effectOf(id)) {
     case 'ember_dart': dealDamage(s, ev, p, target, n[0], { kind: 'spell' }); break;
-    case 'barkskin': addShield(s, ev, p, n[0], 'barkskin'); break;
-    case 'sap_surge': addStatus(s, ev, p, 'empowered', n[0]); break;
+    case 'barkskin': addShield(s, ev, target, n[0], 'barkskin'); break;
+    case 'sap_surge': addStatus(s, ev, target, 'empowered', n[0]); break;
     case 'mending_rain': heal(s, ev, p, n[0]);
       for (const st of ['poison', 'weakened']) if (p.statuses[st]) { p.statuses[st] = 0; ev.push({ t: 'status', uid: p.uid, status: st, value: 0, total: 0 }); }
       break;
