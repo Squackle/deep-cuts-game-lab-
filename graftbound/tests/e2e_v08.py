@@ -75,7 +75,7 @@ with sync_playwright() as p:
         pg.evaluate(f"window.__setMag({mag}); window.__fire('lightningBolt')"); time.sleep(1.25); pg.screenshot(path=f"{SHOTS}/v08_bolt_mag{mag}.png"); time.sleep(1.5)
     pg.evaluate("window.__setMag(8); window.__fire('pyroclasm')"); time.sleep(1.3); pg.screenshot(path=f"{SHOTS}/v08_pyroclasm.png"); time.sleep(1.5)
     pg.evaluate("window.__setMag(6); window.__fire('fireball')"); time.sleep(1.45); pg.screenshot(path=f"{SHOTS}/v08_fireball_flight.png"); time.sleep(1.5)
-    check("dev gallery lists all 16 spells and a magnitude control", pg.evaluate("document.querySelectorAll('#ui .sp').length") == 16)
+    check("dev gallery lists all 17 spells and a magnitude control", pg.evaluate("document.querySelectorAll('#ui .sp').length") == 17)
     # ── mobile hand ──
     pg.close()
     ctx = br.new_context(viewport={"width": 390, "height": 844}, has_touch=True, is_mobile=True); mp = ctx.new_page(); merrs = []; mp.on("pageerror", lambda e: merrs.append(str(e)))

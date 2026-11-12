@@ -68,15 +68,16 @@ export function castSpellEffect(s, ev, id, level, tx, ty) {
   const evAt = ev.length; const channel = s.p.channel || 0;
   if (channel) { for (let i = 0; i < n.length; i++) if (!NO_ARCANE.has(effectOf(id))) n[i] += channel; s.p.channel = 0; }   // Channel: this spell +1
   ev.push({ t: 'spell', id, uid: p.uid, x: tx, y: ty, target: target ? target.uid : null, vfx: c.vfx || effectOf(id), channeled: !!channel });
+  const spellDamage = { kind: 'spell', element: spellElement(id) };
   switch (effectOf(id)) {
-    case 'ember_dart': dealDamage(s, ev, p, target, n[0], { kind: 'spell' }); break;
+    case 'ember_dart': dealDamage(s, ev, p, target, n[0], spellDamage); break;
     case 'barkskin': addShield(s, ev, target, n[0], 'barkskin'); break;
     case 'sap_surge': addStatus(s, ev, target, 'empowered', n[0]); break;
     case 'mending_rain': heal(s, ev, p, n[0]);
       for (const st of ['poison', 'weakened']) if (p.statuses[st]) { p.statuses[st] = 0; ev.push({ t: 'status', uid: p.uid, status: st, value: 0, total: 0 }); }
       break;
-    case 'soul_siphon': { const d = dealDamage(s, ev, p, target, n[0], { kind: 'spell' }); heal(s, ev, p, d, 'siphon'); break; }
-    case 'rootsnare': dealDamage(s, ev, p, target, n[0], { kind: 'spell' }); if (alive(target)) addStatus(s, ev, target, 'stunned', 1); break;
+    case 'soul_siphon': { const d = dealDamage(s, ev, p, target, n[0], spellDamage); heal(s, ev, p, d, 'siphon'); break; }
+    case 'rootsnare': dealDamage(s, ev, p, target, n[0], spellDamage); if (alive(target)) addStatus(s, ev, target, 'stunned', 1); break;
     case 'blink_step': { const from = { x: p.x, y: p.y }; p.x = tx; p.y = ty; ev.push({ t: 'teleport', uid: p.uid, from, x: tx, y: ty }); break; }
     case 'call_sproutling': {
       const u = { uid: s.nextUid++, side: 'player', hero: false, defId: 'sproutling', name: c.reference ? 'Soldier' : 'Sproutling', x: tx, y: ty, hp: n[1], maxHp: n[1],
@@ -84,22 +85,22 @@ export function castSpellEffect(s, ev, id, level, tx, ty) {
       s.units.push(u); ev.push({ t: 'summon', uid: u.uid, defId: 'sproutling', x: tx, y: ty, by: p.uid, ally: true });
       break;
     }
-    case 'wither': dealDamage(s, ev, p, target, n[0], { kind: 'spell' }); if (alive(target)) addStatus(s, ev, target, 'weakened', n[1]); break;
-    case 'firestorm': ev.push({ t: 'area', x: p.x, y: p.y, r: 99, kind: 'firestorm' }); for (const e of enemies(s)) dealDamage(s, ev, p, e, n[0], { kind: 'spell' }); break;
+    case 'wither': dealDamage(s, ev, p, target, n[0], spellDamage); if (alive(target)) addStatus(s, ev, target, 'weakened', n[1]); break;
+    case 'firestorm': ev.push({ t: 'area', x: p.x, y: p.y, r: 99, kind: 'firestorm' }); for (const e of enemies(s)) dealDamage(s, ev, p, e, n[0], spellDamage); break;
     case 'venom_mist': ev.push({ t: 'area', x: tx, y: ty, r: 1, kind: 'mist' }); for (const e of enemies(s)) if (Math.abs(e.x - tx) <= 1 && Math.abs(e.y - ty) <= 1) addStatus(s, ev, e, 'poison', n[0]); break;
     case 'starfall': {
       ev.push({ t: 'area', x: tx, y: ty, r: 1, kind: 'star' });
-      for (const e of enemies(s).filter(e => manhattan(e, { x: tx, y: ty }) <= 1)) dealDamage(s, ev, p, e, e.x === tx && e.y === ty ? n[0] : n[1], { kind: 'spell' });
+      for (const e of enemies(s).filter(e => manhattan(e, { x: tx, y: ty }) <= 1)) dealDamage(s, ev, p, e, e.x === tx && e.y === ty ? n[0] : n[1], spellDamage);
       break;
     }
     case 'chain_lightning': {
-      const chain = [target]; dealDamage(s, ev, p, target, n[0], { kind: 'spell' });
+      const chain = [target]; dealDamage(s, ev, p, target, n[0], spellDamage);
       let last = { x: tx, y: ty };
       for (let i = 0; i < 2; i++) {
         const nxt = enemies(s).filter(e => !chain.includes(e) && manhattan(e, last) <= 2).sort((a, b) => manhattan(a, last) - manhattan(b, last) || a.uid - b.uid)[0];
         if (!nxt) break;
         ev.push({ t: 'chain', from: last, x: nxt.x, y: nxt.y, target: nxt.uid });
-        chain.push(nxt); dealDamage(s, ev, p, nxt, n[1], { kind: 'spell' }); last = { x: nxt.x, y: nxt.y };
+        chain.push(nxt); dealDamage(s, ev, p, nxt, n[1], spellDamage); last = { x: nxt.x, y: nxt.y };
       }
       break;
     }
@@ -141,7 +142,7 @@ export function spellMagnitude(after, effect, nums = []) {
 }
 
 /** v0.6: a deliberately small set of spell–terrain interactions. Element comes from the card's VFX identity. */
-const ELEMENT_BY_VFX = { fire: 'fire', fireball: 'fire', flameSlash: 'fire', lightningBolt: 'lightning', spark: 'lightning', chain: 'lightning', frost: 'frost', pyroclasm: 'fire' };
+const ELEMENT_BY_VFX = { shock: 'lightning', fire: 'fire', fireball: 'fire', flameSlash: 'fire', lightningBolt: 'lightning', spark: 'lightning', chain: 'lightning', frost: 'frost', pyroclasm: 'fire' };
 const ELEMENT_BY_EFFECT = { ember_dart: 'fire', starfall: 'fire', chain_lightning: 'lightning', rootsnare: 'frost' };
 export function spellElement(id) { const c = getCard(id); return (c && ELEMENT_BY_VFX[c.vfx]) || ELEMENT_BY_EFFECT[effectOf(id)] || null; }
 const near = (a, b, r) => Math.abs(a.x - b.x) <= r && Math.abs(a.y - b.y) <= r;
@@ -159,6 +160,6 @@ function elementalInteraction(s, ev, id, tx, ty) {
   if (el === 'lightning') {   // lightning near a charged crystal makes it discharge once
     const c = (s.crystals || []).find(k => k.charged && near(k, { x: tx, y: ty }, 1)); if (!c) return;
     c.charged = false; ev.push({ t: 'crystal', x: c.x, y: c.y, kind: 'discharge' });
-    for (const e of enemies(s).filter(e => near(e, c, TERRAIN_RULES.crystal.dischargeRadius))) dealDamage(s, ev, player(s), e, TERRAIN_RULES.crystal.dischargeDamage, { kind: 'spell' });
+    for (const e of enemies(s).filter(e => near(e, c, TERRAIN_RULES.crystal.dischargeRadius))) dealDamage(s, ev, player(s), e, TERRAIN_RULES.crystal.dischargeDamage, { kind: 'spell', element: 'lightning' });
   }
 }

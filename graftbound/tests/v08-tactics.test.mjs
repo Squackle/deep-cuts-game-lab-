@@ -13,6 +13,7 @@ import { generatePack, primerPack } from '../src/engine/rewards.js';
 import { resolveCard, rewardCards } from '../src/cards/catalog.js';
 import { REAL_SPELLS } from '../src/cards/real-pool.js';
 import { cast, guard, channel, endTurn, player, enemies, attack, guardValue, intents, movePlayer, moveOptions } from '../src/engine/combat.js';
+import { dealDamage } from '../src/engine/abilities.js';
 import { getLegalPlayerActions, shouldAutoEnd, usefulStances } from '../src/engine/legal.js';
 import { spellNumbers, castBlockReason, spellMagnitude } from '../src/engine/spells.js';
 import { strengthOf, expectedStrength } from '../src/engine/strength.js';
@@ -106,13 +107,13 @@ test('Spell Primer: after the first victory, a free spells-only choice of 3 affo
 });
 
 // ── 4. Tactical stances ────────────────────────────────────────────────────
-test('Guard: costs an attack and one movement, counts as one action, reduces every enemy hit until your next turn, never hazards', () => {
+test('Guard: costs an attack and ALL movement, counts as one action, reduces every enemy hit until your next turn, never hazards', () => {
   const s = arena(['....', '.h..', '.P..', '....'], { h: 'hound' }, { evo: evoWith('mtg:pillarfield-ox') }); const p = player(s); E('hound')(s).hp = 99;
   const v = guardValue(p); assert.equal(v, Math.min(TACTICS.guard.max, TACTICS.guard.base + Math.floor(p.toughness / TACTICS.guard.perToughness)));
-  guard(s); assert.equal(s.p.attacksLeft, 0); assert.equal(s.p.moveLeft, 2); assert.equal(s.stats.actions, 1); assert.throws(() => attack(s, E('hound')(s).uid), /already attacked/); assert.throws(() => guard(s), /already used/);
+  guard(s); assert.equal(s.p.attacksLeft, 0); assert.equal(s.p.moveLeft, 0); assert.equal(s.stats.actions, 1); assert.throws(() => attack(s, E('hound')(s).uid), /already attacked/); assert.throws(() => guard(s), /already used/);
   assert.equal(intents(s)[0].guarded > 0, true, 'intents show the reduced damage'); const hp = p.hp; endTurn(s);
   assert.equal(p.hp, hp - Math.max(0, 2 - v), 'the hound strike is reduced by Guard'); assert.equal(p.statuses.guard, 0, 'expires when your turn begins');
-  const l = arena(['....g', '.....', '~....', 'P....'], { g: 'grub' }); guard(l); const h0 = player(l).hp; l.phase = 'player'; movePlayer(l, 0, 2); assert.equal(player(l).hp, h0 - 2, 'lava ignores guard');
+  const l = arena(['....g', '.....', '~....', 'P....'], { g: 'grub' }); guard(l); const h0 = player(l).hp; dealDamage(l, [], null, player(l), 2, { kind: 'lava' }); assert.equal(player(l).hp, h0 - 2, 'lava ignores guard');
 });
 test('Channel: costs attack and movement; +1 mana (max+1); the next spell this turn gains +1; one action', () => {
   const s = arena(['g...', '....', 'P...'], { g: 'tortoise' }, { spellbook: book(['shock']) }); s.p.mana = 0;
@@ -122,15 +123,15 @@ test('Channel: costs attack and movement; +1 mana (max+1); the next spell this t
 test('auto-end: stances keep the turn only when useful (Guard when threatened, Channel when +1 mana unlocks a cast)', () => {
   const far = arena(['g......', '.......', '......P'], { g: 'grub' }); far.p.moveLeft = 0;
   assert.deepEqual(usefulStances(far), [], 'nothing threatens you: no stance blocks auto-end'); assert.equal(shouldAutoEnd(far), true);
-  const near = arena(['...', '.h.', '.P.'], { h: 'hound' }); near.p.moveLeft = 1; near.units.find(u => u.defId === 'hound').hp = 99;
+  const near = arena(['...', '.h.', '.P.'], { h: 'hound' }); near.units.find(u => u.defId === 'hound').hp = 99;
   near.p.attacksLeft = 1; assert.ok(usefulStances(near).includes('guard')); assert.equal(shouldAutoEnd(near), false);
   const ch = arena(['g...', '....', 'P...'], { g: 'grub' }, { spellbook: book(['lightning-bolt']) }); ch.p.mana = 1; ch.p.moveLeft = 1; ch.p.attacksLeft = 1;
   ch.units[1].x = 3; ch.units[1].y = 0; assert.ok(usefulStances(ch).includes('channel'));
 });
-test('ranked replays include stances: recorded runs re-verify byte-identically under rules 0.9 / challenge revision 3', () => {
-  assert.equal(RULES_VERSION, 'graftbound-rules-0.9.0'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 3);
+test('ranked replays include stances: recorded runs re-verify byte-identically under rules 1.0 / challenge revision 4', () => {
+  assert.equal(RULES_VERSION, 'graftbound-rules-1.0.0'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 4);
   const { run, log } = playRanked(); assert.ok(log.some(d => d.type === 'guard' || d.type === 'channel'), 'the bot used a stance');
-  assert.equal(JSON.stringify(replayRun('gb-expedition-01', log, { revision: 3 }).run), JSON.stringify(run));
+  assert.equal(JSON.stringify(replayRun('gb-expedition-01', log, { revision: 4 }).run), JSON.stringify(run));
   const i = log.findIndex(d => d.type === 'guard'); if (i >= 0) { const bad = log.map(d => ({ ...d })); bad.splice(i, 0, { ...bad[i] }); bad.forEach((d, k) => (d.seq = k)); assert.throws(() => replayRun('gb-expedition-01', bad)); }
 });
 
@@ -206,17 +207,21 @@ test('spell hand renders real card faces with GRAFTBOUND overlays, keeps disable
   assert.match(ui, /used: 'Cast this turn'/); assert.match(ui, /nomana: 'Not enough mana'/);
 });
 
-test('Guard and Channel require remaining movement, spend exactly one point, reject after full movement', () => {
-  for (const name of ['guard', 'channel']) {
-    const s = arena(['g...', '....', 'P...'], { g: 'grub' });
-    s.p.moveLeft = 0;
-    assert.throws(() => name === 'guard' ? guard(s) : channel(s), /movement point/i);
-    assert.equal(s.stats.actions, 0);
-    assert.equal(s.p.attacksLeft, 1);
-    s.p.moveLeft = 1;
-    (name === 'guard' ? guard : channel)(s);
-    assert.equal(s.p.moveLeft, 0);
-    assert.equal(s.p.attacksLeft, 0);
-    assert.equal(s.stats.actions, 1);
-  }
+test('Guard commits all movement, scales with movement grafts, blocks after moving; Channel still costs one', () => {
+  const s = arena(['g...', '....', 'P...'], { g: 'grub' });
+  const full = s.p.moveLeft;
+  assert.ok(full > 1);
+  s.p.moveLeft = full - 1;
+  assert.throws(() => guard(s), /all .* movement points unspent/i);
+  assert.equal(s.stats.actions, 0); assert.equal(s.p.attacksLeft, 1);
+  s.p.moveLeft = 0;
+  assert.throws(() => guard(s), /movement/i);
+  s.p.moveLeft = full;
+  guard(s);
+  assert.equal(s.p.moveLeft, 0); assert.equal(s.p.attacksLeft, 0); assert.equal(s.stats.actions, 1);
+  const c = arena(['g...', '....', 'P...'], { g: 'grub' });
+  c.p.moveLeft = 1; channel(c); assert.equal(c.p.moveLeft, 0); assert.equal(c.stats.actions, 1);
+  const fast = arena(['g...', '....', 'P...'], { g: 'grub' });
+  fast.units.find(u => u.hero).move = full + 3; fast.p.moveLeft = full + 3;
+  guard(fast); assert.equal(fast.p.moveLeft, 0, 'movement graft increases Guard commitment');
 });

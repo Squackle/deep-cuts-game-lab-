@@ -10,15 +10,46 @@ from enemies_def import ENEMY_SPRITES
 
 ROOT = os.path.join(os.path.dirname(__file__), '..'); OUT = os.path.join(ROOT, 'assets')
 VIEWS = ['front', 'back']; COLS = max(a[1] for a in ANIMS)
-def sheet(w, h, paint, mask=False):
-    img = Image.new('RGBA', (w * COLS, h * len(VIEWS) * len(ANIMS)), (0, 0, 0, 0))
+# Keep authored creature coordinates unchanged, but give attack/cast poses safe
+# horizontal bleed. This prevents primitives being silently clipped by Spr.put
+# at x<0 / x>=logical width. Transparent margins have no effect on pixel scale
+# or foot pivot: scene sprites are centered on the enlarged frame.
+ENEMY_BLEED = 24  # maximum authoring bleed; trimmed to each sprite's actual extents at build time
+class BleedSprite:
+    def __init__(self, w, h, bleed):
+        self.w, self.h = w, h                 # original authoring coordinate system
+        self.bleed = bleed
+        self.real = Spr(w + 2 * bleed, h)    # drawable pixels beyond old edges
+    def put(self, x, y, c, dark=None, tag=0):
+        self.real.put(x + self.bleed, y, c, dark, tag)
+    def px(self, x, y, c): self.real.px(x + self.bleed, y, c)
+    def line(self, x0, y0, x1, y1, c, w=1):
+        self.real.line(x0 + self.bleed, y0, x1 + self.bleed, y1, c, w)
+    def ellipse(self, cx, cy, rx, ry, r, tag=0, hi=True):
+        self.real.ellipse(cx + self.bleed, cy, rx, ry, r, tag, hi)
+    def rect(self, x0, y0, x1, y1, r, face=0.3, tag=0):
+        self.real.rect(x0 + self.bleed, y0, x1 + self.bleed, y1, r, face, tag)
+    def poly(self, pts, r, lam_fn=None, tag=0):
+        # Shading must remain in the same local coordinate frame.
+        lighting = (lambda x, y: lam_fn(x - self.bleed, y)) if lam_fn else None
+        self.real.poly([(x + self.bleed, y) for x, y in pts], r, lighting, tag)
+    def shade(self, *args): return self.real.shade(*args)
+    def outline(self): self.real.outline(); return self
+    def image(self): return self.real.image()
+    def mask_image(self): return self.real.mask_image()
+
+def sheet(w, h, paint, mask=False, bleed=0):
+    frame_w = w + 2 * bleed
+    img = Image.new('RGBA', (frame_w * COLS, h * len(VIEWS) * len(ANIMS)), (0, 0, 0, 0))
     msk = Image.new('RGBA', img.size, (0, 0, 0, 0)) if mask else None
     for vi, view in enumerate(VIEWS):
         for ai, (name, n, fps, loop) in enumerate(ANIMS):
             for f in range(n):
-                s = Spr(w, h); paint(s, pose(name, f), view == 'back'); s.outline()
-                r = vi * len(ANIMS) + ai; img.paste(s.image(), (f * w, r * h))
-                if mask: msk.paste(s.mask_image(), (f * w, r * h))
+                s = BleedSprite(w, h, bleed) if bleed else Spr(w, h)
+                paint(s, pose(name, f), view == 'back'); s.outline()
+                r = vi * len(ANIMS) + ai
+                img.paste(s.image(), (f * frame_w, r * h))
+                if mask: msk.paste(s.mask_image(), (f * frame_w, r * h))
     return img, msk
 def build_sprites():
     os.makedirs(f'{OUT}/sprites/parts', exist_ok=True)
@@ -39,8 +70,31 @@ def build_sprites():
                 fname = f'parts/{name}_{tier}_{layer}.png'; im.save(f'{OUT}/sprites/{fname}'); entry[layer] = fname
             man['parts'][name][tier] = entry
     for name, (fn, w, h, hover) in ENEMY_SPRITES.items():
-        img, _ = sheet(w, h, fn); img.save(f'{OUT}/sprites/{name}.png')
-        man['sprites'][name] = {'w': w, 'h': h, 'file': f'{name}.png', 'hover': hover, 'pivotY': h - 3}
+        # Render to an expanded physical frame first so reaching arms, mandibles
+        # and attack weapons aren't prematurely cropped at the authored edges.
+        sample, _ = sheet(w, h, fn, bleed=ENEMY_BLEED)
+        full_w = w + 2 * ENEMY_BLEED
+        nearest = full_w
+        # Find the tightest union including every facing and animation frame.
+        for r in range(len(VIEWS) * len(ANIMS)):
+            for f in range(COLS):
+                frame = sample.crop((f * full_w, r * h, (f + 1) * full_w, (r + 1) * h))
+                bounds = frame.getchannel('A').getbbox()
+                if bounds: nearest = min(nearest, bounds[0], full_w - bounds[2])
+        # Retain at least 2px clear padding on BOTH sides, without adding 48px of
+        # invisible overdraw to every sprite. All animation frames share one w.
+        bleed = min(ENEMY_BLEED, max(0, ENEMY_BLEED + 2 - nearest))
+        tight_w = w + 2 * bleed
+        img = Image.new('RGBA', (tight_w * COLS, h * len(VIEWS) * len(ANIMS)), (0, 0, 0, 0))
+        for r in range(len(VIEWS) * len(ANIMS)):
+            for f in range(COLS):
+                left = f * full_w + (ENEMY_BLEED - bleed)
+                piece = sample.crop((left, r * h, left + tight_w, (r + 1) * h))
+                img.paste(piece, (f * tight_w, r * h))
+        img.save(f'{OUT}/sprites/{name}.png')
+        man['sprites'][name] = {'w': tight_w, 'h': h,
+                                 'file': f'{name}.png', 'hover': hover,
+                                 'pivotY': h - 3, 'artWidth': w, 'bleedX': bleed}
     return man
 def vnoise(n, cells, seed):
     rng = np.random.RandomState(seed); g = rng.rand(cells, cells)

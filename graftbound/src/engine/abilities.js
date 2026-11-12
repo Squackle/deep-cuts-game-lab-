@@ -50,9 +50,19 @@ function kill(s, ev, u) {
 }
 /** Damage pipeline: strike cap (bosses) -> armor (combat only) -> shield -> health.
  *  Only combat damage (strikes/counterblows) triggers Deathtouch and Lifelink; spells bypass armor. */
-export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hit' } = {}) {
+export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hit', element = null } = {}) {
   if (!alive(tgt) || amount <= 0) return 0;
   let a = amount;
+  // Explicit per-enemy affinity only. Never grant automatic same-color resistance to all foes.
+  // Applies to spell damage, not poison, falling terrain, ordinary attacks or burst explosions.
+  const affinity = kind === 'spell' && src?.side === 'player' && tgt.side === 'enemy' && element ? ENEMIES[tgt.defId]?.affinity : null;
+  if (affinity?.resist === element) {
+    const blocked = Math.min(a, 1); a -= blocked;
+    if (blocked) ev.push({ t: 'resisted', uid: tgt.uid, amount: blocked, element });
+  } else if (affinity?.weak === element) {
+    a++; ev.push({ t: 'weakpoint', uid: tgt.uid, amount: 1, element });
+  }
+  if (a <= 0) { ev.push({ t: 'damage', uid: tgt.uid, amount: 0, blocked: 0, kind }); return 0; }
   const cap = combat && ENEMIES[tgt.defId] && ENEMIES[tgt.defId].strikeCap;
   if (cap && a > cap) { ev.push({ t: 'capped', uid: tgt.uid, from: a, to: cap }); a = cap; }
   // v0.8 Guard: every hit from an enemy (strikes, arrows, slams, breath) is reduced; hazards and poison are not.

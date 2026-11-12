@@ -24,6 +24,7 @@ import { newEvolution } from '../engine/evolution.js';
 import { RANKED_CHALLENGES, ACTIVE_CHALLENGE } from '../engine/ranked.js';
 import { NODE_TYPES as NT } from '../engine/campaign.js';
 import { formatDuration } from '../engine/clock.js';
+import { packIdentity, packOrnament } from './pack-opening.js';
 
 const $ = id => document.getElementById(id);
 const TARGET = { enemy: 'One foe, anywhere', ally: 'Friendly creature, anywhere', self: 'Yourself', tile: 'Any tile (area)', empty: 'Empty tile' };
@@ -210,17 +211,17 @@ export function mapScreen(app) {
 
 /** Booster: original ornamental wrapper → seal charge → seal break → wrapper opens → cards fan → reveal → choose. */
 export function rewardScreen(app, cards, { tier, severed }) {
-  const run = app.run; const arcane = runStats(run).arcane; const fast = app.animFactor() > 1.5; const instant = app.animFactor() > 50;
+  const run = app.run; const arcane = runStats(run).arcane; const fast = app.animFactor() > 1.5; const instant = app.animFactor() > 50; const identity = packIdentity(tier);
   for (const id of cards) app.meta.seen[id] = true; app.saveMeta();
   const levelOf = id => { const e = run.spellbook.find(s => s.id === id); return e ? e.level + 1 : 1; };
   const titles = { boss: 'The Victor\u2019s Hoard', elite: 'An Elite\u2019s Hoard', shrine: 'Offering of the Wayshrine', graftsmith: 'The Graftsmith\u2019s Stock', battle: 'Spoils of Battle', primer: 'A Spell Primer', archivist: 'The Archivist\u2019s Folio' };
   const motes = Array.from({ length: 14 }, (_, i) => `<i style="--a:${(i * 26) % 360}deg;--d:${(i % 5) * 0.4}s;--r:${70 + (i % 4) * 18}px"></i>`).join('');
   const el = showScreen(`
-    <div class="reward tier-${tier}">
+    <div class="reward tier-${esc(tier)}" data-pack-kind="${identity.emblem}">
       <h2 class="rw-title">${titles[tier] || titles.battle}</h2>
-      <p class="rw-sub" id="rw-sub">${severed ? `You severed <b>${esc(severed)}</b>. ` : ''}Touch the seal to break it</p>
+      <p class="rw-sub" id="rw-sub" aria-live="polite">${severed ? `You severed <b>${esc(severed)}</b>. ` : ''}${esc(identity.cue)}</p><p class="rw-omen">${esc(identity.omen)}</p>
       <div class="pack-stage" id="pstage">
-        <button type="button" class="pack ${tier}" id="pack" aria-label="Break the seal and open the booster"><span class="pack-rank">${tier === 'elite' ? 'ELITE · ENCHANTED' : tier === 'boss' ? 'BOSS · MYTHIC HOARD' : 'COMMON · FIELD PACK'}</span>
+        <button type="button" class="pack ${tier}" id="pack" aria-label="Break the seal and open the booster"><span class="pack-rank">${esc(identity.rank)}</span>
           <span class="pk-shadow"></span>
           <span class="pk-body">
             <svg class="pk-art" viewBox="0 0 200 300" aria-hidden="true">
@@ -242,6 +243,7 @@ export function rewardScreen(app, cards, { tier, severed }) {
                 <path d="M0 -24 V28 M-12 -10 c8 0 12 4 12 10 s4 10 12 10 M12 -10 c-8 0 -12 4 -12 10" fill="none" stroke="url(#pkgold)" stroke-width="3" stroke-linecap="round"/>
                 <circle r="5" fill="url(#pkgold)"/>
               </g>
+              ${packOrnament(tier)}
               <text x="100" y="262" text-anchor="middle" class="pk-name">GRAFTBOUND</text>
               <text x="100" y="278" text-anchor="middle" class="pk-tier">${tier === 'elite' || tier === 'boss' ? 'STRONGER FRAGMENTS WITHIN' : tier === 'graftsmith' ? 'CREATURES ONLY' : 'THREE FRAGMENTS'}</text>
               <path d="M6 58 H194" stroke="url(#pkgold)" stroke-width="1.4" stroke-dasharray="5 4"/>
@@ -278,14 +280,14 @@ export function rewardScreen(app, cards, { tier, severed }) {
     const wait = ms => new Promise(r => setTimeout(r, instant ? 0 : fast ? ms * 0.35 : ms));
     const open = () => opening || (opening = (async () => {
       if (opened) return; opened = true;
-      app.audio.play('seal'); pack.classList.add('charging');
+      app.audio.play('seal'); if (tier === 'boss') app.audio.play('rare'); pack.classList.add('charging');
       const sc = app.scene; if (sc && sc.cam) sc.fx.swirl([0, 1.3, 0], () => [0, 1.3, 0], [1, 0.85, 0.45], 50, 0.6);
       await wait(520);
       pack.classList.add('broken'); app.audio.play('tear'); if (sc) { sc.screenFlash([1, 0.92, 0.7], 0.25); sc.fx.burst([0, 1.4, 0], [1, 0.85, 0.45], 60, { speed: 3, up: 2 }); }
       await wait(320);
       pack.classList.add('open'); fan.classList.add('out');
       await wait(380); pack.classList.add('gone');
-      $('rw-sub').textContent = 'Reveal each card'; const sk = $('rw-skip'); if (sk) sk.hidden = false;
+      $('rw-sub').textContent = 'Reveal the three fragments'; const sk = $('rw-skip'); if (sk) sk.hidden = false;
     })());
     pack.addEventListener('click', open);
     pack.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
@@ -296,7 +298,7 @@ export function rewardScreen(app, cards, { tier, severed }) {
       const fx = c.rarity === 'mythic' ? 'mythic' : c.rarity === 'rare' ? 'rare' : c.rarity === 'uncommon' ? 'uncommon' : 'flip';
       app.audio.play(fx); slot.classList.add('rv-' + c.rarity);
       if ((c.rarity === 'rare' || c.rarity === 'mythic') && app.scene) app.scene.screenFlash(c.rarity === 'mythic' ? [1, 0.7, 0.4] : [1, 0.92, 0.65], 0.18);
-      if (fan.querySelectorAll('.lc-card.flipped').length === 0) { $('rw-sub').textContent = 'Choose one card to keep'; $('rw-reveal').hidden = true; }
+      if (fan.querySelectorAll('.lc-card.flipped').length === 0) { $('rw-sub').textContent = 'Choose one card to keep · double-click to confirm'; $('rw-reveal').hidden = true; }
       return true;
     };
     fan.addEventListener('click', async e => {
@@ -394,7 +396,7 @@ export function sheetModal(app) {
       <section class="sh-main">
         <small class="sh-brand">${GAME.title} · Act ${ACT_ROMAN[run.act]}</small>
         <h2>${esc(run.name)} <small>${STAGE[ap.stage]}</small></h2>
-        <figure class="sh-portrait" data-character-portrait aria-label="Your current evolved character"><figcaption>Current form · ${esc(visible.join(', ') || 'The Blank')}</figcaption></figure>
+        <figure class="sh-portrait" data-character-portrait aria-label="Your current evolved character"><figcaption>Current form · ${esc(visible.join(', ') || 'The Blank')}</figcaption><div class="trait-pins" role="group" aria-label="Inspect visible graft traits"></div></figure><p class="trait-detail" aria-live="polite">Select a glowing trait to inspect your evolved form.</p>
         <div class="sh-pt"><div><span>${run.evo.power}</span><small>Power</small></div><div><span>${run.evo.toughness}</span><small>Toughness</small></div></div>
         <dl class="sh-derived">
           <dt>${ICON.heart} Health</dt><dd>${run.hp}/${st.maxHealth} <small>= ${st.spark} Spark + ${run.evo.toughness} toughness</small></dd>
@@ -416,6 +418,25 @@ export function sheetModal(app) {
     </div>
     <div class="modal-actions"><button type="button" class="btn" data-journal>Evolution Journal</button><button type="button" class="btn primary" data-close>Close</button></div>`, 'wide');
   m.querySelector('[data-character-portrait]')?.prepend(sheetCanvas(app, run.evo, 4));
+  // The markers reflect visible grafted anatomy only; no guessed card provenance.
+  const pinPositions = { head: [50, 18], back: [26, 38], rear: [77, 62], body: [50, 56], front: [77, 39] };
+  const traits = Object.entries(ap.slots).map(([slot, part]) => ({
+    name: part.part + (part.tier > 1 ? ' II' : ''),
+    label: slot + ' · ' + part.part + (part.tier > 1 ? ' (evolved)' : ''),
+    xy: pinPositions[slot] || [50, 50],
+  }));
+  ap.effects.forEach((effect, i) => traits.push({ name: effect, label: 'Visible aura · ' + effect, xy: [38 + i * 24, 79] }));
+  const pins = m.querySelector('.trait-pins');
+  if (pins) {
+    pins.innerHTML = traits.map((trait, i) => `<button type="button" class="trait-pin" data-trait="${i}"
+      style="left:${trait.xy[0]}%;top:${trait.xy[1]}%" aria-label="Inspect ${esc(trait.label)}" aria-pressed="false">✦</button>`).join('');
+    pins.addEventListener('click', event => {
+      const button = event.target.closest('[data-trait]'); if (!button) return;
+      const trait = traits[Number(button.dataset.trait)]; if (!trait) return;
+      for (const pin of pins.querySelectorAll('.trait-pin')) pin.setAttribute('aria-pressed', String(pin === button));
+      const detail = m.querySelector('.trait-detail'); if (detail) detail.textContent = trait.label;
+    });
+  }
   m.querySelector('[data-open-spellbook]')?.addEventListener('click', () => { app.closeModal(); spellbookModal(app); });
   const jb = document.querySelector('#modal [data-journal]'); if (jb) jb.addEventListener('click', () => { app.closeModal(); journalModal(app); });
 }

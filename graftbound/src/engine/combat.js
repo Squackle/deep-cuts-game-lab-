@@ -99,10 +99,23 @@ export function attack(s, targetUid) {
 // Both cost your ATTACK for the turn (no free actions), so they compete with striking. Values live in
 // data/tactics.js so tooltips and rules can never disagree.
 export const guardValue = p => Math.min(TACTICS.guard.max, TACTICS.guard.base + Math.floor((p.toughness || 0) / TACTICS.guard.perToughness));
+/** Movement printed on the Guard button is the hero's full turn budget, not their remaining movement.
+ * The cost grows when grafts improve movement and is reduced if grounded at turn start.
+ * Computing it from unit/status data preserves in-progress saves from earlier rules versions. */
+export function stanceMovementCost(s, kind) {
+  if (kind !== 'guard') return TACTICS[kind]?.moveCost || 0;
+  const p = player(s);
+  return p.statuses.stunned ? 0 : Math.max(0, p.move - (p.keywords.flying && p.statuses.grounded ? 1 : 0));
+}
 export function stanceBlockReason(s, kind) {
   if (s.phase !== 'player') return 'Not your turn';
   if (s.p.attacksLeft <= 0) return 'You already used your attack this turn';
-  if (!TACTICS[kind] || s.p.moveLeft < TACTICS[kind].moveCost) return 'Need ' + (TACTICS[kind]?.moveCost || 1) + ' movement point';
+  if (!TACTICS[kind]) return 'Unknown stance';
+  const cost = stanceMovementCost(s, kind);
+  if (kind === 'guard') {
+    if (cost <= 0) return 'Guard needs movement available';
+    if (s.p.moveLeft !== cost) return `Guard needs all ${cost} movement points unspent — you cannot Guard after moving`;
+  } else if (s.p.moveLeft < cost) return `Need ${cost} movement point${cost === 1 ? '' : 's'}`;
   if (kind === 'guard' && player(s).statuses.guard) return 'Already guarding';
   if (kind === 'channel' && s.p.channel) return 'Already channeling';
   return null;
@@ -110,7 +123,7 @@ export function stanceBlockReason(s, kind) {
 /** GUARD: give up your attack; until your next turn, every hit from a foe (strikes, arrows, slams, breath) is reduced. */
 export function guard(s) {
   ensurePlayerPhase(s); const why = stanceBlockReason(s, 'guard'); if (why) throw new Error(why);
-  const p = player(s); const v = guardValue(p); p.statuses.guard = v; s.p.attacksLeft = 0; s.p.moveLeft -= TACTICS.guard.moveCost;
+  const p = player(s); const v = guardValue(p); p.statuses.guard = v; s.p.attacksLeft = 0; s.p.moveLeft = 0;
   s.stats.actions++; s.stats.stances = (s.stats.stances || 0) + 1;
   return [{ t: 'stance', uid: p.uid, kind: 'guard', amount: v }, { t: 'status', uid: p.uid, status: 'guard', value: v, total: v }];
 }

@@ -45,144 +45,184 @@
    "pivotY": 45
   },
   "grub": {
-   "w": 32,
+   "w": 44,
    "h": 24,
    "file": "grub.png",
    "hover": 0,
-   "pivotY": 21
+   "pivotY": 21,
+   "artWidth": 44,
+   "bleedX": 0
   },
   "hound": {
-   "w": 40,
+   "w": 56,
    "h": 32,
    "file": "hound.png",
    "hover": 0,
-   "pivotY": 29
+   "pivotY": 29,
+   "artWidth": 40,
+   "bleedX": 8
   },
   "archer": {
-   "w": 32,
+   "w": 40,
    "h": 40,
    "file": "archer.png",
    "hover": 0,
-   "pivotY": 37
+   "pivotY": 37,
+   "artWidth": 32,
+   "bleedX": 4
   },
   "warden": {
-   "w": 44,
+   "w": 56,
    "h": 40,
    "file": "warden.png",
    "hover": 0,
-   "pivotY": 37
+   "pivotY": 37,
+   "artWidth": 44,
+   "bleedX": 6
   },
   "moth": {
-   "w": 44,
+   "w": 50,
    "h": 36,
    "file": "moth.png",
    "hover": 1,
-   "pivotY": 33
+   "pivotY": 33,
+   "artWidth": 44,
+   "bleedX": 3
   },
   "hexer": {
-   "w": 32,
+   "w": 38,
    "h": 44,
    "file": "hexer.png",
    "hover": 0,
-   "pivotY": 41
+   "pivotY": 41,
+   "artWidth": 32,
+   "bleedX": 3
   },
   "alpha": {
-   "w": 52,
+   "w": 66,
    "h": 40,
    "file": "alpha.png",
    "hover": 0,
-   "pivotY": 37
+   "pivotY": 37,
+   "artWidth": 52,
+   "bleedX": 7
   },
   "thornmother": {
-   "w": 72,
+   "w": 74,
    "h": 80,
    "file": "thornmother.png",
    "hover": 0,
-   "pivotY": 77
+   "pivotY": 77,
+   "artWidth": 72,
+   "bleedX": 1
   },
   "sproutling": {
-   "w": 24,
+   "w": 28,
    "h": 24,
    "file": "sproutling.png",
    "hover": 0,
-   "pivotY": 21
+   "pivotY": 21,
+   "artWidth": 24,
+   "bleedX": 2
   },
   "cinderling": {
    "w": 28,
    "h": 30,
    "file": "cinderling.png",
    "hover": 0,
-   "pivotY": 27
+   "pivotY": 27,
+   "artWidth": 28,
+   "bleedX": 0
   },
   "ashbrute": {
-   "w": 44,
+   "w": 58,
    "h": 44,
    "file": "ashbrute.png",
    "hover": 0,
-   "pivotY": 41
+   "pivotY": 41,
+   "artWidth": 44,
+   "bleedX": 7
   },
   "harpooner": {
-   "w": 40,
+   "w": 68,
    "h": 40,
    "file": "harpooner.png",
    "hover": 0,
-   "pivotY": 37
+   "pivotY": 37,
+   "artWidth": 40,
+   "bleedX": 14
   },
   "emberseer": {
-   "w": 32,
+   "w": 38,
    "h": 44,
    "file": "emberseer.png",
    "hover": 0,
-   "pivotY": 41
+   "pivotY": 41,
+   "artWidth": 32,
+   "bleedX": 3
   },
   "champion": {
-   "w": 48,
+   "w": 70,
    "h": 52,
    "file": "champion.png",
    "hover": 0,
-   "pivotY": 49
+   "pivotY": 49,
+   "artWidth": 48,
+   "bleedX": 11
   },
   "matron": {
-   "w": 72,
+   "w": 74,
    "h": 80,
    "file": "matron.png",
    "hover": 0,
-   "pivotY": 77
+   "pivotY": 77,
+   "artWidth": 72,
+   "bleedX": 1
   },
   "riftstalker": {
-   "w": 44,
+   "w": 62,
    "h": 34,
    "file": "riftstalker.png",
    "hover": 0,
-   "pivotY": 31
+   "pivotY": 31,
+   "artWidth": 44,
+   "bleedX": 9
   },
   "nullwarden": {
-   "w": 44,
+   "w": 56,
    "h": 40,
    "file": "nullwarden.png",
    "hover": 0,
-   "pivotY": 37
+   "pivotY": 37,
+   "artWidth": 44,
+   "bleedX": 6
   },
   "shardling": {
-   "w": 44,
+   "w": 50,
    "h": 36,
    "file": "shardling.png",
    "hover": 1,
-   "pivotY": 33
+   "pivotY": 33,
+   "artWidth": 44,
+   "bleedX": 3
   },
   "sentinel": {
    "w": 52,
    "h": 60,
    "file": "sentinel.png",
    "hover": 1,
-   "pivotY": 57
+   "pivotY": 57,
+   "artWidth": 52,
+   "bleedX": 0
   },
   "unwritten": {
-   "w": 72,
+   "w": 86,
    "h": 84,
    "file": "unwritten.png",
    "hover": 0,
-   "pivotY": 81
+   "pivotY": 81,
+   "artWidth": 72,
+   "bleedX": 7
   }
  },
  "parts": {

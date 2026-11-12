@@ -75,7 +75,7 @@ export const REAL_SPELLS = [
   S('Arc Lightning', '{2}{R}', 3, 'Sorcery', ['R'], 'uncommon'),
   S('Fireball', '{X}{R}', 1, 'Sorcery', ['R'], 'uncommon'),
   S('Giant Growth', '{G}', 1, 'Instant', ['G'], 'common'),
-  S('Drain Life', '{1}{B}', 2, 'Sorcery', ['B'], 'common'),
+  S('Drain Life', '{X}{1}{B}', 2, 'Sorcery', ['B'], 'common'),
   S('Infest', '{1}{B}{B}', 3, 'Sorcery', ['B'], 'uncommon'),
   S('Raise the Alarm', '{1}{W}', 2, 'Instant', ['W'], 'common'),
   S('Healing Hands', '{2}{W}', 3, 'Sorcery', ['W'], 'common'),

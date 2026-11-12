@@ -39,3 +39,13 @@ test('Scryfall failure never changes gameplay or substitutes a fictional card; i
   assert.equal(resolveCard('mtg:typhoid-rats').sourceInfo.live, true, 'enriched even with a missing image (frame fallback renders)');
   assert.deepEqual(checkFacts(resolveCard('mtg:grizzly-bears'), { ...rec, power: '3', toughness: '3', keywords: [], manaCost: '{1}{G}' }), ['P/T is 3/3 on Scryfall']);
 });
+
+
+test('Drain Life retains its real variable-mana printed cost while gameplay adaptation remains a fixed choice', async () => {
+  const { REAL_SPELLS } = await import('../src/cards/real-pool.js');
+  const oracle = REAL_SPELLS.find(c => c.name === 'Drain Life');
+  assert.equal(oracle.mana_cost, '{X}{1}{B}');
+  assert.equal(oracle.cmc, 2);
+  const { SPELL_ADAPTATIONS } = await import('../src/cards/compatibility.js');
+  assert.ok(SPELL_ADAPTATIONS['Drain Life']?.note?.includes('Adapted'));
+});
