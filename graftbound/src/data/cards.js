@@ -43,6 +43,9 @@ export const SPELLS = [
   { id: 'soul_siphon',    name: 'Soul Siphon',    rarity: 'uncommon', color: 'umbral',  cost: 2, target: 'enemy', art: 'siphon', category: 'damage',     text: 'Deal {2} damage and heal that much.' },
   { id: 'call_sproutling',name: 'Call Sproutling',rarity: 'uncommon', color: 'verdant', cost: 2, target: 'empty', range: 2, art: 'sprout', category: 'summon',     text: 'Summon a {2}/{2} ally beside you for this battle. It fights foes on its own.' },
   { id: 'chain_lightning',name: 'Chain Lightning',rarity: 'rare',     color: 'ember',   cost: 3, target: 'enemy', art: 'bolt',   category: 'damage',     text: 'Deal {3}, then {2} leaps to up to two nearby foes.' },
+  // v0.8 effect templates (used only by reviewed real-card adaptations; never offered on their own)
+  { id: 'wither', name: 'Wither', rarity: 'uncommon', color: 'umbral', cost: 1, target: 'enemy', art: 'siphon', category: 'weaken', text: 'Deal {1} to a foe and Weaken it by {2}: it strikes for {2} less on its next action.' },
+  { id: 'firestorm', name: 'Firestorm', rarity: 'uncommon', color: 'ember', cost: 3, target: 'self', art: 'flame', category: 'area', text: 'Deal {2} to EVERY foe on the battlefield.' },
   { id: 'starfall',       name: 'Starfall',       rarity: 'rare',     color: 'radiant', cost: 4, target: 'tile',  art: 'star',   category: 'area',       text: 'Deal {4} to a tile and {2} to adjacent foes.' },
 ].map(c => ({ ...c, ...L }));
 

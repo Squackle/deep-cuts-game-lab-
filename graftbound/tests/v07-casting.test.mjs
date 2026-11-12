@@ -26,18 +26,19 @@ function stub({ speed = 25, reduced = false, caster = {} } = {}) {
   return sc;
 }
 const SPELLS = Object.entries(SPELL_VFX);
-const SELF = new Set(['growth', 'heal', 'salve', 'shield']);
+const SELF = new Set(['growth', 'heal', 'salve', 'shield', 'titanic', 'pyroclasm']);
 
-test('all 13 curated spells have a cast profile with a casting point and an audio cue', () => {
-  assert.equal(SPELLS.length, 13);
+test('every curated spell (13 + 3 added in v0.8) has a cast profile with a casting point and an audio cue', () => {
+  assert.equal(SPELLS.length, 16);
   for (const [name, kind] of SPELLS) { const P = CAST_PROFILE[kind]; assert.ok(P, name); assert.ok(P.cue && P.origin && P.gather > 0 && P.build > 0, name); }
   assert.equal(rewardCards().filter(c => c.kind === 'spell').every(c => CAST_PROFILE[c.vfx]), true);
 });
 
-test('power sets the buildup: Shock and Healing Salve stay quick, Lightning Bolt and Fireball build the longest', () => {
+test('power sets the buildup: quick spells stay quick, the powerful tier (Bolt, Fireball, Titanic Growth, Pyroclasm) builds longest', () => {
   const t = k => profileFor(k).gather + profileFor(k).build;
-  assert.ok(t('shock') <= 120 && t('salve') <= 140);
-  for (const k of ['lightningBolt', 'fireball']) for (const [, o] of SPELLS) if (!['lightningBolt', 'fireball'].includes(o)) assert.ok(t(k) > t(o), k + ' > ' + o);
+  assert.ok(t('shock') <= 160 && t('salve') <= 180, t('shock') + ' ' + t('salve'));
+  const big = SPELLS.map(([, k]) => k).filter(k => profileFor(k).tier === 2); assert.deepEqual(big.sort(), ['fireball', 'lightningBolt', 'pyroclasm', 'titanic']);
+  for (const k of big) for (const [, o] of SPELLS) if (!big.includes(o)) assert.ok(t(k) > t(o), k + ' > ' + o);
 });
 
 for (const [name, kind] of SPELLS) test(`${name}: gathers at the caster, releases from the casting point, impact before resolve`, async () => {

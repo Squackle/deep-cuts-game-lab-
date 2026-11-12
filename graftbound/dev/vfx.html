@@ -30,16 +30,19 @@ function setForm(f) {
 }
 sc.addUnit({ uid: 2, side: 'enemy', x: 6, y: 1 }, 'hound'); sc.addUnit({ uid: 3, side: 'enemy', x: 5, y: 2 }, 'grub'); setForm(form);
 let last = performance.now(); (function loop(t) { sc.frame(Math.min(0.05, (t - last) / 1000)); last = t; requestAnimationFrame(loop); })(last);
-const SELF = new Set(['growth', 'heal', 'salve', 'shield']);
+const SELF = new Set(['growth', 'heal', 'salve', 'shield', 'titanic', 'pyroclasm']);
 const args = k => { const to = SELF.has(k) ? sc.centerPos(1) : k === 'summon' ? [...sc.world(3, 6)] : sc.centerPos(2); if (k === 'summon') to[1] = 0.3;
   const tiles = [[-1, 0], [0, 0], [1, 0], [0, -1], [0, 1]].map(([dx, dy]) => { const w = sc.world(6 + dx, 1 + dy); return [w[0], 0, w[2]]; });
   return { kind: k, uid: 1, to, target: SELF.has(k) || k === 'summon' || k === 'fireball' || k === 'poison' ? null : 2, tiles }; };
-const fire = async (k = fx) => { fx = k; await castSpellVisual(sc, args(k)); };
+window.__setMag = v => { mag = v; };
+let mag = +(q.get('mag') || 3);
+const fire = async (k = fx) => { fx = k; await castSpellVisual(sc, { ...args(k), magnitude: mag }); };
 const chargeOnly = async (k = fx) => { const done = await charge(sc, { uid: 1, kind: k, toward: sc.units.get(2).pos }); setTimeout(done, 1200 / sc.speed); };
 const ui = document.getElementById('ui');
 const sel = (opts, val, on) => { const s = document.createElement('select'); for (const [v, l] of opts) s.add(new Option(l, v, false, v === val)); s.onchange = () => on(s.value); ui.append(s); return s; };
 sel(Object.keys(FORMS).map(f => [f, 'Form: ' + f]), form, setForm);
-sel([['0.25', 'Speed ¼ (inspect stages)'], ['1', 'Normal'], ['2.2', 'Fast'], ['100', 'Instant']], q.get('speed') || '1', v => { sc.speed = +v; }); sc.speed = +(q.get('speed') || 1);
+sel([['0.25', 'Speed ¼ (inspect stages)'], ['0.65', 'Cinematic'], ['1', 'Normal'], ['2.2', 'Fast'], ['100', 'Instant']], q.get('speed') || '1', v => { sc.speed = +v; }); sc.speed = +(q.get('speed') || 1);
+sel([['1', 'Magnitude 1'], ['3', 'Magnitude 3'], ['6', 'Magnitude 6'], ['12', 'Magnitude 12'], ['24', 'Magnitude 24']], String(mag), v => { mag = +v; });
 sel([['0', 'Motion: full'], ['1', 'Reduced motion']], sc.reduced ? '1' : '0', v => { sc.reduced = v === '1'; });
 for (const [name, k] of Object.entries(SPELL_VFX)) { const b = document.createElement('button'); b.className = 'sp'; b.textContent = name; b.dataset.fx = k; b.onclick = () => { ui.querySelectorAll('.sp').forEach(x => x.classList.toggle('on', x === b)); fire(k); }; ui.append(b); }
 const cb = document.createElement('button'); cb.textContent = 'Charge stage only'; cb.onclick = () => chargeOnly(); ui.append(cb);

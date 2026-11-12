@@ -65,6 +65,10 @@ with sync_playwright() as p:
     pg.screenshot(path=f"{SHOTS}/v06_encounter_result.png"); pg.click(".result [data-go]")
     pg.wait_for_selector("#pack", timeout=20000); pg.click("#pack", force=True); time.sleep(0.4); pg.click("#rw-reveal", force=True); time.sleep(0.6)
     pg.locator(".slot[data-id='mtg:typhoid-rats']").click(force=True); time.sleep(0.2); pg.click("[data-take]", force=True); time.sleep(0.8)
+    try:   # v0.8 Spell Primer follows the first victory: decline it (+1 Spark)
+        pg.wait_for_selector("#pack", timeout=8000); pg.click("#pack", force=True); time.sleep(0.4); pg.click("#rw-reveal", force=True); time.sleep(0.4)
+        pg.click("#rw-skip", force=True); time.sleep(0.3); pg.click("#modal [data-yes]", force=True)
+    except Exception: pass
     pg.wait_for_selector("g.node.avail", timeout=20000)
     # ── journal ──
     pg.evaluate("window.__LC.openSheet()"); time.sleep(0.3); pg.click("#modal [data-journal]"); time.sleep(0.5)
@@ -98,8 +102,8 @@ with sync_playwright() as p:
     check("no page errors", not errs, errs[:3])
     # ── spell VFX gallery (dev only) ──
     pg.goto(ORIGIN + "/graftbound/dev/vfx.html?q=balanced"); time.sleep(2.5)
-    names = pg.evaluate("[...document.querySelectorAll('#b button')].map(b=>b.textContent)")
-    check("dev VFX gallery lists all 13 curated spells", len(names) == 13, names)
+    names = pg.evaluate("[...document.querySelectorAll('#ui .sp')].map(b=>b.textContent)")
+    check("dev VFX gallery lists all 16 curated spells", len(names) == 16, names)
     for fx in ['shock', 'flameSlash', 'salve', 'lightningBolt']:
         pg.evaluate(f"window.__fire('{fx}')"); time.sleep(0.5 if fx != 'lightningBolt' else 0.65); pg.screenshot(path=f"{SHOTS}/v06_vfx_{fx}.png"); time.sleep(0.8)
     check("gallery leaves saves untouched", pg.evaluate("localStorage.getItem('deepcutsedh.livingcard.run') !== null"))

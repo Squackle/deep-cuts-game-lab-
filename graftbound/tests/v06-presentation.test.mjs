@@ -27,12 +27,12 @@ test('no terrain regression: crystals and v0.6 terrain keep the floor free of co
     assert.equal(coplanarOverlaps(new Float32Array(board)), 0);
   }
 });
-test('all 13 curated real spells have DISTINCT VFX identities implemented as their own functions', async () => {
+test('every curated real spell (16) has a DISTINCT VFX identity implemented as its own function', async () => {
   const { VFX, SPELL_VFX } = await import('../src/rendering/vfx.js');
-  const spells = rewardCards().filter(c => c.kind === 'spell'); assert.equal(spells.length, 13);
-  const ids = spells.map(c => c.vfx); assert.equal(new Set(ids).size, 13, ids.join());
+  const spells = rewardCards().filter(c => c.kind === 'spell'); assert.equal(spells.length, 16);
+  const ids = spells.map(c => c.vfx); assert.equal(new Set(ids).size, 16, ids.join());
   for (const c of spells) { assert.equal(SPELL_VFX[c.name], c.vfx, c.name); assert.equal(typeof VFX[c.vfx], 'function', c.vfx); }
-  assert.equal(new Set(Object.values(SPELL_VFX).map(k => VFX[k])).size, 13, 'no two spells share an effect function');
+  assert.equal(new Set(Object.values(SPELL_VFX).map(k => VFX[k])).size, 16, 'no two spells share an effect function');
   const v = src('rendering/vfx.js'); assert.match(v, /export async function shock/); assert.ok(!/shock[^\n]*sleep\(sc, 2\d\d\)/.test(v), 'Shock stays fast (no long buildup)');
   assert.match(readFileSync(new URL('../dev/vfx.html', import.meta.url), 'utf8'), /SPELL_VFX/, 'dev gallery lists every spell');
 });

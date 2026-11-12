@@ -23,9 +23,12 @@ test('builds play differently: defensive builds take less damage per normal batt
   assert.ok(avg('tank', 'taken') < avg('melee', 'taken') || avg('lifelink', 'taken') < avg('melee', 'taken'));
 });
 test('full adventures (naive bot): challenging but winnable; considered picks beat random picks', () => {
-  const g = winRate(16, { policy: 'greedy' }), r = winRate(16, { policy: 'random' });
-  console.log('greedy', g.rate, g.actReached, 'random', r.rate);
-  assert.ok(g.rate >= 0.1 && g.rate <= 0.75, 'greedy ' + g.rate); assert.ok(r.rate <= g.rate, 'random ' + r.rate);
+  // v0.8: adaptive counter-reinforcements narrow the gap between strong and weak builds by design, so "considered
+  // picks beat random" is measured as overall progress (acts reached + wins) over 32 seeds, not win rate on 16.
+  const g = winRate(32, { policy: 'greedy' }), r = winRate(32, { policy: 'random' });
+  const progress = x => x.actReached[1] + x.actReached[2] + x.rate;
+  console.log('greedy', g.rate, g.actReached, 'random', r.rate, r.actReached);
+  assert.ok(g.rate >= 0.1 && g.rate <= 0.75, 'greedy ' + g.rate); assert.ok(progress(r) < progress(g), 'random ' + progress(r) + ' vs ' + progress(g));
   assert.ok(g.runs.some(x => !x.won && x.act >= 1), 'later acts claim runs');
 });
 test('stat growth stays bounded by graft capacity (v0.4 sims reached 30/29 by mid-campaign)', () => {

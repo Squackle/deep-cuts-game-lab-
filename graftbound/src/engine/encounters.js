@@ -3,6 +3,7 @@ import { makeRng, int, pick } from '../core/rng.js';
 import { T, DIRS } from '../core/grid.js';
 import { ACTS, REINFORCEMENTS } from '../data/encounters.js';
 import { stepOf } from './power.js';
+import { strengthOf, expectedStrength } from './strength.js';
 
 export const ARENA_W = 8, ARENA_H = 8;
 function connected(terrain, w, h, start) {
@@ -51,7 +52,7 @@ export function buildEncounter(template, seed, kind = 'battle') {
 export function templateFor(act, nodeType, depth, seed) {
   const rng = makeRng(seed); const A = ACTS[act];
   if (nodeType === 'tutorial' || (act === 0 && depth === 0)) return ACTS[0].tutorial[0]; // the Blank's first fight is always gentle
-  if (nodeType === 'boss') return A.boss[0];
+  if (nodeType === 'boss') return A.bossEncounters[0];
   if (nodeType === 'elite') return pick(rng, A.elite);
   const tier = depth <= 2 ? 'early' : depth <= 4 ? 'mid' : 'late';
   return pick(rng, A[tier]);
@@ -64,10 +65,25 @@ export function threatOf(evo) {
   return evo.power + evo.toughness + 2 * flags + stacks;
 }
 export const REINFORCE_CAP = [1, 2, 3];
-export function reinforcements(act, nodeType, depth, evo, seed) {
-  if (nodeType === 'tutorial' || (act === 0 && depth < 2)) return [];
-  const over = threatOf(evo) - (4 + 1.5 * stepOf(act, depth));
-  const n = Math.max(0, Math.min(REINFORCE_CAP[act], Math.floor(over / 5)));
-  const rng = makeRng(seed ^ 0x51ab);
-  return Array.from({ length: n }, () => pick(rng, REINFORCEMENTS[act]));
+/** v0.8 "the world answers what you have become": foes that COUNTER the build, never extra health.
+ *  Each list is ordered by how directly it answers that build; the reinforcement rolls among the first two. */
+export const COUNTERS = [
+  { flying: ['archer', 'moth'], spells: ['hexer', 'hound'], melee: ['tortoise', 'archer'], tank: ['hexer', 'moth'], any: ['hound', 'grub', 'moth'] },
+  { flying: ['harpooner', 'emberseer'], spells: ['harpooner', 'hound'], melee: ['cinderling', 'ashbrute'], tank: ['emberseer', 'harpooner'], any: ['cinderling', 'harpooner', 'hound'] },
+  { flying: ['harpooner', 'shardling'], spells: ['nullwarden', 'riftstalker'], melee: ['riftstalker', 'cinderling'], tank: ['shardling', 'nullwarden'], any: ['shardling', 'riftstalker', 'cinderling'] },
+];
+export const OVER_PER_FOE = [8, 6, 6];
+export function buildFocus(profile) { return profile.flying ? 'flying' : profile.spells >= 3 ? 'spells' : profile.melee ? 'melee' : profile.tank ? 'tank' : 'any'; }
+export function reinforcements(act, nodeType, depth, evo, seed, { spellbook = [], stats = null } = {}) {
+  if (nodeType === 'tutorial' || nodeType === 'boss' || (act === 0 && depth < 2)) return [];
+  const st = strengthOf(evo, { spellbook, stats: stats || {} });
+  const over = st.score - expectedStrength(stepOf(act, depth));
+  const n = Math.max(0, Math.min(REINFORCE_CAP[act], Math.floor(over / OVER_PER_FOE[act])));
+  const rng = makeRng(seed ^ 0x51ab); const pool = COUNTERS[act][buildFocus(st.profile)];
+  return Array.from({ length: n }, (_, i) => i === 0 ? pool[0] : pick(rng, pool));
+}
+/** Boss adaptation (v0.8): how far above the curve you are when you reach a boss. Read by boss AI only. */
+export function bossAdaptation(act, evo, { spellbook = [], stats = null } = {}) {
+  const st = strengthOf(evo, { spellbook, stats: stats || {} }); const over = st.score - expectedStrength(stepOf(act, 7));
+  return { over: +over.toFixed(1), surge: over >= OVER_PER_FOE[act] * 1.5, focus: buildFocus(st.profile), spells: spellbook.length };
 }

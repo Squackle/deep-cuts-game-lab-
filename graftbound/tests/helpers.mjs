@@ -1,4 +1,5 @@
-import { createBattle, moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, player, enemies, intents, hazardPreview } from '../src/engine/combat.js';
+import { createBattle, moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, player, enemies, intents, hazardPreview, guard } from '../src/engine/combat.js';
+import { usefulStances } from '../src/engine/legal.js';
 import { newEvolution, absorb, deriveStats } from '../src/engine/evolution.js';
 import { installReferenceSet } from '../src/cards/reference-set.js';
 import { T, manhattan, tileAt } from '../src/core/grid.js';
@@ -18,7 +19,8 @@ export function arena(rows, enemyMap, { evo = newEvolution(), spellbook = [], se
   return createBattle({ evo, stats: deriveStats(evo), spellbook, encounter: { name: 'test', w, h, terrain, playerStart, enemies: en }, seed });
 }
 /** Greedy bot (deliberately simple; balance numbers are directional). */
-export function botPlay(s, maxTurns = 40) {
+/** opts.tactics (default true): Guard when a foe threatens you and your attack went unused (v0.8). */
+export function botPlay(s, maxTurns = 40, { tactics = true } = {}) {
   for (let t = 0; t < maxTurns; t++) {
     if (s.phase !== 'player') return s.phase;
     const danger = new Set([...intents(s).flatMap(i => (i.kind === 'fire' || i.kind === 'slam') ? i.tiles.map(q => q.x + ',' + q.y) : []), ...hazardPreview(s).map(q => q.x + ',' + q.y)]);
@@ -36,11 +38,14 @@ export function botPlay(s, maxTurns = 40) {
       const best = opts.sort((a, b) => score(a) - score(b) || a.cost - b.cost)[0];
       if (best && score(best) < Math.min(...enemies(s).map(e => manhattan(player(s), e)))) movePlayer(s, best.x, best.y);
     }
+    // v0.8 tactics: trapped in a telegraph (or badly hurt and threatened) -> Guard instead of trading blows.
+    if (tactics && s.p.attacksLeft > 0 && usefulStances(s).includes('guard')) { const p0 = player(s); const trapped = danger.has(p0.x + ',' + p0.y) && !moveOptions(s).some(safe); if (trapped) guard(s); }
     while (attackTargets(s).length && s.phase === 'player') attack(s, attackTargets(s).sort((a, b) => a.hp - b.hp)[0].uid);
     if (s.phase !== 'player') return s.phase;
     const p = player(s);
     if (danger.has(p.x + ',' + p.y) && s.p.moveLeft > 0) { const o = moveOptions(s).filter(safe)[0]; if (o) movePlayer(s, o.x, o.y); }
     if (s.phase !== 'player') return s.phase;
+    if (tactics && s.p.attacksLeft > 0 && usefulStances(s).includes('guard')) guard(s);
     endTurn(s);
   }
   return s.phase === 'player' ? 'timeout' : s.phase;

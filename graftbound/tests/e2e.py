@@ -87,7 +87,11 @@ with sync_playwright() as p:
     pg.screenshot(path=f"{SHOTS}/e2e_pack_open.png")
     pg.locator(".slot[data-id='mtg:typhoid-rats']").click(force=True); time.sleep(0.3)
     det = pg.inner_text("#rw-detail"); check("detail: You become 2/2 + Deathtouch, Graft button", "2/2" in det and "Deathtouch" in det and "Graft Typhoid Rats" in det, det[:120])
-    pg.click("[data-take]", force=True); time.sleep(0.6); idle(pg, 20); wait_screen(pg, "g.node.avail")
+    pg.click("[data-take]", force=True); time.sleep(0.6); idle(pg, 20)
+    if wait_screen(pg, "#pack", 8) and pg.evaluate("window.__LC.run.pending && window.__LC.run.pending.tier==='primer'"):   # v0.8 Spell Primer
+        check("v0.8: the Spell Primer offers 3 spells after the first victory", pg.evaluate("window.__LC.run.pending.cards.length") == 3)
+        open_pack(pg); take(pg, pg.evaluate("window.__LC.run.pending.cards[0]"))
+    wait_screen(pg, "g.node.avail")
     evo = pg.evaluate("window.__LC.run.evo")
     check("grafted: 2/2 Deathtouch from a real card", evo['power'] == 2 and evo['toughness'] == 2 and evo['keywords'] == {'deathtouch': 1} and evo['absorbed'][0]['cardId'] == 'mtg:typhoid-rats')
     pg.locator("g.node.avail").first.dispatch_event("click"); time.sleep(1.2); idle(pg)
@@ -121,14 +125,14 @@ with sync_playwright() as p:
         check(f"Act {act + 1} battle uses the {theme} theme and new enemies", pg.evaluate("window.__LC.scene.theme") == theme and pg.evaluate("window.__LC.battle.s.units.some(u=>u.side==='enemy'&&['cinderling','harpooner','ashbrute','emberseer','riftstalker','nullwarden','shardling','hound','grub','hexer'].includes(u.defId))"))
         pg.screenshot(path=f"{SHOTS}/e2e_act{act + 1}.png")
     # ── v0.4 save compatibility at /graftbound/ ──
-    pg.evaluate("""(async()=>{const s=await import('./src/engine/save.js'); const run=await import('./src/engine/run.js'); const ev=await import('./src/engine/evolution.js');
+    pg.evaluate("""(async()=>{window.__LC.run=null; /* v0.8 saves on pagehide; drop the live run so it cannot overwrite the injected v0.4 save */ const s=await import('./src/engine/save.js'); const run=await import('./src/engine/run.js'); const ev=await import('./src/engine/evolution.js');
       const r=run.newRun({seed:99,tutorial:true}); let e=ev.newEvolution(); for (const id of ['nightcap_toad','galecrest_roc']) e=ev.absorb(e,id).evo;
       const old={...JSON.parse(JSON.stringify(r)),v:2,contentMode:'original',evo:e,spellbook:[{id:'ember_dart',level:1}]}; for (const k of ['act','actHistory','manaBonus','sparkFonts','wardNext','hp','shrine']) delete old[k];
       localStorage.setItem(s.KEYS.run, s._internal.wrap(2, old));})()""")
     pg.goto(URL); wait_screen(pg, "text=Continue Adventure", 40)
     check("v0.4 save loads at /graftbound/ with an update notice", "v0.4 adventure continues" in pg.inner_text("#toast") or pg.evaluate("window.__LC.loadInfo.migrated"))
     pg.click("text=Continue Adventure"); wait_screen(pg, "g.node.avail")
-    check("legacy grafts kept exactly; legacy card shown as Legacy", pg.evaluate("window.__LC.run.evo.absorbed.map(a=>a.cardId).join()") == "nightcap_toad,galecrest_roc" and pg.evaluate("window.__LC.run.v") == 4)
+    check("legacy grafts kept exactly; legacy card shown as Legacy", pg.evaluate("window.__LC.run.evo.absorbed.map(a=>a.cardId).join()") == "nightcap_toad,galecrest_roc" and pg.evaluate("window.__LC.run.v") == 5)
     pg.locator("g.node.avail").first.dispatch_event("click"); time.sleep(1.2); idle(pg)
     check("migrated adventure is playable (battle starts)", pg.evaluate("!!window.__LC.battle.s"))
     check("no page errors (desktop)", not errs, errs[:3])

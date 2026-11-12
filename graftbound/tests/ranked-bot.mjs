@@ -7,6 +7,7 @@ import { graftRating } from '../src/engine/power.js';
 import { graftsFull } from '../src/engine/run.js';
 import { eventChoices } from '../src/engine/events.js';
 import { manhattan } from '../src/core/grid.js';
+import { usefulStances } from '../src/engine/legal.js';
 import './helpers.mjs';
 
 export function nextBattleDecision(s) {
@@ -23,6 +24,7 @@ export function nextBattleDecision(s) {
   const near = o => Math.min(...enemies(s).map(e => manhattan(o, e)));
   const mv = moveOptions(s).sort((a, b) => near(a) - near(b) || a.cost - b.cost || a.y - b.y || a.x - b.x)[0];
   if (mv && near(mv) < near(p)) return { type: 'move', x: mv.x, y: mv.y };
+  const st = usefulStances(s); if (st.includes('guard')) return { type: 'guard' }; if (st.includes('channel')) return { type: 'channel' };
   return { type: 'end' };
 }
 export function nextDecision(run) {
