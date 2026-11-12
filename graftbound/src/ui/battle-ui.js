@@ -12,6 +12,7 @@ import { KEYWORDS, keywordLabel } from '../data/keywords.js';
 import { deriveAppearance } from '../engine/appearance.js';
 import { composePlayerSheet } from '../rendering/evolution-visuals.js';
 import { VFX, DEFAULT_VFX, chainHop } from '../rendering/vfx.js';
+import { castSpellVisual, withTimeout } from '../rendering/casting.js';
 import { ICON } from './icons.js';
 import { esc } from './cards.js';
 
@@ -74,7 +75,10 @@ export class BattleUI {
       v = this.scene.addUnit(u, 'blank'); this.scene.setUnitTexture(u.uid, composePlayerSheet(this.app.assets, ap), ap.size);
       v.aura = ap.effects.includes('aura') ? ap.glow : null;
       v.hover = u.keywords.flying ? 0.28 : 0;   // v0.6: fliers levitate; trample builds plant heavier steps (see play())
-      v.style = { flying: !!u.keywords.flying, trample: !!u.keywords.trample, deathtouch: !!u.keywords.deathtouch, doubleStrike: !!u.keywords.doubleStrike, lifelink: !!u.keywords.lifelink };
+      v.style = { flying: !!u.keywords.flying, trample: !!u.keywords.trample, deathtouch: !!u.keywords.deathtouch, doubleStrike: !!u.keywords.doubleStrike, lifelink: !!u.keywords.lifelink,
+        armored: !!ap.slots.body || ap.size >= 1.45 };
+      // v0.7 casting point follows the evolved body: horns/antlers/crown channel through the head.
+      v.castAt = ap.slots.head ? 'head' : 'chest';
     } else v = this.scene.addUnit(u, u.defId === 'sproutling' ? 'sproutling' : ENEMIES[u.defId].sprite);
     const el = document.createElement('div'); el.className = 'ulabel ' + (u.side === 'player' ? 'player' : 'enemy'); $('labels').appendChild(el); this.labels.set(u.uid, el);
     return v;
@@ -377,17 +381,17 @@ export class BattleUI {
   }
   tile(x, y) { return this.scene.world(x, y); }
   /** Spell playback: the spell's own VFX identity runs; damage events that follow appear at the impact moment. */
-  async playSpell(e, rest) {
+  /** v0.7 spell playback: GATHER → INTENSIFY → RELEASE at the caster, then the spell's own impact. Damage and
+   *  healing events that follow are played only after this resolves (the impact moment). Animation-only. */
+  async playSpell(e) {
     const sc = this.scene; const c = getCard(e.id); const kind = e.vfx && VFX[e.vfx] ? e.vfx : (DEFAULT_VFX[c.effect || e.id] || 'fire');
-    sc.play(e.uid, 'cast'); this.audio.play(kind === 'lightningBolt' || kind === 'chain' ? 'charge' : kind === 'shock' ? 'zap' : 'spell');
-    const from = sc.centerPos(e.uid); const to = e.target != null && sc.units.get(e.target) ? sc.centerPos(e.target) : [...this.tile(e.x, e.y)];
+    if (kind === 'teleport') { sc.play(e.uid, 'cast'); this.audio.play('spell'); return; }
+    const to = e.target != null && sc.units.get(e.target) ? sc.centerPos(e.target) : [...this.tile(e.x, e.y)];
     if (e.target == null) to[1] = 0.3;
     const tgtView = e.target != null && sc.units.get(e.target) ? e.target : null;
-    if (tgtView) sc.face(sc.units.get(e.uid), sc.units.get(tgtView).pos);
     const tiles = []; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const w = this.tile(e.x + dx, e.y + dy); tiles.push([w[0], 0, w[2]]); }
-    if (kind === 'teleport') return;
     if (kind === 'lightningBolt' || kind === 'chain') setTimeout(() => this.audio.play('crackle'), 120 / this.app.animFactor());
-    await VFX[kind](sc, { from, to, target: tgtView, tiles, uid: e.uid, uidFrom: e.uid });
+    await withTimeout(castSpellVisual(sc, { kind, uid: e.uid, to, target: tgtView, tiles, audio: this.audio }), 6000 / Math.min(this.app.animFactor(), 6));
     this.audio.play(SPELL_SFX[kind] || 'spell');
   }
   async play(events) {
@@ -442,7 +446,7 @@ export class BattleUI {
         case 'death': au.play('death'); { const lb = this.labels.get(e.uid); if (lb) { lb.remove(); this.labels.delete(e.uid); } } await sc.death(e.uid); break;
         case 'burst': { const w = this.tile(e.x, e.y); sc.fx.burst([w[0], 0.3, w[2]], [1, 0.55, 0.15], 40, { speed: 2.8, up: 2 }); sc.addRing({ pos: [w[0], 0.03, w[2]], r0: 0.1, r1: 1.3, life: 0.35, col: [1, 0.5, 0.1], width: 0.12 }); sc.light([w[0], 0.4, w[2]], [1, 0.5, 0.15], 3, 0.4, 2.4); au.play('fireboom'); if (!sc.reduced) sc.shake(0.1); await this.wait(160); break; }
         case 'mana': this.dispMana = e.to; this.renderHUD(); break;
-        case 'spell': await this.playSpell(e, events.slice(idx + 1)); break;
+        case 'spell': await this.playSpell(e); break;
         case 'area': break;
         case 'chain': { const a = [...this.tile(e.from.x, e.from.y)], b = e.target != null && sc.units.get(e.target) ? sc.centerPos(e.target) : [...this.tile(e.x, e.y)]; a[1] = 0.4; au.play('zap'); await chainHop(sc, a, b, e.target); break; }
         case 'trample': this.float(e.uid, 'Trample!', 'note'); await this.wait(100); break;

@@ -1,0 +1,111 @@
+// v0.7 universal spellcasting pipeline: GATHER → INTENSIFY → RELEASE → IMPACT, always from the caster's body.
+// Pure presentation. It never reads or changes rules state: the engine has already resolved the spell, and the
+// damage/heal events are played only after the promise returned here resolves (= the impact moment).
+// Works with any Scene-like object (tests use a recording stub) and an optional audio object.
+import { VFX } from './vfx.js';
+
+const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
+const R = () => Math.random() - 0.5;
+
+/** Per-spell charge identity. tier: 0 quick, 1 normal, 2 powerful. Times are ms at normal speed. */
+export const CAST_PROFILE = {
+  shock:         { col: [1, 0.95, 0.55], gather: 70,  build: 40,  tier: 0, motes: 10, arcs: 1, cue: 'zap',        origin: 'hands' },
+  lightningBolt: { col: [0.62, 0.82, 1], gather: 300, build: 220, tier: 2, motes: 60, arcs: 4, cue: 'charge',     origin: 'chest', core: true },
+  flameSlash:    { col: [1, 0.5, 0.15],  gather: 200, build: 120, tier: 1, motes: 34, embers: true, cue: 'castFire', origin: 'hands' },
+  chain:         { col: [0.62, 0.82, 1], gather: 200, build: 120, tier: 1, motes: 36, arcs: 3, cue: 'charge',     origin: 'chest', core: true },
+  fireball:      { col: [1, 0.48, 0.14], gather: 320, build: 260, tier: 2, motes: 60, embers: true, cue: 'castFire', origin: 'mouth', core: true },
+  growth:        { col: [0.5, 1, 0.4],   gather: 260, build: 110, tier: 1, motes: 44, fromGround: true, cue: 'castNature', origin: 'chest', self: true },
+  drain:         { col: [0.6, 0.2, 0.55], gather: 220, build: 110, tier: 1, motes: 34, cue: 'castDark',   origin: 'chest' },
+  poison:        { col: [0.55, 0.95, 0.3], gather: 220, build: 120, tier: 1, motes: 34, cue: 'castDark',   origin: 'mouth' },
+  summon:        { col: [1, 0.9, 0.55],  gather: 180, build: 100, tier: 1, motes: 30, cue: 'castHoly',   origin: 'chest' },
+  heal:          { col: [1, 0.88, 0.5],  gather: 240, build: 120, tier: 1, motes: 40, cue: 'castHoly',   origin: 'hands', self: true },
+  salve:         { col: [0.75, 1, 0.8],  gather: 90,  build: 40,  tier: 0, motes: 14, cue: 'castHoly',   origin: 'hands', self: true },
+  shield:        { col: [0.55, 0.8, 1],  gather: 200, build: 110, tier: 1, motes: 34, cue: 'castArcane', origin: 'chest', self: true },
+  frost:         { col: [0.65, 0.92, 1], gather: 220, build: 120, tier: 1, motes: 36, cue: 'castFrost',  origin: 'mouth' },
+  fire:          { col: [1, 0.5, 0.15],  gather: 200, build: 100, tier: 1, motes: 30, embers: true, cue: 'castFire', origin: 'hands' },
+  wind:          { col: [0.85, 0.95, 1], gather: 120, build: 60,  tier: 0, motes: 16, cue: 'castArcane', origin: 'hands' },
+};
+const DEFAULT_PROFILE = { col: [0.85, 0.75, 1], gather: 180, build: 100, tier: 1, motes: 28, cue: 'spell', origin: 'chest' };
+export const profileFor = kind => CAST_PROFILE[kind] || DEFAULT_PROFILE;
+
+/** Height fraction of the sprite where magic gathers, by casting point. */
+export const ORIGIN_HEIGHT = { chest: 0.48, hands: 0.42, mouth: 0.62, head: 0.88 };
+
+/** Which casting point this creature uses. Head features (horns/antlers/crown) channel non-hand spells through the head. */
+export function originPoint(v, kind) {
+  const want = profileFor(kind).origin;
+  if (v && v.castAt === 'head' && want !== 'hands') return 'head';
+  return want;
+}
+
+/** The caster's CURRENT world-space casting point (follows hover, bob, lunge, lift and evolution size every frame). */
+export function castOrigin(sc, uid, kind) {
+  const v = sc.units.get(uid); if (!v) return [0, 0, 0];
+  const pt = originPoint(v, kind), h = sc.heightOf(v), frac = ORIGIN_HEIGHT[pt] || 0.48;
+  const bob = v.hover ? Math.sin((sc.time || 0) * 3 + v.uid) * 0.06 : 0;
+  const d = v.dir || [0, -1], l = Math.hypot(d[0], d[1]) || 1, fwd = pt === 'chest' ? 0.06 : 0.14;
+  const lg = v.lunge || [0, 0, 0];
+  return [v.pos[0] + lg[0] + d[0] / l * fwd, v.pos[1] + (v.hover || 0) + bob + (v.castLift || 0) + h * frac, v.pos[2] + lg[2] + d[1] / l * fwd];
+}
+
+const sleep = (sc, ms) => new Promise(r => setTimeout(r, ms / Math.max(0.01, sc.speed)));
+const secs = (sc, ms) => ms / 1000 / Math.max(0.01, sc.speed);
+
+/** Stages 1 + 2: magic converges on the casting point, then concentrates. Resolves with a cleanup function. */
+export async function charge(sc, { uid, kind, audio = null, toward = null }) {
+  const P = profileFor(kind), reduced = !!sc.reduced;
+  const v = sc.units.get(uid); if (!v) return () => {};
+  const origin = () => castOrigin(sc, uid, kind);
+  if (toward && sc.face) sc.face(v, toward);
+  if (sc.play) sc.play(uid, 'cast');
+  if (audio) audio.play(P.cue);
+  const k = reduced ? 0.5 : 1, n = Math.round(P.motes * (reduced ? 0.4 : 1));
+  const timers = [];
+  // stage 1 — gather: element-coloured motes converge on the casting point; a faint glow follows the body
+  const glow = sc.light(origin(), P.col, 1.3, secs(sc, P.gather + P.build) + 0.2, 0.5); glow.follow = origin;
+  v.flash = Math.max(v.flash || 0, 0.15);
+  for (let i = 0; i < n; i++) {
+    const o = origin(); const a = Math.random() * Math.PI * 2, r = 0.7 + Math.random() * 0.8;
+    const start = P.fromGround ? [o[0] + Math.cos(a) * r, 0.04, o[2] + Math.sin(a) * r] : [o[0] + Math.cos(a) * r, o[1] + R() * 0.9, o[2] + Math.sin(a) * r];
+    sc.fx.emit({ pos: start, vel: [0, P.fromGround ? 0.6 : 0, 0], col: [...P.col, 1], size: 7 + Math.random() * 6, life: secs(sc, P.gather + P.build) + 0.1, drag: 0.6, target: origin }, true);
+    if (P.embers && i % 3 === 0) sc.fx.emit({ pos: start, vel: [0, 0.5, 0], col: [1, 0.75, 0.3, 1], size: 5, life: 0.5, grav: -1, target: origin }, true);
+  }
+  if (v.style && v.style.flying && !reduced) sc.tween(P.gather / 1000, t => { v.castLift = 0.12 * t; });
+  await sleep(sc, P.gather * k);
+  // stage 2 — intensify: the glow brightens, a concentrated core / arcs form, powerful spells lean the camera in
+  glow.radius = 1.6 + P.tier * 0.8; glow.base = 0.9 + P.tier * 0.6;
+  if (P.core) sc.addRing({ pos: origin(), r0: 0.05, r1: 0.22 + 0.06 * P.tier, life: secs(sc, P.build) + 0.05, col: P.col, width: 0.05, spin: 6, seg: 16 });
+  if (P.arcs && !reduced) {
+    timers.push(setInterval(() => { const o = origin(); for (let i = 0; i < P.arcs; i++) sc.addBolt({ a: o, b: [o[0] + R() * 0.6, o[1] + R() * 0.5, o[2] + R() * 0.6], life: 0.07, width: 0.016, col: P.col, segs: 4 }); }, 55 / Math.max(0.01, sc.speed)));
+  }
+  sc.fx.burst(origin(), P.col, Math.round((6 + P.tier * 8) * (reduced ? 0.5 : 1)), { speed: 0.5, up: 0.2, size: 8 + P.tier * 3, grav: 0, life: secs(sc, P.build) + 0.1, spread: 0.05 });
+  let z0 = null;
+  if (P.tier >= 2 && !reduced) { z0 = sc.zoom; sc.tween(P.build / 1000, t => { sc.zoom = z0 * (1 + 0.05 * t); }); }
+  if (v.style && v.style.armored && !reduced && P.tier >= 1) { sc.shake(0.03); sc.addRing({ pos: [v.pos[0], 0.03, v.pos[2]], r0: 0.1, r1: 0.6, life: 0.3, col: P.col, width: 0.05 }); }
+  await sleep(sc, P.build * k);
+  let done = false;
+  return () => {
+    if (done) return; done = true;
+    for (const t of timers) clearInterval(t);
+    if (z0 != null) sc.tween(0.25, t => { sc.zoom = z0 * (1 + 0.05 * (1 - t)); }).then(() => { sc.zoom = z0; });
+    if (v.castLift) sc.tween(0.2, t => { v.castLift = 0.12 * (1 - t); }).then(() => { v.castLift = 0; });
+  };
+}
+
+/** Full cast: charge at the caster, then the spell's own release/impact from the casting point. Resolves at IMPACT.
+ *  Never rejects: a failed animation must not stall the battle UI (gameplay was already resolved by the engine). */
+export async function castSpellVisual(sc, { kind, uid, to, target = null, tiles = [], audio = null }) {
+  const fn = VFX[kind]; if (!fn) return;
+  let cleanup = () => {};
+  try {
+    const instant = sc.speed >= 50;
+    if (!instant) cleanup = await charge(sc, { uid, kind, audio, toward: target != null && sc.units.get(target) ? sc.units.get(target).pos : to });
+    const from = castOrigin(sc, uid, kind);
+    if (!instant && profileFor(kind).tier >= 1 && !profileFor(kind).self) sc.light(lerp(from, to || from, 0.3), profileFor(kind).col, 2.2, 0.25, 1.4);   // brief directional light
+    await fn(sc, { from, to: to || from, target, tiles, uid, uidFrom: uid, charged: true });
+  } catch (err) { if (typeof console !== 'undefined') console.warn('Spell VFX failed (gameplay unaffected):', err); }
+  finally { cleanup(); }
+}
+
+/** UI safety net: resolve no later than `ms` even if an effect hangs (e.g. a throttled background tab). */
+export function withTimeout(p, ms) { let t; return Promise.race([p, new Promise(r => { t = setTimeout(r, Math.max(50, ms)); })]).finally(() => clearTimeout(t)); }
