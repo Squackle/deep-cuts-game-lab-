@@ -154,6 +154,8 @@ export function cast(s, spellId, x, y) {
   s.p.mana -= cost; s.p.cast[spellId] = true; s.stats.spellsCast++; s.stats.actions++;
   ev.push({ t: 'mana', from: s.p.mana + cost, to: s.p.mana });
   castSpellEffect(s, ev, spellId, entry.level, x, y);
+  const spellEvent = ev.find(x => x.t === 'spell' && x.id === spellId);
+  if (spellEvent) spellEvent.manaCost = cost; // presentation-only; exact paid cost includes Null Warden tax
   return ev;
 }
 export function endTurn(s) {

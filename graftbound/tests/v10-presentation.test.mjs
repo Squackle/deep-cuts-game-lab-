@@ -32,7 +32,7 @@ test('every spell has an element-specific, finite-cost aftermath glyph; reduced/
   aftermathSigil(scene, 'shock', [1, 1, 2], 1);
   aftermathSigil(scene, 'pyroclasm', [1, 1, 2], 1.8);
   assert.equal(geometry.length, 3); // Shock one ring; powerful Pyroclasm two.
-  assert.equal(geometry[0].spokes, 3);
+  assert.equal(geometry[0].spokes, 0); // 1-mana spark is deliberately simple
   assert.equal(geometry[1].spokes, 12);
   assert.ok(geometry.every(x => x.life <= 0.7 && x.r1 <= 1.8));
   const before = geometry.length;

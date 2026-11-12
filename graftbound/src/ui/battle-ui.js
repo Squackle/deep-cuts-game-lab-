@@ -469,7 +469,7 @@ export class BattleUI {
     const tgtView = e.target != null && sc.units.get(e.target) ? e.target : null;
     const tiles = []; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const w = this.tile(e.x + dx, e.y + dy); tiles.push([w[0], 0, w[2]]); }
     if (kind === 'lightningBolt' || kind === 'chain') setTimeout(() => this.audio.play('crackle'), 120 / this.app.animFactor());
-    await withTimeout(castSpellVisual(sc, { kind, uid: e.uid, to, target: tgtView, tiles, audio: this.audio, magnitude: e.magnitude }), 9000 / Math.min(this.app.animFactor(), 6));
+    await withTimeout(castSpellVisual(sc, { kind, uid: e.uid, to, target: tgtView, tiles, audio: this.audio, magnitude: e.magnitude, manaCost: e.manaCost ?? c.cost }), 9000 / Math.min(this.app.animFactor(), 6));
     this.audio.play(SPELL_SFX[kind] || 'spell');
   }
   async play(events) {
