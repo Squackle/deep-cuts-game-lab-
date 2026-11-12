@@ -14,6 +14,7 @@ import { evaluateAchievements, recordRunEnd } from './engine/progression.js';
 import { deriveAppearance } from './engine/appearance.js';
 import { newEvolution } from './engine/evolution.js';
 import { hashSeed } from './core/rng.js';
+import { tickClock, clockActive, newClock } from './engine/clock.js';
 import { resolveCard as getCard } from './cards/catalog.js';
 import { keywordLabel } from './data/keywords.js';
 import { ACTS } from './data/encounters.js';
@@ -57,14 +58,25 @@ class App {
     this.battle = new BattleUI(this);
     this.mode = 'title'; this.fpsS = [];
     this.bindGlobal();
-    let last = performance.now();
+    let last = performance.now(), clockLast = last, clockSaved = last;
     const loop = now => {
       const dt = Math.max(0, Math.min(0.1, (now - last) / 1000)); last = now;
+
       if (this.mode === 'title' || this.mode === 'intro') this.scene.yawTarget += dt * 0.1;
       this.scene.frame(dt); this.battle.frame(); this.autoQuality(dt);
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
+    // v0.8 active-time clock: a timer (not the render loop, so slow frames never undercount) samples the monotonic
+    // performance.now(). It pauses on the pause menu, hidden tabs and the title/end screens; gaps are clamped.
+    setInterval(() => {
+      const now = performance.now(), raw = now - clockLast; clockLast = now;
+      if (this.run && clockActive({ hasRun: true, mode: this.mode, paused: !!this.pauseOpen, hidden: document.hidden, ended: this.run.phase === 'won' || this.run.phase === 'lost' })) {
+        if (!this.run.clock) this.run.clock = newClock(true);
+        tickClock(this.run.clock, raw, this.run.act);
+        if (now - clockSaved > 15000) { clockSaved = now; this.save(); }
+      }
+    }, 250);
     this.toTitle();
     if (loaded.recovered) this.toast('Your latest save could not be read, so the previous good save was restored.');
     else if (loaded.error) this.toast('Your saved adventure could not be read and was set aside (a copy was kept).');
@@ -72,7 +84,7 @@ class App {
   }
   save() { this.store.saveRun(this.run); }
   saveMeta() { this.store.saveMeta(this.meta); }
-  animFactor() { const f = new URLSearchParams(location.search).get('anim'); return { normal: 1, fast: 2.2, instant: 100 }[f || this.meta.settings.animSpeed] || 1; }
+  animFactor() { const f = new URLSearchParams(location.search).get('anim'); return { cinematic: 0.65, normal: 1, fast: 2.2, instant: 100 }[f || this.meta.settings.animSpeed] || 1; }
   pickQuality() {
     const forced = new URLSearchParams(location.search).get('gfx'); if (['high', 'balanced', 'performance'].includes(forced)) return forced;
     const g = this.meta.settings.graphics; if (g !== 'auto') return g;
@@ -89,11 +101,11 @@ class App {
     const clean = Object.fromEntries(Object.entries(d).filter(([, v]) => v !== undefined));
     (r.ranked.log = r.ranked.log || []).push({ seq: r.ranked.seq, ...clean }); r.ranked.seq++;
   }
-  recordKey(run = this.run) { return run && run.ranked ? `ranked:${run.ranked.challengeId}:${run.ranked.revision}:${run.ranked.rulesVersion}` : 'adventure:v0.6'; }
+  recordKey(run = this.run) { return run && run.ranked ? `ranked:${run.ranked.challengeId}:${run.ranked.revision}:${run.ranked.rulesVersion}` : 'adventure:v0.8'; }
   /** LOCAL personal records only (never uploaded). Returns whether this is a new best. */
   saveRecords(run) {
     const t = expeditionTotals(run); const k = this.recordKey(run); const recs = this.meta.records = this.meta.records || {};
-    const r = recs[k] = recs[k] || { label: run.ranked ? `Ranked preview · ${run.ranked.challengeId}` : 'Adventure (v0.6 scoring)', completions: 0 };
+    const r = recs[k] = recs[k] || { label: run.ranked ? `Ranked preview · ${run.ranked.challengeId}` : 'Adventure (v0.8 rules)', completions: 0 };
     const better = !r.best || t.total > r.best.total || (t.total === r.best.total && t.actions < r.best.actions);
     if (better) r.best = { total: t.total, actions: t.actions, damage: t.damage, turns: t.turns, acts: t.actsCompleted, completed: t.completed };
     if (t.completed) { r.completions++; r.lowestDamage = r.lowestDamage == null ? t.damage : Math.min(r.lowestDamage, t.damage); }
@@ -121,6 +133,8 @@ class App {
     $('hint').addEventListener('click', () => $('hint').classList.remove('show'));
     $('bigtext').addEventListener('click', () => { if (this.skipAbsorb) this.skipAbsorb(); });
     document.addEventListener('pointerdown', () => this.audio.unlock());
+    document.addEventListener('visibilitychange', () => { if (document.hidden && this.run) this.save(); });   // keep elapsed time across closes
+    window.addEventListener('pagehide', () => { if (this.run) this.save(); });
     window.addEventListener('keydown', e => {
       const k = e.key.toLowerCase();
       if (k === 'escape' && this.modalOpen()) { this.closeModal(); return; }
@@ -138,7 +152,7 @@ class App {
   syncSoundBtn() { const on = this.meta.settings.sound || this.meta.settings.music; $('btn-sound').innerHTML = on ? ICON.sound : ICON.mute; $('btn-sound').setAttribute('aria-label', on ? 'Mute' : 'Unmute'); }
   modalOpen() { return $('modal').classList.contains('show'); }
   openModal(html, cls = '') { const m = $('modal'); m.innerHTML = `<div class="modal-box ${cls}" role="dialog" aria-modal="true">${html}</div>`; m.classList.add('show'); const f = m.querySelector('button.primary, button'); if (f) f.focus({ preventScroll: true }); return m.firstElementChild; }
-  closeModal() { $('modal').classList.remove('show'); $('modal').innerHTML = ''; }
+  closeModal() { this.pauseOpen = false; $('modal').classList.remove('show'); $('modal').innerHTML = ''; }
   confirm(text, yes, fn) { const m = this.openModal(`<p class="confirm">${esc(text)}</p><div class="modal-actions"><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn danger" data-yes>${esc(yes)}</button></div>`); m.querySelector('[data-yes]').addEventListener('click', () => { this.closeModal(); fn(); }); }
   toast(html, kind = '') { const t = $('toast'); t.innerHTML = html; t.className = 'toast ' + kind; void t.offsetWidth; t.classList.add('show'); }
   status(text) { $('status').textContent = text; $('status').classList.toggle('show', !!text); }
@@ -149,13 +163,15 @@ class App {
   }
   achievementsToast(list) { list.forEach((a, i) => setTimeout(() => { this.audio.play('achievement'); this.toast(`<b>Achievement</b> ${esc(a.name)}<small>${esc(a.text)}</small>`); }, i * 2200)); }
   openSheet() { if (this.run) UI.sheetModal(this); }
+  inspectSpell(id) { const e = this.run && this.run.spellbook.find(x => x.id === id); UI.inspectCard(this, id, { level: e ? e.level : 1, arcane: this.battle.s ? this.battle.s.p.arcane : 0 }); }
   pauseMenu() {
     const inRun = !!this.run;
+    setTimeout(() => { this.pauseOpen = true; }, 0);   // the clock stops while the pause menu is open
     const m = this.openModal(`<small class="sh-brand">${GAME.title}</small><h2>Paused</h2><div class="menu">
       <button type="button" class="btn primary" data-close>Resume</button>
       ${inRun ? '<button type="button" class="btn" data-a="sheet">Character Sheet &amp; Spellbook</button><button type="button" class="btn" data-a="journal">Evolution Journal</button>' : ''}
       <button type="button" class="btn" data-a="settings">Settings</button>
-      ${inRun ? '<button type="button" class="btn" data-a="quit">Save &amp; Return to Title</button><button type="button" class="btn danger" data-a="abandon">Abandon Adventure</button>' : ''}</div>`);
+      ${inRun ? '<button type="button" class="btn" data-a="quit">Save &amp; Return Home</button><button type="button" class="btn danger" data-a="abandon">Abandon Adventure</button>' : ''}</div>`);
     m.addEventListener('click', e => {
       const a = e.target.closest('[data-a]'); if (!a) return;
       if (a.dataset.a === 'sheet') { this.closeModal(); this.openSheet(); }
@@ -264,6 +280,7 @@ class App {
       this.collect(evaluateAchievements(this.meta, { event: 'evolve', run: this.run, evo: this.run.evo })); this.saveMeta();
     }
     if (this.run.phase === 'won') return this.endRun(true);
+    if (this.run.phase === 'reward' && this.run.pending) return this.reward();   // v0.8: the Spell Primer follows the first victory
     return this.goMap();
   }
   newTraits(evoBefore) {

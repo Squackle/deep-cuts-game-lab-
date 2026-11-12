@@ -8,8 +8,9 @@ import { spellTargets, castSpellEffect, castBlockReason, spellCost } from './spe
 import { actEnemy, actAlly, spawnEnemy, previewIntent, announcePhase } from './ai.js';
 import { STARTING_NAME } from './evolution.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
+import { TACTICS } from '../data/tactics.js';
 
-export const BATTLE_VERSION = 4;
+export const BATTLE_VERSION = 5;
 export const RIFT_DAMAGE = TERRAIN_RULES.rift.pulseDamage, LAVA_DAMAGE = TERRAIN_RULES.lava.endTurnDamage;
 
 export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroName = STARTING_NAME, startHp = null, act = 0 }) {
@@ -41,7 +42,7 @@ export function startPlayerTurn(s) {
   s.turn++; s.phase = 'player'; s.stats.turns = s.turn;
   if (p.suppressed && p.suppressedTurn == null) p.suppressedTurn = s.turn;   // Redaction lasts for exactly this turn
   ev.push({ t: 'turn', phase: 'player', turn: s.turn });
-  p.statuses.empowered = 0;
+  p.statuses.empowered = 0; p.statuses.guard = 0; s.p.channel = 0;   // v0.8 stances last until your next turn begins
   if (p.statuses.poison > 0) { dealDamage(s, ev, null, p, p.statuses.poison, { kind: 'poison' }); p.statuses.poison--; if (!alive(p)) return ev; }
   if (kv(p, 'regenerate')) heal(s, ev, p, kv(p, 'regenerate'), 'regenerate');
   if (kv(p, 'ward') && (p.statuses.shield || 0) < kv(p, 'ward')) {
@@ -94,6 +95,33 @@ export function attack(s, targetUid) {
   if (!has(p, 'vigilance')) s.p.moveLeft = 0;
   return ev;
 }
+// ── v0.8 tactical stances: available to every creature, independent of card rewards ─────────────────────
+// Both cost your ATTACK for the turn (no free actions), so they compete with striking. Values live in
+// data/tactics.js so tooltips and rules can never disagree.
+export const guardValue = p => Math.min(TACTICS.guard.max, TACTICS.guard.base + Math.floor((p.toughness || 0) / TACTICS.guard.perToughness));
+export function stanceBlockReason(s, kind) {
+  if (s.phase !== 'player') return 'Not your turn';
+  if (s.p.attacksLeft <= 0) return 'You already used your attack this turn';
+  if (kind === 'guard' && player(s).statuses.guard) return 'Already guarding';
+  if (kind === 'channel' && s.p.channel) return 'Already channeling';
+  return null;
+}
+/** GUARD: give up your attack; until your next turn, every hit from a foe (strikes, arrows, slams, breath) is reduced. */
+export function guard(s) {
+  ensurePlayerPhase(s); const why = stanceBlockReason(s, 'guard'); if (why) throw new Error(why);
+  const p = player(s); const v = guardValue(p); p.statuses.guard = v; s.p.attacksLeft = 0;
+  s.stats.actions++; s.stats.stances = (s.stats.stances || 0) + 1;
+  return [{ t: 'stance', uid: p.uid, kind: 'guard', amount: v }, { t: 'status', uid: p.uid, status: 'guard', value: v, total: v }];
+}
+/** CHANNEL: give up your attack AND remaining movement; +1 mana now (may exceed max by 1) and your next spell this turn gains +1. */
+export function channel(s) {
+  ensurePlayerPhase(s); const why = stanceBlockReason(s, 'channel'); if (why) throw new Error(why);
+  const p = player(s); const before = s.p.mana;
+  s.p.mana = Math.min(s.p.maxMana + 1, s.p.mana + TACTICS.channel.mana); s.p.channel = TACTICS.channel.spellBonus; s.p.attacksLeft = 0; s.p.moveLeft = 0;
+  s.stats.actions++; s.stats.stances = (s.stats.stances || 0) + 1;
+  return [{ t: 'stance', uid: p.uid, kind: 'channel', amount: TACTICS.channel.spellBonus }, { t: 'mana', from: before, to: s.p.mana }];
+}
+
 export function castOptions(s, spellId) {
   if (castBlockReason(s, spellId)) return [];
   const entry = s.spellbook.find(x => x.id === spellId);
@@ -115,7 +143,7 @@ export function endTurn(s) {
   const ev = []; const p = player(s);
   if (tileAt(s, p.x, p.y) === T.LAVA && !has(p, 'flying')) dealDamage(s, ev, null, p, LAVA_DAMAGE, { kind: 'lava' });
   if (s.phase !== 'player') return ev;
-  p.statuses.empowered = 0; p.statuses.weakened = 0; p.statuses.grounded = 0; if (p.statuses.stunned) p.statuses.stunned = 0;
+  p.statuses.empowered = 0; p.statuses.weakened = 0; p.statuses.grounded = 0; if (p.statuses.stunned) p.statuses.stunned = 0; s.p.silenced = null;
   if (p.suppressed && p.suppressedTurn != null && p.suppressedTurn <= s.turn) { Object.assign(p.keywords, p.suppressed); ev.push({ t: 'restored', uid: p.uid, keyword: Object.keys(p.suppressed)[0] }); p.suppressed = null; p.suppressedTurn = null; }
   s.phase = 'enemy'; ev.push({ t: 'turn', phase: 'enemy', turn: s.turn });
   for (const a of allies(s).filter(u => !u.hero)) { if (s.phase !== 'enemy') break; ev.push({ t: 'enemyTurn', uid: a.uid }); actAlly(s, ev, a); }

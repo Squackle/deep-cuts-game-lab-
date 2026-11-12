@@ -24,9 +24,20 @@ export const CAST_PROFILE = {
   frost:         { col: [0.65, 0.92, 1], gather: 220, build: 120, tier: 1, motes: 36, cue: 'castFrost',  origin: 'mouth' },
   fire:          { col: [1, 0.5, 0.15],  gather: 200, build: 100, tier: 1, motes: 30, embers: true, cue: 'castFire', origin: 'hands' },
   wind:          { col: [0.85, 0.95, 1], gather: 120, build: 60,  tier: 0, motes: 16, cue: 'castArcane', origin: 'hands' },
+  disfigure:     { col: [0.55, 0.25, 0.7], gather: 160, build: 90, tier: 0, motes: 22, cue: 'castDark',   origin: 'hands' },
+  titanic:       { col: [0.45, 1, 0.35],  gather: 300, build: 200, tier: 2, motes: 56, fromGround: true, cue: 'castNature', origin: 'chest', self: true },
+  pyroclasm:     { col: [1, 0.42, 0.1],   gather: 320, build: 260, tier: 2, motes: 60, embers: true, fromGround: true, cue: 'castFire', origin: 'chest', self: true, core: true },
 };
+/** v0.8 pacing: normal-speed casts are deliberately slower and more readable than v0.7 (the brief: "too fast"),
+ *  while quick spells stay quick. Applied to every profile; instant mode still skips the charge entirely. */
+export const PACE = { 0: 1.3, 1: 1.6, 2: 1.75 };
+for (const P of Object.values(CAST_PROFILE)) { const k = PACE[P.tier]; P.gather = Math.round(P.gather * k); P.build = Math.round(P.build * k); }
 const DEFAULT_PROFILE = { col: [0.85, 0.75, 1], gather: 180, build: 100, tier: 1, motes: 28, cue: 'spell', origin: 'chest' };
 export const profileFor = kind => CAST_PROFILE[kind] || DEFAULT_PROFILE;
+/** v0.8: visual intensity from the RESOLVED effect magnitude (damage/heal/shield the rules already applied).
+ *  Bounded square-root curve: 1 → 0.6, 3 → 1.0, 6 → 1.41, 12+ → 2.0. Never linear, never above 2. */
+export const intensityOf = mag => Math.min(2, Math.max(0.6, Math.sqrt(Math.max(0, mag || 0) / 3)));
+export const MAX_SHAKE = 0.3;
 
 /** Height fraction of the sprite where magic gathers, by casting point. */
 export const ORIGIN_HEIGHT = { chest: 0.48, hands: 0.42, mouth: 0.62, head: 0.88 };
@@ -52,14 +63,14 @@ const sleep = (sc, ms) => new Promise(r => setTimeout(r, ms / Math.max(0.01, sc.
 const secs = (sc, ms) => ms / 1000 / Math.max(0.01, sc.speed);
 
 /** Stages 1 + 2: magic converges on the casting point, then concentrates. Resolves with a cleanup function. */
-export async function charge(sc, { uid, kind, audio = null, toward = null }) {
+export async function charge(sc, { uid, kind, audio = null, toward = null, power = 1 }) {
   const P = profileFor(kind), reduced = !!sc.reduced;
   const v = sc.units.get(uid); if (!v) return () => {};
   const origin = () => castOrigin(sc, uid, kind);
   if (toward && sc.face) sc.face(v, toward);
   if (sc.play) sc.play(uid, 'cast');
   if (audio) audio.play(P.cue);
-  const k = reduced ? 0.5 : 1, n = Math.round(P.motes * (reduced ? 0.4 : 1));
+  const k = reduced ? 0.5 : 1, n = Math.round(Math.min(P.motes * 1.6, P.motes * (0.7 + 0.3 * power)) * (reduced ? 0.4 : 1));
   const timers = [];
   // stage 1 — gather: element-coloured motes converge on the casting point; a faint glow follows the body
   const glow = sc.light(origin(), P.col, 1.3, secs(sc, P.gather + P.build) + 0.2, 0.5); glow.follow = origin;
@@ -73,8 +84,8 @@ export async function charge(sc, { uid, kind, audio = null, toward = null }) {
   if (v.style && v.style.flying && !reduced) sc.tween(P.gather / 1000, t => { v.castLift = 0.12 * t; });
   await sleep(sc, P.gather * k);
   // stage 2 — intensify: the glow brightens, a concentrated core / arcs form, powerful spells lean the camera in
-  glow.radius = 1.6 + P.tier * 0.8; glow.base = 0.9 + P.tier * 0.6;
-  if (P.core) sc.addRing({ pos: origin(), r0: 0.05, r1: 0.22 + 0.06 * P.tier, life: secs(sc, P.build) + 0.05, col: P.col, width: 0.05, spin: 6, seg: 16 });
+  glow.radius = (1.6 + P.tier * 0.8) * (0.8 + 0.2 * power); glow.base = (0.9 + P.tier * 0.6) * (0.8 + 0.2 * power);
+  if (P.core) sc.addRing({ pos: origin(), r0: 0.05, r1: (0.22 + 0.06 * P.tier) * (0.75 + 0.25 * power), life: secs(sc, P.build) + 0.05, col: P.col, width: 0.05, spin: 6, seg: 16 });
   if (P.arcs && !reduced) {
     timers.push(setInterval(() => { const o = origin(); for (let i = 0; i < P.arcs; i++) sc.addBolt({ a: o, b: [o[0] + R() * 0.6, o[1] + R() * 0.5, o[2] + R() * 0.6], life: 0.07, width: 0.016, col: P.col, segs: 4 }); }, 55 / Math.max(0.01, sc.speed)));
   }
@@ -94,17 +105,31 @@ export async function charge(sc, { uid, kind, audio = null, toward = null }) {
 
 /** Full cast: charge at the caster, then the spell's own release/impact from the casting point. Resolves at IMPACT.
  *  Never rejects: a failed animation must not stall the battle UI (gameplay was already resolved by the engine). */
-export async function castSpellVisual(sc, { kind, uid, to, target = null, tiles = [], audio = null }) {
+export async function castSpellVisual(sc, { kind, uid, to, target = null, tiles = [], audio = null, magnitude = 3 }) {
   const fn = VFX[kind]; if (!fn) return;
   let cleanup = () => {};
+  const power = intensityOf(magnitude), P = profileFor(kind);
   try {
     const instant = sc.speed >= 50;
-    if (!instant) cleanup = await charge(sc, { uid, kind, audio, toward: target != null && sc.units.get(target) ? sc.units.get(target).pos : to });
+    if (!instant) cleanup = await charge(sc, { uid, kind, audio, power, toward: target != null && sc.units.get(target) ? sc.units.get(target).pos : to });
     const from = castOrigin(sc, uid, kind);
-    if (!instant && profileFor(kind).tier >= 1 && !profileFor(kind).self) sc.light(lerp(from, to || from, 0.3), profileFor(kind).col, 2.2, 0.25, 1.4);   // brief directional light
-    await fn(sc, { from, to: to || from, target, tiles, uid, uidFrom: uid, charged: true });
+    if (!instant && P.tier >= 1 && !P.self) sc.light(lerp(from, to || from, 0.3), P.col, 2.2 * (0.8 + 0.2 * power), 0.25, 1.4);   // brief directional light
+    await fn(sc, { from, to: to || from, target, tiles, uid, uidFrom: uid, charged: true, power });
+    if (!instant) impactAmplifier(sc, P, to || from, power);
   } catch (err) { if (typeof console !== 'undefined') console.warn('Spell VFX failed (gameplay unaffected):', err); }
   finally { cleanup(); }
+}
+
+/** v0.8 impact scaled by the resolved magnitude + brief lingering motes. Hard caps on particles, light and shake.
+ *  Low graphics settings reduce density automatically (sc.fx.density); reduced motion removes shake. */
+export function impactAmplifier(sc, P, at, power) {
+  const extra = Math.round(Math.min(40, 10 * power) * (sc.reduced ? 0.4 : 1));
+  sc.fx.burst(at, P.col, extra, { speed: 1.4 + power * 0.6, up: 1 + power * 0.4, size: 8 + power * 3, life: 0.45 + power * 0.1 });
+  sc.light(at, P.col, Math.min(5.5, 2 + power * 1.4), 0.35 + power * 0.12, Math.min(3, 1.2 + power * 0.7));
+  if (power > 1.1 && !P.self) sc.addRing({ pos: [at[0], 0.03, at[2]], r0: 0.1, r1: Math.min(2.2, 0.6 + power * 0.6), life: 0.4, col: P.col, width: 0.05 + 0.03 * power });
+  if (power > 1.3 && !sc.reduced && sc.shake) sc.shake(Math.min(MAX_SHAKE, 0.05 * power * power));
+  const linger = Math.round(Math.min(18, 6 * power) * (sc.reduced ? 0.4 : 1));   // lingering, non-blocking dissipation
+  for (let i = 0; i < linger; i++) sc.fx.emit({ pos: [at[0] + R() * 0.8, (at[1] || 0.3) + R() * 0.4, at[2] + R() * 0.8], vel: [R() * 0.2, 0.25 + Math.random() * 0.3, R() * 0.2], col: [...P.col, 0.8], size: 5 + Math.random() * 4, life: 0.9 + Math.random() * 0.7, drag: 0.4 });
 }
 
 /** UI safety net: resolve no later than `ms` even if an effect hangs (e.g. a throttled background tab). */

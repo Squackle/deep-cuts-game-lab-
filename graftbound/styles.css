@@ -302,3 +302,33 @@ body[data-mode="reward"] .hint { top: 6px; } body[data-mode="reward"] .toast { t
 .opt[disabled] { opacity: .5; cursor: not-allowed; transform: none; }
 [data-tip]:focus-visible { outline: 2px solid var(--gold2); outline-offset: 2px; }
 @media (max-width: 760px) { .score { font-size: .82rem; } .journal-sprite { width: 104px; height: 104px; } }
+/* ── v0.8 spell hand: real card faces + GRAFTBOUND overlays ── */
+.tray { gap: 0; padding: 18px 10px 6px; align-items: flex-end; overflow-x: auto; overflow-y: visible; max-width: calc(100vw - 260px); }
+.handcard { --cw: 104px; position: relative; flex: none; width: var(--cw); padding: 0; margin: 0 -10px; border: 0; background: none; cursor: pointer; border-radius: 7px;
+  transform: rotate(calc((var(--i) - (var(--n) - 1) / 2) * 2.2deg)) translateY(calc(abs(var(--i) - (var(--n) - 1) / 2) * 3px)); transform-origin: 50% 120%;
+  transition: transform .18s ease, filter .2s, margin .18s; filter: drop-shadow(0 6px 10px rgba(0,0,0,.55)); }
+.handcard .lc-card { --cw: 104px; pointer-events: none; } .handcard .lc-card .ingame { display: none; } .handcard .lc-card .rules .adapt { display: none; }
+.handcard:hover, .handcard:focus-visible { z-index: 5; margin: 0 4px; transform: translateY(-42px) scale(1.55); filter: drop-shadow(0 14px 22px rgba(0,0,0,.7)); outline: none; }
+.handcard:focus-visible .lc-card { box-shadow: 0 0 0 3px var(--gold2); border-radius: 7px; }
+.handcard.sel { z-index: 4; transform: translateY(-26px) scale(1.18); filter: drop-shadow(0 0 14px var(--gold2)) drop-shadow(0 10px 18px rgba(0,0,0,.6)); }
+.handcard.sel::after { content: 'Choose a target'; position: absolute; left: 50%; top: -20px; transform: translateX(-50%); font: 700 10px var(--sans); white-space: nowrap; color: var(--gold2); text-shadow: 0 1px 3px #000; }
+.handcard.st-used .lc-card, .handcard.st-nomana .lc-card, .handcard.st-off .lc-card, .handcard.st-silenced .lc-card { filter: grayscale(.75) brightness(.62); }
+.hc-cost { position: absolute; left: -4px; top: -6px; z-index: 3; display: inline-flex; align-items: center; gap: 1px; padding: 2px 6px; border-radius: 10px; font: 800 12px var(--sans); color: #fff; background: #2f6f9a; border: 1px solid #bfe3ff; box-shadow: 0 2px 4px #000a; }
+.hc-cost.taxed { background: #6b3a99; } .hc-cost .ic { width: .85em; height: .85em; }
+.hc-lvl { position: absolute; right: 6px; top: 22%; z-index: 3; color: var(--gold2); font-size: 11px; text-shadow: 0 1px 2px #000; }
+.hc-state { position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 3; text-align: center; font: 700 9px var(--sans); padding: 1px 3px; border-radius: 4px; background: rgba(9,20,14,.85); color: #9fd49a; }
+.handcard.st-used .hc-state { color: #c9c0aa; } .handcard.st-nomana .hc-state { color: #8fc8ff; } .handcard.st-off .hc-state, .handcard.st-silenced .hc-state { color: #ff9a7a; }
+.handcard kbd { position: absolute; right: 2px; top: -6px; z-index: 3; background: rgba(9,20,14,.85); color: var(--parch); opacity: .85; margin: 0; }
+.hc-info { position: absolute; right: -6px; bottom: 18%; z-index: 4; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font: italic 700 12px var(--serif); color: var(--gold2); background: rgba(9,20,14,.92); border: 1px solid var(--gold2); }
+.stances { position: absolute; right: 14px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); display: flex; flex-direction: column; gap: 6px; }
+.stance { font: 700 .8rem var(--sans); padding: 6px 10px; border-radius: 16px; border: 1px solid var(--gold3); color: var(--parch); background: rgba(10,22,15,.88); cursor: pointer; text-align: left; }
+.stance .ic { color: var(--gold2); } .stance kbd { margin-left: 6px; } .stance.off { opacity: .45; cursor: not-allowed; } .stance.on { border-color: var(--gold2); box-shadow: 0 0 12px rgba(233,201,114,.5); }
+.stance:focus-visible { outline: 2px solid var(--gold2); }
+.banner .banner-sub { display: block; font-size: .45em; letter-spacing: .3em; font-style: italic; opacity: .85; margin-top: 2px; }
+.end .stats tr.time td { color: var(--gold2); } .end .stats tr.sub td { font-size: .82rem; opacity: .75; } .end .stats small { font-weight: 400; opacity: .7; }
+@media (max-width: 760px) {
+  .tray { max-width: none; padding-top: 12px; scroll-snap-type: x proximity; } .handcard { --cw: 76px; margin: 0 2px; transform: none; scroll-snap-align: center; }
+  .handcard .lc-card { --cw: 76px; } .handcard:hover, .handcard:focus-visible { transform: translateY(-6px); margin: 0 2px; } .handcard.sel { transform: translateY(-10px) scale(1.06); }
+  .handcard kbd { display: none; } .hc-state { font-size: 8px; } .stances { right: 8px; bottom: calc(max(10px, env(safe-area-inset-bottom)) + 78px); } .stance { font-size: .7rem; padding: 5px 8px; } .stance kbd { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .handcard, .handcard:hover { transition: none; } }

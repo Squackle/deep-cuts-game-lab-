@@ -32,6 +32,10 @@ export const SPELL_ADAPTATIONS = {
   'Healing Salve':      { effect: 'mending_rain', bonus: -1, cost: 1, vfx: 'salve', note: 'Adapted: heal 3 and cleanse.' },
   'Feat of Resistance': { effect: 'barkskin', cost: 1, vfx: 'shield', note: 'Adapted: a 3-point shield; counters and protection are not modeled.' },
   'Frost Breath':       { effect: 'rootsnare', cost: 2, vfx: 'frost', note: 'Adapted: 1 damage and Stun one foe (one target, not two).' },
+  // v0.8 additions — each fills a role the first 13 did not cover.
+  'Disfigure':          { effect: 'wither', cost: 1, vfx: 'disfigure', note: 'Adapted: −2/−2 becomes 1 damage plus Weaken 2 (the foe strikes for 2 less on its next action).' },
+  'Titanic Growth':     { effect: 'sap_surge', bonus: 1, cost: 2, vfx: 'titanic', note: 'Adapted: +4 power until end of turn (the toughness bonus is not modeled).' },
+  'Pyroclasm':          { effect: 'firestorm', cost: 3, vfx: 'pyroclasm', note: 'Adapted: 2 damage to every foe (it never damages you or your allies here).' },
 };
 
 export const slug = name => String(name).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');

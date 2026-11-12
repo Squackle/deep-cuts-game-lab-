@@ -11,7 +11,7 @@ export const effectOf = id => { const c = resolveCard(id); return (c && c.effect
 
 const BASE = {
   ember_dart: [2], barkskin: [3], sap_surge: [3], gale_push: [2], blink_step: [3], rootsnare: [1],
-  venom_mist: [2], mending_rain: [4], soul_siphon: [2], chain_lightning: [3, 2], starfall: [4, 2], call_sproutling: [2, 2],
+  venom_mist: [2], mending_rain: [4], wither: [1, 2], firestorm: [2], soul_siphon: [2], chain_lightning: [3, 2], starfall: [4, 2], call_sproutling: [2, 2],
 };
 const NO_ARCANE = new Set(['sap_surge', 'blink_step', 'call_sproutling']);
 export function spellNumbers(id, level = 1, arcane = 0) {
@@ -54,6 +54,7 @@ export function castBlockReason(s, id) {
   if (!entry) return 'Not in your spellbook';
   if (s.phase !== 'player') return 'Not your turn';
   if (s.p.cast[id]) return 'Already cast this turn';
+  if (s.p.silenced === id) return 'Silenced by the Unwritten for this turn';
   const cost = spellCost(s, id);
   if (s.p.mana < cost) return `Needs ${cost} mana (you have ${s.p.mana})${cost > getCard(id).cost ? ' — a Null Warden taxes your spells' : ''}`;
   if (!spellTargets(s, id, entry.level).length) return getCard(id).target === 'enemy' ? 'No foe on the battlefield' : 'No valid target';
@@ -63,7 +64,9 @@ export function castSpellEffect(s, ev, id, level, tx, ty) {
   const p = player(s); const n = spellNumbers(id, level, s.p.arcane);
   const target = unitAt(s, tx, ty);
   const c = getCard(id);
-  ev.push({ t: 'spell', id, uid: p.uid, x: tx, y: ty, target: target ? target.uid : null, vfx: c.vfx || effectOf(id) });
+  const evAt = ev.length; const channel = s.p.channel || 0;
+  if (channel) { for (let i = 0; i < n.length; i++) if (!NO_ARCANE.has(effectOf(id))) n[i] += channel; s.p.channel = 0; }   // Channel: this spell +1
+  ev.push({ t: 'spell', id, uid: p.uid, x: tx, y: ty, target: target ? target.uid : null, vfx: c.vfx || effectOf(id), channeled: !!channel });
   switch (effectOf(id)) {
     case 'ember_dart': dealDamage(s, ev, p, target, n[0], { kind: 'spell' }); break;
     case 'barkskin': addShield(s, ev, p, n[0], 'barkskin'); break;
@@ -80,6 +83,8 @@ export function castSpellEffect(s, ev, id, level, tx, ty) {
       s.units.push(u); ev.push({ t: 'summon', uid: u.uid, defId: 'sproutling', x: tx, y: ty, by: p.uid, ally: true });
       break;
     }
+    case 'wither': dealDamage(s, ev, p, target, n[0], { kind: 'spell' }); if (alive(target)) addStatus(s, ev, target, 'weakened', n[1]); break;
+    case 'firestorm': ev.push({ t: 'area', x: p.x, y: p.y, r: 99, kind: 'firestorm' }); for (const e of enemies(s)) dealDamage(s, ev, p, e, n[0], { kind: 'spell' }); break;
     case 'venom_mist': ev.push({ t: 'area', x: tx, y: ty, r: 1, kind: 'mist' }); for (const e of enemies(s)) if (Math.abs(e.x - tx) <= 1 && Math.abs(e.y - ty) <= 1) addStatus(s, ev, e, 'poison', n[0]); break;
     case 'starfall': {
       ev.push({ t: 'area', x: tx, y: ty, r: 1, kind: 'star' });
@@ -116,10 +121,26 @@ export function castSpellEffect(s, ev, id, level, tx, ty) {
     default: throw new Error('Unknown spell ' + id);
   }
   elementalInteraction(s, ev, id, tx, ty);
+  ev[evAt].magnitude = spellMagnitude(ev.slice(evAt + 1), effectOf(id), n);
+}
+
+/** v0.8 PRESENTATION metadata: how strong the RESOLVED effect actually was (after armor, shields and kills), so
+ *  the renderer can scale the spectacle. The renderer never computes damage; this number is attached to the event
+ *  only after the rules resolved it, and nothing in the rules reads it back. Area effects count the biggest hit
+ *  fully and the rest at a quarter, so hitting many foes never makes an absurdly large effect. */
+export function spellMagnitude(after, effect, nums = []) {
+  const hits = after.filter(e => e.t === 'damage' && e.kind === 'spell').map(e => e.amount + (e.blocked || 0)).sort((a, b) => b - a);
+  const heal = after.filter(e => e.t === 'heal').reduce((a, e) => a + e.amount, 0);
+  const shield = after.filter(e => e.t === 'shield').reduce((a, e) => a + e.amount, 0);
+  const status = after.filter(e => e.t === 'status' && e.value > 0).reduce((a, e) => Math.max(a, e.value), 0);
+  if (hits.length) return hits[0] + hits.slice(1).reduce((a, x) => a + x * 0.25, 0) + heal * 0.5;
+  if (heal || shield) return heal + shield;
+  if (effect === 'sap_surge' || effect === 'call_sproutling') return nums[0] || 1;
+  return status || nums[0] || 1;
 }
 
 /** v0.6: a deliberately small set of spell–terrain interactions. Element comes from the card's VFX identity. */
-const ELEMENT_BY_VFX = { fire: 'fire', fireball: 'fire', flameSlash: 'fire', lightningBolt: 'lightning', spark: 'lightning', chain: 'lightning', frost: 'frost' };
+const ELEMENT_BY_VFX = { fire: 'fire', fireball: 'fire', flameSlash: 'fire', lightningBolt: 'lightning', spark: 'lightning', chain: 'lightning', frost: 'frost', pyroclasm: 'fire' };
 const ELEMENT_BY_EFFECT = { ember_dart: 'fire', starfall: 'fire', chain_lightning: 'lightning', rootsnare: 'frost' };
 export function spellElement(id) { const c = getCard(id); return (c && ELEMENT_BY_VFX[c.vfx]) || ELEMENT_BY_EFFECT[effectOf(id)] || null; }
 const near = (a, b, r) => Math.abs(a.x - b.x) <= r && Math.abs(a.y - b.y) <= r;

@@ -1,0 +1,29 @@
+| Build | Act | Elite win (guarding / never guards) | Boss win (guarding / never) | Boss dmg taken (guarding / never) |
+|---|---|---|---|---|
+| melee | I | 100% / 100% | 25% / 17% | 17.3 / 17.8 |
+| melee | II | 100% / 92% | 17% / 0% | 29.8 / 30.0 |
+| melee | III | 100% / 100% | 100% / 100% | 32.8 / 34.8 |
+| tank | I | 100% / 100% | 100% / 100% | 4.1 / 5.8 |
+| tank | II | 100% / 100% | 92% / 92% | 17.8 / 20.1 |
+| tank | III | 100% / 100% | 100% / 100% | 22.3 / 24.3 |
+| flyDT | I | 100% / 100% | 33% / 25% | 14.6 / 14.9 |
+| flyDT | II | 100% / 100% | 100% / 100% | 39.6 / 44.6 |
+| flyDT | III | 100% / 100% | 83% / 83% | 76.3 / 78.1 |
+| dsTrample | I | 100% / 83% | 58% / 50% | 13.6 / 15.0 |
+| dsTrample | II | 100% / 100% | 25% / 25% | 25.0 / 25.3 |
+| dsTrample | III | 100% / 100% | 100% / 92% | 28.6 / 31.4 |
+| lifelink | I | 100% / 100% | 100% / 100% | 15.5 / 16.3 |
+| lifelink | II | 100% / 100% | 92% / 92% | 32.0 / 34.3 |
+| lifelink | III | 100% / 100% | 8% / 8% | 147.3 / 148.4 |
+| spells | I | 75% / 58% | 0% / 0% | 10.0 / 10.0 |
+| spells | II | 92% / 92% | 58% / 33% | 15.4 / 16.3 |
+| spells | III | 100% / 100% | 100% / 100% | 22.7 / 23.5 |
+| hybrid | I | 100% / 100% | 100% / 100% | 3.3 / 3.9 |
+| hybrid | II | 100% / 100% | 100% / 100% | 19.3 / 24.3 |
+| hybrid | III | 100% / 100% | 50% / 58% | 92.4 / 93.9 |
+full adventure · greedy: win 42% · reached Act II 63% · Act III 58% · turns/battle 3.0
+full adventure · random: win 42% · reached Act II 46% · Act III 46% · turns/battle 3.1
+full adventure · melee: win 21% · reached Act II 50% · Act III 38% · turns/battle 3.4
+full adventure · tank: win 29% · reached Act II 46% · Act III 46% · turns/battle 4.2
+full adventure · spells: win 0% · reached Act II 4% · Act III 0% · turns/battle 3.5
+full adventure · flyDeath: win 29% · reached Act II 46% · Act III 38% · turns/battle 3.5

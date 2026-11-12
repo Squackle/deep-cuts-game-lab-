@@ -7,6 +7,18 @@ import { rewardCards, resolveCard } from '../cards/catalog.js';
 import { graftRating, creatureBudget, spellMaxCost } from './power.js';
 
 export const MAX_SPELL_LEVEL = 3;
+/** v0.8 Spell Primer: an affordable, category-diverse, spells-only choice (deterministic per seed). */
+export const PRIMER_CATEGORIES = ['damage', 'protection', 'healing', 'weaken', 'disable', 'enhance', 'area', 'summon'];
+export function primerPack(seed, { spellbook = [] } = {}) {
+  const rng = makeRng(seed ^ 0x9e11);
+  const pool = rewardCards().filter(c => c.kind === 'spell' && c.cost <= 2 && !spellbook.some(s => s.id === c.id));
+  const out = []; const used = new Set();
+  for (const cat of PRIMER_CATEGORIES) {
+    const opts = pool.filter(c => c.category === cat && !used.has(c.category)); if (!opts.length) continue;
+    out.push({ c: opts[Math.floor(next(rng) * opts.length)], k: next(rng) }); used.add(cat);
+  }
+  return out.sort((a, b) => a.k - b.k).slice(0, 3).map(o => o.c.id);
+}
 const ORDER = ['common', 'uncommon', 'rare', 'mythic'];
 const NO_EVO = { power: 0, toughness: 0, keywords: {} };
 
@@ -39,7 +51,7 @@ function weightedPick(rng, cards, weights, prefer) {
 }
 
 /** tier: 'battle' | 'elite' | 'boss' | 'shrine'. forced: card ids that must appear (tutorial). */
-export function generatePack(seed, { tier = 'battle', forced = [], step = 0, evo = NO_EVO, creaturesOnly = false, only = null, ...poolOpts } = {}) {
+export function generatePack(seed, { tier = 'battle', forced = [], step = 0, evo = NO_EVO, creaturesOnly = false, only = null, minSpells = 1, ...poolOpts } = {}) {
   const rng = makeRng(seed);
   if (creaturesOnly) only = 'creature';
   const pool = cardPool({ ...poolOpts, step, tier, evo }).filter(c => !only || c.kind === only);
@@ -57,6 +69,9 @@ export function generatePack(seed, { tier = 'battle', forced = [], step = 0, evo
   if (tier === 'elite' || tier === 'boss') take(ANY, strong);  // elite/boss: one card near the top of the budget
   if (only !== 'spell' && !picked.some(c => c.kind === 'creature')) take(c => c.kind === 'creature');
   if (only !== 'creature' && !picked.some(c => c.kind === 'spell')) take(c => c.kind === 'spell');
+  // v0.8 spell access: while the spellbook is thin early on, packs carry a SECOND spell (still 3 cards; the creature
+  // slot is never removed), preferring a different tactical category so a choice is meaningful.
+  if (only !== 'creature' && minSpells >= 2 && picked.filter(c => c.kind === 'spell').length < 2) take(c => c.kind === 'spell' && !picked.some(p => p.kind === 'spell' && p.category === c.category));
   for (let guard = 0; picked.length < 3 && guard < 6; guard++) take(only ? c => c.kind === only : ANY);
   return picked.map(c => ({ c, k: next(rng) })).sort((a, b) => a.k - b.k).map(o => o.c.id).slice(0, 3);
 }

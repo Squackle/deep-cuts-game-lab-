@@ -1,17 +1,18 @@
 // Run lifecycle (v0.5): three acts, persistent wounds between battles, Wayshrine offerings, real-card rewards.
 import { newEvolution, absorb, deriveStats, rebuild, STARTING_NAME } from './evolution.js';
 import { generateMap, nodeById, availableNodes, ACT_COUNT } from './campaign.js';
-import { buildEncounter, templateFor, reinforcements } from './encounters.js';
+import { buildEncounter, templateFor, reinforcements, bossAdaptation } from './encounters.js';
 import { createBattle } from './combat.js';
-import { generatePack, MAX_SPELL_LEVEL } from './rewards.js';
+import { generatePack, MAX_SPELL_LEVEL, primerPack } from './rewards.js';
 import { resolveCard } from '../cards/catalog.js';
 import { stepOf } from './power.js';
 import { SHRINES, rollShrine, offeringCost, MAX_SPARK_FONTS, MAX_MANA_FONTS } from './shrines.js';
 import { encounterBenchmarks, recordEncounter, newScoring } from './scoring.js';
 import { journalNote, newJournal } from './journal.js';
 import { rollEvent, EVENTS, resolveEvent } from './events.js';
+import { newClock } from './clock.js';
 
-export const RUN_VERSION = 4;
+export const RUN_VERSION = 5;
 export const TUTORIAL_CARD = 'mtg:typhoid-rats';  // real 1/1 Deathtouch: Blank 1/1 -> 2/2 Deathtouch
 export const CHALLENGES = {
   paperThin: { name: 'Paper Thin', text: 'Your Spark is 2 instead of 6.' },
@@ -30,7 +31,7 @@ export function newRun({ seed, unlocks = {}, challenges = [], tutorial = false }
     v: RUN_VERSION, seed: seed >>> 0, name: STARTING_NAME, evo: newEvolution(), spellbook: [], sparkBonus: 0, manaBonus: 0, sparkFonts: 0,
     act: 0, map: generateMap(seed, { act: 0, tutorial }), current: null, visited: [], phase: 'map', battle: null, pending: null, shrine: null,
     unlocks: { ...unlocks }, challenges: challenges.slice(), tutorial, hp: null, wardNext: 0, actHistory: [], event: null, eventsSeen: [],
-    scoring: newScoring(), journal: newJournal(),
+    scoring: newScoring(), journal: newJournal(), clock: newClock(false),
     stats: { battlesWon: 0, kills: 0, damageDealt: 0, damageTaken: 0, spellsCast: 0, turns: 0, cardsAbsorbed: 0, spellsLearned: 0, elitesDefeated: 0, bossesDefeated: 0, flawless: 0 },
     startedAt: Date.now(),
   };
@@ -41,7 +42,7 @@ export const runStats = run => deriveStats(run.evo, { sparkBonus: run.sparkBonus
 export const maxHpOf = run => runStats(run).maxHealth;
 export const woundsOf = run => Math.max(0, maxHpOf(run) - (run.hp == null ? maxHpOf(run) : run.hp));
 export const stepOfRun = run => stepOf(run.act, run.current != null ? nodeById(run.map, run.current).depth : 0);
-const packOpts = run => ({ spellbook: run.spellbook, noRares: run.challenges.includes('pauper'), evo: run.evo, step: stepOfRun(run) });
+const packOpts = run => ({ spellbook: run.spellbook, noRares: run.challenges.includes('pauper'), evo: run.evo, step: stepOfRun(run), minSpells: run.spellbook.length < 2 && (run.act || 0) === 0 ? 2 : 1 });
 function setHp(run, hp) { run.hp = Math.max(1, Math.min(maxHpOf(run), hp)); }
 
 export function enterNode(run, nodeId) {
@@ -52,13 +53,14 @@ export function enterNode(run, nodeId) {
   if (node.type === 'shrine') { run.phase = 'shrine'; run.shrine = { options: rollShrine(shrineView(run), node.seed), node: nodeId }; return run; }
   if (node.type === 'event') { run.phase = 'event'; run.event = { id: rollEvent(eventView(run), node.seed), node: nodeId }; return run; }
   const base = templateFor(run.act, node.type, node.depth, node.seed);
-  const extra = reinforcements(run.act, node.type, node.depth, run.evo, node.seed);
+  const extra = reinforcements(run.act, node.type, node.depth, run.evo, node.seed, { spellbook: run.spellbook, stats: runStats(run) });
   const tpl = extra.length ? { ...base, enemies: [...base.enemies, ...extra] } : base;
   const enc = buildEncounter(tpl, node.seed, node.type);
   const battle = createBattle({ evo: run.evo, stats: runStats(run), spellbook: run.spellbook, encounter: enc, seed: node.seed, heroName: run.name, startHp: run.hp, act: run.act });
   if (run.wardNext) { const h = battle.units.find(u => u.hero); h.statuses.shield = (h.statuses.shield || 0) + run.wardNext; run.wardNext = 0; }
   if (run.challenges.includes('feral')) for (const u of battle.units) if (u.side === 'enemy') u.power += 1;
   battle.nodeType = node.type; battle.reinforced = extra.length; battle.nodeId = nodeId;
+  if (node.type === 'boss') battle.adapt = bossAdaptation(run.act, run.evo, { spellbook: run.spellbook, stats: runStats(run) });
   battle.bench = encounterBenchmarks(node.type, run.act, enc.enemies.length);
   run.battle = battle; run.phase = 'battle';
   return run;
@@ -94,7 +96,7 @@ export function chooseReward(run, cardId, releaseIndex) {
   let change;
   const maxBefore = maxHpOf(run);
   if (card.kind === 'creature') {
-    if (run.pending.tier === 'archivist') throw new Error('The Archivist trades spells only');
+    if (run.pending.tier === 'archivist' || run.pending.tier === 'primer') throw new Error('This offering holds spells only');
     let released = null;
     if (graftsFull(run)) {
       const idx = Number(releaseIndex);
@@ -125,7 +127,13 @@ export function skipReward(run) {
   return { kind: 'spark', amount: 1 };
 }
 function finishReward(run) {
-  const boss = run.pending && run.pending.boss; run.pending = null;
+  const boss = run.pending && run.pending.boss; const tier = run.pending && run.pending.tier; run.pending = null;
+  // v0.8 Spell Primer: after the FIRST victory reward of an adventure, a free, separate spells-only choice
+  // (3 affordable spells from different tactical roles). Skippable for +1 Spark like any pack. Once per adventure.
+  if (!run.primerDone && tier !== 'primer' && (run.stats.battlesWon || 0) >= 1 && (run.act || 0) === 0) {
+    run.primerDone = true; const cards = primerPack(run.seed, { spellbook: run.spellbook });
+    if (cards.length) { run.pending = { cards, tier: 'primer' }; run.phase = 'reward'; return; }
+  }
   if (!boss) { run.phase = 'map'; return; }
   run.actHistory.push({ act: run.act, visited: run.visited.slice() });
   if (run.act + 1 >= ACT_COUNT) { run.phase = 'won'; return; }

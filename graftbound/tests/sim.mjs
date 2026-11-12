@@ -8,7 +8,7 @@ import { graftRating } from '../src/engine/power.js';
 import { botPlay } from './helpers.mjs';
 
 export const POLICIES = {
-  greedy: (run, c) => c.kind === 'creature' ? graftRating(c, run.evo) : (c.category === 'damage' ? 4.5 : 3) - (run.spellbook.length >= 4 ? 3 : 0),
+  greedy: (run, c) => c.kind === 'creature' ? graftRating(c, run.evo) : ({ damage: 5, area: 5.5, weaken: 4, disable: 4, protection: 3.5, healing: 3.5, enhance: 3.5 }[c.category] || 3) - (run.spellbook.length >= 5 ? 3 : 0),
   random: () => 0,
   melee: (run, c) => c.kind === 'creature' ? c.power * 2 + (c.keywords.trample ? 3 : 0) + (c.keywords.doubleStrike ? 4 : 0) : 0,
   tank: (run, c) => c.kind === 'creature' ? c.toughness * 2 + (c.keywords.lifelink ? 3 : 0) : (c.category === 'protection' || c.category === 'healing' ? 5 : 0),

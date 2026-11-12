@@ -82,6 +82,10 @@ export const REAL_SPELLS = [
   S('Healing Salve', '{W}', 1, 'Instant', ['W'], 'common'),
   S('Feat of Resistance', '{1}{W}', 2, 'Instant', ['W'], 'common'),
   S('Frost Breath', '{2}{U}', 3, 'Instant', ['U'], 'common'),
+  // v0.8 additions (new tactical roles: weakening, burst empowerment, board-wide area control).
+  S('Disfigure', '{B}', 1, 'Instant', ['B'], 'uncommon'),
+  S('Titanic Growth', '{1}{G}', 2, 'Instant', ['G'], 'common'),
+  S('Pyroclasm', '{1}{R}', 2, 'Sorcery', ['R'], 'uncommon'),
 ];
 
 /** Turn a pool entry into the same normalized record shape scryfall-adapter.normalizeCard() produces. */

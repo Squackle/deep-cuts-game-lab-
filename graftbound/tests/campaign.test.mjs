@@ -25,7 +25,7 @@ test('24 meaningful nodes per adventure: every act path visits 8 (no decorative 
   assert.equal(n, 8); assert.equal(n * 3, 24);
 });
 test('every encounter template of every act builds a connected arena; hazards appear per act', () => {
-  for (let act = 0; act < 3; act++) for (const tier of ['early', 'mid', 'late', 'elite', 'boss']) for (const tpl of ACTS[act][tier]) for (let seed = 1; seed < 15; seed++) {
+  for (let act = 0; act < 3; act++) for (const tier of ['early', 'mid', 'late', 'elite', 'bossEncounters']) for (const tpl of ACTS[act][tier]) for (let seed = 1; seed < 15; seed++) {
     const e = buildEncounter(tpl, seed * 97, tier); assert.equal(e.enemies.length, tpl.enemies.length);
     for (const en of e.enemies) assert.ok(ENEMIES[en.defId], en.defId);
     if (tpl.lava) assert.ok(e.terrain.includes(T.LAVA)); if (tpl.rifts) assert.ok(e.terrain.includes(T.RIFT));
@@ -38,7 +38,7 @@ test('acts introduce new enemies rather than re-statting old ones', () => {
 });
 test('reinforcements scale with build strength, are capped per act, never inflate health', () => {
   assert.deepEqual(reinforcements(0, 'battle', 1, evoWith('mtg:colossal-dreadmaw'), 5), []);
-  const strong = evoWith('mtg:colossal-dreadmaw', 'mtg:craw-wurm', 'mtg:vampire-nighthawk', 'mtg:serra-angel');
+  const strong = evoWith('mtg:colossal-dreadmaw', 'mtg:craw-wurm', 'mtg:vampire-nighthawk', 'mtg:serra-angel', 'mtg:fencing-ace', 'mtg:charging-monstrosaur', 'mtg:air-elemental');
   for (let act = 0; act < 3; act++) { const r = reinforcements(act, 'battle', 4, strong, 5); assert.ok(r.length >= 1 && r.length <= REINFORCE_CAP[act]); }
   assert.ok(threatOf(strong) > threatOf(newEvolution()));
 });

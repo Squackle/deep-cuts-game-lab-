@@ -7,7 +7,7 @@ import { availableNodes, nodeById, NODE_TYPES } from '../engine/campaign.js';
 import { absorb, deriveStats } from '../engine/evolution.js';
 import { runStats, CHALLENGES, graftCapacity, graftsFull, woundsOf, maxHpOf } from '../engine/run.js';
 import { SHRINES } from '../engine/shrines.js';
-import { ACTS } from '../data/encounters.js';
+import { ACTS, bossNameOf } from '../data/encounters.js';
 import { deriveAppearance } from '../engine/appearance.js';
 import { ACHIEVEMENTS } from '../engine/progression.js';
 import { formatSpellText, rangeLabel } from '../engine/spells.js';
@@ -23,6 +23,7 @@ import { composePlayerSheet } from '../rendering/evolution-visuals.js';
 import { newEvolution } from '../engine/evolution.js';
 import { RANKED_CHALLENGES, ACTIVE_CHALLENGE } from '../engine/ranked.js';
 import { NODE_TYPES as NT } from '../engine/campaign.js';
+import { formatDuration } from '../engine/clock.js';
 
 const $ = id => document.getElementById(id);
 const TARGET = { enemy: 'One foe, anywhere', self: 'Yourself', tile: 'Any tile (area)', empty: 'Empty tile' };
@@ -85,7 +86,7 @@ export function actScreen(app, act) {
   const A = ACTS[act]; const run = app.run;
   const el = showScreen(`<div class="intro act act-${A.theme}">
       <small class="presents">Act ${ACT_ROMAN[act]}</small><h1 class="act-title">${esc(A.name)}</h1>
-      <div class="intro-text"><p class="pending" data-d="0">${ACT_LORE[act]}</p><p class="pending" data-d="1">Your graft capacity grows to <b>${graftCapacity(run)}</b>. The wounds of the last act are mended.</p><p class="intro-last pending" data-d="2">${esc(A.boss)} awaits.</p></div>
+      <div class="intro-text"><p class="pending" data-d="0">${ACT_LORE[act]}</p><p class="pending" data-d="1">Your graft capacity grows to <b>${graftCapacity(run)}</b>. The wounds of the last act are mended.</p><p class="intro-last pending" data-d="2">${esc(A.bossName)} awaits.</p></div>
       <div class="intro-pt"><span>${run.evo.power}/${run.evo.toughness}</span><small>${run.evo.absorbed.length} grafts · ${run.spellbook.length} spells</small></div>
       <button type="button" class="btn primary big" data-go>Descend</button></div>`, 'introscr actscr' + (app.animFactor() > 1.5 ? ' fast' : ''));
   app.audio.play('intro');
@@ -147,7 +148,7 @@ export function settingsModal(app) {
   const sel = (k, opts) => `<select data-k="${k}">${opts.map(([v, l]) => `<option value="${v}" ${st[k] === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
   const m = app.openModal(`<h2>Settings</h2>
     <label class="row"><span>Graphics</span>${sel('graphics', [['auto', 'Auto'], ['high', 'High — shadows, depth of field, bloom'], ['balanced', 'Balanced'], ['performance', 'Performance — no shadows or post']])}</label>
-    <label class="row"><span>Animation speed</span>${sel('animSpeed', [['normal', 'Normal'], ['fast', 'Fast'], ['instant', 'Instant']])}</label>
+    <label class="row"><span>Animation speed</span>${sel('animSpeed', [['cinematic', 'Cinematic — savor every spell'], ['normal', 'Normal'], ['fast', 'Fast'], ['instant', 'Instant']])}</label>
     <label class="toggle"><input type="checkbox" data-k="autoEnd" ${st.autoEnd !== false ? 'checked' : ''}><span>Auto-End Turn <small class="muted">— ends your turn when no legal move, attack, spell or interaction remains</small></span></label>
     <label class="toggle"><input type="checkbox" data-k="ambient" ${st.ambient !== false ? 'checked' : ''}><span>Ambient wind &amp; swaying foliage</span></label>
     <label class="toggle"><input type="checkbox" data-k="sound" ${st.sound ? 'checked' : ''}><span>Sound effects</span></label>
@@ -171,7 +172,7 @@ export function mapScreen(app) {
   }
   const nodes = map.nodes.map(n => {
     const t = NODE_TYPES[n.type]; const cls = [n.type, avail.has(n.id) ? 'avail' : '', run.visited.includes(n.id) ? 'done' : '', n.id === run.current ? 'here' : ''].join(' ');
-    const label = n.type === 'boss' ? map.boss : t.name;
+    const label = n.type === 'boss' ? bossNameOf(run.act) : t.name;
     return `<g class="node ${cls}" data-node="${n.id}" data-tip="${esc(NODE_TIP[n.type] || label)}" transform="translate(${nx(n)} ${depthY(n.depth)})" tabindex="${avail.has(n.id) ? 0 : -1}" role="button" aria-label="${esc(label + ' — ' + (NODE_TIP[n.type] || ''))}">
       <title>${esc(label + ' — ' + (NODE_TIP[n.type] || ''))}</title><circle r="${n.type === 'boss' ? 6.5 : 4.6}"/><text y="1.7">${t.glyph}</text>${avail.has(n.id) || n.type === 'boss' ? `<text class="lbl" y="${n.type === 'boss' ? 11 : 9}">${esc(label)}</text>` : ''}</g>`;
   }).join('');
@@ -212,7 +213,7 @@ export function rewardScreen(app, cards, { tier, severed }) {
   const run = app.run; const arcane = runStats(run).arcane; const fast = app.animFactor() > 1.5; const instant = app.animFactor() > 50;
   for (const id of cards) app.meta.seen[id] = true; app.saveMeta();
   const levelOf = id => { const e = run.spellbook.find(s => s.id === id); return e ? e.level + 1 : 1; };
-  const titles = { boss: 'The Victor\u2019s Hoard', elite: 'An Elite\u2019s Hoard', shrine: 'Offering of the Wayshrine', graftsmith: 'The Graftsmith\u2019s Stock', battle: 'Spoils of Battle' };
+  const titles = { boss: 'The Victor\u2019s Hoard', elite: 'An Elite\u2019s Hoard', shrine: 'Offering of the Wayshrine', graftsmith: 'The Graftsmith\u2019s Stock', battle: 'Spoils of Battle', primer: 'A Spell Primer', archivist: 'The Archivist\u2019s Folio' };
   const motes = Array.from({ length: 14 }, (_, i) => `<i style="--a:${(i * 26) % 360}deg;--d:${(i % 5) * 0.4}s;--r:${70 + (i % 4) * 18}px"></i>`).join('');
   const el = showScreen(`
     <div class="reward tier-${tier}">
@@ -482,6 +483,12 @@ export function scoreBreakdownHTML(run, extra = {}) {
     <p class="small">${run.ranked ? (extra.verifiedLocally ? '✔ Replay re-verified locally from the challenge definition. ' : '✖ Local replay verification failed — this result is not eligible. ') : ''}<span class="badge-local">LOCAL · UNRANKED — not submitted</span></p>
     ${run.scoring && run.migratedFromV05 ? '<p class="small muted">Battles before the v0.6 update were not scored.</p>' : ''}</section>`;
 }
+/** v0.8 Time Taken rows (active play only; partial for adventures begun before v0.8). */
+export function timeRows(run) {
+  const c = run.clock; if (!c) return '<tr><td>Time Taken</td><td>not recorded</td></tr>';
+  const acts = (c.byAct || []).map((ms, i) => ms > 0 ? `<tr class="sub"><td>· Act ${ACT_ROMAN[i]}</td><td>${formatDuration(ms)}</td></tr>` : '').join('');
+  return `<tr class="time"><td>Time Taken${c.partial ? ' <small>(partial — tracked since the v0.8 update)</small>' : ''}</td><td data-time>${formatDuration(c.ms)}</td></tr>${acts}`;
+}
 export function endScreen(app, { won, earned, extra = {} }) {
   const run = app.run; const s = run.stats;
   const el = showScreen(`<div class="end ${won ? 'won' : 'lost'}">
@@ -490,9 +497,9 @@ export function endScreen(app, { won, earned, extra = {} }) {
     <p class="rw-sub">${won ? 'You began as nothing. The Unwritten could not copy what you became.' : `You fell in Act ${ACT_ROMAN[run.act]} · ${esc(ACTS[run.act].name)}. Every card you held is remembered in the Codex.`}</p>
     <div class="end-pt">${run.evo.power}/${run.evo.toughness}</div>
     <div class="chips center">${kwChips(run.evo.keywords)}</div>
-    <table class="stats"><tr><td>Battles won</td><td>${s.battlesWon}</td></tr><tr><td>Bosses defeated</td><td>${s.bossesDefeated || 0}</td></tr><tr><td>Creatures grafted</td><td>${s.cardsAbsorbed}</td></tr><tr><td>Spells learned</td><td>${s.spellsLearned}</td></tr><tr><td>Foes defeated</td><td>${s.kills}</td></tr></table>
+    <table class="stats"><tr><td>Battles won</td><td>${s.battlesWon}</td></tr><tr><td>Bosses defeated</td><td>${s.bossesDefeated || 0}</td></tr><tr><td>Creatures grafted</td><td>${s.cardsAbsorbed}</td></tr><tr><td>Spells learned</td><td>${s.spellsLearned}</td></tr><tr><td>Foes defeated</td><td>${s.kills}</td></tr>${timeRows(run)}</table>
     ${scoreBreakdownHTML(run, extra)}
     ${earned.length ? `<h3>Achievements</h3><ul class="ach">${earned.map(a => `<li class="got"><b>${a.name}</b><span>${a.text}</span></li>`).join('')}</ul>` : ''}
-    <div class="modal-actions center"><button type="button" class="btn" data-a="journal">Evolution Journal</button><button type="button" class="btn primary" data-a="again">New Adventure</button><button type="button" class="btn" data-a="title">Title</button></div></div>`, 'endscr');
+    <div class="modal-actions center"><button type="button" class="btn" data-a="journal">Evolution Journal</button><button type="button" class="btn primary" data-a="again">New Adventure</button><button type="button" class="btn" data-a="title">Home</button></div></div>`, 'endscr');
   return new Promise(res => el.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (!b) return; if (b.dataset.a === 'journal') { journalModal(app); return; } res(b.dataset.a); }));
 }

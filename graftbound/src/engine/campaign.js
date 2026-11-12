@@ -46,7 +46,7 @@ export function generateMap(seed, { act = 0, tutorial = false } = {}) {
     }
     for (const m of nxt) if (!cur.some(n => n.next.includes(m.id))) cur.slice().sort((a, b) => Math.abs(a.x - m.x) - Math.abs(b.x - m.x))[0].next.push(m.id);
   }
-  return { seed, nodes, act, region: ACTS[act].name, boss: ACTS[act].boss };
+  return { seed, nodes, act, region: ACTS[act].name, boss: ACTS[act].bossName };
 }
 export const nodeById = (map, id) => map.nodes.find(n => n.id === id);
 export function availableNodes(map, currentId) {

@@ -41,7 +41,7 @@ test('each encounter contributes once per run (no farming); breakdown totals add
 // ── ranked replay & anti-cheat (the same functions the server verifier imports) ──
 const { run: R, log: LOG } = playRanked();
 test('valid replay is accepted and reproduces the exact run and score (client == server)', () => {
-  assert.ok(LOG.length > 20); const r = replayRun('gb-expedition-01', LOG, { revision: 1 });
+  assert.ok(LOG.length > 20); const r = replayRun('gb-expedition-01', LOG, { revision: 2 });
   assert.equal(JSON.stringify(r.run), JSON.stringify(R)); assert.deepEqual(r.totals, expeditionTotals(R));
   assert.ok(Array.isArray(verifiedAchievements(r.run)));
 });
@@ -56,8 +56,8 @@ test('fabricated scores and tampering are impossible or rejected', () => {
   const i = LOG.findIndex(d => d.type === 'move'); const bad = LOG.map(d => ({ ...d })); bad[i] = { ...bad[i], x: 0, y: 0 };
   assert.throws(() => replayRun('gb-expedition-01', bad), /reach|movement|Not your turn|Out of/i);
   const j = LOG.findIndex(d => d.type === 'attack'); if (j >= 0) { const b2 = LOG.map(d => ({ ...d })); b2[j] = { ...b2[j], uid: 999 }; assert.throws(() => replayRun('gb-expedition-01', b2)); }
-  assert.throws(() => replayRun('gb-expedition-01', LOG, { rulesVersion: 'graftbound-rules-0.5.0' }), /Rules version/);
-  assert.throws(() => replayRun('gb-expedition-02', LOG), /Unknown/); assert.throws(() => replayRun('gb-expedition-01', LOG, { revision: 2 }), /Unknown/);
+  assert.throws(() => replayRun('gb-expedition-01', LOG, { rulesVersion: 'graftbound-rules-0.6.0' }), /Rules version/, 'v0.6 rules are a different, incompatible version');
+  assert.throws(() => replayRun('gb-expedition-02', LOG), /Unknown/); assert.throws(() => replayRun('gb-expedition-01', LOG, { revision: 1 }), /Unknown/, 'revision 1 (v0.6/v0.7 rules) is retired: old scores are never mixed with new');
   assert.throws(() => replayRun('gb-expedition-01', new Array(MAX_DECISIONS + 1).fill(LOG[0])), /too long/);
   const cp = startRanked(); cp.ranked.seq = 10; assert.throws(() => applySegment(cp, LOG.slice(0, 3)), /out-of-order/, 'rolling back to an older checkpoint cannot accept earlier decisions');
   const tampered = startRanked(); tampered.hp = 999; tampered.ranked.rulesVersion = 'x'; assert.throws(() => applySegment(tampered, LOG.slice(0, 1)), /Rules version/);

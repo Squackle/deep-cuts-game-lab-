@@ -4,6 +4,8 @@ import { reachable, pathTo, distanceField, manhattan, unitAt, inBounds, tileAt, 
 import { ENEMIES } from '../data/enemies.js';
 import { player, enemies, allies, alive, attackExchange, dealDamage, addShield, addStatus, enterTiles, strikePower, has } from './abilities.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
+import { resolveCard } from '../cards/catalog.js';
+const spellCostOf = id => (resolveCard(id) || { cost: 0 }).cost;
 
 const cmpTile = (a, b) => a.y - b.y || a.x - b.x;
 const hazard = (s, t) => { const k = tileAt(s, t.x, t.y); return (k === T.LAVA || k === T.RIFT ? 1 : 0) + (t.hz || 0); };
@@ -162,10 +164,11 @@ export function planEnemy(s, e) {
       if (e.slam) { meleeIfAdjacent(hero); break; }
       if (manhattan(e, hero) > 1) go(approach(s, e, hero, list));
       const phase = (e.cycle || 0) % 2, bp = bossPhaseOf(e);
-      if (!e.barked && e.hp <= e.maxHp / 2) plan.actions.push({ type: 'bark', amount: 5 });
+      const ad = s.adapt || {};   // v0.8: against a build far above the curve she hardens earlier and calls more kin
+      if (!e.barked && e.hp <= e.maxHp * (ad.surge ? 2 / 3 : 1 / 2)) plan.actions.push({ type: 'bark', amount: ad.surge ? 7 : 5 });
       // Counters the build: fliers draw Thornbow archers (arrows hit fliers); ground builds draw hounds.
       const kin = has(hero, 'flying') ? 'archer' : 'hound';
-      if (phase === 1 && (e.summons || 0) < 3 && enemies(s).length < 4) plan.actions.push({ type: 'summon', defId: kin, n: 1 });
+      if (phase === 1 && (e.summons || 0) < (ad.surge ? 4 : 3) && enemies(s).length < 4) plan.actions.push({ type: 'summon', defId: kin, n: 1 });
       else plan.actions.push({ type: 'slam', tiles: slamTiles(s, hero, e.barked || plan.actions.some(a => a.type === 'bark')), damage: slamDamage(def, hero), kind: 'root' });
       if (bp >= 2 && phase === 1 && !has(hero, 'flying')) plan.actions.push({ type: 'briars', n: 2 });   // every other turn from phase 2: briars around ground builds; fire burns them
       meleeIfAdjacent(hero); break;
@@ -177,10 +180,10 @@ export function planEnemy(s, e) {
       if (phase === 0) { plan.actions.push({ type: 'slam', tiles: crossTiles(s, hero, posAfter()), damage: bossBlastDamage(hero), kind: 'fire' }); if (bp === 3) plan.actions.push({ type: 'lava', n: 1 }); }
       else {
         // Counters the build: spell-heavy heroes face a Harpooner (it closes distance); others face bursting Cinderlings.
-        const spellHeavy = s.spellbook.length >= 3;
-        if (spellHeavy && !enemies(s).some(x => x.defId === 'harpooner')) plan.actions.push({ type: 'summon', defId: 'harpooner', n: 1 });
+        const spellHeavy = s.spellbook.length >= 3, ad = s.adapt || {};
+        if ((spellHeavy || has(hero, 'flying')) && !enemies(s).some(x => x.defId === 'harpooner')) plan.actions.push({ type: 'summon', defId: 'harpooner', n: 1 });
         else if (enemies(s).filter(x => x.defId === 'cinderling').length < 3) plan.actions.push({ type: 'summon', defId: 'cinderling', n: 2 });
-        plan.actions.push({ type: 'lava', n: bp >= 2 ? 3 : 2 });
+        plan.actions.push({ type: 'lava', n: (bp >= 2 ? 3 : 2) + (ad.surge ? 1 : 0) });
       }
       meleeIfAdjacent(hero); break;
     }
@@ -193,7 +196,10 @@ export function planEnemy(s, e) {
       if (phase === 0 || bp === 3) plan.actions.push({ type: 'slam', tiles: crossTiles(s, hero, posAfter()), damage: bossBlastDamage(hero), kind: 'void' });
       else if (enemies(s).filter(x => x.defId === 'riftstalker').length < 2) plan.actions.push({ type: 'summon', defId: 'riftstalker', n: 1 });
       // Redaction: from phase 2, TEMPORARILY suppresses one of your abilities during your next turn (never permanent).
-      const red = bp >= 2 && phase === 1 && !hero.suppressed && MIRROR_ORDER.concat(['deathtouch']).find(k => hero.keywords[k]);
+      // Redaction (v0.8): spell-heavy builds lose their costliest spell for one turn instead of an ability.
+      const silence = bp >= 2 && phase === 1 && s.spellbook.length >= 3 && !s.p.silenced && s.spellbook.slice().sort((a, b) => spellCostOf(b.id) - spellCostOf(a.id) || (a.id < b.id ? -1 : 1))[0];
+      const red = !silence && bp >= 2 && phase === 1 && !hero.suppressed && MIRROR_ORDER.concat(['deathtouch']).find(k => hero.keywords[k]);
+      if (silence) plan.actions.push({ type: 'silence', spell: silence.id });
       if (red) plan.actions.push({ type: 'redact', keyword: red });
       meleeIfAdjacent(hero); break;
     }
@@ -202,16 +208,21 @@ export function planEnemy(s, e) {
 }
 
 export function previewIntent(s, e) {
-  if (e.aim) return { uid: e.uid, kind: 'fire', damage: e.aim.damage, tiles: e.aim.tiles };
+  const hero = player(s);
+  const g0 = (hero && hero.statuses.guard) || 0;
+  const brace = d => g0 ? Math.min(d, Math.max(g0, Math.floor(d / 2))) : 0;
+  if (e.aim) return { uid: e.uid, kind: 'fire', damage: e.aim.damage - brace(e.aim.damage), guarded: brace(e.aim.damage), tiles: e.aim.tiles };
   const plan = planEnemy(s, e); const a = plan.actions;
   if (e.slam) {
     const atk = a.find(x => x.type === 'attack');
-    return { uid: e.uid, kind: 'slam', damage: e.slam.damage, tiles: e.slam.tiles, extra: atk ? atk.damage : 0, target: atk && atk.target };
+    return { uid: e.uid, kind: 'slam', damage: e.slam.damage - brace(e.slam.damage), guarded: brace(e.slam.damage), tiles: e.slam.tiles, extra: atk ? atk.damage : 0, target: atk && atk.target };
   }
   const main = a.find(x => x.type === 'attack') || a.find(x => x.type === 'harpoon') || a.find(x => x.type === 'spit') || a.find(x => x.type === 'hex') || a.find(x => x.type === 'aim') || a.find(x => x.type === 'slam') || a.find(x => x.type === 'summon') || a.find(x => x.type === 'guard') || a.find(x => x.type === 'stunned');
-  return { uid: e.uid, kind: main ? main.type : 'move', damage: (main && main.damage) || 0, poison: (main && main.poison) || 0, weaken: (main && main.weaken) || 0, ground: !!(main && main.ground),
+  const g = (hero && hero.statuses.guard) || 0;   // v0.8: intents show what you will ACTUALLY take while guarding
+  const dmg = (main && main.damage) || 0; const vsHero = main && (main.target === hero.uid || main.type === 'slam' || main.type === 'aim');
+  return { uid: e.uid, kind: main ? main.type : 'move', damage: vsHero && g ? Math.max(0, dmg - g) : dmg, guarded: vsHero && g ? Math.min(g, dmg) : 0, /* pending slams use the braced rule */ poison: (main && main.poison) || 0, weaken: (main && main.weaken) || 0, ground: !!(main && main.ground),
     tiles: (main && main.type === 'aim') ? main.tiles : [], to: plan.to, target: main && main.target, mirror: (a.find(x => x.type === 'mirror') || {}).keyword,
-    redact: (a.find(x => x.type === 'redact') || {}).keyword, briars: !!a.find(x => x.type === 'briars'), phase: e.boss ? bossPhaseOf(e) : 0 };
+    redact: (a.find(x => x.type === 'redact') || {}).keyword, silence: (a.find(x => x.type === 'silence') || {}).spell, briars: !!a.find(x => x.type === 'briars'), phase: e.boss ? bossPhaseOf(e) : 0 };
 }
 
 function resolvePending(s, ev, e) {
@@ -233,8 +244,8 @@ function resolvePending(s, ev, e) {
 
 export function actEnemy(s, ev, e) {
   if (!alive(e)) return;
-  if (e.statuses.stunned) { e.statuses.stunned = 0; ev.push({ t: 'stunnedSkip', uid: e.uid }); return; }
-  if (resolvePending(s, ev, e)) return;
+  if (e.statuses.stunned) { e.statuses.stunned = 0; e.statuses.weakened = 0; ev.push({ t: 'stunnedSkip', uid: e.uid }); return; }
+  if (resolvePending(s, ev, e)) { e.statuses.weakened = 0; return; }
   if (s.phase !== 'enemy') return;
   const plan = planEnemy(s, e);
   const hero = player(s);
@@ -264,6 +275,7 @@ export function actEnemy(s, ev, e) {
         if (cand.length) ev.push({ t: 'terrain', tiles: cand, kind: 'bramble' });
         break;
       }
+      case 'silence': s.p.silenced = a.spell; ev.push({ t: 'silence', uid: e.uid, spell: a.spell }); break;
       case 'redact': if (hero.keywords[a.keyword]) { hero.suppressed = { [a.keyword]: hero.keywords[a.keyword] }; delete hero.keywords[a.keyword]; ev.push({ t: 'redact', uid: e.uid, keyword: a.keyword }); } break;
       case 'lava': {
         const cand = areaTiles(s, hero, 2).filter(t => tileAt(s, t.x, t.y) === T.FLOOR && !unitAt(s, t.x, t.y) && !(t.x === hero.x && t.y === hero.y))
@@ -287,6 +299,10 @@ export function actEnemy(s, ev, e) {
       }
     }
   }
+  if (e.statuses.weakened) e.statuses.weakened = 0;   // v0.8: an enemy Weaken lasts for exactly its next action
+  if (e.statuses.empowered) e.statuses.empowered = 0; // and a Rally lasts for exactly its next action
+  const rally = ENEMIES[e.defId].rally;               // v0.8 Act II coordination: Brutes rally the foes beside them
+  if (rally && alive(e)) for (const al of enemies(s)) if (al !== e && manhattan(al, e) === 1 && !(al.statuses.empowered >= rally)) { al.statuses.empowered = rally; ev.push({ t: 'status', uid: al.uid, status: 'empowered', value: rally, total: rally }); }
   if (['thornmother', 'matron', 'unwritten'].includes(ENEMIES[e.defId].ai)) { e.cycle = (e.cycle || 0) + 1; announcePhase(ev, e); }
 }
 

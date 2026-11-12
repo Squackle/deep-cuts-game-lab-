@@ -16,13 +16,13 @@ export const ARCHETYPES = {
   hybrid: { cards: [['typhoid-rats', 'grizzly-bears', 'storm-crow', 'child-of-night'], ['typhoid-rats', 'centaur-courser', 'wind-drake', 'child-of-night', 'youthful-knight', 'gnarled-mass'], ['vampire-nighthawk', 'centaur-courser', 'snapping-drake', 'war-mammoth', 'youthful-knight', 'rumbling-baloth', 'child-of-night', 'gnarled-mass']], spells: ['lightning-bolt', 'feat-of-resistance'] },
 };
 export function archetype(name, act) { const a = ARCHETYPES[name]; return { evo: evoWith(...a.cards[act].map(c => 'mtg:' + c)), spellbook: sb(act === 0 ? a.spells.slice(0, 2) : a.spells) }; }
-export function fight({ evo, spellbook, act, tier, n = 20, sparkBonus = act * 4 }) {
+export function fight({ evo, spellbook, act, tier, n = 20, sparkBonus = act * 4, tactics = true }) {
   let won = 0, taken = 0, turns = 0; const st = deriveStats(evo, { sparkBonus, manaBonus: act >= 1 ? 1 : 0, spellCount: spellbook.length });
-  const pools = tier === 'boss' ? ACTS[act].boss : tier === 'elite' ? ACTS[act].elite : [...ACTS[act].mid, ...ACTS[act].late];
+  const pools = tier === 'boss' ? ACTS[act].bossEncounters : tier === 'elite' ? ACTS[act].elite : [...ACTS[act].mid, ...ACTS[act].late];
   for (let seed = 1; seed <= n; seed++) {
     const tpl = pools[seed % pools.length];
     const s = createBattle({ evo, stats: st, spellbook, encounter: buildEncounter(tpl, seed * 977 + act, tier), seed, act });
-    const r = botPlay(s, 40); if (r === 'won') won++; taken += s.stats.damageTaken; turns += s.turn;
+    const r = botPlay(s, 40, { tactics }); if (r === 'won') won++; taken += s.stats.damageTaken; turns += s.turn;
   }
   return { rate: won / n, taken: taken / n, turns: turns / n, maxHp: st.maxHealth };
 }

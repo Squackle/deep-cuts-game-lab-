@@ -55,6 +55,8 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
   let a = amount;
   const cap = combat && ENEMIES[tgt.defId] && ENEMIES[tgt.defId].strikeCap;
   if (cap && a > cap) { ev.push({ t: 'capped', uid: tgt.uid, from: a, to: cap }); a = cap; }
+  // v0.8 Guard: every hit from an enemy (strikes, arrows, slams, breath) is reduced; hazards and poison are not.
+  if (tgt.statuses && tgt.statuses.guard && src && src.side !== tgt.side) { const braced = kind === 'slam' || kind === 'arrow'; const cut = Math.min(a, braced ? Math.max(tgt.statuses.guard, Math.floor(a / 2)) : tgt.statuses.guard); /* telegraphed blows are at least halved */ a -= cut; if (cut) ev.push({ t: 'guarded', uid: tgt.uid, amount: cut }); if (a <= 0) { ev.push({ t: 'damage', uid: tgt.uid, amount: 0, blocked: 0, kind }); return 0; } }
   const armor = combat ? kv(tgt, 'armor') : 0;
   if (armor) { const cut = Math.min(armor, a); a -= cut; if (cut) ev.push({ t: 'armored', uid: tgt.uid, amount: cut }); }
   if (a <= 0) { ev.push({ t: 'damage', uid: tgt.uid, amount: 0, blocked: 0, kind }); return 0; }

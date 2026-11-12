@@ -9,6 +9,8 @@ import { STARTING_NAME, deriveStats } from './evolution.js';
 import { rollShrine } from './shrines.js';
 import { newScoring } from './scoring.js';
 import { reconstructJournal } from './journal.js';
+import { newClock } from './clock.js';
+import { ACTS } from '../data/encounters.js';
 
 export const KEYS = { run: 'deepcutsedh.livingcard.run', meta: 'deepcutsedh.livingcard.meta' };
 const BAK = '.bak', BAD = '.corrupt', PRE = '.pre-v';
@@ -62,6 +64,14 @@ export const RUN_MIGRATIONS = {
     }
     return r;
   },
+};
+RUN_MIGRATIONS[4] = r => {
+  /** v0.7 -> v0.8. Additive: a PARTIAL clock (time before this update is unknown and is never invented), and a
+   *  string boss name on the map (older maps could hold the serialized encounter array). Rules state untouched. */
+  r.v = 5; r.clock = r.clock || newClock(true); r.primerDone = true;   // adventures already under way never get a surprise primer
+  if (r.map && typeof r.map.boss !== 'string') r.map.boss = (ACTS[r.map.act || r.act || 0] || ACTS[0]).bossName;
+  if (r.battle) r.battle.v = 5;
+  return r;
 };
 export const META_MIGRATIONS = {
   1: m => { m.v = 2; m.settings = { ...DEFAULT_SETTINGS, ...(m.settings || {}) }; return m; },
