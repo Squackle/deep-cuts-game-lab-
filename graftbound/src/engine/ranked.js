@@ -7,7 +7,7 @@ import { expeditionTotals } from './scoring.js';
 import { SCORING_VERSION } from '../data/scoring.js';
 
 export const RULES_VERSION = 'graftbound-rules-1.1.0';
-export const CARD_POOL_VERSION = 'real-pool-67-v2';
+export const CARD_POOL_VERSION = 'real-pool-67-v3';
 export const REPLAY_VERSION = 1;
 export const MAX_DECISIONS = 4000, MAX_SEGMENT = 400;
 

@@ -66,7 +66,7 @@ export const REAL_CREATURES = [
   C('Boros Swiftblade', '{R}{W}', 2, 'Creature — Human Soldier', 1, 2, ['Double strike'], ['R', 'W'], 'uncommon'),
   C('Skyknight Legionnaire', '{1}{R}{W}', 3, 'Creature — Human Knight', 2, 2, ['Flying', 'Haste'], ['R', 'W'], 'common'),
   C('Ornithopter', '{0}', 0, 'Artifact Creature — Thopter', 0, 2, ['Flying'], [], 'common'),
-  C('Bronze Sable', '{3}', 3, 'Artifact Creature — Sable', 2, 1, [], [], 'common'),
+  C('Bronze Sable', '{2}', 2, 'Artifact Creature — Sable', 2, 1, [], [], 'common'),
 ];
 export const REAL_SPELLS = [
   S('Shock', '{R}', 1, 'Instant', ['R'], 'common'),
