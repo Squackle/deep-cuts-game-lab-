@@ -63,6 +63,6 @@ test('spell-target affinities apply through real cast pipeline; guard and damage
   const z = find(s, 'shardling');
   const shock = cast(s, 'mtg:shock', z.x, z.y);
   assert.ok(shock.some(e => e.t === 'resisted' && e.element === 'lightning'));
-  assert.equal(RULES_VERSION, 'graftbound-rules-1.1.0');
-  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 5);
+  assert.equal(RULES_VERSION, 'graftbound-rules-1.1.1');
+  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 6);
 });

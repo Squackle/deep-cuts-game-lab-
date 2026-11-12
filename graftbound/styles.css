@@ -447,3 +447,25 @@ body[data-mode="reward"] .hint { top: 6px; } body[data-mode="reward"] .toast { t
 #book-loadout-count { line-height:1.55; max-width:64ch; margin-inline:auto; }
 @media(max-width:760px){.rw-actions{justify-content:center}.rw-actions button{min-height:44px}.book-equip{min-height:44px}}
 @media(prefers-reduced-motion:reduce){.reward .pack.charging:not(.open) .pk-seal{animation:none} #tray .handcard:focus-visible{transform:none}}
+
+/* v1.1.1 screenshot regression: the spell tray MUST show complete card art/rules.
+   Horizontal scrolling computes overflow-y:auto/hidden in browsers, so allocate enough
+   internal headroom for the selected/hover transforms instead of drawing beyond the clip.
+   Small-height windows scale the card to the available viewport, never below the HUD. */
+.lc-card.real .realface .real-img { object-fit: contain; object-position: center; background: #100f0e; }
+#hud .tray { overflow-x: auto; overflow-y: hidden; padding: 26px 24px 14px; max-height: min(calc(100dvh - 44px), 220px); box-sizing: border-box; scroll-padding-inline: 24px; }
+#hud .handcard { --hand-width: clamp(54px, calc((100dvh - 92px) * 5 / 7), 104px); width: var(--hand-width); margin: 0 3px; transform: none; transform-origin: 50% 100%; }
+#hud .handcard .lc-card { --cw: var(--hand-width); }
+#hud .handcard:hover, #hud .handcard:focus-visible { margin: 0 3px; transform: translateY(-6px) scale(1.04); }
+#hud .handcard.sel { transform: translateY(-9px) scale(1.06); }
+#hud .handcard:focus-visible { outline: 2px solid var(--gold2); outline-offset: 2px; }
+@media (max-width: 760px) {
+  #hud .tray { padding: 20px 14px 12px; max-height: min(calc(100dvh - 40px), 195px); }
+  #hud .handcard { --hand-width: clamp(50px, calc((100dvh - 82px) * 5 / 7), 76px); margin: 0 3px; }
+  #hud .handcard:hover, #hud .handcard:focus-visible { margin: 0 3px; transform: translateY(-4px) scale(1.03); }
+  #hud .handcard.sel { transform: translateY(-6px) scale(1.04); }
+}
+@media (max-height: 340px) {
+  #hud .tray { padding-top: 14px; padding-bottom: 8px; max-height: 60dvh; }
+  .hand-readout { max-height: 40dvh; overflow: auto; bottom: 50dvh; }
+}

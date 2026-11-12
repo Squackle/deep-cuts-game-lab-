@@ -1,6 +1,6 @@
 // Enemy and ally AI. planEnemy() is pure: used for intent previews AND execution (what the UI shows is
 // what happens). AI sees only the board, never the player's spellbook or rewards.
-import { reachable, pathTo, distanceField, manhattan, unitAt, inBounds, tileAt, T, DIRS, lineOfSight } from '../core/grid.js';
+import { reachable, pathTo, manhattan, unitAt, inBounds, tileAt, T, DIRS, lineOfSight } from '../core/grid.js';
 import { ENEMIES } from '../data/enemies.js';
 import { player, enemies, allies, alive, attackExchange, dealDamage, addShield, addStatus, enterTiles, strikePower, has } from './abilities.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
@@ -19,18 +19,62 @@ function stops(s, e) {
   const map = reachable(s, e, e.statuses.rooted ? 0 : Math.max(0, e.move - (e.statuses.chilled ? TERRAIN_RULES.ice.slowNextMovement : 0)));
   // Never choose a destination whose path would kill this unit outright; prefer cheaper-hazard routes on ties.
   const list = [...map.values()].filter(v => v.stop).map(v => { v.hz = pathDamage(s, e, pathTo(map, v.x, v.y)); return v; }).filter(v => v.cost === 0 || v.hz < e.hp);
-  // Creatures know their own lairs. Prefer an entirely safe path (and safe landing tile)
-  // over a dangerous shortcut; when no such route exists, keep the original legal
-  // alternatives so players can still corner/force an enemy through a hazard.
-  const safe = list.filter(v => v.hz === 0 && ![T.LAVA, T.RIFT, T.UNSTABLE, T.SPORES].includes(tileAt(s, v.x, v.y)));
-  return { map, list: safe.length ? safe : list };
+  // Do NOT discard dangerous but survivable endpoints. That can leave only the origin
+  // in "safe" candidates, so melee foes appear to skip their turn beside a hazard.
+  // A hazard-weighted route field below selects detours over risky shortcuts.
+  return { map, list };
 }
 const BOSS_PHASES = { thornmother: ['Rootbound', 'Barkskin Awakening', 'The Briar Crown'], matron: ['Smouldering', 'Rising Magma', 'Pyre Unbound'], unwritten: ['The Mirror', 'Redaction', 'The Blank Page'] };
 export const bossPhaseOf = e => (e.hp > e.maxHp * 2 / 3 ? 1 : e.hp > e.maxHp / 3 ? 2 : 3);
 export const bossPhaseName = (e, ph = bossPhaseOf(e)) => (BOSS_PHASES[ENEMIES[e.defId].ai] || [])[ph - 1] || '';
-function approach(s, e, target, list) {
-  const df = distanceField(s, target, has(e, 'flying'));
-  return list.slice().sort((a, b) => (df[a.y * s.w + a.x] - df[b.y * s.w + b.x]) || (hazard(s, a) - hazard(s, b)) || (a.cost - b.cost) || cmpTile(a, b))[0];
+/** Weighted cost of entering a tile for tactical routing, not damage application.
+ *  A survivable hazard is expensive but never treated as an impassable wall.
+ *  Pending pulse hazards still count even for flying enemies. */
+export function routeRisk(s, unit, t) {
+  const ground = !has(unit, 'flying');
+  switch (tileAt(s, t.x, t.y)) {
+    case T.LAVA: return ground ? 12 : 0;
+    case T.RIFT: return 9;
+    case T.UNSTABLE: return 8;
+    case T.SPORES: return ground ? 7 : 0;
+    case T.BRAMBLE: return ground ? 5 : 0;
+    case T.CRUMBLE: return ground ? 5 : 0;
+    default: return 0;
+  }
+}
+/** Reverse Dijkstra: path cost remaining from a tile to the target. Ignores temporary
+ *  unit occupancy (as the old distance field did), but evaluates terrain risks.
+ *  Loop bounds are fixed by the authored board size, with deterministic ties. */
+export function hazardDistanceField(s, target, unit) {
+  const n = s.w * s.h, dist = new Array(n).fill(Infinity), seen = new Uint8Array(n);
+  if (!inBounds(s, target.x, target.y)) return dist;
+  dist[target.y * s.w + target.x] = 0;
+  for (let visit = 0; visit < n; visit++) {
+    let idx = -1;
+    for (let i = 0; i < n; i++) if (!seen[i] && (idx < 0 || dist[i] < dist[idx])) idx = i;
+    if (idx < 0 || !Number.isFinite(dist[idx])) break;
+    seen[idx] = 1;
+    const x = idx % s.w, y = Math.floor(idx / s.w);
+    for (const [dx, dy] of DIRS) {
+      const nx = x + dx, ny = y + dy;
+      if (!inBounds(s, nx, ny) || (!has(unit, 'flying') && tileAt(s, nx, ny) === T.ROCK)) continue;
+      const ni = ny * s.w + nx;
+      const candidate = dist[idx] + 1 + routeRisk(s, unit, { x, y });
+      if (candidate < dist[ni]) dist[ni] = candidate;
+    }
+  }
+  return dist;
+}
+function approach(s, e, target, list, map = null) {
+  if (!list.length) return null;
+  const df = hazardDistanceField(s, target, e);
+  const origin = df[e.y * s.w + e.x];
+  const score = t => df[t.y * s.w + t.x] + (map ? pathTo(map, t.x, t.y).slice(1).reduce((risk, p) => risk + routeRisk(s, e, p), 0) : routeRisk(s, e, t));
+  // The origin is a legal fallback when the unit is truly trapped or all routes are
+  // lethal. Otherwise, taking a safe detour (even one away from the hero initially)
+  // should beat idling, and a nonlethal hazard crossing should remain possible.
+  const options = list.slice().sort((a, b) => score(a) - score(b) || (hazard(s, a) - hazard(s, b)) || (b.cost - a.cost) || cmpTile(a, b));
+  return score(options[0]) < origin || !Number.isFinite(origin) ? options[0] : list.find(t => t.x === e.x && t.y === e.y) || options[0];
 }
 function straightLine(s, from, dir, range) {
   const tiles = [];
@@ -93,7 +137,7 @@ export function planEnemy(s, e) {
       const tgt = meleeTarget(s, e);
       if (manhattan(e, tgt) !== 1) {
         const adj = list.filter(t => manhattan(t, tgt) === 1).sort((a, b) => hazard(s, a) - hazard(s, b) || a.cost - b.cost || cmpTile(a, b))[0];
-        go(adj || approach(s, e, tgt, list));
+        go(adj || approach(s, e, tgt, list, map));
       }
       meleeIfAdjacent(tgt); break;
     }
@@ -105,7 +149,7 @@ export function planEnemy(s, e) {
         const fa = mates.reduce((m, o) => m + d2(o, a), 0), fb = mates.reduce((m, o) => m + d2(o, b), 0);
         return fb - fa || hazard(s, a) - hazard(s, b) || a.cost - b.cost || cmpTile(a, b);
       });
-      if (adj.length) go(adj[0]); else if (manhattan(e, tgt) !== 1) go(approach(s, e, tgt, list));
+      if (adj.length) go(adj[0]); else if (manhattan(e, tgt) !== 1) go(approach(s, e, tgt, list, map));
       meleeIfAdjacent(tgt); break;
     }
     case 'archer': {
@@ -127,15 +171,15 @@ export function planEnemy(s, e) {
       else if (others.length) {
         const ward = others.slice().sort((a, b) => manhattan(a, hero) - manhattan(b, hero) || a.uid - b.uid)[0];
         const near = list.filter(t => manhattan(t, ward) === 1).sort((a, b) => manhattan(a, hero) - manhattan(b, hero) || a.cost - b.cost || cmpTile(a, b))[0];
-        go(near || approach(s, e, ward, list));
-      } else go(approach(s, e, tgt, list));
+        go(near || approach(s, e, ward, list, map));
+      } else go(approach(s, e, tgt, list, map));
       plan.actions.push({ type: 'guard', amount: def.guard });
       meleeIfAdjacent(tgt); break;
     }
     case 'skirmisher': {
       const good = keepRange(3, def.spitRange, true);
       if (good.length) { go(good[0]); plan.actions.push({ type: 'spit', target: hero.uid, damage: e.power, poison: def.poison }); }
-      else { const tgt = meleeTarget(s, e); go(approach(s, e, tgt, list)); meleeIfAdjacent(tgt); }
+      else { const tgt = meleeTarget(s, e); go(approach(s, e, tgt, list, map)); meleeIfAdjacent(tgt); }
       break;
     }
     case 'hexer': {
@@ -144,14 +188,14 @@ export function planEnemy(s, e) {
         // Periodic territory control has visible terrain that players can avoid next turn.
         if ((e.cycle || 0) % 3 === 2) plan.actions.push({ type: e.defId === 'shardling' ? 'fracture' : 'sporefield', n: 1 });
       }
-      else { const tgt = meleeTarget(s, e); go(approach(s, e, tgt, list)); meleeIfAdjacent(tgt); }
+      else { const tgt = meleeTarget(s, e); go(approach(s, e, tgt, list, map)); meleeIfAdjacent(tgt); }
       break;
     }
     case 'harpooner': {
       const good = keepRange(4, def.harpoonRange, true);
       const fly = has(hero, 'flying');
       if (good.length) { go(good[0]); plan.actions.push({ type: 'harpoon', target: hero.uid, damage: e.power * (fly ? 2 : 1), ground: fly }); }
-      else { const tgt = meleeTarget(s, e); go(approach(s, e, tgt, list)); meleeIfAdjacent(tgt); }
+      else { const tgt = meleeTarget(s, e); go(approach(s, e, tgt, list, map)); meleeIfAdjacent(tgt); }
       break;
     }
     case 'seer': {
@@ -169,7 +213,7 @@ export function planEnemy(s, e) {
     }
     case 'thornmother': {
       if (e.slam) { meleeIfAdjacent(hero); break; }
-      if (manhattan(e, hero) > 1) go(approach(s, e, hero, list));
+      if (manhattan(e, hero) > 1) go(approach(s, e, hero, list, map));
       const phase = (e.cycle || 0) % 2, bp = bossPhaseOf(e);
       const ad = s.adapt || {};   // v0.8: against a build far above the curve she hardens earlier and calls more kin
       if (!e.barked && e.hp <= e.maxHp * (ad.surge ? 2 / 3 : 1 / 2)) plan.actions.push({ type: 'bark', amount: ad.surge ? 7 : 5 });
@@ -183,7 +227,7 @@ export function planEnemy(s, e) {
     }
     case 'matron': {
       if (e.slam) { meleeIfAdjacent(hero); break; }
-      if (manhattan(e, hero) > 1) go(approach(s, e, hero, list));
+      if (manhattan(e, hero) > 1) go(approach(s, e, hero, list, map));
       const phase = (e.cycle || 0) % 2, bp = bossPhaseOf(e);
       if (phase === 0) { plan.actions.push({ type: 'slam', tiles: crossTiles(s, hero, posAfter()), damage: bossBlastDamage(hero), kind: 'fire' }); if (bp === 3) plan.actions.push({ type: 'lava', n: 1 }); }
       else {
@@ -199,8 +243,8 @@ export function planEnemy(s, e) {
     case 'unwritten': {
       const copy = MIRROR_ORDER.find(k => hero.keywords[k] && !e.keywords[k]);
       if (copy) plan.actions.push({ type: 'mirror', keyword: copy });
-      if (e.slam) { if (manhattan(e, hero) > 1) go(approach(s, e, hero, list)); meleeIfAdjacent(hero); break; }
-      if (manhattan(e, hero) > 1) go(approach(s, e, hero, list));
+      if (e.slam) { if (manhattan(e, hero) > 1) go(approach(s, e, hero, list, map)); meleeIfAdjacent(hero); break; }
+      if (manhattan(e, hero) > 1) go(approach(s, e, hero, list, map));
       const phase = (e.cycle || 0) % 2, bp = bossPhaseOf(e);
       if (phase === 0 || bp === 3) plan.actions.push({ type: 'slam', tiles: crossTiles(s, hero, posAfter()), damage: bossBlastDamage(hero), kind: 'void' });
       else if (enemies(s).filter(x => x.defId === 'riftstalker').length < 2) plan.actions.push({ type: 'summon', defId: 'riftstalker', n: 1 });
@@ -340,7 +384,7 @@ export function actAlly(s, ev, a) {
   const tgt = foes.slice().sort((x, y) => manhattan(a, x) - manhattan(a, y) || x.uid - y.uid)[0];
   if (manhattan(a, tgt) !== 1) {
     const { map, list } = stops(s, a);
-    const t = list.filter(v => manhattan(v, tgt) === 1).sort((x, y) => x.cost - y.cost || cmpTile(x, y))[0] || approach(s, a, tgt, list);
+    const t = list.filter(v => manhattan(v, tgt) === 1).sort((x, y) => x.cost - y.cost || cmpTile(x, y))[0] || approach(s, a, tgt, list, map);
     if (t && (t.x !== a.x || t.y !== a.y)) { const path = pathTo(map, t.x, t.y); ev.push({ t: 'move', uid: a.uid, path }); a.x = t.x; a.y = t.y; enterTiles(s, ev, a, path); }
   }
   if (alive(a) && alive(tgt) && manhattan(a, tgt) === 1) attackExchange(s, ev, a, tgt);
