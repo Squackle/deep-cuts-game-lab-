@@ -33,7 +33,7 @@ test('boss data model: string names, separate authored encounter lists, no dupli
     assert.equal(typeof A.bossName, 'string'); assert.ok(A.bossName.length > 3); assert.equal(A.boss, undefined, 'no ambiguous `boss` field');
     assert.ok(Array.isArray(A.bossEncounters) && A.bossEncounters.length >= 1 && A.bossEncounters.every(e => e.boss && e.enemies.length));
     assert.equal(bossNameOf(i), A.bossName); assert.equal(typeof bossTitleOf(i), 'string'); assert.notEqual(bossTitleOf(i), A.bossName, 'location subtitle differs from the name');
-    const tpl = templateFor(i, 'boss', 7, 99); assert.equal(tpl, A.bossEncounters[0]); assert.ok(buildEncounter(tpl, 99, 'boss').enemies.length);
+    const tpl = templateFor(i, 'boss', 7, 99); assert.equal(tpl.name, A.bossEncounters[0].name); assert.deepEqual(tpl.enemies, A.bossEncounters[0].enemies); assert.ok(buildEncounter(tpl, 99, 'boss').enemies.length);
   }
   const text = src('data/encounters.js'); for (const a of ['hollow', 'warrens', 'nexus']) { const block = text.slice(text.indexOf(`id: '${a}'`)); assert.equal((block.slice(0, block.indexOf('bossEncounters')).match(/\bboss:/g) || []).length, 0); }
 });
@@ -128,10 +128,10 @@ test('auto-end: stances keep the turn only when useful (Guard when threatened, C
   const ch = arena(['g...', '....', 'P...'], { g: 'grub' }, { spellbook: book(['lightning-bolt']) }); ch.p.mana = 1; ch.p.moveLeft = 1; ch.p.attacksLeft = 1;
   ch.units[1].x = 3; ch.units[1].y = 0; assert.ok(usefulStances(ch).includes('channel'));
 });
-test('ranked replays include stances: recorded runs re-verify byte-identically under rules 1.0 / challenge revision 4', () => {
-  assert.equal(RULES_VERSION, 'graftbound-rules-1.0.0'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 4);
+test('ranked replays include stances: recorded runs re-verify byte-identically under rules 1.1 / challenge revision 5', () => {
+  assert.equal(RULES_VERSION, 'graftbound-rules-1.1.0'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 5);
   const { run, log } = playRanked(); assert.ok(log.some(d => d.type === 'guard' || d.type === 'channel'), 'the bot used a stance');
-  assert.equal(JSON.stringify(replayRun('gb-expedition-01', log, { revision: 4 }).run), JSON.stringify(run));
+  assert.equal(JSON.stringify(replayRun('gb-expedition-01', log, { revision: 5 }).run), JSON.stringify(run));
   const i = log.findIndex(d => d.type === 'guard'); if (i >= 0) { const bad = log.map(d => ({ ...d })); bad.splice(i, 0, { ...bad[i] }); bad.forEach((d, k) => (d.seq = k)); assert.throws(() => replayRun('gb-expedition-01', bad)); }
 });
 

@@ -41,7 +41,7 @@ test('each encounter contributes once per run (no farming); breakdown totals add
 // ── ranked replay & anti-cheat (the same functions the server verifier imports) ──
 const { run: R, log: LOG } = playRanked();
 test('valid replay is accepted and reproduces the exact run and score (client == server)', () => {
-  assert.ok(LOG.length > 20); const r = replayRun('gb-expedition-01', LOG, { revision: 4 });
+  assert.ok(LOG.length > 20); const r = replayRun('gb-expedition-01', LOG, { revision: 5 });
   assert.equal(JSON.stringify(r.run), JSON.stringify(R)); assert.deepEqual(r.totals, expeditionTotals(R));
   assert.ok(Array.isArray(verifiedAchievements(r.run)));
 });

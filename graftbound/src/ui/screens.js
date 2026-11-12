@@ -21,6 +21,7 @@ import { SCORE } from '../data/scoring.js';
 import { graftHistory } from '../engine/journal.js';
 import { composePlayerSheet } from '../rendering/evolution-visuals.js';
 import { newEvolution } from '../engine/evolution.js';
+import { setSpellEquipped, handCapacity, normalizedEquipped } from '../engine/loadout.js';
 import { RANKED_CHALLENGES, ACTIVE_CHALLENGE } from '../engine/ranked.js';
 import { NODE_TYPES as NT } from '../engine/campaign.js';
 import { formatDuration } from '../engine/clock.js';
@@ -259,7 +260,7 @@ export function rewardScreen(app, cards, { tier, severed }) {
           <button type="button" class="zoom" data-zoom="${esc(id)}" aria-label="Inspect">${ICON.zoom}</button></div>`).join('')}</div>
       </div>
       <div class="rw-detail" id="rw-detail"></div>
-      <div class="rw-actions"><button type="button" class="btn small ghost" id="rw-reveal">Reveal all</button>${tier !== 'graftsmith' ? `<button type="button" class="btn small ghost" id="rw-skip" hidden>Leave the pack · +1 Spark</button>` : ''}</div>
+      <div class="rw-actions"><button type="button" class="btn small ghost" id="rw-ceremony-skip" aria-label="Skip pack opening ceremony, retain all rewards">Skip opening animation</button><button type="button" class="btn small ghost" id="rw-reveal">Reveal all</button>${tier !== 'graftsmith' ? `<button type="button" class="btn small ghost" id="rw-skip" hidden>Leave the pack · +1 Spark</button>` : ''}</div>
     </div>`, 'rewardscr' + (fast ? ' fast' : ''));
   app.hint('pack', 'Reveal all three cards, then choose one. Creatures are grafted into you; spells go into your spellbook. Tap the magnifier to inspect a card.');
   let showDetailRef = null;
@@ -276,17 +277,28 @@ export function rewardScreen(app, cards, { tier, severed }) {
   stage.addEventListener('pointermove', e => { if (pack.classList.contains('open')) return; const r = stage.getBoundingClientRect(); pack.style.setProperty('--rx', ((e.clientY - r.top) / r.height - 0.5) * -14 + 'deg'); pack.style.setProperty('--ry', ((e.clientX - r.left) / r.width - 0.5) * 18 + 'deg'); });
   stage.addEventListener('pointerleave', () => { pack.style.setProperty('--rx', '0deg'); pack.style.setProperty('--ry', '0deg'); });
   return new Promise(res => {
-    let opened = false, opening = null, claimed = false;
-    const wait = ms => new Promise(r => setTimeout(r, instant ? 0 : fast ? ms * 0.35 : ms));
+    let opened = false, opening = null, claimed = false, ceremonySkipped = false;
+    const ceremonyButton = $('rw-ceremony-skip');
+    const finishOpen = () => {
+      pack.classList.remove('charging', 'broken');
+      pack.classList.add('open', 'gone'); fan.classList.add('out');
+      ceremonyButton.hidden = true;
+      $('rw-sub').textContent = 'Reveal the three fragments';
+      const sk = $('rw-skip'); if (sk) sk.hidden = false;
+    };
+    // Skip animation never consumes/chooses a card; queued visual transitions are cancelled.
+    const skipCeremony = () => { ceremonySkipped = true; opened = true; finishOpen(); };
+    ceremonyButton.addEventListener('click', skipCeremony);
+    const wait = ms => new Promise(r => setTimeout(r, ceremonySkipped || instant || matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : fast ? ms * 0.35 : ms));
     const open = () => opening || (opening = (async () => {
       if (opened) return; opened = true;
-      app.audio.play('seal'); if (tier === 'boss') app.audio.play('rare'); pack.classList.add('charging');
+      app.audio.play(tier === 'boss' ? 'packBoss' : tier === 'elite' || tier === 'graftsmith' ? 'packElite' : tier === 'primer' || tier === 'archivist' ? 'packFolio' : 'seal'); pack.classList.add('charging');
       const sc = app.scene; if (sc && sc.cam) sc.fx.swirl([0, 1.3, 0], () => [0, 1.3, 0], [1, 0.85, 0.45], 50, 0.6);
-      await wait(520);
+      await wait(520); if (ceremonySkipped) return;
       pack.classList.add('broken'); app.audio.play('tear'); if (sc) { sc.screenFlash([1, 0.92, 0.7], 0.25); sc.fx.burst([0, 1.4, 0], [1, 0.85, 0.45], 60, { speed: 3, up: 2 }); }
-      await wait(320);
+      await wait(320); if (ceremonySkipped) return;
       pack.classList.add('open'); fan.classList.add('out');
-      await wait(380); pack.classList.add('gone');
+      await wait(380); if (ceremonySkipped) return; pack.classList.add('gone'); ceremonyButton.hidden = true;
       $('rw-sub').textContent = 'Reveal the three fragments'; const sk = $('rw-skip'); if (sk) sk.hidden = false;
     })());
     pack.addEventListener('click', open);
@@ -322,7 +334,7 @@ export function rewardScreen(app, cards, { tier, severed }) {
         const take = $('rw-detail')?.querySelector('[data-take]'); if (take && !take.disabled) take.click();
       } else e.target.click();
     } });
-    $('rw-reveal').addEventListener('click', async () => { await open(); fan.querySelectorAll('.slot').forEach((s, i) => setTimeout(() => reveal(s), instant ? 0 : fast ? 60 * i : 180 + i * 220)); });
+    $('rw-reveal').addEventListener('click', async () => { if (!opened) skipCeremony(); await open(); fan.querySelectorAll('.slot').forEach((s, i) => setTimeout(() => reveal(s), instant ? 0 : fast ? 60 * i : 180 + i * 220)); });
     const sk = $('rw-skip'); if (sk) sk.addEventListener('click', () => app.confirm('Leave all three cards behind and gain +1 Spark (+1 max health) instead?', 'Leave them', () => res({ choice: 'skip' })));
     const showDetail = id => {
       const c = getCard(id); let body; const full = c.kind === 'creature' && graftsFull(run);
@@ -408,7 +420,7 @@ export function sheetModal(app) {
         </dl>
         <h3>Abilities</h3>
         <ul class="sh-kw">${Object.entries(run.evo.keywords).map(([k, v]) => `<li><b>${KEYWORDS[k].glyph} ${esc(keywordLabel(k, v))}</b><span>${esc(KEYWORDS[k].text)}</span></li>`).join('') || '<li class="muted">None yet. Graft creatures to gain abilities.</li>'}</ul>
-        <h3>Spellbook</h3>
+        <h3>Spellbook</h3><p class="small">Active spells: ${normalizedEquipped(run).length}/${handCapacity(run)}. Other learned spells stay safe in your tome and can be equipped between battles.</p>
         <p><button type="button" class="btn primary" data-open-spellbook>Open the Spellbook · ${run.spellbook.length} spells</button></p>
       </section>
       <section class="sh-hist"><h3>Grafts</h3><ol class="hist">${hist || '<li class="muted">Nothing yet. You are a blank 1/1.</li>'}</ol>
@@ -445,9 +457,11 @@ export function sheetModal(app) {
 export function spellbookModal(app) {
   const run = app.run; if (!run) return;
   let page = 0, color = 'all';
+  const canEquip = run.phase !== 'battle';
   const filters = ['all', 'radiant', 'tide', 'umbral', 'ember', 'verdant'];
   const st = runStats(run);
   const m = app.openModal(`<div class="book-wrap"><div class="book-header"><small>${GAME.title} · Inscribed spells</small><h2>The Spellbook</h2></div>
+    <p class="book-loadout-count" id="book-loadout-count">Active combat inscriptions: ${normalizedEquipped(run).length}/${handCapacity(run)} · ${Math.max(0, run.spellbook.length - normalizedEquipped(run).length)} stored safely in the tome. ${canEquip ? 'Toggle inscriptions before entering combat.' : 'Loadout locked in combat.'}</p>
     <div class="book-filter" role="group" aria-label="Filter spell colors">${filters.map(x => `<button type="button" data-color="${x}" aria-pressed="${x === color}">${x}</button>`).join('')}</div>
     <div class="open-book" id="open-book" aria-live="polite"><section class="book-page book-left" id="book-left"></section><section class="book-page book-right" id="book-right"></section></div>
     <div class="book-controls"><button type="button" class="btn" data-prev>Previous page</button><span id="book-num"></span><button type="button" class="btn" data-next>Next page</button></div>
@@ -464,8 +478,9 @@ export function spellbookModal(app) {
       m.querySelector('#book-left').innerHTML = `<small>Folio ${page + 1}</small><h3>${esc(c.name)}</h3><div class="book-art">${cardHTML(entry.id, { level:entry.level,arcane:st.arcane,uid:'folio'+page })}</div>`;
       m.querySelector('#book-right').innerHTML = `<small>${esc(c.color)} magic · Level ${entry.level}</small><h3>${esc(c.name)}</h3><p class="book-cost">${ICON.gem}${c.cost} GRAFTBOUND mana · ${esc(rangeLabel(entry.id,entry.level))} · ${esc(TARGET[c.target])}</p>
         <p class="book-effect">${esc(formatSpellText(entry.id,entry.level,st.arcane))}</p><h4>Inscription level</h4><p>Level ${entry.level} ${entry.level < 3 ? `· Next level: ${esc(formatSpellText(entry.id,entry.level+1,st.arcane))}` : '· Mastered'}</p>
-        <p class="book-rule">${esc(c.adaptationNote || 'GRAFTBOUND adaptation, not official Magic rules.')}</p>`;
+        <p class="book-rule">${esc(c.adaptationNote || 'GRAFTBOUND adaptation, not official Magic rules.')}</p><button type="button" class="btn small book-equip" data-equip="${esc(entry.id)}" ${canEquip ? '' : 'disabled'} aria-pressed="${normalizedEquipped(run).includes(entry.id)}">${normalizedEquipped(run).includes(entry.id) ? 'Equipped — remove from hand' : 'Stored — equip in hand'}</button><p class="book-equip-message" aria-live="polite"></p>`;
     }
+    m.querySelector('#book-loadout-count').textContent = `Active combat inscriptions: ${normalizedEquipped(run).length}/${handCapacity(run)} · ${Math.max(0, run.spellbook.length - normalizedEquipped(run).length)} stored safely in the tome. ${canEquip ? 'Toggle inscriptions before entering combat.' : 'Loadout locked in combat.'}`;
     m.querySelector('#book-num').textContent = length ? `Page ${page + 1} of ${length}` : 'Empty';
     m.querySelector('[data-prev]').disabled = !length || page === 0;
     m.querySelector('[data-next]').disabled = !length || page >= length - 1;
@@ -474,6 +489,12 @@ export function spellbookModal(app) {
   };
   m.addEventListener('click', e => {
     const target = e.target.closest('button'); if (!target) return;
+    if (target.dataset.equip && canEquip) {
+      const id = target.dataset.equip;
+      try { setSpellEquipped(run, id, !normalizedEquipped(run).includes(id)); app.save(); render(); }
+      catch (error) { const msg = m.querySelector('.book-equip-message'); if (msg) msg.textContent = String(error.message || error); }
+      return;
+    }
     if (target.dataset.color) { color = target.dataset.color; page = 0; render(); }
     if (target.hasAttribute('data-next')) { page++; render(); }
     if (target.hasAttribute('data-prev')) { page--; render(); }

@@ -15,7 +15,7 @@ export class Particles {
     this.target[i] = o.target || null;
   }
   burst(pos, col, n = 20, { speed = 2, up = 1.5, life = 0.7, size = 12, grav = -4, spread = 0.15 } = {}) {
-    n = Math.round(n * Math.max(0.35, this.density));
+    n = Math.max(0, Math.min(96, Math.round(n * Math.max(0.2, this.density)), this.max - this.n));
     for (let k = 0; k < n; k++) {
       const a = Math.random() * Math.PI * 2, s = speed * (0.4 + Math.random() * 0.6);
       this.emit({ pos: [pos[0] + (Math.random() - 0.5) * spread, pos[1] + (Math.random() - 0.5) * spread, pos[2] + (Math.random() - 0.5) * spread],
@@ -23,7 +23,7 @@ export class Particles {
     }
   }
   swirl(from, target, col, n = 60, life = 1.2) {
-    n = Math.round(n * Math.max(0.35, this.density));
+    n = Math.max(0, Math.min(96, Math.round(n * Math.max(0.2, this.density)), this.max - this.n));
     for (let k = 0; k < n; k++) {
       const a = Math.random() * Math.PI * 2, r = 0.6 + Math.random() * 1.2;
       this.emit({ pos: [from[0] + Math.cos(a) * r, from[1] + Math.random() * 1.2, from[2] + Math.sin(a) * r], vel: [-Math.sin(a) * 2, 0.5, Math.cos(a) * 2],

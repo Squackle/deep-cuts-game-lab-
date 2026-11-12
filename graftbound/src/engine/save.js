@@ -11,6 +11,7 @@ import { newScoring } from './scoring.js';
 import { reconstructJournal } from './journal.js';
 import { newClock } from './clock.js';
 import { ACTS } from '../data/encounters.js';
+import { BASE_HAND_CAPACITY, MAX_HAND_CAPACITY } from './loadout.js';
 
 export const KEYS = { run: 'deepcutsedh.livingcard.run', meta: 'deepcutsedh.livingcard.meta' };
 const BAK = '.bak', BAD = '.corrupt', PRE = '.pre-v';
@@ -73,6 +74,13 @@ RUN_MIGRATIONS[4] = r => {
   if (r.battle) r.battle.v = 5;
   return r;
 };
+RUN_MIGRATIONS[5] = r => {
+  // v1.0 -> v1.1: never throw away a learned spell or interrupt an in-progress fight.
+  r.v = 6; r.handCapacity = BASE_HAND_CAPACITY;
+  r.equippedSpellIds = (r.spellbook || []).slice(0, BASE_HAND_CAPACITY).map(e => e.id);
+  if (r.battle) { r.battle.v = 6; r.battle.terrainTimers = r.battle.terrainTimers || []; }
+  return r;
+};
 export const META_MIGRATIONS = {
   1: m => { m.v = 2; m.settings = { ...DEFAULT_SETTINGS, ...(m.settings || {}) }; return m; },
   2: m => { m.v = 3; return m; },
@@ -95,6 +103,8 @@ export function validateRun(r) {
     for (const a of e.absorbed || []) if (!resolveCard(a.cardId)) errs.push('card ' + a.cardId);
   }
   if (!Array.isArray(r && r.spellbook) || r.spellbook.some(s => !resolveCard(s.id) || !isNum(s.level))) errs.push('spellbook');
+  if (!Number.isInteger(r?.handCapacity) || r.handCapacity < BASE_HAND_CAPACITY || r.handCapacity > MAX_HAND_CAPACITY) errs.push('hand capacity');
+  if (!Array.isArray(r?.equippedSpellIds) || r.equippedSpellIds.length > (r.handCapacity || 0) || new Set(r.equippedSpellIds).size !== r.equippedSpellIds.length || r.equippedSpellIds.some(id => !r.spellbook?.some(e => e.id === id))) errs.push('equipped spells');
   if (!r || !r.map || !Array.isArray(r.map.nodes) || !r.map.nodes.length) errs.push('map');
   if (r && !(isNum(r.act) && r.act >= 0 && r.act <= 2)) errs.push('act');
   if (r && !['map', 'battle', 'reward', 'shrine', 'event', 'won', 'lost'].includes(r.phase)) errs.push('phase');

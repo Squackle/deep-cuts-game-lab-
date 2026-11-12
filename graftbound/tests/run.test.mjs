@@ -86,7 +86,7 @@ test('v0.4 (run v2) saves migrate without data loss: legacy grafts kept exactly,
   const old = { ...JSON.parse(JSON.stringify(v04)), v: 2, contentMode: 'original', evo, spellbook: [{ id: 'ember_dart', level: 2 }, { id: 'mtg:shock', level: 1 }] };
   for (const k of ['act', 'actHistory', 'manaBonus', 'sparkFonts', 'wardNext', 'hp', 'shrine']) delete old[k];
   const raw = _internal.wrap(2, old); st.setItem(KEYS.run, raw);
-  const r = store.loadRun(); assert.ok(r.migrated); assert.equal(r.run.v, 5); assert.equal(r.run.act, 0);
+  const r = store.loadRun(); assert.ok(r.migrated); assert.equal(r.run.v, 6); assert.equal(r.run.act, 0);
   assert.deepEqual(r.run.evo.absorbed.map(a => a.cardId), ['nightcap_toad', 'galecrest_roc', 'sable_adder'], 'legacy cards never swapped');
   assert.deepEqual([r.run.evo.power, r.run.evo.toughness], [evo.power, evo.toughness]); assert.equal(r.run.evo.legacyResonance, 1); assert.equal(r.run.evo.resonance, 0);
   assert.deepEqual(r.run.spellbook, old.spellbook); assert.equal(st.getItem(KEYS.run + '.pre-v2'), raw, 'untouched v0.4 save kept');

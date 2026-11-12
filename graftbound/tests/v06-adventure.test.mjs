@@ -15,7 +15,7 @@ const atEvent = (id, seed = 3) => { const r = newRun({ seed }); r.evo = ['mtg:gr
   r.hp = maxHpOf(r); const n = r.map.nodes.find(x => x.depth === 2); r.current = n.id; r.phase = 'event'; r.event = { id, node: n.id }; return r; };
 
 test('events: stable ids, descriptions, explicit costs, at least one valid choice; deterministic roll', () => {
-  assert.deepEqual(EVENT_IDS, ['archivist', 'graftExchange', 'cursedWell', 'forgottenTrial']);
+  assert.deepEqual(EVENT_IDS, ['mnemonicShrine', 'echoingCauldron', 'archivist', 'graftExchange', 'cursedWell', 'forgottenTrial']);
   for (const id of EVENT_IDS) { const r = atEvent(id); const ch = eventChoices({ ...r, maxHp: maxHpOf(r) }, id); assert.ok(EVENTS[id].name && EVENTS[id].text); assert.ok(ch.some(c => c.available)); assert.ok(ch.every(c => c.text.length > 8)); }
   const r = atEvent('archivist'); assert.equal(rollEvent(r, 77), rollEvent(r, 77));
 });
@@ -52,7 +52,7 @@ test('save: v0.5 run (v3) migrates to v4 idempotently, keeps everything, adds sc
   const r5 = newRun({ seed: 4 }); r5.evo = evoWith('mtg:grizzly-bears'); r5.v = 3; for (const k of ['scoring', 'journal', 'event', 'eventsSeen']) delete r5[k];
   enterNode(r5, availableNodes(r5.map, null)[0].id); r5.v = 3; r5.battle.v = 3; for (const k of ['actions', 'moves', 'tilesMoved', 'interactions']) delete r5.battle.stats[k]; delete r5.battle.crystals; delete r5.battle.cooled; delete r5.battle.bench;
   const raw = _internal.wrap(3, r5); st.setItem(KEYS.run, raw);
-  const a = store.loadRun(); assert.ok(a.migrated); assert.equal(a.run.v, 5); assert.deepEqual(a.run.evo, r5.evo); assert.deepEqual(a.run.scoring.encounters, []);
+  const a = store.loadRun(); assert.ok(a.migrated); assert.equal(a.run.v, 6); assert.deepEqual(a.run.evo, r5.evo); assert.deepEqual(a.run.scoring.encounters, []);
   assert.ok(a.run.journal.entries.some(x => x.kind === 'graft' && x.reconstructed)); assert.equal(a.run.battle.unscored, true); assert.equal(st.getItem(KEYS.run + '.pre-v3'), raw);
   const b = store.loadRun(); assert.ok(!b.migrated); assert.deepEqual(b.run, a.run);
   st.setItem(KEYS.meta, _internal.wrap(4, { v: 4, settings: { sound: false }, unlocks: {} })); const m = store.loadMeta(); assert.equal(m.settings.autoEnd, true); assert.equal(m.settings.sound, false); assert.deepEqual(m.records, {});

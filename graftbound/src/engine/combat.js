@@ -10,7 +10,7 @@ import { STARTING_NAME } from './evolution.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
 import { TACTICS } from '../data/tactics.js';
 
-export const BATTLE_VERSION = 5;
+export const BATTLE_VERSION = 6;
 export const RIFT_DAMAGE = TERRAIN_RULES.rift.pulseDamage, LAVA_DAMAGE = TERRAIN_RULES.lava.endTurnDamage;
 
 export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroName = STARTING_NAME, startHp = null, act = 0 }) {
@@ -21,6 +21,7 @@ export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroN
     p: { mana: 0, maxMana: stats.maxMana, regen: stats.manaRegen, startMana: stats.startMana, arcane: stats.arcane, moveLeft: 0, attacksLeft: 0, cast: {} },
     // v0.6 scoring counters: only actions ACCEPTED by this engine increment them (rejected input throws first).
     stats: { damageDealt: 0, damageTaken: 0, kills: 0, spellsCast: 0, turns: 0, attacks: 0, actions: 0, moves: 0, tilesMoved: 0, interactions: 0 },
+    terrainTimers: [],
     crystals: (encounter.crystals || []).map(c => ({ x: c.x, y: c.y, charged: true })), cooled: [],
   };
   const hp = startHp == null ? stats.maxHealth : Math.max(1, Math.min(stats.maxHealth, startHp));
@@ -34,7 +35,7 @@ export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroN
 export const riftsPulseThisRound = s => s.turn % 2 === 0;
 export function hazardPreview(s) {
   if (!riftsPulseThisRound(s)) return [];
-  const out = []; for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) if (tileAt(s, x, y) === T.RIFT) out.push({ x, y });
+  const out = []; for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) if (tileAt(s, x, y) === T.RIFT || tileAt(s, x, y) === T.UNSTABLE) out.push({ x, y });
   return out;
 }
 export function startPlayerTurn(s) {
@@ -42,7 +43,9 @@ export function startPlayerTurn(s) {
   s.turn++; s.phase = 'player'; s.stats.turns = s.turn;
   if (p.suppressed && p.suppressedTurn == null) p.suppressedTurn = s.turn;   // Redaction lasts for exactly this turn
   ev.push({ t: 'turn', phase: 'player', turn: s.turn });
-  p.statuses.empowered = 0; p.statuses.guard = 0; s.p.channel = 0;   // v0.8 stances last until your next turn begins
+  p.statuses.empowered = 0; p.statuses.guard = 0; s.p.channel = 0;
+  s.p.conduit = tileAt(s, p.x, p.y) === T.CONDUIT ? TERRAIN_RULES.conduit.spellBonus : 0;
+  if (s.p.conduit) ev.push({ t: 'conduit', uid: p.uid, amount: s.p.conduit, x: p.x, y: p.y });   // v0.8 stances last until your next turn begins
   if (p.statuses.poison > 0) { dealDamage(s, ev, null, p, p.statuses.poison, { kind: 'poison' }); p.statuses.poison--; if (!alive(p)) return ev; }
   if (kv(p, 'regenerate')) heal(s, ev, p, kv(p, 'regenerate'), 'regenerate');
   if (kv(p, 'ward') && (p.statuses.shield || 0) < kv(p, 'ward')) {
@@ -52,7 +55,8 @@ export function startPlayerTurn(s) {
   s.p.mana = s.turn === 1 ? s.p.startMana : Math.min(s.p.maxMana, s.p.mana + s.p.regen);
   if (tileAt(s, p.x, p.y) === T.LEYLINE) s.p.mana = Math.min(s.p.maxMana + 1, s.p.mana + 1);
   ev.push({ t: 'mana', from: before, to: s.p.mana });
-  s.p.moveLeft = p.statuses.stunned ? 0 : p.move - (p.keywords.flying && p.statuses.grounded ? 1 : 0);
+  s.p.moveLeft = p.statuses.stunned ? 0 : Math.max(0, p.move - (p.keywords.flying && p.statuses.grounded ? 1 : 0) - (p.statuses.chilled ? TERRAIN_RULES.ice.slowNextMovement : 0));
+  p.statuses.chilled = 0;
   s.p.attacksLeft = s.turn === 1 && has(p, 'haste') ? 2 : 1;
   s.p.cast = {};
   return ev;
@@ -171,8 +175,12 @@ export function endTurn(s) {
     actEnemy(s, ev, e);
   }
   if (s.phase === 'enemy' && riftsPulseThisRound(s)) {
-    const tiles = hazardPreview({ ...s, turn: s.turn });
-    if (tiles.length) { ev.push({ t: 'riftPulse', tiles }); for (const t of tiles) { const u = s.units.find(u => u.hp > 0 && u.x === t.x && u.y === t.y); if (u) dealDamage(s, ev, null, u, RIFT_DAMAGE, { kind: 'rift' }); } }
+    const tiles = hazardPreview(s);
+    const rifts = tiles.filter(t => tileAt(s, t.x, t.y) === T.RIFT);
+    const cracks = tiles.filter(t => tileAt(s, t.x, t.y) === T.UNSTABLE);
+    if (rifts.length) ev.push({ t: 'riftPulse', tiles: rifts });
+    if (cracks.length) ev.push({ t: 'crackPulse', tiles: cracks });
+    for (const t of tiles) { const u = s.units.find(u => u.hp > 0 && u.x === t.x && u.y === t.y); if (u) dealDamage(s, ev, null, u, tileAt(s, t.x, t.y) === T.RIFT ? RIFT_DAMAGE : TERRAIN_RULES.unstable.pulseDamage, { kind: 'terrain' }); }
   }
   if (s.phase === 'enemy') restoreCooled(s, ev);
   if (s.phase === 'enemy') ev.push(...startPlayerTurn(s));

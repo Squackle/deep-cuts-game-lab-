@@ -76,6 +76,17 @@ export class Audio {
       case 'click': this.tone(880, 0.05, { type: 'triangle', vol: 0.08, verb: 0 }); break;
       case 'nope': this.tone(180, 0.12, { type: 'square', vol: 0.06, verb: 0 }); this.tone(150, 0.14, { type: 'square', vol: 0.06, delay: 0.08, verb: 0 }); break;
       case 'seal': [196, 247, 294, 392].forEach((f, i) => this.tone(f, 0.5, { type: 'triangle', vol: 0.08, delay: i * 0.05, verb: 0.6 })); this.noise(0.5, { freq: 1500, vol: 0.1, sweep: 3, q: 4 }); break;
+      case 'packElite': this.noise(0.25, { freq: 1100, vol: 0.13, sweep: 3, q: 2 });
+        [196, 294, 392, 587].forEach((f,i) => this.tone(f, 0.42, { type: 'triangle', vol: 0.065, delay: i * 0.055, verb: 0.6 })); break;
+      case 'packBoss': this.tone(73, 0.95, { type: 'triangle', vol: 0.17, slide: 0.68, verb: 0.5 });
+        [196, 247, 370, 494, 740].forEach((f,i) => this.tone(f, 0.72, { vol: 0.07, delay: i * 0.085, verb: 0.65 })); break;
+      case 'packFolio': [440, 660, 880].forEach((f,i) => this.tone(f, 0.32, { type: 'sine', vol: 0.052, delay: i * 0.065, verb: 0.7 }));
+        this.noise(0.28, { freq: 2700, vol: 0.07, sweep: 0.64 }); break;
+      case 'bossPhase': this.tone(64, 0.85, { type: 'sawtooth', vol: 0.16, slide: 0.6 });
+        this.noise(0.65, { freq: 520, vol: 0.15, type: 'lowpass', sweep: 0.4 }); break;
+      case 'terrainIce': [1568, 2093].forEach((f,i) => this.tone(f, 0.28, { vol: 0.042, delay: i * 0.055, verb: 0.6 })); break;
+      case 'terrainSpore': this.noise(0.38, { freq: 420, vol: 0.1, sweep: 0.7, q: 3 }); break;
+      case 'terrainCollapse': this.noise(0.4, { freq: 340, vol: 0.23, sweep: 0.25, type: 'lowpass' }); break;
       case 'tear': this.noise(0.45, { freq: 3500, vol: 0.35, sweep: 0.4, q: 1.5 }); this.tone(98, 0.6, { vol: 0.25, slide: 0.6 }); break;
       case 'flip': this.noise(0.12, { freq: 2000, vol: 0.2, q: 3, sweep: 1.8 }); this.tone(700, 0.15, { vol: 0.08 }); break;
       case 'uncommon': [659, 988].forEach((f, i) => this.tone(f, 0.5, { vol: 0.08, delay: i * 0.07, verb: 0.6 })); break;

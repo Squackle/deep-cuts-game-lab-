@@ -2,7 +2,7 @@
 // Terrain: FLOOR, ROCK (blocks ground units), BRAMBLE (1 dmg on entry), LEYLINE (+1 mana),
 // LAVA (Act II: damage on entry and when ending a turn on it), RIFT (Act III: pulses on even rounds).
 // Exact numbers live in src/data/terrain.js. Crystals (v0.6) are objects on FLOOR tiles (battle.crystals), not terrain.
-export const T = { FLOOR: 0, ROCK: 1, BRAMBLE: 2, LEYLINE: 3, LAVA: 4, RIFT: 5 };
+export const T = { FLOOR: 0, ROCK: 1, BRAMBLE: 2, LEYLINE: 3, LAVA: 4, RIFT: 5, ICE: 6, SPORES: 7, UNSTABLE: 8, CONDUIT: 9, CRUMBLE: 10 };
 export const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 export const inBounds = (s, x, y) => x >= 0 && y >= 0 && x < s.w && y < s.h;
 export const tileAt = (s, x, y) => s.terrain[y * s.w + x];

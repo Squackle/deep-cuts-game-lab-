@@ -42,6 +42,12 @@ export function buildEncounter(template, seed, kind = 'battle') {
     place(template.lava || 0, T.LAVA, [2, 6]);
     place(template.rifts || 0, T.RIFT, [2, 6]);
     place(template.leylines || 0, T.LEYLINE, [3, 7]);
+    // v1.1 hazards: deterministic and never placed under starting units, crystals or the player.
+    place(template.ice || 0, T.ICE, [2, 6]);
+    place(template.spores || 0, T.SPORES, [2, 6]);
+    place(template.unstable || 0, T.UNSTABLE, [2, 5]);
+    place(template.conduits || 0, T.CONDUIT, [2, 6]);
+    place(template.crumbling || 0, T.CRUMBLE, [2, 6]);
     if (!connected(terrain, w, h, playerStart)) continue;
     const crystals = [];   // v0.6: crystals sit on plain floor, never on hazards, never on a unit
     for (let i = 0, k = 0; i < (template.crystals || 0) && k < 200; k++) { const x = int(rng, w), y = 2 + int(rng, 5); if (free(x, y) && !crystals.some(c => c.x === x && c.y === y)) { crystals.push({ x, y }); reserved.add(y * w + x); i++; } }
@@ -52,10 +58,17 @@ export function buildEncounter(template, seed, kind = 'battle') {
 export function templateFor(act, nodeType, depth, seed) {
   const rng = makeRng(seed); const A = ACTS[act];
   if (nodeType === 'tutorial' || (act === 0 && depth === 0)) return ACTS[0].tutorial[0]; // the Blank's first fight is always gentle
-  if (nodeType === 'boss') return A.bossEncounters[0];
-  if (nodeType === 'elite') return pick(rng, A.elite);
-  const tier = depth <= 2 ? 'early' : depth <= 4 ? 'mid' : 'late';
-  return pick(rng, A[tier]);
+  const base = nodeType === 'boss' ? A.bossEncounters[0] : nodeType === 'elite' ? pick(rng, A.elite) : pick(rng, A[depth <= 2 ? 'early' : depth <= 4 ? 'mid' : 'late']);
+  // A small, authored amount of each new terrain: bosses intensify fissures, not every route.
+  // All placements are performed after baseline hazards and checked for map connectivity.
+  const late = depth >= 3 || nodeType === 'elite' || nodeType === 'boss';
+  return { ...base,
+    ice: act !== 1 ? 1 + (act === 2 && late ? 1 : 0) : 0,
+    spores: act === 0 ? 1 + (late ? 1 : 0) : act === 2 ? 1 : 0,
+    unstable: act > 0 ? 1 + (nodeType === 'boss' ? 1 : 0) : 0,
+    conduits: late ? 1 : 0,
+    crumbling: 1 + (nodeType === 'elite' ? 1 : 0),
+  };
 }
 /** "The world answers": builds stronger than the expected curve draw extra foes (never extra health).
  *  threat = P + T + 2 per flag ability + half of stacked values; expected = 4 + 1.5·step. +1 foe per 5 over, cap per act. */

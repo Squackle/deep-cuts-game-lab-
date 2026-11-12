@@ -4,10 +4,25 @@ import { generatePack } from './rewards.js';
 import { rebuild } from './evolution.js';
 import { resolveCard } from '../cards/catalog.js';
 import { journalNote } from './journal.js';
+import { grantHandSlot, handCapacity, MAX_HAND_CAPACITY } from './loadout.js';
 
 export const EVENT_COST = { archivistHp: 0.25, trialHp: 0.3, wellSpark: 3 };
 const pct = (run, f) => Math.max(2, Math.ceil(run.maxHp * f));
 export const EVENTS = {
+  mnemonicShrine: { name: 'The Mnemonic Shrine', glyph: '✧',
+    text: 'Seven inscriptions circle a stone heart. A vacant eighth rune glimmers just beyond their reach.', when: run => handCapacity(run) < MAX_HAND_CAPACITY,
+    choices: [
+      { id: 'expand', label: 'Inscribe another memory', text: run => `Gain +1 active spell slot permanently for this adventure (${handCapacity(run)} → ${handCapacity(run) + 1}; maximum ${MAX_HAND_CAPACITY}). No spells are discarded.`, when: run => handCapacity(run) < MAX_HAND_CAPACITY },
+      { id: 'spark', label: 'Harvest the rune', text: () => 'Gain +2 Spark and heal 2 health instead of increasing capacity.', when: () => true },
+      { id: 'leave', label: 'Leave untouched', text: () => 'Nothing changes.', when: () => true },
+    ] },
+  echoingCauldron: { name: 'The Echoing Cauldron', glyph: '❂',
+    text: 'A brass vessel remembers every flame lit inside it. The embers ask for a permanent price.', when: () => true,
+    choices: [
+      { id: 'offer', label: 'Offer a wound', text: run => `Lose ${pct(run, 0.2)} health (cannot reduce you below 1) and gain +2 maximum mana for the adventure.`, when: run => run.hp > pct(run, 0.2) },
+      { id: 'shield', label: 'Take the cooled ash', text: () => 'Gain a 4-point ward for your next battle.', when: () => true },
+      { id: 'leave', label: 'Let it fade', text: () => 'Nothing changes.', when: () => true },
+    ] },
   archivist: { name: 'The Wandering Archivist', glyph: '✒',
     text: 'A hooded scribe with an inkstained ledger. "Every spell is a page. I trade pages."', when: () => true,
     choices: [
@@ -50,9 +65,13 @@ export function resolveEvent(run, id, choice, arg, { seed, packOpts, setHp, maxH
   const c = ev.choices.find(x => x.id === choice); if (!c) throw new Error('Not a choice here');
   if (!c.when(view)) throw new Error('That choice is not available right now');
   switch (id + ':' + choice) {
+    case 'mnemonicShrine:expand': return { kind: 'handCapacity', capacity: grantHandSlot(run) };
+    case 'mnemonicShrine:spark': run.sparkBonus += 2; setHp(run.hp + 2); return { kind: 'spark', amount: 2 };
+    case 'echoingCauldron:offer': setHp(run.hp - pct(view, 0.2)); run.manaBonus = (run.manaBonus || 0) + 2; return { kind: 'arcaneMana', amount: 2 };
+    case 'echoingCauldron:shield': run.wardNext = (run.wardNext || 0) + 4; return { kind: 'ward', amount: 4 };
     case 'archivist:trade': {
       const i = run.spellbook.findIndex(s => s.id === arg); if (i < 0) throw new Error('Choose one of your spells');
-      const [gone] = run.spellbook.splice(i, 1);
+      const [gone] = run.spellbook.splice(i, 1); run.equippedSpellIds = (run.equippedSpellIds || []).filter(id => id !== gone.id);
       const cards = generatePack(seed ^ 0xa4c1, { tier: 'elite', ...packOpts, spellbook: run.spellbook, only: 'spell' }).filter(x => x !== gone.id);
       run.pending = { cards, tier: 'archivist', traded: resolveCard(gone.id).name }; return { kind: 'trade', gave: gone.id };
     }
