@@ -85,6 +85,7 @@ export const REAL_SPELLS = [
   // v0.8 additions (new tactical roles: weakening, burst empowerment, board-wide area control).
   S('Disfigure', '{B}', 1, 'Instant', ['B'], 'uncommon'),
   S('Titanic Growth', '{1}{G}', 2, 'Instant', ['G'], 'common'),
+  S('Snakeskin Veil', '{G}', 1, 'Instant', ['G'], 'common'),
   S('Pyroclasm', '{1}{R}', 2, 'Sorcery', ['R'], 'uncommon'),
 ];
 

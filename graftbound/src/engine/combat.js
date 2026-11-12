@@ -102,6 +102,7 @@ export const guardValue = p => Math.min(TACTICS.guard.max, TACTICS.guard.base + 
 export function stanceBlockReason(s, kind) {
   if (s.phase !== 'player') return 'Not your turn';
   if (s.p.attacksLeft <= 0) return 'You already used your attack this turn';
+  if (!TACTICS[kind] || s.p.moveLeft < TACTICS[kind].moveCost) return 'Need ' + (TACTICS[kind]?.moveCost || 1) + ' movement point';
   if (kind === 'guard' && player(s).statuses.guard) return 'Already guarding';
   if (kind === 'channel' && s.p.channel) return 'Already channeling';
   return null;
@@ -109,7 +110,7 @@ export function stanceBlockReason(s, kind) {
 /** GUARD: give up your attack; until your next turn, every hit from a foe (strikes, arrows, slams, breath) is reduced. */
 export function guard(s) {
   ensurePlayerPhase(s); const why = stanceBlockReason(s, 'guard'); if (why) throw new Error(why);
-  const p = player(s); const v = guardValue(p); p.statuses.guard = v; s.p.attacksLeft = 0;
+  const p = player(s); const v = guardValue(p); p.statuses.guard = v; s.p.attacksLeft = 0; s.p.moveLeft -= TACTICS.guard.moveCost;
   s.stats.actions++; s.stats.stances = (s.stats.stances || 0) + 1;
   return [{ t: 'stance', uid: p.uid, kind: 'guard', amount: v }, { t: 'status', uid: p.uid, status: 'guard', value: v, total: v }];
 }
@@ -117,7 +118,7 @@ export function guard(s) {
 export function channel(s) {
   ensurePlayerPhase(s); const why = stanceBlockReason(s, 'channel'); if (why) throw new Error(why);
   const p = player(s); const before = s.p.mana;
-  s.p.mana = Math.min(s.p.maxMana + 1, s.p.mana + TACTICS.channel.mana); s.p.channel = TACTICS.channel.spellBonus; s.p.attacksLeft = 0; s.p.moveLeft = 0;
+  s.p.mana = Math.min(s.p.maxMana + 1, s.p.mana + TACTICS.channel.mana); s.p.channel = TACTICS.channel.spellBonus; s.p.attacksLeft = 0; s.p.moveLeft -= TACTICS.channel.moveCost;
   s.stats.actions++; s.stats.stances = (s.stats.stances || 0) + 1;
   return [{ t: 'stance', uid: p.uid, kind: 'channel', amount: TACTICS.channel.spellBonus }, { t: 'mana', from: before, to: s.p.mana }];
 }
@@ -147,6 +148,8 @@ export function endTurn(s) {
   if (p.suppressed && p.suppressedTurn != null && p.suppressedTurn <= s.turn) { Object.assign(p.keywords, p.suppressed); ev.push({ t: 'restored', uid: p.uid, keyword: Object.keys(p.suppressed)[0] }); p.suppressed = null; p.suppressedTurn = null; }
   s.phase = 'enemy'; ev.push({ t: 'turn', phase: 'enemy', turn: s.turn });
   for (const a of allies(s).filter(u => !u.hero)) { if (s.phase !== 'enemy') break; ev.push({ t: 'enemyTurn', uid: a.uid }); actAlly(s, ev, a); }
+  // Friendly spell buffs remain through the summoned creature's action, then expire.
+  for (const a of allies(s).filter(u => !u.hero)) if (a.statuses.empowered) { a.statuses.empowered = 0; ev.push({ t: 'status', uid: a.uid, status: 'empowered', value: 0, total: 0 }); }
   for (const e of s.units.filter(u => u.side === 'enemy' && u.boss)) announcePhase(ev, e);
   for (const e of s.units.filter(u => u.side === 'enemy')) {
     if (!alive(e) || s.phase !== 'enemy') continue;

@@ -29,7 +29,7 @@ const SPELLS = Object.entries(SPELL_VFX);
 const SELF = new Set(['growth', 'heal', 'salve', 'shield', 'titanic', 'pyroclasm']);
 
 test('every curated spell (13 + 3 added in v0.8) has a cast profile with a casting point and an audio cue', () => {
-  assert.equal(SPELLS.length, 16);
+  assert.equal(SPELLS.length, 17);
   for (const [name, kind] of SPELLS) { const P = CAST_PROFILE[kind]; assert.ok(P, name); assert.ok(P.cue && P.origin && P.gather > 0 && P.build > 0, name); }
   assert.equal(rewardCards().filter(c => c.kind === 'spell').every(c => CAST_PROFILE[c.vfx]), true);
 });

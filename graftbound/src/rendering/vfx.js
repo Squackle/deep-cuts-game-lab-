@@ -132,7 +132,9 @@ export async function heal(sc, { from, charged = false }) {
   sc.light(add(from, [0, 0.6, 0]), GOLD, 2.6, 0.8, 1.6); await sleep(sc, 260);
 }
 /** Protection: a shimmering hexagonal ward forms around the caster. */
-export async function shield(sc, { from, uid, charged = false }) {
+export async function shield(sc, { from, to, uid, target, charged = false }) {
+  if (target != null && to) from = to;
+  if (target != null) uid = target;
   const BLUE = [0.55, 0.8, 1];
   if (charged) { sc.addRing({ pos: [from[0], from[1], from[2]], r0: 0.05, r1: 0.7, life: 0.35, col: BLUE, width: 0.05, spokes: 6, seg: 6 }); from = [from[0], 0, from[2]]; }   // the ward expands outward from inside the body
   sc.addRing({ pos: [from[0], 0.03, from[2]], r0: 0.75, r1: 0.6, life: 0.7, col: BLUE, width: 0.08, spokes: 6, seg: 6 });
@@ -141,7 +143,8 @@ export async function shield(sc, { from, uid, charged = false }) {
   sc.light(add(from, [0, 0.6, 0]), BLUE, 2.4, 0.7, 1.4); await sleep(sc, 220);
 }
 /** Growth: verdant spiral and a muscle-pulse of the sprite. */
-export async function growth(sc, { from, uid, charged = false }) {
+export async function growth(sc, { from, to, target, uid, charged = false }) {
+  if (target != null && to) { from = to; uid = target; }
   const G = [0.5, 1, 0.4];
   if (!charged) sc.fx.swirl(add(from, [0, 0.3, 0]), () => add(from, [0, 0.4, 0]), G, 50, 0.6);
   else sc.fx.burst(from, G, 30, { speed: 1.8, up: 1.2, size: 10, grav: 0, life: 0.4 });   // the gathered energy surges through the body
@@ -177,7 +180,8 @@ export async function disfigure(sc, { from, to, target, power = 1 }) {
   if (target != null) { sc.hit(target, V, false); const v = sc.units.get(target); if (v) v.flashCold = 0; }
 }
 /** v0.8 Titanic Growth — Giant Growth's bigger sibling: vines erupt in a ring and the body swells hard. */
-export async function titanic(sc, { from, uid, power = 1 }) {
+export async function titanic(sc, { from, to, target, uid, power = 1 }) {
+  if (target != null && to) { from = to; uid = target; }
   const G = [0.45, 1, 0.35]; const base0 = [from[0], 0, from[2]];
   for (let v = 0; v < 7; v++) { const a = v / 7 * Math.PI * 2; const b = [base0[0] + Math.cos(a) * 0.6, 0.02, base0[2] + Math.sin(a) * 0.6]; sc.addBolt({ a: b, b: add(b, [-Math.cos(a) * 0.35, 1.3, -Math.sin(a) * 0.35]), life: 0.7, width: 0.04, col: [0.3, 0.8, 0.25], segs: 6, grow: 0.3 }); }
   sc.addRing({ pos: [base0[0], 0.03, base0[2]], r0: 0.2, r1: 1.2, life: 0.6, col: G, width: 0.1, spokes: 7 });
@@ -193,10 +197,21 @@ export async function pyroclasm(sc, { from, tiles = [], power = 1 }) {
   if (!sc.reduced) sc.shake(Math.min(0.3, 0.12 + 0.05 * power));
   await sleep(sc, 260);
 }
-export const VFX = { disfigure, titanic, pyroclasm, lightningBolt, spark, shock, chain, fire, flameSlash, fireball, frost, poison, heal, salve, shield, growth, drain, summon, wind };
+/** Snakeskin Veil: a separate verdant lattice contracts around the chosen friendly unit. */
+export async function snakeskin(sc, { from, to, target, charged = false }) {
+  const at = to || from, GREEN = [0.52, 0.97, 0.45];
+  if (charged) sc.addBolt({ a: from, b: at, life: 0.3, width: 0.022, col: GREEN, segs: 6, grow: 0.16 });
+  for (let i = 0; i < 7; i++) { const a = i * Math.PI * 2 / 7; const b = [at[0] + Math.cos(a) * 0.66, 0.02, at[2] + Math.sin(a) * 0.66];
+    sc.addBolt({ a: b, b: [at[0] + Math.cos(a + 0.4) * 0.46, 0.95, at[2] + Math.sin(a + 0.4) * 0.46], life: 0.55, width: 0.034, col: GREEN, segs: 4 }); }
+  sc.addRing({ pos: [at[0], 0.03, at[2]], r0: 0.65, r1: 0.48, life: 0.6, col: GREEN, width: 0.09, spokes: 7 });
+  sc.light([at[0], 0.7, at[2]], GREEN, 2.6, 0.6, 1.4);
+  if (target != null) { const v = sc.units.get(target); if (v) { v.flash = 0.6; v.flashCold = 1; } }
+  await sleep(sc, 210);
+}
+export const VFX = { snakeskin, disfigure, titanic, pyroclasm, lightningBolt, spark, shock, chain, fire, flameSlash, fireball, frost, poison, heal, salve, shield, growth, drain, summon, wind };
 /** The 13 curated real spells and their unique VFX identities (dev/vfx.html gallery + tests). */
 export const SPELL_VFX = { 'Shock': 'shock', 'Lightning Bolt': 'lightningBolt', 'Flame Slash': 'flameSlash', 'Arc Lightning': 'chain', 'Fireball': 'fireball', 'Giant Growth': 'growth',
   'Drain Life': 'drain', 'Infest': 'poison', 'Raise the Alarm': 'summon', 'Healing Hands': 'heal', 'Healing Salve': 'salve', 'Feat of Resistance': 'shield', 'Frost Breath': 'frost',
-  'Disfigure': 'disfigure', 'Titanic Growth': 'titanic', 'Pyroclasm': 'pyroclasm' };
+  'Snakeskin Veil': 'snakeskin', 'Disfigure': 'disfigure', 'Titanic Growth': 'titanic', 'Pyroclasm': 'pyroclasm' };
 /** Template/legacy effect -> default visual family (used when a card has no explicit vfx). */
 export const DEFAULT_VFX = { ember_dart: 'fire', chain_lightning: 'chain', starfall: 'fireball', venom_mist: 'poison', mending_rain: 'heal', barkskin: 'shield', sap_surge: 'growth', soul_siphon: 'drain', call_sproutling: 'summon', rootsnare: 'frost', gale_push: 'wind', blink_step: 'teleport' };

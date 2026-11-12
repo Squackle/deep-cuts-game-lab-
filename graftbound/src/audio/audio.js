@@ -44,6 +44,17 @@ export class Audio {
       case 'death': this.noise(0.5, { freq: 300, vol: 0.35, type: 'lowpass', sweep: 0.3 }); this.tone(160, 0.5, { type: 'triangle', vol: 0.2, slide: 0.4 }); break;
       case 'charge': this.noise(0.5, { freq: 900, vol: 0.12, sweep: 4, q: 6 }); this.tone(220, 0.5, { type: 'sawtooth', vol: 0.04, slide: 3 }); break;
       case 'crackle': for (let i = 0; i < 6; i++) this.noise(0.03, { freq: 3000 + Math.random() * 3000, vol: 0.12, q: 4, delay: i * 0.04 }); break;
+      // Original layered electrical discharge: a brief tzz charge with a fast TCHOO transient.
+      // Voltages are deliberately mixed quieter than the legacy thunder to avoid clipping.
+      case 'shockImpact':
+        this.noise(0.045, { freq: 6000, vol: 0.16, q: 3, sweep: 0.42 });
+        this.noise(0.15, { freq: 2400, vol: 0.23, q: 1, sweep: 0.18, delay: 0.025 });
+        this.tone(1300, 0.085, { type: 'sawtooth', vol: 0.055, slide: 0.35, delay: 0.022, verb: 0.08 }); break;
+      case 'lightningImpact':
+        this.noise(0.09, { freq: 7600, vol: 0.23, q: 2, sweep: 0.38 });
+        this.noise(0.33, { freq: 1250, vol: 0.28, q: 0.9, sweep: 0.15, delay: 0.05 });
+        this.noise(0.42, { freq: 240, vol: 0.18, type: 'lowpass', sweep: 0.5, delay: 0.075 });
+        this.tone(92, 0.31, { type: 'triangle', vol: 0.16, slide: 0.53, delay: 0.055, verb: 0.12 }); break;
       case 'thunder': this.noise(0.12, { freq: 5000, vol: 0.5, q: 0.7, sweep: 0.2 }); this.noise(0.9, { freq: 160, vol: 0.55, type: 'lowpass', sweep: 0.5, delay: 0.04 }); this.tone(55, 0.7, { vol: 0.4, slide: 0.6, delay: 0.03 }); break;
       case 'zap': this.noise(0.1, { freq: 4500, vol: 0.3, q: 2, sweep: 0.4 }); this.tone(880, 0.12, { type: 'square', vol: 0.05, slide: 0.4 }); break;
       case 'fireboom': this.noise(0.5, { freq: 700, vol: 0.5, sweep: 0.2 }); this.tone(80, 0.5, { vol: 0.4, slide: 0.5 }); break;

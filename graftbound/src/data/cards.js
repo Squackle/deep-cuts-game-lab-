@@ -33,8 +33,8 @@ export const CREATURES = [
 // (movement / summon placement). v0.5: offensive and area spells reach the whole battlefield, no line of sight.
 export const SPELLS = [
   { id: 'ember_dart',     name: 'Ember Dart',     rarity: 'common',   color: 'ember',   cost: 1, target: 'enemy', art: 'flame',  category: 'damage',     text: 'Deal {2} damage to a foe anywhere on the battlefield.' },
-  { id: 'barkskin',       name: 'Barkskin',       rarity: 'common',   color: 'verdant', cost: 1, target: 'self',  art: 'shield', category: 'protection', text: 'Gain {3} shield for this battle.' },
-  { id: 'sap_surge',      name: 'Sap Surge',      rarity: 'common',   color: 'verdant', cost: 1, target: 'self',  art: 'sap',    category: 'enhance',    text: '+{3} power until end of turn.' },
+  { id: 'barkskin',       name: 'Barkskin',       rarity: 'common',   color: 'verdant', cost: 1, target: 'ally',  art: 'shield', category: 'protection', text: 'Give a friendly creature {3} shield for this battle.' },
+  { id: 'sap_surge',      name: 'Sap Surge',      rarity: 'common',   color: 'verdant', cost: 1, target: 'ally',  art: 'sap',    category: 'enhance',    text: 'Give a friendly creature +{3} power until end of turn.' },
   { id: 'gale_push',      name: 'Gale Push',      rarity: 'common',   color: 'tide',    cost: 1, target: 'enemy', art: 'wind',   category: 'control',    text: 'Push a foe 2 tiles away from you. If it collides, it and what it hits take {2}.' },
   { id: 'blink_step',     name: 'Blink Step',     rarity: 'uncommon', color: 'tide',    cost: 1, target: 'empty', range: 3, art: 'swirl',  category: 'movement',   text: 'Teleport to an empty tile up to {3} away.' },
   { id: 'rootsnare',      name: 'Rootsnare',      rarity: 'uncommon', color: 'verdant', cost: 2, target: 'enemy', art: 'root',   category: 'disable',    text: 'Deal {1} and Stun a foe: it loses its next action.' },

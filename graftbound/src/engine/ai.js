@@ -19,7 +19,11 @@ function stops(s, e) {
   const map = reachable(s, e, e.statuses.rooted ? 0 : e.move);
   // Never choose a destination whose path would kill this unit outright; prefer cheaper-hazard routes on ties.
   const list = [...map.values()].filter(v => v.stop).map(v => { v.hz = pathDamage(s, e, pathTo(map, v.x, v.y)); return v; }).filter(v => v.cost === 0 || v.hz < e.hp);
-  return { map, list };
+  // Creatures know their own lairs. Prefer an entirely safe path (and safe landing tile)
+  // over a dangerous shortcut; when no such route exists, keep the original legal
+  // alternatives so players can still corner/force an enemy through a hazard.
+  const safe = list.filter(v => v.hz === 0 && tileAt(s, v.x, v.y) !== T.LAVA && tileAt(s, v.x, v.y) !== T.RIFT);
+  return { map, list: safe.length ? safe : list };
 }
 const BOSS_PHASES = { thornmother: ['Rootbound', 'Barkskin Awakening', 'The Briar Crown'], matron: ['Smouldering', 'Rising Magma', 'Pyre Unbound'], unwritten: ['The Mirror', 'Redaction', 'The Blank Page'] };
 export const bossPhaseOf = e => (e.hp > e.maxHp * 2 / 3 ? 1 : e.hp > e.maxHp / 3 ? 2 : 3);
