@@ -9,8 +9,9 @@ import { actEnemy, actAlly, spawnEnemy, previewIntent, announcePhase , spawnToke
 import { STARTING_NAME } from './evolution.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
 import { TACTICS } from '../data/tactics.js';
-import { createCombatDeck, drawCards, playFromHand, discardFromHand, endHandLimit } from './deck.js';
+import { createCombatDeck, drawCards, playFromHand, discardFromHand, endHandLimit, refillFromGraveyard } from './deck.js';
 import { attachAura, hasGear, attachEquipment, detachEquipment, EQUIPMENT_SLOTS } from './attachments.js';
+import { pendingChoice, resolveGearhulkChoice, resolveScarabEndStep, scarabRecast, opponentCastFromHand } from './printed-triggers.js';
 
 export const BATTLE_VERSION = 7;
 export const RIFT_DAMAGE = TERRAIN_RULES.rift.pulseDamage, LAVA_DAMAGE = TERRAIN_RULES.lava.endTurnDamage;
@@ -25,6 +26,7 @@ export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroN
     stats: { damageDealt: 0, damageTaken: 0, enemyHealthDamage: 0, kills: 0, spellsCast: 0, turns: 0, attacks: 0, actions: 0, moves: 0, tilesMoved: 0, interactions: 0 },
     terrainTimers: [],
     crystals: (encounter.crystals || []).map(c => ({ x: c.x, y: c.y, charged: true })), cooled: [],
+    oppSeed: ((seed ^ 0x6ea7c0de) >>> 0) || 1,
   };
   if (deckMode) { s.deck=createCombatDeck(spellbook,seed,handCapacity); s.spellbook=s.deck.hand; s.p.freeCast=false; s.p.freeCastUsed=false; }
   const hp = startHp == null ? stats.maxHealth : Math.max(1, Math.min(stats.maxHealth, startHp));
@@ -44,7 +46,7 @@ export function hazardPreview(s) {
 export function startPlayerTurn(s) {
   const ev = []; const p = player(s);
   s.turn++; s.phase = 'player'; s.stats.turns = s.turn;
-  if(s.deck){s.spellbook=s.deck.hand;if(s.turn>1){const drawn=drawCards(s.deck,1);for(const c of drawn)ev.push({t:'cardDraw',id:c.id,uid:p.uid});}}
+  if(s.deck){s.spellbook=s.deck.hand;if(s.turn>1){const back=refillFromGraveyard(s.deck);if(back)ev.push({t:'deckReshuffle',count:back,uid:p.uid});const drawn=drawCards(s.deck,1);for(const c of drawn)ev.push({t:'cardDraw',id:c.id,uid:p.uid});}}
   p.tapped=false;
   if (p.suppressed && p.suppressedTurn == null) p.suppressedTurn = s.turn;   // Redaction lasts for exactly this turn
   ev.push({ t: 'turn', phase: 'player', turn: s.turn });
@@ -66,9 +68,11 @@ export function startPlayerTurn(s) {
   s.p.cast = {};
   return ev;
 }
-const ensurePlayerPhase = s => { if (s.phase !== 'player') throw new Error('Not your turn'); };
+const ensurePlayerPhase = s => { if (s.phase !== 'player') throw new Error('Not your turn'); if (pendingChoice(s)) throw new Error('Resolve Combustible Gearhulk first'); };
+/** Combustible Gearhulk: you (target opponent) choose 'draw' (it draws three) or 'mill' (mill three, damage = total MV). */
+export function gearhulkChoice(s, choice) { return resolveGearhulkChoice(s, choice); }
 export function moveOptions(s) {
-  if (s.phase !== 'player') return [];
+  if (s.phase !== 'player' || pendingChoice(s)) return [];
   const p = player(s);
   return [...reachable(s, p, s.p.moveLeft).values()].filter(v => v.stop && v.cost > 0);
 }
@@ -101,7 +105,7 @@ export function canAttack(s, attacker, target) {
   return false;
 }
 export function attackTargets(s) {
-  if (s.phase !== 'player' || s.p.attacksLeft <= 0 || player(s).tapped) return [];
+  if (s.phase !== 'player' || pendingChoice(s) || s.p.attacksLeft <= 0 || player(s).tapped) return [];
   const p = player(s);
   return enemies(s).filter(e => canAttack(s, p, e));
 }
@@ -128,7 +132,7 @@ export function attack(s, targetUid) {
 }
 /** The printed Equip action: paid, legal-bearer-only, and deterministic. */
 export function equipmentOptions(s) {
-  if(!s || s.phase!=='player' || !Array.isArray(s.equipmentInventory))return [];
+  if(!s || s.phase!=='player' || pendingChoice(s) || !Array.isArray(s.equipmentInventory))return [];
   return s.equipmentInventory.filter(id=>!(s.destroyedEquipment||[]).includes(id)).flatMap(id=>{
     const c=getCard(id);if(!c||c.kind!=='equipment'||s.p.mana<(c.equipCost||0))return [];
     return allies(s).flatMap(u=>{
@@ -172,6 +176,7 @@ export function stanceMovementCost(s, kind) {
 }
 export function stanceBlockReason(s, kind) {
   if (s.phase !== 'player') return 'Not your turn';
+  if (pendingChoice(s)) return 'Resolve Combustible Gearhulk first';
   if (s.p.attacksLeft <= 0) return 'You already used your attack this turn';
   if (!TACTICS[kind]) return 'Unknown stance';
   const cost = stanceMovementCost(s, kind);
@@ -244,6 +249,7 @@ export function endTurn(s) {
   for(const u of s.units)if(u.statuses.indestructible){u.statuses.indestructible=0;ev.push({t:'status',uid:u.uid,status:'indestructible',value:0});}
   // The player end step is also an end step for Toxrill's printed trigger.
   resolveToxrillEndStep(s,ev);
+  resolveScarabEndStep(s,ev);
   if(s.phase === 'lost')return ev;
   s.phase = 'enemy'; ev.push({ t: 'turn', phase: 'enemy', turn: s.turn });
   for(const u of s.units)if(u.side==='enemy')u.tapped=false;
@@ -251,6 +257,8 @@ export function endTurn(s) {
   // Friendly spell buffs remain through the summoned creature's action, then expire.
   for (const a of allies(s).filter(u => !u.hero)) if (a.statuses.empowered) { a.statuses.empowered = 0; ev.push({ t: 'status', uid: a.uid, status: 'empowered', value: 0, total: 0 }); }
   for (const e of s.units.filter(u => u.side === 'enemy' && u.boss)) announcePhase(ev, e);
+  // Opponent main phase: recast a returned Scarab God, then at most one creature drawn by a Gearhulk.
+  scarabRecast(s, ev); opponentCastFromHand(s, ev);
   for (const e of s.units.filter(u => u.side === 'enemy')) {
     if (!alive(e) || s.phase !== 'enemy') continue;
     if (e.statuses.poison > 0) { dealDamage(s, ev, null, e, e.statuses.poison, { kind: 'poison' }); e.statuses.poison--; if (!alive(e)) continue; }
@@ -286,6 +294,7 @@ export function endTurn(s) {
   }
   // Enemy end step: Toxrill triggers again, consistent with its printed EVERY end step ability.
   if(s.phase === 'enemy')resolveToxrillEndStep(s,ev);
+  if(s.phase === 'enemy')resolveScarabEndStep(s,ev);
   // Gift of Immortality's delayed end-step reattachment: only while its saved creature still lives.
   for(const a of s.pendingAuras||[]){const u=s.units.find(x=>x.uid===a.uid&&x.hp>0);
     if(u && !u.auras?.includes(a.id)){attachAura(u,a.id);ev.push({t:'auraAttach',uid:u.uid,id:a.id,x:u.x,y:u.y,name:'Gift of Immortality'});}
@@ -307,7 +316,7 @@ function restoreCooled(s, ev) {
 export const crystalAt = (s, x, y) => (s.crystals || []).find(c => c.x === x && c.y === y) || null;
 /** Charged crystals on or next to the hero can be attuned (one interaction action, once per crystal). */
 export function interactOptions(s) {
-  if (s.phase !== 'player') return [];
+  if (s.phase !== 'player' || pendingChoice(s)) return [];
   const p = player(s);
   return (s.crystals || []).filter(c => c.charged && manhattan(p, c) <= 1).map(c => ({ x: c.x, y: c.y, kind: 'crystal' }));
 }

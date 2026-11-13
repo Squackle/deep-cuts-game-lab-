@@ -10,7 +10,7 @@ export const LEGENDARY_BOSSES = Object.freeze([
     { id:'krenko',name:'Krenko, Mob Boss',power:3,toughness:3,vitality:26,sprite:'matron',ai:'legendary',theme:'warrens',ability:'{T}: Create X 1/1 Goblins, where X is the number of Goblins you control.' },
   ],
   [
-    { id:'scarab',name:'The Scarab God',power:5,toughness:5,vitality:38,sprite:'unwritten',ai:'legendary',theme:'nexus',ability:'At upkeep, drain based on Zombies. {2}{U}{B}: exile a creature card to create a 4/4 Zombie. Returns to owner hand after death.' },
+    { id:'scarab',name:'The Scarab God',power:5,toughness:5,vitality:38,sprite:'unwritten',ai:'legendary',theme:'nexus',ability:'At upkeep, you lose X life and it scries X (X = its Zombies). {2}{U}{B}: exile a creature card from any graveyard to create a 4/4 Zombie token copy. When it dies it returns to its owner\'s hand at the next end step.' },
     { id:'toxrill',name:'Toxrill, the Corrosive',power:7,toughness:7,vitality:40,sprite:'unwritten',ai:'legendary',theme:'nexus',ability:'At each end step, put a slime counter on each enemy creature. It gets -1/-1 per counter; deaths spawn 1/1 Slugs.' },
   ],
 ]);

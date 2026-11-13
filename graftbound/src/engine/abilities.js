@@ -4,6 +4,7 @@ import { unitAt, T, tileAt, manhattan, isFlying } from '../core/grid.js';
 import { ENEMIES } from '../data/enemies.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
 import { hasAura, detachAura } from './attachments.js';
+import { resolveShinobiHit, scarabDied } from './printed-triggers.js';
 
 export const has = (u, kw) => kw === 'flying' ? isFlying(u) : !!(u.keywords && u.keywords[kw]);
 export const kv = (u, kw) => (u.keywords && u.keywords[kw]) || 0;
@@ -74,6 +75,7 @@ function kill(s, ev, u) {
   if (u.side === 'enemy') {
     s.stats.kills++;
     const def = ENEMIES[u.defId];
+    if(u.defId==='scarab') scarabDied(s,u);
     if(u.defId==='cinderling') {
       // Mudbutton Torchrunner: 3 to any target, NOT an invented 2-damage explosion.
       const chosen=player(s);if(alive(chosen)) {
@@ -183,6 +185,8 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
     }
   }
   if (combat && src && has(src, 'lifelink') && lost > 0) heal(s, ev, src, lost, 'lifelink');
+  // Fallen Shinobi: combat damage to the player exiles their top two library cards (printed trigger).
+  if (combat && src?.side === 'enemy' && src.defId === 'riftstalker' && tgt.hero && lost > 0 && s.phase !== 'lost') resolveShinobiHit(s, ev, src, tgt);
   // Destruction replacement effects resolve before defeat. Never rewrite printed +P/+T.
   if(tgt.hp<=0 && tgt.toughness>0 && hasAura(tgt,'mtg:hyena-umbra') && (combat||kind==='spell'||kind==='arrow')){
     detachAura(tgt,'mtg:hyena-umbra');tgt.hp=tgt.maxHp;ev.push({t:'auraBreak',uid:tgt.uid,id:'mtg:hyena-umbra'});

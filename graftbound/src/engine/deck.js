@@ -24,3 +24,12 @@ export function returnToHand(deck,id){
 }
 export function discardFromHand(deck,id){return playFromHand(deck,id);}
 export function endHandLimit(deck){return Math.max(0,deck.hand.length-deck.capacity);}
+/** v1.2.3 deckbuilder recursion: when the library is empty at a draw, the graveyard (never exile) is shuffled
+ * back into the library with a deterministic per-deck RNG. Keeps small spell decks playable all encounter. */
+export function refillFromGraveyard(deck){
+ if(deck.library.length||!deck.graveyard.length)return 0;
+ deck.reshuffles=(deck.reshuffles||0)+1;
+ const n=deck.graveyard.length;
+ deck.library=shuffle(makeRng((0x9e3779b9^Math.imul(deck.reshuffles,0x85ebca6b)^n)>>>0),deck.graveyard.splice(0));
+ return n;
+}

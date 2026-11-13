@@ -54,3 +54,27 @@ Owner approved development and Game Lab deployment **conditional on passing rele
 - All six boss encounters resist the instantaneous destroy effect of Deathtouch while keeping the ordinary damage and a documented +2 chip-damage substitution. Non-boss creatures remain susceptible to Deathtouch. Explicit combat feedback and inspection text explain the exception.
 - Beta rules version advances to `graftbound-rules-1.2.2-beta`, ranked challenge revision 9. Previous challenge revisions remain isolated by the replay version contract. No save keys, site root, or other games are changed.
 - Added regression coverage for new creature-model identities and summon token models, projectile event emission, and the boss/ordinary-creature Deathtouch distinction. Continue manual mobile desktop animation acceptance before full v1.2 production promotion.
+## v1.2.3 printed-ability completion (preview candidate)
+
+Resolves three of the listed production blockers. Rules `graftbound-rules-1.2.3-beta`, ranked challenge revision 10. No save-key changes; new battle fields are optional and older in-progress battles fall back safely.
+
+- **Combustible Gearhulk ETB.** On entering, you (the target opponent) must choose before any other action: *let it draw three* or *mill three*. Mill deals damage equal to the milled cards' total mana value. The opponent's library is the curated set of 16 real enemy cards, shuffled per battle from a seeded RNG. **Tactical adaptation:** drawn cards are cast by the opponent, at most one creature per enemy turn, never a second Gearhulk, and only while fewer than six foes remain. The choice is a strict replay decision (`{type:'gearhulk', choice:'draw'|'mill'}`). A non-dismissible prompt blocks auto-end.
+- **Fallen Shinobi.** Combat damage that actually reaches your hero exiles the top two cards of your encounter library. **Tactical adaptation:** the opponent plays an exiled card for free only if it is a single-target damage spell (Shock, Lightning Bolt, Flame Slash). It hits your hero at printed strength (level 1, no Arcane); other cards stay exiled for the encounter. Your permanent run spellbook is unaffected.
+- **The Scarab God.**
+  - Upkeep is now **life loss** that ignores shields and Guard, with X counting every Zombie, including Fallen Shinobi (Zombie Ninja). It also scries X.
+  - Reanimation exiles a creature card from **any** graveyard, including Gearhulk-milled cards. It creates a **4/4 Zombie token copy** that keeps the creature's printed keywords and triggers.
+  - On death the god returns to hand at the next end step. If other foes remain, it is recast for {3}{U}{B} as a printed 5/5 without encounter Vitality. If it was the last foe, the encounter is won immediately.
+- **Deck recursion (balance change for owner review).** When your encounter library is empty at the draw step, the graveyard (never exile) shuffles back in deterministically. Revert by removing the `refillFromGraveyard` call in `startPlayerTurn`.
+- **Balance (24 seeds, naive bot, directional only):**
+
+  | Build | v1.2.2 win | v1.2.3 win |
+  |---|---|---|
+  | Greedy | 50% | 54% |
+  | Melee | 25% | 38% |
+  | Tank | 29% | 29% |
+  | Pure spells | 0% | 0% (reaches Act II 8%) |
+
+  The pure-spell bot never grafts, so it fights the whole adventure as a 1/1 with 7 health. Fixing that is an owner design decision, not a bug fix.
+- **Tests:** `npm test` 240 total: 239 pass, 0 fail, 1 network-only Scryfall skip (baseline was 227 total, 226 pass). 13 new cases are in `tests/v123-printed-triggers.test.mjs`. Bots in `tests/helpers.mjs` and `tests/ranked-bot.mjs` answer the Gearhulk choice.
+- **Browser:** `tests/e2e.py` was stale against the v1.2 Pack 1/2/3 first reward and failed identically on the untouched v1.2.2 source. It now skips Pack 3 of 3, confirming the skip dialog, and runs to completion: **34/36**. The two failures, *Lightning Bolt spawns procedural lightning geometry* and *legacy grafts kept exactly; legacy card shown as Legacy*, also fail on the untouched v1.2.2 source under the same patched script, so they are pre-existing. Environment: headless Chromium + SwiftShader, not real devices.
+- **Still blocking production:** precise equipment visual rig QA, boss art quality, spell-build design, and full device playthroughs. Live Scryfall must be re-run on CI for this commit.

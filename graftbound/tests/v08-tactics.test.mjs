@@ -130,9 +130,9 @@ test('auto-end: stances keep the turn only when useful (Guard when threatened, C
   ch.units[1].x = 3; ch.units[1].y = 0; assert.ok(usefulStances(ch).includes('channel'));
 });
 test('ranked replays include stances: recorded runs re-verify byte-identically under rules 1.1 / challenge revision 6', () => {
-  assert.equal(RULES_VERSION, 'graftbound-rules-1.2.2-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 9);
+  assert.equal(RULES_VERSION, 'graftbound-rules-1.2.3-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 10);
   const { run, log } = playRanked(); assert.ok(log.length >= 15, 'the bot made a meaningful deterministic decision sequence; stance legality is tested in controlled arenas above');
-  assert.equal(JSON.stringify(replayRun('gb-expedition-01', log, { revision: 9 }).run), JSON.stringify(run));
+  assert.equal(JSON.stringify(replayRun('gb-expedition-01', log, { revision: 10 }).run), JSON.stringify(run));
   const i = log.findIndex(d => d.type === 'guard'); if (i >= 0) { const bad = log.map(d => ({ ...d })); bad.splice(i, 0, { ...bad[i] }); bad.forEach((d, k) => (d.seq = k)); assert.throws(() => replayRun('gb-expedition-01', bad)); }
 });
 

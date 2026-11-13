@@ -8,10 +8,12 @@ import { graftsFull } from '../src/engine/run.js';
 import { eventChoices } from '../src/engine/events.js';
 import { manhattan } from '../src/core/grid.js';
 import { usefulStances } from '../src/engine/legal.js';
-import './helpers.mjs';
+import { botGearhulkChoice } from './helpers.mjs';
+import { pendingChoice } from '../src/engine/printed-triggers.js';
 
 export function nextBattleDecision(s) {
   const p = player(s);
+  if (pendingChoice(s)) return { type: 'gearhulk', choice: botGearhulkChoice(s) };
   if(s.deck && ((s.deck.pendingDiscards||0)>0 || s.deck.hand.length>s.deck.capacity) && s.deck.hand.length)return {type:'discard',id:s.deck.hand.at(-1).id};
   for (const sp of s.spellbook) {
     const c = resolveCard(sp.id); const opts = castOptions(s, sp.id); if (!opts.length) continue;

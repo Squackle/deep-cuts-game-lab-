@@ -9,6 +9,7 @@ import { resolveCard } from '../cards/catalog.js';
 const spellCostOf = id => (resolveCard(id) || { cost: 0 }).cost;
 import { refreshTribalBonuses, checkStateBasedDeath } from './abilities.js';
 import { attachAura,detachAura,detachEquipment } from './attachments.js';
+import { queueGearhulk, registerSpawn, scarabUpkeep, scarabTargets, scarabReanimate } from './printed-triggers.js';
 
 const cmpTile = (a, b) => a.y - b.y || a.x - b.x;
 const hazard = (s, t) => { const k = tileAt(s, t.x, t.y); return ([T.LAVA, T.RIFT, T.UNSTABLE, T.SPORES, T.CRUMBLE].includes(k) ? 1 : 0) + (t.hz || 0); };
@@ -171,8 +172,9 @@ export function planEnemy(s, e) {
         plan.actions.push({ type:'legendarySummon', defId:'goblin', n:count }); break;
       }
       case 'scarab': {
-        const dead = s.units.find(u=>u.side === 'enemy' && u.hp <= 0 && u !== e && !u.exiled && !u.token);
-        if (dead && (e.bossMana ?? 3) + 1 >= 4) plan.actions.push({ type:'scarabReanimate', uid:dead.uid, mana:4 });
+        // {2}{U}{B}: exile a creature card from ANY graveyard (highest mana value first, deterministic ties).
+        const pool = scarabTargets(s, e).sort((a,b)=>(ENEMIES[b.defId].power-ENEMIES[a.defId].power)||((a.uid||0)-(b.uid||0))||(a.defId<b.defId?-1:1));
+        if (pool.length && (e.bossMana ?? 3) + 1 >= 4) plan.actions.push({ type:'scarabReanimate', target:pool[0], mana:4 });
         if (adjacent) meleeIfAdjacent(hero); break;
       }
       case 'toxrill': { if (adjacent) meleeIfAdjacent(hero); break; }
@@ -398,8 +400,8 @@ export function actEnemy(s, ev, e) {
     e.bossMana = Math.min(8,(e.bossMana ?? 3)+1);
     if(e.pendingSummons>0) { const pending=e.pendingSummons; e.pendingSummons=0;spawnTokensAround(s,ev,e,{nemata:'saproling',krenko:'goblin'}[e.defId]||'zombie',pending); }
     if (e.defId==='scarab') {
-      const z=enemies(s).filter(x=>x.defId==='zombie').length;
-      if(z>0) { ev.push({t:'legendaryAbility',uid:e.uid,name:'The Scarab God · upkeep',amount:z});dealDamage(s,ev,e,hero,z,{kind:'scarabDrain'}); }
+      scarabUpkeep(s,ev,e);
+      if (s.phase !== 'enemy') return;
     }
   }
   for (const a of plan.actions) {
@@ -430,10 +432,9 @@ export function actEnemy(s, ev, e) {
       }
       case 'scarabReanimate': {
         if(e.bossMana<4) break;
-        const dead=s.units.find(u=>u.uid===a.uid&&u.hp<=0&&!u.exiled&&!u.token);if(!dead)break;
-        e.bossMana-=4;dead.exiled=true;
-        spawnTokensAround(s,ev,e,'zombie',1);
-        ev.push({t:'legendaryAbility',uid:e.uid,name:'Exile creature · create 4/4 Zombie'});break;
+        const still=scarabTargets(s,e).find(t=>t.defId===a.target.defId&&t.from===a.target.from&&(t.uid||0)===(a.target.uid||0));if(!still)break;
+        if(scarabReanimate(s,ev,e,still)) e.bossMana-=4;
+        break;
       }
       case 'realCaterpillar': {
         const u=player(s);if(!alive(u))break;
@@ -579,6 +580,8 @@ export function spawnEnemy(s, defId, x, y) {
       (s.entryEvents||=[]).push({t:'status',uid:h.uid,status:'weakened',value:2,total:h.statuses.weakened,by:u.uid,kind:'Faerie Duelist ETB'});
     }
   }
+  if(defId==='champion') queueGearhulk(s,u);   // printed ETB: the opponent (you) chooses draw or mill
   refreshTribalBonuses(s,[]);
   return u;
 }
+registerSpawn(spawnEnemy);

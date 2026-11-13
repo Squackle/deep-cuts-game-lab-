@@ -1,5 +1,6 @@
 // Battle HUD, input (mouse / touch / keyboard) and event playback onto the HD-2D scene.
-import { moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, intents, canAttack, player, enemies, hazardPreview, interact, interactOptions, crystalAt, guard, channel, guardValue, stanceBlockReason, stanceMovementCost, discard, equipBattle } from '../engine/combat.js';
+import { moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, intents, canAttack, player, enemies, hazardPreview, interact, interactOptions, crystalAt, guard, channel, guardValue, stanceBlockReason, stanceMovementCost, discard, equipBattle, gearhulkChoice } from '../engine/combat.js';
+import { pendingChoice, gearhulkPreview } from '../engine/printed-triggers.js';
 import { TACTICS } from '../data/tactics.js';
 import { getLegalPlayerActions, shouldAutoEnd } from '../engine/legal.js';
 import { describeTile, pathWarning } from '../engine/describe.js';
@@ -45,6 +46,7 @@ export class BattleUI {
       case 'end': ev = endTurn(s); break;
       case 'discard': ev = discard(s, d.id); break;
       case 'equip': ev = equipBattle(s,d.id,d.uid,d.slot); break;
+      case 'gearhulk': ev = gearhulkChoice(s, d.choice); break;
       case 'guard': ev = guard(s); break;
       case 'channel': ev = channel(s); break;
       default: throw new Error('Unknown action');
@@ -371,7 +373,8 @@ export class BattleUI {
     el.classList.add('show');
   }
   maybeAutoEnd() {
-    const s = this.s; const enabled = this.app.meta.settings.autoEnd !== false;
+    const s = this.s;
+    if (s && s.phase === 'player' && !this.busy && pendingChoice(s)) { this.chooseGearhulk(); return; } const enabled = this.app.meta.settings.autoEnd !== false;
     if (this.autoEnding || !shouldAutoEnd(s, { busy: this.busy, targeting: !!this.spell, enabled })) return;
     if ((this.autoEnds || 0) >= 25) return;   // safety valve: a long stun-lock never loops unattended
     this.autoEnding = true; this.app.status('No actions left — your turn ends');
@@ -443,7 +446,7 @@ export class BattleUI {
     if (this.busy) return;
     this.busy = true; this.pendingTap = null; this.showInspect(null); this.scene.setOverlay([]); this.syncDisp();
     let ev;
-    try { ev = await fn(); } catch (err) { this.busy = false; this.reject(err.message || 'Not allowed'); this.refresh(); return; }
+    try { ev = await fn(); } catch (err) { this.busy = false; this.reject(err.message || 'Not allowed'); this.refresh(); this.maybeAutoEnd(); return; }
     this.app.save(); this.renderHUD();
     await this.play(ev);
     this.busy = false; this.syncDisp(); this.refresh(); this.tutorialHints('after'); this.checkEnd(); this.maybeAutoEnd();
@@ -458,6 +461,22 @@ export class BattleUI {
     if(this.s.deck && ((this.s.deck.pendingDiscards||0)>0 || this.s.deck.hand.length>this.s.deck.capacity)) { this.chooseDiscard();return;}
     this.spell = null; this.audio.play('click');
     await this.act(() => this.exec({ type: 'end' }));
+  }
+  /** Combustible Gearhulk's printed ETB: you are the target opponent and must choose. Not dismissible. */
+  chooseGearhulk() {
+    const s = this.s; const pc = pendingChoice(s); if (!pc || document.querySelector('#modal.show [data-gearhulk]')) return;
+    const pv = gearhulkPreview(s);
+    const modal = this.app.openModal(`<h2>Combustible Gearhulk</h2>
+      <p>Target opponent (you) chooses:</p>
+      <div class="gb-discard-list">
+        <button type="button" class="btn primary" data-gearhulk="draw">Let it draw ${pv.drawCount}<small> · the opponent may cast one drawn creature each enemy turn</small></button>
+        <button type="button" class="btn danger" data-gearhulk="mill">Mill ${pv.millCount}<small> · you take damage equal to their total mana value (up to ${pv.maxDamage})</small></button>
+      </div><p class="gb-note"><small>Encounter adaptation: the opponent's library is the curated set of real enemy cards.</small></p>`);
+    modal.addEventListener('click', async e => {
+      const b = e.target.closest('[data-gearhulk]'); if (!b) return;
+      this.app.closeModal();
+      await this.act(() => this.exec({ type: 'gearhulk', choice: b.dataset.gearhulk }));
+    });
   }
   chooseDiscard() {
     const deck=this.s?.deck;if(!deck)return;
@@ -626,13 +645,16 @@ export class BattleUI {
         case 'bossPhase': this.audio.play('bossPhase'); sc.screenFlash([0.6, 0.35, 0.15], 0.3); if (!sc.reduced) sc.shake(0.12); await this.banner(e.phase ? `Phase ${e.phase} · ${e.text}` : (e.text || 'The foe changes'), 'boss'); break;
         case 'stunnedSkip': this.float(e.uid, 'Stunned', 'note'); await this.wait(200); break;
         case 'cardDraw': au.play('flip'); break;
+        case 'deckReshuffle': au.play('flip'); if (sc.units.get(e.uid)) this.float(e.uid, `Graveyard reshuffled · ${e.count} card${e.count === 1 ? '' : 's'}`, 'note'); break;
         case 'equipmentAttach': {au.play('click'); const hero=this.s?.units.find(u=>u.hero); if(hero){const ap=deriveAppearance(this.run.evo);this.scene.setUnitTexture(hero.uid,composeEquippedSheet(this.app.assets,ap,hero.equipment||[]),ap.size);}break;}
         case 'cardDiscard': au.play('flip'); this.float(player(this.s).uid,'Card to graveyard','note'); break;
         case 'auraAttach': {const w=this.tile(e.x,e.y);sc.fx.burst([w[0],0.4,w[2]],[0.85,0.65,1],16,{speed:0.7,up:1.3});au.play('spell');this.float(e.uid,esc(e.name||'Enchanted'),'note');break;}
         case 'auraBreak': au.play('block'); this.float(e.uid,'Aura shattered','warn'); break;
         case 'revive': au.play('heal');this.float(e.uid,'Gift of Immortality!','note');break;
         case 'legendaryFlame': au.play('fireboom');sc.screenFlash([1,0.45,0.18],0.35);break;
-        case 'legendaryAbility': au.play('bossPhase');break;
+        case 'legendaryAbility': au.play('bossPhase'); if (e.name && sc.units.get(e.uid)) this.float(e.uid, esc(e.name), 'note'); break;
+        case 'realAbility': if (e.name && sc.units.get(e.uid)) { this.float(e.uid, esc(e.name), 'note'); await this.wait(180); } break;
+        case 'shinobiExile': au.play('flip'); if (sc.units.get(e.uid)) this.float(e.uid, `Exiled: ${esc(e.name)}`, 'warn'); await this.wait(220); break;
         case 'victory': au.play('victory'); await this.banner('Victory', 'win'); break;
         case 'defeat': au.play('defeat'); await this.banner('The graft unravels', 'lose'); break;
       }

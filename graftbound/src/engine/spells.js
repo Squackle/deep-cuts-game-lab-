@@ -59,6 +59,7 @@ export function castBlockReason(s, id) {
   const entry = s.spellbook.find(x => x.id === id);
   if (!entry) return 'Not in your spellbook';
   if (s.phase !== 'player') return 'Not your turn';
+  if (s.pendingChoices && s.pendingChoices.length) return 'Resolve Combustible Gearhulk first';
   if (s.p.cast[id]) return 'Already cast this turn';
   if(s.deck?.pendingDiscards>0)return 'Discard a card first';
   if (s.p.silenced === id) return 'Silenced by the Unwritten for this turn';
