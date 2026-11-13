@@ -10,7 +10,7 @@ import { STARTING_NAME } from './evolution.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
 import { TACTICS } from '../data/tactics.js';
 import { createCombatDeck, drawCards, playFromHand, discardFromHand, endHandLimit } from './deck.js';
-import { attachAura, hasGear } from './attachments.js';
+import { attachAura, hasGear, attachEquipment, detachEquipment, EQUIPMENT_SLOTS } from './attachments.js';
 
 export const BATTLE_VERSION = 7;
 export const RIFT_DAMAGE = TERRAIN_RULES.rift.pulseDamage, LAVA_DAMAGE = TERRAIN_RULES.lava.endTurnDamage;
@@ -125,6 +125,38 @@ export function attack(s, targetUid) {
   s.p.attacksLeft--;
   if (!has(p, 'vigilance')) s.p.moveLeft = 0;
   return ev;
+}
+/** The printed Equip action: paid, legal-bearer-only, and deterministic. */
+export function equipmentOptions(s) {
+  if(!s || s.phase!=='player' || !Array.isArray(s.equipmentInventory))return [];
+  return s.equipmentInventory.filter(id=>!(s.destroyedEquipment||[]).includes(id)).flatMap(id=>{
+    const c=getCard(id);if(!c||c.kind!=='equipment'||s.p.mana<(c.equipCost||0))return [];
+    return allies(s).flatMap(u=>{
+      if(u.equipment?.includes(id))return [];
+      return Array.from({length:u.hero?EQUIPMENT_SLOTS:1},(_,slot)=>({id,uid:u.uid,slot,cost:c.equipCost||0}));
+    });
+  });
+}
+export function equipBattle(s,id,uid,slot=0) {
+  ensurePlayerPhase(s);
+  if(!Number.isSafeInteger(uid)||!Number.isSafeInteger(slot))throw new Error('Invalid equipment target');
+  const choice=equipmentOptions(s).find(o=>o.id===id&&o.uid===uid&&o.slot===slot);
+  if(!choice)throw new Error('Equipment unavailable, insufficient mana, or illegal bearer');
+  const target=s.units.find(u=>u.uid===uid);
+  const replaced=target.hero?(s.heroEquipmentSlots||[null,null])[slot]||null:target.equipment?.[0]||null;
+  const before=s.p.mana;
+  for(const u of s.units)if(u.equipment?.includes(id))detachEquipment(u,id);
+  if(replaced&&target.equipment?.includes(replaced))detachEquipment(target,replaced);
+  attachEquipment(target,id);
+  if(target.hero){
+    const slots=(s.heroEquipmentSlots||[null,null]).slice();
+    for(let i=0;i<slots.length;i++)if(slots[i]===id)slots[i]=null;
+    slots[slot]=id;s.heroEquipmentSlots=slots;
+  }else if(s.heroEquipmentSlots){
+    s.heroEquipmentSlots=s.heroEquipmentSlots.map(v=>v===id?null:v);
+  }
+  s.p.mana-=choice.cost;s.stats.actions++;s.stats.interactions++;
+  return [{t:'mana',from:before,to:s.p.mana},{t:'equipmentAttach',uid,id,slot,removed:replaced,amount:choice.cost}];
 }
 // ── v0.8 tactical stances: available to every creature, independent of card rewards ─────────────────────
 // Both cost your ATTACK for the turn (no free actions), so they compete with striking. Values live in
