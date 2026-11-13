@@ -31,7 +31,7 @@ export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroN
   s.units.push({ uid: s.nextUid++, side: 'player', hero: true, defId: 'player', name: heroName, x: encounter.playerStart.x, y: encounter.playerStart.y,
     hp, maxHp: stats.maxHealth, power: stats.power, toughness: stats.toughness, move: stats.move, keywords: { ...evo.keywords }, statuses: {} });
   for (const en of encounter.enemies) spawnEnemy(s, en.defId, en.x, en.y);
-  s.openingEvents = startPlayerTurn(s);
+  s.openingEvents = [...(s.entryEvents || []), ...startPlayerTurn(s)];
   return s;
 }
 /** Rifts pulse at the end of every even round (telegraphed during that round's player phase). */

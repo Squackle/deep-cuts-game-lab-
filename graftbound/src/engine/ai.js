@@ -569,6 +569,15 @@ export function spawnEnemy(s, defId, x, y) {
   const u = { uid: s.nextUid++, side: 'enemy', defId, name: d.name, x, y, hp, maxHp: hp, power: d.power,
     toughness: d.toughness, move: d.move || 2, legendaryVitality: d.encounterHealth ? hp - d.toughness : 0, keywords: { ...(d.keywords || {}) }, statuses: {}, legendary: !!d.legendary, boss: !!d.boss };
   s.units.push(u);
+  // Faerie Duelist's printed enter-the-battlefield -2/-0 trigger is real,
+  // not a recurring spell. During encounter setup it lasts through turn one.
+  if(defId==='shardling'){
+    const h=player(s);
+    if(h && alive(h) && !has(h,'hexproof')){
+      h.statuses.weakened=(h.statuses.weakened||0)+2;
+      (s.entryEvents||=[]).push({t:'status',uid:h.uid,status:'weakened',value:2,total:h.statuses.weakened,by:u.uid,kind:'Faerie Duelist ETB'});
+    }
+  }
   refreshTribalBonuses(s,[]);
   return u;
 }

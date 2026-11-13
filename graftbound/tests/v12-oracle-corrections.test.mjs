@@ -7,6 +7,7 @@ import { player, endTurn, enemies } from '../src/engine/combat.js';
 import { attachEquipment } from '../src/engine/attachments.js';
 import { dealDamage } from '../src/engine/abilities.js';
 import { ENEMIES } from '../src/data/enemies.js';
+import { spawnEnemy } from '../src/engine/ai.js';
 installReferenceSet();
 
 test('Scryfall-canonical capitalization recognizes the One with the Wind Aura', () => {
@@ -43,4 +44,18 @@ test('Hexproof blocks opposing targeted goblin ability, not non-targeting Thermo
   attachEquipment(player(t),'mtg:swiftfoot-boots');
   const before=player(t).hp;endTurn(t);
   assert.equal(player(t).hp,before-1);
+});
+
+test('Faerie Duelist entering applies -2/-0 only once, and Hexproof denies its targeted ability',()=>{
+  const s=arena(['.....','..F..','..P..'],{F:'shardling'});
+  assert.equal(player(s).statuses.weakened,2);
+  assert.ok(s.openingEvents.some(e=>e.kind==='Faerie Duelist ETB'));
+  const t=arena(['.....','..F..','..P..'],{F:'shardling'});
+  assert.equal(t.units.filter(u=>u.defId==='shardling').length,1);
+  // Hexproof on the target is checked at ETB. No curse can sneak in as a free targeting shortcut.
+  const h=player(t);h.keywords.hexproof=1;
+  h.statuses.weakened=0;
+  // A subsequent Duelist ETB cannot target the protected player.
+  spawnEnemy(t,'shardling',0,0);
+  assert.equal(h.statuses.weakened,0);
 });
