@@ -1,5 +1,7 @@
 # Changed files — v1.2.3 (base: game/graftbound-v1.2-living-cards-20261112 @ e3c5210b)
 
+v1.2.4 audit fixes also touch: src/main.js (closeModal reopens a pending choice), src/engine/abilities.js, src/engine/printed-triggers.js, src/engine/ai.js (comment), src/engine/ranked.js + version-pin tests (1.2.4-beta / rev 11), tests/v123-printed-triggers.test.mjs (+2).
+
 New
 - src/engine/printed-triggers.js — Gearhulk choice, Shinobi exile/free-play, Scarab God upkeep/reanimate/return, opponent library
 - tests/v123-printed-triggers.test.mjs — 13 regression cases

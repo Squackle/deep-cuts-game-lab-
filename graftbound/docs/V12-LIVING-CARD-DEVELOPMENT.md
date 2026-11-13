@@ -78,3 +78,24 @@ Resolves three of the listed production blockers. Rules `graftbound-rules-1.2.3-
 - **Tests:** `npm test` 240 total: 239 pass, 0 fail, 1 network-only Scryfall skip (baseline was 227 total, 226 pass). 13 new cases are in `tests/v123-printed-triggers.test.mjs`. Bots in `tests/helpers.mjs` and `tests/ranked-bot.mjs` answer the Gearhulk choice.
 - **Browser:** `tests/e2e.py` was stale against the v1.2 Pack 1/2/3 first reward and failed identically on the untouched v1.2.2 source. It now skips Pack 3 of 3, confirming the skip dialog, and runs to completion: **34/36**. The two failures, *Lightning Bolt spawns procedural lightning geometry* and *legacy grafts kept exactly; legacy card shown as Legacy*, also fail on the untouched v1.2.2 source under the same patched script, so they are pre-existing. Environment: headless Chromium + SwiftShader, not real devices.
 - **Still blocking production:** precise equipment visual rig QA, boss art quality, spell-build design, and full device playthroughs. Live Scryfall must be re-run on CI for this commit.
+
+## v1.2.4 verification fixes (audit of committed d5e7e993)
+
+An audit of the committed v1.2.3 (`d5e7e993`) found and fixed:
+- **Fallen Shinobi** triggered on its counterblow when the hero attacked it. It now triggers only when the Shinobi is the attacker, matching "deals combat damage to a player".
+- **Gearhulk choice** incremented `stats.actions`, which lowered the efficiency score for a forced choice. It is now score-neutral.
+- **Gearhulk prompt** could be dismissed with Escape or a backdrop click, leaving the player with no visible way forward. Any modal close now reopens the prompt while the choice is pending (`main.js closeModal` → `BattleUI.reopenPendingChoice`).
+- A comment wrongly said the Scarab God sorts by mana value; it sorts by printed power.
+
+Rules `graftbound-rules-1.2.4-beta`, ranked challenge revision 11. No save-key changes.
+
+Evidence:
+- `npm test`: 242 total, 241 pass, 0 fail, 1 network-only skip. 2 new regressions.
+- Fuzz: 400 mixed battles with Gearhulk, Shinobi and the Scarab God. 0 exceptions, 0 non-finite stats, 0 stuck turns, every state JSON round-trips.
+- Targeted Scarab test: 100/100 return to hand, recast when the opponent's mana allows.
+- Browser test (headless Chromium): Gearhulk injected into a live battle.
+  - The prompt appears, and Escape or a backdrop click cannot dismiss it.
+  - End Turn is refused while the choice is pending.
+  - Mill applies 3 cards and the damage, then the battle continues.
+  - No page errors.
+  - Result: 10/10 checks.

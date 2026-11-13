@@ -1,7 +1,7 @@
 {
   "name": "deep-cuts-graftbound",
   "private": true,
-  "version": "1.2.3-beta",
+  "version": "1.2.4-beta",
   "type": "module",
   "description": "GRAFTBOUND \u2014 HD-2D creature-grafting tactics RPG (Deep Cuts EDH Game Lab, route /graftbound/)",
   "scripts": {

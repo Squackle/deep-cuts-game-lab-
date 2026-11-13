@@ -54,7 +54,7 @@ test('Gearhulk draw: no damage; the opponent casts at most one drawn creature pe
 });
 
 test('Gearhulk choice is a strict replay decision', () => {
-  assert.equal(RULES_VERSION, 'graftbound-rules-1.2.3-beta');
+  assert.equal(RULES_VERSION, 'graftbound-rules-1.2.4-beta');
   assert.ok(validDecision({ seq: 0, type: 'gearhulk', choice: 'mill' }, 0));
   assert.ok(!validDecision({ seq: 0, type: 'gearhulk', choice: 'both' }, 0));
   assert.ok(!validDecision({ seq: 0, type: 'gearhulk', choice: 'draw', extra: 1 }, 0));
@@ -145,4 +145,21 @@ test('a pending Gearhulk choice survives a JSON save/load and still resolves', (
   player(t).maxHp = player(t).hp = 99; player(s).maxHp = player(s).hp = 99;
   gearhulkChoice(t, 'mill'); gearhulkChoice(s, 'mill');
   assert.equal(player(t).hp, player(s).hp); assert.deepEqual(t.opp, s.opp);
+});
+
+test('Fallen Shinobi does NOT trigger when it strikes back as a blocker (counter), only when it attacks', () => {
+  const s = arena(['.....', '..R..', '..P..'], { R: 'riftstalker' });
+  s.deck = createCombatDeck([{ id: 'mtg:shock', level: 1 }], 1); s.deck.library = [{ id: 'mtg:shock', level: 1 }, { id: 'mtg:giant-growth', level: 1 }];
+  player(s).maxHp = player(s).hp = 40;
+  dealDamage(s, [], foe(s, 'riftstalker'), player(s), 5, { combat: true, kind: 'counter' });
+  assert.equal(s.deck.library.length, 2, 'no exile from a counterblow');
+  dealDamage(s, [], foe(s, 'riftstalker'), player(s), 5, { combat: true, kind: 'strike' });
+  assert.equal(s.deck.library.length, 0, 'exiles two when it attacks');
+});
+
+test('the forced Gearhulk choice is not counted as an accepted action (score neutral)', () => {
+  const s = arena(['.....', '..C..', '.....', '..P..'], { C: 'champion' });
+  player(s).maxHp = player(s).hp = 99;
+  const before = s.stats.actions; gearhulkChoice(s, 'draw');
+  assert.equal(s.stats.actions, before);
 });

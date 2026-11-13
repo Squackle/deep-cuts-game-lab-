@@ -152,7 +152,7 @@ class App {
   syncSoundBtn() { const on = this.meta.settings.sound || this.meta.settings.music; $('btn-sound').innerHTML = on ? ICON.sound : ICON.mute; $('btn-sound').setAttribute('aria-label', on ? 'Mute' : 'Unmute'); }
   modalOpen() { return $('modal').classList.contains('show'); }
   openModal(html, cls = '') { const m = $('modal'); m.innerHTML = `<div class="modal-box ${cls}" role="dialog" aria-modal="true">${html}</div>`; m.classList.add('show'); const f = m.querySelector('button.primary, button'); if (f) f.focus({ preventScroll: true }); return m.firstElementChild; }
-  closeModal() { this.pauseOpen = false; $('modal').classList.remove('show'); $('modal').innerHTML = ''; }
+  closeModal() { this.pauseOpen = false; $('modal').classList.remove('show'); $('modal').innerHTML = ''; queueMicrotask(() => this.battle && this.battle.reopenPendingChoice && this.battle.reopenPendingChoice()); }
   confirm(text, yes, fn) { const m = this.openModal(`<p class="confirm">${esc(text)}</p><div class="modal-actions"><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn danger" data-yes>${esc(yes)}</button></div>`); m.querySelector('[data-yes]').addEventListener('click', () => { this.closeModal(); fn(); }); }
   toast(html, kind = '') { const t = $('toast'); t.innerHTML = html; t.className = 'toast ' + kind; void t.offsetWidth; t.classList.add('show'); }
   status(text) { $('status').textContent = text; $('status').classList.toggle('show', !!text); }

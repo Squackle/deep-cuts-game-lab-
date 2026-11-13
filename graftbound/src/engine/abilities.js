@@ -186,7 +186,8 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
   }
   if (combat && src && has(src, 'lifelink') && lost > 0) heal(s, ev, src, lost, 'lifelink');
   // Fallen Shinobi: combat damage to the player exiles their top two library cards (printed trigger).
-  if (combat && src?.side === 'enemy' && src.defId === 'riftstalker' && tgt.hero && lost > 0 && s.phase !== 'lost') resolveShinobiHit(s, ev, src, tgt);
+  // Only when the Shinobi is the attacker; striking back as a blocker ('counter') is not damage to a player.
+  if (combat && src?.side === 'enemy' && src.defId === 'riftstalker' && kind !== 'counter' && tgt.hero && lost > 0 && s.phase !== 'lost') resolveShinobiHit(s, ev, src, tgt);
   // Destruction replacement effects resolve before defeat. Never rewrite printed +P/+T.
   if(tgt.hp<=0 && tgt.toughness>0 && hasAura(tgt,'mtg:hyena-umbra') && (combat||kind==='spell'||kind==='arrow')){
     detachAura(tgt,'mtg:hyena-umbra');tgt.hp=tgt.maxHp;ev.push({t:'auraBreak',uid:tgt.uid,id:'mtg:hyena-umbra'});

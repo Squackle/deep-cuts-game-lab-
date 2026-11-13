@@ -172,7 +172,7 @@ export function planEnemy(s, e) {
         plan.actions.push({ type:'legendarySummon', defId:'goblin', n:count }); break;
       }
       case 'scarab': {
-        // {2}{U}{B}: exile a creature card from ANY graveyard (highest mana value first, deterministic ties).
+        // {2}{U}{B}: exile a creature card from ANY graveyard (highest printed power first, deterministic ties).
         const pool = scarabTargets(s, e).sort((a,b)=>(ENEMIES[b.defId].power-ENEMIES[a.defId].power)||((a.uid||0)-(b.uid||0))||(a.defId<b.defId?-1:1));
         if (pool.length && (e.bossMana ?? 3) + 1 >= 4) plan.actions.push({ type:'scarabReanimate', target:pool[0], mana:4 });
         if (adjacent) meleeIfAdjacent(hero); break;

@@ -51,5 +51,5 @@ test('real spell damage bypasses invented color-affinities; rules versions isola
  s.p.mana=s.p.maxMana=10;
  const t=find(s,'cinderling');const ev=cast(s,'mtg:flame-slash',t.x,t.y);
  assert.ok(!ev.some(e=>e.t==='resisted'),'Torchrunner is not inherently fire resistant');
- assert.equal(RULES_VERSION,'graftbound-rules-1.2.3-beta');assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,10);
+ assert.equal(RULES_VERSION,'graftbound-rules-1.2.4-beta');assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,11);
 });

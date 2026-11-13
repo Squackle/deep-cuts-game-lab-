@@ -462,6 +462,8 @@ export class BattleUI {
     this.spell = null; this.audio.play('click');
     await this.act(() => this.exec({ type: 'end' }));
   }
+  /** Called after any modal closes: a pending printed choice can't be dismissed, only answered. */
+  reopenPendingChoice() { const s = this.s; if (s && s.phase === 'player' && !this.busy && pendingChoice(s) && !document.querySelector('#modal.show')) this.chooseGearhulk(); }
   /** Combustible Gearhulk's printed ETB: you are the target opponent and must choose. Not dismissible. */
   chooseGearhulk() {
     const s = this.s; const pc = pendingChoice(s); if (!pc || document.querySelector('#modal.show [data-gearhulk]')) return;

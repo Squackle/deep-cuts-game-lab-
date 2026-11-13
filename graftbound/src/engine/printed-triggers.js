@@ -71,7 +71,7 @@ export function resolveGearhulkChoice(s, choice) {
     const hero = player(s);
     if (total > 0 && alive(hero)) dealDamage(s, ev, hulk, hero, total, { kind: 'gearhulk' });
   }
-  s.stats.actions++;
+  // A forced printed choice is not counted as an accepted action, so it never lowers the efficiency score.
   return ev;
 }
 
