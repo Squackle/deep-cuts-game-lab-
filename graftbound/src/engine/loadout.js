@@ -11,7 +11,8 @@ export function normalizedEquipped(run) {
   if (!Array.isArray(run.equippedSpellIds)) for (const e of run.spellbook || []) if (ordered.length < handCapacity(run) && !ordered.includes(e.id)) ordered.push(e.id);
   return ordered;
 }
-export function combatSpellbook(run) {
+export function combatSpellbook(run, { all = false } = {}) {
+  if (all) return run.spellbook.map(e=>({...e}));
   const active = new Set(normalizedEquipped(run));
   return run.spellbook.filter(e => active.has(e.id)).map(e => ({ ...e }));
 }

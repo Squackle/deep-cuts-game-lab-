@@ -33,7 +33,11 @@ test('materials: each act theme uses its own floor set; lava and rift tiles get 
 test('every enemy sprite and foliage kind used by the game exists in the asset manifest', async () => {
   const man = JSON.parse(readFileSync(new URL('../assets/sprites/manifest.json', import.meta.url)));
   const { ENEMIES } = await import('../src/data/enemies.js');
-  for (const d of Object.values(ENEMIES)) assert.ok(man.sprites[d.sprite], d.sprite);
+  const { REAL_CREATURE_MODELS } = await import('../src/rendering/real-creature-models.js');
+  for (const d of Object.values(ENEMIES)) {
+    const generated = d.sprite?.startsWith('mtg_') && REAL_CREATURE_MODELS[d.sprite.slice(4)];
+    assert.ok(man.sprites[d.sprite] || generated, d.sprite);
+  }
   for (const th of Object.values(THEMES)) for (const k of [...th.trees, ...th.small]) assert.ok(man.foliage.frames[k], k);
 });
 test('shader sources sample a pre-filtered atlas by texel footprint (distance shimmer fix)', () => {

@@ -1,6 +1,20 @@
 // Enemy definitions (v0.5, three acts). Health = toughness. Difficulty comes from tactics, not inflated pools.
 // role: the tactical identity shown to the player. counters: which build it is designed to pressure.
-export const ENEMIES = {
+import { LEGENDARY_BOSSES } from './legendary.js';
+import { ENEMY_FACTS } from '../cards/enemy-facts.js';
+import { REAL_CREATURE_MODELS } from '../rendering/real-creature-models.js';
+const LEGACY_ENEMIES = {
+  angel: {act:1,name:'Angel',role:'Token',power:4,toughness:4,move:3,ai:'melee',sprite:'moth',keywords:{flying:1},token:true},
+  saproling: { act:0,name:'Saproling',role:'Token',power:1,toughness:1,move:2,ai:'melee',sprite:'grub',token:true },
+  spider: { act:0,name:'Spider',role:'Token',power:1,toughness:2,move:2,ai:'melee',sprite:'moth',keywords:{reach:1},token:true },
+  goblin: { act:1,name:'Goblin',role:'Token',power:1,toughness:1,move:3,ai:'melee',sprite:'cinderling',token:true },
+  zombie: { act:2,name:'Zombie',role:'Token',power:4,toughness:4,move:2,ai:'melee',sprite:'riftstalker',token:true },
+  slug: { act:2,name:'Slug',role:'Token',power:1,toughness:1,move:1,ai:'melee',sprite:'grub',token:true },
+  wolf: {act:0,name:'Wolf',role:'Token',power:2,toughness:2,move:3,ai:'melee',sprite:'hound',tribe:'Wolf',token:true},
+  golemFly: {act:2,name:'Golem',role:'Token',power:3,toughness:3,move:2,ai:'melee',sprite:'sentinel',keywords:{flying:1},token:true},
+  golemVigilance: {act:2,name:'Golem',role:'Token',power:3,toughness:3,move:2,ai:'melee',sprite:'sentinel',keywords:{vigilance:1},token:true},
+  golemTrample: {act:2,name:'Golem',role:'Token',power:3,toughness:3,move:2,ai:'melee',sprite:'sentinel',keywords:{trample:1},token:true},
+
   // ── Act I · The Forgotten Hollow ─────────────────────────────────────────
   grub:     { act: 0, name: 'Mire Grub',        role: 'Brute',      power: 1, toughness: 2, move: 2, ai: 'melee',      sprite: 'grub',     blurb: 'Slow. Bites anything adjacent.' },
   hound:    { act: 0, name: 'Bramble Hound',    role: 'Skirmisher', power: 2, toughness: 2, move: 3, ai: 'flanker',    sprite: 'hound',    pack: true, blurb: 'Pack hunter: +1 power when another foe is beside its target. Circles to the side opposite its packmates.' },
@@ -26,4 +40,14 @@ export const ENEMIES = {
   sentinel:   { act: 2, name: 'Nexus Sentinel',  role: 'Juggernaut', power: 6, toughness: 15, move: 3, ai: 'melee',     sprite: 'sentinel',    keywords: { armor: 2, firstStrike: 1 }, elite: true, blurb: 'Elite. Armor 2 and First Strike — small strikes barely scratch it and it hits first. Spells, Deathtouch and fliers get around it.' },
   unwritten:  { act: 2, name: 'The Unwritten',   role: 'Mirror',     power: 5, toughness: 36, move: 2, ai: 'unwritten', sprite: 'unwritten',   legendary: true, boss: true, strikeCap: 7,
     blurb: 'Legendary. No strike deals more than 7. Copies one of your abilities each cycle, telegraphs Erasure along your row and column, and calls Rift Stalkers.' },
+  ...Object.fromEntries(LEGENDARY_BOSSES.flat().map(b=>[b.id,{act:LEGENDARY_BOSSES.findIndex(a=>a.includes(b)),...b,legendary:true,boss:true,printedPower:b.power,printedToughness:b.toughness,encounterHealth:b.vitality,sprite:REAL_CREATURE_MODELS[b.id]?'mtg_'+b.id:b.sprite,blurb:b.ability}])),
 };
+
+/** Real-card enemy facts override only identity and printed card abilities. Existing IDs keep old saves compatible. */
+export const ENEMIES = Object.fromEntries(Object.entries(LEGACY_ENEMIES).map(([id,d])=>{
+ const f=ENEMY_FACTS[id]; if(!f) return [id,REAL_CREATURE_MODELS[id]?{...d,sprite:'mtg_'+id}:d];
+ return [id,{...d,...f, mtgName:f.name,printedPower:f.power,printedToughness:f.toughness,
+    burst:undefined,pack:undefined,guard:undefined,rally:undefined,spellTax:id==='nullwarden'?1:undefined,
+    aimDamage:id==='archer'?1:undefined,poison:undefined,spitRange:undefined,hexRange:undefined,weaken:undefined,blastDamage:undefined,
+    strikeCap:undefined,affinity:undefined,role:d.role, sprite:REAL_CREATURE_MODELS[id]?'mtg_'+id:d.sprite, oldEncounterName:d.name, blurb:f.oracle}];
+}));

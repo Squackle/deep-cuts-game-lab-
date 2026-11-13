@@ -2,6 +2,7 @@ import test from 'node:test'; import assert from 'node:assert/strict';
 import './helpers.mjs';
 import { buildReferenceSet } from '../src/cards/reference-set.js';
 import { REAL_CREATURES, REAL_SPELLS } from '../src/cards/real-pool.js';
+import { ATTACHMENT_FACTS } from '../src/cards/attachments.js';
 import { resolveCard, rewardCards, isLegacy } from '../src/cards/catalog.js';
 import { ALL_CARDS } from '../src/data/cards.js';
 import { generatePack, cardPool } from '../src/engine/rewards.js';
@@ -9,7 +10,7 @@ import { powerRating, graftRating, creatureBudget } from '../src/engine/power.js
 import { newEvolution } from '../src/engine/evolution.js';
 import { evoWith } from './helpers.mjs';
 
-const REAL_NAMES = new Set([...REAL_CREATURES, ...REAL_SPELLS].map(c => c.name));
+const REAL_NAMES = new Set([...REAL_CREATURES, ...REAL_SPELLS, ...ATTACHMENT_FACTS].map(c => c.name));
 const isReal = id => { const c = resolveCard(id); return !!(c && c.reference && !c.legacy && REAL_NAMES.has(c.name) && id.startsWith('mtg:')); };
 test('the reward pool is ONLY curated real Magic cards: 50 creatures + 13 spells, all pass compatibility', () => {
   const { cards, rejected } = buildReferenceSet(); assert.deepEqual(rejected, []);
@@ -21,7 +22,7 @@ test('every pack of every tier contains only real cards (tutorial, battle, elite
   for (let seed = 1; seed < 400; seed++) for (const tier of ['battle', 'elite', 'boss', 'shrine']) {
     const pk = generatePack(seed, { tier, step: seed % 24, evo: newEvolution() });
     assert.equal(pk.length, 3); assert.ok(pk.every(isReal), tier + ' ' + pk); assert.equal(new Set(pk).size, 3);
-    assert.ok(pk.some(id => resolveCard(id).kind === 'creature') && pk.some(id => resolveCard(id).kind === 'spell'));
+    assert.ok(pk.some(id => resolveCard(id).kind === 'creature') && pk.some(id => resolveCard(id).kind !== 'creature'));
   }
   const gs = generatePack(9, { tier: 'elite', step: 10, creaturesOnly: true }); assert.ok(gs.length === 3 && gs.every(id => isReal(id) && resolveCard(id).kind === 'creature'));
   const tut = generatePack(3, { forced: ['mtg:typhoid-rats'], step: 0 }); assert.ok(tut.includes('mtg:typhoid-rats') && tut.every(isReal));

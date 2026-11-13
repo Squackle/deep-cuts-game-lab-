@@ -27,6 +27,8 @@ export function cardPool({ spellbook = [], noRares = false, step = 0, tier = 'ba
   const budget = creatureBudget(step, tier), maxCost = spellMaxCost(step, tier);
   return rewardCards().filter(c => {
     if (noRares && (c.rarity === 'rare' || c.rarity === 'mythic')) return false;
+    if (c.kind === 'equipment') return step >= 3 && (tier === 'elite' || tier === 'boss' || step >= 9) && c.cost <= maxCost + 1;
+    if (c.kind === 'aura') return step >= 2 && c.cost <= maxCost;
     if (c.kind === 'spell') {
       if (c.cost > maxCost) return false;
       const e = spellbook.find(s => s.id === c.id); if (e && e.level >= MAX_SPELL_LEVEL) return false;
@@ -57,12 +59,12 @@ export function generatePack(seed, { tier = 'battle', forced = [], step = 0, evo
   const pool = cardPool({ ...poolOpts, step, tier, evo }).filter(c => !only || c.kind === only);
   const weights = rarityWeights(step);
   const picked = forced.map(resolveCard).filter(c => c && c.reference);
-  const strong = c => c.kind === 'spell' ? c.cost >= 2 : graftRating(c, evo) >= creatureBudget(step, tier) - 3;
+  const strong = c => c.kind === 'creature' ? graftRating(c,evo)>=creatureBudget(step,tier)-3 : c.cost>=2;
   const take = (filter, prefer) => {
     const sigs = new Set(picked.map(signature));
     let cands = pool.filter(c => !picked.includes(c) && filter(c) && !sigs.has(signature(c)));
     if (!cands.length) cands = pool.filter(c => !picked.includes(c) && filter(c));
-    if (!cands.length) cands = rewardCards().filter(c => !picked.includes(c) && filter(c) && (!only || c.kind === only) && (c.kind === 'spell' ? c.cost <= 1 : graftRating(c, evo) <= creatureBudget(step, tier)));
+    if (!cands.length) cands = rewardCards().filter(c => !picked.includes(c) && filter(c) && (!only || c.kind === only) && (c.kind !== 'creature' ? c.cost <= 1 : graftRating(c, evo) <= creatureBudget(step, tier)));
     if (cands.length) picked.push(weightedPick(rng, cands, weights, prefer));
   };
   const ANY = () => true;

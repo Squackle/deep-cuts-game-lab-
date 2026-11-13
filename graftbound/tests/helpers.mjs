@@ -1,5 +1,8 @@
-import { createBattle, moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, player, enemies, intents, hazardPreview, guard } from '../src/engine/combat.js';
+import { createBattle, moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, player, enemies, intents, hazardPreview, guard, discard } from '../src/engine/combat.js';
 import { usefulStances } from '../src/engine/legal.js';
+import { pendingChoice, gearhulkPreview, resolveGearhulkChoice } from '../src/engine/printed-triggers.js';
+/** Bot answer to Combustible Gearhulk: mill only when even the worst-case mill can't kill the hero. */
+export const botGearhulkChoice = s => (player(s).hp > gearhulkPreview(s).maxDamage + 2 ? 'mill' : 'draw');
 import { newEvolution, absorb, deriveStats } from '../src/engine/evolution.js';
 import { installReferenceSet } from '../src/cards/reference-set.js';
 import { T, manhattan, tileAt } from '../src/core/grid.js';
@@ -22,6 +25,8 @@ export function arena(rows, enemyMap, { evo = newEvolution(), spellbook = [], se
 /** opts.tactics (default true): Guard when a foe threatens you and your attack went unused (v0.8). */
 export function botPlay(s, maxTurns = 40, { tactics = true } = {}) {
   for (let t = 0; t < maxTurns; t++) {
+    if (s.phase !== 'player') return s.phase;
+    while (pendingChoice(s) && s.phase === 'player') resolveGearhulkChoice(s, botGearhulkChoice(s));
     if (s.phase !== 'player') return s.phase;
     const danger = new Set([...intents(s).flatMap(i => (i.kind === 'fire' || i.kind === 'slam') ? i.tiles.map(q => q.x + ',' + q.y) : []), ...hazardPreview(s).map(q => q.x + ',' + q.y)]);
     for (const sp of s.spellbook) {
@@ -46,6 +51,9 @@ export function botPlay(s, maxTurns = 40, { tactics = true } = {}) {
     if (danger.has(p.x + ',' + p.y) && s.p.moveLeft > 0) { const o = moveOptions(s).filter(safe)[0]; if (o) movePlayer(s, o.x, o.y); }
     if (s.phase !== 'player') return s.phase;
     if (tactics && s.p.attacksLeft > 0 && usefulStances(s).includes('guard')) guard(s);
+    while (s.phase === 'player' && s.deck && ((s.deck.pendingDiscards || 0) > 0 || s.deck.hand.length > s.deck.capacity)) {
+      if (!s.deck.hand.length) break;discard(s,s.deck.hand.at(-1).id);
+    }
     endTurn(s);
   }
   return s.phase === 'player' ? 'timeout' : s.phase;

@@ -152,7 +152,7 @@ class App {
   syncSoundBtn() { const on = this.meta.settings.sound || this.meta.settings.music; $('btn-sound').innerHTML = on ? ICON.sound : ICON.mute; $('btn-sound').setAttribute('aria-label', on ? 'Mute' : 'Unmute'); }
   modalOpen() { return $('modal').classList.contains('show'); }
   openModal(html, cls = '') { const m = $('modal'); m.innerHTML = `<div class="modal-box ${cls}" role="dialog" aria-modal="true">${html}</div>`; m.classList.add('show'); const f = m.querySelector('button.primary, button'); if (f) f.focus({ preventScroll: true }); return m.firstElementChild; }
-  closeModal() { this.pauseOpen = false; $('modal').classList.remove('show'); $('modal').innerHTML = ''; }
+  closeModal() { this.pauseOpen = false; $('modal').classList.remove('show'); $('modal').innerHTML = ''; queueMicrotask(() => this.battle && this.battle.reopenPendingChoice && this.battle.reopenPendingChoice()); }
   confirm(text, yes, fn) { const m = this.openModal(`<p class="confirm">${esc(text)}</p><div class="modal-actions"><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn danger" data-yes>${esc(yes)}</button></div>`); m.querySelector('[data-yes]').addEventListener('click', () => { this.closeModal(); fn(); }); }
   toast(html, kind = '') { const t = $('toast'); t.innerHTML = html; t.className = 'toast ' + kind; void t.offsetWidth; t.classList.add('show'); }
   status(text) { $('status').textContent = text; $('status').classList.toggle('show', !!text); }
@@ -171,7 +171,7 @@ class App {
       <button type="button" class="btn primary" data-close>Resume</button>
       ${inRun ? '<button type="button" class="btn" data-a="sheet">Character Sheet &amp; Spellbook</button><button type="button" class="btn" data-a="journal">Evolution Journal</button>' : ''}
       <button type="button" class="btn" data-a="settings">Settings</button>
-      ${inRun ? '<button type="button" class="btn" data-a="quit">Save &amp; Return Home</button><button type="button" class="btn danger" data-a="abandon">Abandon Adventure</button>' : ''}</div>`);
+      ${inRun ? '<button type="button" class="btn" data-a="quit">Save &amp; Return Home</button><button type="button" class="btn danger" data-a="abandon">Abandon Adventure</button>' : ''}<a class="btn lab-menu-link" href="/lab/" aria-label="Back to Game Lab home">← Back to Game Lab</a></div>`);
     m.addEventListener('click', e => {
       const a = e.target.closest('[data-a]'); if (!a) return;
       if (a.dataset.a === 'sheet') { this.closeModal(); this.openSheet(); }
@@ -270,7 +270,7 @@ class App {
     this.scene.dof = 1.6;
     if (!this.run.pending.cards.length) { this.run.pending = null; this.run.phase = 'map'; this.save(); return this.goMap(); }
     if (this.run.phase === 'won') return this.endRun(true);
-    const { choice, rect, release } = await UI.rewardScreen(this, this.run.pending.cards, { tier: this.run.pending.tier, severed: this.run.pending.severed });
+    const { choice, rect, release } = await UI.rewardScreen(this, this.run.pending.cards, { tier: this.run.pending.tier, severed: this.run.pending.severed, firstVictoryPacks: this.run.pending.firstVictoryPacks });
     if (choice === 'skip') { skipReward(this.run); this.record({ type: 'skip' }); this.save(); this.toast('<b>+1 Spark</b>'); }
     else {
       const evoBefore = this.run.evo; let change;

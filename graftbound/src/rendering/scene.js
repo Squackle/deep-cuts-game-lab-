@@ -26,7 +26,7 @@ export class Scene {
     this.yaw = Math.PI / 4; this.yawTarget = this.yaw; this.zoom = 1; this.focus = [0, 0, 0]; this.focusTarget = [0, 0, 0];
     this.shakeAmt = 0; this.fx = new Particles(3200); this.fxLights = []; this.static = null; this.w = 8; this.h = 8;
     this.overlay = null; this.danger = null; this.hazard = null; this.blobs = null; this.fxMesh = null; this.ambientT = 0; this.dof = 1;
-    this.bolts = []; this.rings = []; this.theme = 'hollow'; this.mote = [0.8, 1, 0.55];
+    this.bolts = []; this.rings = []; this.arrows = []; this.theme = 'hollow'; this.mote = [0.8, 1, 0.55];
     this.r.env = { sunDir: norm([-0.55, 0.75, -0.38]), sunCol: [0.9, 0.76, 0.58], ambTop: [0.34, 0.42, 0.44], ambBot: [0.12, 0.13, 0.1], fog: [0.07, 0.11, 0.1], fogR: [7.5, 15] };
     this.sprBuf = new Float32Array(SPR_FLOATS * 6 * 500); this.ambientOn = true;
   }
@@ -39,7 +39,7 @@ export class Scene {
     this.r.env = { ...env.env, sunDir: norm(env.env.sunDir) }; this.r.tint = env.tint; this.mote = env.mote;
     this.static = { mesh: this.r.upload(env.opaque), shafts: this.r.upload(env.shafts), foliage: env.foliage, lights: env.lights, emitters: env.emitters };
     for (const uid of [...this.units.keys()]) this.units.delete(uid);
-    this.fx.clear(); this.fxLights = []; this.bolts = []; this.rings = []; this.setOverlay([]); this.setDanger([]); this.setHazard([]);
+    this.fx.clear(); this.fxLights = []; this.bolts = []; this.rings = []; this.arrows = []; this.setOverlay([]); this.setDanger([]); this.setHazard([]);
   }
   /** Rebuild only the static environment (e.g. the Pyre Matron melts tiles into lava); units/FX are kept. */
   refreshTerrain(battle, seed) {
@@ -122,6 +122,20 @@ export class Scene {
         if (embers) for (let i = 0; i < 2; i++) this.fx.emit({ pos: p, vel: [(Math.random() - 0.5) * 0.8, 0.4 + Math.random(), (Math.random() - 0.5) * 0.8], col: [1, 0.55 + Math.random() * 0.3, 0.15, 1], size: 7, life: 0.6, grav: -2 });
       }
     });
+  }
+  /** An actual visible flying shaft and pointed arrowhead, not a glowing orb.
+   * Pure presentation: combat damage still resolves in the deterministic engine. */
+  async arrowProjectile(from, to, duration = 0.32) {
+    const dx=to[0]-from[0],dy=to[1]-from[1],dz=to[2]-from[2];
+    const len=Math.hypot(dx,dy,dz)||1;
+    const arrow={ pos:from.slice(), dir:[dx/len,dy/len,dz/len] };
+    this.arrows.push(arrow);
+    try {
+      await this.tween(duration,k=>{
+        arrow.pos=[from[0]+dx*k,from[1]+dy*k+Math.sin(k*Math.PI)*0.13,from[2]+dz*k];
+      });
+      this.fx.burst(to,[0.96,0.76,0.46],8,{speed:0.8,up:0.5,size:7});
+    } finally { const i=this.arrows.indexOf(arrow);if(i>=0)this.arrows.splice(i,1); }
   }
   /** Procedural lightning: regenerated every few frames for flicker. `grow` (s) reveals it from a to b. */
   addBolt({ a, b, life = 0.3, width = 0.05, col = [0.6, 0.8, 1], branches = 0, segs = 9, grow = 0 }) { this.boltsMade = (this.boltsMade || 0) + 1; this.bolts.push({ a, b, life, maxLife: life, width, col, branches, segs, grow, pts: null, br: [], t: 0, regen: 0 }); }
@@ -236,6 +250,20 @@ export class Scene {
       const pts = b.pts.slice(0, n); const fade = Math.min(1, b.life / b.maxLife * 2.2);
       ribbon(pts, b.width * 1.9, b.col, 0.3 * fade); ribbon(pts, b.width * 0.5, [1, 1, 1], 0.95 * fade);
       for (const br of b.br) if (br.from < n) { ribbon(br.pts, b.width * 1.4, b.col, 0.25 * fade); ribbon(br.pts, b.width * 0.35, [1, 1, 1], 0.8 * fade); }
+    }
+    // Physical arrow: warm wood shaft, bright metal tip and two visible fletches.
+    // Render inside the same FX geometry pass for camera-correct perspective.
+    for (const shot of this.arrows) {
+      const head=shot.pos, d=shot.dir;
+      const along=(k)=>[head[0]+d[0]*k,head[1]+d[1]*k,head[2]+d[2]*k];
+      const right=norm(cross(d,Math.abs(d[1])>0.9?[1,0,0]:[0,1,0]));
+      const wing=(p,s)=>[p[0]+right[0]*s,p[1]+right[1]*s,p[2]+right[2]*s];
+      ribbon([along(-0.43),head],0.030,[0.90,0.53,0.25],0.99);
+      ribbon([along(-0.43),along(-0.14)],0.011,[1,0.89,0.54],0.95);
+      ribbon([head,wing(along(-0.13),0.085)],0.033,[0.94,0.94,0.96],0.95);
+      ribbon([head,wing(along(-0.13),-0.085)],0.033,[0.94,0.94,0.96],0.95);
+      ribbon([along(-0.39),wing(along(-0.5),0.075)],0.032,[0.80,0.32,0.22],0.85);
+      ribbon([along(-0.39),wing(along(-0.5),-0.075)],0.032,[0.80,0.32,0.22],0.85);
     }
     this.rings = this.rings.filter(r => (r.life -= dt) > 0);
     for (const r of this.rings) {

@@ -1,13 +1,14 @@
 // Builds the real-card set from the bundled curated pool. Pure + synchronous so saves containing real cards
 // validate before anything is fetched from the network. Gameplay never depends on Scryfall availability.
 import { REAL_CREATURES, REAL_SPELLS, poolRecord } from './real-pool.js';
+import { ATTACHMENT_FACTS } from './attachments.js';
 import { toGameCard } from './compatibility.js';
 import { registerReferenceCards, referenceCards } from './catalog.js';
 import { powerRating } from '../engine/power.js';
 
 export function buildReferenceSet() {
   const ok = [], rejected = [];
-  for (const e of [...REAL_CREATURES, ...REAL_SPELLS]) {
+  for (const e of [...REAL_CREATURES, ...REAL_SPELLS, ...ATTACHMENT_FACTS]) {
     const r = toGameCard(poolRecord(e));
     if (r.ok) { r.card.rating = powerRating(r.card); ok.push(r.card); } else rejected.push({ name: e.name, reasons: r.reasons });
   }

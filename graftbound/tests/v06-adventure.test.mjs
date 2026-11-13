@@ -52,7 +52,7 @@ test('save: v0.5 run (v3) migrates to v4 idempotently, keeps everything, adds sc
   const r5 = newRun({ seed: 4 }); r5.evo = evoWith('mtg:grizzly-bears'); r5.v = 3; for (const k of ['scoring', 'journal', 'event', 'eventsSeen']) delete r5[k];
   enterNode(r5, availableNodes(r5.map, null)[0].id); r5.v = 3; r5.battle.v = 3; for (const k of ['actions', 'moves', 'tilesMoved', 'interactions']) delete r5.battle.stats[k]; delete r5.battle.crystals; delete r5.battle.cooled; delete r5.battle.bench;
   const raw = _internal.wrap(3, r5); st.setItem(KEYS.run, raw);
-  const a = store.loadRun(); assert.ok(a.migrated); assert.equal(a.run.v, 6); assert.deepEqual(a.run.evo, r5.evo); assert.deepEqual(a.run.scoring.encounters, []);
+  const a = store.loadRun(); assert.ok(a.migrated); assert.equal(a.run.v, 7); assert.deepEqual(a.run.evo, r5.evo); assert.deepEqual(a.run.scoring.encounters, []);
   assert.ok(a.run.journal.entries.some(x => x.kind === 'graft' && x.reconstructed)); assert.equal(a.run.battle.unscored, true); assert.equal(st.getItem(KEYS.run + '.pre-v3'), raw);
   const b = store.loadRun(); assert.ok(!b.migrated); assert.deepEqual(b.run, a.run);
   st.setItem(KEYS.meta, _internal.wrap(4, { v: 4, settings: { sound: false }, unlocks: {} })); const m = store.loadMeta(); assert.equal(m.settings.autoEnd, true); assert.equal(m.settings.sound, false); assert.deepEqual(m.records, {});

@@ -1,5 +1,6 @@
 // Battle HUD, input (mouse / touch / keyboard) and event playback onto the HD-2D scene.
-import { moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, intents, canAttack, player, enemies, hazardPreview, interact, interactOptions, crystalAt, guard, channel, guardValue, stanceBlockReason, stanceMovementCost } from '../engine/combat.js';
+import { moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, intents, canAttack, player, enemies, hazardPreview, interact, interactOptions, crystalAt, guard, channel, guardValue, stanceBlockReason, stanceMovementCost, discard, equipBattle, gearhulkChoice } from '../engine/combat.js';
+import { pendingChoice, gearhulkPreview } from '../engine/printed-triggers.js';
 import { TACTICS } from '../data/tactics.js';
 import { getLegalPlayerActions, shouldAutoEnd } from '../engine/legal.js';
 import { describeTile, pathWarning } from '../engine/describe.js';
@@ -12,6 +13,7 @@ import { resolveCard as getCard } from '../cards/catalog.js';
 import { KEYWORDS, keywordLabel } from '../data/keywords.js';
 import { deriveAppearance } from '../engine/appearance.js';
 import { composePlayerSheet } from '../rendering/evolution-visuals.js';
+import { composeEquippedSheet } from '../rendering/equipment-visuals.js';
 import { VFX, DEFAULT_VFX, chainHop } from '../rendering/vfx.js';
 import { castSpellVisual, withTimeout } from '../rendering/casting.js';
 import { ICON } from './icons.js';
@@ -21,7 +23,7 @@ const $ = id => document.getElementById(id);
 const SPELL_COL = { ember: [1, 0.55, 0.2], verdant: [0.5, 1, 0.4], tide: [0.4, 0.8, 1], umbral: [0.75, 0.45, 1], radiant: [1, 0.9, 0.5] };
 const SPELL_SFX = { disfigure: 'poison', titanic: 'spell', pyroclasm: 'fireboom', lightningBolt: 'lightningImpact', spark: 'zap', shock: 'shockImpact', flameSlash: 'fireboom', salve: 'heal', chain: 'thunder', fire: 'fireboom', fireball: 'fireboom', frost: 'frost', poison: 'poison', heal: 'heal', shield: 'block', growth: 'spell', drain: 'spell', summon: 'spell', wind: 'spell' };
 export const STAGE = { blank: 'Blank', stirring: 'Stirring', awakened: 'Awakened', ascendant: 'Ascendant' };
-const NO_COUNTER = { boss: 'Bosses never strike back — watch their telegraphs', flying: 'Flying — it cannot reach you', 'first strike': 'First Strike — no strike back', stunned: 'Stunned — no strike back', 'no power': 'Too weak to strike back' };
+const NO_COUNTER = { boss: 'Bosses never strike back — watch their telegraphs', tapped: 'Tapped — no reaction attack', pacifism: 'Pacifism — cannot attack or block', flying: 'Flying — it cannot reach you', 'first strike': 'First Strike — no strike back', stunned: 'Stunned — no strike back', 'no power': 'Too weak to strike back' };
 export function kwChips(keywords, cls = '') {
   return Object.entries(keywords).filter(([k]) => KEYWORDS[k]).map(([k, v]) => `<span class="chip ${cls}" tabindex="0" data-tip="${esc(KEYWORDS[k].text)}"><em>${KEYWORDS[k].glyph}</em>${esc(keywordLabel(k, v))}</span>`).join('');
 }
@@ -42,6 +44,9 @@ export class BattleUI {
       case 'cast': ev = cast(s, d.id, d.x, d.y); break;
       case 'interact': ev = interact(s, d.x, d.y); break;
       case 'end': ev = endTurn(s); break;
+      case 'discard': ev = discard(s, d.id); break;
+      case 'equip': ev = equipBattle(s,d.id,d.uid,d.slot); break;
+      case 'gearhulk': ev = gearhulkChoice(s, d.choice); break;
       case 'guard': ev = guard(s); break;
       case 'channel': ev = channel(s); break;
       default: throw new Error('Unknown action');
@@ -64,19 +69,32 @@ export class BattleUI {
       this.done = res;
       if (fresh) {
         this.busy = true; this.refresh();
-        await this.banner(s.nodeType === 'boss' ? bossNameOf(s.act) : s.nodeType === 'elite' ? 'Elite Lair · ' + s.name : s.name, s.nodeType === 'boss' ? 'boss' : '', s.nodeType === 'boss' ? bossTitleOf(s.act) : '');
+        await this.banner(s.nodeType === 'boss' ? s.name : s.nodeType === 'elite' ? 'Elite Lair · ' + s.name : s.name, s.nodeType === 'boss' ? 'boss' : '', s.nodeType === 'boss' ? bossTitleOf(s.act) : '');
+        if (s.deck) await this.deckCeremony();
         if (s.reinforced) { await this.banner(`The world answers your strength · +${s.reinforced} foe${s.reinforced > 1 ? 's' : ''}`, 'foe'); this.app.hint('reinforced', 'The stronger you become, the more foes answer. Reinforcements never have extra health — just more of them.'); }
         this.busy = false;
       }
       this.refresh(); this.tutorialHints('start'); this.checkEnd(); this.maybeAutoEnd();
     });
   }
+  /** Visual-only arcane spiral: a stationary top cover with rotating UNDERcards.
+   * Shuffling and drawing have already happened deterministically in createCombatDeck(). */
+  async deckCeremony() {
+    const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || this.app.animFactor()>50;
+    if(reduced)return;
+    const overlay=document.createElement('div');overlay.className='gb-shuffle-overlay';
+    overlay.setAttribute('aria-label','Shuffling your encounter deck');overlay.setAttribute('role','status');
+    overlay.innerHTML=`<div class="gb-shuffle-stack">${Array.from({length:8},(_,i)=>`<i class="gb-shuffle-under" style="--k:${i};--angle-a:${i*46}deg;--angle-b:${i*58+180}deg;--angle-c:${i*28}deg"></i>`).join('')}<i class="gb-shuffle-cover"></i></div><span>Arcane Shuffle · Draw 3</span>`;
+    document.body.appendChild(overlay);this.audio.play('shuffle');
+    const duration=this.app.animFactor()>1.5?550:1000;overlay.style.setProperty('--gb-shuffle-ms',duration+'ms');
+    try{await new Promise(res=>setTimeout(res,duration+50));}finally{overlay.remove();}
+  }
   stop() { this.hideHandPreview(); $('hud').classList.add('hidden'); $('labels').innerHTML = ''; this.labels.clear(); this.s = null; }
   addUnitView(u) {
     let v;
     if (u.hero) {
       const ap = deriveAppearance(this.run.evo);
-      v = this.scene.addUnit(u, 'blank'); this.scene.setUnitTexture(u.uid, composePlayerSheet(this.app.assets, ap), ap.size);
+      v = this.scene.addUnit(u, 'blank'); this.scene.setUnitTexture(u.uid, composeEquippedSheet(this.app.assets, ap, u.equipment || []), ap.size);
       v.aura = ap.effects.includes('aura') ? ap.glow : null;
       v.hover = u.keywords.flying ? 0.28 : 0;   // v0.6: fliers levitate; trample builds plant heavier steps (see play())
       v.style = { flying: !!u.keywords.flying, trample: !!u.keywords.trample, deathtouch: !!u.keywords.deathtouch, doubleStrike: !!u.keywords.doubleStrike, lifelink: !!u.keywords.lifelink,
@@ -137,6 +155,7 @@ export class BattleUI {
       <div class="pl-kw">${kwChips(p.keywords)}${d.poison ? `<span class="chip bad" tabindex="0" data-tip="Poison: lose ${d.poison} health at the start of your turn, then it drops by 1.">${ICON.poison}Poison ${d.poison}</span>` : ''}${d.grounded ? `<span class="chip bad" tabindex="0" data-tip="Grounded: no flying and −1 movement this turn.">${ICON.hook}Grounded</span>` : ''}${p.suppressed ? `<span class="chip bad" tabindex="0" data-tip="Redacted by the Unwritten for this turn only. It returns when your turn ends.">✖ ${esc(Object.keys(p.suppressed).map(k => KEYWORDS[k].name).join(', '))}</span>` : ''}</div>`;
     $('enc-turn').textContent = s.phase === 'player' ? `Turn ${s.turn} · Your move` : `Turn ${s.turn} · Foes act`;
     this.renderHand(s);
+    if(s.deck){$('tray').setAttribute('aria-label',`Spell hand · ${s.deck.hand.length} cards · library ${s.deck.library.length} · graveyard ${s.deck.graveyard.length}`);}
     this.renderStances(s);
     $('endTurn').disabled = this.busy || s.phase !== 'player';
     $('endTurn').classList.toggle('glow', s.phase === 'player' && !this.busy && !getLegalPlayerActions(s).any);
@@ -145,7 +164,7 @@ export class BattleUI {
    *  offline) with small overlays for GRAFTBOUND's adapted mana cost, level, availability and selection. */
   renderHand(s) {
     const tray = $('tray');
-    if (!s.spellbook.length) { tray.innerHTML = `<div class="tray-empty">${ICON.book}<span>Your spellbook is empty</span></div>`; return; }
+    if (!s.spellbook.length) { tray.innerHTML = `<div class="tray-empty">${ICON.book}<span>Your hand is empty · draw again next turn</span></div>`; return; }
     const scrollX = tray.scrollLeft;
     tray.classList.toggle('many', s.spellbook.length > 5);
     tray.classList.toggle('overflowing', s.spellbook.length > 7);
@@ -258,7 +277,7 @@ export class BattleUI {
     const currentPower = Math.max(0, u.power + (u.statuses?.empowered || 0) - (u.statuses?.weakened || 0));
     el.innerHTML = `
       <div class="in-head"><b>${esc(u.name)}</b><em class="role">${esc(type)}</em>${u.legendary ? '<em class="leg">Legendary</em>' : ''}<span class="pt">${currentPower}/${u.toughness}</span></div>
-      <div class="in-hp">${ICON.heart}${u.hp}/${u.maxHp}${u.statuses?.shield ? ` · ${ICON.shield}${u.statuses.shield}` : ''}${u.boss ? ` · Phase ${bossPhaseOf(u)}/3 · ${esc(bossPhaseName(u))}` : ''}</div>
+      <div class="in-hp">${ICON.heart}${u.hp}/${u.maxHp}${u.statuses?.shield ? ` · ${ICON.shield}${u.statuses.shield}` : ''}${u.boss ? ` · Printed ${u.power}/${u.toughness} · Legendary Vitality +${u.legendaryVitality || 0} · Deathtouch cannot instantly destroy this boss · Phase ${bossPhaseOf(u)}/3 · ${esc(bossPhaseName(u))}` : ''}</div>
       <p class="in-stats">Movement ${u.move} · Base attack ${u.power}${currentPower !== u.power ? ` → <b>${currentPower} buffed</b>` : ''} · ${friendly ? 'Friendly' : 'Hostile'}</p>
       ${Object.keys(u.keywords || {}).length ? `<div class="in-kw">${kwChips(u.keywords)}</div>` : ''}
       ${statuses ? `<div class="in-status">${statuses}</div>` : ''}
@@ -354,7 +373,8 @@ export class BattleUI {
     el.classList.add('show');
   }
   maybeAutoEnd() {
-    const s = this.s; const enabled = this.app.meta.settings.autoEnd !== false;
+    const s = this.s;
+    if (s && s.phase === 'player' && !this.busy && pendingChoice(s)) { this.chooseGearhulk(); return; } const enabled = this.app.meta.settings.autoEnd !== false;
     if (this.autoEnding || !shouldAutoEnd(s, { busy: this.busy, targeting: !!this.spell, enabled })) return;
     if ((this.autoEnds || 0) >= 25) return;   // safety valve: a long stun-lock never loops unattended
     this.autoEnding = true; this.app.status('No actions left — your turn ends');
@@ -426,7 +446,7 @@ export class BattleUI {
     if (this.busy) return;
     this.busy = true; this.pendingTap = null; this.showInspect(null); this.scene.setOverlay([]); this.syncDisp();
     let ev;
-    try { ev = await fn(); } catch (err) { this.busy = false; this.reject(err.message || 'Not allowed'); this.refresh(); return; }
+    try { ev = await fn(); } catch (err) { this.busy = false; this.reject(err.message || 'Not allowed'); this.refresh(); this.maybeAutoEnd(); return; }
     this.app.save(); this.renderHUD();
     await this.play(ev);
     this.busy = false; this.syncDisp(); this.refresh(); this.tutorialHints('after'); this.checkEnd(); this.maybeAutoEnd();
@@ -438,8 +458,35 @@ export class BattleUI {
   }
   async doEndTurn() {
     if (this.busy || !this.s || this.s.phase !== 'player') return;
+    if(this.s.deck && ((this.s.deck.pendingDiscards||0)>0 || this.s.deck.hand.length>this.s.deck.capacity)) { this.chooseDiscard();return;}
     this.spell = null; this.audio.play('click');
     await this.act(() => this.exec({ type: 'end' }));
+  }
+  /** Called after any modal closes: a pending printed choice can't be dismissed, only answered. */
+  reopenPendingChoice() { const s = this.s; if (s && s.phase === 'player' && !this.busy && pendingChoice(s) && !document.querySelector('#modal.show')) this.chooseGearhulk(); }
+  /** Combustible Gearhulk's printed ETB: you are the target opponent and must choose. Not dismissible. */
+  chooseGearhulk() {
+    const s = this.s; const pc = pendingChoice(s); if (!pc || document.querySelector('#modal.show [data-gearhulk]')) return;
+    const pv = gearhulkPreview(s);
+    const modal = this.app.openModal(`<h2>Combustible Gearhulk</h2>
+      <p>Target opponent (you) chooses:</p>
+      <div class="gb-discard-list">
+        <button type="button" class="btn primary" data-gearhulk="draw">Let it draw ${pv.drawCount}<small> · the opponent may cast one drawn creature each enemy turn</small></button>
+        <button type="button" class="btn danger" data-gearhulk="mill">Mill ${pv.millCount}<small> · you take damage equal to their total mana value (up to ${pv.maxDamage})</small></button>
+      </div><p class="gb-note"><small>Encounter adaptation: the opponent's library is the curated set of real enemy cards.</small></p>`);
+    modal.addEventListener('click', async e => {
+      const b = e.target.closest('[data-gearhulk]'); if (!b) return;
+      this.app.closeModal();
+      await this.act(() => this.exec({ type: 'gearhulk', choice: b.dataset.gearhulk }));
+    });
+  }
+  chooseDiscard() {
+    const deck=this.s?.deck;if(!deck)return;
+    const needed=Math.max(deck.pendingDiscards||0,Math.max(0,deck.hand.length-deck.capacity));
+    if(!needed)return;
+    const choices=deck.hand.map(entry=>{const c=getCard(entry.id);return `<button type="button" class="btn gb-discard-choice" data-discard="${esc(entry.id)}">Discard ${esc(c?.name||entry.id)}</button>`;}).join('');
+    const modal=this.app.openModal(`<h2>Discard ${needed} card${needed===1?'':'s'}</h2><p>Choose a card for the graveyard. All cards remain in your permanent run collection.</p><div class="gb-discard-list">${choices}</div><div class="modal-actions"><button class="btn" data-close>Cancel</button></div>`);
+    modal.addEventListener('click',async e=>{const b=e.target.closest('[data-discard]');if(!b)return;const id=b.dataset.discard;this.app.closeModal();await this.act(()=>this.exec({type:'discard',id}));if(this.s?.deck && ((this.s.deck.pendingDiscards||0)>0 || this.s.deck.hand.length>this.s.deck.capacity))this.chooseDiscard();});
   }
   checkEnd() { if (!this.s) return; if (this.s.phase === 'won' || this.s.phase === 'lost') { const r = this.s.phase; const done = this.done; this.done = null; if (done) setTimeout(() => done(r), 300 / this.app.animFactor()); } }
   float(uid, text, cls) {
@@ -498,6 +545,7 @@ export class BattleUI {
         case 'counter': await this.wait(e.first ? 40 : 110); await sc.lunge(e.uid, e.target); this.float(e.uid, e.first ? 'First Strike!' : 'Strikes back', 'note'); break;
         case 'noCounter': this.float(e.uid, esc(NO_COUNTER[e.reason] || 'No strike back'), 'note'); break;
         case 'capped': this.float(e.uid, `Unyielding: ${e.from} → ${e.to}`, 'note'); break;
+        case 'deathtouchResisted': this.float(e.uid, 'Legendary: resists Deathtouch', 'blocked'); au.play('armor'); break;
         case 'armored': au.play('armor'); this.float(e.uid, `▣ −${e.amount}`, 'blocked'); break;
         case 'damage': {
           if (e.kind === 'strike2') { const atk = events.slice(0, idx).reverse().find(x => x.t === 'attack'); if (atk) { this.float(atk.uid, 'Double Strike!', 'note'); await sc.lunge(atk.uid, e.uid); } }
@@ -531,9 +579,18 @@ export class BattleUI {
         case 'spines': break;
         case 'aim': au.play(e.slam ? 'slam' : 'aim'); sc.play(e.uid, 'cast'); if (e.slam) this.float(e.uid, { root: 'Root Slam!', fire: 'Flames gather!', void: 'Erasure!' }[e.kind] || 'Danger!', 'warn'); this.scene.setDanger(e.tiles); await this.wait(260); break;
         case 'hex': { au.play('spell'); sc.play(e.uid, 'cast'); await sc.projectile(sc.centerPos(e.uid), sc.centerPos(e.target), [0.85, 0.3, 0.9], 0.3, 0.3); break; }
+        case 'rangedShot': {
+          au.play('fire');sc.play(e.uid,'attack');
+          const source=sc.units.get(e.uid),target=sc.units.get(e.target);
+          if(source&&target){sc.face(source,sc.centerPos(e.target));
+            if(e.kind==='spikeshot')await sc.arrowProjectile(sc.centerPos(e.uid),sc.centerPos(e.target));
+            else await sc.projectile(sc.centerPos(e.uid),sc.centerPos(e.target),[1,0.48,0.18],0.25,0.12,{embers:true,size:18});
+          }
+          break;
+        }
         case 'harpoon': { au.play('fire'); sc.play(e.uid, 'attack'); await sc.projectile(sc.centerPos(e.uid), sc.centerPos(e.target), [0.85, 0.9, 1], 0.2, 0.05, { size: 18 }); break; }
         case 'spit': { au.play('fire'); sc.play(e.uid, 'attack'); await sc.projectile(sc.centerPos(e.uid), sc.centerPos(e.target), [0.75, 0.4, 1], 0.25); break; }
-        case 'fire': { au.play('fire'); sc.play(e.uid, 'attack'); const a = sc.centerPos(e.uid); const end = e.tiles.at(-1) || { x: 0, y: 0 }; const victim = e.tiles.map(t => this.s.units.find(u => u.x === t.x && u.y === t.y && u.uid !== e.uid && u.hp >= 0)).find(Boolean); const b = victim && sc.units.get(victim.uid) ? sc.centerPos(victim.uid) : [...this.tile(end.x, end.y)]; await sc.projectile(a, b, [0.9, 1, 0.6], 0.22, 0.15); break; }
+        case 'fire': { au.play('fire'); sc.play(e.uid, 'attack'); const a = sc.centerPos(e.uid); const end = e.tiles.at(-1) || { x: 0, y: 0 }; const victim = e.tiles.map(t => this.s.units.find(u => u.x === t.x && u.y === t.y && u.uid !== e.uid && u.hp >= 0)).find(Boolean); const b = victim && sc.units.get(victim.uid) ? sc.centerPos(victim.uid) : [...this.tile(end.x, end.y)]; if(this.s.units.find(u=>u.uid===e.uid)?.defId==='archer')await sc.arrowProjectile(a,b,0.33); else await sc.projectile(a, b, [0.9, 1, 0.6], 0.22, 0.15); break; }
         case 'slamHit': {
           au.play(e.kind === 'fire' ? 'fireboom' : 'slam'); if (!sc.reduced) sc.shake(0.25); sc.play(e.uid, 'attack');
           const col = e.kind === 'fire' ? [1, 0.5, 0.15] : e.kind === 'void' ? [0.75, 0.4, 1] : [0.5, 0.4, 0.25];
@@ -589,6 +646,17 @@ export class BattleUI {
         case 'mirror': { sc.screenFlash([0.85, 0.8, 1], 0.25); this.float(e.uid, `Copies your ${KEYWORDS[e.keyword].name}!`, 'warn'); au.play('spell'); await this.wait(300); break; }
         case 'bossPhase': this.audio.play('bossPhase'); sc.screenFlash([0.6, 0.35, 0.15], 0.3); if (!sc.reduced) sc.shake(0.12); await this.banner(e.phase ? `Phase ${e.phase} · ${e.text}` : (e.text || 'The foe changes'), 'boss'); break;
         case 'stunnedSkip': this.float(e.uid, 'Stunned', 'note'); await this.wait(200); break;
+        case 'cardDraw': au.play('flip'); break;
+        case 'deckReshuffle': au.play('flip'); if (sc.units.get(e.uid)) this.float(e.uid, `Graveyard reshuffled · ${e.count} card${e.count === 1 ? '' : 's'}`, 'note'); break;
+        case 'equipmentAttach': {au.play('click'); const hero=this.s?.units.find(u=>u.hero); if(hero){const ap=deriveAppearance(this.run.evo);this.scene.setUnitTexture(hero.uid,composeEquippedSheet(this.app.assets,ap,hero.equipment||[]),ap.size);}break;}
+        case 'cardDiscard': au.play('flip'); this.float(player(this.s).uid,'Card to graveyard','note'); break;
+        case 'auraAttach': {const w=this.tile(e.x,e.y);sc.fx.burst([w[0],0.4,w[2]],[0.85,0.65,1],16,{speed:0.7,up:1.3});au.play('spell');this.float(e.uid,esc(e.name||'Enchanted'),'note');break;}
+        case 'auraBreak': au.play('block'); this.float(e.uid,'Aura shattered','warn'); break;
+        case 'revive': au.play('heal');this.float(e.uid,'Gift of Immortality!','note');break;
+        case 'legendaryFlame': au.play('fireboom');sc.screenFlash([1,0.45,0.18],0.35);break;
+        case 'legendaryAbility': au.play('bossPhase'); if (e.name && sc.units.get(e.uid)) this.float(e.uid, esc(e.name), 'note'); break;
+        case 'realAbility': if (e.name && sc.units.get(e.uid)) { this.float(e.uid, esc(e.name), 'note'); await this.wait(180); } break;
+        case 'shinobiExile': au.play('flip'); if (sc.units.get(e.uid)) this.float(e.uid, `Exiled: ${esc(e.name)}`, 'warn'); await this.wait(220); break;
         case 'victory': au.play('victory'); await this.banner('Victory', 'win'); break;
         case 'defeat': au.play('defeat'); await this.banner('The graft unravels', 'lose'); break;
       }

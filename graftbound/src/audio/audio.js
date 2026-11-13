@@ -88,6 +88,7 @@ export class Audio {
       case 'terrainSpore': this.noise(0.38, { freq: 420, vol: 0.1, sweep: 0.7, q: 3 }); break;
       case 'terrainCollapse': this.noise(0.4, { freq: 340, vol: 0.23, sweep: 0.25, type: 'lowpass' }); break;
       case 'tear': this.noise(0.45, { freq: 3500, vol: 0.35, sweep: 0.4, q: 1.5 }); this.tone(98, 0.6, { vol: 0.25, slide: 0.6 }); break;
+      case 'shuffle': this.noise(0.75, {freq:1950,vol:0.08,q:1.5,sweep:1.4});[330,440,554].forEach((f,i)=>this.tone(f,0.28,{vol:0.045,delay:0.28+i*0.08,verb:0.4}));break;
       case 'flip': this.noise(0.12, { freq: 2000, vol: 0.2, q: 3, sweep: 1.8 }); this.tone(700, 0.15, { vol: 0.08 }); break;
       case 'uncommon': [659, 988].forEach((f, i) => this.tone(f, 0.5, { vol: 0.08, delay: i * 0.07, verb: 0.6 })); break;
       case 'rare': [523, 659, 784, 1046, 1318].forEach((f, i) => this.tone(f, 0.8, { vol: 0.1, delay: i * 0.07, verb: 0.7 })); break;

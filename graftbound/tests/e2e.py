@@ -91,6 +91,10 @@ with sync_playwright() as p:
     if wait_screen(pg, "#pack", 8) and pg.evaluate("window.__LC.run.pending && window.__LC.run.pending.tier==='primer'"):   # v0.8 Spell Primer
         check("v0.8: the Spell Primer offers 3 spells after the first victory", pg.evaluate("window.__LC.run.pending.cards.length") == 3)
         open_pack(pg); take(pg, pg.evaluate("window.__LC.run.pending.cards[0]"))
+    # v1.2: the first cleared level offers Pack 3 of 3 (another standard booster). Skip it so the 2/2 Deathtouch check holds.
+    for _ in range(2):
+        if not (wait_screen(pg, "#pack", 6) and pg.evaluate("!!(window.__LC.run.pending)")): break
+        open_pack(pg); pg.click("#rw-skip", force=True); time.sleep(0.4); pg.click(".modal-box [data-yes]", force=True); time.sleep(0.6); idle(pg, 20)
     wait_screen(pg, "g.node.avail")
     evo = pg.evaluate("window.__LC.run.evo")
     check("grafted: 2/2 Deathtouch from a real card", evo['power'] == 2 and evo['toughness'] == 2 and evo['keywords'] == {'deathtouch': 1} and evo['absorbed'][0]['cardId'] == 'mtg:typhoid-rats')

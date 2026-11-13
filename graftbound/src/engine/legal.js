@@ -1,7 +1,8 @@
 // v0.6 centralized legal-action evaluator (v0.8: + tactical stances). Pure: reuses the combat engine's own rules,
 // so "is anything left to do?" can never disagree with what the engine would accept.
-import { moveOptions, attackTargets, castOptions, interactOptions, stanceBlockReason, intents, player } from './combat.js';
+import { moveOptions, attackTargets, castOptions, interactOptions, equipmentOptions, stanceBlockReason, intents, player } from './combat.js';
 import { spellCost } from './spells.js';
+import { pendingChoice } from './printed-triggers.js';
 import { resolveCard } from '../cards/catalog.js';
 
 /** Guard is worth offering only when a foe actually threatens you; Channel only when +1 mana unlocks a cast. */
@@ -21,10 +22,13 @@ export function usefulStances(s) {
 
 export function getLegalPlayerActions(s) {
   if (!s || s.phase !== 'player') return { move: [], attack: [], spells: [], interact: [], stances: [], any: false };
+  // A pending printed choice (Combustible Gearhulk) must be answered; never auto-end past it.
+  if (pendingChoice(s)) return { move: [], attack: [], spells: [], interact: [], stances: [], equipment: [], choice: pendingChoice(s), any: true };
   const move = moveOptions(s), attack = attackTargets(s).map(u => u.uid), interact = interactOptions(s);
   const spells = s.spellbook.map(e => e.id).filter(id => castOptions(s, id).length > 0);
   const stances = usefulStances(s);
-  return { move, attack, spells, interact, stances, any: move.length + attack.length + spells.length + interact.length + stances.length > 0 };
+  const equipment=equipmentOptions(s);
+  return { move, attack, spells, interact, stances, equipment, any: move.length + attack.length + spells.length + interact.length + stances.length + equipment.length > 0 };
 }
 export const hasLegalPlayerAction = s => getLegalPlayerActions(s).any;
 /** Auto-end gate: only during an idle player phase (never mid-animation, mid-targeting or after victory). */

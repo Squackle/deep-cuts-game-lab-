@@ -12,6 +12,7 @@ import { reconstructJournal } from './journal.js';
 import { newClock } from './clock.js';
 import { ACTS } from '../data/encounters.js';
 import { BASE_HAND_CAPACITY, MAX_HAND_CAPACITY } from './loadout.js';
+import { newWorldThreat, normalizedWorldThreat } from './world-threat.js';
 
 export const KEYS = { run: 'deepcutsedh.livingcard.run', meta: 'deepcutsedh.livingcard.meta' };
 const BAK = '.bak', BAD = '.corrupt', PRE = '.pre-v';
@@ -81,6 +82,12 @@ RUN_MIGRATIONS[5] = r => {
   if (r.battle) { r.battle.v = 6; r.battle.terrainTimers = r.battle.terrainTimers || []; }
   return r;
 };
+RUN_MIGRATIONS[6] = r => {
+  r.v = 7; r.worldThreat = normalizedWorldThreat(r.worldThreat || newWorldThreat());
+  r.equipmentInventory=r.equipmentInventory||[];r.equippedEquipment=r.equippedEquipment||[null,null];
+  // In-progress v1.1.1 battles are preserved byte-for-byte: new encounters use the new rules.
+  return r;
+};
 export const META_MIGRATIONS = {
   1: m => { m.v = 2; m.settings = { ...DEFAULT_SETTINGS, ...(m.settings || {}) }; return m; },
   2: m => { m.v = 3; return m; },
@@ -103,6 +110,8 @@ export function validateRun(r) {
     for (const a of e.absorbed || []) if (!resolveCard(a.cardId)) errs.push('card ' + a.cardId);
   }
   if (!Array.isArray(r && r.spellbook) || r.spellbook.some(s => !resolveCard(s.id) || !isNum(s.level))) errs.push('spellbook');
+  if (!Array.isArray(r?.equipmentInventory)||!Array.isArray(r?.equippedEquipment)||r.equippedEquipment.length!==2||r.equippedEquipment.some(id=>id&&!r.equipmentInventory.includes(id))) errs.push('equipment inventory');
+  if (!r?.worldThreat || !Number.isInteger(r.worldThreat.level) || r.worldThreat.level < 0 || r.worldThreat.level > 12) errs.push('world threat');
   if (!Number.isInteger(r?.handCapacity) || r.handCapacity < BASE_HAND_CAPACITY || r.handCapacity > MAX_HAND_CAPACITY) errs.push('hand capacity');
   if (!Array.isArray(r?.equippedSpellIds) || r.equippedSpellIds.length > (r.handCapacity || 0) || new Set(r.equippedSpellIds).size !== r.equippedSpellIds.length || r.equippedSpellIds.some(id => !r.spellbook?.some(e => e.id === id))) errs.push('equipped spells');
   if (!r || !r.map || !Array.isArray(r.map.nodes) || !r.map.nodes.length) errs.push('map');

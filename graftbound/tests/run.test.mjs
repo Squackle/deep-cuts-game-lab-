@@ -19,7 +19,9 @@ test('ACCEPTANCE: Blank 1/1 -> win -> 3 real cards -> graft real 1/1 Deathtouch 
   const b = run.battle; const st = moveOptions(b)[0]; movePlayer(b, st.x, st.y); win(run);
   assert.equal(run.pending.cards.length, 3); assert.ok(run.pending.cards.includes(TUTORIAL_CARD)); assert.ok(run.pending.cards.every(id => id.startsWith('mtg:')));
   const ch = chooseReward(run, TUTORIAL_CARD); assert.equal(ch.kind, 'absorb');
-  assert.equal(run.pending.tier, 'primer', 'v0.8: the Spell Primer follows the first victory'); skipReward(run);
+  assert.equal(run.pending.tier, 'primer', 'Spell Primer is second pack'); skipReward(run);
+  assert.equal(run.pending.firstVictoryPacks.index, 3); skipReward(run);
+  assert.equal(run.phase, 'map');
   assert.deepEqual([run.evo.power, run.evo.toughness, run.evo.keywords.deathtouch], [2, 2, 1]);
   enterNode(run, availableNodes(run.map, run.current)[0].id);
   const p = player(run.battle); assert.deepEqual([p.power, p.toughness, p.keywords.deathtouch], [2, 2, 1]);
@@ -36,7 +38,8 @@ test('wounds: a victory restores half the missing health; the next battle starts
   const run = newRun({ seed: 77, tutorial: true }); enterNode(run, 0);
   const h = player(run.battle); h.hp = 3; run.battle.units.filter(u => u.side === 'enemy').forEach(u => (u.hp = 0)); run.battle.phase = 'won';
   concludeBattle(run); assert.equal(run.hp, 3 + Math.ceil((7 - 3) / 2)); assert.equal(woundsOf(run), 2);
-  chooseReward(run, run.pending.cards.find(id => resolveCard(id).kind === 'spell')); skipReward(run);   // decline the Spell Primer (+1 Spark)
+  chooseReward(run, run.pending.cards.find(id => resolveCard(id).kind === 'spell')); skipReward(run);   // decline Spell Primer (+1 Spark)
+  chooseReward(run, run.pending.cards.find(id => resolveCard(id).kind === 'spell')); // third pack, no additional Spark
   enterNode(run, availableNodes(run.map, run.current)[0].id); assert.equal(player(run.battle).hp, 6, '5 + 1 from the declined primer Spark');
 });
 test('graft capacity (4/6/8 by act): when full you must release a graft; release is exact', () => {
@@ -86,7 +89,7 @@ test('v0.4 (run v2) saves migrate without data loss: legacy grafts kept exactly,
   const old = { ...JSON.parse(JSON.stringify(v04)), v: 2, contentMode: 'original', evo, spellbook: [{ id: 'ember_dart', level: 2 }, { id: 'mtg:shock', level: 1 }] };
   for (const k of ['act', 'actHistory', 'manaBonus', 'sparkFonts', 'wardNext', 'hp', 'shrine']) delete old[k];
   const raw = _internal.wrap(2, old); st.setItem(KEYS.run, raw);
-  const r = store.loadRun(); assert.ok(r.migrated); assert.equal(r.run.v, 6); assert.equal(r.run.act, 0);
+  const r = store.loadRun(); assert.ok(r.migrated); assert.equal(r.run.v, 7); assert.equal(r.run.act, 0);
   assert.deepEqual(r.run.evo.absorbed.map(a => a.cardId), ['nightcap_toad', 'galecrest_roc', 'sable_adder'], 'legacy cards never swapped');
   assert.deepEqual([r.run.evo.power, r.run.evo.toughness], [evo.power, evo.toughness]); assert.equal(r.run.evo.legacyResonance, 1); assert.equal(r.run.evo.resonance, 0);
   assert.deepEqual(r.run.spellbook, old.spellbook); assert.equal(st.getItem(KEYS.run + '.pre-v2'), raw, 'untouched v0.4 save kept');
