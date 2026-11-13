@@ -68,6 +68,8 @@ export function enterNode(run, nodeId) {
   const enc = buildEncounter(tpl, node.seed, node.type);
   const battle = createBattle({ evo: run.evo, stats: runStats(run), spellbook: run.spellbook.map(e=>({...e})), deckMode:true, handCapacity:run.handCapacity, encounter: enc, seed: node.seed, heroName: run.name, startHp: run.hp, act: run.act });
   attachRunEquipment(run,battle.units.find(u=>u.hero));
+  battle.equipmentInventory=[...(run.equipmentInventory||[])];
+  battle.heroEquipmentSlots=[...(run.equippedEquipment||[null,null])];
   if (run.wardNext) { const h = battle.units.find(u => u.hero); h.statuses.shield = (h.statuses.shield || 0) + run.wardNext; run.wardNext = 0; }
   if (run.challenges.includes('feral')) for (const u of battle.units) if (u.side === 'enemy') u.power += 1;
   battle.nodeType = node.type; battle.reinforced = extra.length; battle.nodeId = nodeId;
@@ -93,6 +95,8 @@ export function concludeBattle(run) {
   const isBoss = b.nodeType === 'boss';
   if (isBoss) { run.stats.bossesDefeated++; setHp(run, max); journalNote(run, 'boss', { name: b.name }); }                 // act boss: full recovery
   else setHp(run, hero.hp + Math.ceil((max - hero.hp) * RECOVERY));          // otherwise: half the missing health returns
+  // A recorded paid Equip action persists the hero's selected inventory slots.
+  if(b.heroEquipmentSlots)run.equippedEquipment=b.heroEquipmentSlots.map(id=>id&&(b.destroyedEquipment||[]).includes(id)?null:id);
   // An enemy with an actual destroy-artifact ability can remove persistent Gear.
   if(b.destroyedEquipment?.length){
     const lost=new Set(b.destroyedEquipment);
