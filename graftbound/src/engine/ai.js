@@ -447,7 +447,7 @@ export function actEnemy(s, ev, e) {
         break;
       }
       case 'realPing': {
-        if(e.tapped || !alive(hero))break;
+        if(e.tapped || !alive(hero) || (e.defId==='harpooner' && hero.keywords?.hexproof))break;
         e.tapped=true;
         ev.push({t:'realAbility',uid:e.uid,name:a.name,target:hero.uid});
         if(a.damage>0)dealDamage(s,ev,e,hero,a.damage,{kind:'spelllike'});
@@ -458,7 +458,7 @@ export function actEnemy(s, ev, e) {
         e.spellUsed=true;s.enemySpellsCastThisTurn=(s.enemySpellsCastThisTurn||0)+1;attachAura(ally,'mtg:one-with-the-wind');
         ev.push({t:'auraAttach',uid:ally.uid,id:'mtg:one-with-the-wind',name:'One with the Wind',x:ally.x,y:ally.y,src:e.uid});
         // Enchantment CAST triggers -2/-2 until end of turn on target hero.
-        if(alive(hero)){hero.power=Math.max(0,hero.power-2);hero.toughness=Math.max(0,hero.toughness-2);
+        if(alive(hero) && !hero.keywords?.hexproof){hero.power=Math.max(0,hero.power-2);hero.toughness=Math.max(0,hero.toughness-2);
           hero.maxHp=Math.max(0,hero.maxHp-2);hero.hp=Math.min(hero.hp,hero.maxHp);
           hero.statuses.blightcasterDebuff=(hero.statuses.blightcasterDebuff||0)+2;
           ev.push({t:'realAbility',uid:e.uid,name:'Blightcaster · -2/-2',target:hero.uid});

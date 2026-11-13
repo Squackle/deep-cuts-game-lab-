@@ -32,6 +32,10 @@ export function refreshTribalBonuses(s,ev=[]) {
       }
     }
     const total=timber+ambush+minotaur,delta=total-(u.tribalBonus||0);
+    // Rageblood Shaman also grants Trample to OTHER Minotaurs. Preserve
+    // printed/intrinsic Trample if the source leaves the battlefield.
+    if(minotaur>0){if(!u.keywords.trample)u.tribalOnlyTrample=true;u.keywords.trample=1;}
+    else if(u.tribalOnlyTrample){delete u.keywords.trample;u.tribalOnlyTrample=false;}
     if(!delta)continue;
     u.tribalBonus=total;u.power=Math.max(0,u.power+delta);u.toughness=Math.max(0,u.toughness+delta);
     u.maxHp=Math.max(0,u.maxHp+delta);u.hp=Math.max(0,Math.min(u.maxHp,u.hp+Math.max(0,delta)));

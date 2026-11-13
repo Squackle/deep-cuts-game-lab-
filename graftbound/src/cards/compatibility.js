@@ -74,7 +74,7 @@ export function toGameCard(sf) {
     const type = (sf.typeLine.split('—')[1] || 'Creature').trim();
     return { ok: true, card: { ...base, kind: 'creature', type, power: +sf.power, toughness: +sf.toughness, keywords: kws, parts: partsFor(kws, sf.typeLine), art: null, flavor: '' } };
   }
-  const special = ATTACHMENT_BY_NAME[sf.name];
+  const special = ATTACHMENT_BY_NAME[sf.name] || Object.entries(ATTACHMENT_BY_NAME).find(([name]) => name.toLowerCase() === sf.name.toLowerCase())?.[1];
   if(special){
     return { ok:true, card: {...base,kind:special.kind,effect:special.kind,cost:special.cmc,equipCost:special.equip||0,
       target:special.target||'self',category:special.kind,text:special.oracle,keywords:Object.fromEntries(special.keywords.map(k=>[k,1])),

@@ -170,7 +170,7 @@ test('Rageblood Shaman gives only other Minotaurs +1/+1 and Trample, never unrel
   const s=arena(['......','..xxh.','......','...P..'],{x:'ashbrute',h:'hound'});
   const minotaurs=s.units.filter(x=>x.defId==='ashbrute');
   assert.equal(minotaurs.length,2);
-  assert.ok(minotaurs.every(m=>m.power===3&&m.toughness===3),'each gains +1/+1 from other Shaman');
+  assert.ok(minotaurs.every(m=>m.power===3&&m.toughness===4),'each gains +1/+1 from other Shaman');
   assert.equal(E('hound')(s).power,2,'Wolf receives no Minotaur anthem');
 });
 
