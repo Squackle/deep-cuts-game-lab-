@@ -2,7 +2,7 @@
 // rules-only verifier. Pure + DOM-free: the SAME module runs in the browser and in a Cloudflare Worker.
 // The replay never carries damage, scores or random outcomes — only the player's accepted decisions.
 import { newRun, enterNode, concludeBattle, chooseReward, skipReward, shrineChoice, eventChoice } from './run.js';
-import { movePlayer, attack, cast, endTurn, interact, guard, channel, discard } from './combat.js';
+import { movePlayer, attack, cast, endTurn, interact, guard, channel, discard, equipBattle } from './combat.js';
 import { expeditionTotals } from './scoring.js';
 import { SCORING_VERSION } from '../data/scoring.js';
 
@@ -35,7 +35,7 @@ const INT = v => Number.isSafeInteger(v) && v >= 0 && v < 1e6;
 const ID = v => typeof v === 'string' && /^[a-z0-9:_-]{1,64}$/i.test(v);
 const SHAPES = {
   node: { node: INT }, move: { x: INT, y: INT }, attack: { uid: INT }, cast: { id: ID, x: INT, y: INT }, interact: { x: INT, y: INT },
-  end: {}, guard: {}, channel: {}, discard: {id:ID}, reward: { card: ID, release: v => v === undefined || INT(v) }, skip: {}, shrine: { choice: ID, arg: v => v === undefined || INT(v) || ID(v) },
+  end: {}, guard: {}, channel: {}, discard: {id:ID}, equip: {id:ID,uid:INT,slot:INT}, reward: { card: ID, release: v => v === undefined || INT(v) }, skip: {}, shrine: { choice: ID, arg: v => v === undefined || INT(v) || ID(v) },
   event: { choice: ID, arg: v => v === undefined || INT(v) || ID(v) },
 };
 /** Strict envelope validation: exact keys, typed values, contiguous sequence. */
@@ -61,6 +61,7 @@ export function applyDecision(run, d) {
     case 'interact': need('battle'); interact(b, d.x, d.y); break;
     case 'end': need('battle'); endTurn(b); break;
     case 'discard': need('battle'); discard(b,d.id); break;
+    case 'equip': need('battle'); equipBattle(b,d.id,d.uid,d.slot); break;
     case 'guard': need('battle'); guard(b); break;
     case 'channel': need('battle'); channel(b); break;
     case 'reward': need('reward'); chooseReward(run, d.card, d.release); break;
