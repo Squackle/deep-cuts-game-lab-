@@ -270,7 +270,7 @@ class App {
     this.scene.dof = 1.6;
     if (!this.run.pending.cards.length) { this.run.pending = null; this.run.phase = 'map'; this.save(); return this.goMap(); }
     if (this.run.phase === 'won') return this.endRun(true);
-    const { choice, rect, release } = await UI.rewardScreen(this, this.run.pending.cards, { tier: this.run.pending.tier, severed: this.run.pending.severed });
+    const { choice, rect, release } = await UI.rewardScreen(this, this.run.pending.cards, { tier: this.run.pending.tier, severed: this.run.pending.severed, firstVictoryPacks: this.run.pending.firstVictoryPacks });
     if (choice === 'skip') { skipReward(this.run); this.record({ type: 'skip' }); this.save(); this.toast('<b>+1 Spark</b>'); }
     else {
       const evoBefore = this.run.evo; let change;

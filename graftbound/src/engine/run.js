@@ -109,6 +109,9 @@ export function concludeBattle(run) {
   const tier = isBoss ? 'boss' : b.nodeType === 'elite' ? 'elite' : 'battle';
   const forced = b.nodeType === 'tutorial' ? [TUTORIAL_CARD] : [];
   run.pending = { cards: generatePack(b.rng.s ^ 0x5eed, { tier, forced, ...packOpts(run) }), tier, boss: isBoss };
+  // The first level grants three reward choices, each its own pack.
+  if (run.stats.battlesWon === 1 && run.act === 0 && !run.primerDone)
+    run.pending.firstVictoryPacks = { index: 1, total: 3, seed: (b.rng.s ^ 0x5eed) >>> 0 };
   run.lastBattle = summarize(b);
   run.battle = null; run.phase = 'reward';
   return { outcome: 'won', boss: isBoss, elite: b.nodeType === 'elite', battleStats: b.stats };
@@ -158,7 +161,21 @@ export function skipReward(run) {
   return { kind: 'spark', amount: 1 };
 }
 function finishReward(run) {
-  const boss = run.pending && run.pending.boss; const tier = run.pending && run.pending.tier; run.pending = null;
+  const boss = run.pending && run.pending.boss; const tier = run.pending && run.pending.tier;
+  const sequence = run.pending?.firstVictoryPacks;
+  run.pending = null;
+  if (sequence && sequence.index < sequence.total) {
+    const next = { ...sequence, index: sequence.index + 1 };
+    if (next.index === 2 && !run.primerDone) {
+      run.primerDone = true;
+      const cards = primerPack(run.seed, { spellbook: run.spellbook });
+      if (cards.length) { run.pending = { cards, tier: 'primer', boss, firstVictoryPacks: next }; run.phase = 'reward'; return; }
+    }
+    const seed = (sequence.seed ^ Math.imul(next.index, 0x9e3779b1)) >>> 0;
+    const cards = generatePack(seed, { tier: 'battle', ...packOpts(run) });
+    run.pending = { cards, tier: 'battle', boss, firstVictoryPacks: next };
+    run.phase = 'reward'; return;
+  }
   // v0.8 Spell Primer: after the FIRST victory reward of an adventure, a free, separate spells-only choice
   // (3 affordable spells from different tactical roles). Skippable for +1 Spark like any pack. Once per adventure.
   if (!run.primerDone && tier !== 'primer' && (run.stats.battlesWon || 0) >= 1 && (run.act || 0) === 0) {

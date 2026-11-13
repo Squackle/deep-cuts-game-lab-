@@ -28,7 +28,7 @@ export const SPELL_ADAPTATIONS = {
   'Giant Growth':       { effect: 'sap_surge', cost: 1, vfx: 'growth',  note: 'Adapted: give target creature exactly +3/+3 until end of turn, following printed numbers.' },
   'Drain Life':         { effect: 'soul_siphon', cost: 2, vfx: 'drain', note: 'Adapted: 2 damage to a foe and you heal that much. X is not modeled.' },
   'Infest':             { effect: 'venom_mist', cost: 2, vfx: 'poison', note: 'Adapted: Poison 2 to foes in a 3×3 area (instead of −2/−2 to all creatures).' },
-  'Raise the Alarm':    { effect: 'call_sproutling', cost: 2, vfx: 'summon', note: 'Adapted: summon one 2/2 Soldier ally beside you for this battle (instead of two 1/1s).' },
+  'Raise the Alarm':    { effect: 'call_sproutling', cost: 2, vfx: 'summon', note: 'Adapted: create two separate 1/1 white Soldier creature tokens on empty nearby tiles; they remain for this battle.', text: 'Create two 1/1 white Soldier creature tokens on two empty nearby tiles.' },
   'Healing Hands':      { effect: 'mending_rain', cost: 2, vfx: 'heal',  note: 'Adapted: heal 4 and cleanse poison and weakness; card draw is not modeled.' },
   'Healing Salve':      { effect: 'mending_rain', bonus: -1, cost: 1, vfx: 'salve', note: 'Adapted: heal 3 and cleanse.' },
   'Feat of Resistance': { effect: 'barkskin', cost: 1, vfx: 'shield', note: 'Adapted: give one friendly creature 3 shield; counters and protection are not modeled.' },
@@ -84,5 +84,5 @@ export function toGameCard(sf) {
   const ad = SPELL_ADAPTATIONS[sf.name];
   if (!ad) return { ok: false, reasons: ['spell has no reviewed adaptation'] };
   const eff = getCard(ad.effect);
-  return { ok: true, card: { ...base, kind: 'spell', effect: ad.effect, bonus: ad.bonus || 0, cost: ad.cost ?? eff.cost, target: ['Giant Growth','Titanic Growth'].includes(sf.name)?'creature':eff.target, range: eff.range, category: eff.category, text: eff.text, art: eff.art, vfx: ad.vfx, adaptationNote: ad.note } };
+  return { ok: true, card: { ...base, kind: 'spell', effect: ad.effect, bonus: ad.bonus || 0, cost: ad.cost ?? eff.cost, target: ['Giant Growth','Titanic Growth'].includes(sf.name)?'creature':eff.target, range: eff.range, category: eff.category, text: ad.text || eff.text, art: eff.art, vfx: ad.vfx, adaptationNote: ad.note } };
 }

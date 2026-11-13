@@ -104,7 +104,7 @@ test('Spell Primer: after the first victory, a free spells-only choice of 3 affo
   const run = newRun({ seed: 77, tutorial: true }); enterNode(run, 0); run.battle.units.filter(u => u.side === 'enemy').forEach(u => (u.hp = 0)); run.battle.phase = 'won'; concludeBattle(run);
   chooseReward(run, run.pending.cards[0]); assert.equal(run.phase, 'reward'); assert.equal(run.pending.tier, 'primer');
   assert.throws(() => chooseReward(run, 'mtg:grizzly-bears'), /Invalid|spells only/); const id = run.pending.cards[0]; chooseReward(run, id);
-  assert.ok(run.spellbook.some(s => s.id === id)); assert.equal(run.phase, 'map'); assert.ok(run.primerDone, 'once per adventure');
+  assert.ok(run.spellbook.some(s => s.id === id)); assert.equal(run.pending.firstVictoryPacks.index, 3); skipReward(run); assert.equal(run.phase, 'map'); assert.ok(run.primerDone, 'once per adventure');
 });
 
 // ── 4. Tactical stances ────────────────────────────────────────────────────
@@ -130,9 +130,9 @@ test('auto-end: stances keep the turn only when useful (Guard when threatened, C
   ch.units[1].x = 3; ch.units[1].y = 0; assert.ok(usefulStances(ch).includes('channel'));
 });
 test('ranked replays include stances: recorded runs re-verify byte-identically under rules 1.1 / challenge revision 6', () => {
-  assert.equal(RULES_VERSION, 'graftbound-rules-1.2.0-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 7);
+  assert.equal(RULES_VERSION, 'graftbound-rules-1.2.1-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 8);
   const { run, log } = playRanked(); assert.ok(log.length >= 15, 'the bot made a meaningful deterministic decision sequence; stance legality is tested in controlled arenas above');
-  assert.equal(JSON.stringify(replayRun('gb-expedition-01', log, { revision: 7 }).run), JSON.stringify(run));
+  assert.equal(JSON.stringify(replayRun('gb-expedition-01', log, { revision: 8 }).run), JSON.stringify(run));
   const i = log.findIndex(d => d.type === 'guard'); if (i >= 0) { const bad = log.map(d => ({ ...d })); bad.splice(i, 0, { ...bad[i] }); bad.forEach((d, k) => (d.seq = k)); assert.throws(() => replayRun('gb-expedition-01', bad)); }
 });
 

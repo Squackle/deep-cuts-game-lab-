@@ -62,7 +62,8 @@ test('friendly target spells empower and shield Raise the Alarm Soldiers without
     ['raise-the-alarm', 'giant-growth', 'titanic-growth', 'feat-of-resistance', 'snakeskin-veil']);
   cast(s, 'mtg:raise-the-alarm', 2, 2);
   const soldier = s.units.find(u => u.side === 'player' && !u.hero);
-  assert.equal(soldier.name, 'Soldier'); assert.equal(soldier.power, 2);
+  assert.equal(soldier.name, 'Soldier'); assert.equal(soldier.power, 1);
+  assert.equal(s.units.filter(u => u.name === 'Soldier' && u.hp > 0).length, 2);
   const p = player(s);
   assert.ok(castOptions(s, 'mtg:giant-growth').some(t => t.x === soldier.x && t.y === soldier.y));
   assert.ok(castOptions(s, 'mtg:feat-of-resistance').some(t => t.x === soldier.x && t.y === soldier.y));

@@ -215,7 +215,7 @@ export function mapScreen(app) {
 }
 
 /** Booster: original ornamental wrapper → seal charge → seal break → wrapper opens → cards fan → reveal → choose. */
-export function rewardScreen(app, cards, { tier, severed }) {
+export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
   const run = app.run; const arcane = runStats(run).arcane; const fast = app.animFactor() > 1.5; const instant = app.animFactor() > 50; const identity = packIdentity(tier);
   for (const id of cards) app.meta.seen[id] = true; app.saveMeta();
   const levelOf = id => { const e = run.spellbook.find(s => s.id === id); return e ? e.level + 1 : 1; };
@@ -224,6 +224,7 @@ export function rewardScreen(app, cards, { tier, severed }) {
   const el = showScreen(`
     <div class="reward tier-${esc(tier)}" data-pack-kind="${identity.emblem}">
       <h2 class="rw-title">${titles[tier] || titles.battle}</h2>
+      ${firstVictoryPacks ? `<p class="rw-pack-count" aria-label="First level booster ${firstVictoryPacks.index} of ${firstVictoryPacks.total}">Pack ${firstVictoryPacks.index} of ${firstVictoryPacks.total}</p>` : ''}
       <p class="rw-sub" id="rw-sub" aria-live="polite">${severed ? `You severed <b>${esc(severed)}</b>. ` : ''}${esc(identity.cue)}</p><p class="rw-omen">${esc(identity.omen)}</p>
       <div class="pack-stage" id="pstage">
         <button type="button" class="pack ${tier}" id="pack" aria-label="Break the seal and open the booster"><span class="pack-rank">${esc(identity.rank)}</span>

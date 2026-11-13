@@ -16,6 +16,8 @@ const BASE = {
 const NO_ARCANE = new Set(['sap_surge', 'blink_step', 'call_sproutling']);
 export function spellNumbers(id, level = 1, arcane = 0) {
   const e = effectOf(id); const c = resolveCard(id); const bonus = (c && c.bonus) || 0;
+  // Printed 1/1 Soldier tokens never scale with level or Arcane.
+  if (e === 'call_sproutling' && c?.reference) return [1, 1];
   const add = (level - 1) + bonus + (NO_ARCANE.has(e) ? 0 : arcane);
   return (BASE[e] || []).map(n => Math.max(1, n + add));
 }
@@ -49,6 +51,8 @@ export function spellTargets(s, id, level = 1) {
     if (unitAt(s, x, y) || tileAt(s, x, y) === T.ROCK || tileAt(s, x, y) === T.LAVA) continue;
     out.push({ x, y });
   }
+  // Two distinct Soldiers require two available summoning tiles.
+  if (effectOf(id) === 'call_sproutling' && out.length < 2) return [];
   return out;
 }
 export function castBlockReason(s, id) {
@@ -85,9 +89,14 @@ export function castSpellEffect(s, ev, id, level, tx, ty) {
     case 'rootsnare': dealDamage(s, ev, p, target, n[0], spellDamage); if (alive(target)) addStatus(s, ev, target, 'stunned', 1); break;
     case 'blink_step': { const from = { x: p.x, y: p.y }; p.x = tx; p.y = ty; ev.push({ t: 'teleport', uid: p.uid, from, x: tx, y: ty }); break; }
     case 'call_sproutling': {
-      const u = { uid: s.nextUid++, side: 'player', hero: false, defId: 'sproutling', name: c.reference ? 'Soldier' : 'Sproutling', x: tx, y: ty, hp: n[1], maxHp: n[1],
-        power: n[0], toughness: n[1], move: 2, keywords: {}, statuses: {} };
-      s.units.push(u); ev.push({ t: 'summon', uid: u.uid, defId: 'sproutling', x: tx, y: ty, by: p.uid, ally: true });
+      const second = spellTargets(s, id, level).filter(t => t.x !== tx || t.y !== ty)
+        .sort((a, b) => Math.abs(a.x - tx) + Math.abs(a.y - ty) - Math.abs(b.x - tx) - Math.abs(b.y - ty) || a.y - b.y || a.x - b.x)[0];
+      if (!second) throw new Error('Raise the Alarm needs two free summoning tiles');
+      for (const pos of [{ x: tx, y: ty }, second]) {
+        const u = { uid: s.nextUid++, side: 'player', hero: false, defId: 'sproutling', name: c.reference ? 'Soldier' : 'Sproutling', x: pos.x, y: pos.y, hp: n[1], maxHp: n[1],
+          power: n[0], toughness: n[1], move: 2, keywords: {}, statuses: {}, token: !!c.reference };
+        s.units.push(u); ev.push({ t: 'summon', uid: u.uid, defId: 'sproutling', x: pos.x, y: pos.y, by: p.uid, ally: true });
+      }
       break;
     }
     case 'wither': dealDamage(s, ev, p, target, n[0], spellDamage); if (alive(target)) addStatus(s, ev, target, 'weakened', n[1]); break;

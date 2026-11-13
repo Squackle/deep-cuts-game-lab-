@@ -38,3 +38,11 @@ Owner approved development and Game Lab deployment **conditional on passing rele
 - Exact GitHub branch commit 1391ea37e014af52c8b73c4c8b2a4d4291830e2a passed **218/218** tests on a network-enabled runner, including **98/98** live Scryfall card-fact comparisons (zero failures). Recheck all gates for final head before any merge.
 - Cloudflare preview deployed successfully at https://59ba6c95.deep-cuts-game-lab.pages.dev/graftbound/ for this exact commit. Remote browser rendering at 360 by 640 loaded the title, campaign map, actual battle and mobile combat Armory. This does not constitute full mobile/desktop device acceptance.
 - **Still blocking production:** Gearhulk opponent-choice ETB, Shinobi free-cast, Scarab God's complete scry/reanimation/death-return ability, precise equipment visual rig QA, boss art quality, simulation tuning and full browser playthrough.
+
+## v1.2 first-level reward and Soldier token hotfix
+
+- Raise the Alarm now creates **two separate 1/1 white Soldier tokens**, each on a distinct nearby tile. Spell level and Arcane do not change their printed 1/1 stats. Two empty tiles are required before spending mana.
+- First cleared level grants **three consecutive three-card offerings**: standard booster, existing affordable Spell Primer, and another standard booster. Choose one per pack or skip individually. The UI shows Pack 1 of 3, Pack 2 of 3, and Pack 3 of 3.
+- The sequence is saved and replayed deterministically. Beta ranked rules are now graftbound-rules-1.2.1-beta, challenge revision 8. No save-key changes.
+- Added regression tests for two Soldiers, unavailable summoning positions, deterministic reward sequencing, and mid-sequence save/load.
+- This is a preview-only hotfix; the larger v1.2 production release blockers remain unresolved.
