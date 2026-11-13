@@ -30,3 +30,11 @@ Owner approved development and Game Lab deployment **conditional on passing rele
 - Strict sprite bounds: 21 sheets, zero edge warnings.
 - QA limitations: browser E2E blocked by localhost navigation policy; no visual acceptance on physical devices.
 - Draft PR #148 remains the development source of truth; production `main` remains v1.1.1 until all blockers are resolved.
+
+## Verified continued work — in-battle Equipment and browser checks
+
+- Implemented paid, replayable in-battle Equip actions and mobile combat Armory for choosing hero or living friendly allies. Engine checks owned Equipment, exact printed Equip cost, bearer slots and available mana before mutating state. Hero equipment choices persist after battle.
+- Added five regression cases for printed bonuses, atomic errors, ally transfers, distinct hero slots and replay envelope strictness.
+- Exact GitHub branch commit 1391ea37e014af52c8b73c4c8b2a4d4291830e2a passed **218/218** tests on a network-enabled runner, including **98/98** live Scryfall card-fact comparisons (zero failures). Recheck all gates for final head before any merge.
+- Cloudflare preview deployed successfully at https://59ba6c95.deep-cuts-game-lab.pages.dev/graftbound/ for this exact commit. Remote browser rendering at 360 by 640 loaded the title, campaign map, actual battle and mobile combat Armory. This does not constitute full mobile/desktop device acceptance.
+- **Still blocking production:** Gearhulk opponent-choice ETB, Shinobi free-cast, Scarab God's complete scry/reanimation/death-return ability, precise equipment visual rig QA, boss art quality, simulation tuning and full browser playthrough.
