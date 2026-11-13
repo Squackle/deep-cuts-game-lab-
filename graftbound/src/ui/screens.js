@@ -458,9 +458,56 @@ export function sheetModal(app) {
   const jb = document.querySelector('#modal [data-journal]'); if (jb) jb.addEventListener('click', () => { app.closeModal(); journalModal(app); });
 }
 
+/** Equipment transfers from a live battle are paid actions, not free UI edits.
+ * The hero has two equipment slots, eligible allies have one each. */
+function combatInventoryModal(app) {
+ const run=app.run,s=run.battle;
+ const m=app.openModal('<div class="gb-gear-inventory"><small class="sh-brand">GRAFTBOUND · Armory</small><h2>Battle Equipment</h2><p>Attach or transfer owned Equipment during your turn, paying its printed Equip mana cost. Select a bearer and slot below.</p><div data-gear-targets></div><div class="gb-gear-layout"><div class="gb-gear-avatar"><div data-gear-preview></div><p data-gear-bearer-name></p></div><div class="gb-gear-controls"><h3>Equipment slots</h3><div data-gear-slots></div><h3>Collected Equipment</h3><div data-gear-items></div><p class="small" role="status" aria-live="polite" data-gear-error></p></div></div></div><div class="modal-actions"><button type="button" class="btn primary" data-close>Close</button></div>','wide');
+ let targetUid=s.units.find(u=>u.hero)?.uid, slot=0;
+ const render=()=>{
+   const eligible=s.units.filter(u=>u.side==='player'&&u.hp>0);
+   const target=eligible.find(u=>u.uid===targetUid)||eligible[0];
+   if(!target)return;
+   targetUid=target.uid;
+   const slots=target.hero?2:1;
+   if(slot>=slots)slot=0;
+   m.querySelector('[data-gear-targets]').innerHTML=eligible.map(u=>'<button type="button" class="btn small" data-bearer="'+u.uid+'" aria-pressed="'+(targetUid===u.uid)+'">'+esc(u.name)+(u.hero?' (hero)':'')+'</button>').join('');
+   const worn=target.hero?(s.heroEquipmentSlots||[null,null]):[target.equipment?.[0]||null];
+   m.querySelector('[data-gear-slots]').innerHTML=worn.map((id,i)=>{
+     const c=id&&getCard(id);
+     return '<button type="button" class="btn gb-gear-slot" data-slot="'+i+'" aria-pressed="'+(i===slot)+'">Slot '+(i+1)+': '+(c?esc(c.name):'Empty')+'</button>';
+   }).join('');
+   const preview=m.querySelector('[data-gear-preview]');
+   if(target.hero)preview.replaceChildren(sheetCanvas(app,run.evo,4,target.equipment||[]));
+   else preview.textContent=target.name+' · '+(target.equipment?.length||0)+' attached';
+   m.querySelector('[data-gear-bearer-name]').textContent=target.name;
+   const owned=(s.equipmentInventory||[]).filter(id=>!(s.destroyedEquipment||[]).includes(id));
+   m.querySelector('[data-gear-items]').innerHTML=owned.length?owned.map(id=>{
+     const c=getCard(id);if(!c)return '';
+     const cost=c.equipCost||0,attached=!!target.equipment?.includes(id);
+     const possible=s.phase==='player'&&!app.battle?.busy&&s.p.mana>=cost&&!attached;
+     return '<button type="button" class="gb-gear-entry" data-equip-id="'+esc(id)+'" '+(possible?'':'disabled')+'><b>'+esc(c.name)+'</b><span>Equip '+cost+' mana</span><small>'+(attached?'Already worn':'Available mana: '+s.p.mana)+'</small></button>';
+   }).join(''):'<p>No Equipment collected.</p>';
+ };
+ m.addEventListener('click',async event=>{
+   const b=event.target.closest('button');if(!b)return;
+   if(b.dataset.bearer!==undefined){targetUid=Number(b.dataset.bearer);slot=0;render();return;}
+   if(b.dataset.slot!==undefined){slot=Number(b.dataset.slot);render();return;}
+   if(b.dataset.equipId===undefined)return;
+   try{
+     const id=b.dataset.equipId;
+     if(app.battle?.busy)throw Error('Wait for the current action');
+     await app.battle.act(()=>app.battle.exec({type:'equip',id,uid:targetUid,slot}));
+     render();
+   }catch(error){m.querySelector('[data-gear-error]').textContent=String(error.message||error);}
+ });
+ render();
+}
+
 /** Physical Equipment inventory: gear is drawn ON the character sprite and removed when unequipped. */
 export function inventoryModal(app) {
  const run=app.run;if(!run)return;
+ if(run.phase==='battle')return combatInventoryModal(app);
  const editable=run.phase !== 'battle';
  const m=app.openModal(`<div class="gb-gear-inventory"><small class="sh-brand">${GAME.title} · Adventurer’s Armory</small>
    <h2>Equipment Inventory</h2><p class="small">Two persistent Equipment slots. Gear changes visually on your evolved creature; equipping between encounters is free, printed Equip costs apply to future in-battle transfers. Auras are drawn in battle, not stored here.</p>
