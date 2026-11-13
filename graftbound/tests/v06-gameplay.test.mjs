@@ -60,7 +60,7 @@ test('crystals: attune once for mana (an interaction action); lightning makes a 
   assert.throws(() => interact(s, 3, 2), /Nothing to use/); assert.deepEqual(getLegalPlayerActions(s).interact, []);
   const l = arena(['........', '..hh....', '........', '......P.'], { h: 'tortoise' }, { spellbook: book(['lightning-bolt']) }); l.p.mana = 9; l.crystals = [{ x: 2, y: 2, charged: true }];
   const [a, b] = enemies(l); cast(l, 'mtg:lightning-bolt', a.x, a.y);
-  assert.equal(l.crystals[0].charged, false); assert.equal(b.hp, b.maxHp - TERRAIN_RULES.crystal.dischargeDamage); assert.equal(a.hp, a.maxHp - 3 - TERRAIN_RULES.crystal.dischargeDamage);
+  assert.equal(l.crystals[0].charged, false); assert.equal(b.hp, b.maxHp - TERRAIN_RULES.crystal.dischargeDamage); assert.equal(a.hp, 0,'lightning plus discharge kills the printed 3-toughness target');
 });
 test('elemental interactions: fire burns brambles; frost hardens lava temporarily, then it melts back', () => {
   const s = arena(['.......', '..h....', '.......', '......P'], { h: 'tortoise' }, { spellbook: book(['flame-slash', 'frost-breath']) }); s.p.mana = 9;

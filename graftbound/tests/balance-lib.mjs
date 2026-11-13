@@ -1,6 +1,6 @@
 // Deterministic balance harness: archetype builds × act encounters, using the naive bot. Directional only.
 import { createBattle } from '../src/engine/combat.js';
-import { buildEncounter } from '../src/engine/encounters.js';
+import { buildEncounter, templateFor } from '../src/engine/encounters.js';
 import { deriveStats } from '../src/engine/evolution.js';
 import { ACTS } from '../src/data/encounters.js';
 import { evoWith, botPlay } from './helpers.mjs';
@@ -20,7 +20,7 @@ export function fight({ evo, spellbook, act, tier, n = 20, sparkBonus = act * 4,
   let won = 0, taken = 0, turns = 0; const st = deriveStats(evo, { sparkBonus, manaBonus: act >= 1 ? 1 : 0, spellCount: spellbook.length });
   const pools = tier === 'boss' ? ACTS[act].bossEncounters : tier === 'elite' ? ACTS[act].elite : [...ACTS[act].mid, ...ACTS[act].late];
   for (let seed = 1; seed <= n; seed++) {
-    const tpl = pools[seed % pools.length];
+    const tpl = tier === 'boss' ? templateFor(act, 'boss', 7, seed * 977 + act) : pools[seed % pools.length];
     const s = createBattle({ evo, stats: st, spellbook, encounter: buildEncounter(tpl, seed * 977 + act, tier), seed, act });
     const r = botPlay(s, 40, { tactics }); if (r === 'won') won++; taken += s.stats.damageTaken; turns += s.turn;
   }

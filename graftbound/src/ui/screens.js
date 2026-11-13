@@ -8,6 +8,7 @@ import { absorb, deriveStats } from '../engine/evolution.js';
 import { runStats, CHALLENGES, graftCapacity, graftsFull, woundsOf, maxHpOf } from '../engine/run.js';
 import { SHRINES } from '../engine/shrines.js';
 import { ACTS, bossNameOf } from '../data/encounters.js';
+import { bossForSeed } from '../data/legendary.js';
 import { deriveAppearance } from '../engine/appearance.js';
 import { ACHIEVEMENTS } from '../engine/progression.js';
 import { formatSpellText, rangeLabel } from '../engine/spells.js';
@@ -20,6 +21,8 @@ import { expeditionTotals } from '../engine/scoring.js';
 import { SCORE } from '../data/scoring.js';
 import { graftHistory } from '../engine/journal.js';
 import { composePlayerSheet } from '../rendering/evolution-visuals.js';
+import { composeEquippedSheet } from '../rendering/equipment-visuals.js';
+import { equipItem } from '../engine/attachments.js';
 import { newEvolution } from '../engine/evolution.js';
 import { setSpellEquipped, handCapacity, normalizedEquipped } from '../engine/loadout.js';
 import { RANKED_CHALLENGES, ACTIVE_CHALLENGE } from '../engine/ranked.js';
@@ -174,7 +177,7 @@ export function mapScreen(app) {
   }
   const nodes = map.nodes.map(n => {
     const t = NODE_TYPES[n.type]; const cls = [n.type, avail.has(n.id) ? 'avail' : '', run.visited.includes(n.id) ? 'done' : '', n.id === run.current ? 'here' : ''].join(' ');
-    const label = n.type === 'boss' ? bossNameOf(run.act) : t.name;
+    const label = n.type === 'boss' ? bossForSeed(run.act, n.seed).name : t.name;
     return `<g class="node ${cls}" data-node="${n.id}" data-tip="${esc(NODE_TIP[n.type] || label)}" transform="translate(${nx(n)} ${depthY(n.depth)})" tabindex="${avail.has(n.id) ? 0 : -1}" role="button" aria-label="${esc(label + ' — ' + (NODE_TIP[n.type] || ''))}">
       <title>${esc(label + ' — ' + (NODE_TIP[n.type] || ''))}</title><circle r="${n.type === 'boss' ? 6.5 : 4.6}"/><text y="1.7">${t.glyph}</text>${avail.has(n.id) || n.type === 'boss' ? `<text class="lbl" y="${n.type === 'boss' ? 11 : 9}">${esc(label)}</text>` : ''}</g>`;
   }).join('');
@@ -193,6 +196,7 @@ export function mapScreen(app) {
           <div class="mp-pt">${run.evo.power}<i>/</i>${run.evo.toughness}</div>
           <div class="mp-hp"><div class="bar"><i style="width:${run.hp / st.maxHealth * 100}%"></i></div><span>${ICON.heart}${run.hp}/${st.maxHealth}${wounds ? ` · <em>${wounds} wounds</em>` : ''}</span></div>
           <div class="mp-row">${ICON.gem}${st.maxMana} mana · ${ICON.move}${st.move} move · ${run.evo.absorbed.length}/${graftCapacity(run)} grafts</div>
+          <div class="mp-row world-threat" data-tip="World Threat grows after two enemy-damage-free victories and drops after heavy enemy-caused damage. Maximum 12. Reinforcement limits always apply." role="status" aria-label="World Threat ${run.worldThreat?.level||0} of 12">⚔ World Threat ${(run.worldThreat?.level||0)}/12 · ${run.worldThreat?.level>=9?'Relentless':run.worldThreat?.level>=6?'Hunting':run.worldThreat?.level>=3?'Restless':'Dormant'}</div>
           <div class="mp-kw">${kwChips(run.evo.keywords) || '<span class="muted">No abilities yet</span>'}</div>
           <div class="mp-spells">${run.spellbook.map(s => `<span class="mp-sp c-${getCard(s.id).color}">${esc(getCard(s.id).name)}${s.level > 1 ? ' ' + '✦'.repeat(s.level - 1) : ''}</span>`).join('') || '<span class="muted">Spellbook empty</span>'}</div>
           <small class="open-sheet">Character sheet &amp; spellbook (C)</small>
@@ -420,8 +424,8 @@ export function sheetModal(app) {
         </dl>
         <h3>Abilities</h3>
         <ul class="sh-kw">${Object.entries(run.evo.keywords).map(([k, v]) => `<li><b>${KEYWORDS[k].glyph} ${esc(keywordLabel(k, v))}</b><span>${esc(KEYWORDS[k].text)}</span></li>`).join('') || '<li class="muted">None yet. Graft creatures to gain abilities.</li>'}</ul>
-        <h3>Spellbook</h3><p class="small">Active spells: ${normalizedEquipped(run).length}/${handCapacity(run)}. Other learned spells stay safe in your tome and can be equipped between battles.</p>
-        <p><button type="button" class="btn primary" data-open-spellbook>Open the Spellbook · ${run.spellbook.length} spells</button></p>
+        <h3>Spellbook</h3><p class="small">${run.spellbook.length} collected spells · draw 3 at battle start, then 1 per turn · maximum hand ${handCapacity(run)}. Auras expire after one encounter.</p>
+        <p><button type="button" class="btn primary" data-open-spellbook>Open Spellbook · ${run.spellbook.length} spells</button> <button type="button" class="btn" data-inventory>Equipment Inventory · ${(run.equipmentInventory||[]).length} items</button></p>
       </section>
       <section class="sh-hist"><h3>Grafts</h3><ol class="hist">${hist || '<li class="muted">Nothing yet. You are a blank 1/1.</li>'}</ol>
         <h3>Form</h3><p class="small">${visible.length ? 'Visible traits: ' + esc(visible.join(', ')) : 'Unmarked parchment.'}${ap.dormant.length ? `<br><span class="muted">Dormant: ${esc(ap.dormant.join(', '))}</span>` : ''}</p>
@@ -429,7 +433,7 @@ export function sheetModal(app) {
       </section>
     </div>
     <div class="modal-actions"><button type="button" class="btn" data-journal>Evolution Journal</button><button type="button" class="btn primary" data-close>Close</button></div>`, 'wide');
-  m.querySelector('[data-character-portrait]')?.prepend(sheetCanvas(app, run.evo, 4));
+  m.querySelector('[data-character-portrait]')?.prepend(sheetCanvas(app, run.evo, 4, run.equippedEquipment || []));
   // The markers reflect visible grafted anatomy only; no guessed card provenance.
   const pinPositions = { head: [50, 18], back: [26, 38], rear: [77, 62], body: [50, 56], front: [77, 39] };
   const traits = Object.entries(ap.slots).map(([slot, part]) => ({
@@ -450,7 +454,44 @@ export function sheetModal(app) {
     });
   }
   m.querySelector('[data-open-spellbook]')?.addEventListener('click', () => { app.closeModal(); spellbookModal(app); });
+  m.querySelector('[data-inventory]')?.addEventListener('click', () => { app.closeModal(); inventoryModal(app); });
   const jb = document.querySelector('#modal [data-journal]'); if (jb) jb.addEventListener('click', () => { app.closeModal(); journalModal(app); });
+}
+
+/** Physical Equipment inventory: gear is drawn ON the character sprite and removed when unequipped. */
+export function inventoryModal(app) {
+ const run=app.run;if(!run)return;
+ const editable=run.phase !== 'battle';
+ const m=app.openModal(`<div class="gb-gear-inventory"><small class="sh-brand">${GAME.title} · Adventurer’s Armory</small>
+   <h2>Equipment Inventory</h2><p class="small">Two persistent Equipment slots. Gear changes visually on your evolved creature; equipping between encounters is free, printed Equip costs apply to future in-battle transfers. Auras are drawn in battle, not stored here.</p>
+   <div class="gb-gear-layout"><div class="gb-gear-avatar"><figure class="sh-portrait"><div data-gear-preview></div><figcaption>Equipped form · ${esc(run.name)}</figcaption></figure></div>
+   <div class="gb-gear-controls"><h3>Equipped</h3><div data-gear-slots></div><h3>Collected Equipment</h3><div data-gear-collection></div><p data-gear-message aria-live="polite" class="small"></p></div></div></div>
+   <div class="modal-actions"><button type="button" class="btn" data-gear-back>Character Sheet</button><button type="button" class="btn primary" data-close>Close</button></div>`, 'wide');
+ let selected=0;
+ const render=()=>{
+  const preview=m.querySelector('[data-gear-preview]');preview.replaceChildren(sheetCanvas(app,run.evo,4,run.equippedEquipment||[]));
+  m.querySelector('[data-gear-slots]').innerHTML=[0,1].map(i=>{
+   const id=(run.equippedEquipment||[])[i],c=id&&getCard(id);
+   return `<div class="gb-gear-slot ${selected===i?'selected':''}"><button class="btn" data-gear-slot="${i}" aria-pressed="${selected===i}">Slot ${i+1}: ${c?esc(c.name):'Empty'}</button>${id&&editable?`<button class="btn small" data-gear-unequip="${i}" aria-label="Unequip ${esc(c.name)}">Remove</button>`:''}</div>`;
+  }).join('');
+  const inventory=run.equipmentInventory||[];
+  m.querySelector('[data-gear-collection]').innerHTML=inventory.length?inventory.map(id=>{
+   const c=getCard(id),active=(run.equippedEquipment||[]).includes(id);
+   return `<button type="button" class="gb-gear-entry" data-gear-equip="${esc(id)}" ${editable?'':'disabled'} aria-label="Equip ${esc(c.name)} in slot ${selected}"><b>${esc(c.name)}</b><span>${esc(c.adaptationNote||'Printed Equipment effects apply')} · Equip ${c.equipCost ?? c.equip ?? '?'}</span><small>${active?'Currently equipped':'In inventory'}</small></button>`;
+  }).join(''):'<p>No Equipment collected yet. Find relics in booster rewards.</p>';
+ };
+ m.addEventListener('click',event=>{
+  const b=event.target.closest('button');if(!b)return;
+  if(b.hasAttribute('data-gear-back')){app.closeModal();sheetModal(app);return;}
+  if(b.dataset.gearSlot!==undefined){selected=Number(b.dataset.gearSlot);render();return;}
+  if(!editable)return;
+  const id=b.dataset.gearEquip??(b.dataset.gearUnequip!==undefined?null:undefined);
+  const slot=b.dataset.gearUnequip!==undefined?Number(b.dataset.gearUnequip):selected;
+  if(id===undefined)return;
+  try {equipItem(run,id,slot);app.save();app.audio.play('click');render();}
+  catch(err){m.querySelector('[data-gear-message]').textContent=String(err.message||err);}
+ });
+ render();
 }
 
 /** A page-turning, two-facing-page spellbook. It presents the actual upgraded effect, not base card text. */
@@ -461,7 +502,7 @@ export function spellbookModal(app) {
   const filters = ['all', 'radiant', 'tide', 'umbral', 'ember', 'verdant'];
   const st = runStats(run);
   const m = app.openModal(`<div class="book-wrap"><div class="book-header"><small>${GAME.title} · Inscribed spells</small><h2>The Spellbook</h2></div>
-    <p class="book-loadout-count" id="book-loadout-count">Active combat inscriptions: ${normalizedEquipped(run).length}/${handCapacity(run)} · ${Math.max(0, run.spellbook.length - normalizedEquipped(run).length)} stored safely in the tome. ${canEquip ? 'Toggle inscriptions before entering combat.' : 'Loadout locked in combat.'}</p>
+    <p class="book-loadout-count" id="book-loadout-count">Combat library: ${run.spellbook.length} cards · maximum hand size ${handCapacity(run)} · draw 3 initially then 1 each turn. Every learned spell enters the encounter library; Auras expire after one encounter.</p>
     <div class="book-filter" role="group" aria-label="Filter spell colors">${filters.map(x => `<button type="button" data-color="${x}" aria-pressed="${x === color}">${x}</button>`).join('')}</div>
     <div class="open-book" id="open-book" aria-live="polite"><section class="book-page book-left" id="book-left"></section><section class="book-page book-right" id="book-right"></section></div>
     <div class="book-controls"><button type="button" class="btn" data-prev>Previous page</button><span id="book-num"></span><button type="button" class="btn" data-next>Next page</button></div>
@@ -478,9 +519,9 @@ export function spellbookModal(app) {
       m.querySelector('#book-left').innerHTML = `<small>Folio ${page + 1}</small><h3>${esc(c.name)}</h3><div class="book-art">${cardHTML(entry.id, { level:entry.level,arcane:st.arcane,uid:'folio'+page })}</div>`;
       m.querySelector('#book-right').innerHTML = `<small>${esc(c.color)} magic · Level ${entry.level}</small><h3>${esc(c.name)}</h3><p class="book-cost">${ICON.gem}${c.cost} GRAFTBOUND mana · ${esc(rangeLabel(entry.id,entry.level))} · ${esc(TARGET[c.target])}</p>
         <p class="book-effect">${esc(formatSpellText(entry.id,entry.level,st.arcane))}</p><h4>Inscription level</h4><p>Level ${entry.level} ${entry.level < 3 ? `· Next level: ${esc(formatSpellText(entry.id,entry.level+1,st.arcane))}` : '· Mastered'}</p>
-        <p class="book-rule">${esc(c.adaptationNote || 'GRAFTBOUND adaptation, not official Magic rules.')}</p><button type="button" class="btn small book-equip" data-equip="${esc(entry.id)}" ${canEquip ? '' : 'disabled'} aria-pressed="${normalizedEquipped(run).includes(entry.id)}">${normalizedEquipped(run).includes(entry.id) ? 'Equipped — remove from hand' : 'Stored — equip in hand'}</button><p class="book-equip-message" aria-live="polite"></p>`;
+        <p class="book-rule">${esc(c.adaptationNote || 'GRAFTBOUND adaptation, not official Magic rules.')}</p><p class="small book-equip-message">${c.kind==='aura'?'One-level Aura · expires after the next completed encounter':'Persistent learned spell · shuffled into each encounter deck'}</p><p class="book-equip-message" aria-live="polite"></p>`;
     }
-    m.querySelector('#book-loadout-count').textContent = `Active combat inscriptions: ${normalizedEquipped(run).length}/${handCapacity(run)} · ${Math.max(0, run.spellbook.length - normalizedEquipped(run).length)} stored safely in the tome. ${canEquip ? 'Toggle inscriptions before entering combat.' : 'Loadout locked in combat.'}`;
+    m.querySelector('#book-loadout-count').textContent = `Combat library: ${run.spellbook.length} cards · maximum hand size ${handCapacity(run)} · draw 3 initially then 1 each turn. Every learned spell enters the encounter library; Auras expire after one encounter.`;
     m.querySelector('#book-num').textContent = length ? `Page ${page + 1} of ${length}` : 'Empty';
     m.querySelector('[data-prev]').disabled = !length || page === 0;
     m.querySelector('[data-next]').disabled = !length || page >= length - 1;
@@ -489,7 +530,7 @@ export function spellbookModal(app) {
   };
   m.addEventListener('click', e => {
     const target = e.target.closest('button'); if (!target) return;
-    if (target.dataset.equip && canEquip) {
+    if (false && target.dataset.equip && canEquip) {
       const id = target.dataset.equip;
       try { setSpellEquipped(run, id, !normalizedEquipped(run).includes(id)); app.save(); render(); }
       catch (error) { const msg = m.querySelector('.book-equip-message'); if (msg) msg.textContent = String(error.message || error); }
@@ -507,8 +548,8 @@ const KIND_LINE = { start: () => 'Woke as The Blank — a 1/1 with no abilities.
   graft: e => `Grafted <b>${esc(e.name)}</b> (+${e.power}/+${e.toughness})${e.gained && e.gained.length ? ' — gained ' + esc(e.gained.map(k => KEYWORDS[k].name).join(', ')) : ''}${e.released ? ' · released ' + esc(e.released) : ''}.${e.firstGraft ? ' <em>First graft.</em>' : ''}${e.firstKeyword ? ` <em>First ability: ${esc(KEYWORDS[e.firstKeyword].name)}.</em>` : ''}${e.stage && e.stage !== 'blank' ? ` <em>Became ${esc(STAGE[e.stage])}.</em>` : ''}`,
   release: e => `Released ${esc(e.name)} (${e.by === 'exchange' ? 'Graft Exchange' : 'Graftsmith'}).`, spell: e => `${e.level > 1 ? 'Empowered' : 'Inscribed'} ${esc(getCard(e.cardId) ? getCard(e.cardId).name : e.cardId)}${e.level > 1 ? ' to level ' + e.level : ''}.`,
   event: e => `Met ${esc(EVENTS[e.id] ? EVENTS[e.id].name : e.id)} — chose “${esc(e.choice)}”.` };
-const sheetCanvas = (app, evo, scale = 3) => {
-  const src = composePlayerSheet(app.assets, deriveAppearance(evo)); const c = document.createElement('canvas'); c.width = 48 * scale; c.height = 48 * scale;
+const sheetCanvas = (app, evo, scale = 3, equipment = []) => {
+  const src = composeEquippedSheet(app.assets, deriveAppearance(evo), equipment); const c = document.createElement('canvas'); c.width = 48 * scale; c.height = 48 * scale;
   const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(src, 0, 0, 48, 48, 0, 0, 48 * scale, 48 * scale); c.className = 'journal-sprite'; return c;
 };
 /** v0.6 Evolution Journal: current creature, graft history, spells, timeline and before/after. */

@@ -12,6 +12,7 @@ import './helpers.mjs';
 
 export function nextBattleDecision(s) {
   const p = player(s);
+  if(s.deck && ((s.deck.pendingDiscards||0)>0 || s.deck.hand.length>s.deck.capacity) && s.deck.hand.length)return {type:'discard',id:s.deck.hand.at(-1).id};
   for (const sp of s.spellbook) {
     const c = resolveCard(sp.id); const opts = castOptions(s, sp.id); if (!opts.length) continue;
     if (c.category === 'healing' && p.hp > p.maxHp * 0.6) continue;

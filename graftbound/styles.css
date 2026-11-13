@@ -469,3 +469,26 @@ body[data-mode="reward"] .hint { top: 6px; } body[data-mode="reward"] .toast { t
   #hud .tray { padding-top: 14px; padding-bottom: 8px; max-height: 60dvh; }
   .hand-readout { max-height: 40dvh; overflow: auto; bottom: 50dvh; }
 }
+
+/* Transparent World Threat presentation alongside the character's actual P/T. */
+.mp-row.world-threat{font-size:12px;font-weight:700;letter-spacing:.02em;color:#e6c78d;border:1px solid #9d794e6b;padding:6px 8px;border-radius:7px;background:#553c1c17;}
+/* v1.2 original Equipment inventory / gear on sprite / stationary-cover arcane spiral shuffle. */
+.gb-gear-layout {display:grid;grid-template-columns:minmax(160px,1fr) minmax(260px,1.35fr);gap:20px;align-items:start;}
+.gb-gear-avatar {padding:12px;border-radius:16px;background:radial-gradient(circle at center,#8e784555,#202d2708 75%);}
+.gb-gear-avatar .sh-portrait {display:grid;justify-items:center;gap:8px;max-width:100%;}
+.gb-gear-avatar .journal-sprite {width:min(200px,46vw);height:auto;max-width:100%;image-rendering:pixelated;}
+.gb-gear-slot {display:flex;gap:7px;align-items:center;margin:7px 0;padding:6px;border:1px solid #8e7845;border-radius:8px;}
+.gb-gear-slot.selected {border-color:#d7c385;box-shadow:0 0 0 2px #d7c38533;}
+.gb-gear-entry {display:flex;flex-direction:column;text-align:left;width:100%;gap:3px;padding:10px;margin:6px 0;background:#e4d0a6;color:#3d3326;border:1px solid #947a52;border-radius:8px;cursor:pointer;}
+.gb-gear-entry:hover,.gb-gear-entry:focus-visible {outline:2px solid #b5a16b;outline-offset:2px;}
+.gb-gear-entry span,.gb-gear-entry small {font-size:11px;line-height:1.4;}
+.gb-discard-list {display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;max-height:55vh;overflow:auto;}
+.gb-shuffle-overlay {position:fixed;inset:0;z-index:10005;pointer-events:none;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:20px;background:radial-gradient(circle at 50% 50%,#202f2ad5,#050a09bd 55%,#050a09ab);color:#f0d9a0;font:700 14px var(--sans);letter-spacing:.14em;text-transform:uppercase;}
+.gb-shuffle-stack {position:relative;width:96px;height:138px;filter:drop-shadow(0 12px 30px #000d);}
+.gb-shuffle-under,.gb-shuffle-cover {position:absolute;inset:0;border:2px solid #e3c98b;border-radius:8px;background:radial-gradient(circle at center,#726048 0,#2f3634 24%,#1c2426 66%,#75634b 100%);box-shadow:inset 0 0 0 5px #201c17,inset 0 0 0 7px #d3ab62;}
+.gb-shuffle-under {transform-origin:50% 50%;animation:gb12-orbit var(--gb-shuffle-ms,1000ms) cubic-bezier(.17,.75,.22,1) both;animation-delay:calc(var(--k)*-17ms);}
+.gb-shuffle-cover {z-index:12;transform:none!important;animation:none!important;}
+.gb-shuffle-cover::after {content:'✦';position:absolute;inset:0;display:grid;place-items:center;color:#d7b979;font:42px var(--serif);text-shadow:0 0 13px #f9dfae8c;}
+@keyframes gb12-orbit {0%,100%{transform:translate(0,0) rotate(0deg)}27%{transform:rotate(var(--angle-a)) translateX(56px) rotate(-30deg)}63%{transform:rotate(var(--angle-b)) translateX(54px) rotate(140deg)}82%{transform:rotate(var(--angle-c)) translateX(16px) rotate(12deg)}}
+@media (max-width:600px){.gb-gear-layout{grid-template-columns:1fr}.gb-shuffle-stack{width:74px;height:109px}.gb-gear-avatar .journal-sprite{width:144px;}}
+@media (prefers-reduced-motion:reduce){.gb-shuffle-under{animation:none}}

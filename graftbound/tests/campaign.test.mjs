@@ -33,7 +33,7 @@ test('every encounter template of every act builds a connected arena; hazards ap
 });
 test('acts introduce new enemies rather than re-statting old ones', () => {
   const by = a => new Set(Object.entries(ENEMIES).filter(([, d]) => d.act === a).map(([k]) => k));
-  assert.ok(by(1).size >= 5 && by(2).size >= 5); for (const a of [0, 1, 2]) assert.equal([...by(a)].filter(k => ENEMIES[k].boss).length, 1);
+  assert.ok(by(1).size >= 5 && by(2).size >= 5); for (const a of [0, 1, 2]) assert.equal([...by(a)].filter(k => ENEMIES[k].boss).length, 3);
   const ais = new Set(Object.values(ENEMIES).map(d => d.ai)); assert.ok(ais.size >= 11, [...ais].join());
 });
 test('reinforcements scale with build strength, are capped per act, never inflate health', () => {

@@ -119,7 +119,7 @@ export function sourcePanelHTML(cardId) {
   const oracle = s.oracleText == null ? '<i>Oracle text loads from Scryfall when online.</i>' : (s.oracleText ? esc(s.oracleText).replace(/\n/g, '<br>') : '<i>(No rules text.)</i>');
   return `<div class="source"><h4>The real card</h4><p><b>${esc(c.name)}</b> <span class="pips">${manaPips(s.manaCost)}</span><br>${esc(s.typeLine)}${c.kind === 'creature' ? ` · ${c.power}/${c.toughness}` : ''}</p>
     <p class="oracle">${oracle}</p>
-    <p class="adapt-line"><b>In GRAFTBOUND:</b> ${esc(c.kind === 'spell' ? c.adaptationNote : 'Grafted as ' + gameSummary(c) + '. Abilities use this game\u2019s own rules, not Magic\u2019s.')}</p>
+    <p class="adapt-line"><b>In GRAFTBOUND:</b> ${esc(c.kind !== 'creature' ? c.adaptationNote : 'Grafted as ' + gameSummary(c) + '. Abilities use this game\u2019s own rules, not Magic\u2019s.')}</p>
     ${s.issues && s.issues.length ? `<p class="warn">Scryfall shows a difference: ${esc(s.issues.join('; '))}</p>` : ''}
     <p class="fine">${s.live ? `${esc(s.setName)}${s.artist ? ' · Illustrated by ' + esc(s.artist) : ''} · ` : ''}Card data and images via Scryfall. Magic: The Gathering is © Wizards of the Coast. GRAFTBOUND is unofficial fan content, not approved or endorsed by Wizards. ${s.scryfallUri ? `<a href="${esc(s.scryfallUri)}" target="_blank" rel="noopener noreferrer">View on Scryfall</a>` : ''}</p></div>`;
 }

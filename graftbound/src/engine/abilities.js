@@ -3,6 +3,7 @@
 import { unitAt, T, tileAt, manhattan, isFlying } from '../core/grid.js';
 import { ENEMIES } from '../data/enemies.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
+import { hasAura, detachAura } from './attachments.js';
 
 export const has = (u, kw) => kw === 'flying' ? isFlying(u) : !!(u.keywords && u.keywords[kw]);
 export const kv = (u, kw) => (u.keywords && u.keywords[kw]) || 0;
@@ -11,6 +12,33 @@ export const player = s => s.units.find(u => u.hero);
 export const allies = s => s.units.filter(u => u.side === 'player' && u.hp > 0);
 export const enemies = s => s.units.filter(u => u.side === 'enemy' && u.hp > 0);
 export const effectivePower = u => Math.max(0, u.power + (u.statuses.empowered || 0) - (u.statuses.weakened || 0));
+/** Keep all printed Wolf/Minotaur static modifiers in sync as creatures enter/leave.
+ * This is additive and deterministic, does not invent any extra creature keywords. */
+export function refreshTribalBonuses(s,ev=[]) {
+  if(!s?.units)return;
+  const aliveUnits=s.units.filter(u=>u.hp>0);
+  for(const u of aliveUnits){
+    const same=aliveUnits.filter(v=>v.side===u.side);
+    const tribe=ENEMIES[u.defId]?.tribe||'';
+    const timber=u.defId==='hound'?same.filter(v=>v!==u&&v.defId==='hound').length:0;
+    const ambush=tribe.includes('Wolf')?same.filter(v=>v!==u&&v.defId==='alpha').length:0;
+    const minotaur=tribe.includes('Minotaur')?same.filter(v=>v!==u&&v.defId==='ashbrute').length:0;
+    // Rageblood Shaman grants Trample only to OTHER Minotaurs while alive.
+    if(tribe.includes('Minotaur')) {
+      if(minotaur>0){
+        if(!u.tribalTrample){u.originalTrample=!!u.keywords?.trample;u.tribalTrample=true;u.keywords.trample=1;}
+      }else if(u.tribalTrample){
+        u.tribalTrample=false;if(!u.originalTrample)delete u.keywords.trample;
+      }
+    }
+    const total=timber+ambush+minotaur,delta=total-(u.tribalBonus||0);
+    if(!delta)continue;
+    u.tribalBonus=total;u.power=Math.max(0,u.power+delta);u.toughness=Math.max(0,u.toughness+delta);
+    u.maxHp=Math.max(0,u.maxHp+delta);u.hp=Math.max(0,Math.min(u.maxHp,u.hp+Math.max(0,delta)));
+    ev.push({t:'status',uid:u.uid,status:'tribal',value:total,total});
+  }
+}
+
 
 /** Power used when `u` strikes `target`, including pack-flanking bonus. */
 export function strikePower(s, u, target) {
@@ -38,15 +66,47 @@ export function addStatus(s, ev, u, status, value) {
 }
 function kill(s, ev, u) {
   ev.push({ t: 'death', uid: u.uid });
+  if(u.side==='player' && !u.hero && u.slime>0 && s.units.some(x=>x.defId==='toxrill'&&x.hp>0))s.pendingSlugs=(s.pendingSlugs||0)+1;
   if (u.side === 'enemy') {
     s.stats.kills++;
     const def = ENEMIES[u.defId];
-    if (def && def.burst) { // Cinderling: bursts on death, hitting everything adjacent (both sides)
+    if(u.defId==='cinderling') {
+      // Mudbutton Torchrunner: 3 to any target, NOT an invented 2-damage explosion.
+      const chosen=player(s);if(alive(chosen)) {
+        ev.push({t:'realAbility',uid:u.uid,name:'Mudbutton Torchrunner · death trigger',target:chosen.uid});
+        dealDamage(s,ev,u,chosen,3,{kind:'deathTrigger'});
+      }
+    }
+    if(u.defId==='sentinel') {
+      // Triplicate Titan's death trigger resolves immediately, before checking victory.
+      // Place up to three tokens on nearby legal squares with deterministic ties.
+      const forms=['golemFly','golemVigilance','golemTrample'];
+      const available=[];
+      for(let rad=0;rad<=Math.max(s.w,s.h);rad++)for(let y=0;y<s.h;y++)for(let x=0;x<s.w;x++){
+        if(Math.abs(x-u.x)+Math.abs(y-u.y)!==rad)continue;
+        if(tileAt(s,x,y)===T.ROCK||tileAt(s,x,y)===T.LAVA||unitAt(s,x,y))continue;
+        available.push({x,y});
+      }
+      for(let i=0;i<3&&i<available.length;i++){
+        const d=ENEMIES[forms[i]],tile=available[i];
+        const golem={uid:s.nextUid++,side:'enemy',defId:forms[i],name:d.name,x:tile.x,y:tile.y,hp:d.toughness,maxHp:d.toughness,power:d.power,toughness:d.toughness,move:d.move,keywords:{...d.keywords},statuses:{},token:true};
+        s.units.push(golem);ev.push({t:'summon',uid:golem.uid,defId:forms[i],x:tile.x,y:tile.y,by:u.uid});
+      }
+      ev.push({t:'realAbility',uid:u.uid,name:'Triplicate Titan · three Golems'});
+    }
+    if (def && def.burst) { // Legacy-only rules; new printed creature records clear this property.
       ev.push({ t: 'burst', uid: u.uid, x: u.x, y: u.y });
       for (const o of s.units.filter(o => o.hp > 0 && manhattan(o, u) === 1)) dealDamage(s, ev, null, o, def.burst, { kind: 'burst' });
     }
+    refreshTribalBonuses(s,ev);
     if (s.units.every(e => e.side !== 'enemy' || e.hp <= 0) && s.phase !== 'lost') { s.phase = 'won'; ev.push({ t: 'victory' }); }
   } else if (u.hero && s.phase !== 'won') { s.phase = 'lost'; ev.push({ t: 'defeat' }); }
+}
+/** State-based actions: creature with zero Toughness dies even without receiving damage.
+ * This is required for printed -1/-1 counter and Aura interactions. */
+export function checkStateBasedDeath(s, ev, u) {
+  if (u && u.hp > 0 && u.toughness <= 0) { u.hp = 0; kill(s, ev, u); return true; }
+  return false;
 }
 /** Damage pipeline: strike cap (bosses) -> armor (combat only) -> shield -> health.
  *  Only combat damage (strikes/counterblows) triggers Deathtouch and Lifelink; spells bypass armor. */
@@ -70,18 +130,59 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
   const armor = combat ? kv(tgt, 'armor') : 0;
   if (armor) { const cut = Math.min(armor, a); a -= cut; if (cut) ev.push({ t: 'armored', uid: tgt.uid, amount: cut }); }
   if (a <= 0) { ev.push({ t: 'damage', uid: tgt.uid, amount: 0, blocked: 0, kind }); return 0; }
+  // Dauntless Escort may sacrifice itself to give all other allies Indestructible
+  // until end of turn when a legal lethal attack or spell threatens a creature.
+  if(tgt.side==='enemy' && src?.side==='player' && tgt.defId!=='tortoise' &&
+     !tgt.statuses.indestructible && a>(tgt.statuses.shield||0) && a-(tgt.statuses.shield||0)>=tgt.hp){
+    const escort=enemies(s).find(u=>u.defId==='tortoise'&&u!==tgt);
+    if(escort){
+      escort.hp=0;ev.push({t:'realAbility',uid:escort.uid,name:'Dauntless Escort · sacrifice for indestructible'});
+      kill(s,ev,escort);
+      for(const ally of enemies(s)) {ally.statuses.indestructible=1;ev.push({t:'status',uid:ally.uid,status:'indestructible',value:1});}
+    }
+  }
   const sh = tgt.statuses.shield || 0;
   const blocked = Math.min(sh, a);
   if (blocked) { tgt.statuses.shield = sh - blocked; a -= blocked; }
   const hpBefore = tgt.hp;
-  const dt = combat && src && has(src, 'deathtouch') && a > 0 && !tgt.legendary;
+  const dt = combat && src && has(src, 'deathtouch') && a > 0;
   tgt.hp = dt ? 0 : Math.max(0, tgt.hp - a);
+  if(tgt.statuses.indestructible && tgt.toughness>0 && tgt.hp<=0){tgt.hp=1;ev.push({t:'indestructible',uid:tgt.uid});}
   const lost = hpBefore - tgt.hp;
   ev.push({ t: 'damage', uid: tgt.uid, amount: a, blocked, deathtouch: dt, kind, src: src ? src.uid : null });
   if (src && src.side === 'player') s.stats.damageDealt += lost;
-  if (tgt.hero) s.stats.damageTaken += lost;
+  if (tgt.hero) { s.stats.damageTaken += lost; if (src?.side === 'enemy') s.stats.enemyHealthDamage = (s.stats.enemyHealthDamage || 0) + lost; }
+  // Real infect replaces health damage with poison counters against a player.
+  // Against creatures, damage is represented by persistent -1/-1 counters.
+  if(combat && src?.keywords?.infect && a>0){
+    if(tgt.hero){
+      tgt.hp=hpBefore;s.stats.damageTaken=Math.max(0,s.stats.damageTaken-lost);
+      if(src.side==='enemy')s.stats.enemyHealthDamage=Math.max(0,(s.stats.enemyHealthDamage||0)-lost);
+      s.poisonCounters=(s.poisonCounters||0)+a;
+      ev.push({t:'poisonCounter',uid:tgt.uid,amount:a,total:s.poisonCounters});
+      if(s.poisonCounters>=10){s.phase='lost';ev.push({t:'defeat',kind:'poison'});}
+      return 0;
+    }
+    if(tgt.side!=='player'||!tgt.hero){
+      tgt.hp=hpBefore;
+      tgt.power=Math.max(0,tgt.power-a);tgt.toughness=Math.max(0,tgt.toughness-a);
+      tgt.maxHp=Math.max(0,tgt.maxHp-a);tgt.hp=Math.min(tgt.hp,tgt.maxHp);
+      tgt.minusCounters=(tgt.minusCounters||0)+a;
+      ev.push({t:'minusCounter',uid:tgt.uid,amount:a,total:tgt.minusCounters});
+      if(tgt.hp<=0)kill(s,ev,tgt);
+      return 0;
+    }
+  }
   if (combat && src && has(src, 'lifelink') && lost > 0) heal(s, ev, src, lost, 'lifelink');
-  if (tgt.hp <= 0) kill(s, ev, tgt);
+  // Destruction replacement effects resolve before defeat. Never rewrite printed +P/+T.
+  if(tgt.hp<=0 && tgt.toughness>0 && hasAura(tgt,'mtg:hyena-umbra') && (combat||kind==='spell'||kind==='arrow')){
+    detachAura(tgt,'mtg:hyena-umbra');tgt.hp=tgt.maxHp;ev.push({t:'auraBreak',uid:tgt.uid,id:'mtg:hyena-umbra'});
+  } else if(tgt.hp<=0 && hasAura(tgt,'mtg:gift-of-immortality') && !tgt.token && tgt.toughness>0){
+    ev.push({t:'death',uid:tgt.uid,kind:'gift'});
+    detachAura(tgt,'mtg:gift-of-immortality');tgt.hp=tgt.maxHp;
+    (s.pendingAuras ||= []).push({uid:tgt.uid,id:'mtg:gift-of-immortality'});
+    ev.push({t:'revive',uid:tgt.uid,kind:'gift',hp:tgt.hp});
+  } else if(tgt.hp <= 0) kill(s, ev, tgt);
   return lost;
 }
 /** One combat strike. dir = [dx,dy] of the attack (used by Trample). */
@@ -108,7 +209,10 @@ export function strike(s, ev, src, tgt, dir, kind = 'strike') {
 export function counterBlocked(atk, def, melee) {
   if (!melee) return 'ranged';
   if (!alive(def)) return 'dead';
-  if (def.boss) return 'boss';
+  if(def.tapped)return 'tapped';
+  if(hasAura(def,'mtg:pacifism'))return 'pacifism';
+  // Printed legendary status does not prevent counterattacks.
+  // Tapping, First Strike, flying and explicit restrictions do.
   if (def.statuses.stunned) return 'stunned';
   if (effectivePower(def) <= 0) return 'no power';
   if (has(atk, 'firstStrike')) return 'first strike';
@@ -124,7 +228,7 @@ export function attackExchange(s, ev, atk, def) {
   let countered = false;
   if (!counterBlocked(atk, def, melee) && has(def, 'firstStrike')) {
     ev.push({ t: 'counter', uid: def.uid, target: atk.uid, first: true });
-    strike(s, ev, def, atk, [-dir[0], -dir[1]], 'counter');
+    strike(s, ev, def, atk, [-dir[0], -dir[1]], 'counter');def.tapped=true;
     countered = true;
     if (!alive(atk)) return;
   }
@@ -136,7 +240,7 @@ export function attackExchange(s, ev, atk, def) {
   }
   if (!countered && alive(atk)) {
     const why = counterBlocked(atk, def, melee);
-    if (!why) { ev.push({ t: 'counter', uid: def.uid, target: atk.uid }); strike(s, ev, def, atk, [-dir[0], -dir[1]], 'counter'); }
+    if (!why) { ev.push({ t: 'counter', uid: def.uid, target: atk.uid }); strike(s, ev, def, atk, [-dir[0], -dir[1]], 'counter');def.tapped=true; }
     else if (alive(def) && why !== 'ranged' && why !== 'dead') ev.push({ t: 'noCounter', uid: def.uid, reason: why });
   }
 }

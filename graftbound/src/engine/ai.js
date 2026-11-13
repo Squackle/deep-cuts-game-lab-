@@ -2,10 +2,13 @@
 // what happens). AI sees only the board, never the player's spellbook or rewards.
 import { reachable, pathTo, manhattan, unitAt, inBounds, tileAt, T, DIRS, lineOfSight } from '../core/grid.js';
 import { ENEMIES } from '../data/enemies.js';
+import { BOSS_BY_ID } from '../data/legendary.js';
 import { player, enemies, allies, alive, attackExchange, dealDamage, addShield, addStatus, enterTiles, strikePower, has } from './abilities.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
 import { resolveCard } from '../cards/catalog.js';
 const spellCostOf = id => (resolveCard(id) || { cost: 0 }).cost;
+import { refreshTribalBonuses, checkStateBasedDeath } from './abilities.js';
+import { attachAura,detachAura,detachEquipment } from './attachments.js';
 
 const cmpTile = (a, b) => a.y - b.y || a.x - b.x;
 const hazard = (s, t) => { const k = tileAt(s, t.x, t.y); return ([T.LAVA, T.RIFT, T.UNSTABLE, T.SPORES, T.CRUMBLE].includes(k) ? 1 : 0) + (t.hz || 0); };
@@ -24,7 +27,7 @@ function stops(s, e) {
   // A hazard-weighted route field below selects detours over risky shortcuts.
   return { map, list };
 }
-const BOSS_PHASES = { thornmother: ['Rootbound', 'Barkskin Awakening', 'The Briar Crown'], matron: ['Smouldering', 'Rising Magma', 'Pyre Unbound'], unwritten: ['The Mirror', 'Redaction', 'The Blank Page'] };
+const BOSS_PHASES = { legendary: ['Awakening', 'Reckoning', 'Last Stand'], thornmother: ['Rootbound', 'Barkskin Awakening', 'The Briar Crown'], matron: ['Smouldering', 'Rising Magma', 'Pyre Unbound'], unwritten: ['The Mirror', 'Redaction', 'The Blank Page'] };
 export const bossPhaseOf = e => (e.hp > e.maxHp * 2 / 3 ? 1 : e.hp > e.maxHp / 3 ? 2 : 3);
 export const bossPhaseName = (e, ph = bossPhaseOf(e)) => (BOSS_PHASES[ENEMIES[e.defId].ai] || [])[ph - 1] || '';
 /** Weighted cost of entering a tile for tactical routing, not damage application.
@@ -115,6 +118,22 @@ export function slamTiles(s, c, big) {
 const MIRROR_ORDER = ['flying', 'firstStrike', 'lifelink', 'trample', 'doubleStrike', 'vigilance', 'haste'];
 
 /** Returns { to:{x,y}|null, path, actions:[{type, ...}] } */
+/** Toxrill's actual static -1/-1 per slime counter triggers at the beginning of
+ * EVERY player's end step. Never count this as a once-per-AI-turn attack. */
+export function resolveToxrillEndStep(s, ev) {
+  const boss=enemies(s).find(e=>e.defId==='toxrill');
+  if(!boss)return 0;
+  let affected=0;
+  for(const u of allies(s).filter(alive)) {
+    u.slime=(u.slime||0)+1;
+    u.power=Math.max(0,u.power-1);u.toughness=Math.max(0,u.toughness-1);
+    u.maxHp=Math.max(0,u.maxHp-1);u.hp=Math.min(u.hp,u.maxHp);
+    ev.push({t:'slimeCounter',uid:u.uid,by:boss.uid,total:u.slime});
+    affected++;
+    if(u.toughness<=0)checkStateBasedDeath(s,ev,u);
+  }
+  return affected;
+}
 export function planEnemy(s, e) {
   const hero = player(s); const def = ENEMIES[e.defId];
   const plan = { to: null, path: [], actions: [] };
@@ -132,7 +151,73 @@ export function planEnemy(s, e) {
   const keepRange = (want, max, needLos) => list.filter(t => { const d = manhattan(t, hero); return d >= 2 && d <= max && (!needLos || lineOfSight(s, t, hero)); })
     .sort((a, b) => Math.abs(manhattan(a, hero) - want) - Math.abs(manhattan(b, hero) - want) || hazard(s, a) - hazard(s, b) || a.cost - b.cost || cmpTile(a, b));
 
+  if (BOSS_BY_ID[e.defId]) {
+    // These tactical actions are driven by actual MTG abilities, not by the legacy boss scripts.
+    const nearby = manhattan(e, hero) <= 1;
+    if (['arasta','drakuseth','scarab','toxrill'].includes(e.defId) && !nearby) go(approach(s,e,hero,list,map));
+    const adjacent = manhattan(posAfter(), hero) === 1;
+    switch (e.defId) {
+      case 'nemata': {
+        const mana = Math.min(8, (e.bossMana ?? 3) + 1);
+        const sap = enemies(s).filter(u=>u.defId==='saproling');
+        if (mana >= 3) plan.actions.push({ type:'legendarySummon', defId:'saproling', n:1, mana:3 });
+        if (sap.length >= 2 && e.cycle % 3 === 2) plan.actions.push({ type:'nemataPump' });
+        break;
+      }
+      case 'arasta': { if (adjacent) meleeIfAdjacent(hero); break; }
+      case 'drakuseth': { if (adjacent) { plan.actions.push({ type:'drakusethFlames' }); meleeIfAdjacent(hero); } break; }
+      case 'krenko': {
+        const count = enemies(s).filter(u => u.defId === 'goblin' || u === e).length;
+        plan.actions.push({ type:'legendarySummon', defId:'goblin', n:count }); break;
+      }
+      case 'scarab': {
+        const dead = s.units.find(u=>u.side === 'enemy' && u.hp <= 0 && u !== e && !u.exiled && !u.token);
+        if (dead && (e.bossMana ?? 3) + 1 >= 4) plan.actions.push({ type:'scarabReanimate', uid:dead.uid, mana:4 });
+        if (adjacent) meleeIfAdjacent(hero); break;
+      }
+      case 'toxrill': { if (adjacent) meleeIfAdjacent(hero); break; }
+    }
+    return plan;
+  }
   switch (def.ai) {
+    case 'caterpillar': {
+      // {1}{G}, sacrifice: destroy an artifact or enchantment. The enemy may
+      // target the hero's Equipment separately from Hexproof on the bearer.
+      const hero=player(s);
+      if(hero.equipment?.length || hero.auras?.length)
+        plan.actions.push({type:'realCaterpillar',id:hero.equipment?.[0]||hero.auras[0]});
+      else {if(manhattan(e,hero)!==1)go(approach(s,e,hero,list,map));meleeIfAdjacent(hero);}
+      break;
+    }
+    case 'spikeshot': {
+      // {R},{T}: deal damage equal to its power to any target. No anti-flying bonus.
+      if(!e.tapped)plan.actions.push({type:'realPing',damage:Math.max(0,e.power),name:'Spikeshot Goblin'});
+      break;
+    }
+    case 'alchemist': {
+      // Defender; {T}: 1 damage to each opponent. With one opponent this means the hero.
+      if(!e.tapped)plan.actions.push({type:'realPing',damage:1,name:'Thermo-Alchemist'});
+      break;
+    }
+    case 'blightcaster': {
+      // The enemy actually casts One with the Wind, triggering Blightcaster's -2/-2.
+      const ally=enemies(s).find(u=>u!==e&&!u.auras?.includes('mtg:one-with-the-wind'));
+      if(ally && !(e.spellUsed||false))plan.actions.push({type:'realBlightcaster',uid:ally.uid});
+      if(manhattan(e,hero)!==1)go(approach(s,e,hero,list,map));
+      meleeIfAdjacent(hero);
+      break;
+    }
+    case 'escort': {
+      const friends=enemies(s).filter(u=>u!==e);
+      const ally=friends.slice().sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp||a.uid-b.uid)[0];
+      if(ally && manhattan(e,ally)>1)go(approach(s,e,ally,list,map));
+      meleeIfAdjacent(hero);
+      break;
+    }
+    case 'alpha': {
+      if(manhattan(e,hero)!==1)go(approach(s,e,hero,list,map));
+      meleeIfAdjacent(hero);break;
+    }
     case 'melee': {
       const tgt = meleeTarget(s, e);
       if (manhattan(e, tgt) !== 1) {
@@ -309,10 +394,78 @@ export function actEnemy(s, ev, e) {
     else { ev.push({ t: 'move', uid: e.uid, path: plan.path }); e.x = plan.to.x; e.y = plan.to.y; enterTiles(s, ev, e, plan.path); }
     if (!alive(e)) return;
   }
+  if (e.boss && BOSS_BY_ID[e.defId]) {
+    e.bossMana = Math.min(8,(e.bossMana ?? 3)+1);
+    if(e.pendingSummons>0) { const pending=e.pendingSummons; e.pendingSummons=0;spawnTokensAround(s,ev,e,{nemata:'saproling',krenko:'goblin'}[e.defId]||'zombie',pending); }
+    if (e.defId==='scarab') {
+      const z=enemies(s).filter(x=>x.defId==='zombie').length;
+      if(z>0) { ev.push({t:'legendaryAbility',uid:e.uid,name:'The Scarab God · upkeep',amount:z});dealDamage(s,ev,e,hero,z,{kind:'scarabDrain'}); }
+    }
+  }
   for (const a of plan.actions) {
     if (!alive(e) || s.phase !== 'enemy') break;
     switch (a.type) {
-      case 'attack': { const t = s.units.find(u => u.uid === a.target); if (alive(t) && manhattan(e, t) === 1) attackExchange(s, ev, e, t); break; }
+      case 'legendarySummon': {
+        if(e.bossMana < (a.mana||0)) break;
+        e.bossMana-=(a.mana||0);
+        spawnTokensAround(s,ev,e,a.defId,a.n);
+        ev.push({t:'legendaryAbility',uid:e.uid,name:ENEMIES[e.defId].name+' summons'});
+        if(e.defId==='krenko')e.tapped = true; break;
+      }
+      case 'nemataPump': {
+        const sap=enemies(s).filter(u=>u.defId==='saproling');
+        if(!sap.length) break;
+        const sacrifice=sap[0];sacrifice.hp=0;sacrifice.sacrificed=true;
+        ev.push({t:'death',uid:sacrifice.uid,kind:'sacrifice'});
+        for(const u of sap.slice(1)) {u.power++;u.toughness++;u.hp++;u.maxHp++;u.pumpExpires=(u.pumpExpires||0)+1;}
+        ev.push({t:'legendaryAbility',uid:e.uid,name:'Saprolings +1/+1'});break;
+      }
+      case 'drakusethFlames': {
+        const victims=allies(s).filter(alive).sort((x,y)=> (y.hero?1:0)-(x.hero?1:0)||x.uid-y.uid).slice(0,3);
+        for(let i=0;i<victims.length;i++) {
+          const v=victims[i];ev.push({t:'legendaryFlame',uid:e.uid,target:v.uid,amount:i?3:4});
+          dealDamage(s,ev,e,v,i?3:4,{kind:'drakusethFlame'});
+        }
+        break;
+      }
+      case 'scarabReanimate': {
+        if(e.bossMana<4) break;
+        const dead=s.units.find(u=>u.uid===a.uid&&u.hp<=0&&!u.exiled&&!u.token);if(!dead)break;
+        e.bossMana-=4;dead.exiled=true;
+        spawnTokensAround(s,ev,e,'zombie',1);
+        ev.push({t:'legendaryAbility',uid:e.uid,name:'Exile creature · create 4/4 Zombie'});break;
+      }
+      case 'realCaterpillar': {
+        const u=player(s);if(!alive(u))break;
+        const equip=u.equipment?.includes(a.id),aura=u.auras?.includes(a.id);
+        if(!equip&&!aura)break;
+        if(equip){detachEquipment(u,a.id);(s.destroyedEquipment ||= []).push(a.id);}
+        else detachAura(u,a.id);
+        e.hp=0;ev.push({t:'realAbility',uid:e.uid,name:'Caustic Caterpillar · destroy artifact or enchantment',target:u.uid,id:a.id});
+        ev.push({t:'death',uid:e.uid,kind:'sacrifice'});refreshTribalBonuses(s,ev);
+        if(!enemies(s).length){s.phase='won';ev.push({t:'victory'});}
+        break;
+      }
+      case 'realPing': {
+        if(e.tapped || !alive(hero))break;
+        e.tapped=true;
+        ev.push({t:'realAbility',uid:e.uid,name:a.name,target:hero.uid});
+        if(a.damage>0)dealDamage(s,ev,e,hero,a.damage,{kind:'spelllike'});
+        break;
+      }
+      case 'realBlightcaster': {
+        if(e.spellUsed)break;const ally=s.units.find(u=>u.uid===a.uid&&alive(u));if(!ally)break;
+        e.spellUsed=true;s.enemySpellsCastThisTurn=(s.enemySpellsCastThisTurn||0)+1;attachAura(ally,'mtg:one-with-the-wind');
+        ev.push({t:'auraAttach',uid:ally.uid,id:'mtg:one-with-the-wind',name:'One with the Wind',x:ally.x,y:ally.y,src:e.uid});
+        // Enchantment CAST triggers -2/-2 until end of turn on target hero.
+        if(alive(hero)){hero.power=Math.max(0,hero.power-2);hero.toughness=Math.max(0,hero.toughness-2);
+          hero.maxHp=Math.max(0,hero.maxHp-2);hero.hp=Math.min(hero.hp,hero.maxHp);
+          hero.statuses.blightcasterDebuff=(hero.statuses.blightcasterDebuff||0)+2;
+          ev.push({t:'realAbility',uid:e.uid,name:'Blightcaster · -2/-2',target:hero.uid});
+          if(hero.hp<=0){s.phase='lost';ev.push({t:'defeat'});}}
+        break;
+      }
+      case 'attack': { if(e.auras?.includes('mtg:pacifism')||e.tapped)break; const t = s.units.find(u => u.uid === a.target); if (alive(t) && manhattan(e, t) === 1){attackExchange(s, ev, e, t);if(!has(e,'vigilance'))e.tapped=true;} break; }
       case 'spit': ev.push({ t: 'spit', uid: e.uid, target: hero.uid }); dealDamage(s, ev, e, hero, a.damage, { kind: 'spit' }); addStatus(s, ev, hero, 'poison', a.poison); break;
       case 'hex': ev.push({ t: 'hex', uid: e.uid, target: hero.uid }); dealDamage(s, ev, e, hero, a.damage, { kind: 'hex' }); addStatus(s, ev, hero, 'weakened', a.weaken); break;
       case 'harpoon': ev.push({ t: 'harpoon', uid: e.uid, target: hero.uid }); dealDamage(s, ev, e, hero, a.damage, { kind: 'harpoon' }); if (a.ground && alive(hero)) addStatus(s, ev, hero, 'grounded', 1); break;
@@ -363,6 +516,8 @@ export function actEnemy(s, ev, e) {
       }
     }
   }
+  // Nemata's pump expires at the END of the enemy turn, after all Saprolings have acted.
+
   if (e.statuses.chilled) e.statuses.chilled = 0; // ice slows this action, then expires
   if (e.statuses.weakened) e.statuses.weakened = 0;   // v0.8: an enemy Weaken lasts for exactly its next action
   if (e.statuses.empowered) e.statuses.empowered = 0; // and a Rally lasts for exactly its next action
@@ -390,10 +545,30 @@ export function actAlly(s, ev, a) {
   if (alive(a) && alive(tgt) && manhattan(a, tgt) === 1) attackExchange(s, ev, a, tgt);
 }
 
+/** Deterministic spaces for tokens, never placed on lethal starting tiles or occupied tiles.
+ * If full, pending summons are queued and spawned at the next legal opportunity. */
+export function spawnTokensAround(s, ev, owner, defId, n=1) {
+  if (!Number.isInteger(n) || n<0) return 0;
+  const offsets = [...DIRS,[1,1],[-1,1],[1,-1],[-1,-1]];
+  const candidates = [];
+  for (let r=1; r<=Math.max(s.w,s.h); r++) for (const [dx,dy] of offsets) {
+    const x=owner.x+dx*r,y=owner.y+dy*r;
+    if (inBounds(s,x,y) && tileAt(s,x,y)!==T.ROCK && tileAt(s,x,y)!==T.LAVA && !unitAt(s,x,y) && !candidates.some(t=>t.x===x&&t.y===y)) candidates.push({x,y});
+  }
+  let made=0;
+  for(const loc of candidates.slice(0,n)) {
+    const u=spawnEnemy(s,defId,loc.x,loc.y);u.token=true;u.summoned=true;
+    ev.push({t:'summon',uid:u.uid,defId,x:u.x,y:u.y,by:owner.uid});made++;
+  }
+  if (made < n) { owner.pendingSummons=(owner.pendingSummons||0)+(n-made); ev.push({t:'summonPending',uid:owner.uid,defId,count:n-made}); }
+  return made;
+}
 export function spawnEnemy(s, defId, x, y) {
   const d = ENEMIES[defId];
-  const u = { uid: s.nextUid++, side: 'enemy', defId, name: d.name, x, y, hp: d.toughness, maxHp: d.toughness, power: d.power,
-    toughness: d.toughness, move: d.move, keywords: { ...(d.keywords || {}) }, statuses: {}, legendary: !!d.legendary, boss: !!d.boss };
+  const hp = d.encounterHealth || d.toughness;
+  const u = { uid: s.nextUid++, side: 'enemy', defId, name: d.name, x, y, hp, maxHp: hp, power: d.power,
+    toughness: d.toughness, move: d.move || 2, legendaryVitality: d.encounterHealth ? hp - d.toughness : 0, keywords: { ...(d.keywords || {}) }, statuses: {}, legendary: !!d.legendary, boss: !!d.boss };
   s.units.push(u);
+  refreshTribalBonuses(s,[]);
   return u;
 }

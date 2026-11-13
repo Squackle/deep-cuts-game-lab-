@@ -39,30 +39,17 @@ test('Guard full cost tracks movement-enhancing grafts and grounded movement', (
   assert.equal(stanceMovementCost(s, 'guard'), hero.keywords.flying ? 8 : 9);
 });
 
-test('only authored enemies have resistance or vulnerability; ordinary hits and hazards ignore it', () => {
-  assert.deepEqual(ENEMIES.cinderling.affinity, { resist: 'fire', weak: 'frost' });
-  assert.deepEqual(ENEMIES.shardling.affinity, { resist: 'lightning', weak: 'fire' });
-  assert.equal(ENEMIES.hound.affinity, undefined);
-  const s = arena(['c...','....','P...'], { c: 'cinderling' });
-  const t = find(s, 'cinderling');
-  const ev = [];
-  const fire = dealDamage(s, ev, player(s), t, 2, { kind: 'spell', element: 'fire' });
-  assert.equal(fire, 1); assert.ok(ev.some(e => e.t === 'resisted' && e.amount === 1));
-  const frost = dealDamage(s, ev, player(s), t, 1, { kind: 'spell', element: 'frost' });
-  assert.equal(frost, 1, 'damage capped at remaining health'); assert.ok(ev.some(e => e.t === 'weakpoint' && e.element === 'frost'));
-  const other = arena(['c...','....','P...'], { c: 'cinderling' });
-  assert.equal(dealDamage(other, [], null, find(other, 'cinderling'), 1, { kind: 'lava' }), 1);
+test('real creature identities never inherit fictional elemental resistances or weaknesses',()=>{
+ for(const id of ['cinderling','shardling','hound','moth','alpha'])assert.equal(ENEMIES[id].affinity,undefined,id);
+ const s=arena(['c...','....','P...'],{c:'cinderling'});const target=find(s,'cinderling');
+ const ev=[];const hit=dealDamage(s,ev,player(s),target,1,{kind:'spell',element:'fire'});
+ assert.equal(hit,1);assert.ok(!ev.some(e=>e.t==='resisted'||e.t==='weakpoint'));
 });
 
-test('spell-target affinities apply through real cast pipeline; guard and damage rules version cannot replay old challenges', () => {
-  const s = arena(['c..z.','.....','P....'], { c: 'cinderling', z: 'shardling' }, { spellbook: book('shock', 'flame-slash') });
-  s.p.mana = 10; s.p.maxMana = 10;
-  const t = find(s, 'cinderling');
-  const ev = cast(s, 'mtg:flame-slash', t.x, t.y);
-  assert.ok(ev.some(e => e.t === 'resisted' && e.element === 'fire'));
-  const z = find(s, 'shardling');
-  const shock = cast(s, 'mtg:shock', z.x, z.y);
-  assert.ok(shock.some(e => e.t === 'resisted' && e.element === 'lightning'));
-  assert.equal(RULES_VERSION, 'graftbound-rules-1.1.1');
-  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 6);
+test('real spell damage bypasses invented color-affinities; rules versions isolate the new card engine',()=>{
+ const s=arena(['c..z.','.....','P....'],{c:'cinderling',z:'shardling'},{spellbook:book('shock','flame-slash')});
+ s.p.mana=s.p.maxMana=10;
+ const t=find(s,'cinderling');const ev=cast(s,'mtg:flame-slash',t.x,t.y);
+ assert.ok(!ev.some(e=>e.t==='resisted'),'Torchrunner is not inherently fire resistant');
+ assert.equal(RULES_VERSION,'graftbound-rules-1.2.0-beta');assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,7);
 });

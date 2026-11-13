@@ -93,7 +93,7 @@ export const REAL_SPELLS = [
 export function poolRecord(e) {
   const keywordLine = e.spell ? '' : e.keywords.join(', ').replace(/(^|, )([A-Z])/g, (m, a, b) => a + (a ? b.toLowerCase() : b));
   return { source: 'scryfall', bundled: true, id: '', oracleId: '', name: e.name, manaCost: e.mana_cost, cmc: e.cmc, colors: e.color_identity.slice(),
-    typeLine: e.type_line, power: e.spell ? null : e.power, toughness: e.spell ? null : e.toughness, keywords: e.keywords.slice(),
+    typeLine: e.type_line, power: e.spell ? null : e.power, toughness: e.spell ? null : e.toughness, keywords: e.kind ? [] : e.keywords.slice(),
     oracleText: e.spell ? null : keywordLine, set: '', setName: '', rarity: e.rarity, artist: '', image: { normal: null, artCrop: null },
     scryfallUri: null, rulingsUri: null };
 }

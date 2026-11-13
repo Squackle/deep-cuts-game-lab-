@@ -12,35 +12,50 @@ test('basic attack: survivor strikes back; killing blow suffers none; victory', 
   const k = arena(['...', '.g.', '.P.'], { g: 'grub' }, { evo: evoWith('mtg:grizzly-bears') }); attack(k, E('grub')(k).uid); assert.equal(k.phase, 'won');
 });
 test('defeat when the hero dies', () => { const s = arena(['...', '.a.', '.P.'], { a: 'alpha' }); player(s).hp = 3; attack(s, E('alpha')(s).uid); assert.equal(s.phase, 'lost'); });
-test('deathtouch destroys any non-legendary foe; +2 vs legendary; shield and armor absorb first', () => {
-  const s = arena(['...', '.t.', '.P.'], { t: 'tortoise' }, { evo: evoWith('mtg:typhoid-rats') }); attack(s, E('tortoise')(s).uid); assert.equal(s.phase, 'won');
-  const b = arena(['.....', '..B..', '..P..'], { B: 'thornmother' }, { evo: evoWith('mtg:typhoid-rats') }); attack(b, E('thornmother')(b).uid); assert.equal(E('thornmother')(b).hp, 18 - 4);
-  const a = arena(['...', '.x.', '.P.'], { x: 'ashbrute' }, { evo: evoWith('mtg:typhoid-rats') }); const br = E('ashbrute')(a); br.hp = 6;
-  const weak = arena(['...', '.x.', '.P.'], { x: 'ashbrute' }, { evo: evoWith('mtg:pharika-s-chosen') }); weak.units.find(u => u.hero).power = 1;
-  attack(weak, E('ashbrute')(weak).uid); assert.equal(E('ashbrute')(weak).hp, 6, 'a 1-power deathtouch strike is fully absorbed by Armor 1');
-  attack(a, br.uid); assert.equal(br.hp, 0, '2-power deathtouch gets 1 through armor and kills');
+test('Deathtouch destroys a printed legendary creature too, while shields and Armor prevent lethal damage', () => {
+  const s = arena(['...', '.t.', '.P.'], { t: 'tortoise' }, { evo: evoWith('mtg:typhoid-rats') });
+  attack(s, E('tortoise')(s).uid); assert.equal(s.phase, 'won');
+  const boss = arena(['.....', '..B..', '..P..'], { B: 'nemata' }, { evo: evoWith('mtg:typhoid-rats') });
+  attack(boss, E('nemata')(boss).uid);
+  assert.equal(E('nemata')(boss)?.hp || 0,0,'legendary does not grant special Deathtouch immunity');
+  const a = arena(['...', '.x.', '.P.'], { x: 'ashbrute' }, { evo: evoWith('mtg:typhoid-rats') });
+  E('ashbrute')(a).keywords.armor=2; E('ashbrute')(a).hp=8;
+  attack(a,E('ashbrute')(a).uid);assert.ok(E('ashbrute')(a),'a two-point Armor absorbs the one-point Deathtouch strike');
 });
-test('armor reduces each combat strike but not spells', () => {
-  const s = arena(['....', '.x..', '.P..', '....'], { x: 'ashbrute' }, { evo: evoWith('mtg:grizzly-bears'), spellbook: [{ id: 'mtg:shock', level: 1 }] });
-  const b = E('ashbrute')(s); attack(s, b.uid); assert.equal(b.hp, 6 - 2);
-  s.p.mana = 5; cast(s, 'mtg:shock', b.x, b.y); assert.equal(b.hp, 2);
+
+test('Armor is an explicit encounter modifier: reduces combat strikes but not spells', () => {
+  const s = arena(['....', '.x..', '.P..','....'],{x:'ashbrute'},{evo:evoWith('mtg:grizzly-bears'),spellbook:[{id:'mtg:shock',level:1}]});
+  const b=E('ashbrute')(s);b.hp=b.maxHp=12;b.keywords.armor=1;
+  attack(s,b.uid);assert.equal(b.hp,10,'three-power player strike reduced to two');
+  s.p.mana=5;cast(s,'mtg:shock',b.x,b.y);assert.equal(b.hp,8,'spell bypasses Armor');
 });
+
 test('trample: excess over armor+health hits the foe behind', () => {
   const s = arena(['.g.', '.g.', '.P.'], { g: 'grub' }, { evo: evoWith('mtg:war-mammoth') });
   const front = s.units.find(u => u.y === 1), back = s.units.find(u => u.y === 0 && u.side === 'enemy');
   attack(s, front.uid); assert.equal(front.hp, 0); assert.equal(back.hp, 0);
 });
-test('first strike, double strike, lifelink, flying, vigilance, haste', () => {
-  const fs = arena(['...', '.h.', '.P.'], { h: 'hound' }, { evo: evoWith('mtg:youthful-knight') }); E('hound')(fs).hp = 9; attack(fs, E('hound')(fs).uid); assert.equal(player(fs).hp, player(fs).maxHp);
-  const ds = arena(['...', '.t.', '.P.'], { t: 'tortoise' }, { evo: evoWith('mtg:fencing-ace') }); attack(ds, E('tortoise')(ds).uid); assert.equal(E('tortoise')(ds).hp, 1);
-  const ll = arena(['...', '.t.', '.P.'], { t: 'tortoise' }, { evo: evoWith('mtg:child-of-night') }); player(ll).hp = 3; attack(ll, E('tortoise')(ll).uid); assert.equal(player(ll).hp, 3 + 3 - 1, 'lifelink heals 3 (1+2 power), counterblow 1');
-  const fl = arena(['...', '.t.', '.P.'], { t: 'tortoise' }, { evo: evoWith('mtg:wind-drake') }); attack(fl, E('tortoise')(fl).uid); assert.equal(player(fl).hp, player(fl).maxHp);
-  const vg = arena(['....', '.h..', '.P..', '....'], { h: 'hound' }, { evo: evoWith('mtg:serra-angel') }); E('hound')(vg).hp = 99; attack(vg, E('hound')(vg).uid); assert.ok(moveOptions(vg).length > 0);
-  const hs = arena(['....', '.h..', '.P..', '....'], { h: 'hound' }, { evo: evoWith('mtg:raging-goblin') }); E('hound')(hs).hp = 99; attack(hs, E('hound')(hs).uid); assert.equal(attackTargets(hs).length, 1);
+test('First Strike, Double Strike, Lifelink, Flying, Vigilance and Haste preserve their tactical identity', () => {
+  const fs=arena(['...', '.h.', '.P.'],{h:'hound'},{evo:evoWith('mtg:youthful-knight')}); E('hound')(fs).hp=E('hound')(fs).maxHp=9;
+  attack(fs,E('hound')(fs).uid); assert.equal(player(fs).hp,player(fs).maxHp);
+  const ds=arena(['...', '.t.', '.P.'],{t:'tortoise'},{evo:evoWith('mtg:fencing-ace')}); E('tortoise')(ds).hp=E('tortoise')(ds).maxHp=12;
+  attack(ds,E('tortoise')(ds).uid);assert.equal(E('tortoise')(ds).hp,8,'two two-power strikes');
+  const ll=arena(['...', '.t.', '.P.'],{t:'tortoise'},{evo:evoWith('mtg:child-of-night')});E('tortoise')(ll).hp=E('tortoise')(ll).maxHp=12;player(ll).hp=3;
+  attack(ll,E('tortoise')(ll).uid);assert.equal(player(ll).hp,3,'Lifelink heals three, then Dauntless Escort counters for three');
+  const fl=arena(['...', '.t.', '.P.'],{t:'tortoise'},{evo:evoWith('mtg:wind-drake')});E('tortoise')(fl).hp=E('tortoise')(fl).maxHp=12;
+  attack(fl,E('tortoise')(fl).uid);assert.equal(player(fl).hp,player(fl).maxHp);
+  const vg=arena(['....','.h..','.P..','....'],{h:'hound'},{evo:evoWith('mtg:serra-angel')});E('hound')(vg).hp=99;
+  attack(vg,E('hound')(vg).uid);assert.equal(player(vg).tapped,false);assert.ok(moveOptions(vg).length>0);
+  const hs=arena(['....','.h..','.P..','....'],{h:'hound'},{evo:evoWith('mtg:raging-goblin')});E('hound')(hs).hp=99;
+  attack(hs,E('hound')(hs).uid);assert.equal(attackTargets(hs).length,0);assert.equal(player(hs).tapped,true);
 });
-test('defender first strike hits first and can kill the attacker', () => {
-  const s = arena(['...', '.a.', '.P.'], { a: 'alpha' }); player(s).hp = 3; attack(s, E('alpha')(s).uid); assert.equal(s.phase, 'lost'); assert.equal(E('alpha')(s).hp, 7);
+
+test('Real Elvish Archers First Strike can kill an attacking hero before it lands damage', () => {
+  const s=arena(['...', '.a.', '.P.'],{a:'archer'});player(s).hp=2;
+  E('archer')(s).hp=E('archer')(s).maxHp=9;
+  attack(s,E('archer')(s).uid);assert.equal(s.phase,'lost');assert.equal(E('archer')(s).hp,9);
 });
+
 test('hazards: brambles 1, lava 2 on entry and 2 for ending a turn on it; flyers immune', () => {
   const w = arena(['g..', '...', '*..', 'P..'], { g: 'grub' }); movePlayer(w, 0, 1); assert.equal(player(w).hp, 6);
   const l = arena(['....g', '.....', '.....', '~....', 'P....'], { g: 'grub' }); movePlayer(l, 0, 3); assert.equal(player(l).hp, 5); endTurn(l); assert.equal(player(l).hp, 3);
@@ -63,27 +78,29 @@ test('pack hounds flank (+1 power) and take the side opposite their packmate', (
   const s = arena(['......', '..h...', '......', '.hP...', '......'], { h: 'hound' }); const mover = s.units.find(u => u.defId === 'hound' && u.y === 1);
   endTurn(s); assert.deepEqual([mover.x, mover.y], [3, 3]);
 });
-test('Cinderling bursts on death for 2 to everything adjacent (punishes melee)', () => {
-  const s = arena(['...', '.c.', '.P.'], { c: 'cinderling' }, { evo: evoWith('mtg:grizzly-bears') }); const hp = player(s).hp;
-  attack(s, E('cinderling')(s).uid); assert.equal(player(s).hp, hp - 2);
+test('Mudbutton Torchrunner death trigger deals exactly three to the hero, not a fictional explosion', () => {
+  const s=arena(['...', '.c.', '.P.'],{c:'cinderling'},{evo:evoWith('mtg:grizzly-bears')});const hp=player(s).hp;
+  attack(s,E('cinderling')(s).uid);assert.equal(player(s).hp,hp-3);
 });
-test('Skyhook Harpooner: double damage to fliers and Grounds them (−1 move, no flying) for one turn', () => {
-  const s = arena(['..x...', '......', '......', '......', '..P...'], { x: 'harpooner' }, { evo: evoWith('mtg:storm-crow') });
-  const it = intents(s)[0]; assert.equal(it.kind, 'harpoon'); assert.equal(it.damage, 4); assert.ok(it.ground);
-  endTurn(s); const p = player(s); assert.equal(p.statuses.grounded, 1); assert.equal(s.p.moveLeft, p.move - 1);
-  s.terrain[3 * 6 + 2] = T.ROCK; assert.ok(!moveOptions(s).some(o => o.x === 2 && o.y === 2), 'grounded flier cannot pass rocks');
-  endTurn(s); assert.ok(!player(s).statuses.grounded || player(s).statuses.grounded === 1);
+
+test('Spikeshot Goblin taps to ping equal to its current Power (no invented anti-air bonus)', () => {
+  const s=arena(['..x...','......','......','......','..P...'],{x:'harpooner'},{evo:evoWith('mtg:storm-crow')});
+  const e=E('harpooner')(s),hp=player(s).hp;const ev=endTurn(s);
+  assert.ok(ev.some(x=>x.t==='realAbility'&&x.name==='Spikeshot Goblin'));assert.equal(e.tapped,true);assert.equal(player(s).hp,hp-1);
 });
-test('Emberseer marks a 3×3 around you; stepping out avoids it', () => {
-  const s = arena(['x.......', '........', '........', '........', '........', '...P....'], { x: 'emberseer' });
-  endTurn(s); const seer = E('emberseer')(s); assert.ok(seer.slam && seer.slam.tiles.length >= 6);
-  const out = moveOptions(s).find(o => !seer.slam.tiles.some(t => t.x === o.x && t.y === o.y)); movePlayer(s, out.x, out.y);
-  const hp = player(s).hp; endTurn(s); assert.ok(player(s).hp >= hp - 1, 'dodged the blast (hexers/others aside)');
+
+test('Thermo-Alchemist has Defender and deals one to its opponent by tapping', () => {
+ const s=arena(['x.......','........','........','........','........','...P....'],{x:'emberseer'});
+ assert.equal(E('emberseer')(s).power,0);const hp=player(s).hp;const ev=endTurn(s);
+ assert.ok(ev.some(x=>x.name==='Thermo-Alchemist'));assert.equal(player(s).hp,hp-1);
 });
-test('Rift Stalker steps to your side every turn and strikes — distance does not protect you', () => {
-  const s = arena(['r.......', '........', '........', '........', '........', '.......P'], { r: 'riftstalker' }); const hp = player(s).hp;
-  endTurn(s); const r = E('riftstalker')(s); assert.equal(Math.abs(r.x - player(s).x) + Math.abs(r.y - player(s).y), 1); assert.equal(player(s).hp, hp - 3);
+
+test('Fallen Shinobi has its printed 5/4 instead of fictional Rift Stalker stats', () => {
+  const s=arena(['r.......','........','........','........','........','.......P'],{r:'riftstalker'});
+  const e=E('riftstalker')(s);assert.equal(e.power,5);assert.equal(e.toughness,4);
+  endTurn(s);assert.equal(e.hp>0,true);
 });
+
 test('Null Warden taxes spells by 1 while alive', () => {
   const s = arena(['n...', '....', 'P...'], { n: 'nullwarden' }, { spellbook: [{ id: 'mtg:shock', level: 1 }] }); assert.equal(spellCost(s, 'mtg:shock'), 2);
   E('nullwarden')(s).hp = 0; assert.equal(spellCost(s, 'mtg:shock'), 1);

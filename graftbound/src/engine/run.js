@@ -1,7 +1,8 @@
 // Run lifecycle (v0.5): three acts, persistent wounds between battles, Wayshrine offerings, real-card rewards.
 import { newEvolution, absorb, deriveStats, rebuild, STARTING_NAME } from './evolution.js';
 import { generateMap, nodeById, availableNodes, ACT_COUNT } from './campaign.js';
-import { buildEncounter, templateFor, reinforcements, bossAdaptation } from './encounters.js';
+import { buildEncounter, templateFor, reinforcements, bossAdaptation, REINFORCE_CAP, COUNTERS, buildFocus } from './encounters.js';
+import { strengthOf } from './strength.js';
 import { createBattle } from './combat.js';
 import { generatePack, MAX_SPELL_LEVEL, primerPack } from './rewards.js';
 import { resolveCard } from '../cards/catalog.js';
@@ -12,8 +13,10 @@ import { journalNote, newJournal } from './journal.js';
 import { rollEvent, EVENTS, resolveEvent } from './events.js';
 import { newClock } from './clock.js';
 import { combatSpellbook, refreshLoadout, BASE_HAND_CAPACITY } from './loadout.js';
+import { newWorldThreat, settleWorldThreat, applyWorldThreat } from './world-threat.js';
+import { giveEquipment, attachRunEquipment } from './attachments.js';
 
-export const RUN_VERSION = 6;
+export const RUN_VERSION = 7;
 export const TUTORIAL_CARD = 'mtg:typhoid-rats';  // real 1/1 Deathtouch: Blank 1/1 -> 2/2 Deathtouch
 export const CHALLENGES = {
   paperThin: { name: 'Paper Thin', text: 'Your Spark is 2 instead of 6.' },
@@ -29,10 +32,10 @@ export const graftsFull = run => run.evo.absorbed.length >= graftCapacity(run);
 
 export function newRun({ seed, unlocks = {}, challenges = [], tutorial = false }) {
   const run = {
-    v: RUN_VERSION, seed: seed >>> 0, name: STARTING_NAME, evo: newEvolution(), spellbook: [], handCapacity: BASE_HAND_CAPACITY, equippedSpellIds: [], sparkBonus: 0, manaBonus: 0, sparkFonts: 0,
+    v: RUN_VERSION, seed: seed >>> 0, name: STARTING_NAME, evo: newEvolution(), spellbook: [], equipmentInventory:[],equippedEquipment:[null,null], handCapacity: BASE_HAND_CAPACITY, equippedSpellIds: [], sparkBonus: 0, manaBonus: 0, sparkFonts: 0,
     act: 0, map: generateMap(seed, { act: 0, tutorial }), current: null, visited: [], phase: 'map', battle: null, pending: null, shrine: null,
     unlocks: { ...unlocks }, challenges: challenges.slice(), tutorial, hp: null, wardNext: 0, actHistory: [], event: null, eventsSeen: [],
-    scoring: newScoring(), journal: newJournal(), clock: newClock(false),
+    scoring: newScoring(), journal: newJournal(), clock: newClock(false), worldThreat: newWorldThreat(),
     stats: { battlesWon: 0, kills: 0, damageDealt: 0, damageTaken: 0, spellsCast: 0, turns: 0, cardsAbsorbed: 0, spellsLearned: 0, elitesDefeated: 0, bossesDefeated: 0, flawless: 0 },
     startedAt: Date.now(),
   };
@@ -55,12 +58,20 @@ export function enterNode(run, nodeId) {
   if (node.type === 'event') { run.phase = 'event'; run.event = { id: rollEvent(eventView(run), node.seed), node: nodeId }; return run; }
   const base = templateFor(run.act, node.type, node.depth, node.seed);
   const extra = reinforcements(run.act, node.type, node.depth, run.evo, node.seed, { spellbook: run.spellbook, stats: runStats(run) });
+  // At Threat 6+, add at most ONE extra foe, still within the existing act's total cap.
+  if ((run.worldThreat?.level||0)>=6 && !['tutorial','boss'].includes(node.type) && !(run.act===0&&node.depth<2) && extra.length<REINFORCE_CAP[run.act]) {
+    const profile=strengthOf(run.evo,{spellbook:run.spellbook,stats:runStats(run)}).profile;
+    const choices=COUNTERS[run.act][buildFocus(profile)];
+    extra.push(choices[(node.seed>>>0)%Math.min(2,choices.length)]);
+  }
   const tpl = extra.length ? { ...base, enemies: [...base.enemies, ...extra] } : base;
   const enc = buildEncounter(tpl, node.seed, node.type);
-  const battle = createBattle({ evo: run.evo, stats: runStats(run), spellbook: combatSpellbook(run), encounter: enc, seed: node.seed, heroName: run.name, startHp: run.hp, act: run.act });
+  const battle = createBattle({ evo: run.evo, stats: runStats(run), spellbook: run.spellbook.map(e=>({...e})), deckMode:true, handCapacity:run.handCapacity, encounter: enc, seed: node.seed, heroName: run.name, startHp: run.hp, act: run.act });
+  attachRunEquipment(run,battle.units.find(u=>u.hero));
   if (run.wardNext) { const h = battle.units.find(u => u.hero); h.statuses.shield = (h.statuses.shield || 0) + run.wardNext; run.wardNext = 0; }
   if (run.challenges.includes('feral')) for (const u of battle.units) if (u.side === 'enemy') u.power += 1;
   battle.nodeType = node.type; battle.reinforced = extra.length; battle.nodeId = nodeId;
+  applyWorldThreat(battle, run.worldThreat);
   if (node.type === 'boss') battle.adapt = bossAdaptation(run.act, run.evo, { spellbook: run.spellbook, stats: runStats(run) });
   battle.bench = encounterBenchmarks(node.type, run.act, enc.enemies.length);
   run.battle = battle; run.phase = 'battle';
@@ -77,10 +88,20 @@ export function concludeBattle(run) {
   const hero = b.units.find(u => u.hero); const max = maxHpOf(run);
   run.stats.battlesWon++;
   if (b.stats.damageTaken === 0) run.stats.flawless++;
+  run.worldThreat = settleWorldThreat(run.worldThreat, { victory: true, tutorial: b.nodeType === 'tutorial', enemyDamage: b.stats.enemyHealthDamage || 0, maxHealth: b.units.find(u=>u.hero)?.maxHp || 1 });
   if (b.nodeType === 'elite') run.stats.elitesDefeated++;
   const isBoss = b.nodeType === 'boss';
   if (isBoss) { run.stats.bossesDefeated++; setHp(run, max); journalNote(run, 'boss', { name: b.name }); }                 // act boss: full recovery
   else setHp(run, hero.hp + Math.ceil((max - hero.hp) * RECOVERY));          // otherwise: half the missing health returns
+  // An enemy with an actual destroy-artifact ability can remove persistent Gear.
+  if(b.destroyedEquipment?.length){
+    const lost=new Set(b.destroyedEquipment);
+    run.equipmentInventory=(run.equipmentInventory||[]).filter(id=>!lost.has(id));
+    run.equippedEquipment=(run.equippedEquipment||[]).map(id=>lost.has(id)?null:id);
+  }
+  // Single-level Auras are consumed whether or not drawn. All ordinary learned spells persist.
+  const consumedAuras=run.spellbook.filter(x=>resolveCard(x.id)?.kind==='aura').map(x=>x.id);
+  if(consumedAuras.length) {run.spellbook=run.spellbook.filter(x=>!consumedAuras.includes(x.id));run.equippedSpellIds=(run.equippedSpellIds||[]).filter(id=>!consumedAuras.includes(id));}
   const tier = isBoss ? 'boss' : b.nodeType === 'elite' ? 'elite' : 'battle';
   const forced = b.nodeType === 'tutorial' ? [TUTORIAL_CARD] : [];
   run.pending = { cards: generatePack(b.rng.s ^ 0x5eed, { tier, forced, ...packOpts(run) }), tier, boss: isBoss };
@@ -111,6 +132,10 @@ export function chooseReward(run, cardId, releaseIndex) {
     journalNote(run, 'graft', { cardId: card.id, name: card.name, power: card.power, toughness: card.toughness, gained: res.change.gained, released, firstGraft: stageBefore === 0 && !released });
     run.stats.cardsAbsorbed++;
     setHp(run, run.hp + (maxHpOf(run) - maxBefore));   // new toughness/Spark arrives as fresh health
+  } else if(card.kind==='equipment'){
+    if(run.pending.tier==='primer'||run.pending.tier==='archivist') throw new Error('This offering holds spells only');
+    giveEquipment(run,cardId);change={kind:'equipment',cardId,slots:run.equippedEquipment.slice()};
+    journalNote(run,'spell',{cardId,name:card.name,level:1});
   } else {
     if (run.pending.tier === 'graftsmith') throw new Error('The Graftsmith offers creatures only');
     const e = run.spellbook.find(s => s.id === cardId);

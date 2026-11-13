@@ -4,6 +4,7 @@ import { T, DIRS } from '../core/grid.js';
 import { ACTS, REINFORCEMENTS } from '../data/encounters.js';
 import { stepOf } from './power.js';
 import { strengthOf, expectedStrength } from './strength.js';
+import { bossForSeed, BOSS_BY_ID } from '../data/legendary.js';
 
 export const ARENA_W = 8, ARENA_H = 8;
 function connected(terrain, w, h, start) {
@@ -18,7 +19,7 @@ function connected(terrain, w, h, start) {
   }
   return terrain.every((t, i) => t === T.ROCK || seen.has(i));
 }
-const BOSS_IDS = new Set(['thornmother', 'matron', 'unwritten']);
+const BOSS_IDS = new Set(['thornmother', 'matron', 'unwritten', ...Object.keys(BOSS_BY_ID)]);
 export function buildEncounter(template, seed, kind = 'battle') {
   const w = ARENA_W, h = ARENA_H;
   for (let attempt = 0; attempt < 80; attempt++) {
@@ -58,7 +59,8 @@ export function buildEncounter(template, seed, kind = 'battle') {
 export function templateFor(act, nodeType, depth, seed) {
   const rng = makeRng(seed); const A = ACTS[act];
   if (nodeType === 'tutorial' || (act === 0 && depth === 0)) return ACTS[0].tutorial[0]; // the Blank's first fight is always gentle
-  const base = nodeType === 'boss' ? A.bossEncounters[0] : nodeType === 'elite' ? pick(rng, A.elite) : pick(rng, A[depth <= 2 ? 'early' : depth <= 4 ? 'mid' : 'late']);
+  const prior = nodeType === 'boss' ? A.bossEncounters[0] : nodeType === 'elite' ? pick(rng, A.elite) : pick(rng, A[depth <= 2 ? 'early' : depth <= 4 ? 'mid' : 'late']);
+  const base = nodeType === 'boss' ? { ...prior, name: bossForSeed(act, seed).name, enemies: [bossForSeed(act,seed).id, ...prior.enemies.slice(1)] } : prior;
   // A small, authored amount of each new terrain: bosses intensify fissures, not every route.
   // All placements are performed after baseline hazards and checked for map connectivity.
   const late = depth >= 3 || nodeType === 'elite' || nodeType === 'boss';

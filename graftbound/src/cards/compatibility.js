@@ -2,6 +2,7 @@
 // with reasons. Nothing in Oracle text is ever executed.
 import { KEYWORDS } from '../data/keywords.js';
 import { getCard } from '../data/cards.js';
+import { ATTACHMENT_BY_NAME } from './attachments.js';
 
 export const MTG_TO_GAME_KEYWORD = Object.fromEntries(Object.entries(KEYWORDS).filter(([, d]) => d.mtg).map(([id, d]) => [d.mtg.toLowerCase(), id]));
 const KEYWORD_PARTS = { flying: 'wings', deathtouch: 'venom', trample: 'horns', firstStrike: 'blades', doubleStrike: 'claws', lifelink: 'tendrils', vigilance: 'antlers', haste: 'tail' };
@@ -24,7 +25,7 @@ export const SPELL_ADAPTATIONS = {
   'Flame Slash':        { effect: 'ember_dart', bonus: 2, cost: 3, vfx: 'flameSlash',  note: 'Adapted: 4 damage to one foe (costs 3 gems here).' },
   'Arc Lightning':      { effect: 'chain_lightning', bonus: -1, cost: 3, vfx: 'chain', note: 'Adapted: 2 damage, then 1 arcs to up to two nearby foes (the real card divides 3 damage).' },
   'Fireball':           { effect: 'starfall', cost: 4, vfx: 'fireball', note: 'Adapted: a fixed blast — 4 to the target tile and 2 to adjacent foes. X is not modeled.' },
-  'Giant Growth':       { effect: 'sap_surge', cost: 1, vfx: 'growth',  note: 'Adapted: give one friendly creature +3 power until end of turn (the toughness bonus is not modeled).' },
+  'Giant Growth':       { effect: 'sap_surge', cost: 1, vfx: 'growth',  note: 'Adapted: give target creature exactly +3/+3 until end of turn, following printed numbers.' },
   'Drain Life':         { effect: 'soul_siphon', cost: 2, vfx: 'drain', note: 'Adapted: 2 damage to a foe and you heal that much. X is not modeled.' },
   'Infest':             { effect: 'venom_mist', cost: 2, vfx: 'poison', note: 'Adapted: Poison 2 to foes in a 3×3 area (instead of −2/−2 to all creatures).' },
   'Raise the Alarm':    { effect: 'call_sproutling', cost: 2, vfx: 'summon', note: 'Adapted: summon one 2/2 Soldier ally beside you for this battle (instead of two 1/1s).' },
@@ -34,7 +35,7 @@ export const SPELL_ADAPTATIONS = {
   'Frost Breath':       { effect: 'rootsnare', cost: 2, vfx: 'frost', note: 'Adapted: 1 damage and Stun one foe (one target, not two).' },
   // v0.8 additions — each fills a role the first 13 did not cover.
   'Disfigure':          { effect: 'wither', cost: 1, vfx: 'disfigure', note: 'Adapted: −2/−2 becomes 1 damage plus Weaken 2 (the foe strikes for 2 less on its next action).' },
-  'Titanic Growth':     { effect: 'sap_surge', bonus: 1, cost: 2, vfx: 'titanic', note: 'Adapted: give one friendly creature +4 power until end of turn (the toughness bonus is not modeled).' },
+  'Titanic Growth':     { effect: 'sap_surge', bonus: 1, cost: 2, vfx: 'titanic', note: 'Adapted: give target creature exactly +4/+4 until end of turn, following printed numbers.' },
   'Snakeskin Veil':    { effect: 'barkskin', bonus: -1, cost: 1, vfx: 'snakeskin', note: 'Adapted: give one friendly creature 2 shield for this battle. Hexproof and the permanent +1/+1 counter are not modeled.' },
   'Pyroclasm':          { effect: 'firestorm', cost: 3, vfx: 'pyroclasm', note: 'Adapted: 2 damage to every foe (it never damages you or your allies here).' },
 };
@@ -73,8 +74,15 @@ export function toGameCard(sf) {
     const type = (sf.typeLine.split('—')[1] || 'Creature').trim();
     return { ok: true, card: { ...base, kind: 'creature', type, power: +sf.power, toughness: +sf.toughness, keywords: kws, parts: partsFor(kws, sf.typeLine), art: null, flavor: '' } };
   }
+  const special = ATTACHMENT_BY_NAME[sf.name];
+  if(special){
+    return { ok:true, card: {...base,kind:special.kind,effect:special.kind,cost:special.cmc,equipCost:special.equip||0,
+      target:special.target||'self',category:special.kind,text:special.oracle,keywords:Object.fromEntries(special.keywords.map(k=>[k,1])),
+      powerBonus:special.pt[0],toughnessBonus:special.pt[1],moveBonus:special.move||0,
+      oneLevel:special.kind==='aura',adaptationNote:special.adaptation,art:special.kind==='equipment'?'shield':'swirl',vfx:'shield'} };
+  }
   const ad = SPELL_ADAPTATIONS[sf.name];
   if (!ad) return { ok: false, reasons: ['spell has no reviewed adaptation'] };
   const eff = getCard(ad.effect);
-  return { ok: true, card: { ...base, kind: 'spell', effect: ad.effect, bonus: ad.bonus || 0, cost: ad.cost ?? eff.cost, target: eff.target, range: eff.range, category: eff.category, text: eff.text, art: eff.art, vfx: ad.vfx, adaptationNote: ad.note } };
+  return { ok: true, card: { ...base, kind: 'spell', effect: ad.effect, bonus: ad.bonus || 0, cost: ad.cost ?? eff.cost, target: ['Giant Growth','Titanic Growth'].includes(sf.name)?'creature':eff.target, range: eff.range, category: eff.category, text: eff.text, art: eff.art, vfx: ad.vfx, adaptationNote: ad.note } };
 }
