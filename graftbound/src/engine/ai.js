@@ -356,7 +356,7 @@ export function previewIntent(s, e) {
     const atk = a.find(x => x.type === 'attack');
     return { uid: e.uid, kind: 'slam', damage: e.slam.damage - brace(e.slam.damage), guarded: brace(e.slam.damage), tiles: e.slam.tiles, extra: atk ? atk.damage : 0, target: atk && atk.target };
   }
-  const main = a.find(x => x.type === 'attack') || a.find(x => x.type === 'harpoon') || a.find(x => x.type === 'spit') || a.find(x => x.type === 'hex') || a.find(x => x.type === 'aim') || a.find(x => x.type === 'slam') || a.find(x => x.type === 'summon') || a.find(x => x.type === 'guard') || a.find(x => x.type === 'stunned');
+  const main = a.find(x => x.type === 'attack') || a.find(x => x.type === 'realPing') || a.find(x => x.type === 'harpoon') || a.find(x => x.type === 'spit') || a.find(x => x.type === 'hex') || a.find(x => x.type === 'aim') || a.find(x => x.type === 'slam') || a.find(x => x.type === 'summon') || a.find(x => x.type === 'guard') || a.find(x => x.type === 'stunned');
   const g = (hero && hero.statuses.guard) || 0;   // v0.8: intents show what you will ACTUALLY take while guarding
   const dmg = (main && main.damage) || 0; const vsHero = main && (main.target === hero.uid || main.type === 'slam' || main.type === 'aim');
   return { uid: e.uid, kind: main ? main.type : 'move', damage: vsHero && g ? Math.max(0, dmg - g) : dmg, guarded: vsHero && g ? Math.min(g, dmg) : 0, /* pending slams use the braced rule */ poison: (main && main.poison) || 0, weaken: (main && main.weaken) || 0, ground: !!(main && main.ground),
@@ -450,6 +450,7 @@ export function actEnemy(s, ev, e) {
         if(e.tapped || !alive(hero) || (e.defId==='harpooner' && hero.keywords?.hexproof))break;
         e.tapped=true;
         ev.push({t:'realAbility',uid:e.uid,name:a.name,target:hero.uid});
+        ev.push({t:'rangedShot',uid:e.uid,target:hero.uid,kind:e.defId==='harpooner'?'spikeshot':'alchemist'});
         if(a.damage>0)dealDamage(s,ev,e,hero,a.damage,{kind:'spelllike'});
         break;
       }

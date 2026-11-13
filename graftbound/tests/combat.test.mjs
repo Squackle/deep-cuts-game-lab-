@@ -12,12 +12,15 @@ test('basic attack: survivor strikes back; killing blow suffers none; victory', 
   const k = arena(['...', '.g.', '.P.'], { g: 'grub' }, { evo: evoWith('mtg:grizzly-bears') }); attack(k, E('grub')(k).uid); assert.equal(k.phase, 'won');
 });
 test('defeat when the hero dies', () => { const s = arena(['...', '.a.', '.P.'], { a: 'alpha' }); player(s).hp = 3; attack(s, E('alpha')(s).uid); assert.equal(s.phase, 'lost'); });
-test('Deathtouch destroys a printed legendary creature too, while shields and Armor prevent lethal damage', () => {
+test('Deathtouch destroys ordinary creatures but cannot instantly destroy an encounter boss', () => {
   const s = arena(['...', '.t.', '.P.'], { t: 'tortoise' }, { evo: evoWith('mtg:typhoid-rats') });
   attack(s, E('tortoise')(s).uid); assert.equal(s.phase, 'won');
   const boss = arena(['.....', '..B..', '..P..'], { B: 'nemata' }, { evo: evoWith('mtg:typhoid-rats') });
-  attack(boss, E('nemata')(boss).uid);
-  assert.equal(E('nemata')(boss)?.hp || 0,0,'legendary does not grant special Deathtouch immunity');
+  const bossHp = E('nemata')(boss).hp;
+  const be = attack(boss, E('nemata')(boss).uid);
+  assert.ok(E('nemata')(boss), 'boss survives instant Deathtouch destruction');
+  assert.ok(E('nemata')(boss).hp < bossHp && E('nemata')(boss).hp > 0, 'boss still takes real combat damage');
+  assert.ok(be.some(x => x.t === 'deathtouchResisted'), 'the exception is explicitly announced');
   const a = arena(['...', '.x.', '.P.'], { x: 'ashbrute' }, { evo: evoWith('mtg:typhoid-rats') });
   E('ashbrute')(a).keywords.armor=2; E('ashbrute')(a).hp=8;
   attack(a,E('ashbrute')(a).uid);assert.ok(E('ashbrute')(a),'a two-point Armor absorbs the one-point Deathtouch strike');

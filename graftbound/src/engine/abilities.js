@@ -149,7 +149,12 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
   const blocked = Math.min(sh, a);
   if (blocked) { tgt.statuses.shield = sh - blocked; a -= blocked; }
   const hpBefore = tgt.hp;
-  const dt = combat && src && has(src, 'deathtouch') && a > 0;
+  // Legendary bosses resist the instant-destroy clause of Deathtouch.
+  // Ordinary creatures still die to it; bosses take printed combat damage
+  // (plus the separately disclosed GRAFTBOUND boss chip bonus in strike()).
+  const bossResistsTouch = !!(combat && src && has(src, 'deathtouch') && a > 0 && tgt.boss);
+  if (bossResistsTouch) ev.push({ t: 'deathtouchResisted', uid: tgt.uid, src: src.uid });
+  const dt = combat && src && has(src, 'deathtouch') && a > 0 && !tgt.boss;
   tgt.hp = dt ? 0 : Math.max(0, tgt.hp - a);
   if(tgt.statuses.indestructible && tgt.toughness>0 && tgt.hp<=0){tgt.hp=1;ev.push({t:'indestructible',uid:tgt.uid});}
   const lost = hpBefore - tgt.hp;
@@ -193,7 +198,7 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
 export function strike(s, ev, src, tgt, dir, kind = 'strike') {
   if (!alive(src) || !alive(tgt)) return;
   let amt = strikePower(s, src, tgt);
-  if (has(src, 'deathtouch') && tgt.legendary && amt > 0) amt += 2;
+  if (has(src, 'deathtouch') && tgt.boss && amt > 0) amt += 2; // Explicit Legendary Vitality adaptation: chip damage, not destruction.
   if (amt <= 0) { ev.push({ t: 'damage', uid: tgt.uid, amount: 0, blocked: 0, kind }); return; }
   const cap = ENEMIES[tgt.defId] && ENEMIES[tgt.defId].strikeCap;
   const shield = tgt.statuses.shield || 0, armor = kv(tgt, 'armor');

@@ -275,7 +275,7 @@ export class BattleUI {
     const currentPower = Math.max(0, u.power + (u.statuses?.empowered || 0) - (u.statuses?.weakened || 0));
     el.innerHTML = `
       <div class="in-head"><b>${esc(u.name)}</b><em class="role">${esc(type)}</em>${u.legendary ? '<em class="leg">Legendary</em>' : ''}<span class="pt">${currentPower}/${u.toughness}</span></div>
-      <div class="in-hp">${ICON.heart}${u.hp}/${u.maxHp}${u.statuses?.shield ? ` · ${ICON.shield}${u.statuses.shield}` : ''}${u.boss ? ` · Printed ${u.power}/${u.toughness} · Legendary Vitality +${u.legendaryVitality || 0} · Phase ${bossPhaseOf(u)}/3 · ${esc(bossPhaseName(u))}` : ''}</div>
+      <div class="in-hp">${ICON.heart}${u.hp}/${u.maxHp}${u.statuses?.shield ? ` · ${ICON.shield}${u.statuses.shield}` : ''}${u.boss ? ` · Printed ${u.power}/${u.toughness} · Legendary Vitality +${u.legendaryVitality || 0} · Deathtouch cannot instantly destroy this boss · Phase ${bossPhaseOf(u)}/3 · ${esc(bossPhaseName(u))}` : ''}</div>
       <p class="in-stats">Movement ${u.move} · Base attack ${u.power}${currentPower !== u.power ? ` → <b>${currentPower} buffed</b>` : ''} · ${friendly ? 'Friendly' : 'Hostile'}</p>
       ${Object.keys(u.keywords || {}).length ? `<div class="in-kw">${kwChips(u.keywords)}</div>` : ''}
       ${statuses ? `<div class="in-status">${statuses}</div>` : ''}
@@ -524,6 +524,7 @@ export class BattleUI {
         case 'counter': await this.wait(e.first ? 40 : 110); await sc.lunge(e.uid, e.target); this.float(e.uid, e.first ? 'First Strike!' : 'Strikes back', 'note'); break;
         case 'noCounter': this.float(e.uid, esc(NO_COUNTER[e.reason] || 'No strike back'), 'note'); break;
         case 'capped': this.float(e.uid, `Unyielding: ${e.from} → ${e.to}`, 'note'); break;
+        case 'deathtouchResisted': this.float(e.uid, 'Legendary: resists Deathtouch', 'blocked'); au.play('armor'); break;
         case 'armored': au.play('armor'); this.float(e.uid, `▣ −${e.amount}`, 'blocked'); break;
         case 'damage': {
           if (e.kind === 'strike2') { const atk = events.slice(0, idx).reverse().find(x => x.t === 'attack'); if (atk) { this.float(atk.uid, 'Double Strike!', 'note'); await sc.lunge(atk.uid, e.uid); } }
@@ -557,9 +558,18 @@ export class BattleUI {
         case 'spines': break;
         case 'aim': au.play(e.slam ? 'slam' : 'aim'); sc.play(e.uid, 'cast'); if (e.slam) this.float(e.uid, { root: 'Root Slam!', fire: 'Flames gather!', void: 'Erasure!' }[e.kind] || 'Danger!', 'warn'); this.scene.setDanger(e.tiles); await this.wait(260); break;
         case 'hex': { au.play('spell'); sc.play(e.uid, 'cast'); await sc.projectile(sc.centerPos(e.uid), sc.centerPos(e.target), [0.85, 0.3, 0.9], 0.3, 0.3); break; }
+        case 'rangedShot': {
+          au.play('fire');sc.play(e.uid,'attack');
+          const source=sc.units.get(e.uid),target=sc.units.get(e.target);
+          if(source&&target){sc.face(source,sc.centerPos(e.target));
+            if(e.kind==='spikeshot')await sc.arrowProjectile(sc.centerPos(e.uid),sc.centerPos(e.target));
+            else await sc.projectile(sc.centerPos(e.uid),sc.centerPos(e.target),[1,0.48,0.18],0.25,0.12,{embers:true,size:18});
+          }
+          break;
+        }
         case 'harpoon': { au.play('fire'); sc.play(e.uid, 'attack'); await sc.projectile(sc.centerPos(e.uid), sc.centerPos(e.target), [0.85, 0.9, 1], 0.2, 0.05, { size: 18 }); break; }
         case 'spit': { au.play('fire'); sc.play(e.uid, 'attack'); await sc.projectile(sc.centerPos(e.uid), sc.centerPos(e.target), [0.75, 0.4, 1], 0.25); break; }
-        case 'fire': { au.play('fire'); sc.play(e.uid, 'attack'); const a = sc.centerPos(e.uid); const end = e.tiles.at(-1) || { x: 0, y: 0 }; const victim = e.tiles.map(t => this.s.units.find(u => u.x === t.x && u.y === t.y && u.uid !== e.uid && u.hp >= 0)).find(Boolean); const b = victim && sc.units.get(victim.uid) ? sc.centerPos(victim.uid) : [...this.tile(end.x, end.y)]; await sc.projectile(a, b, [0.9, 1, 0.6], 0.22, 0.15); break; }
+        case 'fire': { au.play('fire'); sc.play(e.uid, 'attack'); const a = sc.centerPos(e.uid); const end = e.tiles.at(-1) || { x: 0, y: 0 }; const victim = e.tiles.map(t => this.s.units.find(u => u.x === t.x && u.y === t.y && u.uid !== e.uid && u.hp >= 0)).find(Boolean); const b = victim && sc.units.get(victim.uid) ? sc.centerPos(victim.uid) : [...this.tile(end.x, end.y)]; if(this.s.units.find(u=>u.uid===e.uid)?.defId==='archer')await sc.arrowProjectile(a,b,0.33); else await sc.projectile(a, b, [0.9, 1, 0.6], 0.22, 0.15); break; }
         case 'slamHit': {
           au.play(e.kind === 'fire' ? 'fireboom' : 'slam'); if (!sc.reduced) sc.shake(0.25); sc.play(e.uid, 'attack');
           const col = e.kind === 'fire' ? [1, 0.5, 0.15] : e.kind === 'void' ? [0.75, 0.4, 1] : [0.5, 0.4, 0.25];

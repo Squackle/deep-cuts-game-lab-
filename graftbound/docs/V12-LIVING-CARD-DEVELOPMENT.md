@@ -46,3 +46,11 @@ Owner approved development and Game Lab deployment **conditional on passing rele
 - The sequence is saved and replayed deterministically. Beta ranked rules are now graftbound-rules-1.2.1-beta, challenge revision 8. No save-key changes.
 - Added regression tests for two Soldiers, unavailable summoning positions, deterministic reward sequencing, and mid-sequence save/load.
 - This is a preview-only hotfix; the larger v1.2 production release blockers remain unresolved.
+
+## v1.2 boss/model/ranged-attack hotfix (preview)
+
+- **Spikeshot Goblin** now emits an explicit `rangedShot` gameplay presentation event when its printed `{R}, {T}` ability resolves, and animates a camera-correct flying wooden shaft with a visible metal tip and feathers. The already-telegraphed Elvish Archer's Longbow shot uses this same actual arrow presentation; Thermo-Alchemist retains its distinct magical projectile. There is no gameplay damage change for these visual effects.
+- Converted enemies now resolve to **distinct original animated models**, not their predecessor's legacy sprite keys. The new model renderer builds 32 individually themed front/back sprite sheets once at asset load, including all sixteen ordinary/Elite card replacements, all six legendary bosses, and their summon tokens. Original existing sprite art remains available to old saves and the unchanged preexisting game; new appearances are generated from original hand-drawn shapes, color identities and animated rigs without Magic card art.
+- All six boss encounters resist the instantaneous destroy effect of Deathtouch while keeping the ordinary damage and a documented +2 chip-damage substitution. Non-boss creatures remain susceptible to Deathtouch. Explicit combat feedback and inspection text explain the exception.
+- Beta rules version advances to `graftbound-rules-1.2.2-beta`, ranked challenge revision 9. Previous challenge revisions remain isolated by the replay version contract. No save keys, site root, or other games are changed.
+- Added regression coverage for new creature-model identities and summon token models, projectile event emission, and the boss/ordinary-creature Deathtouch distinction. Continue manual mobile desktop animation acceptance before full v1.2 production promotion.
