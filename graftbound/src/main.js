@@ -171,7 +171,7 @@ class App {
       <button type="button" class="btn primary" data-close>Resume</button>
       ${inRun ? '<button type="button" class="btn" data-a="sheet">Character Sheet &amp; Spellbook</button><button type="button" class="btn" data-a="journal">Evolution Journal</button>' : ''}
       <button type="button" class="btn" data-a="settings">Settings</button>
-      ${inRun ? '<button type="button" class="btn" data-a="quit">Save &amp; Return Home</button><button type="button" class="btn danger" data-a="abandon">Abandon Adventure</button>' : ''}</div>`);
+      ${inRun ? '<button type="button" class="btn" data-a="quit">Save &amp; Return Home</button><button type="button" class="btn danger" data-a="abandon">Abandon Adventure</button>' : ''}<a class="btn lab-menu-link" href="/lab/" aria-label="Back to Game Lab home">← Back to Game Lab</a></div>`);
     m.addEventListener('click', e => {
       const a = e.target.closest('[data-a]'); if (!a) return;
       if (a.dataset.a === 'sheet') { this.closeModal(); this.openSheet(); }

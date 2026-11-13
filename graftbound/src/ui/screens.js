@@ -48,6 +48,7 @@ export function titleScreen(app) {
   const { meta } = app; const hasRun = !!app.run;
   const el = showScreen(`
     <div class="title-wrap">
+      <a class="lab-home-link" href="/lab/" aria-label="Back to Game Lab home">← Back to Game Lab</a>
       <small class="presents">Deep Cuts EDH presents</small>
       ${LOGO}
       <p class="tagline">${GAME.tagline}</p>

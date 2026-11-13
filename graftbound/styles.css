@@ -88,6 +88,9 @@ body:not([data-mode="battle"]) #labels, body:not([data-mode="battle"]) #hud { di
 .screen { position: absolute; inset: 0; z-index: 20; display: none; overflow: auto; } .screen.show { display: block; animation: fadein .4s; } @keyframes fadein { from { opacity: 0; } }
 .screen.title { background: radial-gradient(ellipse at 50% 62%, transparent 22%, rgba(5,12,8,.72) 70%); }
 .title-wrap { min-height: 100%; display: flex; flex-direction: column; align-items: center; padding: 6vh 16px 24px; text-align: center; }
+.lab-home-link { align-self: flex-start; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: .55em 1em; border: 1px solid var(--gold3); border-radius: 6px; background: rgba(9,20,14,.86); color: var(--gold2); font: 600 .92rem var(--sans); letter-spacing: .02em; text-decoration: none; text-align: left; }
+.lab-home-link:hover, .lab-home-link:focus-visible { border-color: var(--gold2); background: rgba(28,58,43,.95); outline: 2px solid var(--gold2); outline-offset: 2px; }
+.lab-menu-link { display: block; text-decoration: none; text-align: center; }
 .presents { letter-spacing: .34em; font-variant: small-caps; color: var(--gold2); font-size: .85rem; text-shadow: 0 2px 6px #000; }
 .logo { margin: 10px 0 2px; display: flex; align-items: center; gap: .3em; font-family: var(--display); font-weight: 400; font-size: clamp(1.5rem, 8vw, 5.2rem); letter-spacing: .14em; line-height: 1; max-width: 100%; color: var(--parch); text-shadow: 0 0 1px var(--gold), 0 4px 24px rgba(0,0,0,.85), 0 0 46px rgba(201,162,74,.28); }
 .logo-sigil { color: var(--gold2); font-size: .82em; filter: drop-shadow(0 0 10px rgba(233,201,114,.55)); display: inline-grid; }

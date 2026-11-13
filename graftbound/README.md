@@ -7,7 +7,7 @@ An HD-2D tactical RPG. You begin as **The Blank**, a powerless 1/1 creature. Aft
 
 The adventure has three acts: **The Forgotten Hollow**, **The Ashen Warrens** and **The Fractured Nexus**. That's 24 nodes and three bosses.
 
-> Status: **v0.5.0, local build, not merged or deployed.** Formerly *The Living Card* (`/living-card/`, which now redirects here). See `HANDOFF.md`.
+> **Game Lab release candidate: v1.2.4-beta.** The canonical playtest destination is [Game Lab /graftbound/](https://deep-cuts-game-lab.pages.dev/graftbound/) after this version is merged and deployed from this repository's `main`. Draft-branch URLs are previews. This is not a main DeepCutsEDH Arcade release. Formerly *The Living Card* (`/living-card/`, which redirects here). See `HANDOFF.md` and `GPT-DEPLOY-INSTRUCTIONS.md` for active beta limitations and release steps.
 
 ## Run
 ```bash
