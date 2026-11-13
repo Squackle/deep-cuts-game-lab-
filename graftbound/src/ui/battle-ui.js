@@ -1,5 +1,5 @@
 // Battle HUD, input (mouse / touch / keyboard) and event playback onto the HD-2D scene.
-import { moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, intents, canAttack, player, enemies, hazardPreview, interact, interactOptions, crystalAt, guard, channel, guardValue, stanceBlockReason, stanceMovementCost, discard } from '../engine/combat.js';
+import { moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, intents, canAttack, player, enemies, hazardPreview, interact, interactOptions, crystalAt, guard, channel, guardValue, stanceBlockReason, stanceMovementCost, discard, equipBattle } from '../engine/combat.js';
 import { TACTICS } from '../data/tactics.js';
 import { getLegalPlayerActions, shouldAutoEnd } from '../engine/legal.js';
 import { describeTile, pathWarning } from '../engine/describe.js';
@@ -44,6 +44,7 @@ export class BattleUI {
       case 'interact': ev = interact(s, d.x, d.y); break;
       case 'end': ev = endTurn(s); break;
       case 'discard': ev = discard(s, d.id); break;
+      case 'equip': ev = equipBattle(s,d.id,d.uid,d.slot); break;
       case 'guard': ev = guard(s); break;
       case 'channel': ev = channel(s); break;
       default: throw new Error('Unknown action');
@@ -615,6 +616,7 @@ export class BattleUI {
         case 'bossPhase': this.audio.play('bossPhase'); sc.screenFlash([0.6, 0.35, 0.15], 0.3); if (!sc.reduced) sc.shake(0.12); await this.banner(e.phase ? `Phase ${e.phase} · ${e.text}` : (e.text || 'The foe changes'), 'boss'); break;
         case 'stunnedSkip': this.float(e.uid, 'Stunned', 'note'); await this.wait(200); break;
         case 'cardDraw': au.play('flip'); break;
+        case 'equipmentAttach': {au.play('click'); const hero=this.s?.units.find(u=>u.hero); if(hero){const ap=deriveAppearance(this.run.evo);this.scene.setUnitTexture(hero.uid,composeEquippedSheet(this.app.assets,ap,hero.equipment||[]),ap.size);}break;}
         case 'cardDiscard': au.play('flip'); this.float(player(this.s).uid,'Card to graveyard','note'); break;
         case 'auraAttach': {const w=this.tile(e.x,e.y);sc.fx.burst([w[0],0.4,w[2]],[0.85,0.65,1],16,{speed:0.7,up:1.3});au.play('spell');this.float(e.uid,esc(e.name||'Enchanted'),'note');break;}
         case 'auraBreak': au.play('block'); this.float(e.uid,'Aura shattered','warn'); break;
