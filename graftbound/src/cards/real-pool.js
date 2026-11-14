@@ -48,7 +48,7 @@ export const REAL_CREATURES = [
   C('Vampire Nighthawk', '{1}{B}{B}', 3, 'Creature — Vampire Shaman', 2, 3, ['Flying', 'Deathtouch', 'Lifelink'], ['B'], 'uncommon'),
   C('Feral Abomination', '{5}{B}', 6, 'Creature — Thrull', 5, 5, ['Deathtouch'], ['B'], 'common'),
   C('Scathe Zombies', '{2}{B}', 3, 'Creature — Zombie', 2, 2, [], ['B'], 'common'),
-  C('Dross Crocodile', '{3}{B}', 4, 'Creature — Crocodile', 5, 1, [], ['B'], 'common'),
+  C('Dross Crocodile', '{3}{B}', 4, 'Creature — Zombie Crocodile', 5, 1, [], ['B'], 'common'),
   C('Giant Scorpion', '{2}{B}', 3, 'Creature — Scorpion', 1, 3, ['Deathtouch'], ['B'], 'common'),
   C('Zombie Goliath', '{4}{B}', 5, 'Creature — Zombie Giant', 4, 3, [], ['B'], 'common'),
   // Red
