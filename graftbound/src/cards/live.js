@@ -2,13 +2,13 @@
 // Failures (offline, 404, 429, bad JSON) leave the card fully playable with GRAFTBOUND's own frame.
 import { createScryfallAdapter } from './scryfall-adapter.js';
 import { resolveCard } from './catalog.js';
-import { MTG_TO_GAME_KEYWORD } from './compatibility.js';
+import { MTG_TO_GAME_KEYWORD, isReviewedAbilityWord } from './compatibility.js';
 
 export function checkFacts(card, sf) {
   const issues = [];
   if (card.kind === 'creature') {
     if (String(card.power) !== sf.power || String(card.toughness) !== sf.toughness) issues.push(`P/T is ${sf.power}/${sf.toughness} on Scryfall`);
-    const live = sf.keywords.map(k => MTG_TO_GAME_KEYWORD[k.toLowerCase()] || k).sort().join(',');
+    const live = sf.keywords.filter(k => !isReviewedAbilityWord(card.name, k)).map(k => MTG_TO_GAME_KEYWORD[k.toLowerCase()] || k).sort().join(',');
     const mine = Object.keys(card.keywords).sort().join(',');
     if (live !== mine) issues.push(`keywords on Scryfall: ${sf.keywords.join(', ') || 'none'}`);
   }

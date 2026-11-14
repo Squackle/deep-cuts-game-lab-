@@ -9,6 +9,9 @@ import { makeRng } from '../src/core/rng.js';
 import { rarityFirstPick, generatePack, RARITY_TABLE, cardPool } from '../src/engine/rewards.js';
 import { resolveCard } from '../src/cards/catalog.js';
 import { GRAFT_TRAITS } from '../src/cards/trait-registry.js';
+import { REAL_CREATURES } from '../src/cards/real-pool.js';
+import { toGameCard } from '../src/cards/compatibility.js';
+import { checkFacts } from '../src/cards/live.js';
 import { traitDraw, onHeroAttack, onHeroSpell, onBattleGrafts } from '../src/engine/trait-triggers.js';
 import { availableMana, spendMana, addChannel, CHANNEL_MANA_CAP, CHANNEL_CHARGE_CAP } from '../src/engine/mana.js';
 import { motionDuration } from '../src/ui/card-animation-director.js';
@@ -189,4 +192,22 @@ test('Wurmcoil Engine dies into exactly one Deathtouch and one Lifelink 3/3 Wurm
  assert.ok(tokens.every(u=>u.hp===3&&u.maxHp===3&&u.power===3&&u.toughness===3));
  assert.ok(tokens.some(u=>u.keywords.deathtouch)&&tokens.some(u=>u.keywords.lifelink));
  assert.equal(splitWurmcoil(s,ev,source),0,'Death trigger cannot resolve twice');
+});
+
+
+test('Scryfall Magecraft ability word is verified as a card fact but modeled only via its reviewed Archmage trigger', () => {
+  const printed = REAL_CREATURES.find(c => c.name === 'Archmage Emeritus');
+  assert.deepEqual(printed.keywords, ['Magecraft']);
+  const sf = {source:'scryfall',name:printed.name,cmc:printed.cmc,manaCost:printed.mana_cost,
+    typeLine:printed.type_line,power:printed.power,toughness:printed.toughness,keywords:['Magecraft'],
+    colors:['U'],rarity:'rare',oracleText:'Magecraft — Whenever you cast or copy an instant or sorcery spell, draw a card.'};
+  const adapted = toGameCard(sf);
+  assert.equal(adapted.ok, true, adapted.reasons?.join('; '));
+  assert.equal(adapted.card.trait, 'archmage');
+  assert.deepEqual(adapted.card.keywords, {});
+  assert.deepEqual(adapted.card.sourceInfo.keywords, ['Magecraft']);
+  assert.deepEqual(checkFacts(adapted.card,sf), []);
+  const unreviewed = toGameCard({...sf,name:'Unreviewed Magecraft Card'});
+  assert.equal(unreviewed.ok, false);
+  assert.ok(unreviewed.reasons.includes('unsupported keyword: Magecraft'));
 });

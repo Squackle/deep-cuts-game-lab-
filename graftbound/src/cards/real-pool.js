@@ -42,7 +42,7 @@ export const REAL_CREATURES = [
   C('Mahamoti Djinn', '{4}{U}{U}', 6, 'Creature — Djinn', 5, 6, ['Flying'], ['U'], 'rare'),
   C('Tolarian Scholar', '{2}{U}', 3, 'Creature — Human Wizard', 2, 3, [], ['U'], 'common'),
   C('Phantom Monster', '{3}{U}', 4, 'Creature — Illusion', 3, 3, ['Flying'], ['U'], 'common'),
-  C('Archmage Emeritus', '{2}{U}{U}', 4, 'Creature — Human Wizard', 2, 2, [], ['U'], 'rare'),
+  C('Archmage Emeritus', '{2}{U}{U}', 4, 'Creature — Human Wizard', 2, 2, ['Magecraft'], ['U'], 'rare'),
   C('Talrand, Sky Summoner', '{2}{U}{U}', 4, 'Legendary Creature — Merfolk Wizard', 2, 2, [], ['U'], 'rare'),
   C('Archaeomancer', '{2}{U}{U}', 4, 'Creature — Human Wizard', 1, 2, [], ['U'], 'common'),
   // Black

@@ -19,6 +19,14 @@ export const TYPE_PARTS = {
 };
 const COLOR_MAP = { W: 'radiant', U: 'tide', B: 'umbral', R: 'ember', G: 'verdant' };
 
+// Scryfall includes ability words such as Magecraft in its keywords metadata,
+// even though Magic rules 207.2c gives them no standalone gameplay meaning.
+// Permit only specifically reviewed, implemented traits; never grant a generic keyword.
+export function isReviewedAbilityWord(name, word) {
+  return name === 'Archmage Emeritus' && String(word).toLowerCase() === 'magecraft' && traitOf(name)?.id === 'archmage';
+}
+
+
 /** Explicit, reviewed spell adaptations: { effect template, number bonus, gem cost, vfx id, honest note }.
  *  v0.5 costs were raised because spells now reach the whole battlefield. */
 export const SPELL_ADAPTATIONS = {
@@ -68,7 +76,11 @@ export function toGameCard(sf) {
   if (isCreature) {
     if (sf.power == null || sf.toughness == null) reasons.push('non-numeric power/toughness');
     const kws = {};
-    for (const k of sf.keywords) { const g = MTG_TO_GAME_KEYWORD[k.toLowerCase()]; if (g) kws[g] = 1; else reasons.push('unsupported keyword: ' + k); }
+    for (const k of sf.keywords) {
+      const g = MTG_TO_GAME_KEYWORD[k.toLowerCase()];
+      if (g) kws[g] = 1;
+      else if (!isReviewedAbilityWord(sf.name, k)) reasons.push('unsupported keyword: ' + k);
+    }
     if (sf.oracleText != null) {
       const lines = stripReminder(sf.oracleText).split('\n').map(l => l.trim()).filter(Boolean);
       for (const line of lines) {
