@@ -4,6 +4,7 @@
 import { resolveCard } from '../cards/catalog.js';
 import { KEYWORDS } from '../data/keywords.js';
 import { RUN_VERSION } from './run.js';
+import { RULES_VERSION } from './ranked.js';
 import { META_VERSION, newMeta, DEFAULT_SETTINGS } from './progression.js';
 import { STARTING_NAME, deriveStats } from './evolution.js';
 import { rollShrine } from './shrines.js';
@@ -157,8 +158,12 @@ export function createStore(storage) {
   const loadRunFrom = raw => {
     const { v, data } = unwrap(raw);
     const run = migrate(data, v, RUN_VERSION, RUN_MIGRATIONS);
+    // A rules-only patch keeps the save schema but retires obsolete ranked replays.
+    // Preserve the adventure and replay history rather than let old decisions enter new rules.
+    const retired = !!(run.ranked && run.ranked.rulesVersion !== RULES_VERSION);
+    if (retired) { run.archivedRanked ||= { ...run.ranked }; delete run.ranked; }
     const errs = validateRun(run); if (errs.length) throw new Error('invalid: ' + errs.join(', '));
-    return { run, migrated: v !== RUN_VERSION, fromVersion: v, raw };
+    return { run, migrated: v !== RUN_VERSION || retired, fromVersion: v, raw };
   };
   return {
     saveRun(run) {
