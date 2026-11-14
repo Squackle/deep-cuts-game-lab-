@@ -13,6 +13,9 @@ const owns=(s,id)=>s.traits?.includes(id);
 const state=s=>(s.combo ||= {choices:[], counters:{}, actions:{}, treasure:0});
 const nearest=s=>enemies(s).sort((a,b)=>manhattan(a,player(s))-manhattan(b,player(s))||a.uid-b.uid)[0];
 const validCell=(s,x,y)=> x>=0&&y>=0&&x<s.w&&y<s.h&&![T.ROCK,T.LAVA].includes(tileAt(s,x,y))&&!unitAt(s,x,y);
+// Paid graft powers should not offer actions that would have no effect.
+const hasOpenTile=s=>{for(let y=0;y<s.h;y++)for(let x=0;x<s.w;x++)if(validCell(s,x,y))return true;return false;};
+const canDraw=s=>!!((s.deck?.library?.length||0)+(s.deck?.graveyard?.length||0));
 const TYPES={
   'Bird Illusion':{types:['Bird','Illusion'],colors:['U'],feature:'birdIllusion',move:3,keywords:{flying:1}},
   Tentacle:{types:['Tentacle'],colors:['U'],feature:'tentacle',move:2,keywords:{}},
@@ -76,7 +79,7 @@ export function comboChoices(s){
  const choices=[];
  if(c.kind==='mentor'||c.kind==='nadir'){
    choices.push({arg:0,label:'Skip (save mana)'});
-   if(availableMana(s)>=1)choices.push({arg:1,label:`Pay 1 mana · ${c.kind==='mentor'?'draw a card':'gain +1/+1 and summon Tentacle'}`});
+   if(availableMana(s)>=1&&(c.kind!=='mentor'||canDraw(s)))choices.push({arg:1,label:`Pay 1 mana · ${c.kind==='mentor'?'draw a card':'gain +1/+1 and summon Tentacle'}`});
  }
  if(c.kind==='oracle'){
    for(const v of (s.deck?.library||[]).slice(0,2))if(!choices.some(x=>x.arg===v.id))choices.push({arg:v.id,label:`Take ${v.id.replace(/^mtg:/,'').replaceAll('-',' ')}`});
@@ -114,7 +117,7 @@ export function comboActiveOptions(s){
  if(owns(s,'ayara')&&co.actions.ayaraTurn!==s.turn){
   for(const u of allies(s))if(!u.hero&&(u.colors||[]).includes('B'))out.push({kind:'ayara',arg:u.uid,label:`Ayara · sacrifice ${u.name} → draw`});
  }
- if(owns(s,'skeleton')&&availableMana(s)>=2&&!allies(s).some(u=>u.sourceGraft==='skeleton'))out.push({kind:'skeleton',arg:0,label:'Reassemble Skeleton · 2 mana'});
+ if(owns(s,'skeleton')&&availableMana(s)>=2&&hasOpenTile(s)&&!allies(s).some(u=>u.sourceGraft==='skeleton'))out.push({kind:'skeleton',arg:0,label:'Reassemble Skeleton · 2 mana'});
  if(owns(s,'witness')&&!co.actions.witness&&s.deck)for(const c of s.deck.graveyard)if(!out.some(x=>x.kind==='witness'&&x.arg===c.id))out.push({kind:'witness',arg:c.id,label:`Eternal Witness · return ${c.id.replace(/^mtg:/,'').replaceAll('-',' ')}`});
  return out;
 }
