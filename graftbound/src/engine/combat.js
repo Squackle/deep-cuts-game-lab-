@@ -14,14 +14,16 @@ import { attachAura, hasGear, attachEquipment, detachEquipment, EQUIPMENT_SLOTS 
 import { resolveScarabEndStep, scarabRecast } from './printed-triggers.js';
 import { onBattleGrafts, onHeroAttack, onHeroSpell, onHeroDraw, traitDraw } from './trait-triggers.js';
 import { availableMana, spendMana, addChannel, CHANNEL_MANA_CAP, CHANNEL_CHARGE_CAP } from './mana.js';
+import { initialComboEvents, resolveComboEvents, hasComboChoices, comboActivate, resolveComboChoice } from './combo-triggers.js';
 
-export const BATTLE_VERSION = 9;
+export const BATTLE_VERSION = 10;
 export const RIFT_DAMAGE = TERRAIN_RULES.rift.pulseDamage, LAVA_DAMAGE = TERRAIN_RULES.lava.endTurnDamage;
 
 export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroName = STARTING_NAME, startHp = null, act = 0, deckMode = false, handCapacity = 7 }) {
   const s = {
     v: BATTLE_VERSION, w: encounter.w, h: encounter.h, terrain: encounter.terrain.slice(), act,
     name: encounter.name, kind: encounter.kind || 'battle', units: [], nextUid: 1, turn: 0, phase: 'player',
+    combo:{choices:[],counters:{},actions:{},treasure:0},
     rng: makeRng(seed), spellbook: spellbook.map(x => ({ ...x })),
     traits:[...new Set((evo.absorbed||[]).map(x=>getCard(x.cardId)?.trait).filter(Boolean))],
     p: { mana: 0, storedMana:0, channel:0, channeledTurn:0, maxMana: stats.maxMana, regen: stats.manaRegen, startMana: stats.startMana, arcane: stats.arcane, moveLeft: 0, attacksLeft: 0, cast: {} },
@@ -35,8 +37,8 @@ export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroN
   s.units.push({ uid: s.nextUid++, side: 'player', hero: true, defId: 'player', name: heroName, x: encounter.playerStart.x, y: encounter.playerStart.y,
     hp, maxHp: stats.maxHealth, power: stats.power, toughness: stats.toughness, move: stats.move, keywords: { ...evo.keywords }, statuses: {} });
   for (const en of encounter.enemies) spawnEnemy(s, en.defId, en.x, en.y);
-  const traitEvents=[];onBattleGrafts(s,traitEvents);
-  s.openingEvents = [...(s.entryEvents || []), ...traitEvents, ...startPlayerTurn(s)];
+  const traitEvents=[];onBattleGrafts(s,traitEvents);initialComboEvents(s,traitEvents);
+  s.openingEvents = resolveComboEvents(s,[...(s.entryEvents || []), ...traitEvents, ...startPlayerTurn(s)]);
   return s;
 }
 /** Rifts pulse at the end of every even round (telegraphed during that round's player phase). */
@@ -56,7 +58,7 @@ export function startPlayerTurn(s) {
   p.statuses.empowered = 0; p.statuses.guard = 0; // Channel charges persist until an eligible cast.
   s.p.conduit = tileAt(s, p.x, p.y) === T.CONDUIT ? TERRAIN_RULES.conduit.spellBonus : 0;
   if (s.p.conduit) ev.push({ t: 'conduit', uid: p.uid, amount: s.p.conduit, x: p.x, y: p.y });   // v0.8 stances last until your next turn begins
-  if (p.statuses.poison > 0) { dealDamage(s, ev, null, p, p.statuses.poison, { kind: 'poison' }); p.statuses.poison--; if (!alive(p)) return ev; }
+  if (p.statuses.poison > 0) { dealDamage(s, ev, null, p, p.statuses.poison, { kind: 'poison' }); p.statuses.poison--; if (!alive(p)) return finish(s,ev); }
   if (kv(p, 'regenerate')) heal(s, ev, p, kv(p, 'regenerate'), 'regenerate');
   if (kv(p, 'ward') && (p.statuses.shield || 0) < kv(p, 'ward')) {
     const add = kv(p, 'ward') - (p.statuses.shield || 0); p.statuses.shield = kv(p, 'ward'); ev.push({ t: 'shield', uid: p.uid, amount: add, total: p.statuses.shield, kind: 'ward' });
@@ -69,9 +71,10 @@ export function startPlayerTurn(s) {
   p.statuses.chilled = 0;
   s.p.attacksLeft = 1;  // Haste grants movement, not a second attack
   s.p.cast = {};
-  return ev;
+  return finish(s,ev);
 }
-const ensurePlayerPhase = s => { if (s.phase !== 'player') throw new Error('Not your turn'); };
+const ensurePlayerPhase = s => { if (s.phase !== 'player') throw new Error('Not your turn'); if(hasComboChoices(s))throw new Error('Resolve pending graft choice first'); };
+const finish=(s,ev)=>resolveComboEvents(s,ev);
 export function moveOptions(s) {
   if (s.phase !== 'player') return [];
   const p = player(s);
@@ -85,7 +88,7 @@ export function movePlayer(s, x, y) {
   p.x = x; p.y = y; s.p.moveLeft -= n.cost;
   s.stats.actions++; s.stats.moves++; s.stats.tilesMoved += n.cost;
   enterTiles(s, ev, p, path);
-  return ev;
+  return finish(s,ev);
 }
 /** A new 4/4 flying Angel is created for every attack by a Spear bearer. */
 export function summonAngel(s,ev,bearer){
@@ -130,7 +133,7 @@ export function attack(s, targetUid) {
   if(!has(p,'vigilance'))p.tapped=true;
   s.p.attacksLeft--;
   if (!has(p, 'vigilance')) s.p.moveLeft = 0;
-  return ev;
+  return finish(s,ev);
 }
 /** The printed Equip action: paid, legal-bearer-only, and deterministic. */
 export function equipmentOptions(s) {
@@ -194,7 +197,7 @@ export function guard(s) {
   ensurePlayerPhase(s); const why = stanceBlockReason(s, 'guard'); if (why) throw new Error(why);
   const p = player(s); const v = guardValue(p); p.statuses.guard = v; s.p.attacksLeft = 0; s.p.moveLeft = 0;
   s.stats.actions++; s.stats.stances = (s.stats.stances || 0) + 1;
-  return [{ t: 'stance', uid: p.uid, kind: 'guard', amount: v }, { t: 'status', uid: p.uid, status: 'guard', value: v, total: v }];
+  return finish(s,[{ t: 'stance', uid: p.uid, kind: 'guard', amount: v }, { t: 'status', uid: p.uid, status: 'guard', value: v, total: v }]);
 }
 /** CHANNEL: give up attack and movement for banked +1 mana and +1 next eligible spell power, across turns. */
 export function channel(s) {
@@ -202,7 +205,7 @@ export function channel(s) {
   const p = player(s); const manaEvent=addChannel(s,TACTICS.channel.mana,TACTICS.channel.spellBonus);
   s.p.attacksLeft = 0; s.p.moveLeft -= TACTICS.channel.moveCost;
   s.stats.actions++; s.stats.stances = (s.stats.stances || 0) + 1;
-  return [{ t: 'stance', uid: p.uid, kind: 'channel', amount: TACTICS.channel.spellBonus }, manaEvent];
+  return finish(s,[{ t: 'stance', uid: p.uid, kind: 'channel', amount: TACTICS.channel.spellBonus }, manaEvent]);
 }
 
 export function castOptions(s, spellId) {
@@ -226,18 +229,20 @@ export function cast(s, spellId, x, y, xValue = 1) {
     attachAura(target,spellId);ev.push({t:'auraCast',uid:player(s).uid,target:target.uid,id:spellId,x,y,name:card.name,color:card.color});ev.push({t:'auraAttach',uid:target.uid,id:spellId,x,y,name:card.name});
   } else castSpellEffect(s, ev, spellId, entry.level, x, y, xValue);
   if(s.deck){playFromHand(s.deck,spellId,{permanent:card.kind==='aura'});s.spellbook=s.deck.hand;}
-  if(card.kind==='spell'&&/^(Instant|Sorcery)\b/.test(card.sourceInfo?.typeLine||''))onHeroSpell(s,ev);
+  if(card.kind==='spell'&&/^(Instant|Sorcery)\b/.test(card.sourceInfo?.typeLine||'')){
+    onHeroSpell(s,ev);ev.push({t:'comboSpellCast',uid:player(s).uid,id:spellId});
+  }
   if(s.p.freeCast){s.p.freeCast=false;s.p.freeCastUsed=true;}
   const arasta = enemies(s).find(e=>e.defId==='arasta');
   if(arasta && alive(arasta) && card.kind==='spell' && /^(Instant|Sorcery)\b/.test(card.sourceInfo?.typeLine||'')) spawnTokensAround(s,ev,arasta,'spider',1);
   const spellEvent = ev.find(x => x.t === 'spell' && x.id === spellId);
   if (spellEvent) { spellEvent.manaCost = cost; if (spellId === 'mtg:drain-life') spellEvent.xValue = xValue; } // presentation-only; exact paid cost includes Null Warden tax
-  return ev;
+  return finish(s,ev);
 }
 export function discard(s,id){
  ensurePlayerPhase(s);if(!s.deck||!(s.deck.pendingDiscards>0||endHandLimit(s.deck)>0))throw new Error('No discard required');
  discardFromHand(s.deck,id);s.spellbook=s.deck.hand;if(s.deck.pendingDiscards>0)s.deck.pendingDiscards--;
- s.stats.actions++;return [{t:'cardDiscard',id,uid:player(s).uid}];
+ s.stats.actions++;return finish(s,[{t:'cardDiscard',id,uid:player(s).uid}]);
 }
 export function endTurn(s) {
   ensurePlayerPhase(s);
@@ -249,7 +254,7 @@ export function endTurn(s) {
     ev.push({ t: 'archiveDraw', uid: p.uid, x: p.x, y: p.y, count: drawn.length });
   }
   if (tileAt(s, p.x, p.y) === T.LAVA && !has(p, 'flying')) dealDamage(s, ev, null, p, LAVA_DAMAGE, { kind: 'lava' });
-  if (s.phase !== 'player') return ev;
+  if (s.phase !== 'player') return finish(s,ev);
   // End-of-turn stat buffs expire on their target, including allies and foes.
   for(const u of s.units){const t=u.statuses.temporaryToughness||0;if(t){u.maxHp=Math.max(0,u.maxHp-t);u.hp=Math.min(u.hp,u.maxHp);u.toughness=Math.max(0,u.toughness-t);u.statuses.temporaryToughness=0;u.statuses.empowered=0;}}
   p.statuses.empowered = 0; p.statuses.weakened = 0; p.statuses.grounded = 0; if (p.statuses.stunned) p.statuses.stunned = 0; s.p.silenced = null;
@@ -259,7 +264,7 @@ export function endTurn(s) {
   // The player end step is also an end step for Toxrill's printed trigger.
   resolveToxrillEndStep(s,ev);
   resolveScarabEndStep(s,ev);
-  if(s.phase === 'lost')return ev;
+  if(s.phase === 'lost')return finish(s,ev);
   s.phase = 'enemy'; ev.push({ t: 'turn', phase: 'enemy', turn: s.turn });
   for(const u of s.units)if(u.side==='enemy')u.tapped=false;
   for (const a of allies(s).filter(u => !u.hero)) { if (s.phase !== 'enemy') break; ev.push({ t: 'enemyTurn', uid: a.uid }); actAlly(s, ev, a); }
@@ -311,7 +316,7 @@ export function endTurn(s) {
   s.pendingAuras=[];
   if(s.phase === 'enemy') restoreCooled(s, ev);
   if (s.phase === 'enemy') ev.push(...startPlayerTurn(s));
-  return ev;
+  return finish(s,ev);
 }
 
 /** Frost-cooled lava hardens into walkable floor for a few rounds, then melts back (see data/terrain.js). */
@@ -336,7 +341,11 @@ export function interact(s, x, y) {
   c.charged = false; s.stats.actions++; s.stats.interactions++;
   const before = s.p.mana; s.p.mana = Math.min(s.p.maxMana + TERRAIN_RULES.crystal.manaGain, s.p.mana + TERRAIN_RULES.crystal.manaGain);
   ev.push({ t: 'crystal', x, y, kind: 'attune' }, { t: 'mana', from: before, to: s.p.mana });
-  return ev;
+  return finish(s,ev);
 }
 export function intents(s) { return enemies(s).map(e => previewIntent(s, e)); }
 export { player, enemies };
+
+/** Validated, deterministic player decisions for optional graft triggers and activated powers. */
+export const chooseCombo=(s,kind,arg)=>resolveComboChoice(s,kind,arg);
+export const activateCombo=(s,kind,arg)=>comboActivate(s,kind,arg);

@@ -8,7 +8,7 @@ const owns=(s,id)=>s.traits?.includes(id);
 const nearestFoe=s=>enemies(s).sort((a,b)=>manhattan(a,player(s))-manhattan(b,player(s))||a.uid-b.uid)[0];
 function spawnAlly(s,ev,name,power,toughness,keywords={}){
  const hero=player(s);const type=name.toLowerCase().replace(/[^a-z]/g,'');
- if(s.units.filter(u=>u.hp>0&&u.traitToken===type).length>=3)return null;
+ // Board occupancy, real game costs and turn rules constrain summons; never a hidden three-token ceiling.
  const spots=[];
  for(let y=0;y<s.h;y++)for(let x=0;x<s.w;x++){
   const t=tileAt(s,x,y);if(t===T.ROCK||t===T.LAVA||unitAt(s,x,y))continue;
@@ -16,7 +16,9 @@ function spawnAlly(s,ev,name,power,toughness,keywords={}){
  }
  spots.sort((a,b)=>a.d-b.d||a.y-b.y||a.x-b.x);
  const pos=spots[0];if(!pos)return null;
+ const cardIdentity=name==='Elemental'?{colors:['R'],types:['Elemental']} : name==='Drake'?{colors:['U'],types:['Drake']} : name==='Cat Soldier'?{colors:['W'],types:['Cat','Soldier']} : {colors:[],types:[name]};
  const u={uid:s.nextUid++,side:'player',hero:false,defId:'sproutling',traitToken:type,name,
+  ...cardIdentity,creatureTypes:cardIdentity.types.join(' '),
   x:pos.x,y:pos.y,power,toughness,hp:toughness,maxHp:toughness,move:2,keywords:{...keywords},statuses:{},token:true};
  s.units.push(u);
  ev.push({t:'summon',uid:u.uid,defId:u.defId,x:u.x,y:u.y,by:hero.uid,ally:true,trait:type,name});return u;

@@ -1,0 +1,468 @@
+{
+  "generatedPacks": 60000,
+  "slots": 180000,
+  "invalidLength": 0,
+  "duplicateCards": 0,
+  "guaranteeFailures": 0,
+  "eligibilityFailures": 0,
+  "rarityTables": {
+    "battle": {
+      "common": 60,
+      "uncommon": 28,
+      "rare": 10,
+      "mythic": 2
+    },
+    "elite": {
+      "common": 30,
+      "uncommon": 42,
+      "rare": 23,
+      "mythic": 5
+    },
+    "boss": {
+      "common": 12,
+      "uncommon": 33,
+      "rare": 43,
+      "mythic": 12
+    },
+    "shrine": {
+      "common": 45,
+      "uncommon": 35,
+      "rare": 17,
+      "mythic": 3
+    }
+  },
+  "rows": [
+    {
+      "step": 0,
+      "tier": "battle",
+      "eligible": {
+        "common": 20,
+        "uncommon": 4,
+        "rare": 0,
+        "mythic": 0
+      },
+      "cardRarities": {
+        "common": 5128,
+        "uncommon": 2372,
+        "rare": 0,
+        "mythic": 0
+      },
+      "rareOrBetterPackPct": 0,
+      "mythicPackPct": 0
+    },
+    {
+      "step": 0,
+      "tier": "elite",
+      "eligible": {
+        "common": 53,
+        "uncommon": 14,
+        "rare": 2,
+        "mythic": 0
+      },
+      "cardRarities": {
+        "common": 1794,
+        "uncommon": 4137,
+        "rare": 1569,
+        "mythic": 0
+      },
+      "rareOrBetterPackPct": 53.8,
+      "mythicPackPct": 0
+    },
+    {
+      "step": 0,
+      "tier": "boss",
+      "eligible": {
+        "common": 61,
+        "uncommon": 18,
+        "rare": 7,
+        "mythic": 0
+      },
+      "cardRarities": {
+        "common": 1034,
+        "uncommon": 2776,
+        "rare": 3690,
+        "mythic": 0
+      },
+      "rareOrBetterPackPct": 100,
+      "mythicPackPct": 0
+    },
+    {
+      "step": 2,
+      "tier": "battle",
+      "eligible": {
+        "common": 32,
+        "uncommon": 7,
+        "rare": 0,
+        "mythic": 0
+      },
+      "cardRarities": {
+        "common": 5157,
+        "uncommon": 2343,
+        "rare": 0,
+        "mythic": 0
+      },
+      "rareOrBetterPackPct": 0,
+      "mythicPackPct": 0
+    },
+    {
+      "step": 2,
+      "tier": "elite",
+      "eligible": {
+        "common": 63,
+        "uncommon": 19,
+        "rare": 5,
+        "mythic": 0
+      },
+      "cardRarities": {
+        "common": 1810,
+        "uncommon": 4144,
+        "rare": 1546,
+        "mythic": 0
+      },
+      "rareOrBetterPackPct": 52.9,
+      "mythicPackPct": 0
+    },
+    {
+      "step": 2,
+      "tier": "boss",
+      "eligible": {
+        "common": 68,
+        "uncommon": 22,
+        "rare": 10,
+        "mythic": 0
+      },
+      "cardRarities": {
+        "common": 1027,
+        "uncommon": 2753,
+        "rare": 3720,
+        "mythic": 0
+      },
+      "rareOrBetterPackPct": 100,
+      "mythicPackPct": 0
+    },
+    {
+      "step": 5,
+      "tier": "battle",
+      "eligible": {
+        "common": 56,
+        "uncommon": 15,
+        "rare": 2,
+        "mythic": 0
+      },
+      "cardRarities": {
+        "common": 4694,
+        "uncommon": 2278,
+        "rare": 528,
+        "mythic": 0
+      },
+      "rareOrBetterPackPct": 20.4,
+      "mythicPackPct": 0
+    },
+    {
+      "step": 5,
+      "tier": "elite",
+      "eligible": {
+        "common": 72,
+        "uncommon": 26,
+        "rare": 13,
+        "mythic": 0
+      },
+      "cardRarities": {
+        "common": 1795,
+        "uncommon": 4091,
+        "rare": 1614,
+        "mythic": 0
+      },
+      "rareOrBetterPackPct": 54,
+      "mythicPackPct": 0
+    },
+    {
+      "step": 5,
+      "tier": "boss",
+      "eligible": {
+        "common": 73,
+        "uncommon": 31,
+        "rare": 14,
+        "mythic": 0
+      },
+      "cardRarities": {
+        "common": 989,
+        "uncommon": 2757,
+        "rare": 3754,
+        "mythic": 0
+      },
+      "rareOrBetterPackPct": 100,
+      "mythicPackPct": 0
+    },
+    {
+      "step": 8,
+      "tier": "battle",
+      "eligible": {
+        "common": 67,
+        "uncommon": 21,
+        "rare": 8,
+        "mythic": 0
+      },
+      "cardRarities": {
+        "common": 4812,
+        "uncommon": 2186,
+        "rare": 502,
+        "mythic": 0
+      },
+      "rareOrBetterPackPct": 19.1,
+      "mythicPackPct": 0
+    },
+    {
+      "step": 8,
+      "tier": "elite",
+      "eligible": {
+        "common": 73,
+        "uncommon": 32,
+        "rare": 14,
+        "mythic": 0
+      },
+      "cardRarities": {
+        "common": 1785,
+        "uncommon": 4220,
+        "rare": 1495,
+        "mythic": 0
+      },
+      "rareOrBetterPackPct": 51.7,
+      "mythicPackPct": 0
+    },
+    {
+      "step": 8,
+      "tier": "boss",
+      "eligible": {
+        "common": 74,
+        "uncommon": 35,
+        "rare": 15,
+        "mythic": 1
+      },
+      "cardRarities": {
+        "common": 999,
+        "uncommon": 2705,
+        "rare": 3026,
+        "mythic": 770
+      },
+      "rareOrBetterPackPct": 100,
+      "mythicPackPct": 30.8
+    },
+    {
+      "step": 11,
+      "tier": "battle",
+      "eligible": {
+        "common": 72,
+        "uncommon": 28,
+        "rare": 14,
+        "mythic": 0
+      },
+      "cardRarities": {
+        "common": 4759,
+        "uncommon": 2241,
+        "rare": 500,
+        "mythic": 0
+      },
+      "rareOrBetterPackPct": 19,
+      "mythicPackPct": 0
+    },
+    {
+      "step": 11,
+      "tier": "elite",
+      "eligible": {
+        "common": 74,
+        "uncommon": 35,
+        "rare": 15,
+        "mythic": 1
+      },
+      "cardRarities": {
+        "common": 1730,
+        "uncommon": 4008,
+        "rare": 1475,
+        "mythic": 287
+      },
+      "rareOrBetterPackPct": 58.6,
+      "mythicPackPct": 11.5
+    },
+    {
+      "step": 11,
+      "tier": "boss",
+      "eligible": {
+        "common": 76,
+        "uncommon": 35,
+        "rare": 16,
+        "mythic": 1
+      },
+      "cardRarities": {
+        "common": 991,
+        "uncommon": 2659,
+        "rare": 3034,
+        "mythic": 816
+      },
+      "rareOrBetterPackPct": 100,
+      "mythicPackPct": 32.6
+    },
+    {
+      "step": 15,
+      "tier": "battle",
+      "eligible": {
+        "common": 74,
+        "uncommon": 35,
+        "rare": 14,
+        "mythic": 1
+      },
+      "cardRarities": {
+        "common": 4706,
+        "uncommon": 2199,
+        "rare": 502,
+        "mythic": 93
+      },
+      "rareOrBetterPackPct": 21.8,
+      "mythicPackPct": 3.7
+    },
+    {
+      "step": 15,
+      "tier": "elite",
+      "eligible": {
+        "common": 76,
+        "uncommon": 35,
+        "rare": 16,
+        "mythic": 1
+      },
+      "cardRarities": {
+        "common": 1770,
+        "uncommon": 3946,
+        "rare": 1481,
+        "mythic": 303
+      },
+      "rareOrBetterPackPct": 58.7,
+      "mythicPackPct": 12.1
+    },
+    {
+      "step": 15,
+      "tier": "boss",
+      "eligible": {
+        "common": 76,
+        "uncommon": 36,
+        "rare": 16,
+        "mythic": 1
+      },
+      "cardRarities": {
+        "common": 941,
+        "uncommon": 2720,
+        "rare": 3049,
+        "mythic": 790
+      },
+      "rareOrBetterPackPct": 100,
+      "mythicPackPct": 31.6
+    },
+    {
+      "step": 19,
+      "tier": "battle",
+      "eligible": {
+        "common": 76,
+        "uncommon": 35,
+        "rare": 16,
+        "mythic": 1
+      },
+      "cardRarities": {
+        "common": 4690,
+        "uncommon": 2183,
+        "rare": 513,
+        "mythic": 114
+      },
+      "rareOrBetterPackPct": 23.8,
+      "mythicPackPct": 4.6
+    },
+    {
+      "step": 19,
+      "tier": "elite",
+      "eligible": {
+        "common": 76,
+        "uncommon": 36,
+        "rare": 16,
+        "mythic": 1
+      },
+      "cardRarities": {
+        "common": 1741,
+        "uncommon": 4001,
+        "rare": 1431,
+        "mythic": 327
+      },
+      "rareOrBetterPackPct": 57.8,
+      "mythicPackPct": 13.1
+    },
+    {
+      "step": 19,
+      "tier": "boss",
+      "eligible": {
+        "common": 76,
+        "uncommon": 36,
+        "rare": 16,
+        "mythic": 2
+      },
+      "cardRarities": {
+        "common": 977,
+        "uncommon": 2616,
+        "rare": 3034,
+        "mythic": 873
+      },
+      "rareOrBetterPackPct": 100,
+      "mythicPackPct": 31.9
+    },
+    {
+      "step": 23,
+      "tier": "battle",
+      "eligible": {
+        "common": 76,
+        "uncommon": 36,
+        "rare": 16,
+        "mythic": 1
+      },
+      "cardRarities": {
+        "common": 4708,
+        "uncommon": 2202,
+        "rare": 495,
+        "mythic": 95
+      },
+      "rareOrBetterPackPct": 22.4,
+      "mythicPackPct": 3.8
+    },
+    {
+      "step": 23,
+      "tier": "elite",
+      "eligible": {
+        "common": 77,
+        "uncommon": 36,
+        "rare": 16,
+        "mythic": 2
+      },
+      "cardRarities": {
+        "common": 1727,
+        "uncommon": 3989,
+        "rare": 1480,
+        "mythic": 304
+      },
+      "rareOrBetterPackPct": 58.6,
+      "mythicPackPct": 11.8
+    },
+    {
+      "step": 23,
+      "tier": "boss",
+      "eligible": {
+        "common": 77,
+        "uncommon": 36,
+        "rare": 17,
+        "mythic": 3
+      },
+      "cardRarities": {
+        "common": 953,
+        "uncommon": 2658,
+        "rare": 3037,
+        "mythic": 852
+      },
+      "rareOrBetterPackPct": 100,
+      "mythicPackPct": 31.7
+    }
+  ]
+}

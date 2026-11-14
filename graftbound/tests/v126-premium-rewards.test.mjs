@@ -109,22 +109,25 @@ test('Sheoldred draw trigger restores life; Elvish Visionary triggers opening dr
   assert.ok(visionary.openingEvents.some(e=>e.t==='cardDraw'));
 });
 
-test('Brimaz graft summons a capped friendly Cat Soldier on declaration',()=>{
+test('Brimaz graft summons Cat Soldiers until board-space is exhausted, no three-token cap',()=>{
   const s=fight({traits:['mtg:brimaz-king-of-oreskos']});const ev=[];
   onHeroAttack(s,ev);assert.ok(s.units.some(u=>u.name==='Cat Soldier'&&u.side==='player'&&u.power===1));
   assert.ok(ev.some(e=>e.t==='summon'&&e.ally));
   for(let i=0;i<6;i++)onHeroAttack(s,ev);
-  assert.ok(s.units.filter(u=>u.name==='Cat Soldier'&&u.hp>0).length<=3);
+  assert.ok(s.units.filter(u=>u.name==='Cat Soldier'&&u.hp>0).length>3);
+  assert.ok(s.units.filter(u=>u.name==='Cat Soldier'&&u.hp>0).every(u=>u.colors.includes('W')&&u.types.includes('Soldier')));
 });
 
-test('Young Pyromancer and Talrand add distinct bounded spell-trigger token armies',()=>{
+test('Young Pyromancer and Talrand armies grow beyond three on legal board space',()=>{
   const s=fight({traits:['mtg:young-pyromancer','mtg:talrand-sky-summoner']});const ev=[];
   onHeroSpell(s,ev);
   assert.ok(s.units.some(u=>u.name==='Elemental'&&u.power===1));
   assert.ok(s.units.some(u=>u.name==='Drake'&&u.power===2&&u.keywords.flying));
   for(let i=0;i<8;i++)onHeroSpell(s,ev);
-  assert.ok(s.units.filter(u=>u.name==='Elemental'&&u.hp>0).length<=3);
-  assert.ok(s.units.filter(u=>u.name==='Drake'&&u.hp>0).length<=3);
+  assert.ok(s.units.filter(u=>u.name==='Elemental'&&u.hp>0).length>3);
+  assert.ok(s.units.filter(u=>u.name==='Elemental'&&u.hp>0).every(u=>u.colors.includes('R')));
+  assert.ok(s.units.filter(u=>u.name==='Drake'&&u.hp>0).length>3);
+  assert.ok(s.units.filter(u=>u.name==='Drake'&&u.hp>0).every(u=>u.colors.includes('U')&&u.types.includes('Drake')));
 });
 
 test('final act guardian victory is a saved win with no final booster or skipped-reward Spark',()=>{
@@ -149,7 +152,8 @@ test('old Gearhulk encounters migrate into Wurmcoil while preserving old player 
  r.battle.units.push({uid:999,defId:'champion',name:'Combustible Gearhulk',keywords:{firstStrike:1},hp:10});
  const stored=JSON.stringify(r.battle.deck);
  const m=RUN_MIGRATIONS[7](r);
- assert.equal(m.v,RUN_VERSION);assert.equal(m.battle.v,BATTLE_VERSION);
+ assert.equal(m.v,8);assert.equal(m.battle.v,9); // This historical migration remains v7 → v8.
+ const upgraded=RUN_MIGRATIONS[8](m);assert.equal(upgraded.v,RUN_VERSION);assert.equal(upgraded.battle.v,BATTLE_VERSION);
  assert.ok(!('opp' in m.battle));assert.ok(!('pendingChoices' in m.battle));
  assert.equal(m.battle.units.at(-1).name,'Wurmcoil Engine');assert.ok(m.battle.units.at(-1).keywords.deathtouch);
  assert.equal(JSON.stringify(m.battle.deck),stored);

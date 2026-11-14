@@ -16,7 +16,7 @@ import { combatSpellbook, refreshLoadout, BASE_HAND_CAPACITY } from './loadout.j
 import { newWorldThreat, settleWorldThreat, applyWorldThreat } from './world-threat.js';
 import { giveEquipment, attachRunEquipment } from './attachments.js';
 
-export const RUN_VERSION = 8;
+export const RUN_VERSION = 9;
 export const TUTORIAL_CARD = 'mtg:typhoid-rats';  // real 1/1 Deathtouch: Blank 1/1 -> 2/2 Deathtouch
 export const CHALLENGES = {
   paperThin: { name: 'Paper Thin', text: 'Your Spark is 2 instead of 6.' },
