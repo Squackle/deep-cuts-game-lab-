@@ -16,7 +16,7 @@ export const REAL_CREATURE_MODELS = Object.freeze({
   ashbrute: C('ashbrute','#4a2526','#a04c47','#ffd18a','minotaur'),
   harpooner: C('harpooner','#572d25','#b26c44','#ffdda4','spikeshot'),
   emberseer: C('emberseer','#492b27','#a44e32','#ffde91','alchemist'),
-  champion: C('champion','#343f46','#a47f56','#f3cc86','gearhulk'),
+  champion: C('champion','#3e4036','#8e7a55','#d8c98e','wurm'),
   riftstalker: C('riftstalker','#141d33','#425a89','#a4b7df','shinobi'),
   nullwarden: C('nullwarden','#26333b','#687d83','#c7dbe0','golem'),
   shardling: C('shardling','#26365b','#666ab6','#d0c3f2','duelist'),
@@ -76,6 +76,7 @@ function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
     case 'minotaur': horns();ell(0,-13,16,15,mid);poly([[-18,-12],[-8,6],[8,6],[19,-12]],dark);line([-10,9],[-18,24],mid,7);line([10,9],[17,24],mid,7);eye(-4,-18);eye(5,-18);break;
     case 'spikeshot': ears();ell(0,-20,11,11,mid);line([12,-1],[26,-10],dark,6);line([14,-5],[29,-17],light,3);poly([[26,-17],[35,-22],[27,-12]],light);poly([[12,-12],[20,-10],[14,-4]],'#d78f61');eye(-4,-21);eye(4,-21);break;
     case 'alchemist': body();line([14,2],[22,-16],dark,4);ell(22,-19,5,7,'#f5bd65');ell(22,-26,3,7,'#f8e87d');poly([[-13,0],[-21,18],[17,18],[12,0]],dark);break;
+    case 'wurm': body();ell(-13,0,13,8,light);ell(7,-7,15,10,dark);ell(11,-10,7,5,light);ell(-22,4,7,6,dark);line([-28,6],[-15,6],light,3);break;
     case 'gearhulk':case 'golem': body();ell(-15,-6,9,10,light);ell(15,-6,9,10,light);ell(0,-10,7,7,'#ff9f57');line([-7,-10],[7,-10],dark,2);break;
     case 'shinobi':body();poly([[-12,-26],[11,-26],[12,-17],[-10,-17]],dark);line([-23,-27],[20,18],light,3);line([-20,20],[27,-23],light,2);break;
     case 'duelist': poly([[-15,-18],[-29,-35],[-23,-4]],light);poly([[15,-18],[29,-35],[23,-4]],light);body();line([12,-4],[31,-19],light,2);break;

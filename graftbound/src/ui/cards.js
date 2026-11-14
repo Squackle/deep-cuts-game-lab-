@@ -69,7 +69,7 @@ export function manaPips(cost) {
   return String(cost || '').match(/\{[^}]+\}/g)?.map(t => { const v = t.slice(1, -1); const k = /^[WUBRG]$/.test(v) ? v : 'N'; return `<span class="pip pip-${k}">${k === 'N' ? esc(v) : ''}</span>`; }).join('') || '';
 }
 export function gameSummary(c, level = 1, arcane = 0) {
-  if (c.kind === 'creature') return [`+${c.power}/+${c.toughness}`, ...Object.entries(c.keywords).map(([k, v]) => keywordLabel(k, v))].join(' · ');
+  if (c.kind === 'creature') return [`+${c.power}/+${c.toughness}`, ...Object.entries(c.keywords).map(([k, v]) => keywordLabel(k, v)), ...(c.trait ? [`Graft ability: ${c.adaptationNote}`] : [])].join(' · ');
   return `${formatSpellText(c.id, level, arcane)} ${c.cost} mana · ${rangeLabel(c.id, level)}`;
 }
 /** "What grafting this does to you": e.g. 3/3 → 5/5 · new: Flying. */
@@ -98,7 +98,7 @@ export function cardHTML(cardId, opts = {}) {
   let rules = '';
   if (c.kind === 'creature') {
     const kws = Object.entries(c.keywords).map(([k, v]) => `<span class="kwc" title="${esc(KEYWORDS[k].text)}">${KEYWORDS[k].glyph} ${esc(keywordLabel(k, v))}</span>`).join('');
-    rules = `<div class="kwl">${kws || '<i>No abilities — pure body.</i>'}</div>${opts.small ? '' : `<p class="rem">${Object.keys(c.keywords).map(k => esc(KEYWORDS[k].text)).join(' ')}</p>`}`;
+    rules = `<div class="kwl">${kws}${c.trait ? `<span class="gb-trait-text" title="${esc(c.adaptationNote)}"><b>Graft ability:</b> ${esc(c.adaptationNote)}</span>` : (!kws ? '<i>No abilities — pure body.</i>' : '')}</div>${opts.small ? '' : `<p class="rem">${Object.keys(c.keywords).map(k => esc(KEYWORDS[k].text)).join(' ')}</p>`}`;
   } else rules = `<p class="sptxt">${esc(formatSpellText(c.id, opts.level || 1, opts.arcane || 0))}</p>${opts.level > 1 ? `<p class="lvl">Level ${opts.level}</p>` : ''}${c.adaptationNote && !opts.small ? `<p class="adapt">${esc(c.adaptationNote)}</p>` : ''}`;
   const typeLine = c.reference ? esc(c.sourceInfo.typeLine) : `${c.kind === 'creature' ? 'Creature — ' + esc(c.type) : 'Spell'}`;
   return `<div class="lc-card ${c.kind} r-${esc(c.rarity)} ${legacy ? 'legacy' : ''} ${opts.extraClass || ''}" data-card="${esc(c.id)}" style="--frame:${col.frame};--glow:${col.glow};--gem:${r.gem}">
@@ -122,7 +122,7 @@ export function sourcePanelHTML(cardId) {
   const oracle = s.oracleText == null ? '<i>Oracle text loads from Scryfall when online.</i>' : (s.oracleText ? esc(s.oracleText).replace(/\n/g, '<br>') : '<i>(No rules text.)</i>');
   return `<div class="source"><h4>The real card</h4><p><b>${esc(c.name)}</b> <span class="pips">${manaPips(s.manaCost)}</span><br>${esc(s.typeLine)}${c.kind === 'creature' ? ` · ${c.power}/${c.toughness}` : ''}</p>
     <p class="oracle">${oracle}</p>
-    <p class="adapt-line"><b>In GRAFTBOUND:</b> ${esc(c.kind !== 'creature' ? c.adaptationNote : 'Grafted as ' + gameSummary(c) + '. Abilities use this game\u2019s own rules, not Magic\u2019s.')}</p>
+    <p class="adapt-line"><b>In GRAFTBOUND:</b> ${esc(c.kind !== 'creature' ? c.adaptationNote : c.trait ? 'Grafted as ' + gameSummary(c) + '. This is a specifically reviewed game adaptation, not printed Oracle text.' : 'Grafted as ' + gameSummary(c) + '. Abilities use this game\u2019s own rules, not Magic\u2019s.')}</p>
     ${s.issues && s.issues.length ? `<p class="warn">Scryfall shows a difference: ${esc(s.issues.join('; '))}</p>` : ''}
     <p class="fine">${s.live ? `${esc(s.setName)}${s.artist ? ' · Illustrated by ' + esc(s.artist) : ''} · ` : ''}Card data and images via Scryfall. Magic: The Gathering is © Wizards of the Coast. GRAFTBOUND is unofficial fan content, not approved or endorsed by Wizards. ${s.scryfallUri ? `<a href="${esc(s.scryfallUri)}" target="_blank" rel="noopener noreferrer">View on Scryfall</a>` : ''}</p></div>`;
 }

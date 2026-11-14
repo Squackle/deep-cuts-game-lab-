@@ -9,7 +9,7 @@ const R = () => Math.random() - 0.5;
 
 /** Per-spell charge identity. tier: 0 quick, 1 normal, 2 powerful. Times are ms at normal speed. */
 export const CAST_PROFILE = {
-  shock:         { col: [1, 0.95, 0.55], gather: 70,  build: 40,  tier: 0, motes: 10, arcs: 1, cue: 'crackle',        origin: 'hands' },
+  shock:         { col: [0.55, 0.84, 1], gather: 62, build: 50, tier: 0, motes: 22, arcs: 4, cue: 'crackle', origin: 'hands' },
   lightningBolt: { col: [0.62, 0.82, 1], gather: 300, build: 220, tier: 2, motes: 60, arcs: 4, cue: 'charge',     origin: 'chest', core: true },
   flameSlash:    { col: [1, 0.5, 0.15],  gather: 200, build: 120, tier: 1, motes: 34, embers: true, cue: 'castFire', origin: 'hands' },
   chain:         { col: [0.62, 0.82, 1], gather: 200, build: 120, tier: 1, motes: 36, arcs: 3, cue: 'charge',     origin: 'chest', core: true },
@@ -152,20 +152,25 @@ export async function charge(sc, { uid, kind, audio = null, toward = null, power
 
 /** Full cast: charge at the caster, then the spell's own release/impact from the casting point. Resolves at IMPACT.
  *  Never rejects: a failed animation must not stall the battle UI (gameplay was already resolved by the engine). */
-export async function castSpellVisual(sc, { kind, uid, to, target = null, tiles = [], audio = null, magnitude = 3, manaCost = null }) {
+export async function castSpellVisual(sc, { kind, uid, to, target = null, tiles = [], audio = null, magnitude = 3, level = 1, manaCost = null }) {
   const fn = VFX[kind]; if (!fn) return;
   let cleanup = () => {};
-  const power = intensityOf(magnitude), P = profileFor(kind);
+  const spellLevel = Math.max(1, Math.min(3, Number.isInteger(level) ? level : 1));
+  const power = Math.min(2.4, intensityOf(magnitude) * (1 + (spellLevel - 1) * 0.18)), P = profileFor(kind);
   const manaTier = visualManaTier(manaCost ?? (P.tier + 1));
   try {
     const instant = sc.speed >= 50;
     if (!instant) cleanup = await charge(sc, { uid, kind, audio, power, manaTier, toward: target != null && sc.units.get(target) ? sc.units.get(target).pos : to });
     const from = castOrigin(sc, uid, kind);
     if (!instant && manaTier >= 2 && !P.self) sc.light(lerp(from, to || from, 0.3), P.col, 2.2 * (0.8 + 0.2 * power), 0.25, 1.4);   // brief directional light
-    await fn(sc, { from, to: to || from, target, tiles, uid, uidFrom: uid, charged: true, power });
+    await fn(sc, { from, to: to || from, target, tiles, uid, uidFrom: uid, charged: true, power, level:spellLevel });
+    if(kind==='shock' && !sc.reduced) {
+      const center=to||from; const n=Math.min(7,2+Math.max(0,Math.min(3,level))*2);
+      for(let i=0;i<n;i++){const a=i*Math.PI*2/n;sc.addBolt({a:[center[0]+Math.cos(a)*0.32,center[1]+0.5+Math.sin(a*2)*0.22,center[2]+Math.sin(a)*0.32],b:[center[0],center[1]+0.15,center[2]],life:0.16,width:0.032,col:[0.72,0.9,1],segs:4});}
+    }
     if (!instant) {
-      impactAmplifier(sc, P, to || from, power, manaTier);
-      aftermathSigil(sc, kind, to || from, power, manaTier);
+      impactAmplifier(sc, P, to || from, power, manaTier, spellLevel);
+      aftermathSigil(sc, kind, to || from, power, manaTier, spellLevel);
     }
   } catch (err) { if (typeof console !== 'undefined') console.warn('Spell VFX failed (gameplay unaffected):', err); }
   finally { cleanup(); }
@@ -173,9 +178,9 @@ export async function castSpellVisual(sc, { kind, uid, to, target = null, tiles 
 
 /** v0.8 impact scaled by the resolved magnitude + brief lingering motes. Hard caps on particles, light and shake.
  *  Low graphics settings reduce density automatically (sc.fx.density); reduced motion removes shake. */
-export function impactAmplifier(sc, P, at, power, manaTier = P.tier + 1) {
+export function impactAmplifier(sc, P, at, power, manaTier = P.tier + 1, level = 1) {
   const style = MANA_STYLE[manaTier];
-  const extra = Math.round(Math.min(40, 10 * power * style.burst) * (sc.reduced ? 0.4 : 1));
+  const extra = Math.round(Math.min(40, 10 * power * style.burst * (1+0.08*(level-1))) * (sc.reduced ? 0.4 : 1));
   sc.fx.burst(at, P.col, extra, { speed: 1.4 + power * 0.6, up: 1 + power * 0.4, size: 8 + power * 3, life: 0.45 + power * 0.1 });
   sc.light(at, P.col, Math.min(5.5, (1.15 + power * 1.2) * style.radiance), 0.25 + power * 0.12, Math.min(3, (0.8 + power * 0.7) * style.radiance));
   if (manaTier >= 2 && power > 1.1 && !P.self) sc.addRing({ pos: [at[0], 0.03, at[2]], r0: 0.1, r1: Math.min(2.2, 0.6 + power * 0.6), life: 0.4, col: P.col, width: 0.05 + 0.03 * power });
@@ -208,15 +213,15 @@ const RESIDUE = Object.freeze({
   ward: { spokes: 6, seg: 6, spin: 0, radius: 0.78 },
   wind: { spokes: 4, seg: 15, spin: 4, radius: 0.85 },
 });
-export function aftermathSigil(sc, kind, at, power = 1, manaTier = profileFor(kind).tier + 1) {
+export function aftermathSigil(sc, kind, at, power = 1, manaTier = profileFor(kind).tier + 1, level = 1) {
   if (sc.reduced || sc.speed >= 50 || !sc.addRing) return;
   const shape = RESIDUE[AFTERMATH_SIGILS[kind]];
   if (!shape || !at || !Number.isFinite(at[0]) || !Number.isFinite(at[2])) return;
   const col = profileFor(kind).col;
-  const radius = Math.min(1.8, shape.radius * (0.78 + 0.22 * power) * MANA_STYLE[manaTier].radiance);
+  const radius = Math.min(1.8, shape.radius * (0.78 + 0.22 * power) * MANA_STYLE[manaTier].radiance * (1 + 0.12*(level-1)));
   sc.addRing({ pos: [at[0], 0.045, at[2]], r0: radius * 0.55, r1: radius,
     life: Math.min(0.7, 0.43 + manaTier * 0.09), col, width: 0.02 + manaTier * 0.008,
-    spokes: manaTier === 1 ? 0 : shape.spokes, seg: manaTier === 1 ? 8 : shape.seg, spin: manaTier === 1 ? 0 : shape.spin });
+    spokes: manaTier === 1 && level === 1 ? 0 : shape.spokes, seg: manaTier === 1 && level === 1 ? 8 : shape.seg, spin: manaTier === 1 && level === 1 ? 0 : shape.spin });
   // Three-mana spells get an extra concentric echo; one-mana spells stay restrained.
   if (manaTier >= 3) sc.addRing({ pos: [at[0], 0.05, at[2]], r0: 0.08, r1: radius * 0.6,
     life: 0.48, col, width: 0.025, spokes: shape.spokes, seg: shape.seg });

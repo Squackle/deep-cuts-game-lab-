@@ -116,9 +116,9 @@ test('Guard: costs an attack and ALL movement, counts as one action, reduces eve
   assert.equal(p.hp, hp - Math.max(0, 2 - v), 'the hound strike is reduced by Guard'); assert.equal(p.statuses.guard, 0, 'expires when your turn begins');
   const l = arena(['....g', '.....', '~....', 'P....'], { g: 'grub' }); guard(l); const h0 = player(l).hp; dealDamage(l, [], null, player(l), 2, { kind: 'lava' }); assert.equal(player(l).hp, h0 - 2, 'lava ignores guard');
 });
-test('Channel: costs attack and movement; +1 mana (max+1); the next spell this turn gains +1; one action', () => {
+test('Channel: costs attack and movement; stores mana and spell bonus independently across turns', () => {
   const s = arena(['g...', '....', 'P...'], { g: 'tortoise' }, { spellbook: book(['shock']) }); s.p.mana = 0;
-  channel(s); assert.equal(s.p.mana, 1); assert.equal(s.p.moveLeft, 2); assert.equal(s.p.attacksLeft, 0); assert.equal(s.stats.actions, 1);
+  channel(s); assert.equal(s.p.storedMana, 1); assert.equal(s.p.moveLeft, 2); assert.equal(s.p.attacksLeft, 0); assert.equal(s.stats.actions, 1);
   const t = E('tortoise')(s); cast(s, 'mtg:shock', t.x, t.y); assert.equal(t.hp, 0, 'Shock 2 +1 from Channel defeats 3-toughness Escort'); assert.equal(s.p.channel, 0, 'consumed');
 });
 test('auto-end: stances keep the turn only when useful (Guard when threatened, Channel when +1 mana unlocks a cast)', () => {
@@ -130,9 +130,9 @@ test('auto-end: stances keep the turn only when useful (Guard when threatened, C
   ch.units[1].x = 3; ch.units[1].y = 0; assert.ok(usefulStances(ch).includes('channel'));
 });
 test('ranked replays include stances: recorded runs re-verify byte-identically under rules 1.1 / challenge revision 6', () => {
-  assert.equal(RULES_VERSION, 'graftbound-rules-1.2.5-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 12);
+  assert.equal(RULES_VERSION, 'graftbound-rules-1.2.6-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 13);
   const { run, log } = playRanked(); assert.ok(log.length >= 15, 'the bot made a meaningful deterministic decision sequence; stance legality is tested in controlled arenas above');
-  assert.equal(JSON.stringify(replayRun('gb-expedition-01', log, { revision: 12 }).run), JSON.stringify(run));
+  assert.equal(JSON.stringify(replayRun('gb-expedition-01', log, { revision: 13 }).run), JSON.stringify(run));
   const i = log.findIndex(d => d.type === 'guard'); if (i >= 0) { const bad = log.map(d => ({ ...d })); bad.splice(i, 0, { ...bad[i] }); bad.forEach((d, k) => (d.seq = k)); assert.throws(() => replayRun('gb-expedition-01', bad)); }
 });
 

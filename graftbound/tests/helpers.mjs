@@ -1,8 +1,5 @@
 import { createBattle, moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, player, enemies, intents, hazardPreview, guard, discard } from '../src/engine/combat.js';
 import { usefulStances } from '../src/engine/legal.js';
-import { pendingChoice, gearhulkPreview, resolveGearhulkChoice } from '../src/engine/printed-triggers.js';
-/** Bot answer to Combustible Gearhulk: mill only when even the worst-case mill can't kill the hero. */
-export const botGearhulkChoice = s => (player(s).hp > gearhulkPreview(s).maxDamage + 2 ? 'mill' : 'draw');
 import { newEvolution, absorb, deriveStats } from '../src/engine/evolution.js';
 import { installReferenceSet } from '../src/cards/reference-set.js';
 import { T, manhattan, tileAt } from '../src/core/grid.js';
@@ -26,7 +23,6 @@ export function arena(rows, enemyMap, { evo = newEvolution(), spellbook = [], se
 export function botPlay(s, maxTurns = 40, { tactics = true } = {}) {
   for (let t = 0; t < maxTurns; t++) {
     if (s.phase !== 'player') return s.phase;
-    while (pendingChoice(s) && s.phase === 'player') resolveGearhulkChoice(s, botGearhulkChoice(s));
     if (s.phase !== 'player') return s.phase;
     const danger = new Set([...intents(s).flatMap(i => (i.kind === 'fire' || i.kind === 'slam') ? i.tiles.map(q => q.x + ',' + q.y) : []), ...hazardPreview(s).map(q => q.x + ',' + q.y)]);
     for (const sp of s.spellbook) {

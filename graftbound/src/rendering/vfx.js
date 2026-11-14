@@ -45,14 +45,33 @@ export async function lightningBolt(sc, { from, to, target, big = true, charged 
   (async () => { for (let i = 0; i < 4; i++) { await sleep(sc, 60); const p = add(to, [R() * 0.6, Math.random() * 0.4, R() * 0.6]); sc.addBolt({ a: p, b: add(p, [R() * 0.4, R() * 0.3, R() * 0.4]), life: 0.06, width: 0.015, col: ELECTRIC, segs: 3 }); } })();
 }
 export const spark = (sc, o) => lightningBolt(sc, { ...o, big: false });
-/** Shock — FAST: no buildup; a single crisp crack with one small fork, a white pop and a short-lived spark spray. */
-export async function shock(sc, { from, to, target, charged = false }) {
-  const hand = charged ? from : add(from, [0, 0.25, 0]); const Y = [1, 0.95, 0.55];
-  sc.fx.burst(hand, Y, charged ? 5 : 8, { speed: 0.6, up: 0.3, size: 7, grav: 0, life: 0.15 });
-  sc.addBolt({ a: hand, b: to, life: 0.14, width: 0.035, col: Y, branches: 1, segs: 7, grow: 0.03 });
-  await sleep(sc, 50);
-  sc.light(to, [1, 0.97, 0.75], 1.8, 0.18, 2.2); sc.fx.burst(to, [1, 1, 0.85], 14, { speed: 2.4, up: 1, size: 6, life: 0.22, grav: -6 });
-  if (target != null) sc.hit(target, Y, false, true);
+/** Shock — quick, sharp, satisfying electrical strike; each spell LEVEL adds forks and a brighter impact.
+ * Distinct from Lightning Bolt: no long channel, no giant storm bolt and no dramatic camera shake. */
+export async function shock(sc, { from, to, target, charged = false, power = 1, level = 1 }) {
+  const hand = charged ? from : add(from,[0,.25,0]), Y=[1,.93,.48], WHITE=[1,.99,.85];
+  const lv=Math.max(1,Math.min(3,level|0));
+  const mobile=sc.reduced||sc.fx?.density<.6;
+  if (sc.speed>=50) {sc.addBolt({a:hand,b:to,life:.16,width:.035,col:Y,branches:lv+1,segs:11,grow:.02});if(target!=null)sc.hit(target,Y,false,true);return;}
+  // Small electrical switch-on at the fingers, then a quick guided double-fork discharge.
+  sc.light(hand,Y,1.4+lv*.3,.2,1.4);
+  sc.fx.burst(hand,WHITE,Math.round((6+lv*4)*(mobile?.6:1)),{speed:.8,up:.2,size:6,grav:0,life:.2});
+  const mid=lerp(hand,to,.48);
+  // Main lightning filament travels from the caster all the way to the impact (testing and readability).
+  sc.addBolt({a:hand,b:to,life:.22,width:.025+lv*.005,col:Y,branches:1+lv,segs:12,grow:.035});
+  sc.addBolt({a:hand,b:mid,life:.17,width:.026+lv*.005,col:Y,branches:1+lv,segs:9,grow:.03});
+  sc.addBolt({a:mid,b:to,life:.22,width:.035+lv*.006,col:WHITE,branches:lv+1,segs:10,grow:.025});
+  if(lv>=2)sc.addBolt({a:hand,b:to,life:.16,width:.017,col:Y,branches:lv-1,segs:11,grow:.04});
+  await sleep(sc,45);
+  // A single, readable impact corona with staggered forks; no excessive bloom or screen flash.
+  sc.addRing({pos:[to[0],.06,to[2]],r0:.03,r1:.42+lv*.14,life:.3,col:Y,width:.055,spokes:4+lv*2,seg:12});
+  for(let i=0;i<2+lv;i++){
+    const a=(i/(2+lv))*Math.PI*2+(lv*.1),radius=.33+lv*.13;
+    sc.addBolt({a:to,b:add(to,[Math.cos(a)*radius,Math.sin(a)*.18,Math.sin(a)*radius]),life:.14+lv*.025,width:.016,col:WHITE,segs:4});
+  }
+  sc.fx.burst(to,Y,Math.round((13+lv*7)*(mobile?.55:1)),{speed:1.5+lv*.22,up:1,size:7+lv*2,life:.35,grav:-5});
+  sc.light(to,WHITE,2.2+lv*.55,.32,1.8+lv*.28);
+  if(target!=null)sc.hit(target,Y,false,true);
+  if(!sc.reduced && lv>=3)sc.shake(.038);
 }
 /** Flame Slash — a curved crescent blade of fire sweeps across the target, leaving a burning arc. */
 export async function flameSlash(sc, { from, to, target, charged = false }) {

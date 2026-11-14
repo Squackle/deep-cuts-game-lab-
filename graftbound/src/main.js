@@ -93,6 +93,7 @@ class App {
   }
   applySettings() {
     this.audio.setSfx(this.meta.settings.sound); this.audio.setMusic(this.meta.settings.music);
+    document.documentElement.dataset.cardMotion=this.meta.settings.cardMotion||'auto';
     if (this.scene) { this.scene.setQuality(this.autoDowngraded || this.pickQuality()); this.scene.speed = this.animFactor(); this.scene.ambientOn = this.meta.settings.ambient !== false; }
   }
   /** Ranked replay recorder: called only AFTER the engine accepted a decision. Adventure runs record nothing. */
@@ -152,7 +153,7 @@ class App {
   syncSoundBtn() { const on = this.meta.settings.sound || this.meta.settings.music; $('btn-sound').innerHTML = on ? ICON.sound : ICON.mute; $('btn-sound').setAttribute('aria-label', on ? 'Mute' : 'Unmute'); }
   modalOpen() { return $('modal').classList.contains('show'); }
   openModal(html, cls = '') { const m = $('modal'); m.innerHTML = `<div class="modal-box ${cls}" role="dialog" aria-modal="true">${html}</div>`; m.classList.add('show'); const f = m.querySelector('button.primary, button'); if (f) f.focus({ preventScroll: true }); return m.firstElementChild; }
-  closeModal() { this.pauseOpen = false; $('modal').classList.remove('show'); $('modal').innerHTML = ''; queueMicrotask(() => this.battle && this.battle.reopenPendingChoice && this.battle.reopenPendingChoice()); }
+  closeModal() { this.pauseOpen = false; $('modal').classList.remove('show'); $('modal').innerHTML = ''; }
   confirm(text, yes, fn) { const m = this.openModal(`<p class="confirm">${esc(text)}</p><div class="modal-actions"><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn danger" data-yes>${esc(yes)}</button></div>`); m.querySelector('[data-yes]').addEventListener('click', () => { this.closeModal(); fn(); }); }
   toast(html, kind = '') { const t = $('toast'); t.innerHTML = html; t.className = 'toast ' + kind; void t.offsetWidth; t.classList.add('show'); }
   status(text) { $('status').textContent = text; $('status').classList.toggle('show', !!text); }
@@ -214,6 +215,7 @@ class App {
     if (r.phase === 'reward') return this.reward();
     if (r.phase === 'shrine') return this.shrine();
     if (r.phase === 'event') return this.event();
+    if (r.phase === 'won' && r.victoryScene === 'pending') return this.victoryThenEnd();
     if (r.phase === 'won' || r.phase === 'lost') return this.endRun(r.phase === 'won');
     this.goMap();
   }
@@ -260,6 +262,7 @@ class App {
     this.collect(evaluateAchievements(this.meta, { event: out.boss ? 'bossDown' : 'battleWon', act, elite: out.elite, battleStats: out.battleStats, attacks, run: this.run, evo: this.run.evo }));
     if (out.boss) this.collect(evaluateAchievements(this.meta, { event: 'battleWon', elite: false, battleStats: out.battleStats, attacks, run: this.run, evo: this.run.evo }));
     this.saveMeta(); this.save();
+    if(out.final)return this.victoryThenEnd();
     return this.reward();
   }
   collect(earned) { if (earned.length) { this.earnedThisRun.push(...earned); this.achievementsToast(earned); } }
@@ -343,11 +346,18 @@ class App {
     sc.zoom = 1; sc.focusTarget = [0, 0, 0];
   }
   bigText(html, glow) { const b = $('bigtext'); b.style.setProperty('--glow', glow); b.innerHTML = html; b.classList.remove('show'); void b.offsetWidth; b.classList.add('show'); }
+  async victoryThenEnd(){
+    if(!this.run||this.run.phase!=='won')return;
+    this.save();this.battle.stop();this.setMode('end');this.scene.zoom=1.55;this.showcase();
+    await UI.victoryScreen(this);
+    if(this.run){this.run.victoryScene='complete';this.save();return this.endRun(true);}
+  }
   async endRun(won) {
+    if(this.finalizing)return;this.finalizing=true;
     const run = this.run; this.battle.stop();
-    recordRunEnd(this.meta, run, won);
-    this.collect(won ? evaluateAchievements(this.meta, { event: 'runWon', run, evo: run.evo }) : []);
-    const extra = { newBest: this.saveRecords(run) };
+    const firstCompletion=recordRunEnd(this.meta, run, won);
+    if(firstCompletion)this.collect(won ? evaluateAchievements(this.meta, { event: 'runWon', run, evo: run.evo }) : []);
+    const extra = { newBest: firstCompletion ? this.saveRecords(run) : false };
     if (run.ranked) {   // re-run the recorded decisions from the challenge definition, exactly as a server would
       try { const r = replayRun(run.ranked.challengeId, run.ranked.log || [], { revision: run.ranked.revision }); extra.verifiedLocally = r.totals.total === expeditionTotals(run).total && r.run.phase === run.phase; extra.achievements = verifiedAchievements(r.run); }
       catch (err) { extra.verifiedLocally = false; extra.verifyError = String(err.message || err); console.warn('Local replay verification failed:', err); }
@@ -355,9 +365,13 @@ class App {
     this.meta.tutorialDone = true; this.saveMeta();
     this.setMode('end'); this.showcase();
     const all = (this.earnedThisRun || []).slice();
-    this.store.saveRun(null);
+    // Keep the completed run available on disk until the player actually leaves statistics.
+    // Refresh from the end screen may safely replay statistics without recounting the run.
+    if(run.phase==='won')run.victoryScene='complete';
+    this.save();
     const a = await UI.endScreen(this, { won, earned: all, extra });
-    this.run = null;
+    this.store.saveRun(null);
+    this.run = null;this.finalizing=false;
     if (a === 'again') this.newRun([]); else this.toTitle();
   }
 }

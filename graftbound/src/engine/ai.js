@@ -9,7 +9,7 @@ import { resolveCard } from '../cards/catalog.js';
 const spellCostOf = id => (resolveCard(id) || { cost: 0 }).cost;
 import { refreshTribalBonuses, checkStateBasedDeath } from './abilities.js';
 import { attachAura,detachAura,detachEquipment } from './attachments.js';
-import { queueGearhulk, registerSpawn, scarabUpkeep, scarabTargets, scarabReanimate } from './printed-triggers.js';
+import { registerSpawn, scarabUpkeep, scarabTargets, scarabReanimate } from './printed-triggers.js';
 
 const cmpTile = (a, b) => a.y - b.y || a.x - b.x;
 const hazard = (s, t) => { const k = tileAt(s, t.x, t.y); return ([T.LAVA, T.RIFT, T.UNSTABLE, T.SPORES, T.CRUMBLE].includes(k) ? 1 : 0) + (t.hz || 0); };
@@ -580,7 +580,7 @@ export function spawnEnemy(s, defId, x, y) {
       (s.entryEvents||=[]).push({t:'status',uid:h.uid,status:'weakened',value:2,total:h.statuses.weakened,by:u.uid,kind:'Faerie Duelist ETB'});
     }
   }
-  if(defId==='champion') queueGearhulk(s,u);   // printed ETB: the opponent (you) chooses draw or mill
+  // Wurmcoil has no enter-the-battlefield choice. Its printed ability triggers only on death.
   refreshTribalBonuses(s,[]);
   return u;
 }

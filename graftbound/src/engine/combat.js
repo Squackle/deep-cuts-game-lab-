@@ -11,9 +11,11 @@ import { TERRAIN_RULES } from '../data/terrain.js';
 import { TACTICS } from '../data/tactics.js';
 import { createCombatDeck, drawCards, playFromHand, discardFromHand, endHandLimit, refillFromGraveyard } from './deck.js';
 import { attachAura, hasGear, attachEquipment, detachEquipment, EQUIPMENT_SLOTS } from './attachments.js';
-import { pendingChoice, resolveGearhulkChoice, resolveScarabEndStep, scarabRecast, opponentCastFromHand } from './printed-triggers.js';
+import { resolveScarabEndStep, scarabRecast } from './printed-triggers.js';
+import { onBattleGrafts, onHeroAttack, onHeroSpell, onHeroDraw, traitDraw } from './trait-triggers.js';
+import { availableMana, spendMana, addChannel, CHANNEL_MANA_CAP, CHANNEL_CHARGE_CAP } from './mana.js';
 
-export const BATTLE_VERSION = 7;
+export const BATTLE_VERSION = 9;
 export const RIFT_DAMAGE = TERRAIN_RULES.rift.pulseDamage, LAVA_DAMAGE = TERRAIN_RULES.lava.endTurnDamage;
 
 export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroName = STARTING_NAME, startHp = null, act = 0, deckMode = false, handCapacity = 7 }) {
@@ -21,19 +23,20 @@ export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroN
     v: BATTLE_VERSION, w: encounter.w, h: encounter.h, terrain: encounter.terrain.slice(), act,
     name: encounter.name, kind: encounter.kind || 'battle', units: [], nextUid: 1, turn: 0, phase: 'player',
     rng: makeRng(seed), spellbook: spellbook.map(x => ({ ...x })),
-    p: { mana: 0, maxMana: stats.maxMana, regen: stats.manaRegen, startMana: stats.startMana, arcane: stats.arcane, moveLeft: 0, attacksLeft: 0, cast: {} },
+    traits:[...new Set((evo.absorbed||[]).map(x=>getCard(x.cardId)?.trait).filter(Boolean))],
+    p: { mana: 0, storedMana:0, channel:0, channeledTurn:0, maxMana: stats.maxMana, regen: stats.manaRegen, startMana: stats.startMana, arcane: stats.arcane, moveLeft: 0, attacksLeft: 0, cast: {} },
     // v0.6 scoring counters: only actions ACCEPTED by this engine increment them (rejected input throws first).
     stats: { damageDealt: 0, damageTaken: 0, enemyHealthDamage: 0, kills: 0, spellsCast: 0, turns: 0, attacks: 0, actions: 0, moves: 0, tilesMoved: 0, interactions: 0 },
     terrainTimers: [],
     crystals: (encounter.crystals || []).map(c => ({ x: c.x, y: c.y, charged: true })), cooled: [],
-    oppSeed: ((seed ^ 0x6ea7c0de) >>> 0) || 1,
   };
   if (deckMode) { s.deck=createCombatDeck(spellbook,seed,handCapacity); s.spellbook=s.deck.hand; s.p.freeCast=false; s.p.freeCastUsed=false; }
   const hp = startHp == null ? stats.maxHealth : Math.max(1, Math.min(stats.maxHealth, startHp));
   s.units.push({ uid: s.nextUid++, side: 'player', hero: true, defId: 'player', name: heroName, x: encounter.playerStart.x, y: encounter.playerStart.y,
     hp, maxHp: stats.maxHealth, power: stats.power, toughness: stats.toughness, move: stats.move, keywords: { ...evo.keywords }, statuses: {} });
   for (const en of encounter.enemies) spawnEnemy(s, en.defId, en.x, en.y);
-  s.openingEvents = [...(s.entryEvents || []), ...startPlayerTurn(s)];
+  const traitEvents=[];onBattleGrafts(s,traitEvents);
+  s.openingEvents = [...(s.entryEvents || []), ...traitEvents, ...startPlayerTurn(s)];
   return s;
 }
 /** Rifts pulse at the end of every even round (telegraphed during that round's player phase). */
@@ -46,11 +49,11 @@ export function hazardPreview(s) {
 export function startPlayerTurn(s) {
   const ev = []; const p = player(s);
   s.turn++; s.phase = 'player'; s.stats.turns = s.turn;
-  if(s.deck){s.spellbook=s.deck.hand;if(s.turn>1){const back=refillFromGraveyard(s.deck);if(back)ev.push({t:'deckReshuffle',count:back,uid:p.uid});const drawn=drawCards(s.deck,1);for(const c of drawn)ev.push({t:'cardDraw',id:c.id,uid:p.uid});}}
+  if(s.deck){s.spellbook=s.deck.hand;if(s.turn>1){const back=refillFromGraveyard(s.deck);if(back)ev.push({t:'deckReshuffle',count:back,uid:p.uid});const drawn=drawCards(s.deck,1);for(const c of drawn){ev.push({t:'cardDraw',id:c.id,uid:p.uid});onHeroDraw(s,ev);}}}
   p.tapped=false;
   if (p.suppressed && p.suppressedTurn == null) p.suppressedTurn = s.turn;   // Redaction lasts for exactly this turn
   ev.push({ t: 'turn', phase: 'player', turn: s.turn });
-  p.statuses.empowered = 0; p.statuses.guard = 0; s.p.channel = 0;
+  p.statuses.empowered = 0; p.statuses.guard = 0; // Channel charges persist until an eligible cast.
   s.p.conduit = tileAt(s, p.x, p.y) === T.CONDUIT ? TERRAIN_RULES.conduit.spellBonus : 0;
   if (s.p.conduit) ev.push({ t: 'conduit', uid: p.uid, amount: s.p.conduit, x: p.x, y: p.y });   // v0.8 stances last until your next turn begins
   if (p.statuses.poison > 0) { dealDamage(s, ev, null, p, p.statuses.poison, { kind: 'poison' }); p.statuses.poison--; if (!alive(p)) return ev; }
@@ -61,18 +64,16 @@ export function startPlayerTurn(s) {
   const before = s.p.mana;
   s.p.mana = s.turn === 1 ? s.p.startMana : Math.min(s.p.maxMana, s.p.mana + s.p.regen);
   if (tileAt(s, p.x, p.y) === T.LEYLINE) s.p.mana = Math.min(s.p.maxMana + 1, s.p.mana + 1);
-  ev.push({ t: 'mana', from: before, to: s.p.mana });
+  ev.push({ t: 'mana', from: before + (s.p.storedMana||0), to: availableMana(s), reserve:s.p.storedMana||0 });
   s.p.moveLeft = p.statuses.stunned ? 0 : Math.max(0, p.move - (p.keywords.flying && p.statuses.grounded ? 1 : 0) - (p.statuses.chilled ? TERRAIN_RULES.ice.slowNextMovement : 0));
   p.statuses.chilled = 0;
   s.p.attacksLeft = 1;  // Haste grants movement, not a second attack
   s.p.cast = {};
   return ev;
 }
-const ensurePlayerPhase = s => { if (s.phase !== 'player') throw new Error('Not your turn'); if (pendingChoice(s)) throw new Error('Resolve Combustible Gearhulk first'); };
-/** Combustible Gearhulk: you (target opponent) choose 'draw' (it draws three) or 'mill' (mill three, damage = total MV). */
-export function gearhulkChoice(s, choice) { return resolveGearhulkChoice(s, choice); }
+const ensurePlayerPhase = s => { if (s.phase !== 'player') throw new Error('Not your turn'); };
 export function moveOptions(s) {
-  if (s.phase !== 'player' || pendingChoice(s)) return [];
+  if (s.phase !== 'player') return [];
   const p = player(s);
   return [...reachable(s, p, s.p.moveLeft).values()].filter(v => v.stop && v.cost > 0);
 }
@@ -105,7 +106,7 @@ export function canAttack(s, attacker, target) {
   return false;
 }
 export function attackTargets(s) {
-  if (s.phase !== 'player' || pendingChoice(s) || s.p.attacksLeft <= 0 || player(s).tapped) return [];
+  if (s.phase !== 'player' || s.p.attacksLeft <= 0 || player(s).tapped) return [];
   const p = player(s);
   return enemies(s).filter(e => canAttack(s, p, e));
 }
@@ -119,10 +120,11 @@ export function attack(s, targetUid) {
   const ev = []; s.stats.attacks++; s.stats.actions++;
   // The Spear's printed trigger occurs when the equipped creature ATTACKS, before damage.
   if(hasGear(p,'mtg:moonsilver-spear')) summonAngel(s,ev,p);
+  onHeroAttack(s,ev);
   const hpBefore=t.hp;attackExchange(s, ev, p, t);
   // Mask of Memory is adapted from player combat damage to combat damage to a creature.
   if(s.deck && hasGear(p,'mtg:mask-of-memory') && t.hp < hpBefore){
-    const drawn=drawCards(s.deck,2);for(const c of drawn)ev.push({t:'cardDraw',id:c.id,uid:p.uid});
+    const drawn=drawCards(s.deck,2);for(const c of drawn){ev.push({t:'cardDraw',id:c.id,uid:p.uid});onHeroDraw(s,ev);}
     if(drawn.length) {s.deck.pendingDiscards=(s.deck.pendingDiscards||0)+1;if(!s.p.freeCastUsed)s.p.freeCast=true;}
   }
   if(!has(p,'vigilance'))p.tapped=true;
@@ -132,9 +134,9 @@ export function attack(s, targetUid) {
 }
 /** The printed Equip action: paid, legal-bearer-only, and deterministic. */
 export function equipmentOptions(s) {
-  if(!s || s.phase!=='player' || pendingChoice(s) || !Array.isArray(s.equipmentInventory))return [];
+  if(!s || s.phase!=='player' || !Array.isArray(s.equipmentInventory))return [];
   return s.equipmentInventory.filter(id=>!(s.destroyedEquipment||[]).includes(id)).flatMap(id=>{
-    const c=getCard(id);if(!c||c.kind!=='equipment'||s.p.mana<(c.equipCost||0))return [];
+    const c=getCard(id);if(!c||c.kind!=='equipment'||availableMana(s)<(c.equipCost||0))return [];
     return allies(s).flatMap(u=>{
       if(u.equipment?.includes(id))return [];
       return Array.from({length:u.hero?EQUIPMENT_SLOTS:1},(_,slot)=>({id,uid:u.uid,slot,cost:c.equipCost||0}));
@@ -148,7 +150,6 @@ export function equipBattle(s,id,uid,slot=0) {
   if(!choice)throw new Error('Equipment unavailable, insufficient mana, or illegal bearer');
   const target=s.units.find(u=>u.uid===uid);
   const replaced=target.hero?(s.heroEquipmentSlots||[null,null])[slot]||null:target.equipment?.[0]||null;
-  const before=s.p.mana;
   for(const u of s.units)if(u.equipment?.includes(id))detachEquipment(u,id);
   if(replaced&&target.equipment?.includes(replaced))detachEquipment(target,replaced);
   attachEquipment(target,id);
@@ -159,8 +160,8 @@ export function equipBattle(s,id,uid,slot=0) {
   }else if(s.heroEquipmentSlots){
     s.heroEquipmentSlots=s.heroEquipmentSlots.map(v=>v===id?null:v);
   }
-  s.p.mana-=choice.cost;s.stats.actions++;s.stats.interactions++;
-  return [{t:'mana',from:before,to:s.p.mana},{t:'equipmentAttach',uid,id,slot,removed:replaced,amount:choice.cost}];
+  const manaEvent=spendMana(s,choice.cost);s.stats.actions++;s.stats.interactions++;
+  return [manaEvent,{t:'equipmentAttach',uid,id,slot,removed:replaced,amount:choice.cost}];
 }
 // ── v0.8 tactical stances: available to every creature, independent of card rewards ─────────────────────
 // Both cost your ATTACK for the turn (no free actions), so they compete with striking. Values live in
@@ -176,7 +177,6 @@ export function stanceMovementCost(s, kind) {
 }
 export function stanceBlockReason(s, kind) {
   if (s.phase !== 'player') return 'Not your turn';
-  if (pendingChoice(s)) return 'Resolve Combustible Gearhulk first';
   if (s.p.attacksLeft <= 0) return 'You already used your attack this turn';
   if (!TACTICS[kind]) return 'Unknown stance';
   const cost = stanceMovementCost(s, kind);
@@ -185,7 +185,8 @@ export function stanceBlockReason(s, kind) {
     if (s.p.moveLeft !== cost) return `Guard needs all ${cost} movement points unspent — you cannot Guard after moving`;
   } else if (s.p.moveLeft < cost) return `Need ${cost} movement point${cost === 1 ? '' : 's'}`;
   if (kind === 'guard' && player(s).statuses.guard) return 'Already guarding';
-  if (kind === 'channel' && s.p.channel) return 'Already channeling';
+  if (kind === 'channel' && s.p.channeledTurn === s.turn) return 'Already channeled this turn';
+  if (kind === 'channel' && (s.p.storedMana||0) >= CHANNEL_MANA_CAP && (s.p.channel||0) >= CHANNEL_CHARGE_CAP) return 'Channel Reserve is full';
   return null;
 }
 /** GUARD: give up your attack; until your next turn, every hit from a foe (strikes, arrows, slams, breath) is reduced. */
@@ -195,13 +196,13 @@ export function guard(s) {
   s.stats.actions++; s.stats.stances = (s.stats.stances || 0) + 1;
   return [{ t: 'stance', uid: p.uid, kind: 'guard', amount: v }, { t: 'status', uid: p.uid, status: 'guard', value: v, total: v }];
 }
-/** CHANNEL: give up your attack AND remaining movement; +1 mana now (may exceed max by 1) and your next spell this turn gains +1. */
+/** CHANNEL: give up attack and movement for banked +1 mana and +1 next eligible spell power, across turns. */
 export function channel(s) {
   ensurePlayerPhase(s); const why = stanceBlockReason(s, 'channel'); if (why) throw new Error(why);
-  const p = player(s); const before = s.p.mana;
-  s.p.mana = Math.min(s.p.maxMana + 1, s.p.mana + TACTICS.channel.mana); s.p.channel = TACTICS.channel.spellBonus; s.p.attacksLeft = 0; s.p.moveLeft -= TACTICS.channel.moveCost;
+  const p = player(s); const manaEvent=addChannel(s,TACTICS.channel.mana,TACTICS.channel.spellBonus);
+  s.p.attacksLeft = 0; s.p.moveLeft -= TACTICS.channel.moveCost;
   s.stats.actions++; s.stats.stances = (s.stats.stances || 0) + 1;
-  return [{ t: 'stance', uid: p.uid, kind: 'channel', amount: TACTICS.channel.spellBonus }, { t: 'mana', from: before, to: s.p.mana }];
+  return [{ t: 'stance', uid: p.uid, kind: 'channel', amount: TACTICS.channel.spellBonus }, manaEvent];
 }
 
 export function castOptions(s, spellId) {
@@ -215,14 +216,17 @@ export function cast(s, spellId, x, y, xValue = 1) {
   const entry = s.spellbook.find(e => e.id === spellId);
   if (!castOptions(s, spellId).some(t => t.x === x && t.y === y)) throw new Error('Not a valid target for ' + getCard(spellId).name);
   const ev = []; const cost = spellCost(s, spellId, xValue);
-  s.p.mana -= cost; s.p.cast[spellId] = true; s.stats.spellsCast++; s.stats.actions++;
-  ev.push({ t: 'mana', from: s.p.mana + cost, to: s.p.mana });
+  ev.push(spendMana(s,cost)); s.p.cast[spellId] = true; s.stats.spellsCast++; s.stats.actions++;
   const card=getCard(spellId);
+  // Present the card leaving the hand BEFORE its spell impact. The actual deck mutation
+  // is still authoritative and happens below; presentation does not decide card state.
+  if(s.deck)ev.push({t:'cardCastMove',id:spellId,uid:player(s).uid,name:card.name,to:card.kind==='aura'?'battlefield':'graveyard'});
   if(card.kind==='aura'){
     const target=s.units.find(u=>u.hp>0&&u.x===x&&u.y===y);
     attachAura(target,spellId);ev.push({t:'auraAttach',uid:target.uid,id:spellId,x,y,name:card.name});
   } else castSpellEffect(s, ev, spellId, entry.level, x, y, xValue);
   if(s.deck){playFromHand(s.deck,spellId,{permanent:card.kind==='aura'});s.spellbook=s.deck.hand;}
+  if(card.kind==='spell'&&/^(Instant|Sorcery)\b/.test(card.sourceInfo?.typeLine||''))onHeroSpell(s,ev);
   if(s.p.freeCast){s.p.freeCast=false;s.p.freeCastUsed=true;}
   const arasta = enemies(s).find(e=>e.defId==='arasta');
   if(arasta && alive(arasta) && card.kind==='spell' && /^(Instant|Sorcery)\b/.test(card.sourceInfo?.typeLine||'')) spawnTokensAround(s,ev,arasta,'spider',1);
@@ -241,7 +245,7 @@ export function endTurn(s) {
   const ev = []; const p = player(s);
   if (s.deck && tileAt(s, p.x, p.y) === T.ARCHIVE) {
     const back = refillFromGraveyard(s.deck); if (back) ev.push({ t: 'deckReshuffle', count: back, uid: p.uid });
-    const drawn = drawCards(s.deck, 1); for (const card of drawn) ev.push({ t: 'cardDraw', id: card.id, uid: p.uid });
+    const drawn = drawCards(s.deck, 1); for (const card of drawn){ ev.push({ t: 'cardDraw', id: card.id, uid: p.uid });onHeroDraw(s,ev); }
     ev.push({ t: 'archiveDraw', uid: p.uid, x: p.x, y: p.y, count: drawn.length });
   }
   if (tileAt(s, p.x, p.y) === T.LAVA && !has(p, 'flying')) dealDamage(s, ev, null, p, LAVA_DAMAGE, { kind: 'lava' });
@@ -262,8 +266,8 @@ export function endTurn(s) {
   // Friendly spell buffs remain through the summoned creature's action, then expire.
   for (const a of allies(s).filter(u => !u.hero)) if (a.statuses.empowered) { a.statuses.empowered = 0; ev.push({ t: 'status', uid: a.uid, status: 'empowered', value: 0, total: 0 }); }
   for (const e of s.units.filter(u => u.side === 'enemy' && u.boss)) announcePhase(ev, e);
-  // Opponent main phase: recast a returned Scarab God, then at most one creature drawn by a Gearhulk.
-  scarabRecast(s, ev); opponentCastFromHand(s, ev);
+  // Enemy's only persistent recast rule is the Scarab God's printed return-to-hand.
+  scarabRecast(s, ev);
   for (const e of s.units.filter(u => u.side === 'enemy')) {
     if (!alive(e) || s.phase !== 'enemy') continue;
     if (e.statuses.poison > 0) { dealDamage(s, ev, null, e, e.statuses.poison, { kind: 'poison' }); e.statuses.poison--; if (!alive(e)) continue; }
@@ -321,7 +325,7 @@ function restoreCooled(s, ev) {
 export const crystalAt = (s, x, y) => (s.crystals || []).find(c => c.x === x && c.y === y) || null;
 /** Charged crystals on or next to the hero can be attuned (one interaction action, once per crystal). */
 export function interactOptions(s) {
-  if (s.phase !== 'player' || pendingChoice(s)) return [];
+  if (s.phase !== 'player') return [];
   const p = player(s);
   return (s.crystals || []).filter(c => c.charged && manhattan(p, c) <= 1).map(c => ({ x: c.x, y: c.y, kind: 'crystal' }));
 }

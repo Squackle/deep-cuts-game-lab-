@@ -39,3 +39,12 @@ const ART = Object.freeze({
   </g>`,
 });
 export const packOrnament = tier => ART[packIdentity(tier).emblem];
+
+/** Pure cosmetic treatment. Does not affect the reward roll or card printing rarity. */
+export function treatmentFor(seed, cardId, position=0){
+ let h=(seed ^ 0x8a11b00b ^ Math.imul(position+1,0x9e3779b1))>>>0;
+ for(const c of cardId){h=(Math.imul(h^c.charCodeAt(0),16777619))>>>0;}
+ const r=h%100;
+ return r<2?'masterwork':r<12?'etched':'original';
+}
+export const TREATMENT_NAMES=Object.freeze({original:'Original GRAFTBOUND frame',etched:'Etched GRAFTBOUND frame',masterwork:'Masterwork GRAFTBOUND frame'});

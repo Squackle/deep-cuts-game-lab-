@@ -1,12 +1,13 @@
 // Permanent, between-run progression: statistics, achievements, unlocks, settings. Never auto-resets.
 export const META_VERSION = 5;
-export const DEFAULT_SETTINGS = { sound: true, music: true, graphics: 'auto', animSpeed: 'normal', autoEnd: true, ambient: true };
+export const DEFAULT_SETTINGS = { sound: true, music: true, graphics: 'auto', animSpeed: 'normal', cardMotion: 'auto', autoEnd: true, ambient: true };
 export function newMeta() {
   return {
     v: META_VERSION, tutorialDone: false, introSeen: false, hints: {}, seen: {}, achievements: {}, unlocks: {},
     stats: { runs: 0, wins: 0, losses: 0, battlesWon: 0, cardsAbsorbed: 0, spellsCast: 0, kills: 0, bestDepth: 0, bestAct: 0, highestPower: 1, highestToughness: 1 },
     settings: { ...DEFAULT_SETTINGS },
     records: {},   // v0.6 LOCAL personal records (unverified; never uploaded)
+    finalizedRunKeys: [],  // bounded idempotence ledger for refresh/skip-safe victory statistics
   };
 }
 export const ACHIEVEMENTS = [
@@ -34,10 +35,19 @@ export function evaluateAchievements(meta, ctx) {
   return earned;
 }
 export function recordRunEnd(meta, run, won) {
+  if(!run)return false;
+  // Save the completed run identity in the persistent meta BEFORE showing the cinematic.
+  // The same completed run may be reopened after a refresh, but must never count twice.
+  const key=`${run.seed >>> 0}:${run.startedAt ?? 'legacy'}:${run.ranked?.revision || 0}`;
+  meta.finalizedRunKeys=Array.isArray(meta.finalizedRunKeys)?meta.finalizedRunKeys:[];
+  if(meta.finalizedRunKeys.includes(key))return false;
+  meta.finalizedRunKeys.push(key);
+  if(meta.finalizedRunKeys.length>120)meta.finalizedRunKeys.splice(0,meta.finalizedRunKeys.length-120);
   const s = meta.stats;
   s.runs++; if (won) s.wins++; else s.losses++;
   s.battlesWon += run.stats.battlesWon; s.cardsAbsorbed += run.stats.cardsAbsorbed; s.spellsCast += run.stats.spellsCast; s.kills += run.stats.kills;
   const depth = run.current != null ? run.map.nodes.find(n => n.id === run.current).depth : 0;
   s.bestDepth = Math.max(s.bestDepth, (run.act || 0) * 8 + depth); s.bestAct = Math.max(s.bestAct || 0, run.act || 0);
   s.highestPower = Math.max(s.highestPower, run.evo.power); s.highestToughness = Math.max(s.highestToughness, run.evo.toughness);
+  return true;
 }

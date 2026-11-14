@@ -1,7 +1,7 @@
 // Curated pool of REAL Magic: The Gathering cards — the ONLY source of GRAFTBOUND rewards (v0.5).
 // Inclusion rule: every relevant effect must be modeled by this engine.
-//   • creatures: no rules text except keywords this game models (Deathtouch, Flying, Trample, First strike,
-//     Double strike, Lifelink, Vigilance, Haste), or vanilla;
+//   • creatures: modeled evergreen keywords, vanilla, or one of the explicitly tested, disclosed
+//     GRAFTBOUND hero-graft trigger adaptations in trait-registry.js;
 //   • spells: an explicit, reviewed adaptation in compatibility.js SPELL_ADAPTATIONS (labeled in the UI).
 // Bundled: card FACTS only (name, mana cost, mana value, type line, P/T, keywords, color identity, a typical
 // printing's rarity). Images and Oracle text are fetched read-only from Scryfall at runtime and cross-checked.
@@ -9,6 +9,7 @@
 // `node tools/verify-real-pool.mjs` (needs network) before release. Never add a card you have not confirmed exists.
 const C = (name, mana_cost, cmc, type_line, power, toughness, keywords, color_identity, rarity) =>
   ({ name, mana_cost, cmc, type_line, power: String(power), toughness: String(toughness), keywords, color_identity, rarity });
+import { traitOf } from './trait-registry.js';
 const S = (name, mana_cost, cmc, type_line, color_identity, rarity) => ({ name, mana_cost, cmc, type_line, keywords: [], color_identity, rarity, spell: true });
 
 export const REAL_CREATURES = [
@@ -29,6 +30,8 @@ export const REAL_CREATURES = [
   C('Daybreak Chaplain', '{1}{W}', 2, 'Creature — Human Cleric', 1, 3, ['Lifelink'], ['W'], 'common'),
   C('Concordia Pegasus', '{1}{W}', 2, 'Creature — Pegasus', 1, 3, ['Flying'], ['W'], 'common'),
   C('Armored Warhorse', '{W}{W}', 2, 'Creature — Horse', 2, 3, [], ['W'], 'common'),
+  C('Serra Ascendant', '{W}', 1, 'Creature — Human Monk', 1, 1, ['Lifelink'], ['W'], 'rare'),
+  C('Brimaz, King of Oreskos', '{1}{W}{W}', 3, 'Legendary Creature — Cat Soldier', 3, 4, ['Vigilance'], ['W'], 'mythic'),
   // Blue
   C('Fugitive Wizard', '{U}', 1, 'Creature — Human Wizard', 1, 1, [], ['U'], 'common'),
   C('Coral Merfolk', '{1}{U}', 2, 'Creature — Merfolk', 2, 1, [], ['U'], 'common'),
@@ -39,6 +42,9 @@ export const REAL_CREATURES = [
   C('Mahamoti Djinn', '{4}{U}{U}', 6, 'Creature — Djinn', 5, 6, ['Flying'], ['U'], 'rare'),
   C('Tolarian Scholar', '{2}{U}', 3, 'Creature — Human Wizard', 2, 3, [], ['U'], 'common'),
   C('Phantom Monster', '{3}{U}', 4, 'Creature — Illusion', 3, 3, ['Flying'], ['U'], 'common'),
+  C('Archmage Emeritus', '{2}{U}{U}', 4, 'Creature — Human Wizard', 2, 2, ['Magecraft'], ['U'], 'rare'),
+  C('Talrand, Sky Summoner', '{2}{U}{U}', 4, 'Legendary Creature — Merfolk Wizard', 2, 2, [], ['U'], 'rare'),
+  C('Archaeomancer', '{2}{U}{U}', 4, 'Creature — Human Wizard', 1, 2, [], ['U'], 'common'),
   // Black
   C('Typhoid Rats', '{B}', 1, 'Creature — Rat', 1, 1, ['Deathtouch'], ['B'], 'common'),
   C("Pharika's Chosen", '{B}', 1, 'Creature — Snake', 1, 1, ['Deathtouch'], ['B'], 'common'),
@@ -51,6 +57,9 @@ export const REAL_CREATURES = [
   C('Dross Crocodile', '{3}{B}', 4, 'Creature — Zombie Crocodile', 5, 1, [], ['B'], 'common'),
   C('Giant Scorpion', '{2}{B}', 3, 'Creature — Scorpion', 1, 3, ['Deathtouch'], ['B'], 'common'),
   C('Zombie Goliath', '{4}{B}', 5, 'Creature — Zombie Giant', 4, 3, [], ['B'], 'common'),
+  C('Blood Artist', '{1}{B}', 2, 'Creature — Vampire', 0, 1, [], ['B'], 'uncommon'),
+  C('Vito, Thorn of the Dusk Rose', '{2}{B}', 3, 'Legendary Creature — Vampire Cleric', 1, 3, [], ['B'], 'rare'),
+  C('Sheoldred, the Apocalypse', '{2}{B}{B}', 4, 'Legendary Creature — Phyrexian Praetor', 4, 5, ['Deathtouch'], ['B'], 'mythic'),
   // Red
   C('Raging Goblin', '{R}', 1, 'Creature — Goblin Berserker', 1, 1, ['Haste'], ['R'], 'common'),
   C('Gray Ogre', '{2}{R}', 3, 'Creature — Ogre', 2, 2, [], ['R'], 'common'),
@@ -62,6 +71,7 @@ export const REAL_CREATURES = [
   C('Goblin Piker', '{1}{R}', 2, 'Creature — Goblin Warrior', 2, 1, [], ['R'], 'common'),
   C('Canyon Minotaur', '{3}{R}', 4, 'Creature — Minotaur Warrior', 3, 3, [], ['R'], 'common'),
   C('Ogre Resister', '{2}{R}{R}', 4, 'Creature — Ogre', 4, 3, [], ['R'], 'common'),
+  C('Young Pyromancer', '{1}{R}', 2, 'Creature — Human Shaman', 2, 1, [], ['R'], 'uncommon'),
   // Green
   C('Grizzly Bears', '{1}{G}', 2, 'Creature — Bear', 2, 2, [], ['G'], 'common'),
   C('Runeclaw Bear', '{1}{G}', 2, 'Creature — Bear', 2, 2, [], ['G'], 'common'),
@@ -79,11 +89,13 @@ export const REAL_CREATURES = [
   C('Trained Armodon', '{1}{G}{G}', 3, 'Creature — Elephant', 3, 3, [], ['G'], 'common'),
   C('Vastwood Gorger', '{5}{G}', 6, 'Creature — Wurm', 5, 6, [], ['G'], 'common'),
   C('Leatherback Baloth', '{G}{G}{G}', 3, 'Creature — Beast', 4, 5, [], ['G'], 'uncommon'),
+  C('Elvish Visionary', '{1}{G}', 2, 'Creature — Elf Shaman', 1, 1, [], ['G'], 'common'),
   // Multicolor & colorless
   C('Watchwolf', '{G}{W}', 2, 'Creature — Wolf', 3, 3, [], ['G', 'W'], 'uncommon'),
   C('Woolly Thoctar', '{R}{G}{W}', 3, 'Creature — Beast', 5, 4, [], ['R', 'G', 'W'], 'uncommon'),
   C('Boros Swiftblade' , '{R}{W}', 2, 'Creature — Human Soldier', 1, 2, ['Double strike'], ['R', 'W'], 'uncommon'),
   C('Skyknight Legionnaire', '{1}{R}{W}', 3, 'Creature — Human Knight', 2, 2, ['Flying', 'Haste'], ['R', 'W'], 'common'),
+  C('Wurmcoil Engine', '{6}', 6, 'Artifact Creature — Phyrexian Wurm', 6, 6, ['Deathtouch', 'Lifelink'], [], 'mythic'),
   C('Ornithopter', '{0}', 0, 'Artifact Creature — Thopter', 0, 2, ['Flying'], [], 'common'),
   C('Bronze Sable', '{2}', 2, 'Artifact Creature — Sable', 2, 1, [], [], 'common'),
 ];
@@ -117,6 +129,6 @@ export function poolRecord(e) {
   const keywordLine = e.spell ? '' : e.keywords.join(', ').replace(/(^|, )([A-Z])/g, (m, a, b) => a + (a ? b.toLowerCase() : b));
   return { source: 'scryfall', bundled: true, id: '', oracleId: '', name: e.name, manaCost: e.mana_cost, cmc: e.cmc, colors: e.color_identity.slice(),
     typeLine: e.type_line, power: e.spell ? null : e.power, toughness: e.spell ? null : e.toughness, keywords: e.kind ? [] : e.keywords.slice(),
-    oracleText: e.spell ? null : keywordLine, set: '', setName: '', rarity: e.rarity, artist: '', image: { normal: null, artCrop: null },
+    oracleText: e.spell ? null : (traitOf(e.name)?.note || keywordLine), set: '', setName: '', rarity: e.rarity, artist: '', image: { normal: null, artCrop: null },
     scryfallUri: null, rulingsUri: null };
 }
