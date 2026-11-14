@@ -115,7 +115,10 @@ export function cardHTML(cardId, opts = {}) {
     <div class="face back">${backHTML()}</div>
   </div>`;
 }
-export function backHTML() { return `<div class="back-art"><span class="back-sigil">${ICON.sigil}</span><span class="back-word">GRAFTBOUND</span></div>`; }
+// Face-down cards use the standard Magic back, served read-only from Scryfall.
+// The original GRAFTBOUND sigil is retained as an accessible offline/network fallback.
+export const MTG_CARD_BACK_URL = 'https://cards.scryfall.io/back.png';
+export function backHTML() { return `<div class="back-art"><span class="back-sigil">${ICON.sigil}</span><span class="back-word">GRAFTBOUND</span><img class="gb-mtg-card-back" src="${MTG_CARD_BACK_URL}" loading="eager" decoding="async" draggable="false" alt="" onerror="this.hidden=true"></div>`; }
 export function sourcePanelHTML(cardId) {
   const c = resolveCard(cardId); if (!c || !c.reference) return '';
   const s = c.sourceInfo;
