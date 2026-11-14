@@ -647,3 +647,42 @@ html[data-card-motion="minimal"] .reward .slot.gb-reveal-surge .lc-card{animatio
  #inspect p{font-size:inherit}
  .rw-detail,.rw-detail .source,.rw-detail .release{max-width:min(100%,460px);box-sizing:border-box}
 }
+
+
+/* v1.2.7.1 portrait terrain inspector hotfix.
+   This is a SMALL summary docked beneath the hero plate, never a large translucent
+   panel over Library/Graveyard, the spell hand, stances, or End Turn controls. */
+@media (max-width:760px) {
+  #hud #inspect.terrain-inspect {
+    position:absolute;
+    top:var(--gb-terrain-top,160px);
+    bottom:auto!important;
+    left:var(--gb-terrain-left,10px);
+    right:auto;
+    width:var(--gb-terrain-width,240px);
+    max-width:calc(100vw - 16px);
+    max-height:var(--gb-terrain-height,74px)!important;
+    padding:8px 10px;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    overflow:hidden;
+    z-index:15;
+    pointer-events:auto!important;
+    font:500 12px/1.32 var(--sans);
+    border-color:#9e843f;
+    background:rgba(7,19,14,.96);
+    box-shadow:0 5px 16px rgba(0,0,0,.5);
+    transition:opacity .14s ease,transform .14s ease;
+  }
+  #hud #inspect.terrain-inspect.terrain-no-room {opacity:0!important;pointer-events:none!important}
+  #inspect.terrain-inspect .gb-terrain-brief-head {display:flex;align-items:center;gap:6px;min-width:0;flex:none}
+  #inspect.terrain-inspect .gb-terrain-brief-head strong {font:700 13px/1.1 var(--serif);color:var(--gold2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #inspect.terrain-inspect .gb-terrain-role {font:italic 10px var(--sans);color:#afd5ba;flex:none}
+  #inspect.terrain-inspect .gb-terrain-details-btn {margin-left:auto;flex:none;min-height:31px;padding:5px 8px;border:1px solid var(--gold3);border-radius:7px;background:#29432e;color:#f1dcac;font:700 11px var(--sans);cursor:pointer;touch-action:manipulation}
+  #inspect.terrain-inspect .gb-terrain-details-btn:focus-visible {outline:2px solid #f6df9b;outline-offset:2px}
+  #inspect.terrain-inspect .gb-terrain-brief-copy {min-width:0;margin:0!important;max-width:100%;color:#e9dfc3;font:500 11px/1.25 var(--sans);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+}
+.gb-terrain-detail {border-bottom:1px solid rgba(201,162,74,.28);padding:6px 0}
+.gb-terrain-detail h3 {color:var(--gold2);margin:4px 0;font-size:1rem}
+.gb-terrain-detail p {margin:5px 0;line-height:1.45}
