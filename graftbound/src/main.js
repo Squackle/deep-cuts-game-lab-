@@ -2,6 +2,7 @@
 import { Scene } from './rendering/scene.js';
 import { loadAssets } from './rendering/sprites.js';
 import { composePlayerSheet } from './rendering/evolution-visuals.js';
+import { composeEquippedSheet } from './rendering/equipment-visuals.js';
 import { Audio } from './audio/audio.js';
 import { BattleUI } from './ui/battle-ui.js';
 import * as UI from './ui/screens.js';
@@ -12,6 +13,7 @@ import { startRanked, replayRun, verifiedAchievements } from './engine/ranked.js
 import { expeditionTotals } from './engine/scoring.js';
 import { evaluateAchievements, recordRunEnd } from './engine/progression.js';
 import { deriveAppearance } from './engine/appearance.js';
+import { visualForRun } from './engine/visual-identity.js';
 import { newEvolution } from './engine/evolution.js';
 import { hashSeed } from './core/rng.js';
 import { tickClock, clockActive, newClock } from './engine/clock.js';
@@ -187,8 +189,8 @@ class App {
     const evo = this.run ? this.run.evo : newEvolution();
     const fake = { w: 8, h: 8, terrain: new Array(64).fill(0).map((_, i) => ([9, 14, 50, 53].includes(i) ? 3 : [19, 44].includes(i) ? 1 : 0)) };
     this.battle.stop(); this.scene.loadArena(fake, 7, theme || (this.run ? ACTS[this.run.act].theme : 'hollow')); this.audio.setAct(this.run ? this.run.act : 0);
-    const ap = deriveAppearance(evo);
-    const v = this.scene.addUnit({ uid: 1, side: 'player', x: 3, y: 4 }, 'blank'); this.scene.setUnitTexture(1, composePlayerSheet(this.assets, ap), Math.min(1.22, ap.size));
+    const ap = deriveAppearance(evo, visualForRun(this.run));
+    const v = this.scene.addUnit({ uid: 1, side: 'player', x: 3, y: 4 }, 'blank'); this.scene.setUnitTexture(1, composeEquippedSheet(this.assets,ap,this.run?.equippedEquipment||[]), Math.min(0.94, ap.size * 0.76));
     v.pos[0] += 0.5; v.dir = [0.3, 1]; v.aura = ap.effects.includes('aura') ? ap.glow : null;
     this.scene.zoom = 1.75; this.scene.focusTarget = [0.5, 0.2, 0.5]; this.scene.dof = 1.4;
   }
@@ -288,7 +290,7 @@ class App {
   }
   newTraits(evoBefore) {
     const vis = ap => new Set([...Object.values(ap.slots).map(p => p.part + (p.tier > 1 ? '+' : '')), ...ap.effects]);
-    const a = vis(deriveAppearance(evoBefore)), b = vis(deriveAppearance(this.run.evo));
+    const a = vis(deriveAppearance(evoBefore)), b = vis(deriveAppearance(this.run.evo, visualForRun(this.run)));
     return [...b].filter(x => !a.has(x));
   }
   traitLine(evoBefore) {
@@ -329,10 +331,10 @@ class App {
     sc.light(sc.centerPos(uid), col, 3.5, 1.6 / Math.min(k, 3), 2);
     if (!skipped) await waitS(card.kind === 'creature' ? 900 : 550);
     if (card.kind === 'creature') {
-      const ap = deriveAppearance(this.run.evo); const s0 = v.scale;
-      sc.setUnitTexture(uid, composePlayerSheet(this.assets, ap)); v.aura = ap.effects.includes('aura') ? ap.glow : null;
+      const ap = deriveAppearance(this.run.evo, visualForRun(this.run)); const s0 = v.scale;
+      sc.setUnitTexture(uid, composeEquippedSheet(this.assets,ap,this.run.equippedEquipment||[])); v.aura = ap.effects.includes('aura') ? ap.glow : null;
       v.flash = 1; if (!sc.reduced) sc.shake(0.15); sc.screenFlash([1, 0.95, 0.8], 0.45);
-      sc.tween(0.5, t => { v.scale = s0 + (ap.size - s0) * (1 - Math.pow(1 - t, 3)) + Math.sin(t * Math.PI) * 0.15; });
+      sc.tween(0.5, t => { v.scale = s0 + (Math.min(.94,ap.size*.76) - s0) * (1 - Math.pow(1 - t, 3)) + Math.sin(t * Math.PI) * 0.15; });
       sc.fx.burst(sc.centerPos(uid), col, 80, { speed: 3, up: 2.5, size: 16 }); sc.fx.burst(sc.centerPos(uid), [1, 0.95, 0.7], 40, { speed: 1.6, up: 3, size: 10 });
       this.traitFx(uid, evoBefore);
       const kws = [...change.gained, ...change.raised].map(kw => keywordLabel(kw, this.run.evo.keywords[kw]));
@@ -377,6 +379,6 @@ class App {
 }
 const app = new App();
 window.__LC = app; // used by browser tests only
-app.debug = { distanceField, card: id => getCard(id), heroSheetHash() { const c = composePlayerSheet(app.assets, deriveAppearance(app.run ? app.run.evo : newEvolution())); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0; for (let i = 0; i < d.length; i += 7) h = (h * 31 + d[i]) >>> 0; return h; } };
+app.debug = { distanceField, card: id => getCard(id), heroSheetHash() { const c = composePlayerSheet(app.assets, deriveAppearance(app.run ? app.run.evo : newEvolution(), visualForRun(app.run))); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0; for (let i = 0; i < d.length; i += 7) h = (h * 31 + d[i]) >>> 0; return h; } };
 export default app;
 app.init();

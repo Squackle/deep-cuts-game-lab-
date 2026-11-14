@@ -10,6 +10,7 @@ import { SHRINES } from '../engine/shrines.js';
 import { ACTS, bossNameOf } from '../data/encounters.js';
 import { bossForSeed } from '../data/legendary.js';
 import { deriveAppearance } from '../engine/appearance.js';
+import { visualForRun } from '../engine/visual-identity.js';
 import { ACHIEVEMENTS } from '../engine/progression.js';
 import { formatSpellText, rangeLabel } from '../engine/spells.js';
 import { availableMana } from '../engine/mana.js';
@@ -184,7 +185,7 @@ export function mapScreen(app) {
     return `<g class="node ${cls}" data-node="${n.id}" data-tip="${esc(NODE_TIP[n.type] || label)}" transform="translate(${nx(n)} ${depthY(n.depth)})" tabindex="${avail.has(n.id) ? 0 : -1}" role="button" aria-label="${esc(label + ' — ' + (NODE_TIP[n.type] || ''))}">
       <title>${esc(label + ' — ' + (NODE_TIP[n.type] || ''))}</title><circle r="${n.type === 'boss' ? 6.5 : 4.6}"/><text y="1.7">${t.glyph}</text>${avail.has(n.id) || n.type === 'boss' ? `<text class="lbl" y="${n.type === 'boss' ? 11 : 9}">${esc(label)}</text>` : ''}</g>`;
   }).join('');
-  const st = runStats(run), ap = deriveAppearance(run.evo); const wounds = woundsOf(run);
+  const st = runStats(run), ap = deriveAppearance(run.evo, visualForRun(run)); const wounds = woundsOf(run);
   const el = showScreen(`
     <div class="map-wrap act-${ACTS[run.act].theme}">
       <section class="map-sheet">
@@ -415,7 +416,7 @@ export function shrineScreen(app) {
 
 export function sheetModal(app) {
   const run = app.run; if (!run) return;
-  const st = runStats(run), ap = deriveAppearance(run.evo);
+  const st = runStats(run), ap = deriveAppearance(run.evo, visualForRun(run));
   const hist = run.evo.absorbed.map((a, i) => {
     const c = getCard(a.cardId); const col = c ? COLOR[c.color] : COLOR.verdant;
     const bits = [`+${a.power}/+${a.toughness}`, ...a.gained.map(k => KEYWORDS[k].name), ...a.raised.map(k => KEYWORDS[k].name + '↑'), a.resonance ? `Resonance +${a.resonance * 2} Spark` : ''].filter(Boolean).join(' · ');
@@ -611,13 +612,16 @@ const KIND_LINE = { start: () => 'Woke as The Blank — a 1/1 with no abilities.
   release: e => `Released ${esc(e.name)} (${e.by === 'exchange' ? 'Graft Exchange' : 'Graftsmith'}).`, spell: e => `${e.level > 1 ? 'Empowered' : 'Inscribed'} ${esc(getCard(e.cardId) ? getCard(e.cardId).name : e.cardId)}${e.level > 1 ? ' to level ' + e.level : ''}.`,
   event: e => `Met ${esc(EVENTS[e.id] ? EVENTS[e.id].name : e.id)} — chose “${esc(e.choice)}”.` };
 const sheetCanvas = (app, evo, scale = 3, equipment = []) => {
-  const src = composeEquippedSheet(app.assets, deriveAppearance(evo), equipment); const c = document.createElement('canvas'); c.width = 48 * scale; c.height = 48 * scale;
-  const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(src, 0, 0, 48, 48, 0, 0, 48 * scale, 48 * scale); c.className = 'journal-sprite'; return c;
+  const size=app.assets.manifest.sprites.blank.w;
+  const src=composeEquippedSheet(app.assets, deriveAppearance(evo, visualForRun(app.run)), equipment);
+  const c=document.createElement('canvas');c.width=size*scale;c.height=size*scale;
+  const x=c.getContext('2d');x.imageSmoothingEnabled=false;
+  x.drawImage(src,0,0,size,size,0,0,size*scale,size*scale);c.className='journal-sprite';return c;
 };
 /** v0.6 Evolution Journal: current creature, graft history, spells, timeline and before/after. */
 export function journalModal(app) {
   const run = app.run; if (!run) return;
-  const st = runStats(run), ap = deriveAppearance(run.evo); const hist = graftHistory(run);
+  const st = runStats(run), ap = deriveAppearance(run.evo, visualForRun(run)); const hist = graftHistory(run);
   const traits = Object.values(ap.slots).map(p => p.part + (p.tier > 1 ? ' II' : '')).concat(ap.effects);
   const m = app.openModal(`<div class="journal"><small class="sh-brand">${GAME.title} · Evolution Journal</small><h2>${esc(run.name)} <small>${STAGE[ap.stage]}</small></h2>
     <section class="j-now"><div class="j-compare"><figure data-fig="before"><figcaption>The Blank · 1/1</figcaption></figure><span class="j-arrow">→</span><figure data-fig="now"><figcaption>Now · ${run.evo.power}/${run.evo.toughness}</figcaption></figure></div>

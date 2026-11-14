@@ -1,4 +1,6 @@
 import { installRealCreatureModels } from './real-creature-models.js';
+import { installPremiumModels } from './premium-creatures.js';
+import { installLegendaryBosses } from './legendary-boss-art.js';
 // Asset loading: sprite sheets + manifest, evolution layers, terrain atlas (+ pre-filtered blur atlas), foliage, card art.
 const BASE = new URL('../../assets/', import.meta.url).href;
 function img(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Failed to load ' + src)); i.src = BASE + src; }); }
@@ -18,5 +20,7 @@ export async function loadAssets(onProgress = () => {}) {
   let done = 0; jobs.forEach(j => j.then(() => onProgress(++done / jobs.length)));
   await Promise.all(jobs);
   installRealCreatureModels(images,manifest);
+  installPremiumModels(images,manifest);
+  installLegendaryBosses(images,manifest);
   return { manifest, images, parts, base: BASE };
 }

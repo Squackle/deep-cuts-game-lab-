@@ -1,3 +1,4 @@
+import { resolveAnatomy } from './anatomy-resolver.js';
 // Evolution -> appearance description consumed by rendering/evolution-visuals.js. Pure & testable.
 export const PALETTE = {
   parchment: [0.86, 0.80, 0.64],
@@ -18,7 +19,7 @@ export function dominantColor(evo) {
   for (const c of ['verdant', 'umbral', 'ember', 'tide', 'radiant']) if ((evo.colors[c] || 0) > n) { n = evo.colors[c]; best = c; }
   return best;
 }
-export function deriveAppearance(evo) {
+export function deriveAppearance(evo, visual = null) {
   const total = evo.absorbed.length;
   const dom = dominantColor(evo);
   const p = evo.parts || {};
@@ -35,7 +36,7 @@ export function deriveAppearance(evo) {
   const size = +Math.min(1.9, 1 + 0.06 * (evo.toughness - 1) + 0.12 * Math.min(2, p.bulk || 0)).toFixed(3);
   return {
     stage: total === 0 ? 'blank' : total < 4 ? 'stirring' : total < 9 ? 'awakened' : 'ascendant',
-    size, dominant: dom, tintMix: +mix.toFixed(3), body, glow: dom ? PALETTE[dom] : [1, 0.86, 0.5],
+    size, anatomy: resolveAnatomy(evo), skinTone: visual?.skinTone ?? 0, dominant: dom, tintMix: +mix.toFixed(3), body, glow: dom ? PALETTE[dom] : [1, 0.86, 0.5],
     slots, effects: effects.slice(0, MAX_EFFECTS), dormant, markings: Object.keys(evo.colors).sort(),
   };
 }

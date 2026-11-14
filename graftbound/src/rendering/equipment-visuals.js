@@ -1,47 +1,35 @@
-/** Original 48px gear silhouettes, overlaid on every animation cell of the evolved hero.
- * Gear is drawn on the actual rendered combat sprite sheet, not a disconnected HUD icon. */
+/** Card-faithful original authored gear, spatially anchored to the evolved 64px hero. */
 import { composePlayerSheet } from './evolution-visuals.js';
-const NAMES = Object.freeze({
- 'mtg:accorder-s-shield':'shield','mtg:basilisk-collar':'collar',
- 'mtg:swiftfoot-boots':'boots','mtg:mask-of-memory':'mask','mtg:moonsilver-spear':'spear'
-});
-export const gearKinds = ids => [...new Set((ids || []).map(id => NAMES[id]).filter(Boolean))];
-export function composeEquippedSheet(assets, appearance, equipment = []) {
- const source = composePlayerSheet(assets,appearance);
- const kinds = gearKinds(equipment); if (!kinds.length) return source;
- const canvas=document.createElement('canvas'); canvas.width=source.width;canvas.height=source.height;
- const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;c.drawImage(source,0,0);
- const frame=48,cols=Math.floor(source.width/frame),rows=Math.floor(source.height/frame);
- for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
-  c.save();c.translate(col*frame,row*frame);
-  // Head is drawn at y≈28–39 of each 48px animation frame; equipment follows the frame bob.
-  const bob=(row%6===1&&col%2)?1:0;
-  if(kinds.includes('boots')){
-   c.fillStyle='#332f36';c.fillRect(16,39+bob,7,4);c.fillRect(25,39+bob,7,4);
-   c.fillStyle='#c1a363';c.fillRect(16,39+bob,7,1);c.fillRect(25,39+bob,7,1);
+import { drawEquipmentSheet, gearKinds, EQUIPMENT_PRINTINGS } from './gear-art.js';
+import { composeAuraSheet } from './aura-art.js';
+export { gearKinds, EQUIPMENT_PRINTINGS };
+const memo=new WeakMap();
+export function composeEquippedSheet(assets,appearance,equipment=[],auras=[]){
+ const source=composePlayerSheet(assets,appearance);
+ const ids=[...(equipment||[])].sort(),key=JSON.stringify([ids,[...(auras||[])].sort()]);
+ if(!ids.length&&!auras.length)return source;
+ let cache=memo.get(source);if(!cache){cache=new Map();memo.set(source,cache)}
+ if(cache.has(key))return cache.get(key);
+ const c=document.createElement('canvas');c.width=source.width;c.height=source.height;
+ const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(source,0,0);
+ drawEquipmentSheet(g,appearance,ids);
+ const out=composeAuraSheet(c,assets.manifest.sprites.blank.w,auras,assets.manifest.cols);
+ if(cache.size>=16)cache.delete(cache.keys().next().value);cache.set(key,out);
+ return out;
+}
+/** Gear can also be equipped by summoned allies. Compose onto their actual source rig,
+ * scaled to each rig's frame size; never assume a human is behind the sprite. */
+export function composeAllyAttachments(source,frame,equipment=[],auras=[],cols=4){
+ if(!equipment?.length&&!auras?.length)return source;
+ const canvas=document.createElement('canvas');canvas.width=source.width;canvas.height=source.height;
+ const g=canvas.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(source,0,0);
+ if(equipment?.length){
+  const overlay=document.createElement('canvas');overlay.width=64*4;overlay.height=64*10;
+  drawEquipmentSheet(overlay.getContext('2d'),{anatomy:null},equipment);
+  const rows=Math.round(source.height/frame);
+  for(let row=0;row<rows;row++)for(let f=0;f<cols;f++){
+   const rigRow=Math.min(9,row);g.drawImage(overlay,f*64,rigRow*64,64,64,f*frame,row*frame,frame,frame);
   }
-  if(kinds.includes('collar')){
-   c.fillStyle='#3d4432';c.fillRect(18,38+bob,12,2);
-   c.fillStyle='#c7a85f';c.fillRect(18,38+bob,12,1);c.fillRect(23,39+bob,2,1);
-  }
-  if(kinds.includes('mask')){
-   c.fillStyle='#30282a';c.fillRect(19,33+bob,10,6);
-   c.fillStyle='#dec58f';c.fillRect(19,33+bob,10,1);c.fillRect(19,33+bob,1,6);c.fillRect(28,33+bob,1,6);
-   c.fillStyle='#dfe5c5';c.fillRect(20,35+bob,3,2);c.fillRect(26,35+bob,2,2);
-  }
-  if(kinds.includes('shield')){
-   // Beveled shield plate, readable at 48px and attached to the hero's left arm.
-   c.fillStyle='#282f38';c.fillRect(8,23+bob,10,15);c.fillRect(10,38+bob,6,2);
-   c.fillStyle='#9ea9ae';c.fillRect(9,24+bob,8,12);c.fillRect(11,36+bob,4,2);
-   c.fillStyle='#4a6472';c.fillRect(11,26+bob,4,8);
-   c.fillStyle='#eed58a';c.fillRect(12,28+bob,2,4);
-  }
-  if(kinds.includes('spear')){
-   c.fillStyle='#4a2a1b';c.fillRect(35,15+bob,2,28);
-   c.fillStyle='#d7c7ad';c.fillRect(34,8+bob,4,9);c.fillRect(35,5+bob,2,4);
-   c.fillStyle='#fff2c9';c.fillRect(35,8+bob,1,9);
-  }
-  c.restore();
  }
- return canvas;
+ return composeAuraSheet(canvas,frame,auras,cols);
 }

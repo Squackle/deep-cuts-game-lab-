@@ -13,8 +13,11 @@ import { ACTS, bossNameOf, bossTitleOf } from '../data/encounters.js';
 import { resolveCard as getCard } from '../cards/catalog.js';
 import { KEYWORDS, keywordLabel } from '../data/keywords.js';
 import { deriveAppearance } from '../engine/appearance.js';
+import { visualForRun, skinToneForSeed } from '../engine/visual-identity.js';
+import { recolorSkin } from '../rendering/premium-creatures.js';
 import { composePlayerSheet } from '../rendering/evolution-visuals.js';
-import { composeEquippedSheet } from '../rendering/equipment-visuals.js';
+import { composeEquippedSheet, composeAllyAttachments } from '../rendering/equipment-visuals.js';
+import { auraColor } from '../rendering/aura-art.js';
 import { VFX, DEFAULT_VFX, chainHop } from '../rendering/vfx.js';
 import { castSpellVisual, withTimeout } from '../rendering/casting.js';
 import { ICON } from './icons.js';
@@ -98,8 +101,8 @@ export class BattleUI {
   addUnitView(u) {
     let v;
     if (u.hero) {
-      const ap = deriveAppearance(this.run.evo);
-      v = this.scene.addUnit(u, 'blank'); this.scene.setUnitTexture(u.uid, composeEquippedSheet(this.app.assets, ap, u.equipment || []), Math.min(1.22, ap.size));
+      const ap = deriveAppearance(this.run.evo, visualForRun(this.run));
+      v = this.scene.addUnit(u, 'blank'); this.scene.setUnitTexture(u.uid, composeEquippedSheet(this.app.assets, ap, u.equipment || [], u.auras || []), Math.min(0.94, ap.size * 0.76));
       v.aura = ap.effects.includes('aura') ? ap.glow : null;
       v.hover = u.keywords.flying ? 0.28 : 0;   // v0.6: fliers levitate; trample builds plant heavier steps (see play())
       v.style = { flying: !!u.keywords.flying, trample: !!u.keywords.trample, deathtouch: !!u.keywords.deathtouch, doubleStrike: !!u.keywords.doubleStrike, lifelink: !!u.keywords.lifelink,
@@ -113,10 +116,37 @@ export class BattleUI {
         u.traitToken === 'drake' ? 'mtg_friendlyDrake' :
         u.traitToken === 'catsoldier' ? 'mtg_friendlyCatSoldier' :
         u.name === 'Soldier' ? 'mtg_friendlySoldier' : 'mtg_friendlySproutling');
-      v = this.scene.addUnit(u, friend ? tokenKey : ENEMIES[u.defId].sprite, { scale: u.boss ? 0.8 : 0.95 });
+      v = this.scene.addUnit(u, friend ? tokenKey : ENEMIES[u.defId].sprite, { scale: u.boss ? 0.42 : tokenKey==='mtg_friendlySoldier' ? 0.76 : 0.95 });
+      if (friend && tokenKey === 'mtg_friendlySoldier') {
+        const src=this.app.assets.images.mtg_friendlySoldier, mask=this.app.assets.images['mtg_friendlySoldier:skinMask'];
+        this.scene.setUnitTexture(u.uid,composeAllyAttachments(recolorSkin(src,mask,skinToneForSeed(this.run.seed,u.uid)),64,u.equipment||[],u.auras||[]),0.76);
+      }
     }
+    if(u.auras?.length) this.applyAuraLight(u);
     const el = document.createElement('div'); el.className = 'ulabel ' + (u.side === 'player' ? 'player' : 'enemy'); $('labels').appendChild(el); this.labels.set(u.uid, el);
     return v;
+  }
+  /** Repaint the exact unit that changed, never silently update only the hero.
+   * Cosmetic transitions are derived from saved battle state; no gameplay RNG. */
+  refreshUnitAttachments(uid){
+    const unit=this.s?.units.find(u=>u.uid===uid),v=this.scene.units.get(uid);
+    if(!unit||!v)return;
+    if(unit.hero){
+      const app=deriveAppearance(this.run.evo,visualForRun(this.run));
+      this.scene.setUnitTexture(uid,composeEquippedSheet(this.app.assets,app,unit.equipment||[],unit.auras||[]),Math.min(.94,app.size*.76));
+    }else{
+      let base=this.app.assets.images[v.key];if(!base)return;
+      if(v.key==='mtg_friendlySoldier')base=recolorSkin(base,this.app.assets.images['mtg_friendlySoldier:skinMask'],skinToneForSeed(this.run.seed,uid));
+      this.scene.setUnitTexture(uid,composeAllyAttachments(base,v.fw,unit.equipment||[],unit.auras||[],this.app.assets.manifest.cols));
+    }
+    this.applyAuraLight(unit);
+  }
+  applyAuraLight(unit){
+    const v=this.scene.units.get(unit.uid);if(!v)return;
+    const color=auraColor(unit.auras||[]);
+    if(color){const n=Number.parseInt(color.slice(1),16);v.aura=[((n>>16)&255)/255,((n>>8)&255)/255,(n&255)/255];}
+    else if(unit.hero){const ap=deriveAppearance(this.run.evo,visualForRun(this.run));v.aura=ap.effects.includes('aura')?ap.glow:null;}
+    else v.aura=null;
   }
   syncDisp() {
     for (const u of this.s.units) this.disp.set(u.uid, { hp: u.hp, maxHp: u.maxHp, shield: u.statuses.shield || 0, poison: u.statuses.poison || 0, stunned: u.statuses.stunned || 0, empowered: u.statuses.empowered || 0, weakened: u.statuses.weakened || 0, grounded: u.statuses.grounded || 0 });
@@ -156,7 +186,7 @@ export class BattleUI {
   }
   renderHUD() {
     const s = this.s; const p = player(s); const d = this.disp.get(p.uid) || { hp: p.hp, maxHp: p.maxHp, shield: 0 };
-    const ap = deriveAppearance(this.run.evo);
+    const ap = deriveAppearance(this.run.evo, visualForRun(this.run));
     $('plate').innerHTML = `
       <div class="pl-top"><div><div class="pl-name">${esc(this.run.name)}</div><div class="pl-stage">${STAGE[ap.stage]} · ${this.run.evo.absorbed.length} graft${this.run.evo.absorbed.length === 1 ? '' : 's'}</div></div>
       <div class="pl-pt" title="Power / Toughness"><span class="${d.empowered ? 'buff' : d.weakened ? 'debuff' : ''}">${Math.max(0, p.power + (d.empowered || 0) - (d.weakened || 0))}</span>/<span>${p.toughness}</span></div></div>
@@ -775,12 +805,12 @@ export class BattleUI {
         case 'restored': this.float(e.uid, `${KEYWORDS[e.keyword].name} restored`, 'note'); break;
         case 'summon': { const u = this.s.units.find(x => x.uid === e.uid); if (u) { if (e.ally) await VFX.summon(sc, { from: sc.units.get(e.by) ? sc.centerPos(e.by) : null, to: this.tile(e.x, e.y) }); this.disp.set(u.uid, { hp: u.maxHp, maxHp: u.maxHp, shield: 0, poison: 0, stunned: 0, empowered: 0 }); this.addUnitView({ ...u, x: e.x, y: e.y }); this.renderLabel(u.uid); await sc.spawn(u.uid); } break; }
         case 'mirror': { sc.screenFlash([0.85, 0.8, 1], 0.25); this.float(e.uid, `Copies your ${KEYWORDS[e.keyword].name}!`, 'warn'); au.play('spell'); await this.wait(300); break; }
-        case 'bossPhase': this.audio.play('bossPhase'); sc.screenFlash([0.6, 0.35, 0.15], 0.3); if (!sc.reduced) sc.shake(0.12); await this.banner(e.phase ? `Phase ${e.phase} · ${e.text}` : (e.text || 'The foe changes'), 'boss'); break;
+        case 'bossPhase': {const bossView=sc.units.get(e.uid??this.s?.units.find(u=>u.boss)?.uid);if(bossView){bossView.flash=1;bossView.aura=e.phase===3?[0.92,0.38,0.24]:[0.75,0.63,0.35];}this.audio.play('bossPhase'); sc.screenFlash([0.6, 0.35, 0.15], 0.3); if (!sc.reduced) sc.shake(0.12); await this.banner(e.phase ? `Phase ${e.phase} · ${e.text}` : (e.text || 'The foe changes'), 'boss'); break;}
         case 'stunnedSkip': this.float(e.uid, 'Stunned', 'note'); await this.wait(200); break;
         case 'slimeCounter': { const u=this.s.units.find(unit=>unit.uid===e.uid);if(u){this.float(e.uid,`☣ Slime ${e.total} · −${e.total}/−${e.total}`,'poison');sc.fx.burst(sc.centerPos(e.uid),[0.38,0.65,0.18],10,{speed:0.48,up:0.48,size:9});this.renderLabel(e.uid);if(u.hero)this.renderHUD();}au.play('poison');await this.wait(120);break; }
         case 'cardDraw': au.play('flip'); await this.cardAnimations.play('draw',e); break;
         case 'deckReshuffle': au.play('flip'); await this.cardAnimations.play('shuffle',e); if (sc.units.get(e.uid)) this.float(e.uid, `Graveyard reshuffled · ${e.count} card${e.count === 1 ? '' : 's'}`, 'note'); break;
-        case 'equipmentAttach': {au.play('click'); const hero=this.s?.units.find(u=>u.hero); if(hero){const ap=deriveAppearance(this.run.evo);this.scene.setUnitTexture(hero.uid,composeEquippedSheet(this.app.assets,ap,hero.equipment||[]),Math.min(1.22,ap.size));}break;}
+        case 'equipmentAttach': {au.play('click');this.refreshUnitAttachments(e.uid);if(e.removed){for(const unit of this.s?.units||[])if(unit.uid!==e.uid)this.refreshUnitAttachments(unit.uid);}break;}
         case 'cardCastMove': await this.cardAnimations.play('cast',e); break;
         case 'cardReturn': await this.cardAnimations.play('return',e); break;
         case 'cardDiscard': au.play('flip'); await this.cardAnimations.play('discard',e); this.float(player(this.s).uid,'Card to graveyard','note'); break;
@@ -793,8 +823,8 @@ export class BattleUI {
             await sc.projectile(from,to,color,gift?0.48:0.3,gift?0.05:0.24,{size:gift?26:18});}
           sc.fx.burst(to,color,gift?30:15,{speed:gift?0.9:0.65,up:1.5});au.play(gift?'heal':'spell');break;
         }
-        case 'auraAttach': {const w=this.tile(e.x,e.y);sc.fx.burst([w[0],0.4,w[2]],[0.85,0.65,1],16,{speed:0.7,up:1.3});au.play('spell');this.float(e.uid,esc(e.name||'Enchanted'),'note');break;}
-        case 'auraBreak': au.play('block'); this.float(e.uid,'Aura shattered','warn'); break;
+        case 'auraAttach': {const w=this.tile(e.x,e.y);sc.fx.burst([w[0],0.4,w[2]],[0.85,0.65,1],16,{speed:0.7,up:1.3});au.play('spell');this.float(e.uid,esc(e.name||'Enchanted'),'note');this.refreshUnitAttachments(e.uid);break;}
+        case 'auraBreak': au.play('block'); this.float(e.uid,'Aura shattered','warn');this.refreshUnitAttachments(e.uid); break;
         case 'revive': au.play('heal');this.float(e.uid,'Gift of Immortality!','note');break;
         case 'legendaryFlame': au.play('fireboom');sc.screenFlash([1,0.45,0.18],0.35);break;
         case 'legendaryAbility': au.play('bossPhase'); if (e.name && sc.units.get(e.uid)) this.float(e.uid, esc(e.name), 'note'); break;

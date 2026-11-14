@@ -15,6 +15,7 @@ import { newClock } from './clock.js';
 import { combatSpellbook, refreshLoadout, BASE_HAND_CAPACITY } from './loadout.js';
 import { newWorldThreat, settleWorldThreat, applyWorldThreat } from './world-threat.js';
 import { giveEquipment, attachRunEquipment } from './attachments.js';
+import { skinToneForSeed } from './visual-identity.js';
 
 export const RUN_VERSION = 9;
 export const TUTORIAL_CARD = 'mtg:typhoid-rats';  // real 1/1 Deathtouch: Blank 1/1 -> 2/2 Deathtouch
@@ -32,7 +33,7 @@ export const graftsFull = run => run.evo.absorbed.length >= graftCapacity(run);
 
 export function newRun({ seed, unlocks = {}, challenges = [], tutorial = false }) {
   const run = {
-    v: RUN_VERSION, seed: seed >>> 0, name: STARTING_NAME, evo: newEvolution(), spellbook: [], equipmentInventory:[],equippedEquipment:[null,null], handCapacity: BASE_HAND_CAPACITY, equippedSpellIds: [], sparkBonus: 0, manaBonus: 0, sparkFonts: 0,
+    v: RUN_VERSION, seed: seed >>> 0, name: STARTING_NAME, visual: {skinTone: skinToneForSeed(seed)}, evo: newEvolution(), spellbook: [], equipmentInventory:[],equippedEquipment:[null,null], handCapacity: BASE_HAND_CAPACITY, equippedSpellIds: [], sparkBonus: 0, manaBonus: 0, sparkFonts: 0,
     act: 0, map: generateMap(seed, { act: 0, tutorial }), current: null, visited: [], phase: 'map', battle: null, pending: null, shrine: null,
     unlocks: { ...unlocks }, challenges: challenges.slice(), tutorial, hp: null, wardNext: 0, actHistory: [], event: null, eventsSeen: [],
     scoring: newScoring(), journal: newJournal(), clock: newClock(false), worldThreat: newWorldThreat(),
