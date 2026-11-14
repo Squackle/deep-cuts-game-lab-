@@ -1,6 +1,7 @@
 // Battle HUD, input (mouse / touch / keyboard) and event playback onto the HD-2D scene.
 import { availableMana } from '../engine/mana.js';
-import { moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, intents, canAttack, player, enemies, hazardPreview, interact, interactOptions, crystalAt, guard, channel, guardValue, stanceBlockReason, stanceMovementCost, discard, equipBattle } from '../engine/combat.js';
+import { hasComboChoices, comboChoices, comboActiveOptions } from '../engine/combo-triggers.js';
+import { moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, intents, canAttack, player, enemies, hazardPreview, interact, interactOptions, crystalAt, guard, channel, guardValue, stanceBlockReason, stanceMovementCost, discard, equipBattle, chooseCombo, activateCombo } from '../engine/combat.js';
 import { TACTICS } from '../data/tactics.js';
 import { getLegalPlayerActions, shouldAutoEnd } from '../engine/legal.js';
 import { describeTile, pathWarning } from '../engine/describe.js';
@@ -51,6 +52,8 @@ export class BattleUI {
       case 'equip': ev = equipBattle(s,d.id,d.uid,d.slot); break;
       case 'guard': ev = guard(s); break;
       case 'channel': ev = channel(s); break;
+      case 'combo': ev = chooseCombo(s,d.kind,d.arg); break;
+      case 'graft': ev = activateCombo(s,d.kind,d.arg); break;
       default: throw new Error('Unknown action');
     }
     this.app.record(d);
@@ -59,7 +62,7 @@ export class BattleUI {
   }
   wait(ms) { return new Promise(r => setTimeout(r, ms / this.app.animFactor())); }
   async start(run, s, { fresh }) {
-    this.cardAnimations.stop(); this.run = run; this.s = s; this.spell = null; this.hover = null; this.pendingTap = null;
+    this._comboShowing=false;this.cardAnimations.stop(); this.run = run; this.s = s; this.spell = null; this.hover = null; this.pendingTap = null;
     $('labels').innerHTML = ''; this.labels.clear(); this.disp.clear();
     this.scene.loadArena(s, s.rng.s ^ 0x77, ACTS[s.act || 0].theme); this.audio.setAct(s.act || 0);
     for (const u of s.units) if (u.hp > 0) this.addUnitView(u);
@@ -76,7 +79,7 @@ export class BattleUI {
         if (s.reinforced) { await this.banner(`The world answers your strength · +${s.reinforced} foe${s.reinforced > 1 ? 's' : ''}`, 'foe'); this.app.hint('reinforced', 'The stronger you become, the more foes answer. Reinforcements never have extra health — just more of them.'); }
         this.busy = false;
       }
-      this.refresh(); this.tutorialHints('start'); this.checkEnd(); this.maybeAutoEnd();
+      this.refresh(); this.tutorialHints('start'); this.checkEnd(); this.promptComboChoices(); this.maybeAutoEnd();
     });
   }
   /** Visual-only arcane spiral: a stationary top cover with rotating UNDERcards.
@@ -91,7 +94,7 @@ export class BattleUI {
     const duration=this.app.animFactor()>1.5?550:1000;overlay.style.setProperty('--gb-shuffle-ms',duration+'ms');
     try{await new Promise(res=>setTimeout(res,duration+50));}finally{overlay.remove();}
   }
-  stop() { this.cardAnimations.stop(); this.hideHandPreview(); $('hud').classList.add('hidden'); $('labels').innerHTML = ''; this.labels.clear(); this.s = null; }
+  stop() { this._comboShowing=false;this.cardAnimations.stop(); this.hideHandPreview(); $('hud').classList.add('hidden'); $('labels').innerHTML = ''; this.labels.clear(); this.s = null; }
   addUnitView(u) {
     let v;
     if (u.hero) {
@@ -105,10 +108,11 @@ export class BattleUI {
       v.castAt = ap.slots.head ? 'head' : 'chest';
     } else {
       const friend = u.side === 'player' && u.defId === 'sproutling';
-      const tokenKey = u.traitToken === 'elemental' ? 'mtg_friendlyElemental' :
+      const comboModels={birdIllusion:'mtg_friendlyBirdIllusion',tentacle:'mtg_friendlyTentacle',skeleton:'mtg_friendlySkeleton',snake:'mtg_friendlySnake',goblin:'mtg_friendlyGoblin',hornet:'mtg_friendlyHornet',squirrel:'mtg_friendlySquirrel'};
+      const tokenKey = comboModels[u.traitToken] || (u.traitToken === 'elemental' ? 'mtg_friendlyElemental' :
         u.traitToken === 'drake' ? 'mtg_friendlyDrake' :
         u.traitToken === 'catsoldier' ? 'mtg_friendlyCatSoldier' :
-        u.name === 'Soldier' ? 'mtg_friendlySoldier' : 'mtg_friendlySproutling';
+        u.name === 'Soldier' ? 'mtg_friendlySoldier' : 'mtg_friendlySproutling');
       v = this.scene.addUnit(u, friend ? tokenKey : ENEMIES[u.defId].sprite, { scale: u.boss ? 0.8 : 0.95 });
     }
     const el = document.createElement('div'); el.className = 'ulabel ' + (u.side === 'player' ? 'player' : 'enemy'); $('labels').appendChild(el); this.labels.set(u.uid, el);
@@ -159,7 +163,7 @@ export class BattleUI {
       <div class="pl-hp" tabindex="0" data-tip="Health ${d.hp}/${d.maxHp}${d.shield ? ` · shield ${d.shield} absorbs damage first` : ''}. Wounds carry between battles."><div class="bar"><i style="width:${(d.hp / d.maxHp) * 100}%"></i>${d.shield ? `<u style="width:${Math.min(100, d.shield / d.maxHp * 100)}%"></u>` : ''}</div>
       <span>${ICON.heart}${d.hp}<small>/${d.maxHp}</small>${d.shield ? ` <em class="shd">${ICON.shield}${d.shield}</em>` : ''}</span></div>
       <div class="pl-res"><span class="mana" tabindex="0" data-tip="Mana ${this.dispMana}/${s.p.maxMana}. Spells cost gems. You regain ${s.p.regen} each turn${s.p.arcane ? `; Arcane adds +${s.p.arcane} to spell numbers` : ''}.">${Array.from({ length: Math.max(s.p.maxMana, this.dispMana) }, (_, i) => `<i class="${i < this.dispMana ? 'on' : ''}">${ICON.gem}</i>`).join('')}</span>
-      <span class="gb-reserve" tabindex="0" data-tip="Stored mana and spell charges carry across turns until used. Maximum 2 of each.">Bank ${s.p.storedMana||0} ${ICON.gem} · ${s.p.channel||0} ✧</span>
+      <span class="gb-reserve" tabindex="0" data-tip="Banked mana and Channel charges persist; Treasure charges from Storm-Kiln Artist also pay for spells.">Bank ${s.p.storedMana||0} ${ICON.gem} · ${s.p.channel||0} ✧${s.combo?.treasure?' · 🟡'+s.combo.treasure+' Treasure':''}</span>
       <span class="moves" tabindex="0" data-tip="Movement left this turn (tiles). Brambles, lava and crumbling tiles hurt ground units; ice chills and spores poison.">${ICON.move}${s.phase === 'player' ? s.p.moveLeft : 0}</span>
       <span class="atk ${s.p.attacksLeft > 0 && s.phase === 'player' ? 'on' : ''}" tabindex="0" data-tip="Attacks left this turn. Attacking ends your movement unless you have Vigilance.">${ICON.sword}${s.phase === 'player' ? s.p.attacksLeft : 0}</span></div>
       <div class="pl-kw">${kwChips(p.keywords)}${d.poison ? `<span class="chip bad" tabindex="0" data-tip="Poison: lose ${d.poison} health at the start of your turn, then it drops by 1.">${ICON.poison}Poison ${d.poison}</span>` : ''}${p.slime ? `<span class="chip bad" tabindex="0" data-tip="Toxrill adds one slime counter at each end step. Each counter gives −1/−1 while Toxrill is alive.">☣ Slime ${p.slime}</span>` : ''}${d.grounded ? `<span class="chip bad" tabindex="0" data-tip="Grounded: no flying and −1 movement this turn.">${ICON.hook}Grounded</span>` : ''}${p.suppressed ? `<span class="chip bad" tabindex="0" data-tip="Redacted by the Unwritten for this turn only. It returns when your turn ends.">✖ ${esc(Object.keys(p.suppressed).map(k => KEYWORDS[k].name).join(', '))}</span>` : ''}</div>`;
@@ -168,6 +172,8 @@ export class BattleUI {
     this.renderZones(s);
     if(s.deck){$('tray').setAttribute('aria-label',`Spell hand · ${s.deck.hand.length} cards · library ${s.deck.library.length} · graveyard ${s.deck.graveyard.length}`);}
     this.renderStances(s);
+    const skill=$('graftPowers'), options=comboActiveOptions(s);
+    if(skill){skill.hidden=!options.length;skill.disabled=this.busy||s.phase!=='player'||hasComboChoices(s);skill.textContent='✦';skill.setAttribute('aria-label',`Open ${options.length} available Graft Powers`);skill.title=`Graft Powers (${options.length})`; }
     $('endTurn').disabled = this.busy || s.phase !== 'player';
     $('endTurn').classList.toggle('glow', s.phase === 'player' && !this.busy && !getLegalPlayerActions(s).any);
   }
@@ -410,6 +416,7 @@ export class BattleUI {
       const b = e.target.closest('[data-spell]'); if (b) this.selectSpell(b.dataset.spell);
     });
     $('hud').addEventListener('click', e => { const st = e.target.closest('[data-stance]'); if (st) this.doStance(st.dataset.stance); });
+    $('graftPowers').addEventListener('click', () => this.openGraftSkills());
     $('endTurn').addEventListener('click', () => this.doEndTurn());
     $('plate').addEventListener('click', () => this.app.openSheet());
     window.addEventListener('keydown', e => {
@@ -494,6 +501,30 @@ export class BattleUI {
     this.spell = id; this.pendingTap = null; this.refresh();
     this.app.hint('target', 'Spells reach any foe on the battlefield — no need to walk closer. Pick a highlighted target; right-click or Esc to cancel.');
   }
+  /** Player-facing deterministic choices for real spell/creature combo interactions. */
+  promptComboChoices(){
+    if(this._comboShowing&&!this.app.modalOpen())this._comboShowing=false;
+    if(!this.s||this.busy||this.app.mode!=='battle'||this.s.phase!=='player'||this._comboShowing||!hasComboChoices(this.s))return;
+    const choice=comboChoices(this.s);if(!choice)return;
+    this._comboShowing=true;
+    const options=choice.choices.map(x=>`<button type="button" class="btn gb-combo-option" data-combo-arg="${esc(String(x.arg))}">${esc(x.label)}</button>`).join('');
+    const modal=this.app.openModal(`<div class="gb-combo-modal"><small class="sh-brand">Graftbound · Combo Engine</small><h2>${esc(choice.kind.replace(/([A-Z])/g,' $1'))}</h2><p class="muted">${esc(choice.subtitle)}</p><div class="gb-combo-options">${options}</div></div>`);
+    for(const btn of modal.querySelectorAll('[data-combo-arg]'))btn.onclick=async()=>{
+      if(!this._comboShowing)return;this._comboShowing=false;
+      const argText=btn.dataset.comboArg;const arg=/^\d+$/.test(argText)?Number(argText):argText;
+      this.app.closeModal();await this.act(()=>this.exec({type:'combo',kind:choice.kind,arg}));
+    };
+    modal.querySelector('.gb-combo-option')?.focus();
+  }
+  openGraftSkills(){
+    if(!this.s||this.busy||hasComboChoices(this.s)||this.s.phase!=='player')return;
+    const options=comboActiveOptions(this.s);if(!options.length)return;
+    const modal=this.app.openModal(`<div class="gb-combo-modal"><small class="sh-brand">Graftbound · Activated Abilities</small><h2>Graft Powers</h2><p>Choose a power. Every sacrifice, mana payment and card return is a real, replayable action.</p><div class="gb-combo-options">${options.map((o,i)=>`<button type="button" class="btn gb-combo-option" data-graft-index="${i}">${esc(o.label)}</button>`).join('')}</div><button type="button" class="btn" data-close>Cancel</button></div>`);
+    for(const btn of modal.querySelectorAll('[data-graft-index]'))btn.onclick=async()=>{
+      const option=options[Number(btn.dataset.graftIndex)];this.app.closeModal();
+      await this.act(()=>this.exec({type:'graft',kind:option.kind,arg:option.arg}));
+    };
+  }
   chooseDrainX(id) {
     const s=this.s, base=spellCost(s,id,0), max=Math.min(99,availableMana(s)-base);
     if(max<1){this.reject('Not enough mana to choose X ≥ 1');return;}
@@ -560,7 +591,7 @@ export class BattleUI {
     try { ev = await fn(); } catch (err) { this.busy = false; this.reject(err.message || 'Not allowed'); this.refresh(); this.maybeAutoEnd(); return; }
     this.app.save(); this.renderHUD();
     await this.play(ev);
-    this.busy = false; this.syncDisp(); this.refresh(); this.tutorialHints('after'); this.checkEnd(); this.maybeAutoEnd();
+    this.busy = false; this.syncDisp(); this.refresh(); this.tutorialHints('after'); this.checkEnd(); this.promptComboChoices(); this.maybeAutoEnd();
   }
   async doStance(kind) {
     if (!this.s || this.busy || this.s.phase !== 'player') return;

@@ -15,15 +15,21 @@ export const TYPE_PARTS = {
   Snake: ['tail', 'venom'], Zombie: ['tendrils'], Elemental: ['aura', 'eyes'], Spirit: ['aura'], Sable: ['claws'],
   Vampire: ['tendrils', 'eyes'], Aetherborn: ['aura'], Goblin: ['claws'], Elf: ['moss'], Merfolk: ['eyes'], Wizard: ['eyes'], Centaur: ['armor'],
   Cleric: ['aura'], Pegasus: ['wings'], Horse: ['bulk'], Illusion: ['aura'], Crocodile: ['claws', 'tail'], Scorpion: ['venom', 'tail'], Minotaur: ['horns'],
+  Kraken: ['tendrils', 'bulk'], Wall: ['armor'], Dwarf: ['armor'], Insect: ['wings'], Skeleton: ['armor'], Rogue: ['claws'], Noble: ['crown'], Druid: ['moss'], Ally: ['armor'],
   Human: [], Soldier: ['armor'], Knight: ['armor', 'crown'], Kithkin: [], Warrior: ['armor'], Berserker: ['claws'], Shaman: ['eyes'],
 };
 const COLOR_MAP = { W: 'radiant', U: 'tide', B: 'umbral', R: 'ember', G: 'verdant' };
 
-// Scryfall includes ability words such as Magecraft in its keywords metadata,
-// even though Magic rules 207.2c gives them no standalone gameplay meaning.
+// Scryfall keyword metadata includes ability words (Magecraft) and recognized token
+// labels (Treasure), not always independently executable evergreen keywords.
 // Permit only specifically reviewed, implemented traits; never grant a generic keyword.
 export function isReviewedAbilityWord(name, word) {
-  return name === 'Archmage Emeritus' && String(word).toLowerCase() === 'magecraft' && traitOf(name)?.id === 'archmage';
+  const t=traitOf(name);
+  return (name === 'Archmage Emeritus' && String(word).toLowerCase() === 'magecraft' && t?.id === 'archmage')
+    || (name === 'Storm-Kiln Artist' && ['magecraft','treasure'].includes(String(word).toLowerCase()) && t?.id === 'stormkiln')
+    || (name === 'Mulldrifter' && String(word).toLowerCase() === 'evoke' && t?.id === 'mulldrifter')
+    || (name === 'Electrostatic Field' && String(word).toLowerCase() === 'defender' && t?.id === 'electrofield')
+    || (name === 'Deep Forest Hermit' && String(word).toLowerCase() === 'vanishing' && t?.id === 'hermit');
 }
 
 

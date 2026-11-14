@@ -72,7 +72,7 @@ export function addStatus(s, ev, u, status, value) {
   ev.push({ t: 'status', uid: u.uid, status, value, total: u.statuses[status] });
 }
 function kill(s, ev, u, element = null) {
-  ev.push({ t: 'death', uid: u.uid, element });
+  ev.push({ t: 'death', uid: u.uid, element, phase:s.phase,turn:s.turn });
   onUnitDeath(s,ev,u);
   if(u.side==='player' && !u.hero && u.slime>0 && s.units.some(x=>x.defId==='toxrill'&&x.hp>0))s.pendingSlugs=(s.pendingSlugs||0)+1;
   if (u.side === 'enemy') {
@@ -111,6 +111,11 @@ function kill(s, ev, u, element = null) {
     refreshTribalBonuses(s,ev);
     if (s.units.every(e => e.side !== 'enemy' || e.hp <= 0) && s.phase !== 'lost') { s.phase = 'won'; ev.push({ t: 'victory' }); }
   } else if (u.hero && s.phase !== 'won') { s.phase = 'lost'; ev.push({ t: 'defeat' }); }
+}
+/** A legal voluntary sacrifice still uses the authoritative death trigger pipeline. */
+export function sacrificeAlly(s,ev,u){
+  if(!u||u.hero||u.side!=='player'||!alive(u))throw new Error('Choose a living summoned ally');
+  u.hp=0;kill(s,ev,u);return u;
 }
 /** State-based actions: creature with zero Toughness dies even without receiving damage.
  * This is required for printed -1/-1 counter and Aura interactions. */
@@ -229,6 +234,7 @@ export function counterBlocked(atk, def, melee) {
   if (!alive(def)) return 'dead';
   if(def.tapped)return 'tapped';
   if(hasAura(def,'mtg:pacifism'))return 'pacifism';
+  if(atk.championLambholt && atk.side==='player' && effectivePower(atk)>effectivePower(def))return 'champion';
   // Printed legendary status does not prevent counterattacks.
   // Tapping, First Strike, flying and explicit restrictions do.
   if (def.statuses.stunned) return 'stunned';

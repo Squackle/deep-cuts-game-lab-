@@ -686,3 +686,24 @@ html[data-card-motion="minimal"] .reward .slot.gb-reveal-surge .lc-card{animatio
 .gb-terrain-detail {border-bottom:1px solid rgba(201,162,74,.28);padding:6px 0}
 .gb-terrain-detail h3 {color:var(--gold2);margin:4px 0;font-size:1rem}
 .gb-terrain-detail p {margin:5px 0;line-height:1.45}
+
+/* v1.2.8 original combo card integration: explicit choices, no obstruction of portrait cards. */
+.gb-graft-powers{position:absolute;right:12px;top:max(94px,calc(env(safe-area-inset-top) + 80px));z-index:16;
+  border:1px solid #d9bd78;background:#172f29e8;color:#f4deab;border-radius:10px;
+  padding:9px 12px;font:700 12px var(--sans);letter-spacing:.04em;box-shadow:0 5px 18px #0008;cursor:pointer}
+.gb-graft-powers[hidden]{display:none!important}
+.gb-graft-powers:focus-visible,.gb-combo-option:focus-visible{outline:3px solid #f5d78a;outline-offset:2px}
+.gb-combo-modal{width:min(470px,90vw);max-height:82dvh;overflow-y:auto;box-sizing:border-box;color:#f1e6cb}
+.gb-combo-modal h2{text-transform:capitalize;margin:.3em 0}.gb-combo-options{display:grid;gap:8px;margin:12px 0;max-height:51dvh;overflow-y:auto;padding:3px}
+.gb-combo-options button{width:100%;white-space:normal;min-height:42px;line-height:1.35;overflow-wrap:anywhere;text-align:left}
+@media(max-width:760px){.gb-graft-powers{right:8px;top:max(90px,calc(env(safe-area-inset-top) + 74px));font-size:10px;padding:7px 8px;max-width:140px}}
+@media(max-height:430px){.gb-graft-powers{top:max(49px,calc(env(safe-area-inset-top) + 36px))}}
+@media(prefers-reduced-motion:reduce){.gb-combo-modal,.gb-graft-powers{transition:none!important;animation:none!important}}
+
+/* Accessible Graft Powers lives with the camera/menu buttons, not over the hero plate.
+   The right-side top button rail already reserves space beside the mobile plate. */
+.topbtns .gb-graft-powers { position:static; top:auto; right:auto; width:40px; height:40px; padding:0;
+  min-width:40px; border-radius:50%; display:grid;place-items:center; font:700 20px var(--sans);letter-spacing:0; }
+.topbtns .gb-graft-powers:disabled{opacity:.55;cursor:default}
+body:not([data-mode="battle"]) #graftPowers{display:none!important}
+@media (max-width:760px){.topbtns .gb-graft-powers{width:34px;height:34px;min-width:34px;font-size:18px}}

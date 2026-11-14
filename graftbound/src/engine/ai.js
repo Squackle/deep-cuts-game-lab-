@@ -387,7 +387,7 @@ function resolvePending(s, ev, e) {
 
 export function actEnemy(s, ev, e) {
   if (!alive(e)) return;
-  if (e.statuses.stunned) { e.statuses.stunned = 0; e.statuses.chilled = 0; e.statuses.weakened = 0; ev.push({ t: 'stunnedSkip', uid: e.uid }); return; }
+  if (e.statuses.stunned) { e.statuses.stunned = Math.max(0,e.statuses.stunned-1); e.statuses.chilled = 0; e.statuses.weakened = 0; ev.push({ t: 'stunnedSkip', uid: e.uid }); return; }
   if (resolvePending(s, ev, e)) { e.statuses.weakened = 0; return; }
   if (s.phase !== 'enemy') return;
   const plan = planEnemy(s, e);
@@ -539,6 +539,9 @@ export function announcePhase(ev, e) {
 
 export function actAlly(s, ev, a) {
   if (!alive(a) || s.phase !== 'enemy') return;
+  // Reassembled Skeletons return exhausted: their first allied AI action must
+  // be skipped. Clear the flag so they can act on subsequent turns.
+  if (a.tapped) { a.tapped = false; ev.push({ t: 'stunnedSkip', uid: a.uid, kind: 'reassembly' }); return; }
   const foes = enemies(s); if (!foes.length) return;
   const tgt = foes.slice().sort((x, y) => manhattan(a, x) - manhattan(a, y) || x.uid - y.uid)[0];
   if (manhattan(a, tgt) !== 1) {

@@ -109,6 +109,14 @@ RUN_MIGRATIONS[7] = r => {
   if(r.ranked && r.ranked.rulesVersion!=='graftbound-rules-1.2.6-beta') {r.archivedRanked={...r.ranked};delete r.ranked;}
   return r;
 };
+RUN_MIGRATIONS[8] = r => {
+  // v1.2.8 changes reward eligibility and adds encounter-local, serializable combo state.
+  // Keep the current battle, learned cards, original save keys, and completed achievements.
+  r.v=9;
+  if(r.battle){r.battle.v=10;r.battle.combo||={choices:[],counters:{},actions:{},treasure:0};}
+  if(r.ranked && r.ranked.rulesVersion!=='graftbound-rules-1.2.8-beta'){r.archivedRanked={...r.ranked};delete r.ranked;}
+  return r;
+};
 export const META_MIGRATIONS = {
   1: m => { m.v = 2; m.settings = { ...DEFAULT_SETTINGS, ...(m.settings || {}) }; return m; },
   2: m => { m.v = 3; return m; },

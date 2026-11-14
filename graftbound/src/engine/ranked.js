@@ -2,18 +2,18 @@
 // rules-only verifier. Pure + DOM-free: the SAME module runs in the browser and in a Cloudflare Worker.
 // The replay never carries damage, scores or random outcomes — only the player's accepted decisions.
 import { newRun, enterNode, concludeBattle, chooseReward, skipReward, shrineChoice, eventChoice } from './run.js';
-import { movePlayer, attack, cast, endTurn, interact, guard, channel, discard, equipBattle } from './combat.js';
+import { movePlayer, attack, cast, endTurn, interact, guard, channel, discard, equipBattle, chooseCombo, activateCombo } from './combat.js';
 import { expeditionTotals } from './scoring.js';
 import { SCORING_VERSION } from '../data/scoring.js';
 
-export const RULES_VERSION = 'graftbound-rules-1.2.7-beta';
-export const CARD_POOL_VERSION = 'real-pool-110-v6';
+export const RULES_VERSION = 'graftbound-rules-1.2.8-beta';
+export const CARD_POOL_VERSION = 'real-pool-133-v7';
 export const REPLAY_VERSION = 1;
 export const MAX_DECISIONS = 4000, MAX_SEGMENT = 400;
 
 /** Fixed, versioned challenges. Seeds are authored here; servers never accept a client-chosen seed. */
 export const RANKED_CHALLENGES = {
-  'gb-expedition-01': { id: 'gb-expedition-01', revision: 14, name: 'The First Expedition', seed: 0x5eedcafe, tutorial: true,
+  'gb-expedition-01': { id: 'gb-expedition-01', revision: 15, name: 'The First Expedition', seed: 0x5eedcafe, tutorial: true,
     rulesVersion: RULES_VERSION, cardPoolVersion: CARD_POOL_VERSION, scoringVersion: SCORING_VERSION, status: 'active' },
 };
 export const ACTIVE_CHALLENGE = 'gb-expedition-01';
@@ -37,6 +37,8 @@ const SHAPES = {
   node: { node: INT }, move: { x: INT, y: INT }, attack: { uid: INT }, cast: { id: ID, x: INT, y: INT, xValue: v => v === undefined || (INT(v) && v >= 1 && v <= 99) }, interact: { x: INT, y: INT },
   end: {}, guard: {}, channel: {}, discard: {id:ID}, equip: {id:ID,uid:INT,slot:INT}, reward: { card: ID, release: v => v === undefined || INT(v) }, skip: {}, shrine: { choice: ID, arg: v => v === undefined || INT(v) || ID(v) },
   event: { choice: ID, arg: v => v === undefined || INT(v) || ID(v) },
+  combo: { kind: ID, arg: v => v === undefined || INT(v) || ID(v) },
+  graft: { kind: ID, arg: v => v === undefined || INT(v) || ID(v) },
 };
 /** Strict envelope validation: exact keys, typed values, contiguous sequence. */
 export function validDecision(d, seq) {
@@ -64,6 +66,8 @@ export function applyDecision(run, d) {
     case 'equip': need('battle'); equipBattle(b,d.id,d.uid,d.slot); break;
     case 'guard': need('battle'); guard(b); break;
     case 'channel': need('battle'); channel(b); break;
+    case 'combo': need('battle'); chooseCombo(b,d.kind,d.arg); break;
+    case 'graft': need('battle'); activateCombo(b,d.kind,d.arg); break;
     case 'reward': need('reward'); chooseReward(run, d.card, d.release); break;
     case 'skip': need('reward'); skipReward(run); break;
     case 'shrine': need('shrine'); shrineChoice(run, d.choice, d.arg); break;

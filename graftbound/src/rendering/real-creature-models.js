@@ -10,6 +10,13 @@ export const REAL_CREATURE_MODELS = Object.freeze({
   friendlyDrake: C('moth','#18394a','#377e9f','#b9e8f1','friendlyDrake',true),
   friendlyCatSoldier: C('archer','#54442c','#bd9762','#f4dbb1','friendlyCatSoldier',true),
   friendlySproutling: C('grub','#20542b','#5cbd63','#d5f2a4','saproling',true),
+  friendlyBirdIllusion: C('moth','#142e51','#7191db','#d9f5ff','friendlyBirdIllusion',true),
+  friendlyTentacle: C('grub','#173d65','#3697bb','#caecff','friendlyTentacle',true),
+  friendlySkeleton: C('riftstalker','#31343d','#a5a1a0','#fff1d8','friendlySkeleton',true),
+  friendlySnake: C('hound','#25432a','#60a569','#e0ed94','friendlySnake',true),
+  friendlyGoblin: C('cinderling','#62321c','#ad693c','#f9c67d','friendlyGoblin',true),
+  friendlyHornet: C('moth','#292b19','#bc9d32','#f8e47c','friendlyHornet',true),
+  friendlySquirrel: C('hound','#382a20','#a36e48','#f7d29e','friendlySquirrel',true),
   grub: C('grub','#19391d','#54a54a','#d4e988','caterpillar'),
   hound: C('hound','#283e45','#7e9996','#e0e0ba','wolf'),
   archer: C('archer','#123b31','#4a8760','#d2dca0','bow'),
@@ -84,6 +91,32 @@ function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
       poly([[-7,-12],[-35,-43],[-28,2],[-13,14]],light);poly([[7,-12],[35,-43],[28,2],[13,14]],light);
       ell(0,4,11,16,mid);line([0,-8],[9,-30],mid,9);poly([[7,-30],[23,-29],[28,-22],[9,-20]],light);
       poly([[-4,20],[-21,36],[-11,20]],dark);eye(11,-28,dark);break;
+    case 'friendlyBirdIllusion':
+      poly([[-5,-10],[-33,-37],[-26,3],[-10,13]],light);poly([[5,-10],[33,-37],[26,3],[10,13]],light);
+      ell(0,-12,8,16,mid,dark,1);ell(0,-28,9,8,light,dark,1);poly([[0,6],[-9,27],[9,20]],mid);eye(-4,-29,dark);eye(4,-29,dark);break;
+    case 'friendlyTentacle':
+      ell(0,10,16,9,mid);for(let j=-2;j<=2;j++){
+       const x=j*9;line([x,10],[x+(j%2?8:-8),-7-j*2],mid,7);line([x+(j%2?8:-8),-7-j*2],[x+j*3,-33],light,4);
+      }ell(0,7,5,4,light);eye(-3,2,dark);eye(4,2,dark);break;
+    case 'friendlySkeleton':
+      ell(0,-24,12,11,light);ell(-5,-25,3,3,dark,null);ell(5,-25,3,3,dark,null);
+      for(let j=-1;j<=1;j++)line([-9,j*6-7],[9,j*6-7],light,3);
+      line([0,-14],[0,18],light,5);line([-3,10],[-16,25],light,4);line([4,10],[18,25],light,4);
+      line([-9,-8],[-22,9],light,4);line([9,-8],[20,8],light,4);break;
+    case 'friendlySnake':
+      ell(-9,13,18,10,mid);ell(10,8,15,11,mid);
+      line([14,2],[15,-24],mid,9);ell(15,-28,12,8,light);eye(18,-31,dark);line([26,-26],[34,-24],'#d85b5b',2);break;
+    case 'friendlyGoblin':
+      ell(0,-21,12,11,mid);poly([[-9,-21],[-27,-28],[-19,-14]],light);poly([[9,-21],[27,-28],[19,-14]],light);
+      poly([[-11,-8],[11,-8],[15,15],[-15,15]],dark);eye(-5,-22,light);eye(5,-22,light);
+      line([14,5],[25,-34],light,4);poly([[25,-40],[20,-28],[30,-27]],light);break;
+    case 'friendlyHornet':
+      ell(0,1,8,20,mid);for(let i=-1;i<=1;i++)ell(0,-12+i*13,8,3,i%2?dark:light);
+      poly([[-7,-15],[-30,-36],[-23,-3]],light);poly([[7,-15],[30,-36],[23,-3]],light);
+      line([-8,0],[-23,10],light,2);line([8,0],[23,10],light,2);poly([[-4,20],[0,37],[4,20]],light);eye(-3,-21,dark);eye(3,-21,dark);break;
+    case 'friendlySquirrel':
+      ell(0,8,12,16,mid);ell(0,-17,12,11,light);poly([[-13,-21],[-20,-38],[-7,-28]],mid);poly([[13,-21],[20,-38],[7,-28]],mid);
+      ell(21,1,12,21,mid);ell(25,-14,10,11,light);eye(-4,-18,dark);eye(4,-18,dark);break;
     case 'friendlyCatSoldier':
       body();ears();poly([[-14,-31],[-25,-44],[-22,-19]],light);poly([[14,-31],[25,-44],[22,-19]],light);
       line([15,-10],[25,-35],light,4);poly([[25,-42],[19,-32],[30,-32]],light);eye(-5,-23,dark);eye(5,-23,dark);break;

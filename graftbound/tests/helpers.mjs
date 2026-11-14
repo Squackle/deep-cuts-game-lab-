@@ -4,6 +4,8 @@ import { newEvolution, absorb, deriveStats } from '../src/engine/evolution.js';
 import { installReferenceSet } from '../src/cards/reference-set.js';
 import { T, manhattan, tileAt } from '../src/core/grid.js';
 import { resolveCard } from '../src/cards/catalog.js';
+import { comboChoices, hasComboChoices } from '../src/engine/combo-triggers.js';
+import { chooseCombo } from '../src/engine/combat.js';
 installReferenceSet();
 
 export function evoWith(...cards) { let e = newEvolution(); for (const c of cards) e = absorb(e, c).evo; return e; }
@@ -24,13 +26,15 @@ export function botPlay(s, maxTurns = 40, { tactics = true } = {}) {
   for (let t = 0; t < maxTurns; t++) {
     if (s.phase !== 'player') return s.phase;
     if (s.phase !== 'player') return s.phase;
+    const settle=()=>{let limit=0;while(hasComboChoices(s)&&limit++<64){const choice=comboChoices(s);const best=choice.choices.find(c=>c.arg===0)||choice.choices[0];if(!best)break;chooseCombo(s,choice.kind,best.arg);}};
+    settle();
     const danger = new Set([...intents(s).flatMap(i => (i.kind === 'fire' || i.kind === 'slam') ? i.tiles.map(q => q.x + ',' + q.y) : []), ...hazardPreview(s).map(q => q.x + ',' + q.y)]);
     for (const sp of s.spellbook) {
       const c = resolveCard(sp.id); if (['blink_step'].includes(c.effect || sp.id)) continue;
       const opts = castOptions(s, sp.id); if (!opts.length) continue;
       if (c.category === 'healing' && player(s).hp > player(s).maxHp * 0.6) continue;
       const tgt = opts.map(o => ({ o, u: enemies(s).find(e => e.x === o.x && e.y === o.y) })).sort((a, b) => (a.u ? a.u.hp : 99) - (b.u ? b.u.hp : 99))[0];
-      cast(s, sp.id, tgt.o.x, tgt.o.y); if (s.phase !== 'player') return s.phase;
+      cast(s, sp.id, tgt.o.x, tgt.o.y); settle(); if (s.phase !== 'player') return s.phase;
     }
     const safe = o => !danger.has(o.x + ',' + o.y) && tileAt(s, o.x, o.y) !== T.LAVA;
     if (!attackTargets(s).length) {
@@ -50,7 +54,7 @@ export function botPlay(s, maxTurns = 40, { tactics = true } = {}) {
     while (s.phase === 'player' && s.deck && ((s.deck.pendingDiscards || 0) > 0 || s.deck.hand.length > s.deck.capacity)) {
       if (!s.deck.hand.length) break;discard(s,s.deck.hand.at(-1).id);
     }
-    endTurn(s);
+    settle(); endTurn(s);
   }
   return s.phase === 'player' ? 'timeout' : s.phase;
 }

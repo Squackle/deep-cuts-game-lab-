@@ -32,6 +32,10 @@ export const REAL_CREATURES = [
   C('Armored Warhorse', '{W}{W}', 2, 'Creature — Horse', 2, 3, [], ['W'], 'common'),
   C('Serra Ascendant', '{W}', 1, 'Creature — Human Monk', 1, 1, ['Lifelink'], ['W'], 'rare'),
   C('Brimaz, King of Oreskos', '{1}{W}{W}', 3, 'Legendary Creature — Cat Soldier', 3, 4, ['Vigilance'], ['W'], 'mythic'),
+  // v1.2.8 owner-selected white combo grafts
+  C('Soul Warden', '{W}', 1, 'Creature — Human Cleric', 1, 1, [], ['W'], 'common'),
+  C("Ajani's Pridemate", '{1}{W}', 2, 'Creature — Cat Soldier', 2, 2, [], ['W'], 'uncommon'),
+  C('Mentor of the Meek', '{2}{W}', 3, 'Creature — Human Soldier', 2, 2, [], ['W'], 'rare'),
   // Blue
   C('Fugitive Wizard', '{U}', 1, 'Creature — Human Wizard', 1, 1, [], ['U'], 'common'),
   C('Coral Merfolk', '{1}{U}', 2, 'Creature — Merfolk', 2, 1, [], ['U'], 'common'),
@@ -45,6 +49,12 @@ export const REAL_CREATURES = [
   C('Archmage Emeritus', '{2}{U}{U}', 4, 'Creature — Human Wizard', 2, 2, ['Magecraft'], ['U'], 'rare'),
   C('Talrand, Sky Summoner', '{2}{U}{U}', 4, 'Legendary Creature — Merfolk Wizard', 2, 2, [], ['U'], 'rare'),
   C('Archaeomancer', '{2}{U}{U}', 4, 'Creature — Human Wizard', 1, 2, [], ['U'], 'common'),
+  // v1.2.8 owner-selected blue combo grafts
+  C('Mulldrifter', '{4}{U}', 5, 'Creature — Elemental', 2, 2, ['Flying', 'Evoke'], ['U'], 'uncommon'),
+  C('Murmuring Mystic', '{3}{U}', 4, 'Creature — Human Wizard', 1, 5, [], ['U'], 'uncommon'),
+  C('Nadir Kraken', '{1}{U}{U}', 3, 'Creature — Kraken', 2, 3, [], ['U'], 'rare'),
+  C('Sea Gate Oracle', '{2}{U}', 3, 'Creature — Human Wizard', 1, 3, [], ['U'], 'common'),
+  C('Dungeon Geists', '{2}{U}{U}', 4, 'Creature — Spirit', 3, 3, ['Flying'], ['U'], 'rare'),
   // Black
   C('Typhoid Rats', '{B}', 1, 'Creature — Rat', 1, 1, ['Deathtouch'], ['B'], 'common'),
   C("Pharika's Chosen", '{B}', 1, 'Creature — Snake', 1, 1, ['Deathtouch'], ['B'], 'common'),
@@ -60,6 +70,12 @@ export const REAL_CREATURES = [
   C('Blood Artist', '{1}{B}', 2, 'Creature — Vampire', 0, 1, [], ['B'], 'uncommon'),
   C('Vito, Thorn of the Dusk Rose', '{2}{B}', 3, 'Legendary Creature — Vampire Cleric', 1, 3, [], ['B'], 'rare'),
   C('Sheoldred, the Apocalypse', '{2}{B}{B}', 4, 'Legendary Creature — Phyrexian Praetor', 4, 5, ['Deathtouch'], ['B'], 'mythic'),
+  // v1.2.8 owner-selected black combo grafts
+  C('Zulaport Cutthroat', '{1}{B}', 2, 'Creature — Human Rogue Ally', 1, 1, [], ['B'], 'uncommon'),
+  C('Ayara, First of Locthwain', '{B}{B}{B}', 3, 'Legendary Creature — Elf Noble', 2, 3, [], ['B'], 'rare'),
+  C('Reassembling Skeleton', '{1}{B}', 2, 'Creature — Skeleton Warrior', 1, 1, [], ['B'], 'uncommon'),
+  C('Morbid Opportunist', '{2}{B}', 3, 'Creature — Human Rogue', 1, 3, [], ['B'], 'uncommon'),
+  C('Ophiomancer', '{2}{B}', 3, 'Creature — Human Shaman', 2, 2, [], ['B'], 'rare'),
   // Red
   C('Raging Goblin', '{R}', 1, 'Creature — Goblin Berserker', 1, 1, ['Haste'], ['R'], 'common'),
   C('Gray Ogre', '{2}{R}', 3, 'Creature — Ogre', 2, 2, [], ['R'], 'common'),
@@ -72,6 +88,12 @@ export const REAL_CREATURES = [
   C('Canyon Minotaur', '{3}{R}', 4, 'Creature — Minotaur Warrior', 3, 3, [], ['R'], 'common'),
   C('Ogre Resister', '{2}{R}{R}', 4, 'Creature — Ogre', 4, 3, [], ['R'], 'common'),
   C('Young Pyromancer', '{1}{R}', 2, 'Creature — Human Shaman', 2, 1, [], ['R'], 'uncommon'),
+  // v1.2.8 owner-selected red combo grafts
+  C('Guttersnipe', '{2}{R}', 3, 'Creature — Goblin Shaman', 2, 2, [], ['R'], 'uncommon'),
+  C('Electrostatic Field', '{1}{R}', 2, 'Creature — Wall', 0, 4, ['Defender'], ['R'], 'uncommon'),
+  C('Goblin Rabblemaster', '{2}{R}', 3, 'Creature — Goblin Warrior', 2, 2, [], ['R'], 'rare'),
+  C('Storm-Kiln Artist', '{3}{R}', 4, 'Creature — Dwarf Shaman', 2, 2, ['Treasure', 'Magecraft'], ['R'], 'uncommon'),
+  C("Chandra's Spitfire", '{2}{R}', 3, 'Creature — Elemental', 1, 3, ['Flying'], ['R'], 'uncommon'),
   // Green
   C('Grizzly Bears', '{1}{G}', 2, 'Creature — Bear', 2, 2, [], ['G'], 'common'),
   C('Runeclaw Bear', '{1}{G}', 2, 'Creature — Bear', 2, 2, [], ['G'], 'common'),
@@ -90,6 +112,12 @@ export const REAL_CREATURES = [
   C('Vastwood Gorger', '{5}{G}', 6, 'Creature — Wurm', 5, 6, [], ['G'], 'common'),
   C('Leatherback Baloth', '{G}{G}{G}', 3, 'Creature — Beast', 4, 5, [], ['G'], 'uncommon'),
   C('Elvish Visionary', '{1}{G}', 2, 'Creature — Elf Shaman', 1, 1, [], ['G'], 'common'),
+  // v1.2.8 owner-selected green combo grafts
+  C('Ivy Lane Denizen', '{3}{G}', 4, 'Creature — Elf Warrior', 2, 3, [], ['G'], 'common'),
+  C('Champion of Lambholt', '{1}{G}{G}', 3, 'Creature — Human Warrior', 1, 1, [], ['G'], 'rare'),
+  C('Eternal Witness', '{1}{G}{G}', 3, 'Creature — Human Shaman', 2, 1, [], ['G'], 'uncommon'),
+  C('Hornet Queen', '{4}{G}{G}{G}', 7, 'Creature — Insect', 2, 2, ['Flying', 'Deathtouch'], ['G'], 'rare'),
+  C('Deep Forest Hermit', '{3}{G}{G}', 5, 'Creature — Elf Druid', 1, 1, ['Vanishing'], ['G'], 'rare'),
   // Multicolor & colorless
   C('Watchwolf', '{G}{W}', 2, 'Creature — Wolf', 3, 3, [], ['G', 'W'], 'uncommon'),
   C('Woolly Thoctar', '{R}{G}{W}', 3, 'Creature — Beast', 5, 4, [], ['R', 'G', 'W'], 'uncommon'),
