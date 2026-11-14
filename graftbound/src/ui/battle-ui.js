@@ -173,7 +173,7 @@ export class BattleUI {
     if(s.deck){$('tray').setAttribute('aria-label',`Spell hand · ${s.deck.hand.length} cards · library ${s.deck.library.length} · graveyard ${s.deck.graveyard.length}`);}
     this.renderStances(s);
     const skill=$('graftPowers'), options=comboActiveOptions(s);
-    if(skill){skill.hidden=!options.length;skill.disabled=this.busy||s.phase!=='player'||hasComboChoices(s);skill.textContent=`✦ Graft Powers · ${options.length}`;}
+    if(skill){skill.hidden=!options.length;skill.disabled=this.busy||s.phase!=='player'||hasComboChoices(s);skill.textContent='✦';skill.setAttribute('aria-label',`Open ${options.length} available Graft Powers`);skill.title=`Graft Powers (${options.length})`; }
     $('endTurn').disabled = this.busy || s.phase !== 'player';
     $('endTurn').classList.toggle('glow', s.phase === 'player' && !this.busy && !getLegalPlayerActions(s).any);
   }

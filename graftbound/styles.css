@@ -699,3 +699,11 @@ html[data-card-motion="minimal"] .reward .slot.gb-reveal-surge .lc-card{animatio
 @media(max-width:760px){.gb-graft-powers{right:8px;top:max(90px,calc(env(safe-area-inset-top) + 74px));font-size:10px;padding:7px 8px;max-width:140px}}
 @media(max-height:430px){.gb-graft-powers{top:max(49px,calc(env(safe-area-inset-top) + 36px))}}
 @media(prefers-reduced-motion:reduce){.gb-combo-modal,.gb-graft-powers{transition:none!important;animation:none!important}}
+
+/* Accessible Graft Powers lives with the camera/menu buttons, not over the hero plate.
+   The right-side top button rail already reserves space beside the mobile plate. */
+.topbtns .gb-graft-powers { position:static; top:auto; right:auto; width:40px; height:40px; padding:0;
+  min-width:40px; border-radius:50%; display:grid;place-items:center; font:700 20px var(--sans);letter-spacing:0; }
+.topbtns .gb-graft-powers:disabled{opacity:.55;cursor:default}
+body:not([data-mode="battle"]) #graftPowers{display:none!important}
+@media (max-width:760px){.topbtns .gb-graft-powers{width:34px;height:34px;min-width:34px;font-size:18px}}

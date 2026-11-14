@@ -193,6 +193,7 @@ test('UI has accessible paid choice and active-graft controls, and real on-scree
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  const ui=readFileSync(new URL('../src/ui/battle-ui.js',import.meta.url),'utf8');
  assert.ok(html.includes('id="graftPowers"'));assert.ok(html.includes('id="gb-card-zones"'));
+ assert.ok(html.indexOf('id="btn-menu"') < html.indexOf('id="graftPowers"'),'ability button is in protected top-button rail, not HUD over the player plate');
  for(const k of ['promptComboChoices','data-combo-arg','gb-combo-options','openGraftSkills','graftPowers'])assert.ok(ui.includes(k),k);
 });
 
