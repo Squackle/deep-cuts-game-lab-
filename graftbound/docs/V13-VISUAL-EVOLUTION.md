@@ -57,3 +57,7 @@ The installed container's Chromium cannot initialize EGL/WebGL, so an actual in-
 ### Compatibility and rollback
 
 Keep RUN_VERSION, save keys, visual RNG isolation, and ranked replay rules unchanged: this is a visual-only beta; engine `RULES_VERSION` remains v1.2.9. Revert only the versioned, game-scoped Game Lab PR if needed. Do not remove existing saves or ranked logs, and do not update the production website.
+
+### Release coordination evidence
+
+PR #159 uses the repository-required plain-text work-order fields (Workstream, Owner authorization, Files/Scope, Concurrent work, Test plan, Rollback, Rules version, Main-site impact). The initial workflow failure was metadata formatting only; this documentation-only follow-up commit refreshes the pull-request event so the protected checker validates the corrected work order. Keep CI failure closed until the checker itself reports success.
