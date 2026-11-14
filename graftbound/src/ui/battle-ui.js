@@ -19,6 +19,7 @@ import { castSpellVisual, withTimeout } from '../rendering/casting.js';
 import { ICON } from './icons.js';
 import { esc, cardHTML, backHTML } from './cards.js';
 import { CardAnimationDirector } from './card-animation-director.js';
+import { terrainInspectPlacement } from './terrain-inspect.js';
 
 const $ = id => document.getElementById(id);
 const SPELL_COL = { ember: [1, 0.55, 0.2], verdant: [0.5, 1, 0.4], tide: [0.4, 0.8, 1], umbral: [0.75, 0.45, 1], radiant: [1, 0.9, 0.5] };
@@ -196,6 +197,41 @@ export class BattleUI {
     if(!Number.isFinite(trayTop)||!Number.isFinite(hudBottom))return;
     const gap=14; // Also leaves room for the small selected-card lift.
     zones.style.setProperty('--gb-zone-bottom',`${Math.max(0,Math.ceil(hudBottom-trayTop+gap))}px`);
+    this.positionTerrainInspect();
+  }
+  /** Portrait/mobile: fit summary between the hero plate and the card-zone controls. */
+  positionTerrainInspect() {
+    const el = $('inspect');
+    if (!el?.classList.contains('terrain-inspect')) return;
+    if (!window.matchMedia('(max-width: 760px)').matches) {
+      el.style.removeProperty('--gb-terrain-top');
+      el.style.removeProperty('--gb-terrain-height');
+      el.classList.remove('terrain-no-room');
+      return;
+    }
+    const plate = $('plate'), zones = $('gb-card-zones'), tray = $('tray'), hud = $('hud');
+    if (!plate || !zones || !tray || !hud) return;
+    const h = hud.getBoundingClientRect();
+    const relative = node => {const r=node?.getBoundingClientRect();return r ? {left:r.left-h.left,top:r.top-h.top,right:r.right-h.left,bottom:r.bottom-h.top}:null;};
+    const pos = terrainInspectPlacement({
+      width:h.width,height:h.height,plate:relative(plate),zones:relative(zones),
+      tray:relative(tray),endTurn:relative($('endTurn')),topButtons:relative(document.querySelector('.topbtns'))
+    });
+    if(pos.fits){
+      el.style.setProperty('--gb-terrain-top', `${pos.top}px`);
+      el.style.setProperty('--gb-terrain-left', `${pos.left}px`);
+      el.style.setProperty('--gb-terrain-width', `${pos.width}px`);
+      el.style.setProperty('--gb-terrain-height', `${pos.height}px`);
+    }
+    el.classList.toggle('terrain-no-room', !pos.fits);
+  }
+  terrainDetailsHTML(t) {
+    const rows=describeTile(this.s,t.x,t.y);
+    const warning=this.s.phase==='player'?pathWarning(this.s,t.x,t.y):null;
+    return `<h2>Tile details · ${esc(rows.map(r=>r.name).join(' + '))}</h2>` +
+      rows.map(r=>`<section class="gb-terrain-detail"><h3>${esc(r.name)}</h3><p>${esc(r.text)}</p><p class="muted small">${esc(r.when)}</p></section>`).join('') +
+      (warning ? `<p class="take">${esc(warning.text)}${warning.lethal?' This would defeat you.':''}</p>`:'') +
+      `<button type="button" class="btn primary" data-close>Close</button>`;
   }
   inspectZone(zone) {
     if (!this.s?.deck) return;
@@ -316,6 +352,7 @@ export class BattleUI {
   }
   showInspect(u, preview) {
     const el = $('inspect');
+    el.classList.remove('terrain-inspect', 'terrain-no-room');
     if (!u) { el.classList.remove('show'); return; }
     const def = ENEMIES[u.defId]; const it = this.intents.find(i => i.uid === u.uid);
     const friendly = u.side === 'player';
@@ -361,6 +398,7 @@ export class BattleUI {
     cv.addEventListener('contextmenu', e => { e.preventDefault(); this.cancel(); });
     cv.addEventListener('wheel', e => { e.preventDefault(); this.scene.zoom = Math.min(2, Math.max(0.8, this.scene.zoom * (e.deltaY > 0 ? 0.92 : 1.08))); }, { passive: false });
     $('gb-card-zones').addEventListener('click',e=>{const el=e.target.closest('[data-zone]');if(el)this.inspectZone(el.dataset.zone);});
+    $('inspect').addEventListener('click',e=>{if(e.target.closest('[data-terrain-details]') && this.s && this.terrainTile) this.app.openModal(this.terrainDetailsHTML(this.terrainTile));});
     window.addEventListener('resize',()=>this.positionCardZones(),{passive:true});
     window.visualViewport?.addEventListener('resize',()=>this.positionCardZones(),{passive:true});
     $('tray').addEventListener('pointerover', e => { const c = e.target.closest('[data-spell]'); if (c) this.showHandPreview(c.dataset.spell); });
@@ -413,16 +451,23 @@ export class BattleUI {
     }
     if (u) this.showInspect(u, preview);
     else if (!u && !this.spell) this.showTile(t);
-    else if (preview) { $('inspect').innerHTML = `<div class="in-head"><b>${esc(getCard(this.spell).name)}</b></div>${this.previewHTML(preview)}`; $('inspect').classList.add('show'); }
+    else if (preview) { $('inspect').classList.remove('terrain-inspect', 'terrain-no-room'); $('inspect').innerHTML = `<div class="in-head"><b>${esc(getCard(this.spell).name)}</b></div>${this.previewHTML(preview)}`; $('inspect').classList.add('show'); }
     else this.showInspect(null);
   }
   /** v0.6 terrain/object inspection: what it is, what it does, when, and the damage — from live rules. */
   showTile(t) {
     const s = this.s, el = $('inspect'); const rows = describeTile(s, t.x, t.y); const w = s.phase === 'player' ? pathWarning(s, t.x, t.y) : null;
-    el.innerHTML = rows.map(r => `<div class="in-head"><b>${esc(r.name)}</b><em class="role ${r.kind}">${r.kind === 'hazard' ? 'Hazard' : r.kind === 'benefit' ? 'Benefit' : ''}</em></div><p>${esc(r.text)}</p><p class="muted small">${esc(r.when)}</p>`).join('')
-      + (w ? `<div class="preview"><span class="take">${esc(w.text)}${w.lethal ? ' This would defeat you.' : ''}</span></div>` : '')
-      + (interactOptions(s).some(o => o.x === t.x && o.y === t.y) ? '<div class="preview"><span class="safe">Click / tap to attune this crystal.</span></div>' : '');
-    el.classList.add('show');
+    const label = rows.map(r=>r.name).join(' + ');
+    const role = rows.some(r=>r.kind==='hazard') ? 'Hazard' : rows.some(r=>r.kind==='benefit') ? 'Benefit' : '';
+    const description = w ? `${w.text}${w.lethal?' This would defeat you.':''}` : rows.map(r=>r.text).join(' ');
+    this.terrainTile = {x:t.x,y:t.y};
+    el.innerHTML = `<div class="gb-terrain-brief-head"><strong>${esc(label)}</strong><span class="gb-terrain-role">${role}</span><button class="gb-terrain-details-btn" type="button" data-terrain-details aria-label="More details about ${esc(label)}">Details</button></div>`
+      + `<p class="gb-terrain-brief-copy">${esc(description)}</p>`;
+    el.classList.add('terrain-inspect','show');
+    this.positionTerrainInspect();
+    // Ultra-short layouts cannot fit a panel between plate and controls.
+    // A direct tile tap can still open full details without obscuring the hand.
+    if(el.classList.contains('terrain-no-room')) el.classList.remove('show');
   }
   maybeAutoEnd() {
     const s = this.s;
@@ -497,7 +542,7 @@ export class BattleUI {
       else if (this.needConfirm(isTouch, tag)) return;
       this.act(() => this.exec({ type: 'move', x: t.x, y: t.y }));
     }
-    else if (!u && isTouch) { this.showTile(t); }
+    else if (!u && isTouch) { this.showTile(t); if($('inspect').classList.contains('terrain-no-room')) this.app.openModal(this.terrainDetailsHTML(t)); }
     else if (s.p.moveLeft <= 0) this.reject('No movement left this turn');
     else this.reject('Too far, or blocked');
   }
