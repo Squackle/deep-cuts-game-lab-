@@ -209,25 +209,25 @@ export function castOptions(s, spellId) {
   const entry = s.spellbook.find(x => x.id === spellId);
   return spellTargets(s, spellId, entry.level);
 }
-export function cast(s, spellId, x, y) {
+export function cast(s, spellId, x, y, xValue = 1) {
   ensurePlayerPhase(s);
-  const why = castBlockReason(s, spellId); if (why) throw new Error(why);
+  const why = castBlockReason(s, spellId, xValue); if (why) throw new Error(why);
   const entry = s.spellbook.find(e => e.id === spellId);
   if (!castOptions(s, spellId).some(t => t.x === x && t.y === y)) throw new Error('Not a valid target for ' + getCard(spellId).name);
-  const ev = []; const cost = s.p.freeCast ? 0 : spellCost(s, spellId);
+  const ev = []; const cost = spellCost(s, spellId, xValue);
   s.p.mana -= cost; s.p.cast[spellId] = true; s.stats.spellsCast++; s.stats.actions++;
   ev.push({ t: 'mana', from: s.p.mana + cost, to: s.p.mana });
   const card=getCard(spellId);
   if(card.kind==='aura'){
     const target=s.units.find(u=>u.hp>0&&u.x===x&&u.y===y);
     attachAura(target,spellId);ev.push({t:'auraAttach',uid:target.uid,id:spellId,x,y,name:card.name});
-  } else castSpellEffect(s, ev, spellId, entry.level, x, y);
+  } else castSpellEffect(s, ev, spellId, entry.level, x, y, xValue);
   if(s.deck){playFromHand(s.deck,spellId,{permanent:card.kind==='aura'});s.spellbook=s.deck.hand;}
   if(s.p.freeCast){s.p.freeCast=false;s.p.freeCastUsed=true;}
   const arasta = enemies(s).find(e=>e.defId==='arasta');
   if(arasta && alive(arasta) && card.kind==='spell' && /^(Instant|Sorcery)\b/.test(card.sourceInfo?.typeLine||'')) spawnTokensAround(s,ev,arasta,'spider',1);
   const spellEvent = ev.find(x => x.t === 'spell' && x.id === spellId);
-  if (spellEvent) spellEvent.manaCost = cost; // presentation-only; exact paid cost includes Null Warden tax
+  if (spellEvent) { spellEvent.manaCost = cost; if (spellId === 'mtg:drain-life') spellEvent.xValue = xValue; } // presentation-only; exact paid cost includes Null Warden tax
   return ev;
 }
 export function discard(s,id){
@@ -239,6 +239,11 @@ export function endTurn(s) {
   ensurePlayerPhase(s);
   if(s.deck && (s.deck.pendingDiscards>0||endHandLimit(s.deck)>0))throw new Error('Discard down to your hand limit before ending turn');
   const ev = []; const p = player(s);
+  if (s.deck && tileAt(s, p.x, p.y) === T.ARCHIVE) {
+    const back = refillFromGraveyard(s.deck); if (back) ev.push({ t: 'deckReshuffle', count: back, uid: p.uid });
+    const drawn = drawCards(s.deck, 1); for (const card of drawn) ev.push({ t: 'cardDraw', id: card.id, uid: p.uid });
+    ev.push({ t: 'archiveDraw', uid: p.uid, x: p.x, y: p.y, count: drawn.length });
+  }
   if (tileAt(s, p.x, p.y) === T.LAVA && !has(p, 'flying')) dealDamage(s, ev, null, p, LAVA_DAMAGE, { kind: 'lava' });
   if (s.phase !== 'player') return ev;
   // End-of-turn stat buffs expire on their target, including allies and foes.

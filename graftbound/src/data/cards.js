@@ -46,6 +46,7 @@ export const SPELLS = [
   // v0.8 effect templates (used only by reviewed real-card adaptations; never offered on their own)
   { id: 'wither', name: 'Wither', rarity: 'uncommon', color: 'umbral', cost: 1, target: 'enemy', art: 'siphon', category: 'weaken', text: 'Deal {1} to a foe and Weaken it by {2}: it strikes for {2} less on its next action.' },
   { id: 'firestorm', name: 'Firestorm', rarity: 'uncommon', color: 'ember', cost: 3, target: 'self', art: 'flame', category: 'area', text: 'Deal {2} to EVERY foe on the battlefield.' },
+  { id: 'page_draw', name: 'Inscribed Insight', rarity: 'common', color: 'tide', cost: 3, target: 'self', art: 'swirl', category: 'draw', text: 'Draw 2 cards from your battle deck.' },
   { id: 'starfall',       name: 'Starfall',       rarity: 'rare',     color: 'radiant', cost: 4, target: 'tile',  art: 'star',   category: 'area',       text: 'Deal {4} to a tile and {2} to adjacent foes.' },
 ].map(c => ({ ...c, ...L }));
 

@@ -69,8 +69,8 @@ export function addStatus(s, ev, u, status, value) {
   u.statuses[status] = (u.statuses[status] || 0) + value;
   ev.push({ t: 'status', uid: u.uid, status, value, total: u.statuses[status] });
 }
-function kill(s, ev, u) {
-  ev.push({ t: 'death', uid: u.uid });
+function kill(s, ev, u, element = null) {
+  ev.push({ t: 'death', uid: u.uid, element });
   if(u.side==='player' && !u.hero && u.slime>0 && s.units.some(x=>x.defId==='toxrill'&&x.hp>0))s.pendingSlugs=(s.pendingSlugs||0)+1;
   if (u.side === 'enemy') {
     s.stats.kills++;
@@ -160,7 +160,7 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
   tgt.hp = dt ? 0 : Math.max(0, tgt.hp - a);
   if(tgt.statuses.indestructible && tgt.toughness>0 && tgt.hp<=0){tgt.hp=1;ev.push({t:'indestructible',uid:tgt.uid});}
   const lost = hpBefore - tgt.hp;
-  ev.push({ t: 'damage', uid: tgt.uid, amount: a, blocked, deathtouch: dt, kind, src: src ? src.uid : null });
+  ev.push({ t: 'damage', uid: tgt.uid, amount: a, blocked, deathtouch: dt, kind, element, src: src ? src.uid : null });
   if (src && src.side === 'player') s.stats.damageDealt += lost;
   if (tgt.hero) { s.stats.damageTaken += lost; if (src?.side === 'enemy') s.stats.enemyHealthDamage = (s.stats.enemyHealthDamage || 0) + lost; }
   // Real infect replaces health damage with poison counters against a player.
@@ -196,7 +196,7 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
     detachAura(tgt,'mtg:gift-of-immortality');tgt.hp=tgt.maxHp;
     (s.pendingAuras ||= []).push({uid:tgt.uid,id:'mtg:gift-of-immortality'});
     ev.push({t:'revive',uid:tgt.uid,kind:'gift',hp:tgt.hp});
-  } else if(tgt.hp <= 0) kill(s, ev, tgt);
+  } else if(tgt.hp <= 0) kill(s, ev, tgt, element);
   return lost;
 }
 /** One combat strike. dir = [dx,dy] of the attack (used by Trample). */

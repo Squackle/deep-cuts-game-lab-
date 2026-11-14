@@ -7,7 +7,7 @@ const LEGACY_ENEMIES = {
   angel: {act:1,name:'Angel',role:'Token',power:4,toughness:4,move:3,ai:'melee',sprite:'moth',keywords:{flying:1},token:true},
   saproling: { act:0,name:'Saproling',role:'Token',power:1,toughness:1,move:2,ai:'melee',sprite:'grub',token:true },
   spider: { act:0,name:'Spider',role:'Token',power:1,toughness:2,move:2,ai:'melee',sprite:'moth',keywords:{reach:1},token:true },
-  goblin: { act:1,name:'Goblin',role:'Token',power:1,toughness:1,move:3,ai:'melee',sprite:'cinderling',token:true },
+  goblin: { act:1,name:'Goblin',tribe:'Goblin',role:'Token',power:1,toughness:1,move:3,ai:'melee',sprite:'cinderling',token:true },
   zombie: { act:2,name:'Zombie',role:'Token',power:4,toughness:4,move:2,ai:'melee',sprite:'riftstalker',token:true },
   slug: { act:2,name:'Slug',role:'Token',power:1,toughness:1,move:1,ai:'melee',sprite:'grub',token:true },
   wolf: {act:0,name:'Wolf',role:'Token',power:2,toughness:2,move:3,ai:'melee',sprite:'hound',tribe:'Wolf',token:true},

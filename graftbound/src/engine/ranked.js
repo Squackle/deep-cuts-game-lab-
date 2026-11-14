@@ -6,14 +6,14 @@ import { movePlayer, attack, cast, endTurn, interact, guard, channel, discard, e
 import { expeditionTotals } from './scoring.js';
 import { SCORING_VERSION } from '../data/scoring.js';
 
-export const RULES_VERSION = 'graftbound-rules-1.2.4-beta';
-export const CARD_POOL_VERSION = 'real-pool-67-v3';
+export const RULES_VERSION = 'graftbound-rules-1.2.5-beta';
+export const CARD_POOL_VERSION = 'real-pool-91-v4';
 export const REPLAY_VERSION = 1;
 export const MAX_DECISIONS = 4000, MAX_SEGMENT = 400;
 
 /** Fixed, versioned challenges. Seeds are authored here; servers never accept a client-chosen seed. */
 export const RANKED_CHALLENGES = {
-  'gb-expedition-01': { id: 'gb-expedition-01', revision: 11, name: 'The First Expedition', seed: 0x5eedcafe, tutorial: true,
+  'gb-expedition-01': { id: 'gb-expedition-01', revision: 12, name: 'The First Expedition', seed: 0x5eedcafe, tutorial: true,
     rulesVersion: RULES_VERSION, cardPoolVersion: CARD_POOL_VERSION, scoringVersion: SCORING_VERSION, status: 'active' },
 };
 export const ACTIVE_CHALLENGE = 'gb-expedition-01';
@@ -34,7 +34,7 @@ export function startRanked(id = ACTIVE_CHALLENGE) {
 const INT = v => Number.isSafeInteger(v) && v >= 0 && v < 1e6;
 const ID = v => typeof v === 'string' && /^[a-z0-9:_-]{1,64}$/i.test(v);
 const SHAPES = {
-  node: { node: INT }, move: { x: INT, y: INT }, attack: { uid: INT }, cast: { id: ID, x: INT, y: INT }, interact: { x: INT, y: INT },
+  node: { node: INT }, move: { x: INT, y: INT }, attack: { uid: INT }, cast: { id: ID, x: INT, y: INT, xValue: v => v === undefined || (INT(v) && v >= 1 && v <= 99) }, interact: { x: INT, y: INT },
   end: {}, guard: {}, channel: {}, discard: {id:ID}, equip: {id:ID,uid:INT,slot:INT}, gearhulk: { choice: v => v === 'draw' || v === 'mill' }, reward: { card: ID, release: v => v === undefined || INT(v) }, skip: {}, shrine: { choice: ID, arg: v => v === undefined || INT(v) || ID(v) },
   event: { choice: ID, arg: v => v === undefined || INT(v) || ID(v) },
 };
@@ -57,7 +57,7 @@ export function applyDecision(run, d) {
     case 'node': need('map'); enterNode(run, d.node); break;
     case 'move': need('battle'); movePlayer(b, d.x, d.y); break;
     case 'attack': need('battle'); attack(b, d.uid); break;
-    case 'cast': need('battle'); cast(b, d.id, d.x, d.y); break;
+    case 'cast': need('battle'); cast(b, d.id, d.x, d.y, d.xValue ?? 1); break;
     case 'interact': need('battle'); interact(b, d.x, d.y); break;
     case 'end': need('battle'); endTurn(b); break;
     case 'discard': need('battle'); discard(b,d.id); break;

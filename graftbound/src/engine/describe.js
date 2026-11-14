@@ -13,6 +13,7 @@ export function describeTile(s, x, y) {
   if (t === T.ICE) add('Glass ice', `Slippery frost. Ground walkers entering become Chilled, losing ${R.ice.slowNextMovement} movement on their next action.`, 'On entry; flying units are immune.', 'hazard');
   if (t === T.SPORES) add('Spore bed', `Toxic mushrooms give ${R.spores.poisonOnEnter} poison on entry. Fire clears the spores.`, 'On entry; flying units are immune.', 'hazard');
   if (t === T.UNSTABLE) add('Unstable stone', `Fractured stone strikes for ${R.unstable.pulseDamage} damage on every ${R.unstable.every}nd round, alongside rifts.`, riftsPulseThisRound(s) ? 'Will collapse THIS round.' : 'Telegraphed next round.', 'hazard');
+  if (t === T.ARCHIVE) add('Inscribed Page', 'End your turn on this glowing rune to draw one extra card.', 'One draw each turn you end here. Deck mode only; cards are drawn before enemies act.', 'benefit');
   if (t === T.CONDUIT) add('Arcane conduit', `Start your turn here to empower your next spell by +${R.conduit.spellBonus}.`, 'At the start of your turn.', 'benefit');
   if (t === T.CRUMBLE) add('Crumbling tile', `A one-use brittle slab. Deals ${R.crumble.enterDamage} damage when a walker enters, then collapses into ordinary floor.`, 'Once; flying units avoid the pressure.', 'hazard');
   if (t === T.LEYLINE) add('Leyline', `Ancient channel of power. Start your turn here for +${R.leyline.manaBonus} mana (may exceed your maximum by 1).`, 'At the start of your turn.', 'benefit');

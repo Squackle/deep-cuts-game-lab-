@@ -37,7 +37,7 @@ const ACT_ROMAN = ['I', 'II', 'III'];
 const ACT_LORE = [
   'In the Forgotten Hollow, every creature that falls leaves its shape behind.',
   'Below the Hollow the roots burn. The Ashen Warrens are a furnace where the Pyre Matron hatches her kin in lava.',
-  'Past the furnace, the world was never finished. In the Fractured Nexus, the Unwritten waits to copy whatever you have become.',
+  'Past the furnace, the world was never finished. In the Fractured Nexus, a final legendary guardian stands between you and the last graft.',
 ];
 const NODE_TIP = { battle: 'Skirmish: a normal battle, then a booster of 3 real cards. Scored.', tutorial: 'Your first battle. Scored.', elite: 'Elite Lair: harder foes, a stronger booster, ×1.25 score.',
   shrine: 'Wayshrine: one offering, no battle. Not scored.', event: 'Mystery: a special encounter with an explicit choice. Not scored.', boss: 'Act boss: multi-phase fight, full heal after, ×1.5 score.' };
@@ -100,7 +100,7 @@ export function actScreen(app, act) {
 }
 function challengesModal(app) {
   const unlocked = !!app.meta.unlocks.firstVictory;
-  const m = app.openModal(`<h2>Challenges</h2>${unlocked ? '' : '<p class="muted">Finish an adventure (defeat the Unwritten) to unlock challenges.</p>'}
+  const m = app.openModal(`<h2>Challenges</h2>${unlocked ? '' : '<p class="muted">Finish an adventure (defeat the final legendary boss) to unlock challenges.</p>'}
     <div class="chal">${Object.entries(CHALLENGES).map(([id, c]) => `<label class="${unlocked ? '' : 'locked'}"><input type="checkbox" value="${id}" ${unlocked ? '' : 'disabled'}><b>${c.name}</b><span>${c.text}</span></label>`).join('')}</div>
     <div class="modal-actions"><button type="button" class="btn" data-close>Back</button><button type="button" class="btn primary" data-go ${unlocked ? '' : 'disabled'}>Begin Challenge Run</button></div>`);
   m.querySelector('[data-go]').addEventListener('click', () => { const ch = [...m.querySelectorAll('input:checked')].map(i => i.value); app.closeModal(); app.newRun(ch); });
@@ -477,7 +477,7 @@ function combatInventoryModal(app) {
    const worn=target.hero?(s.heroEquipmentSlots||[null,null]):[target.equipment?.[0]||null];
    m.querySelector('[data-gear-slots]').innerHTML=worn.map((id,i)=>{
      const c=id&&getCard(id);
-     return '<button type="button" class="btn gb-gear-slot" data-slot="'+i+'" aria-pressed="'+(i===slot)+'">Slot '+(i+1)+': '+(c?esc(c.name):'Empty')+'</button>';
+     return '<button type="button" class="btn gb-gear-slot" data-slot="'+i+'" aria-pressed="'+(i===slot)+'">'+(id?'<span class="gb-equip-card">'+cardHTML(id,{small:true,extraClass:'gear-mini'})+'</span>':'')+'Slot '+(i+1)+': '+(c?esc(c.name):'Empty')+'</button>';
    }).join('');
    const preview=m.querySelector('[data-gear-preview]');
    if(target.hero)preview.replaceChildren(sheetCanvas(app,run.evo,4,target.equipment||[]));
@@ -488,7 +488,7 @@ function combatInventoryModal(app) {
      const c=getCard(id);if(!c)return '';
      const cost=c.equipCost||0,attached=!!target.equipment?.includes(id);
      const possible=s.phase==='player'&&!app.battle?.busy&&s.p.mana>=cost&&!attached;
-     return '<button type="button" class="gb-gear-entry" data-equip-id="'+esc(id)+'" '+(possible?'':'disabled')+'><b>'+esc(c.name)+'</b><span>Equip '+cost+' mana</span><small>'+(attached?'Already worn':'Available mana: '+s.p.mana)+'</small></button>';
+     return '<button type="button" class="gb-gear-entry" data-equip-id="'+esc(id)+'" '+(possible?'':'disabled')+'><span class="gb-equip-card">'+cardHTML(id,{small:true,extraClass:'gear-mini'})+'</span><b>'+esc(c.name)+'</b><span>Equip '+cost+' mana</span><small>'+(attached?'Already worn':'Available mana: '+s.p.mana)+'</small></button>';
    }).join(''):'<p>No Equipment collected.</p>';
  };
  m.addEventListener('click',async event=>{
@@ -521,12 +521,12 @@ export function inventoryModal(app) {
   const preview=m.querySelector('[data-gear-preview]');preview.replaceChildren(sheetCanvas(app,run.evo,4,run.equippedEquipment||[]));
   m.querySelector('[data-gear-slots]').innerHTML=[0,1].map(i=>{
    const id=(run.equippedEquipment||[])[i],c=id&&getCard(id);
-   return `<div class="gb-gear-slot ${selected===i?'selected':''}"><button class="btn" data-gear-slot="${i}" aria-pressed="${selected===i}">Slot ${i+1}: ${c?esc(c.name):'Empty'}</button>${id&&editable?`<button class="btn small" data-gear-unequip="${i}" aria-label="Unequip ${esc(c.name)}">Remove</button>`:''}</div>`;
+   return `<div class="gb-gear-slot ${selected===i?'selected':''}"><button class="btn gb-gear-equipped" data-gear-slot="${i}" aria-pressed="${selected===i}" aria-label="Equipped slot ${i+1}: ${c?esc(c.name):'Empty'}">${c?`<span class="gb-equip-card">${cardHTML(id,{small:true,extraClass:'gear-mini'})}</span>`:''}<span>Slot ${i+1}: ${c?esc(c.name):'Empty'}</span></button>${id&&editable?`<button class="btn small" data-gear-unequip="${i}" aria-label="Unequip ${esc(c.name)}">Remove</button>`:''}</div>`;
   }).join('');
   const inventory=run.equipmentInventory||[];
   m.querySelector('[data-gear-collection]').innerHTML=inventory.length?inventory.map(id=>{
    const c=getCard(id),active=(run.equippedEquipment||[]).includes(id);
-   return `<button type="button" class="gb-gear-entry" data-gear-equip="${esc(id)}" ${editable?'':'disabled'} aria-label="Equip ${esc(c.name)} in slot ${selected}"><b>${esc(c.name)}</b><span>${esc(c.adaptationNote||'Printed Equipment effects apply')} · Equip ${c.equipCost ?? c.equip ?? '?'}</span><small>${active?'Currently equipped':'In inventory'}</small></button>`;
+   return `<button type="button" class="gb-gear-entry" data-gear-equip="${esc(id)}" ${editable?'':'disabled'} aria-label="Equip ${esc(c.name)} in slot ${selected}"><span class="gb-equip-card">${cardHTML(id,{small:true,extraClass:'gear-mini'})}</span><b>${esc(c.name)}</b><span>${esc(c.adaptationNote||'Printed Equipment effects apply')} · Equip ${c.equipCost ?? c.equip ?? '?'}</span><small>${active?'Currently equipped':'In inventory'}</small></button>`;
   }).join(''):'<p>No Equipment collected yet. Find relics in booster rewards.</p>';
  };
  m.addEventListener('click',event=>{
@@ -683,7 +683,7 @@ export function endScreen(app, { won, earned, extra = {} }) {
   const el = showScreen(`<div class="end ${won ? 'won' : 'lost'}">
     <small class="presents">${GAME.title}</small>
     <h1>${won ? 'The Last Page Turns' : 'The Graft Unravels'}</h1>
-    <p class="rw-sub">${won ? 'You began as nothing. The Unwritten could not copy what you became.' : `You fell in Act ${ACT_ROMAN[run.act]} · ${esc(ACTS[run.act].name)}. Every card you held is remembered in the Codex.`}</p>
+    <p class="rw-sub">${won ? 'You began as nothing. The final guardian could not stop what you became.' : `You fell in Act ${ACT_ROMAN[run.act]} · ${esc(ACTS[run.act].name)}. Every card you held is remembered in the Codex.`}</p>
     <div class="end-pt">${run.evo.power}/${run.evo.toughness}</div>
     <div class="chips center">${kwChips(run.evo.keywords)}</div>
     <table class="stats"><tr><td>Battles won</td><td>${s.battlesWon}</td></tr><tr><td>Bosses defeated</td><td>${s.bossesDefeated || 0}</td></tr><tr><td>Creatures grafted</td><td>${s.cardsAbsorbed}</td></tr><tr><td>Spells learned</td><td>${s.spellsLearned}</td></tr><tr><td>Foes defeated</td><td>${s.kills}</td></tr>${timeRows(run)}</table>

@@ -13,6 +13,7 @@ export const TYPE_PARTS = {
   Wurm: ['tail', 'bulk'], Elephant: ['tusks', 'bulk'], Ox: ['horns', 'bulk'], Giant: ['bulk', 'armor'], Ogre: ['bulk', 'claws'], Unicorn: ['horns'],
   Snake: ['tail', 'venom'], Zombie: ['tendrils'], Elemental: ['aura', 'eyes'], Spirit: ['aura'], Sable: ['claws'],
   Vampire: ['tendrils', 'eyes'], Aetherborn: ['aura'], Goblin: ['claws'], Elf: ['moss'], Merfolk: ['eyes'], Wizard: ['eyes'], Centaur: ['armor'],
+  Cleric: ['aura'], Pegasus: ['wings'], Horse: ['bulk'], Illusion: ['aura'], Crocodile: ['claws', 'tail'], Scorpion: ['venom', 'tail'], Minotaur: ['horns'],
   Human: [], Soldier: ['armor'], Knight: ['armor', 'crown'], Kithkin: [], Warrior: ['armor'], Berserker: ['claws'], Shaman: ['eyes'],
 };
 const COLOR_MAP = { W: 'radiant', U: 'tide', B: 'umbral', R: 'ember', G: 'verdant' };
@@ -23,10 +24,10 @@ export const SPELL_ADAPTATIONS = {
   'Shock':              { effect: 'ember_dart', cost: 1, vfx: 'shock',      note: 'Adapted: 2 damage to one foe anywhere on the battlefield.' },
   'Lightning Bolt':     { effect: 'ember_dart', bonus: 1, cost: 2, vfx: 'lightningBolt', note: 'Adapted: 3 damage to one foe anywhere on the battlefield (costs 2 gems here).' },
   'Flame Slash':        { effect: 'ember_dart', bonus: 2, cost: 3, vfx: 'flameSlash',  note: 'Adapted: 4 damage to one foe (costs 3 gems here).' },
-  'Arc Lightning':      { effect: 'chain_lightning', bonus: -1, cost: 3, vfx: 'chain', note: 'Adapted: 2 damage, then 1 arcs to up to two nearby foes (the real card divides 3 damage).' },
+  'Arc Lightning':      { effect: 'chain_lightning', bonus: -1, cost: 3, vfx: 'chain', note: 'Adapted: 2 damage, then 1 arcs to up to two other foes anywhere (the real card divides 3 damage).' },
   'Fireball':           { effect: 'starfall', cost: 4, vfx: 'fireball', note: 'Adapted: a fixed blast — 4 to the target tile and 2 to adjacent foes. X is not modeled.' },
   'Giant Growth':       { effect: 'sap_surge', cost: 1, vfx: 'growth',  note: 'Adapted: give target creature exactly +3/+3 until end of turn, following printed numbers.' },
-  'Drain Life':         { effect: 'soul_siphon', cost: 2, vfx: 'drain', note: 'Adapted: 2 damage to a foe and you heal that much. X is not modeled.' },
+  'Drain Life':         { effect: 'soul_siphon', cost: 2, vfx: 'drain', note: 'Adapted: choose X at cast time (1–available mana); pay 2 + X mana, deal X damage and heal the actual health removed. Black-mana restriction is not modeled.', text: 'Choose X: pay 2 + X mana, deal X damage to a foe, heal damage dealt.' },
   'Infest':             { effect: 'venom_mist', cost: 2, vfx: 'poison', note: 'Adapted: Poison 2 to foes in a 3×3 area (instead of −2/−2 to all creatures).' },
   'Raise the Alarm':    { effect: 'call_sproutling', cost: 2, vfx: 'summon', note: 'Adapted: create two separate 1/1 white Soldier creature tokens on empty nearby tiles; they remain for this battle.', text: 'Create two 1/1 white Soldier creature tokens on two empty nearby tiles.' },
   'Healing Hands':      { effect: 'mending_rain', cost: 2, vfx: 'heal',  note: 'Adapted: heal 4 and cleanse poison and weakness; card draw is not modeled.' },
@@ -38,6 +39,10 @@ export const SPELL_ADAPTATIONS = {
   'Titanic Growth':     { effect: 'sap_surge', bonus: 1, cost: 2, vfx: 'titanic', note: 'Adapted: give target creature exactly +4/+4 until end of turn, following printed numbers.' },
   'Snakeskin Veil':    { effect: 'barkskin', bonus: -1, cost: 1, vfx: 'snakeskin', note: 'Adapted: give one friendly creature 2 shield for this battle. Hexproof and the permanent +1/+1 counter are not modeled.' },
   'Pyroclasm':          { effect: 'firestorm', cost: 3, vfx: 'pyroclasm', note: 'Adapted: 2 damage to every foe (it never damages you or your allies here).' },
+  'Lightning Strike':   { effect: 'ember_dart', bonus: 1, cost: 2, vfx: 'strikeBolt', note: 'Adapted: 3 damage to one target anywhere.' },
+  'Murder':             { effect: 'ember_dart', bonus: 3, cost: 3, vfx: 'murder', note: 'Adapted: 5 void damage, not unrestricted destroy (Legendary Vitality still applies).' },
+  'Revitalize':         { effect: 'mending_rain', bonus: -1, cost: 2, vfx: 'revitalize', note: 'Adapted: heal 3 and cleanse; printed card draw is not modeled.' },
+  'Divination':         { effect: 'page_draw', cost: 3, vfx: 'divination', note: 'Adapted: draw two cards from your encounter library; has no effect outside deck mode.' },
 };
 
 export const slug = name => String(name).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');

@@ -168,7 +168,7 @@ export function planEnemy(s, e) {
       case 'arasta': { if (adjacent) meleeIfAdjacent(hero); break; }
       case 'drakuseth': { if (adjacent) { plan.actions.push({ type:'drakusethFlames' }); meleeIfAdjacent(hero); } break; }
       case 'krenko': {
-        const count = enemies(s).filter(u => u.defId === 'goblin' || u === e).length;
+        const count = enemies(s).filter(u => (u.creatureTypes || ENEMIES[u.defId]?.tribe || (u.defId === 'goblin' ? 'Goblin' : '')).split(/\s+/).includes('Goblin')).length;
         plan.actions.push({ type:'legendarySummon', defId:'goblin', n:count }); break;
       }
       case 'scarab': {
@@ -568,7 +568,7 @@ export function spawnTokensAround(s, ev, owner, defId, n=1) {
 export function spawnEnemy(s, defId, x, y) {
   const d = ENEMIES[defId];
   const hp = d.encounterHealth || d.toughness;
-  const u = { uid: s.nextUid++, side: 'enemy', defId, name: d.name, x, y, hp, maxHp: hp, power: d.power,
+  const u = { uid: s.nextUid++, side: 'enemy', defId, name: d.name, creatureTypes: d.tribe || (defId === 'goblin' ? 'Goblin' : ''), x, y, hp, maxHp: hp, power: d.power,
     toughness: d.toughness, move: d.move || 2, legendaryVitality: d.encounterHealth ? hp - d.toughness : 0, keywords: { ...(d.keywords || {}) }, statuses: {}, legendary: !!d.legendary, boss: !!d.boss };
   s.units.push(u);
   // Faerie Duelist's printed enter-the-battlefield -2/-0 trigger is real,

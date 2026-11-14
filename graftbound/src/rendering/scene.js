@@ -106,9 +106,9 @@ export class Scene {
     const back = v.lunge.slice(); const d = norm([v.pos[0] - this.focus[0] + 0.001, 0, v.pos[2] - this.focus[2]]);
     this.tween(0.16, k => { const s = Math.sin(k * Math.PI) * (big ? 0.12 : 0.06); v.lunge = [back[0] + d[0] * s, 0, back[2] + d[2] * s]; });
   }
-  async death(uid) {
+  async death(uid, element = null) {
     const v = this.units.get(uid); if (!v) return; v.anim = 'hurt';
-    const c = this.centerPos(uid); this.fx.burst(c, [0.95, 0.85, 0.55], 44, { speed: 2.2, up: 2 }); this.fx.burst(c, [0.3, 0.2, 0.15], 18, { speed: 1.2, up: 0.5, size: 18 });
+    const c = this.centerPos(uid); const colors={fire:[1,0.35,0.1],frost:[0.65,0.9,1],lightning:[0.5,0.7,1],void:[0.48,0.15,0.55],poison:[0.35,0.9,0.3],nature:[0.4,0.9,0.35],radiant:[1,0.9,0.5]}; const col=colors[element]||[0.95,0.85,0.55];this.fx.burst(c,col,44,{speed:2.2,up:element==='frost'?1:2});this.fx.burst(c,element==='void'?[0.16,0.06,0.18]:[0.3,0.2,0.15],18,{speed:1.2,up:0.5,size:18});if(element==='fire'||element==='frost'||element==='void')this.addRing({pos:[c[0],0.08,c[2]],r0:0.15,r1:0.85,life:0.5,col,width:0.07,spokes:element==='frost'?6:5});
     await this.tween(0.55, k => { v.dissolve = k; v.flash = 0.3 * (1 - k); }); this.removeUnit(uid);
   }
   async spawn(uid) { const v = this.units.get(uid); if (!v) return; v.dissolve = 1; this.fx.burst(v.pos, [0.4, 0.9, 0.35], 28, { speed: 1.2, up: 2 }); await this.tween(0.45, k => { v.dissolve = 1 - k; }); v.dissolve = 0; }

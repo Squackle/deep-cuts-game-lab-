@@ -45,7 +45,7 @@ test('adapted numbers: Shock 2, Bolt 3, Flame Slash 4, Arc Lightning 2+1+1, leve
 test('drain, heal+cleanse, shield, stun', () => {
   const s = S(['t...', '....', 'P...'], { t: 'tortoise' }, ['drain-life', 'healing-hands', 'feat-of-resistance', 'frost-breath']);
   const p = player(s); p.hp = 1; p.statuses.poison = 3; p.statuses.weakened = 2; const turtle=enemies(s)[0];turtle.hp=turtle.maxHp=8;
-  cast(s, 'mtg:drain-life', 0, 0); assert.equal(p.hp, 3); cast(s, 'mtg:healing-hands', p.x, p.y); assert.equal(p.hp, 7); assert.equal(p.statuses.poison, 0); assert.equal(p.statuses.weakened, 0);
+  cast(s, 'mtg:drain-life', 0, 0, 2); assert.equal(p.hp, 3); cast(s, 'mtg:healing-hands', p.x, p.y); assert.equal(p.hp, 7); assert.equal(p.statuses.poison, 0); assert.equal(p.statuses.weakened, 0);
   cast(s, 'mtg:feat-of-resistance', p.x, p.y); assert.equal(p.statuses.shield, 3); cast(s, 'mtg:frost-breath', 0, 0); assert.equal(s.units.find(x=>x.defId==='tortoise').statuses.stunned,1);
 });
 test('spell damage never triggers deathtouch or lifelink', () => {
