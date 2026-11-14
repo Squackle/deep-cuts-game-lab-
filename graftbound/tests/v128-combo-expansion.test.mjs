@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 import './helpers.mjs';
 import { REAL_CREATURES } from '../src/cards/real-pool.js';
 import { GRAFT_TRAITS } from '../src/cards/trait-registry.js';
+import { isReviewedAbilityWord, toGameCard } from '../src/cards/compatibility.js';
+import { poolRecord } from '../src/cards/real-pool.js';
 import { buildReferenceSet } from '../src/cards/reference-set.js';
 import { resolveCard } from '../src/cards/catalog.js';
 import { newEvolution, deriveStats } from '../src/engine/evolution.js';
@@ -210,4 +212,17 @@ test('Reassembled Skeleton genuinely skips the next ally AI action, then can fig
  assert.ok(step.some(e=>e.t==='stunnedSkip'&&e.uid===sk.uid));
  const next=[];actAlly(s,next,sk);
  assert.equal(next.some(e=>e.t==='stunnedSkip'),false,'normal AI resumes next action');
+});
+
+
+test('Storm-Kiln Scryfall Treasure + Magecraft metadata is accurate but never granted as unsupported generic keyword',()=>{
+ const c=REAL_CREATURES.find(x=>x.name==='Storm-Kiln Artist');
+ assert.deepEqual(c.keywords,['Treasure','Magecraft']);
+ const normalized=poolRecord(c);
+ assert.equal(isReviewedAbilityWord('Storm-Kiln Artist','Treasure'),true);
+ const converted=toGameCard(normalized);
+ assert.equal(converted.ok,true,converted.reasons?.join('; '));
+ assert.equal(converted.card.trait,'stormkiln');
+ assert.deepEqual(converted.card.keywords,{});
+ assert.equal(isReviewedAbilityWord('Unknown Card','Treasure'),false);
 });

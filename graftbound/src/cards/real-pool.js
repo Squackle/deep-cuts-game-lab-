@@ -92,7 +92,7 @@ export const REAL_CREATURES = [
   C('Guttersnipe', '{2}{R}', 3, 'Creature — Goblin Shaman', 2, 2, [], ['R'], 'uncommon'),
   C('Electrostatic Field', '{1}{R}', 2, 'Creature — Wall', 0, 4, ['Defender'], ['R'], 'uncommon'),
   C('Goblin Rabblemaster', '{2}{R}', 3, 'Creature — Goblin Warrior', 2, 2, [], ['R'], 'rare'),
-  C('Storm-Kiln Artist', '{3}{R}', 4, 'Creature — Dwarf Shaman', 2, 2, ['Magecraft'], ['R'], 'uncommon'),
+  C('Storm-Kiln Artist', '{3}{R}', 4, 'Creature — Dwarf Shaman', 2, 2, ['Treasure', 'Magecraft'], ['R'], 'uncommon'),
   C("Chandra's Spitfire", '{2}{R}', 3, 'Creature — Elemental', 1, 3, ['Flying'], ['R'], 'uncommon'),
   // Green
   C('Grizzly Bears', '{1}{G}', 2, 'Creature — Bear', 2, 2, [], ['G'], 'common'),
