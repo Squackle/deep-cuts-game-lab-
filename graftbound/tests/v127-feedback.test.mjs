@@ -103,7 +103,7 @@ test('graft selection includes actual triggered ability descriptions, tile inspe
 });
 
 test('rules update uses new isolated replay version without changing the historic card pool',()=>{
- assert.equal(RULES_VERSION,'graftbound-rules-1.2.8-beta');
- assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,15);
+ assert.equal(RULES_VERSION,'graftbound-rules-1.2.9-beta');
+ assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,16);
  assert.throws(()=>replayRun('gb-expedition-01',[],{revision:13}),/Unknown or retired challenge/);
 });

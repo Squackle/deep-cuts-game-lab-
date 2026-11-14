@@ -15,9 +15,9 @@ import { sacrificeAlly, dealDamage, counterBlocked } from '../src/engine/abiliti
 import { actAlly } from '../src/engine/ai.js';
 import { availableMana } from '../src/engine/mana.js';
 import { REAL_CREATURE_MODELS } from '../src/rendering/real-creature-models.js';
-import { RANKED_CHALLENGES, RULES_VERSION, CARD_POOL_VERSION, validDecision, applyDecision } from '../src/engine/ranked.js';
+import { RANKED_CHALLENGES, RULES_VERSION, CARD_POOL_VERSION, validDecision, applyDecision, startRanked } from '../src/engine/ranked.js';
 import { RUN_VERSION } from '../src/engine/run.js';
-import { RUN_MIGRATIONS } from '../src/engine/save.js';
+import { RUN_MIGRATIONS, createStore, memoryStorage } from '../src/engine/save.js';
 
 const picks=[
 'Soul Warden',"Ajani's Pridemate",'Mentor of the Meek','Mulldrifter','Murmuring Mystic','Nadir Kraken',
@@ -44,8 +44,8 @@ test('exactly the 23 owner-selected identities are new: 133 total real reward ca
  assert.equal(buildReferenceSet().rejected.length,0);assert.equal(buildReferenceSet().cards.length,133);
  for(const name of picks){const t=GRAFT_TRAITS[name];assert.ok(t&&t.id&&t.trigger&&t.note,name);}
  assert.equal(BATTLE_VERSION,10);assert.equal(RUN_VERSION,9);
- assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,15);
- assert.equal(RULES_VERSION,'graftbound-rules-1.2.8-beta');assert.equal(CARD_POOL_VERSION,'real-pool-133-v7');
+ assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,16);
+ assert.equal(RULES_VERSION,'graftbound-rules-1.2.9-beta');assert.equal(CARD_POOL_VERSION,'real-pool-133-v7');
 });
 
 test('Soul Warden + Ajani + Vito: summoning heals/grows/bolts even at full health, across chained events',()=>{
@@ -226,4 +226,60 @@ test('Storm-Kiln Scryfall Treasure + Magecraft metadata is accurate but never gr
  assert.equal(converted.card.trait,'stormkiln');
  assert.deepEqual(converted.card.keywords,{});
  assert.equal(isReviewedAbilityWord('Unknown Card','Treasure'),false);
+});
+
+test('full battlefield disables paid Skeleton revival rather than spending 2 mana for nothing',()=>{
+ const s=make(['Reassembling Skeleton'],{wide:7});
+ closeChoice(s);
+ const old=s.units.find(u=>u.sourceGraft==='skeleton'&&u.hp>0);
+ sacrificeAlly(s,[],old);
+ s.p.mana=3;
+ assert.ok(comboActiveOptions(s).some(o=>o.kind==='skeleton'),'power available with a free tile');
+ for(let y=0;y<s.h;y++)for(let x=0;x<s.w;x++){
+   if(s.units.some(u=>u.hp>0&&u.x===x&&u.y===y))continue;
+   s.units.push({uid:s.nextUid++,side:'player',hero:false,defId:'sproutling',name:'Blocker',x,y,hp:1,
+     maxHp:1,power:1,toughness:1,move:1,keywords:{},statuses:{}});
+ }
+ const mana=availableMana(s),actions=s.stats.actions;
+ assert.ok(!comboActiveOptions(s).some(o=>o.kind==='skeleton'));
+ assert.throws(()=>activateCombo(s,'skeleton',0),/not available/);
+ assert.equal(availableMana(s),mana);
+ assert.equal(s.stats.actions,actions);
+ const blocker=s.units.find(u=>u.name==='Blocker');blocker.hp=0;
+ assert.ok(comboActiveOptions(s).some(o=>o.kind==='skeleton'),'opening a tile makes revival available');
+ activateCombo(s,'skeleton',0);
+ assert.equal(availableMana(s),mana-2);
+ assert.ok(s.units.some(u=>u.sourceGraft==='skeleton'&&u.hp>0&&u.x===blocker.x&&u.y===blocker.y));
+});
+
+test('Mentor of the Meek cannot charge mana to draw from an empty Library and Graveyard',()=>{
+ const s=make(['Mentor of the Meek']);closeChoice(s);
+ s.deck.library=[];s.deck.graveyard=[];
+ const ev=[];comboToken(s,ev,'Squirrel');resolveComboEvents(s,ev);
+ const view=comboChoices(s),mana=availableMana(s),actions=s.stats.actions;
+ assert.equal(view.kind,'mentor');
+ assert.deepEqual(view.choices.map(x=>x.arg),[0]);
+ assert.throws(()=>chooseCombo(s,'mentor',1),/Invalid combo choice/);
+ assert.equal(availableMana(s),mana);
+ assert.equal(s.stats.actions,actions);
+ chooseCombo(s,'mentor',0);
+ assert.equal(hasComboChoices(s),false);
+ // A recyclable real card makes the paid option legitimate again.
+ const c=s.deck.hand[0];s.deck.graveyard.push(c);
+ const other=[];comboToken(s,other,'Squirrel');resolveComboEvents(s,other);
+ assert.ok(comboChoices(s).choices.some(x=>x.arg===1));
+});
+
+test('rules-only maintenance patch archives legacy ranked replay without deleting local progress',()=>{
+ const storage=memoryStorage(),store=createStore(storage),old=startRanked();
+ old.ranked.rulesVersion='graftbound-rules-1.2.8-beta';
+ old.ranked.revision=15;
+ store.saveRun(old);
+ const result=store.loadRun();
+ assert.ok(result.run,'existing run still loads');
+ assert.ok(result.migrated,'rules-only retirement persists the updated envelope');
+ assert.equal(result.run.ranked,undefined);
+ assert.equal(result.run.archivedRanked.rulesVersion,'graftbound-rules-1.2.8-beta');
+ assert.deepEqual(result.run.map,old.map,'campaign map and progress survive');
+ assert.equal(store.loadRun().run.archivedRanked.revision,15);
 });
