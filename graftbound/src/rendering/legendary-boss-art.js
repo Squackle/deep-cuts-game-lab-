@@ -15,9 +15,22 @@ export const BOSS_PRINTINGS=Object.freeze({
 const P={ink:'#202830',dark:'#33323c',bone:'#e6ceaa',ivory:'#fff1cd',iron:'#52616b',ironHi:'#aebec1',gold:'#cba96c',goldHi:'#f0da9a',amber:'#efaa54',fire:'#db5837',red:'#99433e',rose:'#c9787a',green:'#4c7959',greenHi:'#9abe75',wood:'#644c38',woodHi:'#aa8662',web:'#d2c8e2',violet:'#806494',teal:'#448f94',tealHi:'#90ddd6',slime:'#9ed77f'};
 function dot(g,x,y,w=1,h=1,color=P.ink){g.fillStyle=color;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));}
 function line(g,x0,y0,x1,y1,color=P.ink,width=1){let n=Math.ceil(Math.max(Math.abs(x1-x0),Math.abs(y1-y0)));for(let i=0;i<=n;i++){let t=i/Math.max(n,1);dot(g,x0+(x1-x0)*t,y0+(y1-y0)*t,width,width,color)}}
+// Material-aware cel shading: consistent top-left key light across every premium boss.
+// Compute a small deterministic ramp per source swatch rather than flat-filling the
+// surface. No random noise, no extra textures and no gameplay-state dependency.
+const LIGHT_RAMP=new Map();
+function lit(color,step){
+ if(!/^#[0-9a-f]{6}$/i.test(color))return color;
+ const key=color+':'+step; if(LIGHT_RAMP.has(key))return LIGHT_RAMP.get(key);
+ const rgb=[1,3,5].map(i=>parseInt(color.slice(i,i+2),16));
+ const values=rgb.map(v=>Math.max(0,Math.min(255,Math.round(step<0?v*(1+step):v+(255-v)*step))));
+ const hex='#'+values.map(v=>v.toString(16).padStart(2,'0')).join('');LIGHT_RAMP.set(key,hex);return hex;
+}
 function ell(g,x,y,rx,ry,color=P.iron,edge=P.ink){for(let iy=Math.floor(y-ry);iy<=Math.ceil(y+ry);iy++)for(let ix=Math.floor(x-rx);ix<=Math.ceil(x+rx);ix++){
  const dx=(ix+.5-x)/rx,dy=(iy+.5-y)/ry,d=dx*dx+dy*dy;if(d>1)continue;
- dot(g,ix,iy,1,1,d>.87?edge:dx*-.3+dy*-.4>.16?color:d>.44?color:color);
+ const light=dx*-.43+dy*-.54+Math.sqrt(Math.max(0,1-d))*.12;
+ const shade=light>.35?.26:light>.12?.12:light<-.4?-.30:light<-.12?-.14:0;
+ dot(g,ix,iy,1,1,d>.92?edge:shade?lit(color,shade):color);
 }}
 function poly(g,a,color,edge=P.ink){let min=Math.floor(Math.min(...a.map(p=>p[1]))),max=Math.ceil(Math.max(...a.map(p=>p[1])));for(let y=min;y<=max;y++){
  let xs=[];for(let k=0;k<a.length;k++){let [x0,y0]=a[k],[x1,y1]=a[(k+1)%a.length];if(y+.5>=Math.min(y0,y1)&&y+.5<Math.max(y0,y1)&&y0!==y1)xs.push(x0+(y+.5-y0)*(x1-x0)/(y1-y0));}
