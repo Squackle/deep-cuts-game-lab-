@@ -177,6 +177,18 @@ export class BattleUI {
       <button type="button" class="gb-zone gb-zone-graveyard" data-zone="graveyard" aria-label="Graveyard, ${grave.length} cards. Latest: ${esc(label)}. Inspect graveyard.">
         <span class="gb-zone-art gb-grave-face">${last ? cardHTML(last.id || last,{small:true,uid:'graveyard-zone'}) : '<span class="gb-zone-empty">✧</span>'}</span>
         <span class="gb-zone-meta"><strong>Graveyard</strong><em>${grave.length}</em></span></button>`;
+    this.positionCardZones();
+  }
+  // Actual spell-hand height changes with screen size, orientation, and card count.
+  // Anchor the two piles ABOVE the measured tray, not an arbitrary 94px offset.
+  positionCardZones() {
+    const zones=$('gb-card-zones'),tray=$('tray'),hud=$('hud');
+    if(!zones||!tray||!hud)return;
+    if(!window.matchMedia('(max-width: 760px)').matches){zones.style.removeProperty('--gb-zone-bottom');return;}
+    const trayTop=tray.getBoundingClientRect().top, hudBottom=hud.getBoundingClientRect().bottom;
+    if(!Number.isFinite(trayTop)||!Number.isFinite(hudBottom))return;
+    const gap=14; // Also leaves room for the small selected-card lift.
+    zones.style.setProperty('--gb-zone-bottom',`${Math.max(0,Math.ceil(hudBottom-trayTop+gap))}px`);
   }
   inspectZone(zone) {
     if (!this.s?.deck) return;
@@ -342,6 +354,8 @@ export class BattleUI {
     cv.addEventListener('contextmenu', e => { e.preventDefault(); this.cancel(); });
     cv.addEventListener('wheel', e => { e.preventDefault(); this.scene.zoom = Math.min(2, Math.max(0.8, this.scene.zoom * (e.deltaY > 0 ? 0.92 : 1.08))); }, { passive: false });
     $('gb-card-zones').addEventListener('click',e=>{const el=e.target.closest('[data-zone]');if(el)this.inspectZone(el.dataset.zone);});
+    window.addEventListener('resize',()=>this.positionCardZones(),{passive:true});
+    window.visualViewport?.addEventListener('resize',()=>this.positionCardZones(),{passive:true});
     $('tray').addEventListener('pointerover', e => { const c = e.target.closest('[data-spell]'); if (c) this.showHandPreview(c.dataset.spell); });
     $('tray').addEventListener('focusin', e => { const c = e.target.closest('[data-spell]'); if (c) this.showHandPreview(c.dataset.spell); });
     $('tray').addEventListener('pointerleave', () => this.hideHandPreview());
