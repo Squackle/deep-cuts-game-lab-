@@ -165,6 +165,28 @@ function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
   if(!back && ['bow','spikeshot','alchemist','minotaur','gearhulk'].includes(feature))ell(0,0,2,2,light,null);
   g.restore();
 }
+/** v1.3 shared material finish for summons, elites and ordinary enemies.
+ * Low-amplitude authored pixel variation with edge-aware shading; original character
+ * silhouettes and separate identity overlays stay intact. No gameplay RNG. */
+function polishMaterial(cell, material) {
+  const c=cell.getContext('2d',{willReadFrequently:true});
+  const img=c.getImageData(0,0,cell.width,cell.height),data=img.data,w=cell.width,h=cell.height;
+  const organic=/wolf|direwolf|caterpillar|squirrel|snake|saproling|wurm|rhino|cat|hornet|spider|stinger|stalker|toxrill/i.test(material);
+  const metal=/golem|titan|gearhulk|duelist|shinobi|bow|soldier|skeleton|sentinel|rhino|armor/i.test(material);
+  const alpha=(x,y)=>x<0||y<0||x>=w||y>=h?0:data[(y*w+x)*4+3];
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const i=(y*w+x)*4;if(data[i+3]<128)continue;
+    const edge=(alpha(x-1,y)<128?1:0)+(alpha(x+1,y)<128?1:0)+(alpha(x,y-1)<128?1:0)+(alpha(x,y+1)<128?1:0);
+    const n=(((x*47)^(y*89)^((x+y)*13))>>>0)%11;
+    let delta = (n===1?-9:n===6?7:0);
+    if(organic && (x+y)%7===0)delta-=4;
+    if(metal && (2*x+y)%13===0)delta+=7;
+    if(edge){delta += x%3===0?-9:3;}
+    else{delta+=x<w*.44?3:-3;delta+=y<h*.36?3:0;}
+    for(let k=0;k<3;k++)data[i+k]=Math.max(0,Math.min(255,data[i+k]+delta));
+  }
+  c.putImageData(img,0,0);
+}
 /** Append new namespaced sprite sheets and metadata to the loaded, original atlas. */
 export function installRealCreatureModels(images,manifest) {
   if (typeof document === 'undefined') return 0;
@@ -186,6 +208,7 @@ export function installRealCreatureModels(images,manifest) {
       }
       // Every frame, including the non-looping hurt/cast frames, is fully populated.
       overlay(cctx,width,height,config,view,anim.row,frame);
+      polishMaterial(cell,config.feature);
       sctx.drawImage(cell,frame*width,(view*rows+anim.row)*height);
     }
     images[key]=sheet;
