@@ -2,11 +2,12 @@
 // caster-distance or line-of-sight limit. Only 'empty'-target spells (movement, summon placement) keep a range.
 // Numbers scale with spell level, the caster's Arcane, and the real card's adaptation bonus.
 import { resolveCard } from '../cards/catalog.js';
+import { availableMana } from './mana.js';
 import { inBounds, unitAt, tileAt, T, manhattan } from '../core/grid.js';
 import { dealDamage, heal, addShield, addStatus, enemies, alive, player, enterTiles } from './abilities.js';
+import { traitDraw } from './trait-triggers.js';
 import { ENEMIES } from '../data/enemies.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
-import { drawCards, refillFromGraveyard } from './deck.js';
 const getCard = id => resolveCard(id);
 export const effectOf = id => { const c = resolveCard(id); return (c && c.effect) || id; };
 
@@ -61,13 +62,12 @@ export function castBlockReason(s, id, xValue = 1) {
   const entry = s.spellbook.find(x => x.id === id);
   if (!entry) return 'Not in your spellbook';
   if (s.phase !== 'player') return 'Not your turn';
-  if (s.pendingChoices && s.pendingChoices.length) return 'Resolve Combustible Gearhulk first';
   if (s.p.cast[id]) return 'Already cast this turn';
   if(s.deck?.pendingDiscards>0)return 'Discard a card first';
   if (s.p.silenced === id) return 'Silenced by the Unwritten for this turn';
   if (isDrainLife(id) && (!Number.isSafeInteger(xValue) || xValue < 1 || xValue > 99)) return 'Choose a whole-number X from 1 to 99';
   const cost = spellCost(s, id, xValue);
-  if (s.p.mana < cost) return `Needs ${cost} mana (you have ${s.p.mana})${cost > getCard(id).cost ? ' — a Null Warden taxes your spells' : ''}`;
+  if (availableMana(s) < cost) return `Needs ${cost} mana (you have ${availableMana(s)})${cost > getCard(id).cost ? ' — a Null Warden taxes your spells' : ''}`;
   if (!spellTargets(s, id, entry.level).length) return getCard(id).target === 'enemy' ? 'No foe on the battlefield' : 'No valid target';
   return null;
 }
@@ -75,9 +75,11 @@ export function castSpellEffect(s, ev, id, level, tx, ty, xValue = 1) {
   const p = player(s); const n = spellNumbers(id, level, s.p.arcane);
   const target = unitAt(s, tx, ty);
   const c = getCard(id);
-  const evAt = ev.length; const channel = s.p.channel || 0; const boost = channel + (s.p.conduit || 0);
-  if (boost) { for (let i = 0; i < n.length; i++) if (!NO_ARCANE.has(effectOf(id))) n[i] += boost; s.p.channel = 0; s.p.conduit = 0; }   // Channel: this spell +1
-  ev.push({ t: 'spell', id, uid: p.uid, x: tx, y: ty, target: target ? target.uid : null, vfx: c.vfx || effectOf(id), channeled: !!channel });
+  const evAt = ev.length; const eligible=!NO_ARCANE.has(effectOf(id));
+  const channel=eligible?(s.p.channel||0):0, boost=channel+(eligible?(s.p.conduit||0):0);
+  if(boost)for(let i=0;i<n.length;i++)n[i]+=boost;
+  if(eligible){s.p.channel=0;s.p.conduit=0;} // No-Arcane casts never consume stored Channel power.
+  ev.push({ t: 'spell', id, uid: p.uid, x: tx, y: ty, target: target ? target.uid : null, vfx: c.vfx || effectOf(id), channeled: !!channel, level, intensity: Math.min(3,Math.max(1,level)), channelPower:channel });
   const spellDamage = { kind: 'spell', element: spellElement(id) };
   if (isDrainLife(id)) n[0] = xValue; // Player-selected paid mana, not a fixed template number.
   switch (effectOf(id)) {
@@ -87,7 +89,7 @@ export function castSpellEffect(s, ev, id, level, tx, ty, xValue = 1) {
       addStatus(s, ev, target, 'empowered', n[0]);
       target.maxHp+=n[0];target.hp+=n[0];target.toughness+=n[0];target.statuses.temporaryToughness=(target.statuses.temporaryToughness||0)+n[0];
       ev.push({t:'status',uid:target.uid,status:'toughness',value:n[0],total:target.statuses.temporaryToughness});break;
-    case 'page_draw': { if (s.deck) { const back = refillFromGraveyard(s.deck); if (back) ev.push({ t: 'deckReshuffle', count: back, uid: p.uid }); for (const card of drawCards(s.deck, 2)) ev.push({ t: 'cardDraw', id: card.id, uid: p.uid }); } break; }
+    case 'page_draw': { if(s.deck)traitDraw(s,ev,2); break; }
     case 'mending_rain': heal(s, ev, p, n[0]);
       for (const st of ['poison', 'weakened']) if (p.statuses[st]) { p.statuses[st] = 0; ev.push({ t: 'status', uid: p.uid, status: st, value: 0, total: 0 }); }
       break;

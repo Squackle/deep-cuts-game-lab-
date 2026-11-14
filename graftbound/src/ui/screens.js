@@ -12,6 +12,7 @@ import { bossForSeed } from '../data/legendary.js';
 import { deriveAppearance } from '../engine/appearance.js';
 import { ACHIEVEMENTS } from '../engine/progression.js';
 import { formatSpellText, rangeLabel } from '../engine/spells.js';
+import { availableMana } from '../engine/mana.js';
 import { rarityWeights } from '../engine/rewards.js';
 import { GAME } from '../config.js';
 import { kwChips, STAGE } from './battle-ui.js';
@@ -28,7 +29,7 @@ import { setSpellEquipped, handCapacity, normalizedEquipped } from '../engine/lo
 import { RANKED_CHALLENGES, ACTIVE_CHALLENGE } from '../engine/ranked.js';
 import { NODE_TYPES as NT } from '../engine/campaign.js';
 import { formatDuration } from '../engine/clock.js';
-import { packIdentity, packOrnament } from './pack-opening.js';
+import { packIdentity, packOrnament, treatmentFor, TREATMENT_NAMES } from './pack-opening.js';
 
 const $ = id => document.getElementById(id);
 const TARGET = { enemy: 'One foe, anywhere', ally: 'Friendly creature, anywhere', self: 'Yourself', tile: 'Any tile (area)', empty: 'Empty tile' };
@@ -109,7 +110,7 @@ function codexModal(app) {
   const seen = app.meta.seen; const all = rewardCards();
   const w = rarityWeights(0); const tot = Object.values(w).reduce((a, b) => a + b, 0);
   const m = app.openModal(`<h2>Codex <small>${all.filter(c => seen[c.id]).length} / ${all.length} real cards discovered</small></h2>
-    <p class="muted small">Which cards can appear depends on GRAFTBOUND power rating and how far you are, not on Magic rarity. Rarity only shapes which eligible card shows up (${Object.entries(w).map(([k, v]) => `${RARITY[k].name} ${Math.round(v / tot * 100)}%`).join(' · ')} at the start).</p>
+    <p class="muted small">Card eligibility depends on your progress and GRAFTBOUND power budget; actual Common, Uncommon, Rare, and Mythic drop chances differ by pack tier. The cosmetic treatment is rolled separately.</p>
     <div class="codex">${all.map(c => seen[c.id] ? `<button type="button" class="cx" data-zoom="${esc(c.id)}">${cardHTML(c.id, { small: true, uid: 'cx' })}</button>` : `<div class="lc-card unknown"><div class="face front"><div class="q">?</div><small>Undiscovered</small></div></div>`).join('')}</div>
     <div class="modal-actions"><button type="button" class="btn" data-close>Close</button></div>`, 'wide');
   m.addEventListener('click', e => { const z = e.target.closest('[data-zoom]'); if (z) inspectCard(app, z.dataset.zoom, { back: () => codexModal(app) }); });
@@ -155,6 +156,7 @@ export function settingsModal(app) {
   const m = app.openModal(`<h2>Settings</h2>
     <label class="row"><span>Graphics</span>${sel('graphics', [['auto', 'Auto'], ['high', 'High — shadows, depth of field, bloom'], ['balanced', 'Balanced'], ['performance', 'Performance — no shadows or post']])}</label>
     <label class="row"><span>Animation speed</span>${sel('animSpeed', [['cinematic', 'Cinematic — savor every spell'], ['normal', 'Normal'], ['fast', 'Fast'], ['instant', 'Instant']])}</label>
+    <label class="row"><span>Card animations</span>${sel('cardMotion', [['auto', 'Auto — honor device preference'], ['full', 'Full — card flights and rarity effects'], ['minimal', 'Minimal — short essential transitions'], ['off', 'Off — instant card moves']])}</label>
     <label class="toggle"><input type="checkbox" data-k="autoEnd" ${st.autoEnd !== false ? 'checked' : ''}><span>Auto-End Turn <small class="muted">— ends your turn when no legal move, attack, spell or interaction remains</small></span></label>
     <label class="toggle"><input type="checkbox" data-k="ambient" ${st.ambient !== false ? 'checked' : ''}><span>Ambient wind &amp; swaying foliage</span></label>
     <label class="toggle"><input type="checkbox" data-k="sound" ${st.sound ? 'checked' : ''}><span>Sound effects</span></label>
@@ -220,6 +222,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
   const run = app.run; const arcane = runStats(run).arcane; const fast = app.animFactor() > 1.5; const instant = app.animFactor() > 50; const identity = packIdentity(tier);
   for (const id of cards) app.meta.seen[id] = true; app.saveMeta();
   const levelOf = id => { const e = run.spellbook.find(s => s.id === id); return e ? e.level + 1 : 1; };
+  const treatments=cards.map((id,i)=>treatmentFor((run.pending?.firstVictoryPacks?.seed || run.seed) ^ (run.current||0),id,i));
   const titles = { boss: 'The Victor\u2019s Hoard', elite: 'An Elite\u2019s Hoard', shrine: 'Offering of the Wayshrine', graftsmith: 'The Graftsmith\u2019s Stock', battle: 'Spoils of Battle', primer: 'A Spell Primer', archivist: 'The Archivist\u2019s Folio' };
   const motes = Array.from({ length: 14 }, (_, i) => `<i style="--a:${(i * 26) % 360}deg;--d:${(i % 5) * 0.4}s;--r:${70 + (i % 4) * 18}px"></i>`).join('');
   const el = showScreen(`
@@ -261,8 +264,8 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
           </span>
           <span class="pk-motes">${motes}</span>
         </button>
-        <div class="fan" id="fan">${cards.map((id, i) => `<div class="slot" data-i="${i}" data-id="${esc(id)}" style="--i:${i}" role="button" tabindex="0" aria-label="Card ${i + 1}">
-          <span class="rays"></span>${cardHTML(id, { level: levelOf(id), arcane, uid: 'rw' + i, extraClass: 'flipped', evo: run.evo })}
+        <div class="fan" id="fan">${cards.map((id, i) => `<div class="slot treat-${treatments[i]} rarity-${esc(getCard(id).rarity)}" data-i="${i}" data-id="${esc(id)}" data-treatment="${treatments[i]}" style="--i:${i}" role="button" tabindex="0" aria-label="Card ${i + 1}">
+          <span class="rays"></span><span class="gb-reward-seal" aria-hidden="true">${getCard(id).rarity === 'mythic' ? '✦' : getCard(id).rarity === 'rare' ? '◆' : getCard(id).rarity === 'uncommon' ? '◇' : '·'}</span>${cardHTML(id, { level: levelOf(id), arcane, uid: 'rw' + i, extraClass: 'flipped', evo: run.evo })}
           <button type="button" class="zoom" data-zoom="${esc(id)}" aria-label="Inspect">${ICON.zoom}</button></div>`).join('')}</div>
       </div>
       <div class="rw-detail" id="rw-detail"></div>
@@ -313,8 +316,10 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
       const card = slot.querySelector('.lc-card'); if (!card.classList.contains('flipped')) return false;
       card.classList.remove('flipped'); slot.classList.add('revealed');
       const c = getCard(slot.dataset.id);
+      slot.setAttribute('aria-label',`${c.name} · ${c.rarity} · ${TREATMENT_NAMES[slot.dataset.treatment]}`);
       const fx = c.rarity === 'mythic' ? 'mythic' : c.rarity === 'rare' ? 'rare' : c.rarity === 'uncommon' ? 'uncommon' : 'flip';
       app.audio.play(fx); slot.classList.add('rv-' + c.rarity);
+      if(!matchMedia('(prefers-reduced-motion: reduce)').matches && app.meta.settings.cardMotion !== 'off' && c.rarity!=='common')slot.classList.add('gb-reveal-surge');
       if ((c.rarity === 'rare' || c.rarity === 'mythic') && app.scene) app.scene.screenFlash(c.rarity === 'mythic' ? [1, 0.7, 0.4] : [1, 0.92, 0.65], 0.18);
       if (fan.querySelectorAll('.lc-card.flipped').length === 0) { $('rw-sub').textContent = 'Choose one card to keep · double-click to confirm'; $('rw-reveal').hidden = true; }
       return true;
@@ -487,8 +492,8 @@ function combatInventoryModal(app) {
    m.querySelector('[data-gear-items]').innerHTML=owned.length?owned.map(id=>{
      const c=getCard(id);if(!c)return '';
      const cost=c.equipCost||0,attached=!!target.equipment?.includes(id);
-     const possible=s.phase==='player'&&!app.battle?.busy&&s.p.mana>=cost&&!attached;
-     return '<button type="button" class="gb-gear-entry" data-equip-id="'+esc(id)+'" '+(possible?'':'disabled')+'><span class="gb-equip-card">'+cardHTML(id,{small:true,extraClass:'gear-mini'})+'</span><b>'+esc(c.name)+'</b><span>Equip '+cost+' mana</span><small>'+(attached?'Already worn':'Available mana: '+s.p.mana)+'</small></button>';
+     const possible=s.phase==='player'&&!app.battle?.busy&&availableMana(s)>=cost&&!attached;
+     return '<button type="button" class="gb-gear-entry" data-equip-id="'+esc(id)+'" '+(possible?'':'disabled')+'><span class="gb-equip-card">'+cardHTML(id,{small:true,extraClass:'gear-mini'})+'</span><b>'+esc(c.name)+'</b><span>Equip '+cost+' mana</span><small>'+(attached?'Already worn':'Available mana: '+availableMana(s))+'</small></button>';
    }).join(''):'<p>No Equipment collected.</p>';
  };
  m.addEventListener('click',async event=>{
@@ -678,6 +683,27 @@ export function timeRows(run) {
   const acts = (c.byAct || []).map((ms, i) => ms > 0 ? `<tr class="sub"><td>· Act ${ACT_ROMAN[i]}</td><td>${formatDuration(ms)}</td></tr>` : '').join('');
   return `<tr class="time"><td>Time Taken${c.partial ? ' <small>(partial — tracked since the v0.8 update)</small>' : ''}</td><td data-time>${formatDuration(c.ms)}</td></tr>${acts}`;
 }
+/** End-of-run hero celebration: purely visual; run phase and score have already been saved. */
+export function victoryScreen(app){
+ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches || app.meta.settings.cardMotion==='off';
+ const e=showScreen(`<div class="gb-finale ${reduce?'reduced':''}" role="region" aria-label="GRAFTBOUND victory celebration">
+  <div class="gb-finale-sky" aria-hidden="true">${Array.from({length:24},(_,i)=>`<i style="--i:${i};--rot:${i*15}deg;--delay:${i%7*.16}s"></i>`).join('')}</div>
+  <div class="gb-finale-mark" aria-hidden="true">${ICON.sigil}</div>
+  <p class="gb-finale-eyebrow">The last guardian has fallen</p><h1>GRAFTBOUND</h1>
+  <h2>VICTORY</h2><p>From the Blank to the final page. You became everything.</p>
+  <div class="gb-finale-hero">${app.run.evo.power} / ${app.run.evo.toughness} <span>Final evolved form</span></div>
+  <button type="button" class="btn primary" data-view-stats>View Run Statistics</button>
+  <button type="button" class="btn ghost" data-view-stats>Skip celebration</button>
+ </div>`, 'gb-finale-screen');
+ app.audio.play('victory');
+ return new Promise(resolve=>{let finished=false;
+  const key=ev=>{if(ev.key==='Escape'||ev.key==='Enter'){ev.preventDefault();finish();}};
+  const finish=()=>{if(finished)return;finished=true;document.removeEventListener('keydown',key);resolve();};
+  e.addEventListener('click',ev=>{if(ev.target.closest('[data-view-stats]'))finish();});
+  document.addEventListener('keydown',key);
+ });
+}
+
 export function endScreen(app, { won, earned, extra = {} }) {
   const run = app.run; const s = run.stats;
   const el = showScreen(`<div class="end ${won ? 'won' : 'lost'}">

@@ -3,6 +3,7 @@
 import { KEYWORDS } from '../data/keywords.js';
 import { getCard } from '../data/cards.js';
 import { ATTACHMENT_BY_NAME } from './attachments.js';
+import { traitOf } from './trait-registry.js';
 
 export const MTG_TO_GAME_KEYWORD = Object.fromEntries(Object.entries(KEYWORDS).filter(([, d]) => d.mtg).map(([id, d]) => [d.mtg.toLowerCase(), id]));
 const KEYWORD_PARTS = { flying: 'wings', deathtouch: 'venom', trample: 'horns', firstStrike: 'blades', doubleStrike: 'claws', lifelink: 'tendrils', vigilance: 'antlers', haste: 'tail' };
@@ -71,13 +72,14 @@ export function toGameCard(sf) {
     if (sf.oracleText != null) {
       const lines = stripReminder(sf.oracleText).split('\n').map(l => l.trim()).filter(Boolean);
       for (const line of lines) {
+        if (traitOf(sf.name)) continue; // Printed text has a reviewed, disclosed tactical adaptation below.
         const parts = line.split(/,\s*/).map(p => p.trim().toLowerCase());
         if (!parts.every(p => MTG_TO_GAME_KEYWORD[p] && sf.keywords.some(k => k.toLowerCase() === p))) reasons.push('unmodeled rules text: "' + line.slice(0, 60) + '"');
       }
     }
     if (reasons.length) return { ok: false, reasons };
     const type = (sf.typeLine.split('—')[1] || 'Creature').trim();
-    return { ok: true, card: { ...base, kind: 'creature', type, power: +sf.power, toughness: +sf.toughness, keywords: kws, parts: partsFor(kws, sf.typeLine), art: null, flavor: '' } };
+    return { ok: true, card: { ...base, trait: traitOf(sf.name)?.id || null, adaptationNote: traitOf(sf.name)?.note || '', kind: 'creature', type, power: +sf.power, toughness: +sf.toughness, keywords: kws, parts: partsFor(kws, sf.typeLine), art: null, flavor: '' } };
   }
   const special = ATTACHMENT_BY_NAME[sf.name] || Object.entries(ATTACHMENT_BY_NAME).find(([name]) => name.toLowerCase() === sf.name.toLowerCase())?.[1];
   if(special){

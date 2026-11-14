@@ -4,7 +4,8 @@ import { unitAt, T, tileAt, manhattan, isFlying } from '../core/grid.js';
 import { ENEMIES } from '../data/enemies.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
 import { hasAura, detachAura } from './attachments.js';
-import { resolveShinobiHit, scarabDied } from './printed-triggers.js';
+import { resolveShinobiHit, scarabDied, splitWurmcoil } from './printed-triggers.js';
+import { onUnitDeath, onHeroHeal } from './trait-triggers.js';
 
 export const has = (u, kw) => kw === 'flying' ? isFlying(u) : !!(u.keywords && u.keywords[kw]);
 export const kv = (u, kw) => (u.keywords && u.keywords[kw]) || 0;
@@ -57,6 +58,7 @@ export function heal(s, ev, u, amount, kind = 'heal') {
   const h = Math.min(amount, u.maxHp - u.hp);
   if (h <= 0) return 0;
   u.hp += h; ev.push({ t: 'heal', uid: u.uid, amount: h, kind });
+  if(u.hero)onHeroHeal(s,ev,h,kind);
   return h;
 }
 export function addShield(s, ev, u, amount, kind = 'shield') {
@@ -71,11 +73,13 @@ export function addStatus(s, ev, u, status, value) {
 }
 function kill(s, ev, u, element = null) {
   ev.push({ t: 'death', uid: u.uid, element });
+  onUnitDeath(s,ev,u);
   if(u.side==='player' && !u.hero && u.slime>0 && s.units.some(x=>x.defId==='toxrill'&&x.hp>0))s.pendingSlugs=(s.pendingSlugs||0)+1;
   if (u.side === 'enemy') {
     s.stats.kills++;
     const def = ENEMIES[u.defId];
     if(u.defId==='scarab') scarabDied(s,u);
+    if(u.defId==='champion') splitWurmcoil(s,ev,u);
     if(u.defId==='cinderling') {
       // Mudbutton Torchrunner: 3 to any target, NOT an invented 2-damage explosion.
       const chosen=player(s);if(alive(chosen)) {

@@ -1,10 +1,7 @@
-// v1.2.3 printed-ability completion for three production blockers:
-//   * Combustible Gearhulk — opponent's draw-or-mill choice on entering.
-//   * Fallen Shinobi       — combat damage to the player exiles their top two library cards; opponent may play them free.
-//   * The Scarab God       — upkeep life loss + scry, token-copy reanimation, return-to-hand at the next end step.
+// Printed abilities: Wurmcoil Engine, Fallen Shinobi and The Scarab God.
+// No simulated opponent library; all card movements refer to real encounter state.
 // Pure and DOM-free. Every random outcome comes from a seeded, serialisable RNG stored on the battle.
 // Encounter adaptations are labelled as such and never presented as exact Oracle text.
-import { makeRng, shuffle } from '../core/rng.js';
 import { ENEMY_FACTS } from '../cards/enemy-facts.js';
 import { ENEMIES } from '../data/enemies.js';
 import { inBounds, tileAt, unitAt, T, DIRS } from '../core/grid.js';
@@ -22,72 +19,20 @@ export function manaValue(cost = '') {
   return mv;
 }
 
-/** Cards the opponent may cast from hand after a Gearhulk "draw three". Excludes cards that would chain
- *  further six-plus drops (Gearhulk, Triplicate Titan) so the adaptation stays bounded. */
-const OPP_CASTABLE_MAX_MV = 5;
-export const OPP_BOARD_CAP = 6;
-export const GEARHULK_DRAW = 3, GEARHULK_MILL = 3, SHINOBI_EXILE = 2, SCARAB_RECAST_COST = 5;
-
-/** The opponent's library: one copy of each curated real enemy card, deterministically shuffled per battle. */
-export function opponentLibrary(s) {
-  if (!s.opp) {
-    const seed = (s.oppSeed ?? ((s.nextUid * 2654435761) ^ 0x6ea7)) >>> 0;
-    const ids = Object.keys(ENEMY_FACTS).filter(id => ENEMIES[id]);
-    s.opp = { library: shuffle(makeRng(seed || 1), ids), hand: [], graveyard: [], mana: 0 };
+export const SHINOBI_EXILE = 2, SCARAB_RECAST_COST = 5;
+/** Wurmcoil Engine's simultaneous death-triggered two 3/3 tokens, deterministically placed. */
+export function splitWurmcoil(s, ev, wurm) {
+  if(wurm.defId!=='champion' || wurm.token || wurm.wurmSplit)return 0;
+  wurm.wurmSplit=true;
+  let count=0;
+  for(const defId of ['wurmTouch','wurmLife']){
+    const tile=openTileNear(s,wurm);
+    if(!tile){ev.push({t:'realAbility',uid:wurm.uid,name:'Wurmcoil Engine · no safe tile for the remaining Wurm token'});break;}
+    const u=spawnCard(s,defId,tile.x,tile.y);u.token=true;u.summoned=true;
+    ev.push({t:'summon',uid:u.uid,defId,x:u.x,y:u.y,by:wurm.uid});count++;
   }
-  return s.opp;
-}
-const cardMV = defId => manaValue(ENEMY_FACTS[defId]?.mana_cost || '');
-
-// ---------------------------------------------------------------- Combustible Gearhulk
-export function queueGearhulk(s, u) {
-  (s.pendingChoices ||= []).push({ kind: 'gearhulk', uid: u.uid });
-  (s.entryEvents ||= []).push({ t: 'realAbility', uid: u.uid, name: 'Combustible Gearhulk · you choose: let it draw three, or mill three for damage' });
-}
-export const pendingChoice = s => (s && s.pendingChoices && s.pendingChoices[0]) || null;
-
-/** Preview shown to the player before choosing. Mill damage is hidden information (unknown library). */
-export function gearhulkPreview(s) {
-  const lib = opponentLibrary(s).library;
-  return { drawCount: Math.min(GEARHULK_DRAW, lib.length), millCount: Math.min(GEARHULK_MILL, lib.length),
-    maxDamage: lib.map(cardMV).sort((a, b) => b - a).slice(0, GEARHULK_MILL).reduce((a, b) => a + b, 0) };
-}
-
-export function resolveGearhulkChoice(s, choice) {
-  const pc = pendingChoice(s);
-  if (!pc || pc.kind !== 'gearhulk') throw new Error('No Combustible Gearhulk choice is pending');
-  if (s.phase !== 'player') throw new Error('Not your turn');
-  if (choice !== 'draw' && choice !== 'mill') throw new Error('Choose draw or mill');
-  s.pendingChoices.shift();
-  const ev = []; const opp = opponentLibrary(s);
-  const hulk = s.units.find(u => u.uid === pc.uid) || { uid: pc.uid, side: 'enemy', keywords: {}, statuses: {} };
-  if (choice === 'draw') {
-    const drawn = opp.library.splice(0, GEARHULK_DRAW); opp.hand.push(...drawn);
-    ev.push({ t: 'realAbility', uid: pc.uid, name: `Combustible Gearhulk · opponent draws ${drawn.length}`, cards: drawn.map(id => ENEMY_FACTS[id].name) });
-  } else {
-    const milled = opp.library.splice(0, GEARHULK_MILL); opp.graveyard.push(...milled);
-    const total = milled.reduce((a, id) => a + cardMV(id), 0);
-    ev.push({ t: 'realAbility', uid: pc.uid, name: `Combustible Gearhulk · mills ${milled.map(id => ENEMY_FACTS[id].name).join(', ') || 'nothing'}`, amount: total });
-    const hero = player(s);
-    if (total > 0 && alive(hero)) dealDamage(s, ev, hulk, hero, total, { kind: 'gearhulk' });
-  }
-  // A forced printed choice is not counted as an accepted action, so it never lowers the efficiency score.
-  return ev;
-}
-
-/** Enemy-turn start: the opponent casts at most ONE drawn creature card per turn, bounded by board size. */
-export function opponentCastFromHand(s, ev) {
-  const opp = s.opp; if (!opp || !opp.hand.length || s.phase !== 'enemy') return;
-  if (enemies(s).length >= OPP_BOARD_CAP) return;
-  const i = opp.hand.findIndex(id => cardMV(id) <= OPP_CASTABLE_MAX_MV && id !== 'champion');
-  if (i < 0) return;
-  const anchor = enemies(s).find(u => u.defId === 'champion') || enemies(s)[0];
-  if (!anchor) return;
-  const tile = openTileNear(s, anchor); if (!tile) return;
-  const [defId] = opp.hand.splice(i, 1);
-  const u = spawnCard(s, defId, tile.x, tile.y);
-  ev.push({ t: 'summon', uid: u.uid, defId, x: u.x, y: u.y, by: anchor.uid });
-  ev.push({ t: 'realAbility', uid: u.uid, name: `Opponent casts ${ENEMY_FACTS[defId].name} from hand` });
+  ev.push({t:'realAbility',uid:wurm.uid,name:`Wurmcoil Engine · ${count} Wurm tokens (${count} of 2 spaces available)`});
+  return count;
 }
 
 // ---------------------------------------------------------------- Fallen Shinobi
@@ -120,29 +65,26 @@ export function scarabUpkeep(s, ev, god) {
   if (x <= 0 || !alive(hero)) return 0;
   const before = hero.hp; hero.hp = Math.max(0, hero.hp - x);
   const lost = before - hero.hp; s.stats.damageTaken += lost;
-  ev.push({ t: 'legendaryAbility', uid: god.uid, name: `The Scarab God · you lose ${x} life, scry ${x}`, amount: x });
+  ev.push({ t: 'legendaryAbility', uid: god.uid, name: `The Scarab God · you lose ${x} life; foresight ${x} (adapted scry)`, amount: x });
   ev.push({ t: 'damage', uid: hero.uid, amount: lost, blocked: 0, kind: 'lifeLoss', src: god.uid });
-  // Scry X: keep cheap creatures on top (castable soon), bottom the rest. Deterministic.
-  const opp = opponentLibrary(s); const top = opp.library.splice(0, x);
-  const keep = top.filter(id => cardMV(id) <= 4), bottom = top.filter(id => cardMV(id) > 4);
-  opp.library.unshift(...keep); opp.library.push(...bottom);
+  // Adaptation: the God announces an ominous, deterministic tactical read.
+  // No hidden opponent library, phantom draws or fictional spell casting.
+  s.scarabOmen=x; ev.push({t:'legendaryAbility',uid:god.uid,name:`The Scarab God · foresight ${x} (GRAFTBOUND adaptation)`});
   if (hero.hp <= 0 && s.phase !== 'won') { s.phase = 'lost'; ev.push({ t: 'defeat', kind: 'lifeLoss' }); }
   return lost;
 }
 
-/** Graveyard creature cards available to the Scarab God: dead non-token creatures on either side, plus the
- *  opponent's milled cards. Returns objects { from:'battlefield'|'library', uid?, defId }. */
+/** Real battlefield corpses are the only reanimation targets; no simulated opponent library. */
 export function scarabTargets(s, god) {
   const out = [];
   for (const u of s.units) if (u.hp <= 0 && !u.token && !u.exiled && !u.hero && !u.inHand && u !== god && ENEMIES[u.defId]) out.push({ from: 'battlefield', uid: u.uid, defId: u.defId });
-  for (const id of (s.opp?.graveyard || [])) out.push({ from: 'library', defId: id });
   return out;
 }
 
 export function scarabReanimate(s, ev, god, target) {
   const tile = openTileNear(s, god); if (!tile) return null;
   if (target.from === 'battlefield') { const d = s.units.find(u => u.uid === target.uid); if (!d) return null; d.exiled = true; }
-  else { const g = s.opp.graveyard; const i = g.indexOf(target.defId); if (i < 0) return null; g.splice(i, 1); }
+  else return null; // Only actual defeated creatures may be exiled.
   const u = spawnCard(s, target.defId, tile.x, tile.y);
   // Token copy, except 4/4 black Zombie. Printed abilities (and keywords) are kept; encounter Vitality is not.
   Object.assign(u, { power: 4, toughness: 4, hp: 4, maxHp: 4, legendaryVitality: 0, boss: false, token: true, zombie: true, summoned: true });

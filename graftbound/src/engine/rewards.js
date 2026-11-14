@@ -2,7 +2,6 @@
 // functionally distinct where possible; creatures gated by GRAFTBOUND power rating (not Magic rarity or mana value);
 // rarity weights only shape which ELIGIBLE card appears. Deterministic per seed. No hidden pity.
 import { makeRng, next } from '../core/rng.js';
-import { RARITY } from '../data/cards.js';
 import { rewardCards, resolveCard } from '../cards/catalog.js';
 import { graftRating, creatureBudget, spellMaxCost } from './power.js';
 
@@ -19,7 +18,6 @@ export function primerPack(seed, { spellbook = [] } = {}) {
   }
   return out.sort((a, b) => a.k - b.k).slice(0, 3).map(o => o.c.id);
 }
-const ORDER = ['common', 'uncommon', 'rare', 'mythic'];
 const NO_EVO = { power: 0, toughness: 0, keywords: {} };
 
 /** Eligible pack contents for a campaign step / tier / build. */
@@ -37,19 +35,26 @@ export function cardPool({ spellbook = [], noRares = false, step = 0, tier = 'ba
     return graftRating(c, evo) <= budget;
   });
 }
-/** Rarity weights by step (documented, mild). */
-export function rarityWeights(step = 0) {
-  const d = Math.max(0, Math.min(23, step)) / 4;
-  return { common: RARITY.common.weight - d * 4, uncommon: RARITY.uncommon.weight + d * 2, rare: RARITY.rare.weight + d * 1.5, mythic: RARITY.mythic.weight + d * 0.5 };
-}
-const signature = c => (c.kind === 'creature' ? 'c:' + Object.keys(c.keywords).sort().join('+') + ':' + (c.power + c.toughness) : 's:' + c.category);
-
-function weightedPick(rng, cards, weights, prefer) {
-  const list = prefer ? (cards.filter(prefer).length ? cards.filter(prefer) : cards) : cards;
-  const total = list.reduce((a, c) => a + weights[c.rarity], 0);
-  let r = next(rng) * total;
-  for (const c of list) { r -= weights[c.rarity]; if (r < 0) return c; }
-  return list[list.length - 1];
+/** Per-slot rarity probabilities. These are hidden gameplay tuning, not MTG Arena odds. */
+export const RARITY_TABLE = Object.freeze({
+  battle: Object.freeze({common:60,uncommon:28,rare:10,mythic:2}),
+  elite: Object.freeze({common:30,uncommon:42,rare:23,mythic:5}),
+  boss: Object.freeze({common:12,uncommon:33,rare:43,mythic:12}),
+  shrine: Object.freeze({common:45,uncommon:35,rare:17,mythic:3}),
+});
+/** Kept for older callers/tests; slot probabilities are now tier-first, not multiplied by bucket size. */
+export function rarityWeights(step=0,tier='battle') { return { ...(RARITY_TABLE[tier] || RARITY_TABLE.battle) }; }
+const ORDER = ['common','uncommon','rare','mythic'];
+const signature = c => c.kind === 'creature' ? 'c:' + Object.keys(c.keywords).sort().join('+') + ':' + (c.power + c.toughness) + ':' + (c.trait||'') : 's:' + c.category;
+/** Pick rarity first, renormalized only over actual eligible buckets, then choose a card uniformly. */
+export function rarityFirstPick(rng,cards,table=RARITY_TABLE.battle,minimum='common') {
+  const floor=ORDER.indexOf(minimum), available=ORDER.filter((r,i)=>i>=floor&&cards.some(c=>c.rarity===r));
+  if(!available.length)return null;
+  let roll=next(rng)*available.reduce((a,r)=>a+(table[r]||0),0);
+  let rarity=available.at(-1);
+  for(const r of available){roll-=table[r]||0;if(roll<0){rarity=r;break;}}
+  const bucket=cards.filter(c=>c.rarity===rarity);
+  return bucket[Math.floor(next(rng)*bucket.length)];
 }
 
 /** tier: 'battle' | 'elite' | 'boss' | 'shrine'. forced: card ids that must appear (tutorial). */
@@ -57,18 +62,24 @@ export function generatePack(seed, { tier = 'battle', forced = [], step = 0, evo
   const rng = makeRng(seed);
   if (creaturesOnly) only = 'creature';
   const pool = cardPool({ ...poolOpts, step, tier, evo }).filter(c => !only || c.kind === only);
-  const weights = rarityWeights(step);
+  const table = rarityWeights(step,tier);
   const picked = forced.map(resolveCard).filter(c => c && c.reference);
   const strong = c => c.kind === 'creature' ? graftRating(c,evo)>=creatureBudget(step,tier)-3 : c.cost>=2;
   const take = (filter, prefer) => {
     const sigs = new Set(picked.map(signature));
     let cands = pool.filter(c => !picked.includes(c) && filter(c) && !sigs.has(signature(c)));
     if (!cands.length) cands = pool.filter(c => !picked.includes(c) && filter(c));
-    if (!cands.length) cands = rewardCards().filter(c => !picked.includes(c) && filter(c) && (!only || c.kind === only) && (c.kind !== 'creature' ? c.cost <= 1 : graftRating(c, evo) <= creatureBudget(step, tier)));
-    if (cands.length) picked.push(weightedPick(rng, cands, weights, prefer));
+    // Never fall back outside the allowed pool, which would bypass progression or Pauper rules.
+    if (cands.length) { const c = rarityFirstPick(rng,cands,table); if(c)picked.push(c); }
   };
   const ANY = () => true;
-  if (tier === 'elite' || tier === 'boss') take(ANY, strong);  // elite/boss: one card near the top of the budget
+  // Pinned first slot: a meaningful rarity guarantee if the eligible pool can satisfy it.
+  // Pauper's Pack or low-depth gating may legitimately have no such eligible card.
+  const minRarity=tier==='boss'?'rare':tier==='elite'?'uncommon':null;
+  if(minRarity){
+    const allowed=pool.filter(c=>ORDER.indexOf(c.rarity)>=ORDER.indexOf(minRarity));
+    if(allowed.length){const c=rarityFirstPick(rng,allowed,table,minRarity);if(c)picked.push(c);}
+  }
   if (only !== 'spell' && !picked.some(c => c.kind === 'creature')) take(c => c.kind === 'creature');
   if (only !== 'creature' && !picked.some(c => c.kind === 'spell')) take(c => c.kind === 'spell');
   // v0.8 spell access: while the spellbook is thin early on, packs carry a SECOND spell (still 3 cards; the creature

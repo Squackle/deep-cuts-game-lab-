@@ -509,3 +509,85 @@ body[data-mode="reward"] .hint { top: 6px; } body[data-mode="reward"] .toast { t
 .in-types{font-size:11px;letter-spacing:.05em;color:#d4c08b;margin:4px 0 7px}
 
 .gb-gear-equipped{display:flex;align-items:center;gap:9px;min-width:0;max-width:100%;flex:1;text-align:left}.gb-gear-equipped .gb-equip-card{margin:0;flex-shrink:0}.gb-gear-equipped>span:last-child{min-width:0;overflow-wrap:anywhere}.gb-gear-slot>.btn.small{flex-shrink:0}
+
+/* v1.2.6 premium booster, library/graveyard and final-victory presentation. */
+.gb-reserve {border-radius:10px;padding:3px 7px;background:rgba(37,62,78,.12);border:1px solid rgba(59,111,142,.42);color:#285b7d;font-size:.7rem;white-space:nowrap;cursor:help}
+.gb-card-zones {position:absolute;bottom:max(22px,env(safe-area-inset-bottom));left:12px;display:flex;align-items:flex-end;gap:9px;z-index:12;max-width:200px}
+.gb-zone {position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;width:76px;border:0;background:transparent;color:var(--parch);padding:0;cursor:pointer;text-shadow:0 2px 4px #000;font-family:var(--sans)}
+.gb-zone:focus-visible {outline:2px solid var(--gold2);outline-offset:5px}
+.gb-zone-art {position:relative;display:block;width:62px;height:88px;overflow:hidden;border:2px solid #d8bd77;border-radius:5px;background:linear-gradient(140deg,#273e42,#152226);box-shadow:0 0 0 2px #151714,0 5px 15px #0009}
+.gb-deck-back::after {content:'';position:absolute;z-index:-1;inset:4px -5px -5px 4px;box-shadow:2px 2px 0 #111b18,4px 4px 0 #b49a5d}
+.gb-zone .back-art {width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;gap:0;font-size:.5rem;background:radial-gradient(circle,#345d54,#0d1820)}
+.gb-zone .back-word {font-size:9px;letter-spacing:.05em;color:#f2d893}.gb-zone .back-sigil svg {width:30px;height:30px}
+.gb-zone .lc-card {width:100%;height:100%;font-size:6px;pointer-events:none;border-radius:3px}
+.gb-zone .lc-card .ingame,.gb-zone .lc-card .rarity-mark {display:none}.gb-zone .lc-card .face {transform:none!important}
+.gb-zone-empty {display:grid;place-items:center;width:100%;height:100%;font-size:32px;color:#b19b72;background:repeating-linear-gradient(45deg,#16231c,#16231c 6px,#1a3029 7px)}
+.gb-zone-meta {display:flex;align-items:center;gap:4px;font-size:10px;letter-spacing:.025em;white-space:nowrap}
+.gb-zone-meta strong{font-weight:700}.gb-zone-meta em{min-width:18px;padding:1px 4px;background:#162b2a;border:1px solid #967d50;border-radius:9px;font-style:normal;font-variant-numeric:tabular-nums}
+.gb-zone:hover .gb-zone-art {box-shadow:0 0 0 2px var(--gold2),0 4px 18px rgba(242,203,109,.48)}
+.gb-card-flight {position:fixed;z-index:1000;pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;width:82px;height:114px;padding:5px;overflow:hidden;border:2px solid #e4c87c;border-radius:7px;background:radial-gradient(circle at 50% 35%,#456259,#111e25);box-shadow:0 8px 28px #000a,0 0 13px #bc9a61a8;color:#f4e3ab;font-family:var(--sans);font-size:10px;text-align:center;will-change:transform,opacity}
+.gb-card-flight.faceup{background:linear-gradient(#ead8b3,#a68e63);color:#2b2117}.gb-flight-sigil{font-size:29px;line-height:1.4}
+.gb-grave-list {display:flex;gap:12px;overflow-x:auto;max-height:55vh;max-width:calc(100vw - 70px);padding:10px 4px}.gb-grave-list-card{flex:0 0 150px;min-width:150px}.gb-grave-list-card>.lc-card{width:150px;min-height:210px}
+/* Genuine rarity remains part of the reward: cosmetics are an independent roll. */
+.slot.rarity-uncommon::after,.slot.rarity-rare::after,.slot.rarity-mythic::after {content:'';position:absolute;inset:-5px;pointer-events:none;border-radius:12px;z-index:9;opacity:.8}
+.slot.rarity-uncommon::after{border:2px solid #8ec4d2;box-shadow:0 0 15px #70a4bc88}
+.slot.rarity-rare::after{border:3px solid #f5d575;box-shadow:0 0 24px #e2ae52a6,inset 0 0 8px #f0db9b55}
+.slot.rarity-mythic::after{border:3px solid #fc9853;box-shadow:0 0 30px #fa6e29ae,inset 0 0 14px #de4b1766}
+.slot.treat-etched .lc-card {filter:drop-shadow(0 0 7px #a5d8d3bb)}
+.slot.treat-masterwork::before{content:'MASTERWORK';position:absolute;left:50%;top:-24px;transform:translateX(-50%);background:#e6cf8b;color:#322316;font:700 10px var(--sans);letter-spacing:.1em;border:1px solid #fff1b6;border-radius:15px;padding:3px 8px;z-index:11;pointer-events:none}
+.slot.treat-masterwork .lc-card {box-shadow:0 0 13px 4px #fae2a6ae,0 0 40px #e9b4649b}
+.slot.gb-reveal-surge {animation:gb-reward-surprise .78s cubic-bezier(.14,.66,.2,1) both}
+@keyframes gb-reward-surprise{0%{filter:brightness(1);scale:.94}30%{filter:brightness(2);scale:1.04}100%{filter:brightness(1);scale:1}}
+.gb-finale-screen {overflow:auto}.gb-finale {min-height:100%;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:17px;text-align:center;padding:35px 18px;color:#f3e5c3;background:radial-gradient(ellipse at 50% 43%,rgba(56,78,60,.8),rgba(8,17,17,.96) 68%);isolation:isolate}
+.gb-finale-sky {position:absolute;inset:0;pointer-events:none;z-index:-1}.gb-finale-sky i {position:absolute;top:50%;left:50%;width:2px;height:43%;transform-origin:50% 0;transform:rotate(var(--rot));background:linear-gradient(transparent,rgba(235,194,105,.44),transparent);animation:gb-final-rays 2.7s ease-in-out infinite alternate;animation-delay:var(--delay)}
+.gb-finale-mark {width:110px;height:110px;display:grid;place-items:center;color:#f2d794;filter:drop-shadow(0 0 15px #d8a54a);animation:gb-final-mark 3s ease-in-out infinite alternate}
+.gb-finale-mark svg{width:100%;height:100%}.gb-finale-eyebrow{font-family:var(--sans);letter-spacing:.26em;text-transform:uppercase;color:#c9b080;font-size:.8rem}
+.gb-finale h1 {font-family:serif;font-size:clamp(2.8rem,8vw,6rem);letter-spacing:.12em;margin:0;text-shadow:0 0 22px #bca55b7e}
+.gb-finale h2 {color:#f5d981;letter-spacing:.4em;margin:0;font:700 clamp(1.4rem,5vw,3rem) serif}
+.gb-finale p{max-width:550px}.gb-finale-hero{border:1px solid #ab945b;border-radius:40px;padding:8px 28px;font:700 1.4rem var(--sans);background:#152b258a}
+.gb-finale-hero span{font:400 .75rem var(--sans);letter-spacing:.04em;color:#c4b88f;display:block}
+@keyframes gb-final-rays{to{opacity:.23;transform:rotate(var(--rot)) scaleY(.65)}}
+@keyframes gb-final-mark{to{filter:drop-shadow(0 0 28px #e1bc66);transform:scale(1.08)}}
+@media (max-width:700px){.gb-card-zones{left:6px;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 94px);gap:4px}.gb-zone{width:48px}.gb-zone-art{width:38px;height:52px}.gb-zone-meta{font-size:8px;flex-wrap:wrap;justify-content:center}.gb-zone .back-word{font-size:5px}.gb-zone .back-sigil svg{width:17px;height:17px}.gb-reserve{font-size:.6rem}.gb-finale h1{letter-spacing:.05em}.gb-finale{gap:12px}}
+@media (prefers-reduced-motion:reduce){.slot.gb-reveal-surge,.gb-finale-sky i,.gb-finale-mark{animation:none!important}.gb-card-flight{display:none!important}}
+
+/* Premium reward treatments are original in-game finishes, NOT verified Magic printings. */
+.reward .slot{isolation:isolate}
+.reward .slot .gb-reward-seal{position:absolute;left:50%;top:-23px;translate:-50% 0;z-index:4;font-size:18px;line-height:24px;color:#eadcae;filter:drop-shadow(0 1px 4px #000b);pointer-events:none}
+.reward .slot.rarity-uncommon .gb-reward-seal{color:#a8e9db}
+.reward .slot.rarity-rare .gb-reward-seal{color:#ffe69b;text-shadow:0 0 13px #f4bd41}
+.reward .slot.rarity-mythic .gb-reward-seal{color:#ffb987;text-shadow:0 0 21px #fa6822}
+.reward .slot.revealed.rarity-rare .lc-card{box-shadow:0 0 0 2px #e6c17f,0 0 28px #f4ca6c88}
+.reward .slot.revealed.rarity-mythic .lc-card{box-shadow:0 0 0 3px #e7a567,0 0 20px #ec6f3b,0 0 46px #fa5c3c8c}
+.reward .slot.treat-etched .lc-card{outline:2px solid #d2e0d8;outline-offset:2px;filter:drop-shadow(0 0 7px #85cfbd55)}
+.reward .slot.treat-masterwork .lc-card{outline:3px solid #f5d399;outline-offset:2px;filter:drop-shadow(0 0 15px #e7af68a8)}
+.reward .slot.treat-masterwork::after{content:'MASTERWORK';position:absolute;top:-41px;left:50%;translate:-50% 0;z-index:5;color:#fbe7ad;font:700 10px var(--sans);letter-spacing:.1em;text-shadow:0 0 8px #e9ad56}
+@media(prefers-reduced-motion:no-preference){.reward .slot.gb-reveal-surge.rarity-rare .lc-card,.reward .slot.gb-reveal-surge.rarity-mythic .lc-card{animation:gb26-reveal-pulse .85s ease-out 1}.reward .slot.treat-masterwork.revealed .gb-reward-seal{animation:gb26-rare-twinkle 3.4s ease-in-out infinite alternate}}
+@keyframes gb26-reveal-pulse{0%{filter:brightness(1.8);transform:scale(1.06)}100%{filter:brightness(1);transform:none}}
+@keyframes gb26-rare-twinkle{0%{filter:brightness(.9)}100%{filter:brightness(1.7)}}
+
+/* Channel Reserve visibly separates banked mana from regenerating ordinary mana. */
+/* Final-act victory screen · original sigil, no flashes, skippable and no pack. */
+.gb-finale-screen{display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 43%,#3d423490 0,#111a17eb 66%,#090d0bea 100%)}
+.gb-finale{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:center;gap:12px;justify-content:center;width:min(630px,95vw);max-height:98dvh;overflow-y:auto;text-align:center;color:#f4deab;padding:clamp(12px,3vw,35px);font-family:var(--serif);text-shadow:0 2px 10px #000b}
+.gb-finale h1{font:700 clamp(1.6rem,4vw,3rem) var(--serif);letter-spacing:.17em;margin:0;color:#e2c480}
+.gb-finale h2{font:700 clamp(2.8rem,9vw,6rem) var(--serif);letter-spacing:.16em;color:#ffdf93;margin:0;text-shadow:0 0 23px #eab96d9c,0 4px 13px #000}
+.gb-finale p{margin:0;line-height:1.5}.gb-finale-eyebrow{font:700 11px var(--sans);text-transform:uppercase;letter-spacing:.24em;color:#dfc890}
+.gb-finale-mark{width:110px;height:110px;display:grid;place-items:center;filter:drop-shadow(0 0 30px #e9c568);color:#f9de9b}.gb-finale-mark svg{width:88px;height:88px}
+.gb-finale-hero{font:700 1.45rem var(--serif);color:#f3d7a2}.gb-finale-hero span{display:block;font:11px var(--sans);letter-spacing:.12em;color:#d7c9ac}
+.gb-finale-sky{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none}.gb-finale-sky i{position:absolute;top:50%;left:50%;width:3px;height:3px;border-radius:50%;background:#ffe7a2;box-shadow:0 0 13px 3px #f6c87570}
+@media(prefers-reduced-motion:no-preference){.gb-finale:not(.reduced) .gb-finale-mark{animation:gb26-finale-arrive .9s ease-out both}.gb-finale:not(.reduced) h2{animation:gb26-finale-arrive 1.2s ease-out both}.gb-finale:not(.reduced) .gb-finale-sky i{animation:gb26-finale-mote 3.2s ease-out both;animation-delay:var(--delay)}}
+@keyframes gb26-finale-arrive{from{opacity:0;transform:translateY(15px) scale(.92)}to{opacity:1;transform:none}}
+@keyframes gb26-finale-mote{from{opacity:0;transform:rotate(var(--rot)) translateX(20px)}30%{opacity:1}to{opacity:0;transform:rotate(var(--rot)) translateX(280px)}}
+@media(prefers-reduced-motion:reduce){.gb-zone-stack{transition:none}.reward .slot.gb-reveal-surge .lc-card,.gb-finale *{animation:none!important;transition:none!important}}
+html[data-card-motion="off"] .reward .slot,html[data-card-motion="off"] .reward .slot *,html[data-card-motion="off"] .gb-finale *{animation:none!important;transition:none!important}
+html[data-card-motion="minimal"] .reward .slot.gb-reveal-surge .lc-card{animation-duration:.15s!important}
+
+/* Single compact card zone rail; original card back in Library, actual latest face in Graveyard. */
+.gb-card-flight .lc-card{--cw:78px;position:relative;flex:0 0 auto;pointer-events:none}
+.gb-card-flight .lc-card .ingame{display:none}
+@media (max-height:430px){#hud .gb-card-zones{bottom:8px;left:8px;transform:scale(.73);transform-origin:bottom left}}
+
+/* Reviewed, rules-impacting creature grafts must be visibly described on their reward card. */
+.lc-card .gb-trait-text{display:block;font:600 .87em/1.28 var(--sans);color:#283c2c;margin-top:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.lc-card .gb-trait-text b{color:#395e3b}

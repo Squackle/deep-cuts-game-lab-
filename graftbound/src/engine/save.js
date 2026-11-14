@@ -88,6 +88,27 @@ RUN_MIGRATIONS[6] = r => {
   // In-progress v1.1.1 battles are preserved byte-for-byte: new encounters use the new rules.
   return r;
 };
+RUN_MIGRATIONS[7] = r => {
+  // v1.2.5 -> v1.2.6: retire the simulated opponent hand while preserving the player's deck and game.
+  r.v = 8;
+  if (r.battle) {
+    const b = r.battle; b.v = 9;
+    delete b.opp; delete b.oppSeed; delete b.pendingChoices;
+    b.p ||= {};
+    b.p.storedMana = Math.max(0, Math.min(2, b.p.storedMana || 0));
+    b.p.channel = Math.max(0, Math.min(2, b.p.channel || 0));
+    b.p.channeledTurn = b.p.channel ? b.turn : -1;
+    // Older provisional replay rules are archived, not silently submitted under the new engine.
+    if(r.ranked && r.ranked.rulesVersion!=='graftbound-rules-1.2.6-beta') { r.archivedRanked={...r.ranked};delete r.ranked; }
+    for (const u of b.units || []) if (u.defId === 'champion') {
+      u.name = 'Wurmcoil Engine';
+      u.keywords = { ...(u.keywords || {}), deathtouch: 1, lifelink: 1 };
+      delete u.keywords.firstStrike;
+    }
+  }
+  if(r.ranked && r.ranked.rulesVersion!=='graftbound-rules-1.2.6-beta') {r.archivedRanked={...r.ranked};delete r.ranked;}
+  return r;
+};
 export const META_MIGRATIONS = {
   1: m => { m.v = 2; m.settings = { ...DEFAULT_SETTINGS, ...(m.settings || {}) }; return m; },
   2: m => { m.v = 3; return m; },

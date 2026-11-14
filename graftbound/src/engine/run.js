@@ -16,7 +16,7 @@ import { combatSpellbook, refreshLoadout, BASE_HAND_CAPACITY } from './loadout.j
 import { newWorldThreat, settleWorldThreat, applyWorldThreat } from './world-threat.js';
 import { giveEquipment, attachRunEquipment } from './attachments.js';
 
-export const RUN_VERSION = 7;
+export const RUN_VERSION = 8;
 export const TUTORIAL_CARD = 'mtg:typhoid-rats';  // real 1/1 Deathtouch: Blank 1/1 -> 2/2 Deathtouch
 export const CHALLENGES = {
   paperThin: { name: 'Paper Thin', text: 'Your Spark is 2 instead of 6.' },
@@ -106,6 +106,13 @@ export function concludeBattle(run) {
   // Single-level Auras are consumed whether or not drawn. All ordinary learned spells persist.
   const consumedAuras=run.spellbook.filter(x=>resolveCard(x.id)?.kind==='aura').map(x=>x.id);
   if(consumedAuras.length) {run.spellbook=run.spellbook.filter(x=>!consumedAuras.includes(x.id));run.equippedSpellIds=(run.equippedSpellIds||[]).filter(id=>!consumedAuras.includes(id));}
+  // The final defeated guardian IS the reward. Keep its score/achievement outcome, no pack or skip-Spark.
+  if(isBoss && run.act+1>=ACT_COUNT){
+    run.actHistory.push({act:run.act,visited:run.visited.slice()});
+    run.lastBattle=summarize(b);run.battle=null;run.pending=null;run.phase='won';
+    run.victoryScene='pending';
+    return {outcome:'won',boss:true,final:true,elite:false,battleStats:b.stats};
+  }
   const tier = isBoss ? 'boss' : b.nodeType === 'elite' ? 'elite' : 'battle';
   const forced = b.nodeType === 'tutorial' ? [TUTORIAL_CARD] : [];
   run.pending = { cards: generatePack(b.rng.s ^ 0x5eed, { tier, forced, ...packOpts(run) }), tier, boss: isBoss };

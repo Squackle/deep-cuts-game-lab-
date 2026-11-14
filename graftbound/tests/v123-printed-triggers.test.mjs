@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { arena } from './helpers.mjs';
-import { attack, endTurn, movePlayer, gearhulkChoice, player, enemies, cast } from '../src/engine/combat.js';
+import { attack, endTurn, movePlayer, player, enemies, cast } from '../src/engine/combat.js';
 import { dealDamage } from '../src/engine/abilities.js';
 import { createCombatDeck } from '../src/engine/deck.js';
 import { getLegalPlayerActions, shouldAutoEnd } from '../src/engine/legal.js';
-import { manaValue, opponentLibrary, pendingChoice, gearhulkPreview, scarabTargets, OPP_BOARD_CAP } from '../src/engine/printed-triggers.js';
+import { manaValue, scarabTargets } from '../src/engine/printed-triggers.js';
 import { ENEMY_FACTS } from '../src/cards/enemy-facts.js';
 import { applyDecision, startRanked, validDecision, RULES_VERSION } from '../src/engine/ranked.js';
 
@@ -17,49 +17,21 @@ test('mana value parser matches printed costs', () => {
   assert.equal(manaValue('{X}{R}'), 1); assert.equal(manaValue(''), 0);
 });
 
-test('Combustible Gearhulk: entering creates a pending opponent choice that blocks every other action and auto-end', () => {
-  const s = arena(['.....', '..C..', '.....', '..P..'], { C: 'champion' });
-  assert.equal(pendingChoice(s)?.kind, 'gearhulk');
-  assert.throws(() => movePlayer(s, 1, 3), /Gearhulk/);
-  assert.throws(() => endTurn(s), /Gearhulk/);
-  const legal = getLegalPlayerActions(s);
-  assert.equal(legal.any, true); assert.equal(legal.move.length, 0); assert.equal(legal.choice.kind, 'gearhulk');
-  assert.equal(shouldAutoEnd(s), false, 'never auto-ends past a printed choice');
-  assert.throws(() => gearhulkChoice(s, 'burn'), /draw or mill/);
+test('Wurmcoil Engine: has no forced choices or simulated enemy library', () => {
+ const s = arena(['.......', '...C...', '.......', '...P...'], { C: 'champion' });
+ assert.equal(s.opp, undefined); assert.equal(s.pendingChoices, undefined);
+ assert.equal(foe(s,'champion').name,'Wurmcoil Engine');
+ assert.ok(getLegalPlayerActions(s).any);
+ assert.ok(!validDecision({seq:0,type:'gearhulk',choice:'draw'},0));
 });
-
-test('Gearhulk mill: three cards milled, damage equals their total mana value, deterministic per seed', () => {
-  const run = seed => { const s = arena(['.....', '..C..', '.....', '..P..'], { C: 'champion' }, { seed });
-    const top = opponentLibrary(s).library.slice(0, 3); const hp = player(s).hp; player(s).maxHp = player(s).hp = 99;
-    gearhulkChoice(s, 'mill'); return { s, top, total: top.reduce((a, id) => a + mv(id), 0), hp }; };
-  const a = run(7), b = run(7);
-  assert.deepEqual(a.top, b.top, 'same seed, same library');
-  assert.deepEqual(a.s.opp.graveyard, a.top);
-  assert.equal(player(a.s).hp, 99 - a.total);
-  assert.equal(pendingChoice(a.s), null);
-  assert.ok(a.total <= gearhulkPreview(arena(['.....', '..C..', '.....', '..P..'], { C: 'champion' }, { seed: 7 })).maxDamage);
-});
-
-test('Gearhulk draw: no damage; the opponent casts at most one drawn creature per enemy turn, bounded by board cap', () => {
-  const s = arena(['.......', '...C...', '.......', '.......', '...P...'], { C: 'champion' }, { seed: 3 });
-  const hp = player(s).hp;
-  gearhulkChoice(s, 'draw');
-  assert.equal(player(s).hp, hp); assert.equal(s.opp.hand.length, 3);
-  const before = enemies(s).length; endTurn(s);
-  const castable = s.opp.hand.length < 3;
-  assert.ok(enemies(s).length <= before + 1, 'at most one creature cast per turn');
-  if (castable) assert.equal(enemies(s).length, before + 1);
-  assert.ok(enemies(s).length <= OPP_BOARD_CAP);
-  assert.equal(enemies(s).filter(u => u.defId === 'champion').length, 1, 'never casts a second Gearhulk');
-});
-
-test('Gearhulk choice is a strict replay decision', () => {
-  assert.equal(RULES_VERSION, 'graftbound-rules-1.2.5-beta');
-  assert.ok(validDecision({ seq: 0, type: 'gearhulk', choice: 'mill' }, 0));
-  assert.ok(!validDecision({ seq: 0, type: 'gearhulk', choice: 'both' }, 0));
-  assert.ok(!validDecision({ seq: 0, type: 'gearhulk', choice: 'draw', extra: 1 }, 0));
-  const run = startRanked();
-  assert.throws(() => applyDecision(run, { seq: 0, type: 'gearhulk', choice: 'draw' }), /not allowed/);
+test('Wurmcoil Engine: on death produces distinct printed 3/3 Deathtouch and Lifelink Wurms', () => {
+ const s = arena(['.......', '...C...', '.......', '...P...'], { C: 'champion' });
+ const wurm=foe(s,'champion');wurm.hp=1;
+ const ev=[];dealDamage(s,ev,player(s),wurm,4,{kind:'spell'});
+ assert.equal(wurm.hp,0);assert.equal(s.phase,'player');
+ assert.equal(foe(s,'wurmTouch').power,3);assert.equal(foe(s,'wurmLife').power,3);
+ assert.ok(foe(s,'wurmTouch').keywords.deathtouch);assert.ok(foe(s,'wurmLife').keywords.lifelink);
+ assert.equal(ev.filter(e=>e.t==='summon').length,2);
 });
 
 test('Fallen Shinobi: combat damage to you exiles your top two library cards; a damage spell is played for free at you', () => {
@@ -93,7 +65,7 @@ test('The Scarab God upkeep is life LOSS (ignores shield) and counts Zombie crea
   const ev = endTurn(s);
   const loss = ev.find(e => e.t === 'damage' && e.kind === 'lifeLoss');
   assert.ok(loss, 'upkeep life loss happened'); assert.equal(loss.amount, 1, 'X = 1 Zombie (Fallen Shinobi is a Zombie Ninja)');
-  assert.ok(ev.some(e => e.t === 'legendaryAbility' && /scry 1/.test(e.name)));
+  assert.ok(ev.some(e => e.t === 'legendaryAbility' && /foresight 1/.test(e.name)));
 });
 
 test('The Scarab God reanimates from ANY graveyard as a 4/4 Zombie token copy that keeps printed keywords', () => {
@@ -138,15 +110,6 @@ test('empty library reshuffles the graveyard (never exile) deterministically at 
   assert.equal(refillFromGraveyard({ library: [{ id: 'z' }], graveyard: [{ id: 'q' }] }), 0, 'only when the library is empty');
 });
 
-test('a pending Gearhulk choice survives a JSON save/load and still resolves', () => {
-  const s = arena(['.....', '..C..', '.....', '..P..'], { C: 'champion' }, { seed: 11 });
-  const t = JSON.parse(JSON.stringify(s));
-  assert.equal(pendingChoice(t).kind, 'gearhulk');
-  player(t).maxHp = player(t).hp = 99; player(s).maxHp = player(s).hp = 99;
-  gearhulkChoice(t, 'mill'); gearhulkChoice(s, 'mill');
-  assert.equal(player(t).hp, player(s).hp); assert.deepEqual(t.opp, s.opp);
-});
-
 test('Fallen Shinobi does NOT trigger when it strikes back as a blocker (counter), only when it attacks', () => {
   const s = arena(['.....', '..R..', '..P..'], { R: 'riftstalker' });
   s.deck = createCombatDeck([{ id: 'mtg:shock', level: 1 }], 1); s.deck.library = [{ id: 'mtg:shock', level: 1 }, { id: 'mtg:giant-growth', level: 1 }];
@@ -157,9 +120,3 @@ test('Fallen Shinobi does NOT trigger when it strikes back as a blocker (counter
   assert.equal(s.deck.library.length, 0, 'exiles two when it attacks');
 });
 
-test('the forced Gearhulk choice is not counted as an accepted action (score neutral)', () => {
-  const s = arena(['.....', '..C..', '.....', '..P..'], { C: 'champion' });
-  player(s).maxHp = player(s).hp = 99;
-  const before = s.stats.actions; gearhulkChoice(s, 'draw');
-  assert.equal(s.stats.actions, before);
-});

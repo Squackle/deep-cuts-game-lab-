@@ -2,6 +2,8 @@
 // rating = power + toughness + Σ keyword weights + combo bonuses. Double Strike is worth the card's power again.
 // Packs only offer creatures whose rating fits the current BUDGET (campaign step + reward tier), measured
 // against what the graft would ADD to the current build (an ability you already have adds nothing new).
+import { traitOf } from '../cards/trait-registry.js';
+const TRAIT_VALUE = Object.freeze({ ascendant:2.5, brimaz:4, archmage:4.5, talrand:4.5, archaeomancer:1.5, bloodArtist:2.5, vito:3, sheoldred:4.5, pyromancer:3, visionary:1.5, wurmcoil:2 });
 export const KW_WEIGHT = { flying: 2.5, deathtouch: 3, trample: 1, firstStrike: 1.5, lifelink: 1.5, vigilance: 0.5, haste: 0.5 };
 export const COMBOS = [
   [['flying', 'deathtouch'], 2], [['firstStrike', 'deathtouch'], 2], [['doubleStrike', 'trample'], 2],
@@ -16,7 +18,7 @@ function comboValue(kws) { return COMBOS.reduce((a, [ks, b]) => a + (ks.every(k 
 /** Printed card rating (used for display and coarse gating). */
 export function powerRating(card) {
   if (card.kind !== 'creature') return 0;
-  return +(card.power + card.toughness + kwValue(card.keywords, card.power) + comboValue(card.keywords)).toFixed(2);
+  return +(card.power + card.toughness + kwValue(card.keywords, card.power) + comboValue(card.keywords) + (TRAIT_VALUE[traitOf(card)?.id] || 0)).toFixed(2);
 }
 /** Marginal rating of grafting `card` onto `evo` (new abilities + new combos with existing abilities). */
 export function graftRating(card, evo) {
@@ -25,7 +27,7 @@ export function graftRating(card, evo) {
   const before = comboValue(evo.keywords || {});
   const after = comboValue({ ...(evo.keywords || {}), ...card.keywords });
   const ds = card.keywords.doubleStrike && !(evo.keywords || {}).doubleStrike ? Math.max(1.5, (evo.power || 0) + card.power) - Math.max(1.5, card.power) : 0;
-  return +(card.power + card.toughness + kwValue(fresh, card.power) + ds + (after - before)).toFixed(2);
+  return +(card.power + card.toughness + kwValue(fresh, card.power) + ds + (after - before) + (TRAIT_VALUE[traitOf(card)?.id] || 0) * ((evo.absorbed || []).some(a=>a.cardId===card.id) ? 0 : 1)).toFixed(2);
 }
 /** Global campaign step: act*8 + layer depth (0..23). */
 export const stepOf = (act, depth) => act * 8 + depth;
