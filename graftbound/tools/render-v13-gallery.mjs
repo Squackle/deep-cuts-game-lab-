@@ -72,7 +72,7 @@ let composite=[];for(let i=0;i<names.length;i++){
 }
 const cell=hero.getContext('2d').getImageData(0,0,64,64);
 const png=await sharp(cell.data,{raw:{width:64,height:64,channels:4}}).resize(190,190,{kernel:'nearest'}).png().toBuffer();
-composite.push({input:png,left:70,top:125+2*290});
-composite.push({input:Buffer.from('<svg width="280" height="44"><text x="5" y="32" fill="#e6d7aa" font-family="Georgia" font-size="21">Dragon + Cat Grafts</text></svg>'),left:70,top:314+2*290});
+composite.push({input:png,left:70+300,top:125+2*290});
+composite.push({input:Buffer.from('<svg width="280" height="44"><text x="5" y="32" fill="#e6d7aa" font-family="Georgia" font-size="21">Dragon + Cat Grafts</text></svg>'),left:70+300,top:314+2*290});
 const output=process.argv[2]||'/mnt/data/GRAFTBOUND-v13-runtime-gallery.png';
 await sharp(bg).composite(composite).png().toFile(output);console.log('gallery',output);
