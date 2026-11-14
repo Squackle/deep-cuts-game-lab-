@@ -223,7 +223,7 @@ export function cast(s, spellId, x, y, xValue = 1) {
   if(s.deck)ev.push({t:'cardCastMove',id:spellId,uid:player(s).uid,name:card.name,to:card.kind==='aura'?'battlefield':'graveyard'});
   if(card.kind==='aura'){
     const target=s.units.find(u=>u.hp>0&&u.x===x&&u.y===y);
-    attachAura(target,spellId);ev.push({t:'auraAttach',uid:target.uid,id:spellId,x,y,name:card.name});
+    attachAura(target,spellId);ev.push({t:'auraCast',uid:player(s).uid,target:target.uid,id:spellId,x,y,name:card.name,color:card.color});ev.push({t:'auraAttach',uid:target.uid,id:spellId,x,y,name:card.name});
   } else castSpellEffect(s, ev, spellId, entry.level, x, y, xValue);
   if(s.deck){playFromHand(s.deck,spellId,{permanent:card.kind==='aura'});s.spellbook=s.deck.hand;}
   if(card.kind==='spell'&&/^(Instant|Sorcery)\b/.test(card.sourceInfo?.typeLine||''))onHeroSpell(s,ev);

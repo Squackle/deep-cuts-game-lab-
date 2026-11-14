@@ -128,10 +128,12 @@ export function resolveToxrillEndStep(s, ev) {
   for(const u of allies(s).filter(alive)) {
     u.slime=(u.slime||0)+1;
     u.power=Math.max(0,u.power-1);u.toughness=Math.max(0,u.toughness-1);
-    u.maxHp=Math.max(0,u.maxHp-1);u.hp=Math.min(u.hp,u.maxHp);
-    ev.push({t:'slimeCounter',uid:u.uid,by:boss.uid,total:u.slime});
+    ev.push({t:'slimeCounter',uid:u.uid,by:boss.uid,total:u.slime,phase:s.phase});
     affected++;
-    if(u.toughness<=0)checkStateBasedDeath(s,ev,u);
+    // Apply toughness-based death BEFORE clamping life to zero, otherwise
+    // checkStateBasedDeath's alive guard silently skips defeat and Slug triggers.
+    if(u.toughness<=0){checkStateBasedDeath(s,ev,u);continue;}
+    u.maxHp=Math.max(0,u.maxHp-1);u.hp=Math.min(u.hp,u.maxHp);
   }
   return affected;
 }

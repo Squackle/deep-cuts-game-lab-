@@ -102,7 +102,14 @@ export class BattleUI {
         armored: !!ap.slots.body || ap.size >= 1.45 };
       // v0.7 casting point follows the evolved body: horns/antlers/crown channel through the head.
       v.castAt = ap.slots.head ? 'head' : 'chest';
-    } else v = this.scene.addUnit(u, u.defId === 'sproutling' ? 'sproutling' : ENEMIES[u.defId].sprite, { scale: u.boss ? 0.8 : 0.95 });
+    } else {
+      const friend = u.side === 'player' && u.defId === 'sproutling';
+      const tokenKey = u.traitToken === 'elemental' ? 'mtg_friendlyElemental' :
+        u.traitToken === 'drake' ? 'mtg_friendlyDrake' :
+        u.traitToken === 'catsoldier' ? 'mtg_friendlyCatSoldier' :
+        u.name === 'Soldier' ? 'mtg_friendlySoldier' : 'mtg_friendlySproutling';
+      v = this.scene.addUnit(u, friend ? tokenKey : ENEMIES[u.defId].sprite, { scale: u.boss ? 0.8 : 0.95 });
+    }
     const el = document.createElement('div'); el.className = 'ulabel ' + (u.side === 'player' ? 'player' : 'enemy'); $('labels').appendChild(el); this.labels.set(u.uid, el);
     return v;
   }
@@ -130,7 +137,7 @@ export class BattleUI {
     }
     const u = this.s.units.find(x => x.uid === uid);
     const armor = u && u.keywords && u.keywords.armor ? `<span class="st ar">▣${u.keywords.armor}</span>` : '';
-    const st = [armor, d.grounded ? `<span class="st gr">${ICON.hook}</span>` : '', d.weakened ? `<span class="st wk">−${d.weakened}⚔</span>` : '', d.shield ? `<span class="st sh">${ICON.shield}${d.shield}</span>` : '', d.poison ? `<span class="st ps">${ICON.poison}${d.poison}</span>` : '', d.stunned ? `<span class="st sn">${ICON.stun}</span>` : '', d.empowered ? `<span class="st em">+${d.empowered}</span>` : ''].join('');
+    const st = [armor, u?.slime ? `<span class="st gb-slime" title="Toxrill: ${u.slime} slime counter(s), -${u.slime}/-${u.slime}">☣${u.slime}</span>` : '', d.grounded ? `<span class="st gr">${ICON.hook}</span>` : '', d.weakened ? `<span class="st wk">−${d.weakened}⚔</span>` : '', d.shield ? `<span class="st sh">${ICON.shield}${d.shield}</span>` : '', d.poison ? `<span class="st ps">${ICON.poison}${d.poison}</span>` : '', d.stunned ? `<span class="st sn">${ICON.stun}</span>` : '', d.empowered ? `<span class="st em">+${d.empowered}</span>` : ''].join('');
     el.innerHTML = `${intent}<div class="hpbar"><i style="width:${pct}%"></i><span>${d.hp}</span></div><div class="sts">${st}</div>`;
   }
   intentText(it) {
@@ -154,7 +161,7 @@ export class BattleUI {
       <span class="gb-reserve" tabindex="0" data-tip="Stored mana and spell charges carry across turns until used. Maximum 2 of each.">Bank ${s.p.storedMana||0} ${ICON.gem} · ${s.p.channel||0} ✧</span>
       <span class="moves" tabindex="0" data-tip="Movement left this turn (tiles). Brambles, lava and crumbling tiles hurt ground units; ice chills and spores poison.">${ICON.move}${s.phase === 'player' ? s.p.moveLeft : 0}</span>
       <span class="atk ${s.p.attacksLeft > 0 && s.phase === 'player' ? 'on' : ''}" tabindex="0" data-tip="Attacks left this turn. Attacking ends your movement unless you have Vigilance.">${ICON.sword}${s.phase === 'player' ? s.p.attacksLeft : 0}</span></div>
-      <div class="pl-kw">${kwChips(p.keywords)}${d.poison ? `<span class="chip bad" tabindex="0" data-tip="Poison: lose ${d.poison} health at the start of your turn, then it drops by 1.">${ICON.poison}Poison ${d.poison}</span>` : ''}${d.grounded ? `<span class="chip bad" tabindex="0" data-tip="Grounded: no flying and −1 movement this turn.">${ICON.hook}Grounded</span>` : ''}${p.suppressed ? `<span class="chip bad" tabindex="0" data-tip="Redacted by the Unwritten for this turn only. It returns when your turn ends.">✖ ${esc(Object.keys(p.suppressed).map(k => KEYWORDS[k].name).join(', '))}</span>` : ''}</div>`;
+      <div class="pl-kw">${kwChips(p.keywords)}${d.poison ? `<span class="chip bad" tabindex="0" data-tip="Poison: lose ${d.poison} health at the start of your turn, then it drops by 1.">${ICON.poison}Poison ${d.poison}</span>` : ''}${p.slime ? `<span class="chip bad" tabindex="0" data-tip="Toxrill adds one slime counter at each end step. Each counter gives −1/−1 while Toxrill is alive.">☣ Slime ${p.slime}</span>` : ''}${d.grounded ? `<span class="chip bad" tabindex="0" data-tip="Grounded: no flying and −1 movement this turn.">${ICON.hook}Grounded</span>` : ''}${p.suppressed ? `<span class="chip bad" tabindex="0" data-tip="Redacted by the Unwritten for this turn only. It returns when your turn ends.">✖ ${esc(Object.keys(p.suppressed).map(k => KEYWORDS[k].name).join(', '))}</span>` : ''}</div>`;
     $('enc-turn').textContent = s.phase === 'player' ? `Turn ${s.turn} · Your move` : `Turn ${s.turn} · Foes act`;
     this.renderHand(s);
     this.renderZones(s);
@@ -175,7 +182,7 @@ export class BattleUI {
         <span class="gb-zone-art gb-deck-back">${backHTML()}</span>
         <span class="gb-zone-meta"><strong>Library</strong><em>${library.length}</em></span></button>
       <button type="button" class="gb-zone gb-zone-graveyard" data-zone="graveyard" aria-label="Graveyard, ${grave.length} cards. Latest: ${esc(label)}. Inspect graveyard.">
-        <span class="gb-zone-art gb-grave-face">${last ? cardHTML(last.id || last,{small:true,uid:'graveyard-zone'}) : '<span class="gb-zone-empty">✧</span>'}</span>
+        <span class="gb-zone-art gb-grave-face">${last ? cardHTML(last.id || last,{small:true,uid:'graveyard-zone',extraClass:'gb-grave-top'}) : '<span class="gb-zone-empty">✧</span>'}</span>
         <span class="gb-zone-meta"><strong>Graveyard</strong><em>${grave.length}</em></span></button>`;
     this.positionCardZones();
   }
@@ -312,7 +319,7 @@ export class BattleUI {
     if (!u) { el.classList.remove('show'); return; }
     const def = ENEMIES[u.defId]; const it = this.intents.find(i => i.uid === u.uid);
     const friendly = u.side === 'player';
-    const type = friendly ? (u.hero ? 'Your creature' : 'Summoned ally · Soldier') : (def?.role || 'Foe');
+    const type = friendly ? (u.hero ? 'Your creature' : `Summoned ally · ${u.name}`) : (def?.role || 'Foe');
     const statuses = Object.entries(u.statuses || {}).filter(([, val]) => typeof val === 'number' && val > 0)
       .map(([name, val]) => `<span class="chip ${name === 'poison' || name === 'weakened' ? 'bad' : ''}">${esc(name)} ${val}</span>`).join('');
     const currentPower = Math.max(0, u.power + (u.statuses?.empowered || 0) - (u.statuses?.weakened || 0));
@@ -322,9 +329,9 @@ export class BattleUI {
       <div class="in-hp">${ICON.heart}${u.hp}/${u.maxHp}${u.statuses?.shield ? ` · ${ICON.shield}${u.statuses.shield}` : ''}${u.boss ? ` · Printed ${u.power}/${u.toughness} · Legendary Vitality +${u.legendaryVitality || 0} · Deathtouch cannot instantly destroy this boss · Phase ${bossPhaseOf(u)}/3 · ${esc(bossPhaseName(u))}` : ''}</div>
       <p class="in-stats">Movement ${u.move} · Base attack ${u.power}${currentPower !== u.power ? ` → <b>${currentPower} buffed</b>` : ''} · ${friendly ? 'Friendly' : 'Hostile'}</p>
       ${Object.keys(u.keywords || {}).length ? `<div class="in-kw">${kwChips(u.keywords)}</div>` : ''}
-      ${statuses ? `<div class="in-status">${statuses}</div>` : ''}
+      ${statuses || u.slime ? `<div class="in-status">${statuses}${u.slime ? `<span class="chip bad">☣ Slime ${u.slime} · −${u.slime}/−${u.slime} while Toxrill lives</span>` : ''}</div>` : ''}
       ${def?.affinity ? `<div class="in-affinity"><span>Resists ${esc(def.affinity.resist)} spells −1 damage</span><span>Weak to ${esc(def.affinity.weak)} spells +1 damage</span></div>` : ''}
-      <p>${esc(friendly ? (u.hero ? 'Your evolving graftbound form.' : 'A Soldier summoned by Raise the Alarm. It acts automatically when your turn ends. Friendly-target spells can enhance or shield it.') : (def?.blurb || ''))}</p>
+      <p>${esc(friendly ? (u.hero ? 'Your evolving graftbound form.' : `${u.name} ally. It acts automatically when your turn ends. Friendly-target spells can enhance or shield it.`) : (def?.blurb || ''))}</p>
       ${it ? `<p class="in-intent">${esc(this.intentText(it))}</p>` : ''}${this.previewHTML(preview)}`;
     el.classList.add('show');
   }
@@ -552,8 +559,14 @@ export class BattleUI {
   async playSpell(e) {
     const sc = this.scene; const c = getCard(e.id); const kind = e.vfx && VFX[e.vfx] ? e.vfx : (DEFAULT_VFX[c.effect || e.id] || 'fire');
     if (kind === 'teleport') { sc.play(e.uid, 'cast'); this.audio.play('spell'); return; }
+    if (c.color === 'umbral' && sc.units.get(e.uid)) {
+      const source=sc.centerPos(e.uid);
+      sc.fx.burst(source,[0.16,0.09,0.19],12,{speed:0.45,up:0.5,grav:-0.06,size:9});
+    }
     const to = e.target != null && sc.units.get(e.target) ? sc.centerPos(e.target) : [...this.tile(e.x, e.y)];
     if (e.target == null) to[1] = 0.3;
+    if (c.color === 'umbral' && sc.units.get(e.uid))
+      sc.fx.swirl(sc.centerPos(e.uid),()=>to,[0.14,0.1,0.2],14,0.36);
     const tgtView = e.target != null && sc.units.get(e.target) ? e.target : null;
     const tiles = []; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const w = this.tile(e.x + dx, e.y + dy); tiles.push([w[0], 0, w[2]]); }
     if (kind === 'lightningBolt' || kind === 'chain') setTimeout(() => this.audio.play('crackle'), 120 / this.app.animFactor());
@@ -688,17 +701,36 @@ export class BattleUI {
         case 'mirror': { sc.screenFlash([0.85, 0.8, 1], 0.25); this.float(e.uid, `Copies your ${KEYWORDS[e.keyword].name}!`, 'warn'); au.play('spell'); await this.wait(300); break; }
         case 'bossPhase': this.audio.play('bossPhase'); sc.screenFlash([0.6, 0.35, 0.15], 0.3); if (!sc.reduced) sc.shake(0.12); await this.banner(e.phase ? `Phase ${e.phase} · ${e.text}` : (e.text || 'The foe changes'), 'boss'); break;
         case 'stunnedSkip': this.float(e.uid, 'Stunned', 'note'); await this.wait(200); break;
+        case 'slimeCounter': { const u=this.s.units.find(unit=>unit.uid===e.uid);if(u){this.float(e.uid,`☣ Slime ${e.total} · −${e.total}/−${e.total}`,'poison');sc.fx.burst(sc.centerPos(e.uid),[0.38,0.65,0.18],10,{speed:0.48,up:0.48,size:9});this.renderLabel(e.uid);if(u.hero)this.renderHUD();}au.play('poison');await this.wait(120);break; }
         case 'cardDraw': au.play('flip'); await this.cardAnimations.play('draw',e); break;
         case 'deckReshuffle': au.play('flip'); await this.cardAnimations.play('shuffle',e); if (sc.units.get(e.uid)) this.float(e.uid, `Graveyard reshuffled · ${e.count} card${e.count === 1 ? '' : 's'}`, 'note'); break;
         case 'equipmentAttach': {au.play('click'); const hero=this.s?.units.find(u=>u.hero); if(hero){const ap=deriveAppearance(this.run.evo);this.scene.setUnitTexture(hero.uid,composeEquippedSheet(this.app.assets,ap,hero.equipment||[]),Math.min(1.22,ap.size));}break;}
         case 'cardCastMove': await this.cardAnimations.play('cast',e); break;
         case 'cardReturn': await this.cardAnimations.play('return',e); break;
         case 'cardDiscard': au.play('flip'); await this.cardAnimations.play('discard',e); this.float(player(this.s).uid,'Card to graveyard','note'); break;
+        case 'auraCast': {
+          const from=sc.units.get(e.uid)?sc.centerPos(e.uid):null;
+          const to=sc.units.get(e.target)?sc.centerPos(e.target):[...this.tile(e.x,e.y)];
+          const gift=e.id==='mtg:gift-of-immortality';
+          const color=gift?[1,0.91,0.54]:e.color==='umbral'?[0.22,0.13,0.32]:[0.8,0.7,1];
+          if(from){sc.play(e.uid,'cast');sc.addBolt({a:from,b:to,life:gift?0.55:0.35,width:gift?0.13:0.065,col:color,branches:gift?0:2,segs:9});
+            await sc.projectile(from,to,color,gift?0.48:0.3,gift?0.05:0.24,{size:gift?26:18});}
+          sc.fx.burst(to,color,gift?30:15,{speed:gift?0.9:0.65,up:1.5});au.play(gift?'heal':'spell');break;
+        }
         case 'auraAttach': {const w=this.tile(e.x,e.y);sc.fx.burst([w[0],0.4,w[2]],[0.85,0.65,1],16,{speed:0.7,up:1.3});au.play('spell');this.float(e.uid,esc(e.name||'Enchanted'),'note');break;}
         case 'auraBreak': au.play('block'); this.float(e.uid,'Aura shattered','warn'); break;
         case 'revive': au.play('heal');this.float(e.uid,'Gift of Immortality!','note');break;
         case 'legendaryFlame': au.play('fireboom');sc.screenFlash([1,0.45,0.18],0.35);break;
         case 'legendaryAbility': au.play('bossPhase'); if (e.name && sc.units.get(e.uid)) this.float(e.uid, esc(e.name), 'note'); break;
+        case 'graftTrigger': if(e.name && sc.units.get(e.uid)){
+          this.float(e.uid,esc(e.name),'note');
+          if (/Blood Artist|Vito|Sheoldred/i.test(e.name)) {
+            const from=sc.centerPos(e.uid), target=this.s.units.filter(u=>u.side==='enemy'&&u.hp>0).sort((a,b)=>a.uid-b.uid)[0];
+            sc.fx.burst(from,[0.14,0.08,0.17],11,{speed:0.4,up:0.35});
+            if(target&&sc.units.get(target.uid))sc.fx.swirl(from,()=>sc.centerPos(target.uid),[0.2,0.12,0.27],15,0.36);
+          }
+          await this.wait(110);break;
+        }
         case 'realAbility': if (e.name && sc.units.get(e.uid)) { this.float(e.uid, esc(e.name), 'note'); await this.wait(180); } break;
         case 'shinobiExile': au.play('flip'); if (sc.units.get(e.uid)) this.float(e.uid, `Exiled: ${esc(e.name)}`, 'warn'); await this.wait(220); break;
         case 'victory': au.play('victory'); await this.banner('Victory', 'win'); break;

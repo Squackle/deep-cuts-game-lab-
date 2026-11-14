@@ -42,7 +42,7 @@ const ACT_LORE = [
 ];
 const NODE_TIP = { battle: 'Skirmish: a normal battle, then a booster of 3 real cards. Scored.', tutorial: 'Your first battle. Scored.', elite: 'Elite Lair: harder foes, a stronger booster, ×1.25 score.',
   shrine: 'Wayshrine: one offering, no battle. Not scored.', event: 'Mystery: a special encounter with an explicit choice. Not scored.', boss: 'Act boss: multi-phase fight, full heal after, ×1.5 score.' };
-export function showScreen(html, cls = '') { const el = $('screen'); el.className = 'screen show ' + cls; el.innerHTML = html; return el; }
+export function showScreen(html, cls = '') { const el = $('screen'); el.className = 'screen show ' + cls; el.innerHTML = html; el.scrollTop = 0; el.scrollLeft = 0; return el; }
 export function hideScreen() { const el = $('screen'); el.className = 'screen'; el.innerHTML = ''; }
 
 export function titleScreen(app) {
@@ -288,9 +288,16 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
   return new Promise(res => {
     let opened = false, opening = null, claimed = false, ceremonySkipped = false;
     const ceremonyButton = $('rw-ceremony-skip');
+    // Reward rows are horizontally scrollable on phones. Center the first/selected
+    // card using the row's own scroll offset, never scroll the entire reward page.
+    const centerSlot = slot => {
+      if (!slot || !window.matchMedia('(max-width: 760px)').matches) return;
+      fan.scrollLeft = Math.max(0, slot.offsetLeft - fan.offsetLeft - (fan.clientWidth - slot.offsetWidth) / 2);
+    };
+    const enterFan = () => requestAnimationFrame(() => centerSlot(fan.querySelector('.slot:nth-child(2)')));
     const finishOpen = () => {
       pack.classList.remove('charging', 'broken');
-      pack.classList.add('open', 'gone'); fan.classList.add('out');
+      pack.classList.add('open', 'gone'); fan.classList.add('out'); enterFan();
       ceremonyButton.hidden = true;
       $('rw-sub').textContent = 'Reveal the three fragments';
       const sk = $('rw-skip'); if (sk) sk.hidden = false;
@@ -306,7 +313,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
       await wait(520); if (ceremonySkipped) return;
       pack.classList.add('broken'); app.audio.play('tear'); if (sc) { sc.screenFlash([1, 0.92, 0.7], 0.25); sc.fx.burst([0, 1.4, 0], [1, 0.85, 0.45], 60, { speed: 3, up: 2 }); }
       await wait(320); if (ceremonySkipped) return;
-      pack.classList.add('open'); fan.classList.add('out');
+      pack.classList.add('open'); fan.classList.add('out'); enterFan();
       await wait(380); if (ceremonySkipped) return; pack.classList.add('gone'); ceremonyButton.hidden = true;
       $('rw-sub').textContent = 'Reveal the three fragments'; const sk = $('rw-skip'); if (sk) sk.hidden = false;
     })());
@@ -329,7 +336,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
       const slot = e.target.closest('.slot'); if (!slot) return;
       if (!opened) { await open(); return; }
       if (reveal(slot)) return;
-      fan.querySelectorAll('.slot').forEach(s => s.classList.toggle('sel', s === slot)); showDetail(slot.dataset.id);
+      fan.querySelectorAll('.slot').forEach(s => s.classList.toggle('sel', s === slot)); centerSlot(slot); showDetail(slot.dataset.id);
       if (matchMedia('(max-width: 760px)').matches) $('rw-detail').scrollIntoView({ behavior: instant ? 'auto' : 'smooth', block: 'nearest' });
     });
     fan.addEventListener('dblclick', e => {
@@ -353,11 +360,12 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
         const { evo, change } = absorb(run.evo, c);
         const before = runStats(run), after = deriveStats(evo, { sparkBonus: run.sparkBonus, baseSpark: before.spark - run.sparkBonus - 2 * (run.evo.resonance || 0), manaBonus: run.manaBonus || 0 });
         const gained = change.gained.map(k => `<span class="chip new" data-tip="${esc(KEYWORDS[k].text)}">${KEYWORDS[k].glyph} ${esc(keywordLabel(k, evo.keywords[k]))}</span>`).join('');
+        const ability = c.trait ? `<span class="chip new gb-graft-ability" title="${esc(c.adaptationNote)}">✦ ${esc(c.name)} ability</span><p class="gb-graft-note">${esc(c.adaptationNote)}</p>` : '';
         body = `<div class="becomes"><span class="lbl">${full ? 'Release one graft, then become' : 'You become'}</span><span class="ptbig">${run.evo.power}/${run.evo.toughness} <i>→</i> <b>${evo.power}/${evo.toughness}</b>${full ? ' <small>(before release)</small>' : ''}</span>
           <span class="hp">${ICON.heart} ${before.maxHealth} → ${after.maxHealth} max health${after.move !== before.move ? ` · ${ICON.move} ${before.move} → ${after.move} move` : ''}</span>
-          <div class="chips">${gained}${change.resonance ? `<span class="chip res" data-tip="Abilities you already have resonate: +2 Spark (max health) each.">Resonance +${change.resonance * 2} Spark</span>` : ''}</div></div>
+          <div class="chips">${gained}${ability}${change.resonance ? `<span class="chip res" data-tip="Abilities you already have resonate: +2 Spark (max health) each.">Resonance +${change.resonance * 2} Spark</span>` : ''}</div></div>
           ${full ? `<div class="release"><p>Your body holds <b>${graftCapacity(run)}</b> grafts in this act. Choose one to release (its power, toughness and abilities leave you):</p>
-            ${run.evo.absorbed.map((a, i) => { const ac = getCard(a.cardId); return `<label><input type="radio" name="rel" value="${i}"><b>${esc(a.name)}</b><small>${ac && ac.kind === 'creature' ? `+${ac.power}/+${ac.toughness}${Object.keys(ac.keywords).length ? ' · ' + Object.keys(ac.keywords).map(k => KEYWORDS[k].name).join(', ') : ''}` : ''}</small></label>`; }).join('')}</div>` : ''}
+            ${run.evo.absorbed.map((a, i) => { const ac = getCard(a.cardId); return `<label><input type="radio" name="rel" value="${i}"><b>${esc(a.name)}</b><small>${ac && ac.kind === 'creature' ? `+${ac.power}/+${ac.toughness}${Object.keys(ac.keywords).length ? ' · ' + Object.keys(ac.keywords).map(k => KEYWORDS[k].name).join(', ') : ''}${ac.trait ? ' · ✦ ' + esc(ac.adaptationNote) : ''}` : ''}</small></label>`; }).join('')}</div>` : ''}
           ${sourcePanelHTML(id)}<button type="button" class="btn primary big" data-take ${full ? 'disabled' : ''}>Graft ${esc(c.name)}</button>`;
       } else {
         const e = run.spellbook.find(s => s.id === id);
