@@ -154,16 +154,24 @@ export async function growth(sc, { from, to, target, uid, charged = false }) {
 }
 /** Drain: a dark bolt strikes, then motes of life stream back into the caster. */
 export async function drain(sc, { from, to, target, uidFrom, charged = false, power = 1 }) {
-  const RED = [0.9, 0.2, 0.35]; const hand = charged ? from : add(from, [0, 0.2, 0]);
-  sc.addBolt({ a: hand, b: to, life: 1.3, width: 0.02 + 0.02 * power, col: [0.55, 0.15, 0.45], segs: 8, grow: 0.3 });   // sustained tether; heavier for bigger drains   // dark tether from caster to target
-  await sc.projectile(hand, to, RED, 0.28, 0.3, { size: 30 });
-  if (target != null) sc.hit(target, RED, false);
-  sc.fx.swirl(to, () => sc.centerPos(uidFrom), [1, 0.4, 0.5], Math.round(28 + 22 * power), 1.2); sc.light(to, RED, 2.4, 0.5, 1.6);
+  const SHADE=[0.35,0.12,0.42], HEART=[0.95,0.12,0.22], hand=charged?from:add(from,[0,0.2,0]);
+  // A five-fingered silhouette extends from the caster, closes over the foe, then tears a crimson soul back.
+  await sc.projectile(hand,to,SHADE,0.25,0.18,{size:30});
+  for(let finger=0;finger<5;finger++){
+    const a=(finger-2)*0.35, tip=[to[0]+Math.sin(a)*0.26,to[1]+0.22+Math.cos(a)*0.18,to[2]+Math.cos(a)*0.18];
+    sc.addBolt({a:hand,b:tip,life:0.52,width:0.025,col:SHADE,segs:3,grow:0.08});
+    sc.addBolt({a:tip,b:to,life:0.5,width:0.038,col:[0.18,0.07,0.2],segs:2,grow:0.12});
+  }
+  if(target!=null)sc.hit(target,HEART,false);
+  sc.fx.burst(to,HEART,Math.round(14+12*power),{speed:0.7,up:0.3,size:13});
+  await sc.projectile(to,hand,HEART,0.42,0.38,{size:30+power*8});
+  sc.fx.swirl(hand,()=>sc.centerPos(uidFrom),HEART,Math.round(20+12*power),0.65);
+  sc.light(hand,HEART,2.8,0.42,1.5);
 }
 /** Summoning: a rotating ground glyph and a rising column precede materialization. */
 export async function summon(sc, { from, to, charged = false }) {
   const G = [1, 0.9, 0.55];
-  if (charged && from) { await sc.projectile(from, [to[0], 0.4, to[2]], G, 0.28, 0.6, { size: 22 }); sc.fx.burst([to[0], 0.2, to[2]], G, 16, { speed: 1, up: 1.5 }); return; }   // magic travels to the spot; the circle forms when the Soldier materializes
+  if (from) { await sc.projectile(from, [to[0], 0.4, to[2]], G, 0.27, 0.5, { size: 20 }); sc.fx.burst([to[0], 0.2, to[2]], G, 16, { speed: 1, up: 1.5 }); if (charged) return; }   // magic travels to the spot; the circle forms when the Soldier materializes
   sc.addRing({ pos: [to[0], 0.03, to[2]], r0: 0.55, r1: 0.5, life: 0.9, col: G, width: 0.06, spokes: 8, spin: 3 });
   for (let i = 0; i < 30; i++) sc.fx.emit({ pos: [to[0] + R() * 0.5, 0.05, to[2] + R() * 0.5], vel: [0, 1.8 + Math.random(), 0], col: [1, 0.95, 0.7, 1], size: 9, life: 0.6, drag: 0.2 }, true);
   sc.light(add(to, [0, 0.5, 0]), G, 2.4, 0.8, 1.6); await sleep(sc, 300);
@@ -208,10 +216,23 @@ export async function snakeskin(sc, { from, to, target, charged = false }) {
   if (target != null) { const v = sc.units.get(target); if (v) { v.flash = 0.6; v.flashCold = 1; } }
   await sleep(sc, 210);
 }
-export const VFX = { snakeskin, disfigure, titanic, pyroclasm, lightningBolt, spark, shock, chain, fire, flameSlash, fireball, frost, poison, heal, salve, shield, growth, drain, summon, wind };
+/** Distinct hand-authored cast identities for the expanded real-card spellbook. */
+export async function strikeBolt(sc, args) { await lightningBolt(sc, args); }
+export async function murder(sc, args) { await disfigure(sc, args); }
+export async function revitalize(sc, args) { await heal(sc, args); }
+export async function divination(sc, { from }) {
+  const A = [0.45, 0.65, 1];
+  for (let i = 0; i < 2; i++) {
+    sc.addRing({pos:[from[0], 0.3+i*0.25, from[2]],r0:0.2,r1:0.55,life:0.45,col:A,width:0.06,spokes:4,spin:2});
+    sc.fx.burst([from[0],0.5,from[2]],A,10,{speed:0.7,up:1.2,size:12});
+  }
+  sc.light(from,A,2,0.5,1.3);await sleep(sc,180);
+}
+export const VFX = { strikeBolt, murder, revitalize, divination, snakeskin, disfigure, titanic, pyroclasm, lightningBolt, spark, shock, chain, fire, flameSlash, fireball, frost, poison, heal, salve, shield, growth, drain, summon, wind };
 /** The 13 curated real spells and their unique VFX identities (dev/vfx.html gallery + tests). */
 export const SPELL_VFX = { 'Shock': 'shock', 'Lightning Bolt': 'lightningBolt', 'Flame Slash': 'flameSlash', 'Arc Lightning': 'chain', 'Fireball': 'fireball', 'Giant Growth': 'growth',
   'Drain Life': 'drain', 'Infest': 'poison', 'Raise the Alarm': 'summon', 'Healing Hands': 'heal', 'Healing Salve': 'salve', 'Feat of Resistance': 'shield', 'Frost Breath': 'frost',
-  'Snakeskin Veil': 'snakeskin', 'Disfigure': 'disfigure', 'Titanic Growth': 'titanic', 'Pyroclasm': 'pyroclasm' };
+  'Snakeskin Veil': 'snakeskin', 'Disfigure': 'disfigure', 'Titanic Growth': 'titanic', 'Pyroclasm': 'pyroclasm',
+  'Lightning Strike': 'strikeBolt', 'Murder': 'murder', 'Revitalize': 'revitalize', 'Divination': 'divination' };
 /** Template/legacy effect -> default visual family (used when a card has no explicit vfx). */
 export const DEFAULT_VFX = { ember_dart: 'fire', chain_lightning: 'chain', starfall: 'fireball', venom_mist: 'poison', mending_rain: 'heal', barkskin: 'shield', sap_surge: 'growth', soul_siphon: 'drain', call_sproutling: 'summon', rootsnare: 'frost', gale_push: 'wind', blink_step: 'teleport' };

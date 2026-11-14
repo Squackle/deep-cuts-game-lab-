@@ -59,7 +59,7 @@ export function buildEnvironment(battle, seed = 1, themeId = 'hollow') {
     if (t === TILE.BRAMBLE || t === TILE.SPORES) mat = MAT.dirt;
     if (t === TILE.ICE) mat = MAT.water;
     if (t === TILE.UNSTABLE || t === TILE.CRUMBLE) mat = MAT.basalt;
-    if (t === TILE.CONDUIT) mat = MAT.rune;
+    if (t === TILE.CONDUIT || t === TILE.ARCHIVE) mat = MAT.rune;
     if (t === TILE.LEYLINE || t === TILE.RIFT) mat = MAT.rune;
     if (t === TILE.LAVA) {   // lava sits as a recessed glowing pool; its rim is basalt
       g.material(MAT.basalt, q => q.slab(cx, cz, 0.97, 0.97, TILE_BOTTOM, -0.03, 0.03, [0.5, 0.45, 0.42, 1], [0.6, 0.55, 0.5, 1]));
@@ -78,6 +78,7 @@ export function buildEnvironment(battle, seed = 1, themeId = 'hollow') {
     if (t === TILE.ICE) { lights.push({ pos: [cx, 0.3, cz], col: [0.46, 0.85, 1], radius: 1.8, intensity: 0.45, flicker: 0.06, prio: 0 }); emitters.push({ kind: 'rift', pos: [cx, 0.02, cz] }); }
     if (t === TILE.SPORES) { foliage.push({ kind: 'mushroom', x: cx - 0.14, z: cz, s: 0.52 }); lights.push({ pos: [cx, 0.18, cz], col: [0.4, 1, 0.42], radius: 1.3, intensity: 0.35, flicker: 0.15, prio: 0 }); }
     if (t === TILE.UNSTABLE) { lights.push({ pos: [cx, 0.1, cz], col: [1, 0.36, 0.17], radius: 1.4, intensity: 0.4, flicker: 0.15, prio: 0 }); }
+    if (t === TILE.ARCHIVE) { lights.push({ pos: [cx, 0.24, cz], col: [0.58, 0.6, 1], radius: 1.65, intensity: 0.75, flicker: 0.12, prio: 1 }); emitters.push({ kind: 'ley', pos: [cx, 0.03, cz] }); }
     if (t === TILE.CONDUIT) { lights.push({ pos: [cx, 0.35, cz], col: [0.4, 0.9, 1], radius: 2.1, intensity: 0.85, flicker: 0.12, prio: 2 }); emitters.push({ kind: 'ley', pos: [cx, 0.04, cz] }); }
     if (t === TILE.CRUMBLE) { foliage.push({ kind: 'shard', x: cx, z: cz, s: 0.42 }); }
     if (t === TILE.LEYLINE) { lights.push({ pos: [cx, 0.35, cz], col: [1, 0.78, 0.35], radius: 1.8, intensity: 0.9, flicker: 0.15, prio: 1 }); emitters.push({ kind: 'ley', pos: [cx, 0.02, cz] }); }

@@ -25,6 +25,10 @@ export const REAL_CREATURES = [
   C('Knight of Meadowgrain', '{W}{W}', 2, 'Creature — Kithkin Knight', 2, 2, ['First strike', 'Lifelink'], ['W'], 'uncommon'),
   C('Pillarfield Ox', '{3}{W}', 4, 'Creature — Ox', 2, 4, [], ['W'], 'common'),
   C('Serra Angel', '{3}{W}{W}', 5, 'Creature — Angel', 4, 4, ['Flying', 'Vigilance'], ['W'], 'uncommon'),
+  C('Eager Cadet', '{W}', 1, 'Creature — Human Soldier', 1, 1, [], ['W'], 'common'),
+  C('Daybreak Chaplain', '{1}{W}', 2, 'Creature — Human Cleric', 1, 3, ['Lifelink'], ['W'], 'common'),
+  C('Concordia Pegasus', '{1}{W}', 2, 'Creature — Pegasus', 1, 3, ['Flying'], ['W'], 'common'),
+  C('Armored Warhorse', '{W}{W}', 2, 'Creature — Horse', 2, 3, [], ['W'], 'common'),
   // Blue
   C('Fugitive Wizard', '{U}', 1, 'Creature — Human Wizard', 1, 1, [], ['U'], 'common'),
   C('Coral Merfolk', '{1}{U}', 2, 'Creature — Merfolk', 2, 1, [], ['U'], 'common'),
@@ -33,6 +37,8 @@ export const REAL_CREATURES = [
   C('Snapping Drake', '{3}{U}', 4, 'Creature — Drake', 3, 2, ['Flying'], ['U'], 'common'),
   C('Air Elemental', '{3}{U}{U}', 5, 'Creature — Elemental', 4, 4, ['Flying'], ['U'], 'uncommon'),
   C('Mahamoti Djinn', '{4}{U}{U}', 6, 'Creature — Djinn', 5, 6, ['Flying'], ['U'], 'rare'),
+  C('Tolarian Scholar', '{2}{U}', 3, 'Creature — Human Wizard', 2, 3, [], ['U'], 'common'),
+  C('Phantom Monster', '{3}{U}', 4, 'Creature — Illusion', 3, 3, ['Flying'], ['U'], 'common'),
   // Black
   C('Typhoid Rats', '{B}', 1, 'Creature — Rat', 1, 1, ['Deathtouch'], ['B'], 'common'),
   C("Pharika's Chosen", '{B}', 1, 'Creature — Snake', 1, 1, ['Deathtouch'], ['B'], 'common'),
@@ -41,6 +47,10 @@ export const REAL_CREATURES = [
   C('Gifted Aetherborn', '{B}{B}', 2, 'Creature — Aetherborn Vampire', 2, 3, ['Deathtouch', 'Lifelink'], ['B'], 'uncommon'),
   C('Vampire Nighthawk', '{1}{B}{B}', 3, 'Creature — Vampire Shaman', 2, 3, ['Flying', 'Deathtouch', 'Lifelink'], ['B'], 'uncommon'),
   C('Feral Abomination', '{5}{B}', 6, 'Creature — Thrull', 5, 5, ['Deathtouch'], ['B'], 'common'),
+  C('Scathe Zombies', '{2}{B}', 3, 'Creature — Zombie', 2, 2, [], ['B'], 'common'),
+  C('Dross Crocodile', '{3}{B}', 4, 'Creature — Crocodile', 5, 1, [], ['B'], 'common'),
+  C('Giant Scorpion', '{2}{B}', 3, 'Creature — Scorpion', 1, 3, ['Deathtouch'], ['B'], 'common'),
+  C('Zombie Goliath', '{4}{B}', 5, 'Creature — Zombie Giant', 4, 3, [], ['B'], 'common'),
   // Red
   C('Raging Goblin', '{R}', 1, 'Creature — Goblin Berserker', 1, 1, ['Haste'], ['R'], 'common'),
   C('Gray Ogre', '{2}{R}', 3, 'Creature — Ogre', 2, 2, [], ['R'], 'common'),
@@ -49,6 +59,9 @@ export const REAL_CREATURES = [
   C('Fire Elemental', '{3}{R}{R}', 5, 'Creature — Elemental', 5, 4, [], ['R'], 'common'),
   C('Charging Monstrosaur', '{4}{R}', 5, 'Creature — Dinosaur', 5, 5, ['Trample', 'Haste'], ['R'], 'uncommon'),
   C('Volcanic Dragon', '{4}{R}{R}', 6, 'Creature — Dragon', 4, 4, ['Flying', 'Haste'], ['R'], 'uncommon'),
+  C('Goblin Piker', '{1}{R}', 2, 'Creature — Goblin Warrior', 2, 1, [], ['R'], 'common'),
+  C('Canyon Minotaur', '{3}{R}', 4, 'Creature — Minotaur Warrior', 3, 3, [], ['R'], 'common'),
+  C('Ogre Resister', '{2}{R}{R}', 4, 'Creature — Ogre', 4, 3, [], ['R'], 'common'),
   // Green
   C('Grizzly Bears', '{1}{G}', 2, 'Creature — Bear', 2, 2, [], ['G'], 'common'),
   C('Runeclaw Bear', '{1}{G}', 2, 'Creature — Bear', 2, 2, [], ['G'], 'common'),
@@ -62,8 +75,14 @@ export const REAL_CREATURES = [
   C('Craw Wurm', '{4}{G}{G}', 6, 'Creature — Wurm', 6, 4, [], ['G'], 'common'),
   C('Colossal Dreadmaw', '{4}{G}{G}', 6, 'Creature — Dinosaur', 6, 6, ['Trample'], ['G'], 'common'),
   C('Ancient Brontodon', '{6}{G}{G}', 8, 'Creature — Dinosaur', 9, 9, [], ['G'], 'common'),
+  C('Kalonian Tusker', '{G}{G}', 2, 'Creature — Beast', 3, 3, [], ['G'], 'uncommon'),
+  C('Trained Armodon', '{1}{G}{G}', 3, 'Creature — Elephant', 3, 3, [], ['G'], 'common'),
+  C('Vastwood Gorger', '{5}{G}', 6, 'Creature — Wurm', 5, 6, [], ['G'], 'common'),
+  C('Leatherback Baloth', '{G}{G}{G}', 3, 'Creature — Beast', 4, 5, [], ['G'], 'uncommon'),
   // Multicolor & colorless
-  C('Boros Swiftblade', '{R}{W}', 2, 'Creature — Human Soldier', 1, 2, ['Double strike'], ['R', 'W'], 'uncommon'),
+  C('Watchwolf', '{G}{W}', 2, 'Creature — Wolf', 3, 3, [], ['G', 'W'], 'uncommon'),
+  C('Woolly Thoctar', '{R}{G}{W}', 3, 'Creature — Beast', 5, 4, [], ['R', 'G', 'W'], 'uncommon'),
+  C('Boros Swiftblade' , '{R}{W}', 2, 'Creature — Human Soldier', 1, 2, ['Double strike'], ['R', 'W'], 'uncommon'),
   C('Skyknight Legionnaire', '{1}{R}{W}', 3, 'Creature — Human Knight', 2, 2, ['Flying', 'Haste'], ['R', 'W'], 'common'),
   C('Ornithopter', '{0}', 0, 'Artifact Creature — Thopter', 0, 2, ['Flying'], [], 'common'),
   C('Bronze Sable', '{2}', 2, 'Artifact Creature — Sable', 2, 1, [], [], 'common'),
@@ -87,6 +106,10 @@ export const REAL_SPELLS = [
   S('Titanic Growth', '{1}{G}', 2, 'Instant', ['G'], 'common'),
   S('Snakeskin Veil', '{G}', 1, 'Instant', ['G'], 'common'),
   S('Pyroclasm', '{1}{R}', 2, 'Sorcery', ['R'], 'uncommon'),
+  S('Lightning Strike', '{1}{R}', 2, 'Instant', ['R'], 'common'),
+  S('Murder', '{1}{B}{B}', 3, 'Instant', ['B'], 'common'),
+  S('Revitalize', '{1}{W}', 2, 'Instant', ['W'], 'common'),
+  S('Divination', '{2}{U}', 3, 'Sorcery', ['U'], 'common'),
 ];
 
 /** Turn a pool entry into the same normalized record shape scryfall-adapter.normalizeCard() produces. */

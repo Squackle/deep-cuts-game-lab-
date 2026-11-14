@@ -27,6 +27,10 @@ export const CAST_PROFILE = {
   wind:          { col: [0.85, 0.95, 1], gather: 120, build: 60,  tier: 0, motes: 16, cue: 'castArcane', origin: 'hands' },
   disfigure:     { col: [0.55, 0.25, 0.7], gather: 160, build: 90, tier: 0, motes: 22, cue: 'castDark',   origin: 'hands' },
   titanic:       { col: [0.45, 1, 0.35],  gather: 300, build: 200, tier: 2, motes: 56, fromGround: true, cue: 'castNature', origin: 'chest', self: true },
+  strikeBolt:    { col:[0.65,0.85,1],gather:220,build:110,tier:1,motes:32,arcs:3,cue:'charge',origin:'hands' },
+  murder:        { col:[0.4,0.12,0.45],gather:220,build:110,tier:1,motes:34,cue:'castDark',origin:'hands' },
+  revitalize:    { col:[0.85,1,0.65],gather:200,build:115,tier:1,motes:30,cue:'castHoly',origin:'hands',self:true },
+  divination:    { col:[0.45,0.65,1],gather:180,build:120,tier:1,motes:28,cue:'castArcane',origin:'chest',self:true },
   pyroclasm:     { col: [1, 0.42, 0.1],   gather: 320, build: 260, tier: 2, motes: 60, embers: true, fromGround: true, cue: 'castFire', origin: 'chest', self: true, core: true },
 };
 /** v0.8 pacing: normal-speed casts are deliberately slower and more readable than v0.7 (the brief: "too fast"),
@@ -83,6 +87,7 @@ export const CAST_SIGNATURES = Object.freeze({
   fire: [5,0.7], fireball: [9,1.1], flameSlash: [2,0.5], pyroclasm: [12,1.3],
   growth: [6,0.7], titanic: [8,1], snakeskin: [4,0.45],
   frost: [6,0.85], drain: [5,-0.7], disfigure: [3,-0.35], poison: [9,-0.3],
+  strikeBolt: [6,0.8], murder: [5,-0.8], revitalize: [7,0.5], divination: [6,0.7],
   summon: [8,0.6], heal: [10,0.5], salve: [4,0.35], shield: [6,0.2], wind: [4,1.5],
 });
 export function castSignature(sc, kind, at, power, manaTier = profileFor(kind).tier + 1) {
@@ -188,6 +193,7 @@ export const AFTERMATH_SIGILS = Object.freeze({
   growth: 'roots', titanic: 'roots', snakeskin: 'roots',
   frost: 'snowflake', drain: 'void', disfigure: 'void', poison: 'spores',
   summon: 'sunburst', heal: 'sunburst', salve: 'sunburst', shield: 'ward', wind: 'wind',
+  strikeBolt:'storm',murder:'void',revitalize:'sunburst',divination:'ward',
 });
 const RESIDUE = Object.freeze({
   spark: { spokes: 3, seg: 8, spin: 0, radius: 0.42 },

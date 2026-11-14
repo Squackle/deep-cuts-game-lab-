@@ -54,7 +54,7 @@ test('Gearhulk draw: no damage; the opponent casts at most one drawn creature pe
 });
 
 test('Gearhulk choice is a strict replay decision', () => {
-  assert.equal(RULES_VERSION, 'graftbound-rules-1.2.4-beta');
+  assert.equal(RULES_VERSION, 'graftbound-rules-1.2.5-beta');
   assert.ok(validDecision({ seq: 0, type: 'gearhulk', choice: 'mill' }, 0));
   assert.ok(!validDecision({ seq: 0, type: 'gearhulk', choice: 'both' }, 0));
   assert.ok(!validDecision({ seq: 0, type: 'gearhulk', choice: 'draw', extra: 1 }, 0));

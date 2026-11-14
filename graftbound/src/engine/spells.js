@@ -6,6 +6,7 @@ import { inBounds, unitAt, tileAt, T, manhattan } from '../core/grid.js';
 import { dealDamage, heal, addShield, addStatus, enemies, alive, player, enterTiles } from './abilities.js';
 import { ENEMIES } from '../data/enemies.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
+import { drawCards, refillFromGraveyard } from './deck.js';
 const getCard = id => resolveCard(id);
 export const effectOf = id => { const c = resolveCard(id); return (c && c.effect) || id; };
 
@@ -33,9 +34,10 @@ export function spellRange(id, level = 1) {
 }
 export const rangeLabel = (id, level = 1) => { const c = getCard(id); if (c.target === 'self') return 'self'; const r = spellRange(id, level); return r === Infinity ? 'anywhere' : `range ${r}`; };
 /** Mana cost including enemy spell taxes (Null Warden). */
-export function spellCost(s, id) {
+export const isDrainLife = id => id === 'mtg:drain-life';
+export function spellCost(s, id, xValue = 1) {
   const tax = s ? enemies(s).reduce((a, e) => a + ((ENEMIES[e.defId] && ENEMIES[e.defId].spellTax) || 0), 0) : 0;
-  return (s?.p?.freeCast?0:getCard(id).cost + tax);
+  return (s?.p?.freeCast ? 0 : getCard(id).cost + tax) + (isDrainLife(id) ? xValue : 0); // X itself always requires mana.
 }
 export function spellTargets(s, id, level = 1) {
   const c = getCard(id), p = player(s), out = [];
@@ -55,7 +57,7 @@ export function spellTargets(s, id, level = 1) {
   if (effectOf(id) === 'call_sproutling' && out.length < 2) return [];
   return out;
 }
-export function castBlockReason(s, id) {
+export function castBlockReason(s, id, xValue = 1) {
   const entry = s.spellbook.find(x => x.id === id);
   if (!entry) return 'Not in your spellbook';
   if (s.phase !== 'player') return 'Not your turn';
@@ -63,12 +65,13 @@ export function castBlockReason(s, id) {
   if (s.p.cast[id]) return 'Already cast this turn';
   if(s.deck?.pendingDiscards>0)return 'Discard a card first';
   if (s.p.silenced === id) return 'Silenced by the Unwritten for this turn';
-  const cost = spellCost(s, id);
+  if (isDrainLife(id) && (!Number.isSafeInteger(xValue) || xValue < 1 || xValue > 99)) return 'Choose a whole-number X from 1 to 99';
+  const cost = spellCost(s, id, xValue);
   if (s.p.mana < cost) return `Needs ${cost} mana (you have ${s.p.mana})${cost > getCard(id).cost ? ' — a Null Warden taxes your spells' : ''}`;
   if (!spellTargets(s, id, entry.level).length) return getCard(id).target === 'enemy' ? 'No foe on the battlefield' : 'No valid target';
   return null;
 }
-export function castSpellEffect(s, ev, id, level, tx, ty) {
+export function castSpellEffect(s, ev, id, level, tx, ty, xValue = 1) {
   const p = player(s); const n = spellNumbers(id, level, s.p.arcane);
   const target = unitAt(s, tx, ty);
   const c = getCard(id);
@@ -76,6 +79,7 @@ export function castSpellEffect(s, ev, id, level, tx, ty) {
   if (boost) { for (let i = 0; i < n.length; i++) if (!NO_ARCANE.has(effectOf(id))) n[i] += boost; s.p.channel = 0; s.p.conduit = 0; }   // Channel: this spell +1
   ev.push({ t: 'spell', id, uid: p.uid, x: tx, y: ty, target: target ? target.uid : null, vfx: c.vfx || effectOf(id), channeled: !!channel });
   const spellDamage = { kind: 'spell', element: spellElement(id) };
+  if (isDrainLife(id)) n[0] = xValue; // Player-selected paid mana, not a fixed template number.
   switch (effectOf(id)) {
     case 'ember_dart': dealDamage(s, ev, p, target, n[0], spellDamage); break;
     case 'barkskin': addShield(s, ev, target, n[0], 'barkskin'); break;
@@ -83,6 +87,7 @@ export function castSpellEffect(s, ev, id, level, tx, ty) {
       addStatus(s, ev, target, 'empowered', n[0]);
       target.maxHp+=n[0];target.hp+=n[0];target.toughness+=n[0];target.statuses.temporaryToughness=(target.statuses.temporaryToughness||0)+n[0];
       ev.push({t:'status',uid:target.uid,status:'toughness',value:n[0],total:target.statuses.temporaryToughness});break;
+    case 'page_draw': { if (s.deck) { const back = refillFromGraveyard(s.deck); if (back) ev.push({ t: 'deckReshuffle', count: back, uid: p.uid }); for (const card of drawCards(s.deck, 2)) ev.push({ t: 'cardDraw', id: card.id, uid: p.uid }); } break; }
     case 'mending_rain': heal(s, ev, p, n[0]);
       for (const st of ['poison', 'weakened']) if (p.statuses[st]) { p.statuses[st] = 0; ev.push({ t: 'status', uid: p.uid, status: st, value: 0, total: 0 }); }
       break;
@@ -112,7 +117,7 @@ export function castSpellEffect(s, ev, id, level, tx, ty) {
       const chain = [target]; dealDamage(s, ev, p, target, n[0], spellDamage);
       let last = { x: tx, y: ty };
       for (let i = 0; i < 2; i++) {
-        const nxt = enemies(s).filter(e => !chain.includes(e) && manhattan(e, last) <= 2).sort((a, b) => manhattan(a, last) - manhattan(b, last) || a.uid - b.uid)[0];
+        const nxt = enemies(s).filter(e => !chain.includes(e)).sort((a, b) => manhattan(a, last) - manhattan(b, last) || a.uid - b.uid)[0];
         if (!nxt) break;
         ev.push({ t: 'chain', from: last, x: nxt.x, y: nxt.y, target: nxt.uid });
         chain.push(nxt); dealDamage(s, ev, p, nxt, n[1], spellDamage); last = { x: nxt.x, y: nxt.y };
@@ -157,7 +162,7 @@ export function spellMagnitude(after, effect, nums = []) {
 }
 
 /** v0.6: a deliberately small set of spell–terrain interactions. Element comes from the card's VFX identity. */
-const ELEMENT_BY_VFX = { shock: 'lightning', fire: 'fire', fireball: 'fire', flameSlash: 'fire', lightningBolt: 'lightning', spark: 'lightning', chain: 'lightning', frost: 'frost', pyroclasm: 'fire' };
+const ELEMENT_BY_VFX = { drain: 'void', murder:'void', strikeBolt:'lightning', revitalize:'radiant', divination:'tide', disfigure: 'void', poison: 'poison', heal: 'radiant', growth: 'nature', summon: 'radiant', shock: 'lightning', fire: 'fire', fireball: 'fire', flameSlash: 'fire', lightningBolt: 'lightning', spark: 'lightning', chain: 'lightning', frost: 'frost', pyroclasm: 'fire' };
 const ELEMENT_BY_EFFECT = { ember_dart: 'fire', starfall: 'fire', chain_lightning: 'lightning', rootsnare: 'frost' };
 export function spellElement(id) { const c = getCard(id); return (c && ELEMENT_BY_VFX[c.vfx]) || ELEMENT_BY_EFFECT[effectOf(id)] || null; }
 const near = (a, b, r) => Math.abs(a.x - b.x) <= r && Math.abs(a.y - b.y) <= r;

@@ -49,6 +49,7 @@ export function buildEncounter(template, seed, kind = 'battle') {
     place(template.unstable || 0, T.UNSTABLE, [2, 5]);
     place(template.conduits || 0, T.CONDUIT, [2, 6]);
     place(template.crumbling || 0, T.CRUMBLE, [2, 6]);
+    place(template.archives || 0, T.ARCHIVE, [2, 6]);
     if (!connected(terrain, w, h, playerStart)) continue;
     const crystals = [];   // v0.6: crystals sit on plain floor, never on hazards, never on a unit
     for (let i = 0, k = 0; i < (template.crystals || 0) && k < 200; k++) { const x = int(rng, w), y = 2 + int(rng, 5); if (free(x, y) && !crystals.some(c => c.x === x && c.y === y)) { crystals.push({ x, y }); reserved.add(y * w + x); i++; } }
@@ -70,6 +71,7 @@ export function templateFor(act, nodeType, depth, seed) {
     unstable: act > 0 ? 1 + (nodeType === 'boss' ? 1 : 0) : 0,
     conduits: late ? 1 : 0,
     crumbling: 1 + (nodeType === 'elite' ? 1 : 0),
+    archives: 1, // Inscribed Page: stand here when ending turn to draw one card.
   };
 }
 /** "The world answers": builds stronger than the expected curve draw extra foes (never extra health).

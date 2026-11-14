@@ -41,7 +41,7 @@ export class BattleUI {
     switch (d.type) {
       case 'move': ev = movePlayer(s, d.x, d.y); break;
       case 'attack': ev = attack(s, d.uid); break;
-      case 'cast': ev = cast(s, d.id, d.x, d.y); break;
+      case 'cast': ev = cast(s, d.id, d.x, d.y, d.xValue ?? 1); break;
       case 'interact': ev = interact(s, d.x, d.y); break;
       case 'end': ev = endTurn(s); break;
       case 'discard': ev = discard(s, d.id); break;
@@ -94,14 +94,14 @@ export class BattleUI {
     let v;
     if (u.hero) {
       const ap = deriveAppearance(this.run.evo);
-      v = this.scene.addUnit(u, 'blank'); this.scene.setUnitTexture(u.uid, composeEquippedSheet(this.app.assets, ap, u.equipment || []), ap.size);
+      v = this.scene.addUnit(u, 'blank'); this.scene.setUnitTexture(u.uid, composeEquippedSheet(this.app.assets, ap, u.equipment || []), Math.min(1.22, ap.size));
       v.aura = ap.effects.includes('aura') ? ap.glow : null;
       v.hover = u.keywords.flying ? 0.28 : 0;   // v0.6: fliers levitate; trample builds plant heavier steps (see play())
       v.style = { flying: !!u.keywords.flying, trample: !!u.keywords.trample, deathtouch: !!u.keywords.deathtouch, doubleStrike: !!u.keywords.doubleStrike, lifelink: !!u.keywords.lifelink,
         armored: !!ap.slots.body || ap.size >= 1.45 };
       // v0.7 casting point follows the evolved body: horns/antlers/crown channel through the head.
       v.castAt = ap.slots.head ? 'head' : 'chest';
-    } else v = this.scene.addUnit(u, u.defId === 'sproutling' ? 'sproutling' : ENEMIES[u.defId].sprite);
+    } else v = this.scene.addUnit(u, u.defId === 'sproutling' ? 'sproutling' : ENEMIES[u.defId].sprite, { scale: u.boss ? 0.8 : 0.95 });
     const el = document.createElement('div'); el.className = 'ulabel ' + (u.side === 'player' ? 'player' : 'enemy'); $('labels').appendChild(el); this.labels.set(u.uid, el);
     return v;
   }
@@ -277,6 +277,7 @@ export class BattleUI {
     const currentPower = Math.max(0, u.power + (u.statuses?.empowered || 0) - (u.statuses?.weakened || 0));
     el.innerHTML = `
       <div class="in-head"><b>${esc(u.name)}</b><em class="role">${esc(type)}</em>${u.legendary ? '<em class="leg">Legendary</em>' : ''}<span class="pt">${currentPower}/${u.toughness}</span></div>
+      <div class="in-types">${esc(u.creatureTypes || def?.tribe || (u.hero ? 'Grafted Hero' : u.token ? 'Soldier' : 'Creature'))}</div>
       <div class="in-hp">${ICON.heart}${u.hp}/${u.maxHp}${u.statuses?.shield ? ` · ${ICON.shield}${u.statuses.shield}` : ''}${u.boss ? ` · Printed ${u.power}/${u.toughness} · Legendary Vitality +${u.legendaryVitality || 0} · Deathtouch cannot instantly destroy this boss · Phase ${bossPhaseOf(u)}/3 · ${esc(bossPhaseName(u))}` : ''}</div>
       <p class="in-stats">Movement ${u.move} · Base attack ${u.power}${currentPower !== u.power ? ` → <b>${currentPower} buffed</b>` : ''} · ${friendly ? 'Friendly' : 'Hostile'}</p>
       ${Object.keys(u.keywords || {}).length ? `<div class="in-kw">${kwChips(u.keywords)}</div>` : ''}
@@ -384,17 +385,31 @@ export class BattleUI {
       this.autoEnds = (this.autoEnds || 0) + 1; await this.doEndTurn();
     }, 520 / Math.min(this.app.animFactor(), 10));
   }
-  cancel() { this.spell = null; this.pendingTap = null; this.refresh(); }
+  cancel() { this.spell = null; this.spellX = null; this.pendingTap = null; this.refresh(); }
   reject(msg) { this.audio.play('nope'); this.app.toast(`<b>Can't</b> ${esc(msg)}`, 'short'); }
   selectSpell(id) {
     if (!this.s || this.s.phase !== 'player' || this.busy) return;
-    if (this.spell === id) { this.spell = null; this.refresh(); return; }
+    if (this.spell === id) { this.spell = null; this.spellX = null; this.refresh(); return; }
     const why = castBlockReason(this.s, id); if (why) { this.flashTray(id); this.reject(why); return; }
     this.audio.play('click');
+    if (id === 'mtg:drain-life') { this.chooseDrainX(id); return; }
     const opts = castOptions(this.s, id);
     if (getCard(id).target === 'self') { this.spell = null; this.act(() => this.exec({ type: 'cast', id, x: opts[0].x, y: opts[0].y })); return; }
     this.spell = id; this.pendingTap = null; this.refresh();
     this.app.hint('target', 'Spells reach any foe on the battlefield — no need to walk closer. Pick a highlighted target; right-click or Esc to cancel.');
+  }
+  chooseDrainX(id) {
+    const s=this.s, base=spellCost(s,id,0), max=Math.min(99,s.p.mana-base);
+    if(max<1){this.reject('Not enough mana to choose X ≥ 1');return;}
+    let x=Math.min(2,max);
+    const m=this.app.openModal(`<div class="gb-x-choice"><small class="sh-brand">Drain Life · Variable Mana</small><h2>Choose X</h2><p class="small">Spend mana to tear life from your target. Damage = X; you recover the health taken.</p><div class="gb-x-step"><button class="btn" type="button" data-x-minus aria-label="Decrease X">−</button><output data-x-output aria-live="polite"></output><button class="btn" type="button" data-x-plus aria-label="Increase X">+</button></div><input type="range" min="1" max="${max}" value="${x}" step="1" data-x-range aria-label="Drain Life X value"/><p class="gb-x-summary" data-x-summary></p><div class="modal-actions"><button class="btn" type="button" data-x-cancel>Cancel</button><button class="btn primary" type="button" data-x-confirm>Choose Target</button></div></div>`);
+    const paint=()=>{m.querySelector('[data-x-output]').textContent=x;m.querySelector('[data-x-range]').value=x;m.querySelector('[data-x-summary]').textContent=`${base+x} mana · ${x} damage · heal actual damage dealt`;};
+    m.querySelector('[data-x-minus]').onclick=()=>{x=Math.max(1,x-1);paint();};
+    m.querySelector('[data-x-plus]').onclick=()=>{x=Math.min(max,x+1);paint();};
+    m.querySelector('[data-x-range]').oninput=e=>{x=Math.max(1,Math.min(max,Number(e.target.value)||1));paint();};
+    m.querySelector('[data-x-cancel]').onclick=()=>this.app.closeModal();
+    m.querySelector('[data-x-confirm]').onclick=()=>{this.spell=id;this.spellX=x;this.pendingTap=null;this.app.closeModal();this.refresh();this.app.toast(`Drain Life X=${x} · Pick an enemy`, 'short');};
+    paint();
   }
   flashTray(id) { const b = document.querySelector(`[data-spell="${CSS.escape(id)}"]`); if (b) { b.classList.remove('nope'); void b.offsetWidth; b.classList.add('nope'); } }
   needConfirm(isTouch, tag) {
@@ -407,7 +422,7 @@ export class BattleUI {
     if (s.phase !== 'player') { this.reject('Wait for the foes to finish'); return; }
     const tag = key(t.x, t.y) + (this.spell || '');
     if (this.spell) {
-      if (castOptions(s, this.spell).some(o => o.x === t.x && o.y === t.y)) { if (this.needConfirm(isTouch, tag)) return; const id = this.spell; this.spell = null; this.act(() => this.exec({ type: 'cast', id, x: t.x, y: t.y })); }
+      if (castOptions(s, this.spell).some(o => o.x === t.x && o.y === t.y)) { if (this.needConfirm(isTouch, tag)) return; const id = this.spell, xValue = this.spellX ?? 1; this.spell = null; this.spellX = null; this.act(() => this.exec({ type: 'cast', id, x: t.x, y: t.y, ...(id === 'mtg:drain-life' ? { xValue } : {}) })); }
       else this.reject(`${getCard(this.spell).name} can't target that tile`);
       return;
     }
@@ -569,7 +584,7 @@ export class BattleUI {
           if (e.value && lbl) this.float(e.uid, lbl, e.status === 'empowered' ? 'heal' : 'poison');
           this.renderLabel(e.uid); this.renderHUD(); await this.wait(120); break;
         }
-        case 'death': au.play('death'); { const lb = this.labels.get(e.uid); if (lb) { lb.remove(); this.labels.delete(e.uid); } } await sc.death(e.uid); break;
+        case 'death': au.play('death'); { const lb = this.labels.get(e.uid); if (lb) { lb.remove(); this.labels.delete(e.uid); } } await sc.death(e.uid, e.element); break;
         case 'burst': { const w = this.tile(e.x, e.y); sc.fx.burst([w[0], 0.3, w[2]], [1, 0.55, 0.15], 40, { speed: 2.8, up: 2 }); sc.addRing({ pos: [w[0], 0.03, w[2]], r0: 0.1, r1: 1.3, life: 0.35, col: [1, 0.5, 0.1], width: 0.12 }); sc.light([w[0], 0.4, w[2]], [1, 0.5, 0.15], 3, 0.4, 2.4); au.play('fireboom'); if (!sc.reduced) sc.shake(0.1); await this.wait(160); break; }
         case 'mana': this.dispMana = e.to; this.renderHUD(); break;
         case 'spell': await this.playSpell(e); break;
@@ -598,6 +613,7 @@ export class BattleUI {
           if (e.kind === 'void') for (const t of e.tiles.slice(0, 6)) { const w = this.tile(t.x, t.y); sc.addBolt({ a: [w[0], 2.5, w[2]], b: [w[0], 0, w[2]], life: 0.2, width: 0.05, col, segs: 6 }); }
           await this.wait(220); break;
         }
+        case 'archiveDraw': { const w = this.tile(e.x,e.y); sc.addRing({pos:[w[0],0.04,w[2]],r0:0.1,r1:0.7,life:0.5,col:[0.58,0.65,1],width:0.07,spokes:4});this.float(e.uid,e.count?'Inscribed Page · Draw +1':'Inscribed Page · Empty deck','note');break;}
         case 'conduit': { const w = this.tile(e.x, e.y); sc.addRing({ pos: [w[0], 0.1, w[2]], r0: 0.2, r1: 0.7, life: 0.5, col: [0.35, 0.9, 1], width: 0.08, spokes: 8 }); break; }
         case 'crackPulse': au.play('slam'); for (const t of e.tiles) { const w = this.tile(t.x, t.y); sc.addRing({ pos: [w[0], 0.02, w[2]], r0: 0.1, r1: 0.55, life: 0.4, col: [1, 0.44, 0.2], width: 0.09, spokes: 6 }); } await this.wait(180); break;
         case 'riftPulse': au.play('zap'); for (const t of e.tiles) { const w = this.tile(t.x, t.y); sc.addRing({ pos: [w[0], 0.04, w[2]], r0: 0.05, r1: 0.6, life: 0.4, col: [0.75, 0.4, 1], width: 0.1, spokes: 4 }); sc.fx.burst([w[0], 0.2, w[2]], [0.75, 0.4, 1], 12, { speed: 1.2, up: 2 }); } await this.wait(220); break;
@@ -642,13 +658,13 @@ export class BattleUI {
         case 'silence': { const h = this.s.units.find(u => u.hero); if (h) this.float(h.uid, `${getCard(e.spell).name} silenced (this turn)`, 'warn'); sc.screenFlash([0.85, 0.8, 1], 0.2); au.play('spell'); await this.wait(280); break; }
         case 'redact': { sc.screenFlash([0.85, 0.8, 1], 0.25); const h = this.s.units.find(u => u.hero); if (h) this.float(h.uid, `${KEYWORDS[e.keyword].name} redacted (this turn)`, 'warn'); au.play('spell'); await this.wait(300); break; }
         case 'restored': this.float(e.uid, `${KEYWORDS[e.keyword].name} restored`, 'note'); break;
-        case 'summon': { const u = this.s.units.find(x => x.uid === e.uid); if (u) { if (e.ally) await VFX.summon(sc, { to: this.tile(e.x, e.y) }); this.disp.set(u.uid, { hp: u.maxHp, maxHp: u.maxHp, shield: 0, poison: 0, stunned: 0, empowered: 0 }); this.addUnitView({ ...u, x: e.x, y: e.y }); this.renderLabel(u.uid); await sc.spawn(u.uid); } break; }
+        case 'summon': { const u = this.s.units.find(x => x.uid === e.uid); if (u) { if (e.ally) await VFX.summon(sc, { from: sc.units.get(e.by) ? sc.centerPos(e.by) : null, to: this.tile(e.x, e.y) }); this.disp.set(u.uid, { hp: u.maxHp, maxHp: u.maxHp, shield: 0, poison: 0, stunned: 0, empowered: 0 }); this.addUnitView({ ...u, x: e.x, y: e.y }); this.renderLabel(u.uid); await sc.spawn(u.uid); } break; }
         case 'mirror': { sc.screenFlash([0.85, 0.8, 1], 0.25); this.float(e.uid, `Copies your ${KEYWORDS[e.keyword].name}!`, 'warn'); au.play('spell'); await this.wait(300); break; }
         case 'bossPhase': this.audio.play('bossPhase'); sc.screenFlash([0.6, 0.35, 0.15], 0.3); if (!sc.reduced) sc.shake(0.12); await this.banner(e.phase ? `Phase ${e.phase} · ${e.text}` : (e.text || 'The foe changes'), 'boss'); break;
         case 'stunnedSkip': this.float(e.uid, 'Stunned', 'note'); await this.wait(200); break;
         case 'cardDraw': au.play('flip'); break;
         case 'deckReshuffle': au.play('flip'); if (sc.units.get(e.uid)) this.float(e.uid, `Graveyard reshuffled · ${e.count} card${e.count === 1 ? '' : 's'}`, 'note'); break;
-        case 'equipmentAttach': {au.play('click'); const hero=this.s?.units.find(u=>u.hero); if(hero){const ap=deriveAppearance(this.run.evo);this.scene.setUnitTexture(hero.uid,composeEquippedSheet(this.app.assets,ap,hero.equipment||[]),ap.size);}break;}
+        case 'equipmentAttach': {au.play('click'); const hero=this.s?.units.find(u=>u.hero); if(hero){const ap=deriveAppearance(this.run.evo);this.scene.setUnitTexture(hero.uid,composeEquippedSheet(this.app.assets,ap,hero.equipment||[]),Math.min(1.22,ap.size));}break;}
         case 'cardDiscard': au.play('flip'); this.float(player(this.s).uid,'Card to graveyard','note'); break;
         case 'auraAttach': {const w=this.tile(e.x,e.y);sc.fx.burst([w[0],0.4,w[2]],[0.85,0.65,1],16,{speed:0.7,up:1.3});au.play('spell');this.float(e.uid,esc(e.name||'Enchanted'),'note');break;}
         case 'auraBreak': au.play('block'); this.float(e.uid,'Aura shattered','warn'); break;

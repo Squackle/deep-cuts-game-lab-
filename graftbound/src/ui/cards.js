@@ -85,10 +85,13 @@ export function cardHTML(cardId, opts = {}) {
   const c = resolveCard(cardId); if (!c) return '';
   const legacy = isLegacy(cardId);
   const cmp = opts.evo ? compareLine(c, opts.evo) : '';
-  const strip = `<div class="ingame"><b>In GRAFTBOUND</b> ${esc(gameSummary(c, opts.level || 1, opts.arcane || 0))}${cmp ? `<span class="cmp">${cmp}</span>` : ''}</div>`;
+  const rarityLabel = { common:'Common', uncommon:'Uncommon', rare:'Rare', mythic:'Mythic Rare' }[c.rarity] || 'Common';
+  const rarityMark = `<span class="rarity-mark rarity-${esc(c.rarity)}" aria-label="Rarity: ${rarityLabel}" title="${rarityLabel} rarity (visual shine does not indicate a foil printing)">${esc(rarityLabel)}</span>`;
+  const strip = `<div class="ingame">
+<b>In GRAFTBOUND</b> ${esc(gameSummary(c, opts.level || 1, opts.arcane || 0))}${cmp ? `<span class="cmp">${cmp}</span>` : ''}</div>`;
   if (c.reference && CONFIG.SHOW_REFERENCE_IMAGES && c.sourceInfo.live && c.sourceInfo.image && c.sourceInfo.image.normal) {
     return `<div class="lc-card ${c.kind} real r-${esc(c.rarity)} ${opts.extraClass || ''}" data-card="${esc(c.id)}">
-      <div class="face front realface"><img class="real-img" src="${esc(c.sourceInfo.image.normal)}" alt="${esc(c.name)}" draggable="false" loading="lazy" onerror="this.closest('.lc-card').classList.add('img-failed')">${opts.level > 1 ? `<span class="level-seal">LEVEL ${opts.level}</span>` : ''}${strip}</div>
+      <div class="face front realface"><img class="real-img" src="${esc(c.sourceInfo.image.normal)}" alt="${esc(c.name)}" draggable="false" loading="lazy" onerror="this.closest('.lc-card').classList.add('img-failed')">${opts.level > 1 ? `<span class="level-seal">LEVEL ${opts.level}</span>` : ''}${rarityMark}${strip}</div>
       <div class="face back">${backHTML()}</div></div>`;
   }
   const col = COLOR[c.color] || COLOR.verdant; const r = RARITY[c.rarity] || RARITY.common;
@@ -100,7 +103,7 @@ export function cardHTML(cardId, opts = {}) {
   const typeLine = c.reference ? esc(c.sourceInfo.typeLine) : `${c.kind === 'creature' ? 'Creature — ' + esc(c.type) : 'Spell'}`;
   return `<div class="lc-card ${c.kind} r-${esc(c.rarity)} ${legacy ? 'legacy' : ''} ${opts.extraClass || ''}" data-card="${esc(c.id)}" style="--frame:${col.frame};--glow:${col.glow};--gem:${r.gem}">
     <div class="face front">
-      <div class="title"><span class="nm">${esc(c.name)}</span>${c.reference ? `<span class="pips">${manaPips(c.sourceInfo.manaCost)}</span>` : ''}</div>
+      ${rarityMark}<div class="title"><span class="nm">${esc(c.name)}</span>${c.reference ? `<span class="pips">${manaPips(c.sourceInfo.manaCost)}</span>` : ''}</div>
       <div class="art">${artHTML(c, opts.uid || '')}${c.kind === 'spell' ? `<span class="gemcost" title="Mana in GRAFTBOUND">${c.cost}</span>` : ''}</div>
       <div class="type"><span>${typeLine}</span><span class="rar" title="${esc(r.name)}"></span></div>
       <div class="rules">${rules}</div>

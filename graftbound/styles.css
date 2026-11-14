@@ -496,3 +496,16 @@ body[data-mode="reward"] .hint { top: 6px; } body[data-mode="reward"] .toast { t
 @keyframes gb12-orbit {0%,100%{transform:translate(0,0) rotate(0deg)}27%{transform:rotate(var(--angle-a)) translateX(56px) rotate(-30deg)}63%{transform:rotate(var(--angle-b)) translateX(54px) rotate(140deg)}82%{transform:rotate(var(--angle-c)) translateX(16px) rotate(12deg)}}
 @media (max-width:600px){.gb-gear-layout{grid-template-columns:1fr}.gb-shuffle-stack{width:74px;height:109px}.gb-gear-avatar .journal-sprite{width:144px;}}
 @media (prefers-reduced-motion:reduce){.gb-shuffle-under{animation:none}}
+
+/* v1.2.5: genuine rarity, visual-only iridescence, and compact X / equipped-card UI. */
+.lc-card .rarity-mark{position:absolute;top:5px;left:5px;z-index:4;font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:3px 6px;border-radius:4px;background:rgba(12,15,22,.94);color:#e7e8eb;border:1px solid #68717d;pointer-events:none;text-shadow:0 1px 2px #000}
+.lc-card .rarity-uncommon{color:#e0e3ec;border-color:#a6b9d3}
+.lc-card .rarity-rare{color:#fbd77c;border-color:#c6a353;box-shadow:0 0 7px rgba(232,185,59,.3)}
+.lc-card .rarity-mythic{color:#ffd5aa;border-color:#f48641;box-shadow:0 0 9px rgba(255,122,53,.45)}
+@media(prefers-reduced-motion:no-preference){.lc-card.r-rare .rarity-mark,.lc-card.r-mythic .rarity-mark{animation:gb-rarity-glint 3.5s ease-in-out infinite alternate}}
+@keyframes gb-rarity-glint{from{filter:brightness(.95)}to{filter:brightness(1.6)}}
+.gb-x-choice{text-align:center;max-width:390px;margin:auto}.gb-x-step{display:flex;align-items:center;justify-content:center;gap:18px;margin:18px 0}.gb-x-step button{min-width:46px;min-height:46px;font-size:22px}.gb-x-step output{min-width:75px;font-size:2.4rem;font-weight:700;color:#f2cddd}.gb-x-choice input[type=range]{width:100%;accent-color:#c07b9f;min-height:44px}.gb-x-summary{color:#f0d7e4;font-weight:600;margin:12px 0}
+.gb-equip-card{display:block;width:70px;min-width:70px;max-width:70px;height:99px;overflow:hidden;border-radius:5px;flex-shrink:0;pointer-events:none}.gb-equip-card .lc-card{transform:scale(.42);transform-origin:0 0;pointer-events:none}.gb-gear-entry{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.gb-gear-entry .gb-equip-card{align-self:flex-start}.gb-gear-slot .gb-equip-card{display:inline-flex;vertical-align:middle;margin:0 8px 4px 0}
+.in-types{font-size:11px;letter-spacing:.05em;color:#d4c08b;margin:4px 0 7px}
+
+.gb-gear-equipped{display:flex;align-items:center;gap:9px;min-width:0;max-width:100%;flex:1;text-align:left}.gb-gear-equipped .gb-equip-card{margin:0;flex-shrink:0}.gb-gear-equipped>span:last-child{min-width:0;overflow-wrap:anywhere}.gb-gear-slot>.btn.small{flex-shrink:0}

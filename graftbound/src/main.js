@@ -187,7 +187,7 @@ class App {
     const fake = { w: 8, h: 8, terrain: new Array(64).fill(0).map((_, i) => ([9, 14, 50, 53].includes(i) ? 3 : [19, 44].includes(i) ? 1 : 0)) };
     this.battle.stop(); this.scene.loadArena(fake, 7, theme || (this.run ? ACTS[this.run.act].theme : 'hollow')); this.audio.setAct(this.run ? this.run.act : 0);
     const ap = deriveAppearance(evo);
-    const v = this.scene.addUnit({ uid: 1, side: 'player', x: 3, y: 4 }, 'blank'); this.scene.setUnitTexture(1, composePlayerSheet(this.assets, ap), ap.size);
+    const v = this.scene.addUnit({ uid: 1, side: 'player', x: 3, y: 4 }, 'blank'); this.scene.setUnitTexture(1, composePlayerSheet(this.assets, ap), Math.min(1.22, ap.size));
     v.pos[0] += 0.5; v.dir = [0.3, 1]; v.aura = ap.effects.includes('aura') ? ap.glow : null;
     this.scene.zoom = 1.75; this.scene.focusTarget = [0.5, 0.2, 0.5]; this.scene.dof = 1.4;
   }

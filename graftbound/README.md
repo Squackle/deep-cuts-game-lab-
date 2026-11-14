@@ -5,9 +5,9 @@ An HD-2D tactical RPG. You begin as **The Blank**, a powerless 1/1 creature. Aft
 - **Graft** a creature: its printed power, toughness and abilities add to yours, and your pixel-art body visibly changes.
 - **Inscribe** a spell: it reaches any foe on the battlefield.
 
-The adventure has three acts: **The Forgotten Hollow**, **The Ashen Warrens** and **The Fractured Nexus**. That's 24 nodes and three bosses.
+The adventure has three acts: **The Forgotten Hollow**, **The Ashen Warrens** and **The Fractured Nexus**. That's 24 nodes and three seed-selected bosses (one of two real legends per act).
 
-> **Game Lab release candidate: v1.2.4-beta.** The canonical playtest destination is [Game Lab /graftbound/](https://deep-cuts-game-lab.pages.dev/graftbound/) after this version is merged and deployed from this repository's `main`. Draft-branch URLs are previews. This is not a main DeepCutsEDH Arcade release. Formerly *The Living Card* (`/living-card/`, which redirects here). See `HANDOFF.md` and `GPT-DEPLOY-INSTRUCTIONS.md` for active beta limitations and release steps.
+> **Game Lab release candidate: v1.2.5-beta.** The canonical playtest destination is [Game Lab /graftbound/](https://deep-cuts-game-lab.pages.dev/graftbound/) after this version is merged and deployed from this repository's `main`. Draft-branch URLs are previews. This is not a main DeepCutsEDH Arcade release. Formerly *The Living Card* (`/living-card/`, which redirects here). See `HANDOFF.md` and `GPT-DEPLOY-INSTRUCTIONS.md` for active beta limitations and release steps.
 
 ## Run
 ```bash
@@ -33,3 +33,7 @@ node tools/verify-real-pool.mjs  # NEEDS NETWORK: checks every bundled real card
 ## Dev pages
 - `dev/floor.html?before=1|0` reproduces the v0.4 floor bug next to the fix.
 - `dev/vfx.html?fx=lightningBolt&auto=1` shows the spell VFX library.
+
+## v1.2.5-beta feedback update
+
+Expanded 68-creature / 21-spell real-card pool, visible rarity labels, Inscribed Page draw tile, distance-free chain lightning, replayable X-cost Drain Life, Krenko Goblin tribe fix, attached gear card previews, revised achievements, distinct spell/death VFX, tactical scaling caps and face-anchored Mask of Memory. See `docs/V125-OWNER-FEEDBACK.md` for the exact rules, test gates and beta limitations.
