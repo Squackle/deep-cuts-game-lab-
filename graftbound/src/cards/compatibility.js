@@ -38,8 +38,8 @@ export const SPELL_ADAPTATIONS = {
   'Giant Growth':       { effect: 'sap_surge', cost: 1, vfx: 'growth',  note: 'Adapted: give target creature exactly +3/+3 until end of turn, following printed numbers.' },
   'Drain Life':         { effect: 'soul_siphon', cost: 2, vfx: 'drain', note: 'Adapted: choose X at cast time (1–available mana); pay 2 + X mana, deal X damage and heal the actual health removed. Black-mana restriction is not modeled.', text: 'Choose X: pay 2 + X mana, deal X damage to a foe, heal damage dealt.' },
   'Infest':             { effect: 'venom_mist', cost: 2, vfx: 'poison', note: 'Adapted: Poison 2 to foes in a 3×3 area (instead of −2/−2 to all creatures).' },
-  'Raise the Alarm':    { effect: 'call_sproutling', cost: 2, vfx: 'summon', note: 'Adapted: create two separate 1/1 white Soldier creature tokens on empty nearby tiles; they remain for this battle.', text: 'Create two 1/1 white Soldier creature tokens on two empty nearby tiles.' },
-  'Healing Hands':      { effect: 'mending_rain', cost: 2, vfx: 'heal',  note: 'Adapted: heal 4 and cleanse poison and weakness; card draw is not modeled.' },
+  'Raise the Alarm':    { effect: 'call_sproutling', cost: 2, vfx: 'summon', note: 'Adapted: summon two separate white Soldiers on empty nearby tiles. Level 1: 1/1 each; Level 2: 2/2 each; Level 3: 3/3 each. Token power/toughness are not modified by Arcane.', text: 'Create two {1}/{2} white Soldier creature tokens on two empty nearby tiles.' },
+  'Healing Hands':      { effect: 'mending_rain', cost: 2, vfx: 'heal',  note: 'Adapted: heal 4, cleanse poison and weakness, and draw one card. Printed prevention is represented as healing here.' },
   'Healing Salve':      { effect: 'mending_rain', bonus: -1, cost: 1, vfx: 'salve', note: 'Adapted: heal 3 and cleanse.' },
   'Feat of Resistance': { effect: 'barkskin', cost: 1, vfx: 'shield', note: 'Adapted: give one friendly creature 3 shield; counters and protection are not modeled.' },
   'Frost Breath':       { effect: 'rootsnare', cost: 2, vfx: 'frost', note: 'Adapted: 1 damage and Stun one foe (one target, not two).' },
@@ -47,10 +47,10 @@ export const SPELL_ADAPTATIONS = {
   'Disfigure':          { effect: 'wither', cost: 1, vfx: 'disfigure', note: 'Adapted: −2/−2 becomes 1 damage plus Weaken 2 (the foe strikes for 2 less on its next action).' },
   'Titanic Growth':     { effect: 'sap_surge', bonus: 1, cost: 2, vfx: 'titanic', note: 'Adapted: give target creature exactly +4/+4 until end of turn, following printed numbers.' },
   'Snakeskin Veil':    { effect: 'barkskin', bonus: -1, cost: 1, vfx: 'snakeskin', note: 'Adapted: give one friendly creature 2 shield for this battle. Hexproof and the permanent +1/+1 counter are not modeled.' },
-  'Pyroclasm':          { effect: 'firestorm', cost: 3, vfx: 'pyroclasm', note: 'Adapted: 2 damage to every foe (it never damages you or your allies here).' },
+  'Pyroclasm':          { effect: 'firestorm', cost: 3, vfx: 'pyroclasm', note: 'Adapted: 2 damage to every creature, including your hero and every summoned ally. Damage increases with spell level and Arcane.' },
   'Lightning Strike':   { effect: 'ember_dart', bonus: 1, cost: 2, vfx: 'strikeBolt', note: 'Adapted: 3 damage to one target anywhere.' },
   'Murder':             { effect: 'ember_dart', bonus: 3, cost: 3, vfx: 'murder', note: 'Adapted: 5 void damage, not unrestricted destroy (Legendary Vitality still applies).' },
-  'Revitalize':         { effect: 'mending_rain', bonus: -1, cost: 2, vfx: 'revitalize', note: 'Adapted: heal 3 and cleanse; printed card draw is not modeled.' },
+  'Revitalize':         { effect: 'mending_rain', bonus: -1, cost: 2, vfx: 'revitalize', note: 'Adapted: heal 3, cleanse, and draw one card from the encounter library.' },
   'Divination':         { effect: 'page_draw', cost: 3, vfx: 'divination', note: 'Adapted: draw two cards from your encounter library; has no effect outside deck mode.' },
 };
 

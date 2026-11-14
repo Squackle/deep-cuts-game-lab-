@@ -18,8 +18,9 @@ const BASE = {
 const NO_ARCANE = new Set(['sap_surge', 'blink_step', 'call_sproutling']);
 export function spellNumbers(id, level = 1, arcane = 0) {
   const e = effectOf(id); const c = resolveCard(id); const bonus = (c && c.bonus) || 0;
-  // Printed 1/1 Soldier tokens never scale with level or Arcane.
-  if (e === 'call_sproutling' && c?.reference) return [1, 1];
+  // The printed card always makes 1/1s; GRAFTBOUND empowers the summoned Soldiers
+  // at level 2/3 to 2/2 and 3/3, independently of Arcane/Channel.
+  if (e === 'call_sproutling' && c?.reference) return [Math.min(3,Math.max(1,level)), Math.min(3,Math.max(1,level))];
   const add = (level - 1) + bonus + (NO_ARCANE.has(e) ? 0 : arcane);
   return (BASE[e] || []).map(n => Math.max(1, n + add));
 }
@@ -92,6 +93,7 @@ export function castSpellEffect(s, ev, id, level, tx, ty, xValue = 1) {
     case 'page_draw': { if(s.deck)traitDraw(s,ev,2); break; }
     case 'mending_rain': heal(s, ev, p, n[0]);
       for (const st of ['poison', 'weakened']) if (p.statuses[st]) { p.statuses[st] = 0; ev.push({ t: 'status', uid: p.uid, status: st, value: 0, total: 0 }); }
+      if (id === 'mtg:healing-hands' || id === 'mtg:revitalize') traitDraw(s, ev, 1);
       break;
     case 'soul_siphon': { const d = dealDamage(s, ev, p, target, n[0], spellDamage); heal(s, ev, p, d, 'siphon'); break; }
     case 'rootsnare': dealDamage(s, ev, p, target, n[0], spellDamage); if (alive(target)) addStatus(s, ev, target, 'stunned', 1); break;
@@ -108,7 +110,13 @@ export function castSpellEffect(s, ev, id, level, tx, ty, xValue = 1) {
       break;
     }
     case 'wither': dealDamage(s, ev, p, target, n[0], spellDamage); if (alive(target)) addStatus(s, ev, target, 'weakened', n[1]); break;
-    case 'firestorm': ev.push({ t: 'area', x: p.x, y: p.y, r: 99, kind: 'firestorm' }); for (const e of enemies(s)) dealDamage(s, ev, p, e, n[0], spellDamage); break;
+    case 'firestorm': {
+      ev.push({ t: 'area', x: p.x, y: p.y, r: 99, kind: 'firestorm' });
+      // Pyroclasm's printed symmetrical damage is deliberate: friendly summons
+      // and the hero are creatures too. Take a snapshot before death triggers.
+      for (const unit of s.units.filter(alive)) dealDamage(s, ev, p, unit, n[0], spellDamage);
+      break;
+    }
     case 'venom_mist': ev.push({ t: 'area', x: tx, y: ty, r: 1, kind: 'mist' }); for (const e of enemies(s)) if (Math.abs(e.x - tx) <= 1 && Math.abs(e.y - ty) <= 1) addStatus(s, ev, e, 'poison', n[0]); break;
     case 'starfall': {
       ev.push({ t: 'area', x: tx, y: ty, r: 1, kind: 'star' });

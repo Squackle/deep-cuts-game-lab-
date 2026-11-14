@@ -7,7 +7,7 @@ An HD-2D tactical RPG. You begin as **The Blank**, a powerless 1/1 creature. Aft
 
 The adventure has three acts: **The Forgotten Hollow**, **The Ashen Warrens** and **The Fractured Nexus**. That's 24 nodes and three seed-selected bosses (one of two real legends per act).
 
-> **Game Lab release candidate: v1.2.6-beta.** The canonical playtest destination is [Game Lab /graftbound/](https://deep-cuts-game-lab.pages.dev/graftbound/) after this version is merged and deployed from this repository's `main`. Draft-branch URLs are previews. This is not a main DeepCutsEDH Arcade release. Formerly *The Living Card* (`/living-card/`, which redirects here). See `HANDOFF.md` and `GPT-DEPLOY-INSTRUCTIONS.md` for active beta limitations and release steps.
+> **Game Lab release candidate: v1.2.7-beta.** The canonical playtest destination is [Game Lab /graftbound/](https://deep-cuts-game-lab.pages.dev/graftbound/) after this version is merged and deployed from this repository's `main`. Draft-branch URLs are previews. This is not a main DeepCutsEDH Arcade release. Formerly *The Living Card* (`/living-card/`, which redirects here). See `HANDOFF.md` and `GPT-DEPLOY-INSTRUCTIONS.md` for active beta limitations and release steps.
 
 ## Run
 ```bash
@@ -47,3 +47,7 @@ Expanded 68-creature / 21-spell real-card pool, visible rarity labels, Inscribed
 - Final act boss awards a skippable victory celebration and run statistics, **no final pack**. Saves migrate additively and prevent duplicate completion stats.
 
 See `docs/V126-PREMIUM-REWARDS-RELEASE.md` for tests, simulation results, limitations, and rollback.
+
+### v1.2.7-beta Game Lab playtest fixes
+
+Mobile pack scroll centering, distinctive ally token sprites, visible graft traits, face-up Graveyard, bounded terrain inspection, umbral/Aura casting VFX, level-scaled Raise the Alarm, symmetric Pyroclasm, real Healing Hands/Revitalize card draw, and Toxrill slime/death feedback. See `docs/V127-PLAYTEST-FEEDBACK.md`.

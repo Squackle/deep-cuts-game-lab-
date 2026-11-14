@@ -165,7 +165,7 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
   if(tgt.statuses.indestructible && tgt.toughness>0 && tgt.hp<=0){tgt.hp=1;ev.push({t:'indestructible',uid:tgt.uid});}
   const lost = hpBefore - tgt.hp;
   ev.push({ t: 'damage', uid: tgt.uid, amount: a, blocked, deathtouch: dt, kind, element, src: src ? src.uid : null });
-  if (src && src.side === 'player') s.stats.damageDealt += lost;
+  if (src && src.side === 'player' && tgt.side === 'enemy') s.stats.damageDealt += lost;
   if (tgt.hero) { s.stats.damageTaken += lost; if (src?.side === 'enemy') s.stats.enemyHealthDamage = (s.stats.enemyHealthDamage || 0) + lost; }
   // Real infect replaces health damage with poison counters against a player.
   // Against creatures, damage is represented by persistent -1/-1 counters.

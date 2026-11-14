@@ -8,11 +8,11 @@ import { T } from '../src/core/grid.js';
 import { newRun, enterNode, concludeBattle, chooseReward, skipReward, TUTORIAL_CARD } from '../src/engine/run.js';
 import { createStore, memoryStorage } from '../src/engine/save.js';
 const makeBattle=(rows=['t.....','......','......','..P...'])=>{const s=arena(rows,{t:'tortoise'},{spellbook:[{id:'mtg:raise-the-alarm',level:3}]});s.p.mana=10;s.p.maxMana=10;s.p.arcane=4;return s};
-test('Raise the Alarm spawns two distinct 1/1 Soldiers regardless of level or Arcane',()=>{
- const s=makeBattle();assert.deepEqual(spellNumbers('mtg:raise-the-alarm',3,9),[1,1]);assert.match(formatSpellText('mtg:raise-the-alarm',3,9),/two 1\/1 white Soldier/);
+test('Raise the Alarm summons two separate 3/3 Soldiers at level 3, unaffected by Arcane',()=>{
+ const s=makeBattle();assert.deepEqual(spellNumbers('mtg:raise-the-alarm',3,9),[3,3]);assert.match(formatSpellText('mtg:raise-the-alarm',3,9),/two 3\/3 white Soldier/);
  const ev=cast(s,'mtg:raise-the-alarm',2,2),a=s.units.filter(u=>u.side==='player'&&!u.hero);
  assert.equal(a.length,2);assert.equal(new Set(a.map(u=>u.uid)).size,2);assert.equal(new Set(a.map(u=>u.x+','+u.y)).size,2);
- for(const u of a)assert.deepEqual([u.name,u.power,u.toughness,u.hp,u.maxHp,u.token],['Soldier',1,1,1,1,true]);
+ for(const u of a)assert.deepEqual([u.name,u.power,u.toughness,u.hp,u.maxHp,u.token],['Soldier',3,3,3,3,true]);
  assert.equal(ev.filter(e=>e.t==='summon'&&e.defId==='sproutling').length,2);
 });
 test('two legal empty tiles are required before mana is spent',()=>{

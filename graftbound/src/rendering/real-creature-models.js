@@ -5,6 +5,11 @@
 
 const C = (base, dark, mid, light, feature, custom = false) => ({ base, dark, mid, light, feature, custom });
 export const REAL_CREATURE_MODELS = Object.freeze({
+  friendlySoldier: C('archer','#293341','#63768c','#e7d1a1','friendlySoldier',true),
+  friendlyElemental: C('emberseer','#57241b','#db5a29','#ffdb82','friendlyElemental',true),
+  friendlyDrake: C('moth','#18394a','#377e9f','#b9e8f1','friendlyDrake',true),
+  friendlyCatSoldier: C('archer','#54442c','#bd9762','#f4dbb1','friendlyCatSoldier',true),
+  friendlySproutling: C('grub','#20542b','#5cbd63','#d5f2a4','saproling',true),
   grub: C('grub','#19391d','#54a54a','#d4e988','caterpillar'),
   hound: C('hound','#283e45','#7e9996','#e0e0ba','wolf'),
   archer: C('archer','#123b31','#4a8760','#d2dca0','bow'),
@@ -66,6 +71,22 @@ function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
   const body=()=>{poly([[-14,-17],[-17,13],[-10,22],[11,22],[17,13],[12,-17]],mid);poly([[-12,-16],[-9,1],[8,1],[12,-16]],dark,null);ell(0,-22,11,11,mid);eye(-5,-23);eye(5,-23)};
   const limb=(x,y,dx,dy)=>line([x,y],[x+dx,y+dy],dark,7);
   switch(feature){
+    case 'friendlySoldier':
+      poly([[-12,-9],[-16,13],[-8,23],[8,23],[16,13],[12,-9]],mid);ell(0,-23,12,13,light);
+      poly([[-14,-30],[0,-40],[14,-30],[12,-23],[-12,-23]],dark);line([-8,-3],[-25,15],light,5);
+      ell(-23,10,9,14,mid,light,3);line([16,14],[21,-39],light,4);poly([[21,-48],[16,-36],[26,-36]],light);
+      eye(-5,-21,dark);eye(5,-21,dark);break;
+    case 'friendlyElemental':
+      for(let i=-3;i<=3;i++){poly([[i*7,-2],[(i-1)*8,-29-(i%3)*7],[(i+1)*8,-17],[i*7,23]],i%2?mid:light,dark,2);}
+      ell(0,0,16,22,mid,dark,2);poly([[-17,6],[-5,-29],[2,-6],[9,-39],[17,0]],light);
+      eye(-5,-4,'#401c18');eye(6,-4,'#401c18');break;
+    case 'friendlyDrake':
+      poly([[-7,-12],[-35,-43],[-28,2],[-13,14]],light);poly([[7,-12],[35,-43],[28,2],[13,14]],light);
+      ell(0,4,11,16,mid);line([0,-8],[9,-30],mid,9);poly([[7,-30],[23,-29],[28,-22],[9,-20]],light);
+      poly([[-4,20],[-21,36],[-11,20]],dark);eye(11,-28,dark);break;
+    case 'friendlyCatSoldier':
+      body();ears();poly([[-14,-31],[-25,-44],[-22,-19]],light);poly([[14,-31],[25,-44],[22,-19]],light);
+      line([15,-10],[25,-35],light,4);poly([[25,-42],[19,-32],[30,-32]],light);eye(-5,-23,dark);eye(5,-23,dark);break;
     case 'caterpillar': for(let i=-2;i<=2;i++)ell(i*8,2+Math.sin(i)*2,6,9,i%2?mid:light);poly([[20,0],[31,-8],[27,4]],light);eye(18,-4);break;
     case 'wolf':case 'direwolf': ears();ell(0,-14,15,9,mid);poly([[0,-11],[23,-8],[27,-1],[9,-2]],light);ell(-5,-18,4,3,dark,null);eye(12,-16,feature==='direwolf'?'#ef8a61':light);line([-17,0],[-28,-4],mid,5);break;
     case 'bow': ears();line([-20,-26],[-25,14],light,3);line([-25,14],[-17,24],light,3);line([-20,-26],[-17,24],dark,1);poly([[8,-8],[27,-9],[30,-5],[6,-3]],light);eye(2,-23);break;
