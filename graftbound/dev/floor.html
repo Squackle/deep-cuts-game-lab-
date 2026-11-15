@@ -21,7 +21,7 @@ sc.addUnit({ uid: 1, side: 'player', x: enc.playerStart.x, y: enc.playerStart.y 
 if (q.get('benchmarks') === '1') {
   const x=enc.playerStart.x, y=enc.playerStart.y;
   sc.addUnit({ uid: 901, side: 'player', x: Math.max(0,Math.min(enc.w-1,x+1)), y }, 'mtg_friendlySoldier', { scale: 0.39 });
-  sc.addUnit({ uid: 902, side: 'player', x: Math.max(0,Math.min(enc.w-1,x+1)), y: Math.max(0,Math.min(enc.h-1,y+1)) }, 'mtg_friendlySquirrel', { scale: 0.24 });
+  sc.addUnit({ uid: 902, side: 'player', x: Math.max(0,Math.min(enc.w-1,x+2)), y }, 'mtg_friendlySquirrel', { scale: 0.24 });
 }
 let last = performance.now(); (function loop(t) { sc.frame(Math.min(0.05, (t - last) / 1000)); last = t; requestAnimationFrame(loop); })(last);
 window.__sc = sc;
