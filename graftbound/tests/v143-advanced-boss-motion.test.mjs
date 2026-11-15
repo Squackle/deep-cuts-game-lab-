@@ -5,8 +5,8 @@ import {ADVANCED_BOSS_KEYS,BOSS_STATES,advancedBossPose} from '../src/rendering/
 import {BOSS_PRINTINGS,LEGENDARY_BOSS_KEYS} from '../src/rendering/legendary-boss-art.js';
 const art=readFileSync(new URL('../src/rendering/legendary-boss-art.js',import.meta.url),'utf8');
 
-test('only the two specifically upgraded legendary bosses add animation states',()=>{
-  assert.deepEqual(ADVANCED_BOSS_KEYS,['nemata','toxrill']);
+test('four distinctive legendary bosses have independently articulated runtime states',()=>{
+  assert.deepEqual(ADVANCED_BOSS_KEYS,['nemata','arasta','drakuseth','toxrill']);
   assert.equal(BOSS_STATES.join(','),'idle,walk,attack,cast,hurt,defeat');
   for(const name of ADVANCED_BOSS_KEYS){
     assert.ok(LEGENDARY_BOSS_KEYS.includes(name),name+' must be a real boss');
@@ -38,7 +38,7 @@ test('Toxrill has independently animated slime pressure, feelers and body compre
 test('visual poses are deterministic and invalid inputs cannot mutate the rules engine',()=>{
   for(const name of ADVANCED_BOSS_KEYS)for(let state=0;state<6;state++)for(let f=0;f<4;f++)
     assert.deepEqual(advancedBossPose(name,state,f,!!(f%2)),advancedBossPose(name,state,f,!!(f%2)));
-  assert.equal(advancedBossPose('drakuseth',2,1),null);
+  assert.equal(advancedBossPose('krenko',2,1),null);
   assert.throws(()=>advancedBossPose('nemata',-1,0),/Invalid boss pose/);
   assert.throws(()=>advancedBossPose('toxrill',6,0),/Invalid boss pose/);
   assert.throws(()=>advancedBossPose('nemata',2,4),/Invalid boss pose/);
@@ -46,7 +46,7 @@ test('visual poses are deterministic and invalid inputs cannot mutate the rules 
   for(const forbidden of ['Math.random','localStorage','window.','player.hp =','state.damage ='])
     assert.equal(module.includes(forbidden),false);
 });
-test('actual boss atlas consumes the new poses and leaves the other four bosses untouched',()=>{
+test('actual boss atlas consumes the new poses and leaves the two remaining bosses untouched',()=>{
   assert.ok(art.includes("import {ADVANCED_BOSS_KEYS,advancedBossPose} from './advanced-boss-motion.js';"));
   assert.ok(art.includes('motion:advanced?advancedBossPose(name,a,f,v===1):null'));
   assert.ok(art.includes("advanced?ANIMS+1:ANIMS"));
