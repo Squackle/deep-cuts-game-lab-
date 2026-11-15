@@ -13,7 +13,7 @@ export const MAX_DECISIONS = 4000, MAX_SEGMENT = 400;
 
 /** Fixed, versioned challenges. Seeds are authored here; servers never accept a client-chosen seed. */
 export const RANKED_CHALLENGES = {
-  'gb-expedition-01': { id: 'gb-expedition-01', revision: 16, name: 'The First Expedition', seed: 0x5eedcafe, tutorial: true,
+  'gb-expedition-01': { id: 'gb-expedition-01', revision: 17, name: 'The First Expedition', seed: 0x5eedcafe, tutorial: true,
     rulesVersion: RULES_VERSION, cardPoolVersion: CARD_POOL_VERSION, scoringVersion: SCORING_VERSION, status: 'active' },
 };
 export const ACTIVE_CHALLENGE = 'gb-expedition-01';
