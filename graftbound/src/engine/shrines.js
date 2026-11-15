@@ -7,7 +7,7 @@ export const MAX_SPARK_FONTS = 3, MAX_MANA_FONTS = 2;
 export const SHRINES = {
   restoration: { name: 'Restoration', glyph: '✚', text: run => `Mend every wound (+${run.wounds} health now). Your next battle also begins with 3 shield.`,
     when: run => run.wounds > 0 },
-  spark: { name: 'Spark Font', glyph: '✦', text: () => '+3 Spark: maximum health rises by 3 for the rest of the adventure.',
+  spark: { name: 'Maximum Health Font', glyph: '✦', text: () => '+3 Maximum Health: maximum health rises by 3 for the rest of the adventure.',
     when: run => (run.sparkFonts || 0) < MAX_SPARK_FONTS, note: run => `${MAX_SPARK_FONTS - (run.sparkFonts || 0)} left this adventure` },
   offering: { name: 'Offering Bowl', glyph: '❂', text: run => `Open an extra booster. The bowl drinks first: you take a wound of ${offeringCost(run)} (cannot drop you below 1).`,
     when: () => true },
