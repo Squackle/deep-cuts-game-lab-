@@ -16,7 +16,7 @@ import { onBattleGrafts, onHeroAttack, onHeroSpell, onHeroDraw, traitDraw } from
 import { availableMana, spendMana, addChannel, CHANNEL_MANA_CAP, CHANNEL_CHARGE_CAP } from './mana.js';
 import { initialComboEvents, resolveComboEvents, hasComboChoices, comboActivate, resolveComboChoice } from './combo-triggers.js';
 
-export const BATTLE_VERSION = 10;
+export const BATTLE_VERSION = 11;
 export const RIFT_DAMAGE = TERRAIN_RULES.rift.pulseDamage, LAVA_DAMAGE = TERRAIN_RULES.lava.endTurnDamage;
 
 export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroName = STARTING_NAME, startHp = null, act = 0, deckMode = false, handCapacity = 7 }) {
@@ -267,17 +267,29 @@ export function endTurn(s) {
   if(s.phase === 'lost')return finish(s,ev);
   s.phase = 'enemy'; ev.push({ t: 'turn', phase: 'enemy', turn: s.turn });
   for(const u of s.units)if(u.side==='enemy')u.tapped=false;
-  for (const a of allies(s).filter(u => !u.hero)) { if (s.phase !== 'enemy') break; ev.push({ t: 'enemyTurn', uid: a.uid }); actAlly(s, ev, a); }
-  // Friendly spell buffs remain through the summoned creature's action, then expire.
-  for (const a of allies(s).filter(u => !u.hero)) if (a.statuses.empowered) { a.statuses.empowered = 0; ev.push({ t: 'status', uid: a.uid, status: 'empowered', value: 0, total: 0 }); }
+  // Foe phase priority: existing enemies act before friendly summons. The ordering
+  // of enemy UIDs and of surviving ally UIDs remains stable for replay determinism.
+  // Announce phases and resolve Scarab's recast before enemies take actions.
   for (const e of s.units.filter(u => u.side === 'enemy' && u.boss)) announcePhase(ev, e);
-  // Enemy's only persistent recast rule is the Scarab God's printed return-to-hand.
   scarabRecast(s, ev);
   for (const e of s.units.filter(u => u.side === 'enemy')) {
     if (!alive(e) || s.phase !== 'enemy') continue;
     if (e.statuses.poison > 0) { dealDamage(s, ev, null, e, e.statuses.poison, { kind: 'poison' }); e.statuses.poison--; if (!alive(e)) continue; }
     ev.push({ t: 'enemyTurn', uid: e.uid });
     actEnemy(s, ev, e);
+  }
+  // Only allies that survived the enemy wave get their actions. Killed Soldiers
+  // cannot retaliate later in the same foe phase.
+  if (s.phase === 'enemy') for (const a of allies(s).filter(u => !u.hero)) {
+    if (s.phase !== 'enemy') break;
+    ev.push({ t: 'enemyTurn', uid: a.uid });
+    actAlly(s, ev, a);
+  }
+  // Friendly spell buffs persist through an ally's action, then expire even if
+  // no ally survived the foe phase.
+  for (const a of allies(s).filter(u => !u.hero)) if (a.statuses.empowered) {
+    a.statuses.empowered = 0;
+    ev.push({ t: 'status', uid: a.uid, status: 'empowered', value: 0, total: 0 });
   }
   for (const u of s.units.filter(x=>x.pumpExpires)) { const n=u.pumpExpires; u.power=Math.max(0,u.power-n);u.toughness=Math.max(0,u.toughness-n);u.maxHp=Math.max(0,u.maxHp-n);u.hp=Math.min(u.hp,u.maxHp);u.pumpExpires=0; }
   // Nightpack Ambusher: end step, if its controller cast no spell this turn, create a 2/2 Wolf.
