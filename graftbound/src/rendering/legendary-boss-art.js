@@ -74,38 +74,58 @@ function nemata(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S;
    barb(g,x,y,x+(i-2)*3,y+Math.min(8,m.sink),P.woodHi);}
  }
 }
-function arasta(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,b=walk?(phase%2?1:-1):0;
+function arasta(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,m=S.motion;
+ const b=m?Math.round(m.sink*.12+(walk?m.spiderStep*.25:0)):0;
  // Each of eight genuine articulated legs tracks body phase independently.
  for(let side of [-1,1])for(let i=0;i<4;i++){
   let x=56+side*(12+i%2*3),y=60+i*5+b;
-  let kneeX=56+side*(25+i*3),kneeY=27+i*9+(walk?(phase+i)%3:0)+b;
-  let tipX=56+side*(37+i*2),tipY=92-i*4+b;
+  const step=m?(i%2?m.spiderStep:-m.spiderStep):0;
+  let kneeX=56+side*(25+i*3+step*.45),kneeY=27+i*9+(walk?(phase+i)%3:0)+b;
+  let tipX=56+side*(37+i*2+step*.9),tipY=92-i*4+b-Math.abs(step)*.4;
   branch(g,x,y,kneeX,kneeY,P.violet);line(g,kneeX,kneeY,tipX,tipY,P.ink,5);line(g,kneeX,kneeY,tipX,tipY,i%2?P.violet:P.greenHi,3);
   barb(g,tipX,tipY,tipX+side*3,tipY+6,P.web);
  }
- ell(g,57,68+b,23,24,'#53405b');ell(g,57,66+b,19,18,P.violet);
+ ell(g,57+(m?m.spiderLunge*.25:0),68+b,23+(m?m.abdomenBreath*.15:0),24+(m?m.abdomenBreath*.2:0),'#53405b');
+ ell(g,57+(m?m.spiderLunge*.25:0),66+b,19+(m?m.abdomenBreath*.15:0),18,P.violet);
  for(let k=0;k<9;k++){let x=42+(k*7)%33,y=55+(k*11)%25+b;dot(g,x,y,3,3,k%3?P.web:P.rose)}
  // Thorax, enthroned head, patterned back carapace.
- ell(g,57,42+b,14,17,P.green);petals(g,57,36+b,7,P.violet);
- ell(g,57,38+b,10,12,'#94758d');
- if(!back){for(let k=-1;k<=1;k++){eye(g,57+k*6,36+b,P.goldHi);eye(g,57+k*4,42+b,P.rose);}}
+ const strikeShift=m?m.spiderLunge:0;
+ ell(g,57+strikeShift,42+b,14,17,P.green);petals(g,57+strikeShift,36+b,7,P.violet);
+ ell(g,57+strikeShift,38+b,10,12,'#94758d');
+ if(!back){for(let k=-1;k<=1;k++){
+  eye(g,57+strikeShift+k*6,36+b,P.goldHi);
+  eye(g,57+strikeShift+k*4,42+b,P.rose);
+ }}
  for(let i=0;i<5;i++){let x=37+i*9,y=54+(i%2)*4+b;
   line(g,x,y,57,78+b,P.web,1);}
  if(cast||attack){for(let k=-3;k<=3;k++){
-  line(g,56,38+b,56+k*6,25+k*2+b,P.web,1);line(g,56+k*6,25+k*2+b,56+k*8,24+k*4+b,P.web,1);
+  const tensile=m?m.webTension:0;
+  line(g,56+strikeShift,38+b,56+k*6,25+k*2+b-tensile*.4,P.web,1);
+  line(g,56+k*6,25+k*2+b-tensile*.4,56+k*8,24+k*4+b-tensile*.65,P.web,1);
  }}
  if(hot)for(let k=0;k<7;k++){let x=35+(k*7)%43,y=21+(k*5)%42;dot(g,x,y,2,2,P.web);}
  if(hurt)line(g,48,38+b,66,38+b,P.ink,3);
+ if(S.defeat){
+  // Spinnerets droop as the eight rooted legs collapse around the abdomen.
+  for(let side of [-1,1])for(let i=0;i<3;i++){
+   line(g,57+side*(9+i*4),87+b,57+side*(14+i*6),94+b+(m?m.sink*.22:0),P.web,1);
+  }
+ }
 }
-function drakuseth(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,b=walk?(phase%2):0,flap=phase%2?4:0;
+function drakuseth(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,m=S.motion;
+ const b=m?Math.round(m.sink*.12+(walk?m.tailFlex*.18:0)):0;
+ const flap=m?m.wingLift*.5:phase%2?4:0;
+ const neck=m?m.neckThrust:0,jaw=m?m.jawOpen:0;
  // Swept red-charcoal membrane wings; wing roots connected to shoulder.
  for(let side of [-1,1]){
   const x=55+side*10;
-  poly(g,[[x,57+b],[x+side*16,20-flap],[x+side*34,6+flap],[x+side*35,26],[x+side*26,36],[x+side*36,46],[x+side*16,67+b]],'#8b332c');
-  line(g,x,57+b,x+side*34,8+flap,P.ink,4);line(g,x,57+b,x+side*35,26,P.amber,2);
+  const tipY=Math.max(7,6+flap);
+  poly(g,[[x,57+b],[x+side*16,Math.max(12,20-flap)],[x+side*34,tipY],[x+side*35,26],[x+side*26,36],[x+side*36,46],[x+side*16,67+b]],'#8b332c');
+  line(g,x,57+b,x+side*34,tipY+2,P.ink,4);line(g,x,57+b,x+side*35,26,P.amber,2);
   for(let i=1;i<4;i++)line(g,x,56+b,x+side*(17+i*5),17+i*10,P.red,2);
  }
- for(let k=0;k<11;k++){let x=47-k*2.6,y=75+k*1.8+b;ell(g,x,y,6-k*.28,5-k*.14,k%2?'#5f302d':'#813b30');
+ for(let k=0;k<11;k++){let x=47-k*2.6,y=75+k*1.8+b+(m?m.tailFlex*k*.035:0);
+  ell(g,x,y,6-k*.28,5-k*.14,k%2?'#5f302d':'#813b30');
   if(k%2===0)barb(g,x,y-3,x-4,y-8,P.bone);}
  // Muscular dragon haunches and talons.
  for(let side of [-1,1]){
@@ -115,51 +135,81 @@ function drakuseth(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,b=walk?(p
  ell(g,59,61+b,23,27,'#75372e');ell(g,60,60+b,17,22,'#b75c3b');
  for(let j=0;j<7;j++){let x=47+j*4,y=56+j%2*5+b;ell(g,x,y,3,4,j%2?P.red:P.amber);}
  // Distinct long neck and horned jaw, original black-red Drakuseth form.
- branch(g,60,48+b,70,26+b,'#71332d');ell(g,72,27+b,13,11,'#51353a');
- poly(g,[[68,28+b],[87,26+b],[96,32+b],[87,40+b],[73,37+b]],'#ae5839');
- poly(g,[[77,37+b],[93,35+b],[89,41+b],[76,41+b]],'#392c34');
- for(let i=0;i<4;i++)barb(g,79+i*4,38+b,79+i*4,41+b,P.ivory);
+ branch(g,60,48+b,70+neck*.45,26+b-neck*.15,'#71332d');
+ ell(g,72+neck,27+b-neck*.15,13,11,'#51353a');
+ poly(g,[[68+neck,28+b],[87+neck,26+b],[96+neck,32+b],[87+neck,40+b],[73+neck,37+b]],'#ae5839');
+ poly(g,[[77+neck,37+b],[93+neck,35+b+jaw*.4],[89+neck,41+b+jaw],[76+neck,41+b+jaw]],'#392c34');
+ for(let i=0;i<4;i++)barb(g,79+neck+i*4,38+b+jaw*.15,79+neck+i*4,41+b+jaw*.6,P.ivory);
  for(let i=-2;i<=2;i++)barb(g,66+i*4,18+b,64+i*6,7+b,P.bone);
- if(!back){eye(g,81,27+b,P.goldHi);dot(g,88,30+b,2,2,P.ink)}
+ if(!back){eye(g,81+neck,27+b,P.goldHi);dot(g,88+neck,30+b,2,2,P.ink)}
  for(let i=0;i<7;i++)barb(g,47+i*4,42+b+(i%2)*4,46+i*4,35+b+(i%2)*3,P.bone);
  if(attack||cast){for(let i=0;i<8;i++){
-   let x=93+i*(hot?1.9:1.4),y=38+Math.sin(i*.9+phase)*3+b;
+   const spread=m?m.flameBloom:0;
+   // Flame stays inside the atlas cell at maximum breath extension.
+   let x=Math.min(102,93+neck+i*(.9+spread*.04)),y=38+Math.sin(i*.9+phase)*3+b+jaw*.18;
    ell(g,x,y,3+(i%3),3+(i%2),i%2?P.amber:P.fire);
- }}if(hurt)dot(g,75,33+b,10,3,P.ink);
+ }}
+ if(hurt)dot(g,75,33+b,10,3,P.ink);
+ if(S.defeat){
+  // Wing membranes sag and extinguished embers scatter as the dragon falls.
+  for(let i=0;i<4;i++)ell(g,53+i*8,92+b,2,2,i%2?P.dark:P.red);
+ }
 }
-function krenko(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,b=walk?(phase%2):0;
+function krenko(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,m=S.motion;
+ const b=m?Math.round(m.sink*.12+(walk?Math.abs(m.goblinStep)*.3:0)):0;
+ const step=m?m.goblinStep:walk?phase%2?3:-3:0;
+ const headBob=m?m.goblinHead:0;
  // Krenko remains a nimble goblin-sized commander, never an inflated troll.
  for(let side of [-1,1]){
-  branch(g,56+side*7,77+b,56+side*9+(walk?side*(phase%2?3:-3):0),94+b,'#5f513c');
-  ell(g,56+side*12,96+b,8,3,P.dark);
+  const footX=56+side*9+side*step*.7,footY=94+b-Math.abs(step)*.4;
+  branch(g,56+side*7,77+b,footX,footY,'#5f513c');
+  ell(g,footX+side*2,footY+2,8,3,P.dark);
  }
  poly(g,[[44,43+b],[66,43+b],[75,79+b],[39,79+b]],'#873f37');
  poly(g,[[45,49+b],[68,49+b],[70,74+b],[42,74+b]],'#b96b49');
  for(let i=0;i<6;i++){dot(g,45+i*4,60+b,2,2,P.gold);dot(g,46+i*4,72+b,3,2,P.dark);}
  line(g,42,75+b,73,75+b,P.ink,4);dot(g,53,74+b,8,5,P.gold);dot(g,55,75+b,4,3,P.wood);
  for(let side of [-1,1]){
-  branch(g,56+side*16,50+b,56+side*24+(attack?side*4:0),73+b,'#907c58');
-  ell(g,56+side*24,74+b,5,5,'#8d8059');
+  const lift=m?(side<0?m.goblinCommand:m.goblinBlade):attack?4:0;
+  const handX=56+side*(24+lift*.5),handY=73+b-lift*.65;
+  branch(g,56+side*16,50+b,handX,handY,'#907c58');
+  ell(g,handX,handY+1,5,5,'#8d8059');
  }
  // Recognizable pointed Goblin ears, wrinkled face, nose, sharp teeth, crooked cap.
- ell(g,56,34+b,17,17,'#84915a');poly(g,[[42,32+b],[21,23+b],[36,41+b]],'#989b5f');poly(g,[[70,32+b],[91,21+b],[76,41+b]],'#989b5f');
- if(!back){eye(g,47,33+b,P.ivory);eye(g,65,33+b,P.ivory);poly(g,[[56,35+b],[45,47+b],[66,42+b]],'#b4ab7d');
-  for(let i=0;i<5;i++)dot(g,49+i*3,46+b,2,2,P.ivory);}
- poly(g,[[39,28+b],[45,18+b],[64,15+b],[75,25+b],[70,32+b],[41,31+b]],'#793e3b');
- for(let i=0;i<4;i++)dot(g,45+i*7,22+b,2,1,P.gold);
- // Commander's knife and offhand attack signal.
- line(g,82,69+b,88,37+b,P.dark,4);poly(g,[[88,37+b],[86,24+b],[93,22+b],[94,34+b]],P.ironHi);
- if(cast||attack){for(let i=0;i<3;i++)dot(g,73+i*8,19+i*5,3,3,P.amber)}
- if(hurt)line(g,45,32+b,67,32+b,P.dark,3);
+ ell(g,56,34+b+headBob,17,17,'#84915a');
+ poly(g,[[42,32+b+headBob],[21,23+b+headBob],[36,41+b+headBob]],'#989b5f');
+ poly(g,[[70,32+b+headBob],[91,21+b+headBob],[76,41+b+headBob]],'#989b5f');
+ if(!back){eye(g,47,33+b+headBob,P.ivory);eye(g,65,33+b+headBob,P.ivory);
+  poly(g,[[56,35+b+headBob],[45,47+b+headBob],[66,42+b+headBob]],'#b4ab7d');
+  for(let i=0;i<5;i++)dot(g,49+i*3,46+b+headBob,2,2,P.ivory);}
+ poly(g,[[39,28+b+headBob],[45,18+b+headBob],[64,15+b+headBob],[75,25+b+headBob],
+  [70,32+b+headBob],[41,31+b+headBob]],'#793e3b');
+ for(let i=0;i<4;i++)dot(g,45+i*7,22+b+headBob,2,1,P.gold);
+ // Knife is anchored to the active sword hand, not floating at world position.
+ const blade=m?m.goblinBlade:0;
+ const grip=[80+blade*.5,73+b-blade*.65],knifeTip=[Math.min(97,88+blade*.42),Math.max(13,37+b-blade*.75)];
+ line(g,grip[0],grip[1],knifeTip[0],knifeTip[1],P.dark,4);
+ poly(g,[[knifeTip[0],knifeTip[1]],[knifeTip[0]-2,knifeTip[1]-12],
+   [knifeTip[0]+5,knifeTip[1]-14],[knifeTip[0]+6,knifeTip[1]-3]],P.ironHi);
+ if(cast||attack){for(let i=0;i<3;i++)
+  dot(g,73+i*8+(m?m.goblinCommand*.35:0),19+i*5,3,3,P.amber);}
+ if(hurt)line(g,45,32+b+headBob,67,32+b+headBob,P.dark,3);
+ if(S.defeat){for(let i=-2;i<=2;i++)ell(g,56+i*5,92+b,2.3+(m?m.sink*.12:0),2,P.wood);}
 }
-function scarab(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,b=walk?(phase%2):0;
+function scarab(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,m=S.motion;
+ const b=m?Math.round(m.sink*.12+(walk?Math.abs(m.scarabStep)*.25:0)):0;
+ const cape=m?m.scarabCape:0,arm=m?m.scarabArm:0;
  for(let side of [-1,1]){
   // Cape/wings and insect ceremonial shoulder plates.
-  poly(g,[[55+side*8,42+b],[55+side*30,17+b],[55+side*33,75+b],[55+side*21,87+b]],'#1e555d');
-  for(let i=0;i<5;i++){line(g,55+side*9,45+b,55+side*(20+i*3),40+i*7+b,P.teal,1);}
-  branch(g,56+side*14,51+b,56+side*21,77+b,P.iron);
-  ell(g,56+side*20,80+b,6,7,P.gold);branch(g,56+side*7,81+b,56+side*8,99+b,P.dark);
-  ell(g,56+side*9,101+b,8,4,P.gold);
+  poly(g,[[55+side*8,42+b],[55+side*(30+cape*.45),17+b-cape*.45],
+    [55+side*(33+cape*.35),75+b],[55+side*21,87+b]],'#1e555d');
+  for(let i=0;i<5;i++){line(g,55+side*9,45+b,55+side*(20+i*3+cape*.25),40+i*7+b,P.teal,1);}
+  const armX=56+side*(21+arm*.4),armY=77+b-arm*.65;
+  branch(g,56+side*14,51+b,armX,armY,P.iron);
+  ell(g,armX,armY+3,6,7,P.gold);
+  const footX=56+side*(8+(m?m.scarabStep*.4:0));
+  branch(g,56+side*7,81+b,footX,99+b-(m?Math.abs(m.scarabStep)*.25:0),P.dark);
+  ell(g,footX+side,101+b,8,4,P.gold);
  }
  poly(g,[[43,40+b],[69,40+b],[78,66+b],[67,91+b],[45,91+b],[35,66+b]],'#223d4a');
  poly(g,[[46,45+b],[66,45+b],[69,71+b],[60,85+b],[48,73+b]],P.teal);
@@ -174,9 +224,16 @@ function scarab(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,b=walk?(phas
   let y=65+i*5+b;line(g,47,y,65,y,P.gold,1);
  }
  if(cast||attack)for(let i=0;i<8;i++){
-  let x=35+(i*9)%45,y=23+(i*11)%43;dot(g,x,y,3,3,i%2?P.tealHi:P.goldHi);
+  const pulse=m?m.scarabMagic:0;
+  let x=35+(i*9)%45+(i%2?pulse*.4:0),y=23+(i*11)%43-pulse*.65;
+  dot(g,x,y,3,3,i%2?P.tealHi:P.goldHi);
  }
  if(hurt)dot(g,47,32+b,18,2,P.ink);
+ if(S.defeat){
+  // Broken ceremonial ribbons and cooling divine embers, not an upright idle.
+  for(let i=0;i<6;i++){const x=33+i*8;
+   line(g,x,88+b,x+((i%2)?3:-3),93+b+(m?m.sink*.25:0),P.tealHi,2);}
+ }
 }
 function toxrill(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S;
  const m=S.motion,b=m?Math.round(m.mantleWave*.25+m.sink*.14):0;
