@@ -167,31 +167,53 @@ export function planEnemy(s, e) {
     .sort((a, b) => Math.abs(manhattan(a, target) - want) - Math.abs(manhattan(b, target) - want) || hazard(s, a) - hazard(s, b) || a.cost - b.cost || cmpTile(a, b));
 
   if (BOSS_BY_ID[e.defId]) {
-    // These tactical actions are driven by actual MTG abilities, not by the legacy boss scripts.
-    const nearby = manhattan(e, hero) <= 1;
-    if (['arasta','drakuseth','scarab','toxrill'].includes(e.defId) && !nearby) go(approach(s,e,hero,list,map));
-    const adjacent = manhattan(posAfter(), hero) === 1;
+    // All six legendary creatures participate in tactical combat. Their
+    // printed activated/triggered abilities are ADDITIONAL actions, not a
+    // replacement for movement and basic attacks (unless they tap to activate).
+    // Prefer the closest live player-side unit, including summoned Soldiers.
+    const target = meleeTarget(s, e);
+    if (target && manhattan(e, target) !== 1) {
+      // When within reach, occupy a free adjacent tile to attack this turn.
+      // Otherwise advance along the same deterministic hazard-aware route as
+      // other melee foes. Never move onto a unit or an unsafe lethal tile.
+      const attackStops = list.filter(t => manhattan(t, target) === 1)
+        .sort((a,b)=>a.hz-b.hz || a.cost-b.cost || cmpTile(a,b));
+      go(attackStops[0] || approach(s,e,target,list,map));
+    }
+    const adjacent = !!target && manhattan(posAfter(), target) === 1;
+    const attackTarget = () => { if (adjacent) meleeIfAdjacent(target); };
     switch (e.defId) {
       case 'nemata': {
         const mana = Math.min(8, (e.bossMana ?? 3) + 1);
         const sap = enemies(s).filter(u=>u.defId==='saproling');
         if (mana >= 3) plan.actions.push({ type:'legendarySummon', defId:'saproling', n:1, mana:3 });
         if (sap.length >= 2 && e.cycle % 3 === 2) plan.actions.push({ type:'nemataPump' });
+        attackTarget(); // Nemata's Saproling activation does not tap Nemata.
         break;
       }
-      case 'arasta': { if (adjacent) meleeIfAdjacent(hero); break; }
-      case 'drakuseth': { if (adjacent) { plan.actions.push({ type:'drakusethFlames' }); meleeIfAdjacent(hero); } break; }
+      case 'arasta': { attackTarget(); break; }
+      case 'drakuseth': {
+        // Flame trigger occurs on an actual attack, never as a free ranged spell.
+        if (adjacent) { plan.actions.push({ type:'drakusethFlames' }); attackTarget(); }
+        break;
+      }
       case 'krenko': {
-        const count = enemies(s).filter(u => (u.creatureTypes || ENEMIES[u.defId]?.tribe || (u.defId === 'goblin' ? 'Goblin' : '')).split(/\s+/).includes('Goblin')).length;
-        plan.actions.push({ type:'legendarySummon', defId:'goblin', n:count }); break;
+        // Krenko's printed token ability TAPS it. Keep the signature Goblin
+        // summons, but alternate with an untapped melee turn so Krenko can
+        // actually fight rather than remaining a stationary token factory.
+        if ((e.cycle || 0) % 2 === 0) {
+          const count = enemies(s).filter(u => (u.creatureTypes || ENEMIES[u.defId]?.tribe || (u.defId === 'goblin' ? 'Goblin' : '')).split(/\s+/).includes('Goblin')).length;
+          plan.actions.push({ type:'legendarySummon', defId:'goblin', n:count });
+        } else attackTarget();
+        break;
       }
       case 'scarab': {
-        // {2}{U}{B}: exile a creature card from ANY graveyard (highest printed power first, deterministic ties).
+        // {2}{U}{B}: reanimate from either graveyard; this is not a tap ability.
         const pool = scarabTargets(s, e).sort((a,b)=>(ENEMIES[b.defId].power-ENEMIES[a.defId].power)||((a.uid||0)-(b.uid||0))||(a.defId<b.defId?-1:1));
         if (pool.length && (e.bossMana ?? 3) + 1 >= 4) plan.actions.push({ type:'scarabReanimate', target:pool[0], mana:4 });
-        if (adjacent) meleeIfAdjacent(hero); break;
+        attackTarget(); break;
       }
-      case 'toxrill': { if (adjacent) meleeIfAdjacent(hero); break; }
+      case 'toxrill': { attackTarget(); break; }
     }
     return plan;
   }
@@ -384,7 +406,7 @@ export function previewIntent(s, e) {
     const atk = a.find(x => x.type === 'attack');
     return { uid: e.uid, kind: 'slam', damage: e.slam.damage - brace(e.slam.damage), guarded: brace(e.slam.damage), tiles: e.slam.tiles, extra: atk ? atk.damage : 0, target: atk && atk.target };
   }
-  const main = a.find(x => x.type === 'attack') || a.find(x => x.type === 'realPing') || a.find(x => x.type === 'harpoon') || a.find(x => x.type === 'spit') || a.find(x => x.type === 'hex') || a.find(x => x.type === 'aim') || a.find(x => x.type === 'slam') || a.find(x => x.type === 'summon') || a.find(x => x.type === 'guard') || a.find(x => x.type === 'stunned');
+  const main = a.find(x => x.type === 'attack') || a.find(x => x.type === 'drakusethFlames') || a.find(x => x.type === 'realPing') || a.find(x => x.type === 'harpoon') || a.find(x => x.type === 'spit') || a.find(x => x.type === 'hex') || a.find(x => x.type === 'aim') || a.find(x => x.type === 'slam') || a.find(x => x.type === 'legendarySummon') || a.find(x => x.type === 'scarabReanimate') || a.find(x => x.type === 'nemataPump') || a.find(x => x.type === 'summon') || a.find(x => x.type === 'guard') || a.find(x => x.type === 'stunned');
   const g = (hero && hero.statuses.guard) || 0;   // v0.8: intents show what you will ACTUALLY take while guarding
   const dmg = (main && main.damage) || 0; const vsHero = main && (main.target === hero.uid || main.type === 'slam' || main.type === 'aim');
   return { uid: e.uid, kind: main ? main.type : 'move', damage: vsHero && g ? Math.max(0, dmg - g) : dmg, guarded: vsHero && g ? Math.min(g, dmg) : 0, /* pending slams use the braced rule */ poison: (main && main.poison) || 0, weaken: (main && main.weaken) || 0, ground: !!(main && main.ground),
