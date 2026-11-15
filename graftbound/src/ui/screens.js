@@ -270,7 +270,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
           <button type="button" class="zoom" data-zoom="${esc(id)}" aria-label="Inspect">${ICON.zoom}</button></div>`).join('')}</div>
       </div>
       <div class="rw-detail" id="rw-detail"></div>
-      <div class="rw-actions"><button type="button" class="btn small ghost" id="rw-ceremony-skip" aria-label="Skip pack opening ceremony, retain all rewards">Skip opening animation</button><button type="button" class="btn small ghost" id="rw-reveal">Reveal all</button>${tier !== 'graftsmith' ? `<button type="button" class="btn small ghost" id="rw-skip" hidden>Leave the pack · +1 Spark</button>` : ''}</div>
+      <div class="rw-actions"><button type="button" class="btn small ghost" id="rw-ceremony-skip" aria-label="Skip pack opening ceremony, retain all rewards">Skip opening animation</button><button type="button" class="btn small ghost" id="rw-reveal">Reveal all</button>${tier !== 'graftsmith' ? `<button type="button" class="btn small ghost" id="rw-skip" hidden>Leave the pack · +1 Maximum Health</button>` : ''}</div>
     </div>`, 'rewardscr' + (fast ? ' fast' : ''));
   app.hint('pack', 'Reveal all three cards, then choose one. Creatures are grafted into you; spells go into your spellbook. Tap the magnifier to inspect a card.');
   let showDetailRef = null;
@@ -354,7 +354,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
       } else e.target.click();
     } });
     $('rw-reveal').addEventListener('click', async () => { if (!opened) skipCeremony(); await open(); fan.querySelectorAll('.slot').forEach((s, i) => setTimeout(() => reveal(s), instant ? 0 : fast ? 60 * i : 180 + i * 220)); });
-    const sk = $('rw-skip'); if (sk) sk.addEventListener('click', () => app.confirm('Leave all three cards behind and gain +1 Spark (+1 max health) instead?', 'Leave them', () => res({ choice: 'skip' })));
+    const sk = $('rw-skip'); if (sk) sk.addEventListener('click', () => app.confirm('Leave all three cards behind and gain +1 Maximum Health (+1 max health) instead?', 'Leave them', () => res({ choice: 'skip' })));
     const showDetail = id => {
       const c = getCard(id); let body; const full = c.kind === 'creature' && graftsFull(run);
       if (c.kind === 'creature') {
@@ -364,7 +364,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
         const ability = c.trait ? `<span class="chip new gb-graft-ability" title="${esc(c.adaptationNote)}">✦ ${esc(c.name)} ability</span><p class="gb-graft-note">${esc(c.adaptationNote)}</p>` : '';
         body = `<div class="becomes"><span class="lbl">${full ? 'Release one graft, then become' : 'You become'}</span><span class="ptbig">${run.evo.power}/${run.evo.toughness} <i>→</i> <b>${evo.power}/${evo.toughness}</b>${full ? ' <small>(before release)</small>' : ''}</span>
           <span class="hp">${ICON.heart} ${before.maxHealth} → ${after.maxHealth} max health${after.move !== before.move ? ` · ${ICON.move} ${before.move} → ${after.move} move` : ''}</span>
-          <div class="chips">${gained}${ability}${change.resonance ? `<span class="chip res" data-tip="Abilities you already have resonate: +2 Spark (max health) each.">Resonance +${change.resonance * 2} Spark</span>` : ''}</div></div>
+          <div class="chips">${gained}${ability}${change.resonance ? `<span class="chip res" data-tip="Abilities you already have resonate: +2 Maximum Health (max health) each.">Resonance +${change.resonance * 2} Maximum Health</span>` : ''}</div></div>
           ${full ? `<div class="release"><p>Your body holds <b>${graftCapacity(run)}</b> grafts in this act. Choose one to release (its power, toughness and abilities leave you):</p>
             ${run.evo.absorbed.map((a, i) => { const ac = getCard(a.cardId); return `<label><input type="radio" name="rel" value="${i}"><b>${esc(a.name)}</b><small>${ac && ac.kind === 'creature' ? `+${ac.power}/+${ac.toughness}${Object.keys(ac.keywords).length ? ' · ' + Object.keys(ac.keywords).map(k => KEYWORDS[k].name).join(', ') : ''}${ac.trait ? ' · ✦ ' + esc(ac.adaptationNote) : ''}` : ''}</small></label>`; }).join('')}</div>` : ''}
           ${sourcePanelHTML(id)}<button type="button" class="btn primary big" data-take ${full ? 'disabled' : ''}>Graft ${esc(c.name)}</button>`;
@@ -433,12 +433,12 @@ export function sheetModal(app) {
         <figure class="sh-portrait" data-character-portrait aria-label="Your current evolved character"><figcaption>Current form · ${esc(visible.join(', ') || 'The Blank')}</figcaption><div class="trait-pins" role="group" aria-label="Inspect visible graft traits"></div></figure><p class="trait-detail" aria-live="polite">Select a glowing trait to inspect your evolved form.</p>
         <div class="sh-pt"><div><span>${run.evo.power}</span><small>Power</small></div><div><span>${run.evo.toughness}</span><small>Toughness</small></div></div>
         <dl class="sh-derived">
-          <dt>${ICON.heart} Health</dt><dd>${run.hp}/${st.maxHealth} <small>= ${st.spark} Spark + ${run.evo.toughness} toughness</small></dd>
+          <dt>${ICON.heart} Health</dt><dd>${run.hp}/${st.maxHealth} <small>= ${st.spark} Maximum Health + ${run.evo.toughness} toughness</small></dd>
           <dt>${ICON.move} Movement</dt><dd>${st.move}</dd>
           <dt>${ICON.gem} Mana</dt><dd>${st.startMana} at start · +${st.manaRegen}/turn · max ${st.maxMana}</dd>
           <dt>⧉ Grafts</dt><dd>${run.evo.absorbed.length} of ${graftCapacity(run)} this act</dd>
           ${st.arcane ? `<dt>✦ Arcane</dt><dd>Spells +${st.arcane}</dd>` : ''}
-          ${run.evo.resonance ? `<dt>◎ Resonance</dt><dd>+${run.evo.resonance * 2} Spark from repeated abilities</dd>` : ''}
+          ${run.evo.resonance ? `<dt>◎ Resonance</dt><dd>+${run.evo.resonance * 2} Maximum Health from repeated abilities</dd>` : ''}
         </dl>
         <h3>Abilities</h3>
         <ul class="sh-kw">${Object.entries(run.evo.keywords).map(([k, v]) => `<li><b>${KEYWORDS[k].glyph} ${esc(keywordLabel(k, v))}</b><span>${esc(KEYWORDS[k].text)}</span></li>`).join('') || '<li class="muted">None yet. Graft creatures to gain abilities.</li>'}</ul>
@@ -447,7 +447,7 @@ export function sheetModal(app) {
       </section>
       <section class="sh-hist"><h3>Grafts</h3><ol class="hist">${hist || '<li class="muted">Nothing yet. You are a blank 1/1.</li>'}</ol>
         <h3>Form</h3><p class="small">${visible.length ? 'Visible traits: ' + esc(visible.join(', ')) : 'Unmarked parchment.'}${ap.dormant.length ? `<br><span class="muted">Dormant: ${esc(ap.dormant.join(', '))}</span>` : ''}</p>
-        <p class="rules-note"><b>Permanent</b>: grafts, spells and Spark. <b>Between battles</b>: wounds — a victory restores half your missing health; act bosses and Restoration restore all. <b>Temporary</b>: shields, poison, stuns, power changes.</p>
+        <p class="rules-note"><b>Permanent</b>: grafts, spells and Maximum Health. <b>Between battles</b>: wounds — a victory restores half your missing health; act bosses and Restoration restore all. <b>Temporary</b>: shields, poison, stuns, power changes.</p>
       </section>
     </div>
     <div class="modal-actions"><button type="button" class="btn" data-journal>Evolution Journal</button><button type="button" class="btn primary" data-close>Close</button></div>`, 'wide');
