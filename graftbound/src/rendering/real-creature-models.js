@@ -4,6 +4,7 @@
 // Canvas-only: engine, simulation and ranked replay remain entirely DOM-free.
 import { CREATURE_MOTION_FAMILIES, creaturePose, materialLightDelta } from './creature-motion.js';
 import { SPECIES_FRAME, SPECIES_STUDY_FEATURES, drawSpeciesStudyFrame } from './detailed-species-art.js';
+import { HUMANOID_FRAME, HUMANOID_STUDY_FEATURES, drawHumanoidStudyFrame } from './detailed-humanoid-art.js';
 
 const C = (base, dark, mid, light, feature, custom = false) => ({ base, dark, mid, light, feature, custom });
 export const REAL_CREATURE_MODELS = Object.freeze({
@@ -296,9 +297,12 @@ export function installRealCreatureModels(images,manifest) {
     if(!base||!source)throw new Error('Missing original animation rig '+config.base+' for '+key);
     // A native 96px identity-specific rendering rig replaces Hound/Moth borrowed art
     // while retaining the original one-tile gameplay and apparent world height.
-    const detailed=SPECIES_STUDY_FEATURES.includes(config.feature);
-    const width=detailed?SPECIES_FRAME:config.custom && ['arasta','drakuseth','krenko','scarab','toxrill'].includes(name)?96:base.w;
-    const height=detailed?SPECIES_FRAME:config.custom && ['arasta','drakuseth','krenko','scarab','toxrill'].includes(name)?96:base.h;
+    const humanoid=HUMANOID_STUDY_FEATURES.includes(config.feature);
+    const species=SPECIES_STUDY_FEATURES.includes(config.feature);
+    const detailed=species||humanoid;
+    const nativeFrame=humanoid?HUMANOID_FRAME:SPECIES_FRAME;
+    const width=detailed?nativeFrame:config.custom && ['arasta','drakuseth','krenko','scarab','toxrill'].includes(name)?96:base.w;
+    const height=detailed?nativeFrame:config.custom && ['arasta','drakuseth','krenko','scarab','toxrill'].includes(name)?96:base.h;
     // Species-specific defeat poses retain the old simulation death timing.
     // The additional row belongs to these identities only; never move shared atlas rows.
     const authored=Boolean(CREATURE_MOTION_FAMILIES[config.feature]);
@@ -316,7 +320,8 @@ export function installRealCreatureModels(images,manifest) {
         cctx.drawImage(source,srcX,srcY,base.w,base.h,0,0,width,height);
         recolor(cell,config);
       }
-      if(detailed)drawSpeciesStudyFrame(cctx,config.feature,view,anim.row,frame,config);
+      if(humanoid)drawHumanoidStudyFrame(cctx,config.feature,view,anim.row,frame,config);
+      else if(species)drawSpeciesStudyFrame(cctx,config.feature,view,anim.row,frame,config);
       else overlay(cctx,width,height,config,view,anim.row,frame);
       polishMaterial(cell,config.feature);
       sctx.drawImage(cell,frame*width,(view*rows+anim.row)*height);
@@ -325,9 +330,12 @@ export function installRealCreatureModels(images,manifest) {
     manifest.sprites[key]={w:width,h:height,pivotY:detailed?87:height-3,
       hover:(name==='spider'||name==='friendlySpider'||name==='hound'||name==='wolf'||name==='alpha'?0:(base.hover||0)),
       artWidth:Math.max(0,width-4),bleedX:2,generated:true,
-      ...(detailed?{pixelScale:base.h*(base.pixelScale||1)/height,artPack:'species-anatomy-study-v1'}:{}),
+      ...(detailed?{
+        pixelScale:base.h*(base.pixelScale||1)/height,
+        artPack:humanoid?'humanoid-anatomy-study-v1':'species-anatomy-study-v1'
+      }:{}),
       ...(authored?{anims,views:manifest.views,cols}:{}),
-      qualityStatus:detailed?'native resolution original anatomy study; final hand-painted HD-2D quality pending':
+      qualityStatus:detailed?'native source anatomy study; final painted HD-2D acceptance pending':
         authored?'species-specific motion study; original HD-2D art still required':undefined};
   }
   return Object.keys(REAL_CREATURE_MODELS).length;
