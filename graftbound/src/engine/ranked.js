@@ -6,14 +6,14 @@ import { movePlayer, attack, cast, endTurn, interact, guard, channel, discard, e
 import { expeditionTotals } from './scoring.js';
 import { SCORING_VERSION } from '../data/scoring.js';
 
-export const RULES_VERSION = 'graftbound-rules-1.3.5-beta';
+export const RULES_VERSION = 'graftbound-rules-1.3.6-beta';
 export const CARD_POOL_VERSION = 'real-pool-133-v7';
 export const REPLAY_VERSION = 1;
 export const MAX_DECISIONS = 4000, MAX_SEGMENT = 400;
 
 /** Fixed, versioned challenges. Seeds are authored here; servers never accept a client-chosen seed. */
 export const RANKED_CHALLENGES = {
-  'gb-expedition-01': { id: 'gb-expedition-01', revision: 18, name: 'The First Expedition', seed: 0x5eedcafe, tutorial: true,
+  'gb-expedition-01': { id: 'gb-expedition-01', revision: 19, name: 'The First Expedition', seed: 0x5eedcafe, tutorial: true,
     rulesVersion: RULES_VERSION, cardPoolVersion: CARD_POOL_VERSION, scoringVersion: SCORING_VERSION, status: 'active' },
 };
 export const ACTIVE_CHALLENGE = 'gb-expedition-01';

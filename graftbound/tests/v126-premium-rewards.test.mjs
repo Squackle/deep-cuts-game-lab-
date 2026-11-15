@@ -153,7 +153,7 @@ test('old Gearhulk encounters migrate into Wurmcoil while preserving old player 
  const stored=JSON.stringify(r.battle.deck);
  const m=RUN_MIGRATIONS[7](r);
  assert.equal(m.v,8);assert.equal(m.battle.v,9); // This historical migration remains v7 → v8.
- const upgraded=RUN_MIGRATIONS[8](m);assert.equal(upgraded.v,RUN_VERSION);assert.equal(upgraded.battle.v,BATTLE_VERSION);
+ const upgraded=RUN_MIGRATIONS[8](m);assert.equal(upgraded.v,RUN_VERSION);assert.equal(upgraded.battle.v,10,'historical v8→v9 migration stays at the original battle schema version');
  assert.ok(!('opp' in m.battle));assert.ok(!('pendingChoices' in m.battle));
  assert.equal(m.battle.units.at(-1).name,'Wurmcoil Engine');assert.ok(m.battle.units.at(-1).keywords.deathtouch);
  assert.equal(JSON.stringify(m.battle.deck),stored);
