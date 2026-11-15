@@ -285,8 +285,8 @@ export function endTurn(s) {
     ev.push({ t: 'enemyTurn', uid: a.uid });
     actAlly(s, ev, a);
   }
-  // Friendly spell buffs persist through an ally's action, then expire even if
-  // no ally survived the foe phase.
+  // Friendly spell buffs persist through each surviving ally's action and
+  // expire afterward, as before this ordering change.
   for (const a of allies(s).filter(u => !u.hero)) if (a.statuses.empowered) {
     a.statuses.empowered = 0;
     ev.push({ t: 'status', uid: a.uid, status: 'empowered', value: 0, total: 0 });
