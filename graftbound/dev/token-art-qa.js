@@ -1,7 +1,6 @@
 import {loadAssets} from '../src/rendering/sprites.js';
 const $=id=>document.getElementById(id);
 const models=[
- ['Squirrel (Token)','mtg_friendlySquirrel'],
  ['Saproling (Summon)','mtg_saproling'],
  ['Sproutling (Summon)','mtg_friendlySproutling']
 ];
@@ -19,6 +18,12 @@ function signature(bytes){
 }
 try{
  const assets=await loadAssets(),results=[];
+ // Owner-approved illustrated Squirrel has precedence over the procedural
+ // creature renderer. Reject any accidental downgraded art pack.
+ const approved=assets.manifest.sprites.mtg_friendlySquirrel;
+ if(approved?.artPack!=='owner-raster-benchmarks-v1'||
+    approved?.artSource!=='squirrel-poses.png'||approved?.w!==96)
+   throw new Error('Approved painted Squirrel benchmark replaced or missing');
  for(const [label,key] of models){
   const meta=assets.manifest.sprites[key],sprite=assets.images[key];
   if(!sprite||meta?.artPack!=='token-anatomy-study-v1'||meta.w!==96||meta.h!==96)
@@ -63,6 +68,6 @@ try{
   article.append(heading,canvas,info);$('models').append(article);
   results.push(report);
  }
- $('status').textContent='Loaded '+results.length+' native Squirrel and Saproling identities; all tested views/states have 3+ distinct nonempty frames.';
+ $('status').textContent='Loaded '+results.length+' native Saproling identities; approved painted Squirrel preserved; all tested native fungus views/states have 3+ distinct nonempty frames.';
  $('status').id='ready';
 }catch(err){$('status').textContent='Token art QA failed: '+String(err);$('status').id='error';}
