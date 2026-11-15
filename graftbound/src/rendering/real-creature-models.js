@@ -8,6 +8,7 @@ import { HUMANOID_FRAME, HUMANOID_STUDY_FEATURES, drawHumanoidStudyFrame } from 
 import { BEAST_FRAME, BEAST_STUDY_FEATURES, drawBeastStudyFrame } from './detailed-beast-art.js';
 import { TOKEN_FRAME, TOKEN_STUDY_FEATURES, drawTokenStudyFrame } from './detailed-token-art.js';
 import { MAGIC_FRAME, MAGIC_STUDY_FEATURES, drawMagicStudyFrame } from './detailed-magic-art.js';
+import { MONSTER_FRAME, MONSTER_STUDY_FEATURES, drawMonsterStudyFrame } from './detailed-monster-art.js';
 
 const C = (base, dark, mid, light, feature, custom = false) => ({ base, dark, mid, light, feature, custom });
 export const REAL_CREATURE_MODELS = Object.freeze({
@@ -305,8 +306,9 @@ export function installRealCreatureModels(images,manifest) {
     const beast=BEAST_STUDY_FEATURES.includes(config.feature);
     const token=TOKEN_STUDY_FEATURES.includes(config.feature);
     const magic=MAGIC_STUDY_FEATURES.includes(config.feature);
-    const detailed=species||humanoid||beast||token||magic;
-    const nativeFrame=humanoid?HUMANOID_FRAME:beast?BEAST_FRAME:token?TOKEN_FRAME:magic?MAGIC_FRAME:SPECIES_FRAME;
+    const monster=MONSTER_STUDY_FEATURES.includes(config.feature);
+    const detailed=species||humanoid||beast||token||magic||monster;
+    const nativeFrame=humanoid?HUMANOID_FRAME:beast?BEAST_FRAME:token?TOKEN_FRAME:magic?MAGIC_FRAME:monster?MONSTER_FRAME:SPECIES_FRAME;
     const width=detailed?nativeFrame:config.custom && ['arasta','drakuseth','krenko','scarab','toxrill'].includes(name)?96:base.w;
     const height=detailed?nativeFrame:config.custom && ['arasta','drakuseth','krenko','scarab','toxrill'].includes(name)?96:base.h;
     // Species-specific defeat poses retain the old simulation death timing.
@@ -331,6 +333,7 @@ export function installRealCreatureModels(images,manifest) {
       else if(beast)drawBeastStudyFrame(cctx,config.feature,view,anim.row,frame,config);
       else if(token)drawTokenStudyFrame(cctx,config.feature,view,anim.row,frame,config);
       else if(magic)drawMagicStudyFrame(cctx,config.feature,view,anim.row,frame,config);
+      else if(monster)drawMonsterStudyFrame(cctx,config.feature,view,anim.row,frame,config);
       else overlay(cctx,width,height,config,view,anim.row,frame);
       polishMaterial(cell,config.feature);
       sctx.drawImage(cell,frame*width,(view*rows+anim.row)*height);
@@ -341,7 +344,7 @@ export function installRealCreatureModels(images,manifest) {
       artWidth:Math.max(0,width-4),bleedX:2,generated:true,
       ...(detailed?{
         pixelScale:base.h*(base.pixelScale||1)/height,
-        artPack:humanoid?'humanoid-anatomy-study-v1':beast?'beast-anatomy-study-v1':token?'token-anatomy-study-v1':magic?'magic-anatomy-study-v1':'species-anatomy-study-v1'
+        artPack:humanoid?'humanoid-anatomy-study-v1':beast?'beast-anatomy-study-v1':token?'token-anatomy-study-v1':magic?'magic-anatomy-study-v1':monster?'monster-anatomy-study-v1':'species-anatomy-study-v1'
       }:{}),
       ...(authored?{anims,views:manifest.views,cols}:{}),
       qualityStatus:detailed?'native source anatomy study; final painted HD-2D acceptance pending':
