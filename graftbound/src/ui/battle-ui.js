@@ -102,24 +102,24 @@ export class BattleUI {
     let v;
     if (u.hero) {
       const ap = deriveAppearance(this.run.evo, visualForRun(this.run));
-      v = this.scene.addUnit(u, 'blank'); this.scene.setUnitTexture(u.uid, composeEquippedSheet(this.app.assets, ap, u.equipment || [], u.auras || []), Math.min(0.94, ap.size * 0.76));
+      v = this.scene.addUnit(u, 'blank'); this.scene.setUnitTexture(u.uid, composeEquippedSheet(this.app.assets, ap, u.equipment || [], u.auras || []), Math.min(0.53, ap.size * 0.38));
       v.aura = ap.effects.includes('aura') ? ap.glow : null;
-      v.hover = u.keywords.flying ? 0.28 : 0;   // v0.6: fliers levitate; trample builds plant heavier steps (see play())
+      v.hover = u.keywords.flying ? 0.14 : 0;   // v0.6: fliers levitate; trample builds plant heavier steps (see play())
       v.style = { flying: !!u.keywords.flying, trample: !!u.keywords.trample, deathtouch: !!u.keywords.deathtouch, doubleStrike: !!u.keywords.doubleStrike, lifelink: !!u.keywords.lifelink,
         armored: !!ap.slots.body || ap.size >= 1.45 };
       // v0.7 casting point follows the evolved body: horns/antlers/crown channel through the head.
       v.castAt = ap.slots.head ? 'head' : 'chest';
     } else {
       const friend = u.side === 'player' && u.defId === 'sproutling';
-      const comboModels={birdIllusion:'mtg_friendlyBirdIllusion',tentacle:'mtg_friendlyTentacle',skeleton:'mtg_friendlySkeleton',snake:'mtg_friendlySnake',goblin:'mtg_friendlyGoblin',hornet:'mtg_friendlyHornet',squirrel:'mtg_friendlySquirrel'};
+      const comboModels={spider:'mtg_friendlySpider',birdIllusion:'mtg_friendlyBirdIllusion',tentacle:'mtg_friendlyTentacle',skeleton:'mtg_friendlySkeleton',snake:'mtg_friendlySnake',goblin:'mtg_friendlyGoblin',hornet:'mtg_friendlyHornet',squirrel:'mtg_friendlySquirrel'};
       const tokenKey = comboModels[u.traitToken] || (u.traitToken === 'elemental' ? 'mtg_friendlyElemental' :
         u.traitToken === 'drake' ? 'mtg_friendlyDrake' :
         u.traitToken === 'catsoldier' ? 'mtg_friendlyCatSoldier' :
         u.name === 'Soldier' ? 'mtg_friendlySoldier' : 'mtg_friendlySproutling');
-      v = this.scene.addUnit(u, friend ? tokenKey : ENEMIES[u.defId].sprite, { scale: u.boss ? 0.42 : tokenKey==='mtg_friendlySoldier' ? 0.76 : 0.95 });
+      v = this.scene.addUnit(u, friend ? tokenKey : ENEMIES[u.defId].sprite, { scale: u.boss ? 0.46 : (tokenKey==='mtg_friendlySoldier' ? 0.39 : (u.defId==='spider' || tokenKey==='mtg_friendlySpider' ? 0.34 : 0.56)) });
       if (friend && tokenKey === 'mtg_friendlySoldier') {
         const src=this.app.assets.images.mtg_friendlySoldier, mask=this.app.assets.images['mtg_friendlySoldier:skinMask'];
-        this.scene.setUnitTexture(u.uid,composeAllyAttachments(recolorSkin(src,mask,skinToneForSeed(this.run.seed,u.uid)),64,u.equipment||[],u.auras||[]),0.76);
+        this.scene.setUnitTexture(u.uid,composeAllyAttachments(recolorSkin(src,mask,skinToneForSeed(this.run.seed,u.uid)),64,u.equipment||[],u.auras||[]),0.39);
       }
     }
     if(u.auras?.length) this.applyAuraLight(u);
