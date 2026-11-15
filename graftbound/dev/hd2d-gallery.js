@@ -6,14 +6,15 @@ const states=['idle','walk','attack','cast','hurt'];
 const stateSelect=$('state'), viewSelect=$('view'), grid=$('models'), coverage=$('coverage');
 for(const v of states){const el=document.createElement('option');el.value=v;el.textContent=v;stateSelect.append(el)}
 for(const v of ['front','back','left','right']){const el=document.createElement('option');el.value=v;el.textContent=v;viewSelect.append(el)}
-const accepted=modelList.filter(([k,m])=>m.artPack==='hd2d-v1').length;
-coverage.textContent=accepted+' / '+modelList.length+' runtime identities contain independently authored HD-2D sprite sheets. Remaining models use legacy art. This is an asset inspector, not proof of art acceptance or a battle screenshot.';
+const authored=modelList.filter(([k,m])=>m.artPack==='hd2d-v1').length;
+const benchmark=modelList.filter(([k,m])=>m.artPack==='owner-raster-benchmarks-v1').length;
+coverage.textContent=benchmark+' owner-style raster benchmarks in the actual runtime, '+authored+' additional authored HD-2D sheets, '+(modelList.length-benchmark-authored)+' legacy identities. Benchmark rear motion/cast/hurt remain work-in-progress. This is the real asset inspector, not an art-acceptance certificate or battle screenshot.';
 const cards=[];
 for(const [key,meta] of modelList){
   const box=document.createElement('article');box.className='card';
   const canvas=document.createElement('canvas');canvas.width=canvas.height=176;canvas.setAttribute('aria-label',key+' sprite animation');
   const title=document.createElement('strong');title.textContent=key.replace(/^mtg_/,'').replace(/_/g,' ');
-  const status=document.createElement('small');status.textContent=meta.artPack==='hd2d-v1'?'Native authored HD-2D':'Legacy art — not approved';
+  const status=document.createElement('small');status.textContent=meta.artPack==='owner-raster-benchmarks-v1'?'Original raster benchmark · more animation QA needed':meta.artPack==='hd2d-v1'?'Authored HD-2D · visual QA required':'Legacy art — not approved';
   box.append(canvas,title,status);grid.append(box);cards.push({key,meta,canvas});
 }
 let last=0;

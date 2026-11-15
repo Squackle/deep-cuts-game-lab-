@@ -12,7 +12,7 @@ export function composeEquippedSheet(assets,appearance,equipment=[],auras=[]){
  if(cache.has(key))return cache.get(key);
  const c=document.createElement('canvas');c.width=source.width;c.height=source.height;
  const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(source,0,0);
- drawEquipmentSheet(g,appearance,ids);
+ g.save();g.scale(source.width/(64*4),source.height/(64*10));drawEquipmentSheet(g,appearance,ids);g.restore();
  const out=composeAuraSheet(c,assets.manifest.sprites.blank.w,auras,assets.manifest.cols);
  if(cache.size>=16)cache.delete(cache.keys().next().value);cache.set(key,out);
  return out;

@@ -117,10 +117,10 @@ export class BattleUI {
         u.traitToken === 'drake' ? 'mtg_friendlyDrake' :
         u.traitToken === 'catsoldier' ? 'mtg_friendlyCatSoldier' :
         u.name === 'Soldier' ? 'mtg_friendlySoldier' : 'mtg_friendlySproutling');
-      v = this.scene.addUnit(u, friend ? tokenKey : ENEMIES[u.defId].sprite, { scale: u.boss ? 0.46 : (tokenKey==='mtg_friendlySoldier' ? 0.39 : (u.defId==='spider' || tokenKey==='mtg_friendlySpider' ? 0.34 : 0.56)) });
+      v = this.scene.addUnit(u, friend ? tokenKey : ENEMIES[u.defId].sprite, { scale: u.boss ? 0.46 : (tokenKey==='mtg_friendlySoldier' ? 0.39 : (tokenKey==='mtg_friendlySquirrel' ? 0.24 : (u.defId==='spider' || tokenKey==='mtg_friendlySpider' ? 0.34 : 0.56))) });
       if (friend && tokenKey === 'mtg_friendlySoldier') {
         const src=this.app.assets.images.mtg_friendlySoldier, mask=this.app.assets.images['mtg_friendlySoldier:skinMask'];
-        this.scene.setUnitTexture(u.uid,composeAllyAttachments(recolorSkin(src,mask,skinToneForSeed(this.run.seed,u.uid)),64,u.equipment||[],u.auras||[]),0.39);
+        this.scene.setUnitTexture(u.uid,composeAllyAttachments(recolorSkin(src,mask,skinToneForSeed(this.run.seed,u.uid)),v.fw,u.equipment||[],u.auras||[]),0.39);
       }
     }
     if(u.auras?.length) this.applyAuraLight(u);
