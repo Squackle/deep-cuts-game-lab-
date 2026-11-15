@@ -74,7 +74,7 @@ test('concealed reward fronts and deferred hand drawings have runtime hooks',()=
 });
 
 test('rules change gets new ranked revision without changing score API',()=>{
- assert.equal(RULES_VERSION,'graftbound-rules-1.3.6-beta');
- assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,19);
+ assert.equal(RULES_VERSION,'graftbound-rules-1.3.7-beta');
+ assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,20);
  assert.equal(resolveCard('mtg:shock').target,'creature');
 });
