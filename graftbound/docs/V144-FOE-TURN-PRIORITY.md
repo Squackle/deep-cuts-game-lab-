@@ -2,6 +2,8 @@
 
 ## Authorized behavior change
 
+Release workstream: **Game Lab** (GRAFTBOUND-specific scope; no shared site promotion).
+
 During the existing enemy/foe phase, the enemy team now performs all its combat actions **before** the surviving allied summons take their actions. Within each side, existing stable unit-array order is retained. This is a combat rule change (not merely a UI animation change) because it affects who survives and what targets are available.
 
 - Enemies may attack, move, cast or summon using their existing AI and special rules.
