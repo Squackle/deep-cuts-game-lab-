@@ -89,10 +89,10 @@ test('all six states have at least three genuinely distinct poses in both direct
 test('real atlas loader uses the new body without drawing over borrowed legacy models',()=>{
   assert.ok(source.includes("HUMANOID_STUDY_FEATURES, drawHumanoidStudyFrame"));
   assert.ok(source.includes('const humanoid=HUMANOID_STUDY_FEATURES.includes(config.feature);'));
-  assert.ok(source.includes('const detailed=species||humanoid;'));
+  assert.ok(source.includes('const detailed=species||humanoid||beast;'));
   assert.ok(source.includes('if(!detailed && !config.custom && anim.row!==baseRows)'));
   assert.ok(source.includes('if(humanoid)drawHumanoidStudyFrame(cctx,config.feature,view,anim.row,frame,config)'));
-  assert.ok(source.includes("artPack:humanoid?'humanoid-anatomy-study-v1':'species-anatomy-study-v1'"));
+  assert.ok(source.includes("artPack:humanoid?'humanoid-anatomy-study-v1':beast?'beast-anatomy-study-v1':'species-anatomy-study-v1'"));
   assert.ok(source.includes('pixelScale:base.h*(base.pixelScale||1)/height'));
   const art=readFileSync(new URL('../src/rendering/detailed-humanoid-art.js',import.meta.url),'utf8');
   for(const forbidden of ['Math.random','localStorage','fetch(','window.','player.hp ='])
