@@ -268,52 +268,113 @@ function toxrill(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S;
    ell(g,x,y,2.1+(m.sink*.18),2,P.slime);}
  }
 }
-function thornmother(g,S){const {back,phase,walk,cast,attack}=S,b=walk?(phase%2):0;
- // Living thorn sovereign: bramble crown, twisting roots and an exposed heartwood core.
- for(let i=-3;i<=3;i++){let x=56+i*5,y=84+b;branch(g,x,y,x+i*4,105+b,i%2?P.wood:P.dark);
-  barb(g,x+i*4,105+b,x+i*5,103+b,P.woodHi);}
+function thornmother(g,S){
+ const {back,walk,cast,attack,hurt}=S,m=S.motion;
+ const b=m?Math.round(m.sink*.1+(walk?Math.abs(m.thornRoot)*.22:0)):walk?S.phase%2:0;
+ const root=m?m.thornRoot:0,lash=m?m.thornLash:0,crown=m?m.thornCrown:0;
+ // Living Treefolk sovereign: all seven roots emerge from the same trunk.
+ for(let i=-3;i<=3;i++){
+  const x=56+i*5,tipX=x+i*4+(i%2?root:-root)*.45,tipY=99+b-Math.abs(root)*.25;
+  branch(g,x,84+b,tipX,tipY,i%2?P.wood:P.dark);
+  barb(g,tipX,tipY,tipX+i*.2,Math.min(103,tipY+2),P.woodHi);
+ }
  poly(g,[[42,37+b],[70,37+b],[82,83+b],[69,91+b],[43,91+b],[29,81+b]],'#473d3c');
  ell(g,56,64+b,17,23,'#6c5242');
- for(let side of [-1,1]){let x=56+side*13;branch(g,x,48+b,x+side*29,70+b,P.wood);
-  for(let i=0;i<4;i++)barb(g,x+side*(3+i*5),49+i*5+b,x+side*(7+i*6),42+i*3+b,P.bone);}
- for(let k=0;k<9;k++){let x=32+k*6;barb(g,x,43+b,x+(k-4)*2,16+(k%3)*3+b,k%3?P.greenHi:P.bone);}
- ell(g,56,33+b,11,14,'#5d493d');if(!back){eye(g,51,33+b,P.greenHi);eye(g,61,33+b,P.greenHi);}
- ell(g,56,65+b,7,10,P.rose);ell(g,56,66+b,4,7,P.goldHi);
- for(let k=0;k<15;k++){let x=31+(k*11)%51,y=24+(k*13)%61+b;
-  dot(g,x,y,2,3,k%3?P.green:P.greenHi);}
- if(cast||attack)for(let k=0;k<4;k++)line(g,43+k*9,89+b,36+k*11,71+b,P.greenHi,2);
-}
-function matron(g,S){const {back,phase,walk,cast,attack}=S,b=walk?(phase%2):0;
- // Furnace brood queen: a molten-egg abdomen and clawed forelimbs, NOT a dragon.
- for(let side of [-1,1]){let x=56+side*14;
-  branch(g,x,65+b,x+side*21,91+b,'#713632');ell(g,x+side*22,96+b,9,5,P.iron);
-  branch(g,x,48+b,x+side*26,66+b,'#a35438');
-  for(let j=0;j<3;j++)barb(g,x+side*(22+j*3),65+b,x+side*(28+j*4),68+b,P.bone);
- }
- ell(g,56,75+b,27,26,'#543438');ell(g,56,76+b,21,20,'#9d4630');
- for(let i=0;i<11;i++){let x=37+(i*11)%37,y=63+(i*7)%27+b;ell(g,x,y,3,4,i%3?P.amber:P.fire);}
- ell(g,56,39+b,16,20,'#582f34');poly(g,[[43,36+b],[55,14+b],[68,36+b]],'#8e4035');
- for(let i=-2;i<=2;i++)barb(g,56+i*6,27+b,56+i*9,6+(i%2)*4+b,P.bone);
- ell(g,56,42+b,13,11,'#af6040');if(!back){eye(g,50,40+b,P.amber);eye(g,62,40+b,P.amber);}
- if(cast||attack)for(let i=0;i<8;i++){
-  let x=43+i*4,y=70+Math.sin(i+phase)*3+b;ell(g,x,y,3,5,i%2?P.fire:P.amber);
- }
-}
-function unwritten(g,S){const {back,phase,walk,cast,attack}=S,b=walk?(phase%2):0;
- // The original nexus mirror entity: empty floating mask, erased scroll fragments and void limbs.
  for(let side of [-1,1]){
-  poly(g,[[56+side*8,35+b],[56+side*30,10+b],[56+side*37,82+b],[56+side*17,88+b]],'#2c344d');
-  for(let i=0;i<5;i++)line(g,56+side*13,43+b,56+side*(19+i*3),27+i*12+b,i%2?P.violet:P.web,1);
-  branch(g,56+side*12,46+b,56+side*20,80+b,P.iron);
-  for(let i=0;i<4;i++){let x=56+side*(13+i*4),y=75+i*5+b;dot(g,x,y,3,4,P.web);}
+  const x=56+side*13,handX=x+side*(29+lash*.45),handY=70+b-lash*.52;
+  branch(g,x,48+b,handX,handY,P.wood);
+  for(let i=0;i<4;i++)
+   barb(g,x+side*(3+i*5),49+i*5+b,handX+side*(i*.9),handY-8-i*2,P.bone);
+ }
+ // Branches and antler-thorns flex with the canopy, not as loose decorations.
+ for(let k=0;k<9;k++){
+  const x=32+k*6,tx=x+(k-4)*2+crown*(k-4)*.18;
+  barb(g,x,43+b,tx,16+(k%3)*3+b+crown*.3,k%3?P.greenHi:P.bone);
+ }
+ ell(g,56,33+b+crown*.3,11,14,'#5d493d');
+ if(!back){eye(g,51,33+b+crown*.3,P.greenHi);eye(g,61,33+b+crown*.3,P.greenHi);}
+ const pulse=m?m.heartwoodPulse:0;
+ ell(g,56,65+b,7+pulse*.15,10+pulse*.15,P.rose);
+ ell(g,56,66+b,4+pulse*.18,7+pulse*.2,P.goldHi);
+ for(let k=0;k<15;k++){
+  const x=31+(k*11)%51,y=24+(k*13)%61+b+crown*.12;
+  dot(g,x,y,2,3,k%3?P.green:P.greenHi);
+ }
+ if(cast||attack)for(let k=0;k<4;k++)
+  line(g,43+k*9,89+b,36+k*11,71+b-(m?m.heartwoodPulse*.4:0),P.greenHi,2);
+ if(S.defeat)for(let k=0;k<4;k++)
+  line(g,38+k*11,96+b,37+k*11,100+b+(m?m.sink*.35:0),P.woodHi,2);
+ if(hurt)line(g,48,63+b,65,63+b,P.dark,2);
+}
+function matron(g,S){
+ const {back,phase,walk,cast,attack}=S,m=S.motion;
+ const b=m?Math.round(m.sink*.15+(walk?Math.abs(m.broodStride)*.2:0)):walk?phase%2:0;
+ const step=m?m.broodStride:0,claw=m?m.clawSwipe:0;
+ const heat=m?m.moltenPulse:0,tilt=m?m.hornTilt:0;
+ // Brood queen is a heavy furnace-insect with two grounded feet and long claws.
+ for(let side of [-1,1]){
+  const x=56+side*14,footX=x+side*(21+step*.35),footY=91+b-Math.abs(step)*.3;
+  branch(g,x,65+b,footX,footY,'#713632');ell(g,footX+side,footY+5,9,5,P.iron);
+  const handX=x+side*(22+claw*.3),handY=66+b-claw*.6;
+  branch(g,x,48+b,handX,handY,'#a35438');
+  for(let j=0;j<3;j++)
+   barb(g,handX-side*(4-j*3),handY,handX+side*(3+j*4),handY+2+j,P.bone);
+ }
+ ell(g,56,75+b,27,26-Math.min(5,(m?m.sink:0)*.35),'#543438');
+ ell(g,56,76+b,21+heat*.18,20+heat*.12,'#9d4630');
+ for(let i=0;i<11;i++){
+  const x=37+(i*11)%37,y=63+(i*7)%27+b;
+  ell(g,x,y,3+heat*.08,4+heat*.12,i%3?P.amber:P.fire);
+ }
+ ell(g,56,39+b+tilt*.22,16,20,'#582f34');
+ poly(g,[[43,36+b+tilt*.22],[55,14+b+tilt*.25],[68,36+b+tilt*.22]],'#8e4035');
+ for(let i=-2;i<=2;i++)
+  barb(g,56+i*6,27+b+tilt*.2,56+i*9,7+(i%2)*4+b+tilt*.25,P.bone);
+ ell(g,56,42+b+tilt*.2,13,11,'#af6040');
+ if(!back){eye(g,50,40+b+tilt*.2,P.amber);eye(g,62,40+b+tilt*.2,P.amber);}
+ if(cast||attack)for(let i=0;i<8;i++){
+  const x=43+i*4,y=70+Math.sin(i+phase)*3+b-heat*.3;
+  ell(g,x,y,3+heat*.1,5+heat*.12,i%2?P.fire:P.amber);
+ }
+ if(S.defeat)for(let i=0;i<5;i++)ell(g,37+i*10,97+b,3+heat*.12,2,P.iron);
+}
+function unwritten(g,S){
+ const {back,walk,cast,attack}=S,m=S.motion;
+ const b=m?Math.round(m.voidFloat*.45):walk?S.phase%2:0;
+ const flutter=m?m.scrollFlutter:0,arm=m?m.voidArm:0,glow=m?m.glyphBurst:0;
+ // Negative-space mirror entity, one mask with attached scroll-cape and limbs.
+ for(let side of [-1,1]){
+  poly(g,[[56+side*8,35+b],[56+side*(30+flutter*.35),10+b-flutter*.3],
+    [56+side*(33+flutter*.25),75+b],[56+side*17,88+b]],'#2c344d');
+  for(let i=0;i<5;i++)
+   line(g,56+side*9,45+b,56+side*(20+i*3+flutter*.2),40+i*7+b,P.teal,1);
+  const handX=56+side*(20+arm*.35),handY=80+b-arm*.65;
+  branch(g,56+side*12,46+b,handX,handY,P.iron);
+  for(let i=0;i<4;i++){
+   const x=handX+side*(i*.8),y=handY-4+i*3;
+   dot(g,x,y,3,4,P.web);
+  }
  }
  poly(g,[[44,39+b],[68,39+b],[80,91+b],[34,91+b]],'#35364b');
- for(let i=0;i<7;i++){let x=38+i*6,y=51+(i%2)*5+b;line(g,x,y,x+5,y+1,i%2?P.web:P.violet,1);}
- ell(g,56,31+b,16,20,'#292e43');ell(g,56,28+b,13,16,'#d0c6d3');
- // Faceless black glyph rather than scarab or human features.
- if(!back){ell(g,56,27+b,7,9,'#3b3553');dot(g,52,22+b,8,2,P.web);dot(g,54,31+b,4,4,P.violet);}
- for(let i=0;i<8;i++){let x=31+(i*11)%52,y=17+(i*13)%74+b;dot(g,x,y,2,2,i%2?P.violet:P.web);}
- if(attack||cast)for(let i=0;i<6;i++)line(g,33+i*8,55+b,43+i*5,39+b,P.web,1);
+ for(let i=0;i<7;i++){
+  const x=38+i*6,y=51+(i%2)*5+b;
+  line(g,x,y,x+5+flutter*.1,y+1,i%2?P.web:P.violet,1);
+ }
+ const headY=31+b-(m?m.maskBend||0:0);
+ ell(g,56,headY,16,20,'#292e43');ell(g,56,headY-3,13,16,'#d0c6d3');
+ if(!back){
+  ell(g,56,headY-4,7,9,'#3b3553');
+  dot(g,52,headY-9,8,2,P.web);dot(g,54,headY,4,4,P.violet);
+ }
+ for(let i=0;i<8;i++){
+  const x=31+(i*11)%52+glow*((i%2)?-.3:.3);
+  const y=17+(i*13)%74+b-glow*.5;
+  dot(g,x,y,2+glow*.1,2+glow*.1,i%2?P.violet:P.web);
+ }
+ if(attack||cast)for(let i=0;i<6;i++)
+  line(g,33+i*8,55+b,43+i*5,39+b-glow*.5,P.web,1);
+ if(S.defeat)for(let i=0;i<4;i++)
+  line(g,40+i*10,86+b,42+i*9,90+b+(m?m.sink*.4:0),P.violet,1.5);
 }
 const DRAW={nemata,arasta,drakuseth,krenko,scarab,toxrill,thornmother,matron,unwritten};
 function sheet(name){

@@ -1,8 +1,8 @@
 /**
- * Visual-only articulated phase poses for all six legendary creatures, including Krenko and the Scarab God.
+ * Visual-only articulated phase poses for six Magic legendary creatures and three original act bosses.
  * Frame state is deterministic; bosses keep their existing combat AI and phases.
  */
-export const ADVANCED_BOSS_KEYS=Object.freeze(['nemata','arasta','drakuseth','krenko','scarab','toxrill']);
+export const ADVANCED_BOSS_KEYS=Object.freeze(['nemata','arasta','drakuseth','krenko','scarab','toxrill','thornmother','matron','unwritten']);
 export const BOSS_STATES=Object.freeze(['idle','walk','attack','cast','hurt','defeat']);
 const WALK=Object.freeze([-2,0,2,-1]);
 const STRIKE=Object.freeze([0,3,8,2]);
@@ -61,6 +61,29 @@ export function advancedBossPose(name,state,frame,back=false){
       cast?[0,4,8,3][frame]:defeat?[0,-2,-6,-9][frame]:[0,1,2,1][frame],
     scarabArm:cast?[0,3,7,2][frame]:attack?[0,2,5,1][frame]:
       hurt?[0,-1,-2,-1][frame]:0,
-    scarabMagic:cast?[0,3,7,2][frame]:attack?[0,1,4,1][frame]:0
+    scarabMagic:cast?[0,3,7,2][frame]:attack?[0,1,4,1][frame]:0,
+    // Thornmother: rooted body, branch-lash, green heartwood and crown always
+    // connect to the same sovereign trunk while reacting to combat.
+    thornRoot:walk?[-2,0,2,-1][frame]:attack?[0,1,3,1][frame]:0,
+    thornLash:attack?[0,3,8,2][frame]:cast?[0,1,4,1][frame]:0,
+    thornCrown:walk?[0,1,3,1][frame]:cast?[0,2,5,2][frame]:
+      hurt?[0,-2,-4,-1][frame]:defeat?[0,-2,-5,-8][frame]:idle,
+    heartwoodPulse:cast?[0,2,5,1][frame]:attack?[0,1,3,1][frame]:[0,1,2,0][frame],
+    // Matron: low-slung furnace abdomen and grasping brood-claws; never a dragon.
+    broodStride:walk?[-2,1,3,0][frame]:attack?[0,1,3,0][frame]:0,
+    clawSwipe:attack?[0,3,7,2][frame]:cast?[0,1,4,1][frame]:0,
+    moltenPulse:cast?[0,2,6,2][frame]:attack?[0,2,5,1][frame]:[0,1,3,1][frame],
+    hornTilt:walk?[0,1,2,0][frame]:attack?[0,-2,-4,-1][frame]:
+      hurt?[0,2,5,1][frame]:defeat?[0,2,5,8][frame]:0,
+    // The Unwritten: independent floating mask, scroll wings and void limbs,
+    // with casting glyphs anchored to the same body rather than arbitrary dots.
+    voidFloat:walk?[0,-2,-3,-1][frame]:cast?[0,-1,-4,-1][frame]:
+      hurt?[0,2,5,1][frame]:defeat?[0,2,5,9][frame]:[0,-1,-2,-1][frame],
+    scrollFlutter:walk?[0,2,4,1][frame]:attack?[0,2,6,1][frame]:
+      cast?[0,3,7,2][frame]:defeat?[0,-2,-5,-9][frame]:[0,1,2,1][frame],
+    voidArm:attack?[0,3,8,2][frame]:cast?[0,3,6,1][frame]:0,
+    glyphBurst:cast?[0,2,6,1][frame]:attack?[0,1,4,1][frame]:0,
+    maskBend:attack?[0,2,4,1][frame]:cast?[0,1,3,1][frame]:
+      hurt?[0,-2,-5,-1][frame]:defeat?[0,-2,-4,-6][frame]:0
   };
 }
