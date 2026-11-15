@@ -8,7 +8,7 @@
 export const CREATURE_MOTION_FAMILIES=Object.freeze({
   wolf:'quadruped',direwolf:'quadruped',
   friendlyDrake:'winged',torchgoblin:'biped',friendlyGoblin:'biped',
-  saproling:'fungal',friendlySquirrel:'rodent',
+  saproling:'fungal',
   spiderling:'arachnid',friendlySnake:'serpent',friendlyHornet:'insect',stinger:'insect',
   friendlyCatSoldier:'feline-warrior',friendlySkeleton:'skeleton',zombie:'undead',
   golem:'construct',gearhulk:'construct',titan:'construct'
