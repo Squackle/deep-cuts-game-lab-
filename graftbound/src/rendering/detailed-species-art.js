@@ -137,9 +137,11 @@ function snake(g,rig,palette,state,frame){
     ell(g,x+4.4,y-4.5,.5,.5,ivory,null);
     ell(g,x+11,y+3,1.2,1.2,dark,null);
     if(state===2||state===3){
-      line(g,[[x+12,y+4],[x+19+rig.strike,y+7]],'#d66d73',2);
-      line(g,[[x+19+rig.strike,y+7],[x+23+rig.strike,y+4]],'#d66d73',1.1);
-      line(g,[[x+19+rig.strike,y+7],[x+22+rig.strike,y+11]],'#d66d73',1.1);
+      // Constrain the fork to the source-art cell, even at the longest strike.
+      const tongueTip=Math.min(89,x+19+rig.strike),forkTip=Math.min(92,x+23+rig.strike);
+      line(g,[[x+12,y+4],[tongueTip,y+7]],'#d66d73',2);
+      line(g,[[tongueTip,y+7],[forkTip,y+4]],'#d66d73',1.1);
+      line(g,[[tongueTip,y+7],[forkTip,y+11]],'#d66d73',1.1);
     }
   } else{
     for(const side of [-1,1])line(g,[[x+side*5,y-6],[x+side*3,y]],light,1.2);
