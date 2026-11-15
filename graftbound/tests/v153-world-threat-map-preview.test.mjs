@@ -32,6 +32,14 @@ test('ordinary weak builds see no surprise battle pressure and save stays unchan
   assert.equal(threatPreviewLabel(view),'Stored 0/12 · Next battle 0/12');
   assert.equal(effectiveThreatLevel(run.worldThreat,{strength:1,expected:3}),0);
 });
+test('the scripted opening tutorial accurately reports that World Threat is disabled',()=>{
+  const run=newRun({seed:99,tutorial:true});
+  const preview=previewNextWorldThreat(run);
+  assert.equal(preview.base,0);
+  assert.equal(preview.tutorial,true);
+  assert.equal(preview.range,null);
+  assert.equal(threatPreviewLabel(preview),'Stored 0/12 · Tutorial has no Threat');
+});
 test('old saves with missing threat state render cleanly and established threat is displayed',()=>{
   const run=newRun({seed:42,tutorial:false});delete run.worldThreat;
   assert.equal(previewNextWorldThreat(run).base,0);
