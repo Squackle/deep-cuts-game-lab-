@@ -1,0 +1,16 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GRAFTBOUND · All Runtime Sprite Animations</title>
+<style>
+:root{color-scheme:dark;background:#10201c;color:#efdeb5;font-family:system-ui,sans-serif}body{max-width:1400px;margin:auto;padding:1rem}a{color:#e3c787}
+h1{font-family:Georgia,serif}.controls{display:flex;gap:1rem;flex-wrap:wrap;margin:1rem 0}select{padding:.5rem;background:#25392d;color:inherit;border:1px solid #ad8e5b}
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem}.card{border:1px solid #896e49;border-radius:9px;background:#1e3027;text-align:center;padding:.6rem}
+.card canvas{width:100%;max-width:176px;aspect-ratio:1;image-rendering:pixelated}.card strong,.card small{display:block;overflow-wrap:anywhere}.card small{margin-top:4px;color:#b5c8b8}
+</style></head><body>
+<a href="v13-visual.html">Back to graft and Equipment preview</a>
+<h1>GRAFTBOUND · Full runtime sprite gallery</h1>
+<p id="coverage" role="status">Loading the real game sprite registry…</p>
+<div class="controls"><label>Animation <select id="state" aria-label="Animation state"></select></label>
+<label>View <select id="view" aria-label="Viewing direction"></select></label></div>
+<div class="gallery" id="models"></div>
+<p>All previews use the sprite sheets actually loaded by the game. Asset previews do not substitute for real tactical battle screenshots, reference comparisons, or mobile tests.</p>
+<script type="module" src="hd2d-gallery.js"></script></body></html>
