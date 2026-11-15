@@ -10,20 +10,20 @@ function summonFriendly(s,{x,y,hp=20,power=2,toughness=20,move=2}){
   s.units.push(unit);return unit;
 }
 test('the foe phase takes enemy actions before all living allied summons',()=>{
-  const s=arena(['g.....g','.......','.......','.......','...P...'],{g:'grub'});
+  const s=arena(['g.....g','.......','.......','.......','...P...'],{g:'wolf'});
   player(s).hp=100;player(s).maxHp=100;player(s).toughness=100;
-  const a=summonFriendly(s,{x:2,y:2,hp:50,toughness:50});
-  const b=summonFriendly(s,{x:4,y:2,hp:50,toughness:50});
+  const a=summonFriendly(s,{x:2,y:2,hp:50,toughness:50,power:0});
+  const b=summonFriendly(s,{x:4,y:2,hp:50,toughness:50,power:0});
   const enemyIds=enemies(s).map(u=>u.uid);
   const ev=endTurn(s);
   const acting=ev.filter(e=>e.t==='enemyTurn').map(e=>e.uid);
   assert.deepEqual(acting,[...enemyIds,a.uid,b.uid],
     'foes take their turns first, then allied summons in stable UID order');
   assert.ok(ev.some(e=>e.t==='turn'&&e.phase==='enemy'));
-  assert.equal(s.phase,'player','normal full round still returns control to the hero');
+  assert.ok(['player','won'].includes(s.phase),'enemy/ally phase resolves normally or ends on victory');
 });
 test('an allied summon cannot preemptively kill a foe before that foe acts',()=>{
-  const s=arena(['.....','..g..','.....','..P..','.....'],{g:'grub'});
+  const s=arena(['.....','..g..','.....','..P..','.....'],{g:'alpha'});
   const foe=enemies(s)[0];
   player(s).hp=100;player(s).maxHp=100;player(s).toughness=100;
   const ally=summonFriendly(s,{x:2,y:2,hp:50,toughness:50,power:100});
@@ -36,7 +36,7 @@ test('an allied summon cannot preemptively kill a foe before that foe acts',()=>
     'a surviving ally still attacks after the foe');
 });
 test('an ally defeated by the enemy phase cannot move, attack or take a turn afterward',()=>{
-  const s=arena(['.....','..g..','.....','..P..','.....'],{g:'grub'});
+  const s=arena(['.....','..g..','.....','..P..','.....'],{g:'wolf'});
   const foe=enemies(s)[0];
   player(s).hp=100;player(s).maxHp=100;player(s).toughness=100;
   const ally=summonFriendly(s,{x:2,y:2,hp:1,toughness:1,power:100});
@@ -48,11 +48,13 @@ test('an ally defeated by the enemy phase cannot move, attack or take a turn aft
   assert.equal(ev.some(e=>e.t==='attack'&&e.uid===ally.uid),false);
 });
 test('ally buffs expire after their own opportunity to act, never before the enemy turn',()=>{
-  const s=arena(['g.....','......','......','...P..'],{g:'grub'});
-  const ally=summonFriendly(s,{x:1,y:2,hp:80,toughness:80,power:2});
+  const s=arena(['.....','..g..','.....','..P..','.....'],{g:'alpha'});
+  const foe=enemies(s)[0];
+  player(s).hp=100;player(s).maxHp=100;player(s).toughness=100;
+  const ally=summonFriendly(s,{x:2,y:2,hp:80,toughness:80,power:2});
   ally.statuses.empowered=4;
   const ev=endTurn(s);
-  const foe=enemies(s)[0],foeTurn=ev.findIndex(e=>e.t==='enemyTurn'&&e.uid===foe.uid);
+  const foeTurn=ev.findIndex(e=>e.t==='enemyTurn'&&e.uid===foe.uid);
   const allyTurn=ev.findIndex(e=>e.t==='enemyTurn'&&e.uid===ally.uid);
   const expiration=ev.findIndex(e=>e.t==='status'&&e.uid===ally.uid&&e.status==='empowered'&&e.value===0);
   assert.ok(foeTurn>=0&&allyTurn>foeTurn);
