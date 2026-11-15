@@ -80,7 +80,7 @@ test('real runtime replaces incompatible Hound/Moth bases without inflating a ti
   assert.match(src,/else if\(species\)drawSpeciesStudyFrame\(cctx,config\.feature,view,anim\.row,frame,config\)/);
   assert.match(src,/if\(!detailed && !config\.custom && anim\.row!==baseRows\)/);
   assert.match(src,/pixelScale:base\.h\*\(base\.pixelScale\|\|1\)\/height/);
-  assert.match(src,/artPack:humanoid\?'humanoid-anatomy-study-v1':'species-anatomy-study-v1'/);
+  assert.ok(src.includes("artPack:humanoid?'humanoid-anatomy-study-v1':beast?'beast-anatomy-study-v1':'species-anatomy-study-v1'"));
   for(const relative of ['../src/rendering/creature-motion.js','../src/rendering/detailed-species-art.js']){
     const c=readFileSync(new URL(relative,import.meta.url),'utf8');
     for(const forbidden of ['Math.random','localStorage','window.','player.hp ='])
