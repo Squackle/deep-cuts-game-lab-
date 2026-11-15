@@ -1,6 +1,9 @@
 /* GRAFTBOUND — dark forest green, parchment, antique brass. Act themes tint map/shrine screens. */
 :root { --g950:#07110c; --g900:#0d1a14; --g800:#13261d; --g700:#1c3a2b; --parch:#ecdfbf; --parch2:#d9c79c; --ink:#20180f; --ink2:#4a3b28;
   --gold:#c9a24a; --gold2:#e9c972; --gold3:#8a6a26; --blood:#b4432f; --sky:#8fd0e6;
+  /* Unit allegiance is immediately readable at battle zoom: friendly = blue, hostile = red. */
+  --hp-friendly-top:#80d3ff; --hp-friendly-bottom:#2375d4;
+  --hp-enemy-top:#ff9a7b; --hp-enemy-bottom:#b32b22;
   --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --display:"Trajan Pro","Cinzel","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; }
 * { box-sizing: border-box; }
@@ -35,9 +38,9 @@ body:not([data-mode="battle"]) #labels, body:not([data-mode="battle"]) #hud { di
 .pl-top { display: flex; justify-content: space-between; align-items: center; } .pl-name { font-variant: small-caps; letter-spacing: .06em; font-weight: 700; font-size: 1.05rem; } .pl-stage { font-size: .78rem; color: var(--ink2); font-style: italic; }
 .pl-pt { font-size: 1.6rem; font-weight: 700; padding: 0 10px; border-radius: 8px; border: 2px solid var(--gold3); background: linear-gradient(#f4ead2, #d6c294); min-width: 70px; text-align: center; } .pl-pt .buff { color: #2f7d2f; } .pl-pt .debuff { color: #a52d1c; }
 .pl-hp { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-family: var(--sans); font-weight: 700; font-size: .9rem; }
-.pl-hp .bar, .mp-hp .bar { position: relative; flex: 1; height: 12px; border-radius: 6px; background: #3b2a1a; overflow: hidden; border: 1px solid #5a4630; }
-.pl-hp .bar i, .mp-hp .bar i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(#e0644b, #a5301f); transition: width .3s; }
-.pl-hp .bar u { position: absolute; inset: 0 0 0 auto; background: repeating-linear-gradient(45deg, rgba(143,208,230,.9) 0 4px, rgba(90,160,200,.9) 4px 8px); }
+.pl-hp .bar, .mp-hp .bar { position: relative; flex: 1; height: 12px; border-radius: 6px; background: #102238; overflow: hidden; border: 1px solid #526f91; }
+.pl-hp .bar i, .mp-hp .bar i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(var(--hp-friendly-top), var(--hp-friendly-bottom)); transition: width .3s; }
+.pl-hp .bar u { position: absolute; inset: 0 0 0 auto; background: repeating-linear-gradient(45deg, rgba(255,238,172,.96) 0 4px, rgba(190,215,229,.94) 4px 8px); }
 .pl-hp small { opacity: .6; } .pl-hp .ic { color: var(--blood); } .shd { color: #2a6f8f; font-style: normal; }
 .pl-res { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-family: var(--sans); font-size: .85rem; font-weight: 700; }
 .mana { display: flex; gap: 2px; } .mana i { color: #9c8f78; opacity: .45; font-size: 16px; } .mana i.on { color: #3f8fc0; opacity: 1; filter: drop-shadow(0 0 3px rgba(80,170,230,.7)); }
@@ -74,7 +77,10 @@ body:not([data-mode="battle"]) #labels, body:not([data-mode="battle"]) #hud { di
 #labels { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
 .ulabel { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; margin-left: -30px; width: 60px; margin-top: -40px; will-change: transform; }
 .hpbar { position: relative; width: 46px; height: 9px; border-radius: 5px; background: rgba(20,10,5,.85); border: 1px solid rgba(0,0,0,.8); }
-.hpbar i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: linear-gradient(#e86a50, #a52d1c); transition: width .25s; } .player .hpbar i { background: linear-gradient(#f2d27a, #b98a2a); }
+/* Use allegiance rather than species: the hero and every summoned ally are blue; all enemy units and bosses are red. */
+.hpbar i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; transition: width .25s; }
+.ulabel.player .hpbar i { background: linear-gradient(var(--hp-friendly-top), var(--hp-friendly-bottom)); }
+.ulabel.enemy .hpbar i { background: linear-gradient(var(--hp-enemy-top), var(--hp-enemy-bottom)); }
 .hpbar span { position: absolute; left: -16px; top: -4px; font: 700 11px var(--sans); color: #fff; text-shadow: 0 1px 2px #000, 0 0 3px #000; width: 14px; text-align: right; }
 .sts { display: flex; gap: 2px; } .st { display: inline-flex; align-items: center; font: 700 10px var(--sans); padding: 0 3px; border-radius: 6px; background: rgba(0,0,0,.7); }
 .st.sh { color: var(--sky); } .st.ps { color: #b6e05a; } .st.sn { color: #f7d36b; } .st.em { color: #9fe08a; } .st.ar { color: #c9d4dc; } .st.gr { color: #ffb08a; } .st.wk, .intent .wk { color: #e59cff; font: 800 10px var(--sans); } .intent .wk { margin-left: 3px; font-size: 12px; }
