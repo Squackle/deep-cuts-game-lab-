@@ -13,7 +13,8 @@ export const CREATURE_MOTION_FAMILIES=Object.freeze({
   friendlyCatSoldier:'feline-warrior',friendlySkeleton:'skeleton',zombie:'undead',
   golem:'construct',gearhulk:'construct',titan:'construct',
   friendlyElemental:'flame-being',friendlyBirdIllusion:'winged-illusion',
-  friendlyTentacle:'tentacular',angel:'celestial'
+  friendlyTentacle:'tentacular',angel:'celestial',
+  caterpillar:'larval',rhino:'hoofed',wurm:'burrowing',toxrill:'slug-horror'
 });
 const GAIT=Object.freeze([-1,0,1,0]);
 const HOP=Object.freeze([0,-2,-4,-1]);
