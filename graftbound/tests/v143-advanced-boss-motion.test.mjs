@@ -38,7 +38,7 @@ test('Toxrill has independently animated slime pressure, feelers and body compre
 test('visual poses are deterministic and invalid inputs cannot mutate the rules engine',()=>{
   for(const name of ADVANCED_BOSS_KEYS)for(let state=0;state<6;state++)for(let f=0;f<4;f++)
     assert.deepEqual(advancedBossPose(name,state,f,!!(f%2)),advancedBossPose(name,state,f,!!(f%2)));
-  assert.equal(advancedBossPose('krenko',2,1),null);
+  assert.equal(advancedBossPose('thornmother',2,1),null);
   assert.throws(()=>advancedBossPose('nemata',-1,0),/Invalid boss pose/);
   assert.throws(()=>advancedBossPose('toxrill',6,0),/Invalid boss pose/);
   assert.throws(()=>advancedBossPose('nemata',2,4),/Invalid boss pose/);
