@@ -31,9 +31,25 @@ try{
    g.drawImage(sprite,p.frame*meta.w,row*meta.h,meta.w,meta.h,i*128,0,128,128);
    g.fillText(p.label,i*128+8,147);
   }
+  // Measure actual resulting RGBA pixels, not merely an asset-loaded flag.
+  const pixels=g.getImageData(0,0,512,128).data;let signature=2166136261,opaque=0,edge=0;
+  for(let k=0;k<pixels.length;k+=4){
+   const alpha=pixels[k+3],x=(k/4)%512,y=Math.floor(k/4/512);
+   if(alpha>20){
+    opaque++;
+    if(x%128<2||x%128>125||y<2||y>125)edge++;
+    for(let channel=0;channel<4;channel++)signature=Math.imul(signature^pixels[k+channel],16777619)>>>0;
+   }
+  }
+  article.dataset.signature=String(signature>>>0);
+  article.dataset.opaque=String(opaque);
+  article.dataset.edge=String(edge);
+  if(opaque<100)throw new Error('Empty raster for '+item.label);
   article.append(heading,canvas);$('gallery').append(article);
  }
- $('status').textContent='Loaded native '+meta.w+'px Blank; '+cases.length+' appearance comparisons; '+cols+' animation columns per state.';
+ const signatures=[...$('gallery').querySelectorAll('article')].map(x=>x.dataset.signature);
+ if(new Set(signatures).size!==cases.length)throw new Error('Anatomy or Equipment variant failed to produce unique runtime pixels');
+ $('status').textContent='Loaded native '+meta.w+'px Blank; '+cases.length+' distinct raster comparisons; '+cols+' animation columns per state.';
  $('status').id='ready';
 }catch(err){
  $('status').textContent='QA loading failed: '+String(err);
