@@ -167,7 +167,7 @@ export class BattleUI {
     const it = this.intents.find(i => i.uid === uid);
     let intent = '';
     if (it && this.s.phase === 'player') {
-      const ic = { attack: ICON.sword, spit: ICON.spit, hex: ICON.stun, harpoon: ICON.hook, aim: ICON.aim, fire: ICON.aim, slam: ICON.slam, summon: ICON.summon, guard: ICON.guard, stunned: ICON.stun, move: ICON.move }[it.kind] || ICON.move;
+      const ic = { attack: ICON.sword, spit: ICON.spit, hex: ICON.stun, harpoon: ICON.hook, aim: ICON.aim, fire: ICON.aim, slam: ICON.slam, summon: ICON.summon, support: ICON.shield, guard: ICON.guard, stunned: ICON.stun, move: ICON.move }[it.kind] || ICON.move;
       const cls = it.kind === 'fire' || it.kind === 'slam' ? 'locked' : (it.damage ? 'threat' : 'calm');
       intent = `<div class="intent ${cls}" title="${esc(this.intentText(it))}">${ic}${it.damage ? `<b>${it.damage}</b>` : ''}${it.extra ? `<span class="xtra">+${ICON.sword}${it.extra}</span>` : ''}${it.poison ? `<span class="psn">${ICON.poison}${it.poison}</span>` : ''}${it.weaken ? `<span class="wk">−${it.weaken}⚔</span>` : ''}</div>`;
     }
@@ -181,7 +181,7 @@ export class BattleUI {
     const who = tgt && !tgt.hero ? ' your ' + tgt.name : ' you';
     return (({ attack: `Will strike${who} for ${it.damage}`, spit: `Will spit for ${it.damage} and poison ${it.poison}`, hex: `Will curse you: ${it.damage} damage and −${it.weaken} power on your next turn`,
       harpoon: `Harpoon: ${it.damage} damage${it.ground ? ' and Grounds you (no flying next turn)' : ''}`, aim: 'Will take aim along a line', fire: `Fires ${it.damage} along the red line`,
-      slam: `${it.damage} to every red tile${it.extra ? ` (and strikes for ${it.extra} if adjacent)` : ''}`, summon: 'Will summon reinforcements', guard: 'Will shield adjacent allies', stunned: 'Stunned — loses its next action' })[it.kind] || 'Will move')
+      slam: `${it.damage} to every red tile${it.extra ? ` (and strikes for ${it.extra} if adjacent)` : ''}`, summon: 'Will summon reinforcements', support: 'Will empower its Saprolings', guard: 'Will shield adjacent allies', stunned: 'Stunned — loses its next action' })[it.kind] || 'Will move')
       + (it.guarded ? ` · Guard blocks ${it.guarded}` : '') + (it.silence ? ` · Silences your ${getCard(it.silence).name} next turn` : '')
       + (it.redact ? ` · Redaction: your ${KEYWORDS[it.redact].name} is suppressed during your next turn (it returns after)` : '') + (it.briars ? ' · Briars will sprout around you (fire burns them)' : '') + (it.mirror ? ` · Will copy your ${KEYWORDS[it.mirror].name}` : '');
   }
