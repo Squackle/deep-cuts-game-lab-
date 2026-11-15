@@ -140,7 +140,7 @@ function tentacle(g,p,{dark,mid,light}){
   for(let i=-3;i<=3;i++){
     const rootX=48+i*3.5,side=i<0?-1:1;
     const tipX=clamp(48+i*6.5+side*(i%2?coil:-coil)*.7+
-      side*p.tentacleLunge*(i===3||i===-3?.45:.15),8,88);
+      side*p.tentacleLunge*((i===3||i===-3)?.45:.15),8,88);
     const tipY=clamp(40+Math.abs(i)*5+(i%2?coil:-coil)*.6+sink*.4,13,81);
     const control=[48+i*7,25+Math.abs(i)*5+(i%2?coil:-coil)];
     g.beginPath();g.moveTo(rootX,cy);
