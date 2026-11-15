@@ -1,3 +1,4 @@
+import {ADVANCED_BOSS_KEYS,advancedBossPose} from './advanced-boss-motion.js';
 /** GRAFTBOUND v1.3: nine original, individually drawn premium boss identities.
  * Official MTG art consulted for silhouette/identity; no card illustration pixels copied.
  * All sheets share 112px 4-frame/10-row HD-2D format and lighting language. */
@@ -41,25 +42,37 @@ function branch(g,x,y,xx,yy,bark=P.wood){line(g,x+1,y+1,xx+1,yy+1,P.ink,6);line(
 function barb(g,x,y,xx,yy,color=P.bone){poly(g,[[x-2,y+2],[x+2,y+2],[xx,yy]],color);}
 function eye(g,x,y,color=P.goldHi,back=false){if(back)return;dot(g,x-2,y-1,4,3,P.ink);dot(g,x,y,2,1,color)}
 function petals(g,cx,cy,n,color){for(let i=0;i<n;i++){let a=i/n*Math.PI*2;let x=cx+Math.cos(a)*10,y=cy+Math.sin(a)*9;ell(g,x,y,5,7,i%2?color:P.greenHi);}}
-function nemata(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,b=walk?(phase%2):phase===3?1:0;
+function nemata(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S;
+ const m=S.motion,b=m?Math.round(m.sink*.15+(walk?m.rootStep*.4:0)):0;
+ const bend=m?m.canopySway:0,reach=m?m.armReach:0;
  // Foot roots and weighty trunk; top canopy intentionally asymmetrical.
- for(let k=0;k<5;k++){let x=51+(k-2)*7+S.lean,y=91+b;
-  branch(g,55,74,x+(k-2)*4,103+b);barb(g,x+(k-2)*4,103+b,x+(k-2)*4-5,106+b,P.woodHi);}
+ for(let k=0;k<5;k++){let x=51+(k-2)*7+S.lean+(m?m.rootStep*(k%2?1:-1)*.45:0),y=91+b;
+  const tipX=x+(k-2)*4;
+  // Root stroke width and outline must stay inside the bottom atlas gutter.
+  branch(g,55,74+b*.25,tipX,100+b);barb(g,tipX,101+b,tipX-5,103+b,P.woodHi);}
  ell(g,57,65+b,19,30,P.wood);poly(g,[[47,37+b],[65,37+b],[77,57+b],[70,89+b],[51,91+b],[40,72+b]],P.wood);
  for(let side of [-1,1]){let sh=57+side*13,ex=57+side*27;
-  branch(g,sh,48+b,ex+(attack?side*4:0),72+b);
-  branch(g,ex,71+b,ex+side*7,83+b);barb(g,ex+side*7,83+b,ex+side*15,78+b,P.wood);
+  const elbowX=ex+side*(attack?reach*.65:cast?reach*.38:0);
+  branch(g,sh,48+b,elbowX,72+b-(cast?reach*.3:0));
+  const clawX=ex+side*(7+(attack?reach*.75:0));
+  branch(g,elbowX,71+b-(cast?reach*.3:0),clawX,83+b-(cast?reach*.6:0));
+  barb(g,clawX,83+b-(cast?reach*.6:0),clawX+side*8,78+b-(cast?reach*.7:0),P.wood);
   for(let j=0;j<3;j++)branch(g,ex+(j-1)*3,61+b,ex+side*(12+j*3),52+b+j*6);
  }
  ell(g,57,41+b,16,16,P.woodHi);for(let k=-3;k<=3;k++){let x=57+k*8,y=31+Math.abs(k)*3;
-  branch(g,x,44+b,x+k*2,13+Math.abs(k)*2+b);
-  ell(g,x+k*2,16+Math.abs(k)*2+b,9,8,k%2?P.green:P.greenHi);
+  branch(g,x,44+b,x+k*2+bend*(k/4),13+Math.abs(k)*2+b+bend*.65);
+  ell(g,x+k*2+bend*(k/4),16+Math.abs(k)*2+b+bend*.65,9,8,k%2?P.green:P.greenHi);
  }
  for(let k=0;k<14;k++){let x=40+(k*11)%36,y=19+(k*13)%45+b;dot(g,x,y,3,2,k%3?P.woodHi:P.greenHi);}
  for(let k=-2;k<=2;k++)branch(g,57+k*3,47+b,57+k*4,82+b,k%2?P.woodHi:P.wood);
  if(!back){eye(g,51,38+b,P.goldHi);eye(g,63,38+b,P.goldHi);line(g,54,45+b,61,44+b,P.ink,2);}
  if(hot){for(let k=0;k<4;k++)ell(g,42+k*10,73+b,2,4,P.greenHi)}
  if(hurt)dot(g,49,44+b,17,2,P.wood);
+ if(S.defeat){
+  // Bark splinters and drooping branch tips describe a falling Treefolk.
+  for(let i=0;i<4;i++){let x=38+i*13,y=83+b;
+   barb(g,x,y,x+(i-2)*3,y+Math.min(8,m.sink),P.woodHi);}
+ }
 }
 function arasta(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,b=walk?(phase%2?1:-1):0;
  // Each of eight genuine articulated legs tracks body phase independently.
@@ -165,29 +178,38 @@ function scarab(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,b=walk?(phas
  }
  if(hurt)dot(g,47,32+b,18,2,P.ink);
 }
-function toxrill(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,b=walk?(phase%2):0,shift=phase===1?2:phase===3?-1:0;
+function toxrill(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S;
+ const m=S.motion,b=m?Math.round(m.mantleWave*.25+m.sink*.14):0;
+ const shift=m?m.slugAdvance+m.mantleWave*.45:0,sink=m?m.sink:0;
  // Slug anatomy: no legs, no arms, continuous foot and massive ridged mantle.
  ell(g,54+shift,91+b,40,13,'#493450');
  poly(g,[[14+shift,91+b],[22+shift,82+b],[85+shift,80+b],[101+shift,93+b],[88+shift,103+b],[20+shift,103+b]],'#6b4b78');
  for(let i=0;i<8;i++){let x=24+i*10+shift,y=97+b+(i%2);ell(g,x,y,6,3,i%2?P.violet:'#9c70a0');}
- ell(g,53+shift,67+b,36,29,'#4b385b');ell(g,57+shift,62+b,31,26,'#806093');
+ ell(g,53+shift,67+b+sink*.28,36,29-sink*.65,'#4b385b');
+ ell(g,57+shift,62+b+sink*.28,31,26-sink*.6,'#806093');
  for(let i=0;i<8;i++){let x=31+i*7+shift,y=48+(i%3)*7+b;
   poly(g,[[x-6,y+8],[x-2,y-5],[x+4,y+1],[x+7,y+11]],i%2?'#77538a':'#a56f9c');
  }
  // Raised, stalking slug head with multiple feelers, corrosive fangs.
- ell(g,79+shift,48+b,19,22,'#6b4f7e');
+ ell(g,79+shift,48+b+sink*.35,19,22-sink*.32,'#6b4f7e');
  poly(g,[[69+shift,48+b],[93+shift,44+b],[101+shift,53+b],[89+shift,66+b],[69+shift,63+b]],'#97759a');
  for(let i=0;i<4;i++){
   const x=73+i*7+shift,y=42-(i%2)*3+b;
-  line(g,x,y,x+(i-1)*3,17+(i%2)*6+b,P.ink,6);
-  line(g,x,y,x+(i-1)*3,17+(i%2)*6+b,'#9778a2',4);
-  ell(g,x+(i-1)*3,16+(i%2)*6+b,4,4,P.slime);
-  eye(g,x+(i-1)*3,16+(i%2)*6+b,P.ink,back);
+  const tipX=x+(i-1)*3+(m?m.feelerBend*.36:0),tipY=17+(i%2)*6+b+(m?m.feelerBend*.65:0);
+  line(g,x,y,tipX,tipY,P.ink,6);
+  line(g,x,y,tipX,tipY,'#9778a2',4);
+  ell(g,tipX,tipY-1,4,4,P.slime);
+  eye(g,tipX,tipY-1,P.ink,back);
  }
  for(let i=0;i<8;i++){let x=28+(i*9)%70+shift,y=68+(i*5)%25+b;ell(g,x,y,2,3,i%3?P.slime:P.teal);}
  if(cast||attack){for(let i=0;i<8;i++)ell(g,64+i*5,87+i%4*3+b,3,4,i%2?P.slime:P.teal);}
  if(hot)for(let i=0;i<6;i++)dot(g,29+(i*17)%59,105+b,5,2,P.slime);
  if(hurt)line(g,76,54+b,97,54+b,P.ink,3);
+ if(S.defeat){
+  // Final, distinct slime compression, not a generic upright damage pose.
+  for(let i=0;i<7;i++){const x=22+i*11,y=99+(i%2)*2;
+   ell(g,x,y,2.1+(m.sink*.18),2,P.slime);}
+ }
 }
 function thornmother(g,S){const {back,phase,walk,cast,attack}=S,b=walk?(phase%2):0;
  // Living thorn sovereign: bramble crown, twisting roots and an exposed heartwood core.
@@ -237,11 +259,15 @@ function unwritten(g,S){const {back,phase,walk,cast,attack}=S,b=walk?(phase%2):0
  if(attack||cast)for(let i=0;i<6;i++)line(g,33+i*8,55+b,43+i*5,39+b,P.web,1);
 }
 const DRAW={nemata,arasta,drakuseth,krenko,scarab,toxrill,thornmother,matron,unwritten};
-function sheet(name){const c=document.createElement('canvas');c.width=W*F;c.height=W*VIEWS*ANIMS;
+function sheet(name){
+ const advanced=ADVANCED_BOSS_KEYS.includes(name),rows=advanced?ANIMS+1:ANIMS;
+ const c=document.createElement('canvas');c.width=W*F;c.height=W*VIEWS*rows;
  const g=c.getContext('2d');g.imageSmoothingEnabled=false;
- for(let v=0;v<VIEWS;v++)for(let a=0;a<ANIMS;a++)for(let f=0;f<F;f++){
-  g.save();g.translate(f*W,(v*ANIMS+a)*W);
-  DRAW[name](g,{back:v===1,phase:f,walk:a===1,attack:a===2,cast:a===3,hurt:a===4,hot:a===2||a===3,lean:a===2?(-2+f):0});
+ for(let v=0;v<VIEWS;v++)for(let a=0;a<rows;a++)for(let f=0;f<F;f++){
+  g.save();g.translate(f*W,(v*rows+a)*W);
+  DRAW[name](g,{back:v===1,phase:f,walk:a===1,attack:a===2,cast:a===3,hurt:a===4,
+    defeat:a===5,hot:a===2||a===3,lean:a===2?(-2+f):0,
+    motion:advanced?advancedBossPose(name,a,f,v===1):null});
   g.restore();
  }
  return c;
@@ -251,7 +277,21 @@ export function installLegendaryBosses(images,manifest){
  if(typeof document==='undefined')return;
  for(const name of Object.keys(DRAW)){
   const key=LEGENDARY_BOSS_KEYS.includes(name)?'mtg_'+name:name;
+  const advanced=ADVANCED_BOSS_KEYS.includes(name);
   images[key]=sheet(name);
-  manifest.sprites[key]={w:W,h:W,pivotY:W-6,artWidth:W-12,bleedX:4,generated:true,premium:true,identity:name};
+  manifest.sprites[key]={w:W,h:W,pivotY:W-6,artWidth:W-12,bleedX:4,generated:true,premium:true,identity:name,
+    ...(advanced?{
+      views:['front','back'],cols:F,artPack:'advanced-boss-motion-v1',
+      anims:{
+        idle:{row:0,frames:4,fps:5,loop:true},
+        walk:{row:1,frames:4,fps:9,loop:true},
+        attack:{row:2,frames:4,fps:11,loop:false},
+        cast:{row:3,frames:4,fps:9,loop:false},
+        hurt:{row:4,frames:4,fps:9,loop:false},
+        defeat:{row:5,frames:4,fps:7,loop:false}
+      }
+    }:{}),
+    qualityStatus:advanced?'species-specific boss motion study; final painted asset quality pending':undefined
+  };
  }
 }

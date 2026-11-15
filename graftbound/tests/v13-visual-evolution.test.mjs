@@ -83,7 +83,14 @@ test('actual authored boss frames render distinct RGBA pixels in normal and atta
    const hashes=new Set();
    for(const name of LEGENDARY_BOSS_KEYS){
     const key='mtg_'+name,canvas=images[key],meta=manifest.sprites[key];
-    assert.equal(meta.w,112);assert.equal(canvas.width,448);assert.equal(canvas.height,1120);
+    assert.equal(meta.w,112);assert.equal(canvas.width,448);
+    const advanced=name==='nemata'||name==='toxrill';
+    assert.equal(canvas.height,advanced?1344:1120);
+    if(advanced){
+      assert.equal(meta.anims.defeat.row,5);
+      assert.deepEqual(meta.views,['front','back']);
+      assert.equal(meta.artPack,'advanced-boss-motion-v1');
+    }else assert.equal(meta.anims,undefined);
     const data=canvas.buf;assert.ok(data);
     const h=Array.from(data).reduce((n,v,i)=>((n*31+v+i)%2147483647),1);
     hashes.add(h);
