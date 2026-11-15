@@ -315,7 +315,7 @@ function matron(g,S){
  for(let side of [-1,1]){
   const x=56+side*14,footX=x+side*(21+step*.35),footY=91+b-Math.abs(step)*.3;
   branch(g,x,65+b,footX,footY,'#713632');ell(g,footX+side,footY+5,9,5,P.iron);
-  const handX=x+side*(26+claw*.4),handY=66+b-claw*.6;
+  const handX=x+side*(22+claw*.3),handY=66+b-claw*.6;
   branch(g,x,48+b,handX,handY,'#a35438');
   for(let j=0;j<3;j++)
    barb(g,handX-side*(4-j*3),handY,handX+side*(3+j*4),handY+2+j,P.bone);
