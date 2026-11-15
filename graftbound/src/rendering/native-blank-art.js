@@ -137,22 +137,22 @@ function faceMorph(g,A,m,view){
     if(view!==1){oval(g,fx+2,fy+3,5,3,c.furHi);oval(g,fx+5,fy+2,1.8,1,c.deep);}
   }
   if(m.head==='draconic'){
-    for(const side of [-1,1])blade(g,[x+side*7,y-6],[x+side*12,y-18],4);
+    for(const side of [-1,1])blade(g,[x+side*7,y-6],[x+side*12,Math.max(7,y-15)],4);
     if(view!==1)for(let i=0;i<4;i++)line(g,[[fx-3+i*3,fy-2],[fx-2+i*3,fy-4]],c.scaleLight,1.25);
   }
   if(m.head==='beak'&&view!==1)blade(g,[fx+3,fy+3],[fx+13,fy+6],4);
 }
 function horns(g,A,tier){
   const [x,y]=A.head;
-  for(const side of [-1,1])blade(g,[x+side*7,y-7],[x+side*(11+tier*2),y-18-tier*2],4);
+  for(const side of [-1,1])blade(g,[x+side*7,y-7],[x+side*(11+tier*2),Math.max(8,y-18-tier*2)],4);
 }
 function antlers(g,A,tier){
   const [x,y]=A.head;
   for(const side of [-1,1]){
-    const st=[x+side*7,y-7],top=[x+side*(15+tier*2),y-28];
+    const st=[x+side*7,y-7],top=[x+side*(15+tier*2),y-18];
     line(g,[st,top],c.bark,3.2);
-    line(g,[[x+side*12,y-20],[x+side*(5+tier),y-28]],c.barkHi,2);
-    line(g,[[x+side*14,y-23],[x+side*(23+tier),y-25]],c.barkHi,2);
+    line(g,[[x+side*12,y-12],[x+side*(5+tier),y-17]],c.barkHi,2);
+    line(g,[[x+side*14,y-15],[x+side*(23+tier),y-17]],c.barkHi,2);
   }
 }
 function claw(g,pos,side,tier){
