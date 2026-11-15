@@ -2,6 +2,7 @@ import { installRealCreatureModels } from './real-creature-models.js';
 import { installPremiumModels } from './premium-creatures.js';
 import { installLegendaryBosses } from './legendary-boss-art.js';
 import { installHd2dArtPack } from './hd2d-art-pack.js';
+import { installPainterlySquirrel } from './painterly-squirrel.js';
 // Asset loading: sprite sheets + manifest, evolution layers, terrain atlas (+ pre-filtered blur atlas), foliage, card art.
 const BASE = new URL('../../assets/', import.meta.url).href;
 function img(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Failed to load ' + src)); i.src = BASE + src; }); }
@@ -23,6 +24,8 @@ export async function loadAssets(onProgress = () => {}) {
   installRealCreatureModels(images,manifest);
   installPremiumModels(images,manifest);
   installLegendaryBosses(images,manifest);
+  // Original species-specific squirrel animation supersedes the legacy Hound-based token.
+  installPainterlySquirrel(images,manifest);
   // Native authored sheets replace matching runtime identities only after all frames validate.
   // An empty art-pack manifest preserves every existing model and save/replay rule.
   await installHd2dArtPack(images,manifest,()=>json('hd2d/manifest.json'),img);
