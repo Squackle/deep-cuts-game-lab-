@@ -82,6 +82,8 @@ export function advancedBossPose(name,state,frame,back=false){
     scrollFlutter:walk?[0,2,4,1][frame]:attack?[0,2,6,1][frame]:
       cast?[0,3,7,2][frame]:defeat?[0,-2,-5,-9][frame]:[0,1,2,1][frame],
     voidArm:attack?[0,3,8,2][frame]:cast?[0,3,6,1][frame]:0,
-    glyphBurst:cast?[0,2,6,1][frame]:attack?[0,1,4,1][frame]:0
+    glyphBurst:cast?[0,2,6,1][frame]:attack?[0,1,4,1][frame]:0,
+    maskBend:attack?[0,2,4,1][frame]:cast?[0,1,3,1][frame]:
+      hurt?[0,-2,-5,-1][frame]:defeat?[0,-2,-4,-6][frame]:0
   };
 }
