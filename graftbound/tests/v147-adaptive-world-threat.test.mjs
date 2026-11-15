@@ -60,8 +60,11 @@ test('higher threat adds bounded counter-reinforcements and more shields without
 function prepareRun(seed,act=1){
   const run=newRun({seed,tutorial:false});
   run.act=act;run.map=generateMap(seed,{act});
-  const target=run.map.nodes.find(n=>n.depth===2 && (n.type==='battle'||n.type==='elite'));
-  assert.ok(target,'needs an ordinary Act II encounter');
+  // Mystery/shrine substitutions can occupy every depth-2 branch for some
+  // seeds; use a real reachable skirmish instead of assuming an authored node.
+  const target=run.map.nodes.find(n=>n.depth===2 && (n.type==='battle'||n.type==='elite'))
+    || run.map.nodes.find(n=>n.depth===1 && n.type==='battle');
+  assert.ok(target,'needs a real reachable Act II combat encounter');
   const parent=run.map.nodes.find(n=>n.depth===1&&n.next.includes(target.id));
   assert.ok(parent);
   run.current=parent.id;run.visited=[parent.id];run.phase='map';
