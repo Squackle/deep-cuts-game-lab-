@@ -89,6 +89,18 @@ function straightLine(s, from, dir, range) {
   }
   return tiles;
 }
+/** Visible-board tactical threat. Nearby creatures that can kill the archer on
+ * their next turn outrank the hero, but targets still obey range/line of sight. */
+export function rangedPriority(s,e,range=Infinity,from=e,los=false) {
+  const candidates=allies(s).filter(alive).filter(u=>manhattan(from,u)<=range&&(!los||lineOfSight(s,from,u)));
+  candidates.sort((a,b)=>{
+    const score=u=>{const d=manhattan(e,u);const canReach=d<=Math.max(1,(u.move||0)+1);
+      const fatal=(u.power+(u.statuses?.empowered||0)-(u.statuses?.weakened||0))>=e.hp;
+      return canReach&&fatal?0:canReach?1:2;};
+    return score(a)-score(b)||manhattan(from,a)-manhattan(from,b)||Number(a.hero)-Number(b.hero)||a.uid-b.uid;
+  });
+  return candidates[0]||null;
+}
 function meleeTarget(s, e) {
   const hero = player(s);
   return allies(s).sort((a, b) => manhattan(e, a) - manhattan(e, b) || (b.hero ? 1 : 0) - (a.hero ? 1 : 0) || a.uid - b.uid)[0] || hero;
@@ -151,8 +163,8 @@ export function planEnemy(s, e) {
       plan.actions.push({ type: 'attack', target: tgt.uid, damage: strikePower({ ...s, units: s.units.map(u => (u === e ? ghost : u)) }, ghost, tgt) });
     }
   };
-  const keepRange = (want, max, needLos) => list.filter(t => { const d = manhattan(t, hero); return d >= 2 && d <= max && (!needLos || lineOfSight(s, t, hero)); })
-    .sort((a, b) => Math.abs(manhattan(a, hero) - want) - Math.abs(manhattan(b, hero) - want) || hazard(s, a) - hazard(s, b) || a.cost - b.cost || cmpTile(a, b));
+  const keepRange = (want, max, needLos, target=hero) => list.filter(t => { const d = manhattan(t, target); return d >= 2 && d <= max && (!needLos || lineOfSight(s, t, target)); })
+    .sort((a, b) => Math.abs(manhattan(a, target) - want) - Math.abs(manhattan(b, target) - want) || hazard(s, a) - hazard(s, b) || a.cost - b.cost || cmpTile(a, b));
 
   if (BOSS_BY_ID[e.defId]) {
     // These tactical actions are driven by actual MTG abilities, not by the legacy boss scripts.
@@ -195,12 +207,12 @@ export function planEnemy(s, e) {
     }
     case 'spikeshot': {
       // {R},{T}: deal damage equal to its power to any target. No anti-flying bonus.
-      if(!e.tapped)plan.actions.push({type:'realPing',damage:Math.max(0,e.power),name:'Spikeshot Goblin'});
+      if(!e.tapped)plan.actions.push({type:'realPing',target:(rangedPriority(s,e)||hero).uid,damage:Math.max(0,e.power),name:'Spikeshot Goblin'});
       break;
     }
     case 'alchemist': {
       // Defender; {T}: 1 damage to each opponent. With one opponent this means the hero.
-      if(!e.tapped)plan.actions.push({type:'realPing',damage:1,name:'Thermo-Alchemist'});
+      if(!e.tapped)plan.actions.push({type:'realPing',target:hero.uid,damage:1,name:'Thermo-Alchemist'});
       break;
     }
     case 'blightcaster': {
@@ -242,15 +254,24 @@ export function planEnemy(s, e) {
       meleeIfAdjacent(tgt); break;
     }
     case 'archer': {
-      if (e.aim) break;
-      const p = hero;
-      const aligned = list.filter(t => (t.x === p.x || t.y === p.y)).map(t => {
-        const d = manhattan(t, p); const dir = [Math.sign(p.x - t.x), Math.sign(p.y - t.y)];
-        const line = straightLine(s, t, dir, def.aimRange);
-        return { t, d, line, ok: d >= 2 && line.some(l => l.x === p.x && l.y === p.y) };
-      }).filter(o => o.ok).sort((a, b) => Math.abs(a.d - 4) - Math.abs(b.d - 4) || a.t.cost - b.t.cost || cmpTile(a.t, b.t));
-      if (aligned.length) { go(aligned[0].t); plan.actions.push({ type: 'aim', tiles: aligned[0].line, damage: def.aimDamage }); }
-      else { const t = list.slice().sort((a, b) => Math.min(Math.abs(a.x - p.x), Math.abs(a.y - p.y)) - Math.min(Math.abs(b.x - p.x), Math.abs(b.y - p.y)) || a.cost - b.cost || cmpTile(a, b))[0]; go(t); meleeIfAdjacent(meleeTarget(s, { ...e, ...posAfter() })); }
+      if(e.aim)break;
+      // Evaluate all legal victims; immediate lethal retaliation is the highest
+      // priority, not the hero's identity. Plan and intent share this routine.
+      const victims=allies(s).filter(alive).sort((a,b)=>{
+        const priority=u=>manhattan(e,u)<=Math.max(1,(u.move||0)+1)&&u.power>=e.hp?0:1;
+        return priority(a)-priority(b)||manhattan(e,a)-manhattan(e,b)||Number(a.hero)-Number(b.hero)||a.uid-b.uid;
+      });
+      let choice=null;
+      for(const target of victims){
+        const aligned=list.filter(t=>t.x===target.x||t.y===target.y).map(t=>{
+          const d=manhattan(t,target),dir=[Math.sign(target.x-t.x),Math.sign(target.y-t.y)];
+          const line=straightLine(s,t,dir,def.aimRange);
+          return {t,d,line,ok:d>=2&&line.some(l=>l.x===target.x&&l.y===target.y)};
+        }).filter(o=>o.ok).sort((a,b)=>Math.abs(a.d-3)-Math.abs(b.d-3)||a.t.cost-b.t.cost||cmpTile(a.t,b.t));
+        if(aligned.length){choice=aligned[0];break;}
+      }
+      if(choice){go(choice.t);plan.actions.push({type:'aim',tiles:choice.line,damage:def.aimDamage});}
+      else{const p=victims[0]||hero;const t=list.slice().sort((a,b)=>manhattan(a,p)-manhattan(b,p)||a.cost-b.cost||cmpTile(a,b))[0];go(t);meleeIfAdjacent(meleeTarget(s,{...e,...posAfter()}));}
       break;
     }
     case 'guardian': {
@@ -266,14 +287,16 @@ export function planEnemy(s, e) {
       meleeIfAdjacent(tgt); break;
     }
     case 'skirmisher': {
-      const good = keepRange(3, def.spitRange, true);
-      if (good.length) { go(good[0]); plan.actions.push({ type: 'spit', target: hero.uid, damage: e.power, poison: def.poison }); }
+      const target=rangedPriority(s,e,def.spitRange)||hero;
+      const good = keepRange(3, def.spitRange, true,target);
+      if (good.length) { go(good[0]); plan.actions.push({ type: 'spit', target: target.uid, damage: e.power, poison: def.poison }); }
       else { const tgt = meleeTarget(s, e); go(approach(s, e, tgt, list, map)); meleeIfAdjacent(tgt); }
       break;
     }
     case 'hexer': {
-      const good = keepRange(def.hexRange, def.hexRange, true);
-      if (good.length) { go(good[0]); plan.actions.push({ type: 'hex', target: hero.uid, damage: 1, weaken: def.weaken });
+      const target=rangedPriority(s,e,def.hexRange)||hero;
+      const good = keepRange(def.hexRange, def.hexRange, true,target);
+      if (good.length) { go(good[0]); plan.actions.push({ type: 'hex', target: target.uid, damage: 1, weaken: def.weaken });
         // Periodic territory control has visible terrain that players can avoid next turn.
         if ((e.cycle || 0) % 3 === 2) plan.actions.push({ type: e.defId === 'shardling' ? 'fracture' : 'sporefield', n: 1 });
       }
@@ -281,9 +304,10 @@ export function planEnemy(s, e) {
       break;
     }
     case 'harpooner': {
-      const good = keepRange(4, def.harpoonRange, true);
-      const fly = has(hero, 'flying');
-      if (good.length) { go(good[0]); plan.actions.push({ type: 'harpoon', target: hero.uid, damage: e.power * (fly ? 2 : 1), ground: fly }); }
+      const target=rangedPriority(s,e,def.harpoonRange)||hero;
+      const good = keepRange(4, def.harpoonRange, true,target);
+      const fly = has(target, 'flying');
+      if (good.length) { go(good[0]); plan.actions.push({ type: 'harpoon', target: target.uid, damage: e.power * (fly ? 2 : 1), ground: fly }); }
       else { const tgt = meleeTarget(s, e); go(approach(s, e, tgt, list, map)); meleeIfAdjacent(tgt); }
       break;
     }
@@ -450,11 +474,12 @@ export function actEnemy(s, ev, e) {
         break;
       }
       case 'realPing': {
-        if(e.tapped || !alive(hero) || (e.defId==='harpooner' && hero.keywords?.hexproof))break;
+        const victim=s.units.find(u=>u.uid===a.target&&alive(u));
+        if(e.tapped||!victim||(e.defId==='harpooner'&&victim.keywords?.hexproof))break;
         e.tapped=true;
-        ev.push({t:'realAbility',uid:e.uid,name:a.name,target:hero.uid});
-        ev.push({t:'rangedShot',uid:e.uid,target:hero.uid,kind:e.defId==='harpooner'?'spikeshot':'alchemist'});
-        if(a.damage>0)dealDamage(s,ev,e,hero,a.damage,{kind:'spelllike'});
+        ev.push({t:'realAbility',uid:e.uid,name:a.name,target:victim.uid});
+        ev.push({t:'rangedShot',uid:e.uid,target:victim.uid,kind:e.defId==='harpooner'?'spikeshot':'alchemist'});
+        if(a.damage>0)dealDamage(s,ev,e,victim,a.damage,{kind:'spelllike'});
         break;
       }
       case 'realBlightcaster': {
@@ -470,9 +495,9 @@ export function actEnemy(s, ev, e) {
         break;
       }
       case 'attack': { if(e.auras?.includes('mtg:pacifism')||e.tapped)break; const t = s.units.find(u => u.uid === a.target); if (alive(t) && manhattan(e, t) === 1){attackExchange(s, ev, e, t);if(!has(e,'vigilance'))e.tapped=true;} break; }
-      case 'spit': ev.push({ t: 'spit', uid: e.uid, target: hero.uid }); dealDamage(s, ev, e, hero, a.damage, { kind: 'spit' }); addStatus(s, ev, hero, 'poison', a.poison); break;
-      case 'hex': ev.push({ t: 'hex', uid: e.uid, target: hero.uid }); dealDamage(s, ev, e, hero, a.damage, { kind: 'hex' }); addStatus(s, ev, hero, 'weakened', a.weaken); break;
-      case 'harpoon': ev.push({ t: 'harpoon', uid: e.uid, target: hero.uid }); dealDamage(s, ev, e, hero, a.damage, { kind: 'harpoon' }); if (a.ground && alive(hero)) addStatus(s, ev, hero, 'grounded', 1); break;
+      case 'spit': {const tgt=s.units.find(u=>u.uid===a.target&&alive(u));if(!tgt)break;ev.push({t:'spit',uid:e.uid,target:tgt.uid});dealDamage(s,ev,e,tgt,a.damage,{kind:'spit'});if(alive(tgt))addStatus(s,ev,tgt,'poison',a.poison);break;}
+      case 'hex': {const tgt=s.units.find(u=>u.uid===a.target&&alive(u));if(!tgt)break;ev.push({t:'hex',uid:e.uid,target:tgt.uid});dealDamage(s,ev,e,tgt,a.damage,{kind:'hex'});if(alive(tgt))addStatus(s,ev,tgt,'weakened',a.weaken);break;}
+      case 'harpoon': {const tgt=s.units.find(u=>u.uid===a.target&&alive(u));if(!tgt)break;ev.push({t:'harpoon',uid:e.uid,target:tgt.uid});dealDamage(s,ev,e,tgt,a.damage,{kind:'harpoon'});if(a.ground&&alive(tgt))addStatus(s,ev,tgt,'grounded',1);break;}
       case 'aim': e.aim = { tiles: a.tiles, damage: a.damage }; ev.push({ t: 'aim', uid: e.uid, tiles: a.tiles }); break;
       case 'sporefield':
     case 'fissure':
