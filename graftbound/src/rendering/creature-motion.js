@@ -9,7 +9,9 @@ export const CREATURE_MOTION_FAMILIES=Object.freeze({
   wolf:'quadruped',direwolf:'quadruped',
   friendlyDrake:'winged',torchgoblin:'biped',friendlyGoblin:'biped',
   saproling:'fungal',
-  spiderling:'arachnid',friendlySnake:'serpent',friendlyHornet:'insect',stinger:'insect'
+  spiderling:'arachnid',friendlySnake:'serpent',friendlyHornet:'insect',stinger:'insect',
+  friendlyCatSoldier:'feline-warrior',friendlySkeleton:'skeleton',zombie:'undead',
+  golem:'construct',gearhulk:'construct',titan:'construct'
 });
 const GAIT=Object.freeze([-1,0,1,0]);
 const HOP=Object.freeze([0,-2,-4,-1]);

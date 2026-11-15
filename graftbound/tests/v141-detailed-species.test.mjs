@@ -76,11 +76,11 @@ test('each species directly paints independent directional frames with stable fr
   assert.equal(speciesRigPose('hound',0,0),null);
 });
 test('real runtime replaces incompatible Hound/Moth bases without inflating a tile or consuming gameplay RNG',()=>{
-  assert.match(src,/const detailed=SPECIES_STUDY_FEATURES\.includes\(config\.feature\)/);
-  assert.match(src,/if\(detailed\)drawSpeciesStudyFrame\(cctx,config\.feature,view,anim\.row,frame,config\)/);
+  assert.match(src,/const species=SPECIES_STUDY_FEATURES\.includes\(config\.feature\)/);
+  assert.match(src,/else if\(species\)drawSpeciesStudyFrame\(cctx,config\.feature,view,anim\.row,frame,config\)/);
   assert.match(src,/if\(!detailed && !config\.custom && anim\.row!==baseRows\)/);
   assert.match(src,/pixelScale:base\.h\*\(base\.pixelScale\|\|1\)\/height/);
-  assert.match(src,/artPack:'species-anatomy-study-v1'/);
+  assert.match(src,/artPack:humanoid\?'humanoid-anatomy-study-v1':'species-anatomy-study-v1'/);
   for(const relative of ['../src/rendering/creature-motion.js','../src/rendering/detailed-species-art.js']){
     const c=readFileSync(new URL(relative,import.meta.url),'utf8');
     for(const forbidden of ['Math.random','localStorage','window.','player.hp ='])
