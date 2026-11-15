@@ -55,8 +55,10 @@ function stroke(g,pts,col,width=1){
 }
 function tail(g,view,pose,defeat){
   const rear=view===1;
-  g.save();g.translate(rear?51:27,71+pose.bob+defeat*7);
+  g.save();g.translate(rear?54:48,71+pose.bob+defeat*5);
   g.rotate((rear?-.14:.08)+pose.tail*.012-defeat*.38);
+  // Tail silhouette must fit a single tile and stay connected to the haunch.
+  g.scale(.62,.84);
   g.beginPath();
   g.moveTo(-1,4);
   g.bezierCurveTo(rear?-7:-9,-16,-20,-23,-22,-40);
@@ -105,7 +107,7 @@ function body(g,p,view,state){
   const walk=state==='walk',attack=state==='attack';
   const stretch=walk?5:attack?3:0;
   const tuck=p.tuck;
-  const bx=rear?49:49+p.lunge*.5,by=64+p.bob+tuck*14;
+  const bx=rear?49:49+p.lunge*.5,by=64+p.bob+tuck*8;
   if(!rear)hindPaw(g,bx-15,by+17,p.stride>0?-2:1);
   const coat=grad(g,bx-5,by-10,36,[[0,C.gold],[.23,C.fur],[.56,C.rust],[.84,C.ochre],[1,C.deep]]);
   ellipse(g,bx-stretch*.25,by,19+stretch*.55,17-tuck*6,coat,C.edge,1.7);
