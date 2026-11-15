@@ -419,8 +419,10 @@ export function sheetModal(app) {
   const st = runStats(run), ap = deriveAppearance(run.evo, visualForRun(run));
   const hist = run.evo.absorbed.map((a, i) => {
     const c = getCard(a.cardId); const col = c ? COLOR[c.color] : COLOR.verdant;
-    const bits = [`+${a.power}/+${a.toughness}`, ...a.gained.map(k => KEYWORDS[k].name), ...a.raised.map(k => KEYWORDS[k].name + '↑'), a.resonance ? `Resonance +${a.resonance * 2} Spark` : ''].filter(Boolean).join(' · ');
-    return `<li style="--frame:${col.frame}"><span class="n">${i + 1}</span><b>${esc(a.name || (c && c.name) || a.cardId)}${c && c.legacy ? ' <em class="lg">legacy</em>' : ''}</b><small>${esc(bits)}</small></li>`;
+    const bits = [`+${a.power}/+${a.toughness}`, ...(a.gained||[]).map(k => KEYWORDS[k]?.name||k), ...(a.raised||[]).map(k => (KEYWORDS[k]?.name||k) + '↑'), a.resonance ? `Resonance +${a.resonance * 2} Maximum Health` : ''].filter(Boolean).join(' · ');
+    const descriptions=[...(a.gained||[]),...(a.raised||[])].map(k=>KEYWORDS[k]?.text).filter(Boolean);
+    if(c?.adaptationNote)descriptions.push(c.adaptationNote);
+    return `<li style="--frame:${col.frame}"><span class="n">${i + 1}</span><b>${esc(a.name || (c && c.name) || a.cardId)}${c && c.legacy ? ' <em class="lg">legacy</em>' : ''}</b><small>${esc(bits)}</small>${descriptions.length?`<small class="gb-graft-details">${esc(descriptions.join(' · '))}</small>`:''}</li>`;
   }).join('');
   const visible = Object.entries(ap.slots).map(([, p]) => `${p.part}${p.tier > 1 ? ' II' : ''}`).concat(ap.effects);
   const m = app.openModal(`
