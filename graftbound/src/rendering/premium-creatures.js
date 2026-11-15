@@ -3,7 +3,7 @@
  * Every frame shares anatomy proportions; only material-tagged skin can change tone. */
 import { SKIN_PALETTES } from '../engine/visual-identity.js';
 const SIZE = 64, COLS = 4, ROWS = 10;
-const ink = '#23292b', shade = '#574f51', clothDark = '#344453', cloth = '#667d83', clothLight = '#abb8aa';
+const ink = '#23292b';
 function px(c,x,y,w=1,h=1,color=ink){c.fillStyle=color;c.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));}
 function disk(c,x,y,rx,ry,palette,mask=null){
   for(let iy=Math.ceil(y-ry);iy<=Math.floor(y+ry);iy++)for(let ix=Math.ceil(x-rx);ix<=Math.floor(x+rx);ix++){
@@ -30,43 +30,71 @@ function polygon(c,points,color,edge=ink){
   }
   if(edge)for(let i=0;i<points.length;i++)line(c,...points[i],...points[(i+1)%points.length],edge);
 }
-function drawHero(g,m,view,anim,frame){
+export function drawHero(g,m,view,anim,frame){
   const back=!!view,walk=anim===1,attack=anim===2,cast=anim===3,hurt=anim===4;
   const bob=walk?([0,1,0,1][frame]):anim===0?([0,0,1,1][frame]):0;
   const lean=attack?([1,-2,-3,0][frame]):hurt?2:0;
   const x=lean, y=bob;
   const skin=['#423b3b','#9b8d80','#c7b7a4','#e2d1b8','#f5e8cb'];
   const feet=[walk?[-2,0,2,0][frame]:0,walk?[2,0,-2,0][frame]:0];
-  // Legs are long enough to read as humanoid while remaining compact on the tactical tile.
+  // An unarmored, nonhuman Blank: bare legs, ankles and splayed toes.
+  // All exposed tissue is tagged in the skin mask, so deterministic saved tones
+  // apply to the whole body rather than leaving fixed-color trousers or boots.
   for(let i=0;i<2;i++){
-    const fx=(i?-1:1)*(5),step=feet[i];
-    disk(g,32+fx+x+step*.4,50+y,4,9,['#303b40','#56666a','#718185','#97a4a0']);
-    px(g,27+fx+x+step,55+y,10,3,'#30373c');px(g,27+fx+x+step,57+y,10,2,'#8a8375');
-    px(g,28+fx+x+step,56+y,3,1,'#bdada0');
+    const side=i?1:-1,step=feet[i],legX=32+side*6+x+step*.38;
+    disk(g,legX,47+y,4.9,8.1,skin,m);
+    disk(g,legX+side*.2,53+y+step*.2,3.5,6.3,skin,m);
+    disk(g,legX+side*1.15+step*.65,58+y,5.3,2.6,skin,m);
+    // Individual rounded toes create a barefoot silhouette at gameplay zoom.
+    for(let toe=0;toe<3;toe++){
+      const toeX=legX+side*(2.6+toe*1.15)+step*.65;
+      disk(g,toeX,59+y,1.25,1.35,skin,m);
+      px(g,toeX,59+y,1,1,skin[4]);
+    }
   }
-  // Hips and linen underlayer are intentionally plain, allowing future replacement anatomy.
-  disk(g,32+x,45+y,11,6,[ink,'#5b564f','#96897c','#c8b79c']);
-  polygon(g,[[24+x,43+y],[40+x,43+y],[39+x,50+y],[25+x,50+y]],'#8e8d78');
-  // Arms render before the torso and remain articulated during attacks and spells.
+  // The pelvis remains skin; the cloth wrap is painted AFTER the body and
+  // excluded from the skin mask, making Equipment and grafted armor independent.
+  disk(g,32+x,44+y,11,7,skin,m);
+  // Articulated bare shoulders, arms and hands — no sleeves or bracers.
   for(const side of [-1,1]){
-    const sx=32+side*13+x, startY=31+y;
-    const lifted=cast && side===1 ? -12 : attack && side===-1 ? -7 : 0;
-    const endX=sx+side*2-(attack && side===-1?8:0), endY=42+y+lifted;
-    line(g,sx,startY,endX,endY,ink,7);
-    line(g,sx+1,startY,endX+1,endY,'#b3a58f',5);
-    disk(g,endX,endY,4,4,skin,m);
-    px(g,endX-2,endY-1,3,1,skin[4]);
+    const sx=32+side*13+x,startY=31+y;
+    const lifted=cast&&side===1?-12:attack&&side===-1?-7:0;
+    const endX=sx+side*2-(attack&&side===-1?8:0),endY=42+y+lifted;
+    disk(g,sx,startY+2,5,6.5,skin,m);
+    const mx=(sx+endX)/2,my=(startY+endY)/2;
+    disk(g,mx,my,4.5,Math.max(5,Math.abs(endY-startY)/2+3),skin,m);
+    disk(g,endX,endY,4.5,4.1,skin,m);
+    for(let finger=0;finger<3;finger++)disk(g,endX+side*(1+finger*.9),endY+2.6,1,1.5,skin,m);
   }
-  disk(g,32+x,35+y,11,11,[ink,'#605b50','#9e9884','#dbccb0']);
-  // Soft unadorned vest: pale textile with a subtle seam and a small unifying heart-sigil.
-  polygon(g,[[27+x,28+y],[37+x,28+y],[43+x,35+y],[40+x,46+y],[24+x,46+y],[21+x,35+y]],clothDark);
-  polygon(g,[[27+x,29+y],[37+x,29+y],[41+x,35+y],[38+x,44+y],[26+x,44+y],[23+x,35+y]],cloth);
-  for(let yy=32;yy<44;yy+=3){px(g,24+x,yy+y,2,1,clothLight);px(g,39+x,yy+y,1,1,clothLight)}
-  line(g,32+x,31+y,32+x,43+y,'#526166');
-  px(g,24+x,43+y,16,3,'#675848');px(g,28+x,44+y,8,1,'#b2a081');
-  if(!back){
-    px(g,30+x,33+y,4,5,'#302d30');px(g,31+x,33+y,2,4,'#d1ac5c');px(g,31+x,34+y,2,2,'#f6df90');
-  }else{line(g,27+x,30+y,37+x,41+y,'#a69980',2)}
+  // Bare chest and abdomen, with subdued sculpted anatomy rather than a
+  // starting vest, plated torso, shoulder guards or symbolic armor insignia.
+  disk(g,32+x,35+y,12,10.5,skin,m);
+  disk(g,32+x,40+y,9,7,skin,m);
+  // Thin low-contrast anatomy details; these are organic shading, not armor.
+  for(const side of [-1,1]){
+    line(g,32+side*2+x,34+y,32+side*9+x,35+y,skin[1],1);
+    px(g,32+side*7+x,36+y,1,1,skin[2]);
+  }
+  line(g,32+x,37+y,32+x,42+y,skin[1],1);
+  px(g,29+x,41+y,2,1,skin[2]);px(g,34+x,41+y,2,1,skin[2]);
+  // Only clothing: a tied, warm-brown cloth groin wrap. Clear its pixels from
+  // the skin material mask so tone changes never recolor this fabric.
+  const apron=[[23+x,42+y],[41+x,42+y],[40+x,47+y],[37+x,51+y],[34+x,54+y],[29+x,52+y],[26+x,55+y],[23+x,51+y]];
+  const wrap=[[22+x,41+y],[42+x,41+y],[40+x,44+y],[24+x,44+y]];
+  // Remove mask only under the exact garment silhouette; exposed thighs on
+  // either side remain skin-masked (a rectangular cutout would erase them).
+  m.save();m.globalCompositeOperation='destination-out';
+  polygon(m,apron,'#ffffff',null);polygon(m,wrap,'#ffffff',null);
+  m.restore();
+  polygon(g,apron,'#7c5743');
+  polygon(g,[[24+x,43+y],[40+x,43+y],[38+x,48+y],[34+x,51+y],[29+x,49+y],[26+x,53+y],[24+x,49+y]],'#a67b5a',null);
+  polygon(g,wrap,'#4a332b');
+  line(g,24+x,42+y,40+x,42+y,'#d2a477',1);
+  // Fold and uneven hem: cloth, not leather armor or a rigid belt.
+  line(g,31+x,45+y,30+x,51+y,'#6a4437',1);
+  line(g,37+x,45+y,35+x,51+y,'#d0a47d',1);
+  px(g,38+x,43+y,3,2,'#c39468');
+  px(g,40+x,44+y,2,3,'#79513e');
   // Narrow neck and smooth organic head: no hair, armor, snout, scales, horns, or species traits.
   disk(g,32+x,26+y,5,5,skin,m);
   disk(g,32+x,17+y,9,11,skin,m);
