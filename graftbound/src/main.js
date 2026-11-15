@@ -148,7 +148,15 @@ class App {
       else if (k === 'm') $('btn-sound').click();
     });
     const tip = $('tip');
-    const showTip = el => { const r = el.getBoundingClientRect(); tip.textContent = el.dataset.tip; tip.classList.add('show'); tip.style.left = Math.min(innerWidth - 250, Math.max(8, r.left)) + 'px'; tip.style.top = (r.bottom + 6) + 'px'; };
+    const showTip = el => {
+      const r=el.getBoundingClientRect();tip.textContent=el.dataset.tip;tip.classList.add('show');
+      // Position from measured tooltip size, accounting for narrow and short screens.
+      const w=Math.min(tip.getBoundingClientRect().width||260,innerWidth-16);
+      const h=Math.min(tip.getBoundingClientRect().height||90,innerHeight-16);
+      const above=r.top-h-8, below=r.bottom+8;
+      tip.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left))+'px';
+      tip.style.top=Math.max(8,Math.min(innerHeight-h-8,below+h+8>innerHeight&&above>=8?above:below))+'px';
+    };
     document.addEventListener('pointerover', e => { const el = e.target.closest('[data-tip]'); if (el) showTip(el); else tip.classList.remove('show'); });
     document.addEventListener('focusin', e => { const el = e.target.closest('[data-tip]'); if (el) showTip(el); });
   }
