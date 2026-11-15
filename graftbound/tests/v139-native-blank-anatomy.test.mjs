@@ -11,7 +11,7 @@ function spyCanvas(){
  const g={calls,save(){calls.push('save')},restore(){calls.push('restore')},
   translate(...p){calls.push(['translate',...p])},beginPath(){calls.push('beginPath')},
   moveTo(...p){calls.push(['moveTo',...p])},lineTo(...p){calls.push(['lineTo',...p])},
-  closePath(){calls.push('closePath')},fill(){calls.push('fill')},stroke(){calls.push('stroke')},
+  closePath(){calls.push('closePath')},rect(...p){calls.push(['rect',...p])},clip(){calls.push('clip')},fill(){calls.push('fill')},stroke(){calls.push('stroke')},
   ellipse(...p){calls.push(['ellipse',...p])},
   bezierCurveTo(...p){calls.push(['bezier',...p])},
   quadraticCurveTo(...p){calls.push(['quad',...p])},
@@ -56,6 +56,7 @@ test('multiple grafts share native pose anchors and render genuinely distinct be
  assert.ok(front.calls.filter(x=>x==='fill').length>40,'scales, horns, claws, armor and moss must draw real native art');
  assert.deepEqual(behind.calls.filter(x=>Array.isArray(x)&&x[0]==='translate').length,40);
  assert.deepEqual(front.calls.filter(x=>Array.isArray(x)&&x[0]==='translate').length,40);
+ assert.equal(front.calls.filter(x=>x==='clip').length,40,'every native graft frame must clip to its own atlas cell');
  const a=spyCanvas();drawNativeBlankGraftSheet(a,mutant,'front');
  assert.deepEqual(a.calls,front.calls,'sprite creation must be deterministic and replay safe');
  assert.throws(()=>drawNativeBlankGraftSheet(spyCanvas(),mutant,'invalid'),/Invalid Blank graft layer/);
@@ -79,6 +80,7 @@ test('five card Equipment visuals use native anchors, while unknown items do not
  const gear=spyCanvas();drawNativeBlankGearSheet(gear,ids);
  assert.ok(gear.calls.filter(x=>x==='fill').length>150);
  assert.equal(gear.calls.filter(x=>Array.isArray(x)&&x[0]==='translate').length,40);
+ assert.equal(gear.calls.filter(x=>x==='clip').length,40,'equipment may never bleed into adjacent animation cells');
 });
 test('runtime integration selects native graft and equipment painters without changing engine rules',()=>{
  const bench=source('../src/rendering/raster-benchmarks.js');
