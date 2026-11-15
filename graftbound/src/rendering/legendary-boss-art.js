@@ -274,9 +274,9 @@ function thornmother(g,S){
  const root=m?m.thornRoot:0,lash=m?m.thornLash:0,crown=m?m.thornCrown:0;
  // Living Treefolk sovereign: all seven roots emerge from the same trunk.
  for(let i=-3;i<=3;i++){
-  const x=56+i*5,tipX=x+i*4+(i%2?root:-root)*.45,tipY=103+b-Math.abs(root)*.25;
+  const x=56+i*5,tipX=x+i*4+(i%2?root:-root)*.45,tipY=99+b-Math.abs(root)*.25;
   branch(g,x,84+b,tipX,tipY,i%2?P.wood:P.dark);
-  barb(g,tipX,tipY,tipX+i*.2,Math.min(107,tipY+2),P.woodHi);
+  barb(g,tipX,tipY,tipX+i*.2,Math.min(103,tipY+2),P.woodHi);
  }
  poly(g,[[42,37+b],[70,37+b],[82,83+b],[69,91+b],[43,91+b],[29,81+b]],'#473d3c');
  ell(g,56,64+b,17,23,'#6c5242');
