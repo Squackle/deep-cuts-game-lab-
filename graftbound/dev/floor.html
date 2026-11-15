@@ -15,13 +15,13 @@ const theme = q.get('theme') || 'hollow'; const act = { hollow: 0, warrens: 1, n
 const enc = buildEncounter(ACTS[act].mid[0], 4242, 'battle');
 sc.loadArena(enc, 7, theme); sc.zoom = +(q.get('zoom') || 1); sc.yaw = sc.yawTarget = +(q.get('yaw') || Math.PI / 4);
 enc.enemies.forEach((e, i) => sc.addUnit({ uid: i + 2, side: 'enemy', x: e.x, y: e.y }, { grub: 'grub', hound: 'hound', moth: 'moth', archer: 'archer', tortoise: 'warden', cinderling: 'cinderling', emberseer: 'emberseer', ashbrute: 'ashbrute', riftstalker: 'riftstalker', nullwarden: 'nullwarden', shardling: 'shardling', hexer: 'hexer', harpooner: 'harpooner' }[e.defId] || 'grub'));
-sc.addUnit({ uid: 1, side: 'player', x: enc.playerStart.x, y: enc.playerStart.y }, 'blank');
+sc.addUnit({ uid: 1, side: 'player', x: enc.playerStart.x, y: enc.playerStart.y }, 'blank', { scale: 0.38 });
 // Optional real WebGL scene QA: exact shipped Blank, Soldier and Squirrel at tactical scale.
 // This is not a fake background illustration and does not modify a real campaign encounter.
 if (q.get('benchmarks') === '1') {
   const x=enc.playerStart.x, y=enc.playerStart.y;
   sc.addUnit({ uid: 901, side: 'player', x: Math.max(0,Math.min(enc.w-1,x+1)), y }, 'mtg_friendlySoldier', { scale: 0.39 });
-  sc.addUnit({ uid: 902, side: 'player', x, y: Math.max(0,Math.min(enc.h-1,y+1)) }, 'mtg_friendlySquirrel', { scale: 0.24 });
+  sc.addUnit({ uid: 902, side: 'player', x: Math.max(0,Math.min(enc.w-1,x+1)), y: Math.max(0,Math.min(enc.h-1,y+1)) }, 'mtg_friendlySquirrel', { scale: 0.24 });
 }
 let last = performance.now(); (function loop(t) { sc.frame(Math.min(0.05, (t - last) / 1000)); last = t; requestAnimationFrame(loop); })(last);
 window.__sc = sc;
