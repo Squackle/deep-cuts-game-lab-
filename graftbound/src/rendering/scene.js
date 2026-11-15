@@ -6,6 +6,7 @@ import { mul, perspective, ortho, lookAt, xform, invert, I } from './math.js';
 import { Geo } from './geometry.js';
 import { buildEnvironment, swayFor, WIND } from './environment.js';
 import { Particles } from './particles.js';
+import { spriteAnimationFrame, defeatTiming } from './sprite-animation.js';
 import { chooseSpriteDirection } from './hd2d-art-pack.js';
 
 export const PX = 1 / 19;
@@ -109,9 +110,10 @@ export class Scene {
     this.tween(0.16, k => { const s = Math.sin(k * Math.PI) * (big ? 0.12 : 0.06); v.lunge = [back[0] + d[0] * s, 0, back[2] + d[2] * s]; });
   }
   async death(uid, element = null) {
-    const v = this.units.get(uid); if (!v) return; v.anim = 'hurt';
+    const v = this.units.get(uid); if (!v) return;
+    const timing = defeatTiming(v.animSet); v.anim = timing.authored ? 'defeat' : 'hurt'; v.animT = 0;
     const c = this.centerPos(uid); const colors={fire:[1,0.35,0.1],frost:[0.65,0.9,1],lightning:[0.5,0.7,1],void:[0.48,0.15,0.55],poison:[0.35,0.9,0.3],nature:[0.4,0.9,0.35],radiant:[1,0.9,0.5]}; const col=colors[element]||[0.95,0.85,0.55];this.fx.burst(c,col,44,{speed:2.2,up:element==='frost'?1:2});this.fx.burst(c,element==='void'?[0.16,0.06,0.18]:[0.3,0.2,0.15],18,{speed:1.2,up:0.5,size:18});if(element==='fire'||element==='frost'||element==='void')this.addRing({pos:[c[0],0.08,c[2]],r0:0.15,r1:0.85,life:0.5,col,width:0.07,spokes:element==='frost'?6:5});
-    await this.tween(0.55, k => { v.dissolve = k; v.flash = 0.3 * (1 - k); }); this.removeUnit(uid);
+    await this.tween(timing.seconds, k => { const t = timing.fadeStart ? Math.max(0, (k - timing.fadeStart) / (1 - timing.fadeStart)) : k; v.dissolve = t; v.flash = 0.3 * (1 - t); }); this.removeUnit(uid);
   }
   async spawn(uid) { const v = this.units.get(uid); if (!v) return; v.dissolve = 1; this.fx.burst(v.pos, [0.4, 0.9, 0.35], 28, { speed: 1.2, up: 2 }); await this.tween(0.45, k => { v.dissolve = 1 - k; }); v.dissolve = 0; }
   async projectile(from, to, color, dur = 0.28, arc = 0.5, { embers = false, size = 30 } = {}) {
@@ -200,12 +202,14 @@ export class Scene {
     for (const [tex, list] of byTex) {
       const start = off;
       for (const v of list) {
-        const anims = v.animSet || man.anims, A = anims[v.anim] || anims.idle; v.animT += dt * this.speed;
-        let f = Math.floor(v.animT * A.fps); if (f >= A.frames) { if (A.loop) f %= A.frames; else { v.anim = 'idle'; v.animT = 0; f = 0; } }
+        const anims = v.animSet || man.anims; v.animT += dt * this.speed;
+        const pose = spriteAnimationFrame(v.anim, v.animT, anims);
+        if (pose.reset) { v.anim = 'idle'; v.animT = 0; }
+        const f = pose.frame;
         const frontDot = v.dir[0] * fwdH[0] + v.dir[1] * fwdH[1];
         const sideDot = v.dir[0] * rH[0] + v.dir[1] * rH[1];
         const {index:viewIndex, flip} = chooseSpriteDirection(v.views || man.views, frontDot, sideDot);
-        const row = viewIndex * Object.keys(anims).length + (anims[v.anim] || A).row;
+        const row = viewIndex * Object.keys(anims).length + anims[v.anim].row;
         const u0 = (f * v.fw) / tex.w, u1 = ((f + 1) * v.fw) / tex.w, v0 = (row * v.fh) / tex.h, v1 = ((row + 1) * v.fh) / tex.h;
         const s = v.scale * v.spawnK, pixelScale = v.pixelScale || 1;
         const wdt = v.fw * PX * s * pixelScale, hgt = v.fh * PX * HCOMP * s * pixelScale;
