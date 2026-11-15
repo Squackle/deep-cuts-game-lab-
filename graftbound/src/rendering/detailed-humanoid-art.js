@@ -100,7 +100,7 @@ function cat(g,A,pal,state,frame){
   }
   // Ears emerge from the skull, facing the same view in every state.
   for(const side of [-1,1]){
-    shape(g,[[cx+side*7,cy-5],[cx+side*13,cy-18],[cx+side*17,cy-3]],mid,INK,1.3);
+    shape(g,[[cx+side*7,cy-5],[cx+side*13,Math.max(6,cy-14)],[cx+side*17,cy-3]],mid,INK,1.3);
     shape(g,[[cx+side*10,cy-5],[cx+side*13,cy-13],[cx+side*14,cy-5]],LEATHER_HI,null);
   }
   ell(g,cx,cy,12.2,11.5,ramp(g,cx-3,cy-4,18,light,mid,dark),INK,1.6);
