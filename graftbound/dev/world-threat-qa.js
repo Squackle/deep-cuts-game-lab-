@@ -3,6 +3,7 @@ import {newWorldThreat,settleWorldThreat,effectiveThreatLevel,threatModifiers} f
 import {newRun,enterNode,runStats} from '../src/engine/run.js';
 import {generateMap} from '../src/engine/campaign.js';
 import {strengthOf} from '../src/engine/strength.js';
+import {previewNextWorldThreat,threatPreviewLabel} from '../src/engine/threat-preview.js';
 
 const assert=(ok,message)=>{if(!ok)throw new Error(message)};
 const status=document.getElementById('status'),results=document.getElementById('results');
@@ -25,6 +26,11 @@ try{
   const strength=strengthOf(run.evo,{spellbook:run.spellbook,stats:runStats(run)}).score;
   const expected=3+2*(run.act*8+target.depth);
   const predicted=effectiveThreatLevel(run.worldThreat,{strength,expected});
+  const forecast=previewNextWorldThreat(run),mapText=threatPreviewLabel(forecast);
+  assert(forecast.nodes.some(n=>n.id===target.id&&n.level===predicted),
+    'map displayed a different threat from the actual selected encounter');
+  assert(mapText.includes('Stored 0/12 · Next battle '),
+    'map must distinguish stored zero from active build-strength threat');
   enterNode(run,target.id);
   assert(predicted>=5,'strong build did not raise active threat');
   assert(run.battle.worldThreat===predicted,'battle did not apply adaptive threat level');
@@ -36,6 +42,7 @@ try{
     ['Flawless win',`0 → ${first.level}`],
     ['Two light-hit wins',`${first.level} → ${low.level}`],
     ['Persistent level',String(run.worldThreat.level)],
+    ['Actual map label',mapText],
     ['Build strength',strength.toFixed(1)],
     ['Expected strength',String(expected)],
     ['Active battle threat',run.battle.worldThreat+'/12'],
