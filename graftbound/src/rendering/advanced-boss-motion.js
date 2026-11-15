@@ -1,8 +1,8 @@
 /**
- * Visual-only articulated phase poses for Nemata, Arasta, Drakuseth and Toxrill.
+ * Visual-only articulated phase poses for all six legendary creatures, including Krenko and the Scarab God.
  * Frame state is deterministic; bosses keep their existing combat AI and phases.
  */
-export const ADVANCED_BOSS_KEYS=Object.freeze(['nemata','arasta','drakuseth','toxrill']);
+export const ADVANCED_BOSS_KEYS=Object.freeze(['nemata','arasta','drakuseth','krenko','scarab','toxrill']);
 export const BOSS_STATES=Object.freeze(['idle','walk','attack','cast','hurt','defeat']);
 const WALK=Object.freeze([-2,0,2,-1]);
 const STRIKE=Object.freeze([0,3,8,2]);
@@ -46,6 +46,21 @@ export function advancedBossPose(name,state,frame,back=false){
     jawOpen:attack?[0,2,6,1][frame]:cast?[0,4,7,2][frame]:0,
     tailFlex:walk?[-2,1,3,0][frame]:attack?[0,3,5,1][frame]:
       defeat?[-1,-3,-5,-8][frame]:[0,1,2,0][frame],
-    flameBloom:attack?[0,2,5,1][frame]:cast?[0,3,7,2][frame]:0
+    flameBloom:attack?[0,2,5,1][frame]:cast?[0,3,7,2][frame]:0,
+    // Krenko: body weight follows his Goblin feet, the sword stays connected to
+    // a moving arm, and a free-hand command gesture rises during summoning.
+    goblinStep:walk?[-2,1,3,0][frame]:attack?[0,2,5,1][frame]:0,
+    goblinCommand:cast?[0,3,7,2][frame]:attack?[0,1,3,0][frame]:0,
+    goblinBlade:attack?[0,3,8,2][frame]:cast?[0,2,3,1][frame]:0,
+    goblinHead:walk?[0,1,-1,0][frame]:attack?[0,-1,-3,-1][frame]:
+      cast?[0,-2,-4,-2][frame]:hurt?[0,2,4,2][frame]:idle,
+    // The Scarab God's ceremonial metal and winged cape form one coherent
+    // body, never a generic wizard model. Its casting light follows the hands.
+    scarabStep:walk?[-2,0,2,-1][frame]:attack?[0,1,2,1][frame]:0,
+    scarabCape:walk?[0,2,4,1][frame]:attack?[0,2,5,1][frame]:
+      cast?[0,4,8,3][frame]:defeat?[0,-2,-6,-9][frame]:[0,1,2,1][frame],
+    scarabArm:cast?[0,3,7,2][frame]:attack?[0,2,5,1][frame]:
+      hurt?[0,-1,-2,-1][frame]:0,
+    scarabMagic:cast?[0,3,7,2][frame]:attack?[0,1,4,1][frame]:0
   };
 }
