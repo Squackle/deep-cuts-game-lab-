@@ -2,7 +2,7 @@
 // sprite atlas is never relabeled: each identity receives a different visible model.
 // Generated once at asset load; no Magic card art, network requests or gameplay RNG.
 // Canvas-only: engine, simulation and ranked replay remain entirely DOM-free.
-import { creaturePose, materialLightDelta } from './creature-motion.js';
+import { CREATURE_MOTION_FAMILIES, creaturePose, materialLightDelta } from './creature-motion.js';
 
 const C = (base, dark, mid, light, feature, custom = false) => ({ base, dark, mid, light, feature, custom });
 export const REAL_CREATURE_MODELS = Object.freeze({
@@ -92,7 +92,7 @@ function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
       eye(-5,-4,'#401c18');eye(6,-4,'#401c18');break;
     case 'friendlyDrake': {
       const m=motion;
-      g.save();g.translate(m.advance*.55,m.bob*.25);
+      g.save();g.translate(m.advance*.55,m.bob*.25+m.collapse*.3);g.scale(1,1-m.collapse*.04);
       // Two independently articulated wings remain rooted at the shoulder.
       for(const side of [-1,1]){
         const spread=28+m.wing*.6,top=-37-m.wing;
@@ -131,7 +131,7 @@ function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
       line([14,2],[15,-24],mid,9);ell(15,-28,12,8,light);eye(18,-31,dark);line([26,-26],[34,-24],'#d85b5b',2);break;
     case 'friendlyGoblin': {
       const m=motion;
-      g.save();g.translate(m.advance*.25,m.collapse*.7);
+      g.save();g.translate(m.advance*.25,m.collapse*.35);g.scale(1,1-m.collapse*.04);
       for(const [x,step] of [[-7,m.farStep],[7,m.nearStep]]){
         line([x,11],[x+step*4,25],dark,6);ell(x+step*4,26,5,3,mid);
       }
@@ -160,7 +160,7 @@ function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
     case 'caterpillar': for(let i=-2;i<=2;i++)ell(i*8,2+Math.sin(i)*2,6,9,i%2?mid:light);poly([[20,0],[31,-8],[27,4]],light);eye(18,-4);break;
     case 'wolf':case 'direwolf': {
       const m=motion;
-      g.save();g.translate(m.advance*.38,m.bob*.4+m.collapse*.6);
+      g.save();g.translate(m.advance*.38,m.bob*.4+m.collapse*.3);g.scale(1,1-m.collapse*.04);
       // Four separate hips, hocks, paws and alternating diagonals. No sliding quadruped rig.
       poly([[-22,-8],[-29,-14-m.tail],[-34,-23-m.tail],[-30,-26-m.tail],[-15,-13]],mid);
       for(const [i,x] of [-17,-7,13,23].entries()){
@@ -196,7 +196,7 @@ function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
     case 'blightcaster': line([18,-28],[20,19],light,3);ell(18,-31,5,5,'#bd79e5');poly([[-17,-3],[18,-3],[15,22],[-18,22]],dark);poly([[-13,-10],[12,-10],[7,-1],[-8,-1]],mid);eye(4,-21);break;
     case 'torchgoblin': {
       const m=motion;
-      g.save();g.translate(m.advance*.2,m.collapse*.7);
+      g.save();g.translate(m.advance*.2,m.collapse*.35);g.scale(1,1-m.collapse*.04);
       for(const [x,step] of [[-7,m.farStep],[7,m.nearStep]]){
         line([x,10],[x+step*3,25],mid,6);ell(x+step*3,27,5,3,dark);
       }
@@ -247,7 +247,7 @@ function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
     case 'angel': poly([[-12,-4],[-31,-32],[-24,15]],light);poly([[12,-4],[31,-32],[24,15]],light);body();ell(0,-43,12,2,'#f7e49f');break;
     case 'saproling': {
       const m=motion;
-      g.save();g.translate(m.advance*.16,m.bob*.45+m.collapse*.7);
+      g.save();g.translate(m.advance*.16,m.bob*.45+m.collapse*.35);g.scale(1,1-m.collapse*.04);
       // Rooted feet flex through the walk rather than sliding a mushroom icon.
       for(const [x,step] of [[-8,m.nearStep],[8,m.farStep]]){
         line([x,12],[x+step*3,27],dark,6);
@@ -289,29 +289,38 @@ function polishMaterial(cell, material) {
 /** Append new namespaced sprite sheets and metadata to the loaded, original atlas. */
 export function installRealCreatureModels(images,manifest) {
   if (typeof document === 'undefined') return 0;
-  const rows=Object.keys(manifest.anims).length, views=manifest.views.length, cols=manifest.cols;
+  const baseRows=Object.keys(manifest.anims).length, views=manifest.views.length, cols=manifest.cols;
   for(const [name,config] of Object.entries(REAL_CREATURE_MODELS)) {
     const key='mtg_'+name,base=manifest.sprites[config.base],source=images[config.base];
     if(!base||!source)throw new Error('Missing original animation rig '+config.base+' for '+key);
     const width=config.custom && ['arasta','drakuseth','krenko','scarab','toxrill'].includes(name)?96:base.w;
     const height=config.custom && ['arasta','drakuseth','krenko','scarab','toxrill'].includes(name)?96:base.h;
+    // Species-specific defeat poses retain the old simulation death timing.
+    // The additional row belongs to these identities only; never move shared atlas rows.
+    const authored=Boolean(CREATURE_MOTION_FAMILIES[config.feature]);
+    const anims=authored ? {...manifest.anims,defeat:{row:baseRows,frames:4,fps:7,loop:false}} : manifest.anims;
+    const rows=Object.keys(anims).length;
     const sheet=document.createElement('canvas');sheet.width=width*cols;sheet.height=height*rows*views;
     const sctx=sheet.getContext('2d');sctx.imageSmoothingEnabled=false;
-    for(let view=0;view<views;view++)for(const anim of Object.values(manifest.anims))for(let frame=0;frame<cols;frame++){
+    for(let view=0;view<views;view++)for(const anim of Object.values(anims))for(let frame=0;frame<cols;frame++){
       const cell=document.createElement('canvas');cell.width=width;cell.height=height;
       const cctx=cell.getContext('2d');cctx.imageSmoothingEnabled=false;
-      const srcX=frame*base.w,srcY=(view*rows+anim.row)*base.h;
-      if(!config.custom) {
+      const srcX=frame*base.w,srcY=(view*baseRows+Math.min(anim.row,baseRows-1))*base.h;
+      // Death frames are drawn as a collapsing animal/body, never a still-living
+      // borrowed base sprite with a pasted effect on top.
+      if(!config.custom && anim.row!==baseRows) {
         cctx.drawImage(source,srcX,srcY,base.w,base.h,0,0,width,height);
         recolor(cell,config);
       }
-      // Every frame, including the non-looping hurt/cast frames, is fully populated.
       overlay(cctx,width,height,config,view,anim.row,frame);
       polishMaterial(cell,config.feature);
       sctx.drawImage(cell,frame*width,(view*rows+anim.row)*height);
     }
     images[key]=sheet;
-    manifest.sprites[key]={w:width,h:height,pivotY:height-3,hover:(name==='spider'||name==='friendlySpider'||name==='hound'||name==='wolf'||name==='alpha'?0:(base.hover||0)),artWidth:Math.max(0,width-4),bleedX:2,generated:true};
+    manifest.sprites[key]={w:width,h:height,pivotY:height-3,
+      hover:(name==='spider'||name==='friendlySpider'||name==='hound'||name==='wolf'||name==='alpha'?0:(base.hover||0)),
+      artWidth:Math.max(0,width-4),bleedX:2,generated:true,
+      ...(authored?{anims,views:manifest.views,cols}:{}),qualityStatus:authored?'species-specific motion study; original HD-2D art still required':undefined};
   }
   return Object.keys(REAL_CREATURE_MODELS).length;
 }
