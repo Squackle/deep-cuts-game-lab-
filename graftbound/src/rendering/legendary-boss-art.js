@@ -155,39 +155,61 @@ function drakuseth(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,m=S.motio
   for(let i=0;i<4;i++)ell(g,53+i*8,92+b,2,2,i%2?P.dark:P.red);
  }
 }
-function krenko(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,b=walk?(phase%2):0;
+function krenko(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,m=S.motion;
+ const b=m?Math.round(m.sink*.12+(walk?Math.abs(m.goblinStep)*.3:0)):0;
+ const step=m?m.goblinStep:walk?phase%2?3:-3:0;
+ const headBob=m?m.goblinHead:0;
  // Krenko remains a nimble goblin-sized commander, never an inflated troll.
  for(let side of [-1,1]){
-  branch(g,56+side*7,77+b,56+side*9+(walk?side*(phase%2?3:-3):0),94+b,'#5f513c');
-  ell(g,56+side*12,96+b,8,3,P.dark);
+  const footX=56+side*9+side*step*.7,footY=94+b-Math.abs(step)*.4;
+  branch(g,56+side*7,77+b,footX,footY,'#5f513c');
+  ell(g,footX+side*2,footY+2,8,3,P.dark);
  }
  poly(g,[[44,43+b],[66,43+b],[75,79+b],[39,79+b]],'#873f37');
  poly(g,[[45,49+b],[68,49+b],[70,74+b],[42,74+b]],'#b96b49');
  for(let i=0;i<6;i++){dot(g,45+i*4,60+b,2,2,P.gold);dot(g,46+i*4,72+b,3,2,P.dark);}
  line(g,42,75+b,73,75+b,P.ink,4);dot(g,53,74+b,8,5,P.gold);dot(g,55,75+b,4,3,P.wood);
  for(let side of [-1,1]){
-  branch(g,56+side*16,50+b,56+side*24+(attack?side*4:0),73+b,'#907c58');
-  ell(g,56+side*24,74+b,5,5,'#8d8059');
+  const lift=m?(side<0?m.goblinCommand:m.goblinBlade):attack?4:0;
+  const handX=56+side*(24+lift*.5),handY=73+b-lift*.65;
+  branch(g,56+side*16,50+b,handX,handY,'#907c58');
+  ell(g,handX,handY+1,5,5,'#8d8059');
  }
  // Recognizable pointed Goblin ears, wrinkled face, nose, sharp teeth, crooked cap.
- ell(g,56,34+b,17,17,'#84915a');poly(g,[[42,32+b],[21,23+b],[36,41+b]],'#989b5f');poly(g,[[70,32+b],[91,21+b],[76,41+b]],'#989b5f');
- if(!back){eye(g,47,33+b,P.ivory);eye(g,65,33+b,P.ivory);poly(g,[[56,35+b],[45,47+b],[66,42+b]],'#b4ab7d');
-  for(let i=0;i<5;i++)dot(g,49+i*3,46+b,2,2,P.ivory);}
- poly(g,[[39,28+b],[45,18+b],[64,15+b],[75,25+b],[70,32+b],[41,31+b]],'#793e3b');
- for(let i=0;i<4;i++)dot(g,45+i*7,22+b,2,1,P.gold);
- // Commander's knife and offhand attack signal.
- line(g,82,69+b,88,37+b,P.dark,4);poly(g,[[88,37+b],[86,24+b],[93,22+b],[94,34+b]],P.ironHi);
- if(cast||attack){for(let i=0;i<3;i++)dot(g,73+i*8,19+i*5,3,3,P.amber)}
- if(hurt)line(g,45,32+b,67,32+b,P.dark,3);
+ ell(g,56,34+b+headBob,17,17,'#84915a');
+ poly(g,[[42,32+b+headBob],[21,23+b+headBob],[36,41+b+headBob]],'#989b5f');
+ poly(g,[[70,32+b+headBob],[91,21+b+headBob],[76,41+b+headBob]],'#989b5f');
+ if(!back){eye(g,47,33+b+headBob,P.ivory);eye(g,65,33+b+headBob,P.ivory);
+  poly(g,[[56,35+b+headBob],[45,47+b+headBob],[66,42+b+headBob]],'#b4ab7d');
+  for(let i=0;i<5;i++)dot(g,49+i*3,46+b+headBob,2,2,P.ivory);}
+ poly(g,[[39,28+b+headBob],[45,18+b+headBob],[64,15+b+headBob],[75,25+b+headBob],
+  [70,32+b+headBob],[41,31+b+headBob]],'#793e3b');
+ for(let i=0;i<4;i++)dot(g,45+i*7,22+b+headBob,2,1,P.gold);
+ // Knife is anchored to the active sword hand, not floating at world position.
+ const blade=m?m.goblinBlade:0;
+ const grip=[80+blade*.5,73+b-blade*.65],knifeTip=[Math.min(97,88+blade*.42),Math.max(13,37+b-blade*.75)];
+ line(g,grip[0],grip[1],knifeTip[0],knifeTip[1],P.dark,4);
+ poly(g,[[knifeTip[0],knifeTip[1]],[knifeTip[0]-2,knifeTip[1]-12],
+   [knifeTip[0]+5,knifeTip[1]-14],[knifeTip[0]+6,knifeTip[1]-3]],P.ironHi);
+ if(cast||attack){for(let i=0;i<3;i++)
+  dot(g,73+i*8+(m?m.goblinCommand*.35:0),19+i*5,3,3,P.amber);}
+ if(hurt)line(g,45,32+b+headBob,67,32+b+headBob,P.dark,3);
+ if(S.defeat){for(let i=-2;i<=2;i++)ell(g,56+i*5,92+b,2.3+(m?m.sink*.12:0),2,P.wood);}
 }
-function scarab(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,b=walk?(phase%2):0;
+function scarab(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,m=S.motion;
+ const b=m?Math.round(m.sink*.12+(walk?Math.abs(m.scarabStep)*.25:0)):0;
+ const cape=m?m.scarabCape:0,arm=m?m.scarabArm:0;
  for(let side of [-1,1]){
   // Cape/wings and insect ceremonial shoulder plates.
-  poly(g,[[55+side*8,42+b],[55+side*30,17+b],[55+side*33,75+b],[55+side*21,87+b]],'#1e555d');
-  for(let i=0;i<5;i++){line(g,55+side*9,45+b,55+side*(20+i*3),40+i*7+b,P.teal,1);}
-  branch(g,56+side*14,51+b,56+side*21,77+b,P.iron);
-  ell(g,56+side*20,80+b,6,7,P.gold);branch(g,56+side*7,81+b,56+side*8,99+b,P.dark);
-  ell(g,56+side*9,101+b,8,4,P.gold);
+  poly(g,[[55+side*8,42+b],[55+side*(30+cape*.45),17+b-cape*.45],
+    [55+side*(33+cape*.35),75+b],[55+side*21,87+b]],'#1e555d');
+  for(let i=0;i<5;i++){line(g,55+side*9,45+b,55+side*(20+i*3+cape*.25),40+i*7+b,P.teal,1);}
+  const armX=56+side*(21+arm*.4),armY=77+b-arm*.65;
+  branch(g,56+side*14,51+b,armX,armY,P.iron);
+  ell(g,armX,armY+3,6,7,P.gold);
+  const footX=56+side*(8+(m?m.scarabStep*.4:0));
+  branch(g,56+side*7,81+b,footX,99+b-(m?Math.abs(m.scarabStep)*.25:0),P.dark);
+  ell(g,footX+side,101+b,8,4,P.gold);
  }
  poly(g,[[43,40+b],[69,40+b],[78,66+b],[67,91+b],[45,91+b],[35,66+b]],'#223d4a');
  poly(g,[[46,45+b],[66,45+b],[69,71+b],[60,85+b],[48,73+b]],P.teal);
@@ -202,9 +224,16 @@ function scarab(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S,b=walk?(phas
   let y=65+i*5+b;line(g,47,y,65,y,P.gold,1);
  }
  if(cast||attack)for(let i=0;i<8;i++){
-  let x=35+(i*9)%45,y=23+(i*11)%43;dot(g,x,y,3,3,i%2?P.tealHi:P.goldHi);
+  const pulse=m?m.scarabMagic:0;
+  let x=35+(i*9)%45+(i%2?pulse*.4:0),y=23+(i*11)%43-pulse*.65;
+  dot(g,x,y,3,3,i%2?P.tealHi:P.goldHi);
  }
  if(hurt)dot(g,47,32+b,18,2,P.ink);
+ if(S.defeat){
+  // Broken ceremonial ribbons and cooling divine embers, not an upright idle.
+  for(let i=0;i<6;i++){const x=33+i*8;
+   line(g,x,88+b,x+((i%2)?3:-3),93+b+(m?m.sink*.25:0),P.tealHi,2);}
+ }
 }
 function toxrill(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S;
  const m=S.motion,b=m?Math.round(m.mantleWave*.25+m.sink*.14):0;
