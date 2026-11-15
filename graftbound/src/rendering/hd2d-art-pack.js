@@ -24,8 +24,14 @@ export function validateHd2dManifest(pack, runtimeSprites) {
     // The current hero graft, skin and equipment compositors are 64px-specific.
     // Silently replacing the Blank would detach all of those layers.
     if (unit.key === 'blank') error('Blank needs a resolution-aware graft, skin-mask and equipment compositor first');
-    if (typeof unit.file !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9_/-]*\.png$/.test(unit.file) ||
-        unit.file.split('/').some(s => s === '' || s === '.' || s === '..')) error(id + ' has unsafe PNG path');
+    const safePng = path => typeof path === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9_/-]*\.png$/.test(path) &&
+      !path.split('/').some(s => s === '' || s === '.' || s === '..');
+    if (!safePng(unit.file)) error(id + ' has unsafe PNG path');
+    if (unit.skinMaskFile !== undefined && !safePng(unit.skinMaskFile)) error(id + ' has unsafe skin mask PNG path');
+    // Soldier skins are deterministically recolored in the active battle renderer.
+    // Its mask MUST match the replaced sprite: an old 64px mask silently corrupts new art.
+    if (unit.key === 'mtg_friendlySoldier' && !unit.skinMaskFile)
+      error(id + ' requires a native skinMaskFile for Soldier palette compatibility');
     const { frameWidth:w, frameHeight:h, columns } = unit;
     if (!isInt(w) || !isInt(h) || w < 32 || h < 32 || w > 512 || h > 512 || !isInt(columns) || columns < 4 || columns > 24)
       error(id + ' has invalid native frame dimensions/columns');
@@ -66,20 +72,29 @@ export function chooseSpriteDirection(views, awayDot, rightDot) {
 export async function installHd2dArtPack(images, manifest, readPack, loadPng) {
   const units = validateHd2dManifest(await readPack(), manifest.sprites);
   const staged = await Promise.all(units.map(async (unit) => {
-    const image = await loadPng('hd2d/' + unit.file);
+    const [image,skinMask] = await Promise.all([
+      loadPng('hd2d/' + unit.file),
+      unit.skinMaskFile ? loadPng('hd2d/' + unit.skinMaskFile) : Promise.resolve(null)
+    ]);
     const expectedW = unit.frameWidth * unit.columns;
     const expectedH = unit.frameHeight * unit.views.length * Object.keys(unit.animations).length;
     if (!image || image.width !== expectedW || image.height !== expectedH)
       error(unit.key + ' sheet size must be ' + expectedW + 'x' + expectedH + ' RGBA pixels');
-    return {unit,image};
+    if (unit.skinMaskFile && (!skinMask || skinMask.width !== expectedW || skinMask.height !== expectedH))
+      error(unit.key + ' skin mask size must be ' + expectedW + 'x' + expectedH + ' RGBA pixels');
+    return {unit,image,skinMask};
   }));
-  for (const {unit,image} of staged) {
+  for (const {unit,image,skinMask} of staged) {
     const prior = manifest.sprites[unit.key];
+    // Imported sprites may replace already-upgraded 128px raster benchmarks, not just
+    // a 64px legacy asset. Preserve the ORIGINAL world size across both transitions.
+    const previousWorldHeight = prior.h * (prior.pixelScale || 1);
     images[unit.key] = image;
+    if (skinMask) images[unit.key + ':skinMask'] = skinMask;
     manifest.sprites[unit.key] = {
       ...prior, w:unit.frameWidth, h:unit.frameHeight, pivotY:unit.pivotY,
       pivotX:unit.pivotX ?? Math.floor(unit.frameWidth/2),
-      pixelScale:prior.h / unit.frameHeight, // preserve the preexisting tile/world footprint
+      pixelScale:previousWorldHeight / unit.frameHeight,
       cols:unit.columns, views:unit.views, anims:unit.animations,
       anchors:unit.anchors || {}, artPack:'hd2d-v1', premium:true
     };
