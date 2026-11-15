@@ -61,8 +61,8 @@ test('UI source renders same pure forecast visibly and in accessible label',()=>
   const src=readFileSync(new URL('../src/ui/screens.js',import.meta.url),'utf8');
   assert.ok(src.includes("import {previewNextWorldThreat,threatPreviewLabel} from '../engine/threat-preview.js';"));
   assert.ok(src.includes('const threatPreview=previewNextWorldThreat(run);'));
-  assert.ok(src.includes('aria-label="World Threat: \${esc(threatPreviewLabel(threatPreview))}"'));
-  assert.ok(src.includes('⚔ World Threat · \${esc(threatPreviewLabel(threatPreview))}'));
+  assert.ok(src.includes('aria-label="World Threat: ${esc(threatPreviewLabel(threatPreview))}"'));
+  assert.ok(src.includes('⚔ World Threat · ${esc(threatPreviewLabel(threatPreview))}'));
   const preview=readFileSync(new URL('../src/engine/threat-preview.js',import.meta.url),'utf8');
   for(const forbidden of ['Math.random','localStorage','window.','fetch(','run.worldThreat ='])
     assert.equal(preview.includes(forbidden),false,'preview may not mutate saved run or RNG');
