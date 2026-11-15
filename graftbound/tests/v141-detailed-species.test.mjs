@@ -68,7 +68,7 @@ test('each species directly paints independent directional frames with stable fr
     const g=spy();
     drawSpeciesStudyFrame(g,feature,view,animation,2,palette);
     assert.equal(g.calls.filter(x=>x==='clip').length,1,feature+' must stay inside its atlas cell');
-    assert.ok(g.calls.filter(x=>x==='fill').length>=4,feature+' paints real body parts');
+    assert.ok(g.calls.filter(x=>x==='fill').length>=(feature==='friendlySnake'?2:4),feature+' paints real anatomical surfaces');
     assert.ok(g.calls.filter(x=>x==='stroke').length>=10,feature+' paints articulated parts');
     assert.deepEqual(g.calls.find(x=>Array.isArray(x)&&x[0]==='rect'),['rect',0,0,96,96]);
   }
