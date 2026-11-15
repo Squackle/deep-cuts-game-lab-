@@ -20,7 +20,7 @@ import { skinToneForSeed } from './visual-identity.js';
 export const RUN_VERSION = 9;
 export const TUTORIAL_CARD = 'mtg:typhoid-rats';  // real 1/1 Deathtouch: Blank 1/1 -> 2/2 Deathtouch
 export const CHALLENGES = {
-  paperThin: { name: 'Paper Thin', text: 'Your Spark is 2 instead of 6.' },
+  paperThin: { name: 'Paper Thin', text: 'Your Maximum Health is 2 instead of 6.' },
   pauper:    { name: 'Pauper\u2019s Pack', text: 'Boosters never contain Rare or Mythic cards.' },
   feral:     { name: 'Feral Wilds', text: 'Every foe has +1 power.' },
 };
@@ -107,7 +107,7 @@ export function concludeBattle(run) {
   // Single-level Auras are consumed whether or not drawn. All ordinary learned spells persist.
   const consumedAuras=run.spellbook.filter(x=>resolveCard(x.id)?.kind==='aura').map(x=>x.id);
   if(consumedAuras.length) {run.spellbook=run.spellbook.filter(x=>!consumedAuras.includes(x.id));run.equippedSpellIds=(run.equippedSpellIds||[]).filter(id=>!consumedAuras.includes(id));}
-  // The final defeated guardian IS the reward. Keep its score/achievement outcome, no pack or skip-Spark.
+  // The final defeated guardian IS the reward. Keep its score/achievement outcome, no pack or skip-Maximum Health.
   if(isBoss && run.act+1>=ACT_COUNT){
     run.actHistory.push({act:run.act,visited:run.visited.slice()});
     run.lastBattle=summarize(b);run.battle=null;run.pending=null;run.phase='won';
@@ -146,7 +146,7 @@ export function chooseReward(run, cardId, releaseIndex) {
     run.evo = res.evo; change = { kind: 'absorb', ...res.change, released };
     journalNote(run, 'graft', { cardId: card.id, name: card.name, power: card.power, toughness: card.toughness, gained: res.change.gained, released, firstGraft: stageBefore === 0 && !released });
     run.stats.cardsAbsorbed++;
-    setHp(run, run.hp + (maxHpOf(run) - maxBefore));   // new toughness/Spark arrives as fresh health
+    setHp(run, run.hp + (maxHpOf(run) - maxBefore));   // new toughness/Maximum Health arrives as fresh health
   } else if(card.kind==='equipment'){
     if(run.pending.tier==='primer'||run.pending.tier==='archivist') throw new Error('This offering holds spells only');
     giveEquipment(run,cardId);change={kind:'equipment',cardId,slots:run.equippedEquipment.slice()};
@@ -185,7 +185,7 @@ function finishReward(run) {
     run.phase = 'reward'; return;
   }
   // v0.8 Spell Primer: after the FIRST victory reward of an adventure, a free, separate spells-only choice
-  // (3 affordable spells from different tactical roles). Skippable for +1 Spark like any pack. Once per adventure.
+  // (3 affordable spells from different tactical roles). Skippable for +1 Maximum Health like any pack. Once per adventure.
   if (!run.primerDone && tier !== 'primer' && (run.stats.battlesWon || 0) >= 1 && (run.act || 0) === 0) {
     run.primerDone = true; const cards = primerPack(run.seed, { spellbook: run.spellbook });
     if (cards.length) { run.pending = { cards, tier: 'primer' }; run.phase = 'reward'; return; }

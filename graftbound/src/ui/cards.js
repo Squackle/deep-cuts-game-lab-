@@ -77,7 +77,7 @@ export function compareLine(c, evo) {
   if (!evo || c.kind !== 'creature') return '';
   const { evo: after, change } = absorb(evo, c);
   const bits = change.gained.map(k => 'new ' + KEYWORDS[k].name);
-  if (change.resonance) bits.push(`Resonance +${change.resonance * 2} Spark`);
+  if (change.resonance) bits.push(`Resonance +${change.resonance * 2} Maximum Health`);
   return `${evo.power}/${evo.toughness} → <b>${after.power}/${after.toughness}</b>${bits.length ? ' · ' + esc(bits.join(' · ')) : ''}`;
 }
 /** opts: level, arcane, small, extraClass, uid, evo (show compare line) */

@@ -17,13 +17,14 @@ export const REAL_CREATURE_MODELS = Object.freeze({
   friendlyGoblin: C('cinderling','#62321c','#ad693c','#f9c67d','friendlyGoblin',true),
   friendlyHornet: C('moth','#292b19','#bc9d32','#f8e47c','friendlyHornet',true),
   friendlySquirrel: C('hound','#382a20','#a36e48','#f7d29e','friendlySquirrel',true),
+  friendlySpider: C('hound','#261d17','#624532','#b68b5a','spiderling',true),
   grub: C('grub','#19391d','#54a54a','#d4e988','caterpillar'),
-  hound: C('hound','#283e45','#7e9996','#e0e0ba','wolf'),
+  hound: C('hound','#241912','#7f5131','#d5a36c','wolf'),
   archer: C('archer','#123b31','#4a8760','#d2dca0','bow'),
   tortoise: C('warden','#52514a','#a4a69a','#e6e2cd','rhino'),
   moth: C('moth','#312043','#786293','#bbf1c2','stinger'),
   hexer: C('hexer','#24152f','#6b3b89','#d1a0e7','blightcaster'),
-  alpha: C('alpha','#101b2a','#4b657d','#b6d5ee','direwolf'),
+  alpha: C('alpha','#2a1a14','#76513a','#d7b07a','direwolf'),
   cinderling: C('cinderling','#592824','#b35b35','#f3d391','torchgoblin'),
   ashbrute: C('ashbrute','#4a2526','#a04c47','#ffd18a','minotaur'),
   harpooner: C('harpooner','#572d25','#b26c44','#ffdda4','spikeshot'),
@@ -41,11 +42,11 @@ export const REAL_CREATURE_MODELS = Object.freeze({
   toxrill: C('unwritten','#34203b','#734d8c','#addb75','toxrill',true),
   angel: C('moth','#7f6d4f','#e2cfa5','#ffffff','angel',true),
   saproling: C('grub','#27542d','#68aa63','#d1f0a1','saproling',true),
-  spider: C('moth','#2c2742','#55567b','#cad8d9','spiderboss',true),
+  spider: C('hound','#211912','#58402d','#c39a6b','spiderling',true),
   goblin: C('cinderling','#583026','#bb8052','#e8d38f','torchgoblin',true),
   zombie: C('riftstalker','#283e42','#5d8a8c','#c5d3bc','zombie'),
   slug: C('grub','#34213d','#76538b','#bbeb88','toxrill',true),
-  wolf: C('hound','#283e45','#839b90','#f1e0b6','wolf'),
+  wolf: C('hound','#241912','#8a5835','#dbac72','wolf'),
   golemFly: C('sentinel','#374354','#8c9ba4','#dbd8c0','titan'),
   golemVigilance: C('sentinel','#4a4537','#b3a17c','#f8e2a9','golem'),
   golemTrample: C('sentinel','#463c42','#987985','#e3c3d6','gearhulk'),
@@ -121,7 +122,17 @@ function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
       body();ears();poly([[-14,-31],[-25,-44],[-22,-19]],light);poly([[14,-31],[25,-44],[22,-19]],light);
       line([15,-10],[25,-35],light,4);poly([[25,-42],[19,-32],[30,-32]],light);eye(-5,-23,dark);eye(5,-23,dark);break;
     case 'caterpillar': for(let i=-2;i<=2;i++)ell(i*8,2+Math.sin(i)*2,6,9,i%2?mid:light);poly([[20,0],[31,-8],[27,4]],light);eye(18,-4);break;
-    case 'wolf':case 'direwolf': ears();ell(0,-14,15,9,mid);poly([[0,-11],[23,-8],[27,-1],[9,-2]],light);ell(-5,-18,4,3,dark,null);eye(12,-16,feature==='direwolf'?'#ef8a61':light);line([-17,0],[-28,-4],mid,5);break;
+    case 'wolf':case 'direwolf':
+      // Grounded timber-wolf proportions: four paws, deep chest, long muzzle and a bushy tail.
+      poly([[-22,-8],[-29,-19],[-31,-27],[-25,-22],[-15,-13]],mid);
+      for(const x of [-17,-7,13,23]){line([x,7],[x-2,23],dark,6);ell(x-2,23,4,3,light);}
+      ell(-3,-5,26,13,mid);poly([[11,-12],[18,-29],[22,-15],[27,-25],[29,-8]],dark);
+      ell(18,-12,13,13,mid);poly([[21,-10],[40,-5],[43,1],[24,2]],light);
+      ell(33,1,3,2,dark,null);eye(22,-15,feature==='direwolf'?'#f0b36c':'#ebdb9a');break;
+    case 'spiderling':
+      // Tiny eight-legged ground spider, never a floating moth rig.
+      for(let i=0;i<4;i++){const y=-8+i*4;line([-5,y],[-12-i*2,-14+i*3],dark,3);line([-12-i*2,-14+i*3],[-22-i,8+i*3],mid,2);line([5,y],[12+i*2,-14+i*3],dark,3);line([12+i*2,-14+i*3],[22+i,8+i*3],mid,2);}
+      ell(-4,0,15,11,mid);ell(12,-6,10,9,dark);eye(11,-9,'#e5bc78');eye(17,-9,'#e5bc78');break;
     case 'bow': ears();line([-20,-26],[-25,14],light,3);line([-25,14],[-17,24],light,3);line([-20,-26],[-17,24],dark,1);poly([[8,-8],[27,-9],[30,-5],[6,-3]],light);eye(2,-23);break;
     case 'rhino': horns();poly([[-3,-26],[5,-41],[9,-24]],light);ell(0,-12,17,9,mid);poly([[-20,-6],[-28,4],[-18,13]],light);lightLine([-10,0],[10,4]);break;
     case 'stinger': poly([[-25,-22],[-32,-7],[-12,-9]],light);poly([[25,-22],[32,-7],[12,-9]],light);line([12,6],[25,22],mid,4);poly([[25,22],[29,30],[20,26]],light);eye(3,-18);break;
@@ -212,7 +223,7 @@ export function installRealCreatureModels(images,manifest) {
       sctx.drawImage(cell,frame*width,(view*rows+anim.row)*height);
     }
     images[key]=sheet;
-    manifest.sprites[key]={w:width,h:height,pivotY:height-3,hover:base.hover||0,artWidth:Math.max(0,width-4),bleedX:2,generated:true};
+    manifest.sprites[key]={w:width,h:height,pivotY:height-3,hover:(name==='spider'||name==='friendlySpider'||name==='hound'||name==='wolf'||name==='alpha'?0:(base.hover||0)),artWidth:Math.max(0,width-4),bleedX:2,generated:true};
   }
   return Object.keys(REAL_CREATURE_MODELS).length;
 }

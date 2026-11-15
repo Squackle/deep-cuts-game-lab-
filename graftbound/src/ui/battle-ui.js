@@ -38,7 +38,7 @@ export class BattleUI {
   constructor(app) {
     this.app = app; this.audio = app.audio;
     this.disp = new Map(); this.labels = new Map(); this.busy = false; this.spell = null; this.hover = null; this.cursor = null; this.pendingTap = null; this.intents = [];
-    this.cardAnimations = new CardAnimationDirector(app);
+    this.cardAnimations = new CardAnimationDirector(app); this.concealedDraws=new Map();this.initialHandConcealed=false;
     this.bindInput();
   }
   get scene() { return this.app.scene; }
@@ -65,7 +65,7 @@ export class BattleUI {
   }
   wait(ms) { return new Promise(r => setTimeout(r, ms / this.app.animFactor())); }
   async start(run, s, { fresh }) {
-    this._comboShowing=false;this.cardAnimations.stop(); this.run = run; this.s = s; this.spell = null; this.hover = null; this.pendingTap = null;
+    this._comboShowing=false;this.cardAnimations.stop(); this.concealedDraws.clear();this.initialHandConcealed=!!fresh&&!!s.deck;this.run = run; this.s = s; this.spell = null; this.hover = null; this.pendingTap = null;
     $('labels').innerHTML = ''; this.labels.clear(); this.disp.clear();
     this.scene.loadArena(s, s.rng.s ^ 0x77, ACTS[s.act || 0].theme); this.audio.setAct(s.act || 0);
     for (const u of s.units) if (u.hp > 0) this.addUnitView(u);
@@ -79,6 +79,7 @@ export class BattleUI {
         this.busy = true; this.refresh();
         await this.banner(s.nodeType === 'boss' ? s.name : s.nodeType === 'elite' ? 'Elite Lair · ' + s.name : s.name, s.nodeType === 'boss' ? 'boss' : '', s.nodeType === 'boss' ? bossTitleOf(s.act) : '');
         if (s.deck) await this.deckCeremony();
+        this.initialHandConcealed=false;this.renderHand(s);
         if (s.reinforced) { await this.banner(`The world answers your strength · +${s.reinforced} foe${s.reinforced > 1 ? 's' : ''}`, 'foe'); this.app.hint('reinforced', 'The stronger you become, the more foes answer. Reinforcements never have extra health — just more of them.'); }
         this.busy = false;
       }
@@ -102,24 +103,24 @@ export class BattleUI {
     let v;
     if (u.hero) {
       const ap = deriveAppearance(this.run.evo, visualForRun(this.run));
-      v = this.scene.addUnit(u, 'blank'); this.scene.setUnitTexture(u.uid, composeEquippedSheet(this.app.assets, ap, u.equipment || [], u.auras || []), Math.min(0.94, ap.size * 0.76));
+      v = this.scene.addUnit(u, 'blank'); this.scene.setUnitTexture(u.uid, composeEquippedSheet(this.app.assets, ap, u.equipment || [], u.auras || []), Math.min(0.53, ap.size * 0.38));
       v.aura = ap.effects.includes('aura') ? ap.glow : null;
-      v.hover = u.keywords.flying ? 0.28 : 0;   // v0.6: fliers levitate; trample builds plant heavier steps (see play())
+      v.hover = u.keywords.flying ? 0.14 : 0;   // v0.6: fliers levitate; trample builds plant heavier steps (see play())
       v.style = { flying: !!u.keywords.flying, trample: !!u.keywords.trample, deathtouch: !!u.keywords.deathtouch, doubleStrike: !!u.keywords.doubleStrike, lifelink: !!u.keywords.lifelink,
         armored: !!ap.slots.body || ap.size >= 1.45 };
       // v0.7 casting point follows the evolved body: horns/antlers/crown channel through the head.
       v.castAt = ap.slots.head ? 'head' : 'chest';
     } else {
       const friend = u.side === 'player' && u.defId === 'sproutling';
-      const comboModels={birdIllusion:'mtg_friendlyBirdIllusion',tentacle:'mtg_friendlyTentacle',skeleton:'mtg_friendlySkeleton',snake:'mtg_friendlySnake',goblin:'mtg_friendlyGoblin',hornet:'mtg_friendlyHornet',squirrel:'mtg_friendlySquirrel'};
+      const comboModels={spider:'mtg_friendlySpider',birdIllusion:'mtg_friendlyBirdIllusion',tentacle:'mtg_friendlyTentacle',skeleton:'mtg_friendlySkeleton',snake:'mtg_friendlySnake',goblin:'mtg_friendlyGoblin',hornet:'mtg_friendlyHornet',squirrel:'mtg_friendlySquirrel'};
       const tokenKey = comboModels[u.traitToken] || (u.traitToken === 'elemental' ? 'mtg_friendlyElemental' :
         u.traitToken === 'drake' ? 'mtg_friendlyDrake' :
         u.traitToken === 'catsoldier' ? 'mtg_friendlyCatSoldier' :
         u.name === 'Soldier' ? 'mtg_friendlySoldier' : 'mtg_friendlySproutling');
-      v = this.scene.addUnit(u, friend ? tokenKey : ENEMIES[u.defId].sprite, { scale: u.boss ? 0.42 : tokenKey==='mtg_friendlySoldier' ? 0.76 : 0.95 });
+      v = this.scene.addUnit(u, friend ? tokenKey : ENEMIES[u.defId].sprite, { scale: u.boss ? 0.46 : (tokenKey==='mtg_friendlySoldier' ? 0.39 : (u.defId==='spider' || tokenKey==='mtg_friendlySpider' ? 0.34 : 0.56)) });
       if (friend && tokenKey === 'mtg_friendlySoldier') {
         const src=this.app.assets.images.mtg_friendlySoldier, mask=this.app.assets.images['mtg_friendlySoldier:skinMask'];
-        this.scene.setUnitTexture(u.uid,composeAllyAttachments(recolorSkin(src,mask,skinToneForSeed(this.run.seed,u.uid)),64,u.equipment||[],u.auras||[]),0.76);
+        this.scene.setUnitTexture(u.uid,composeAllyAttachments(recolorSkin(src,mask,skinToneForSeed(this.run.seed,u.uid)),64,u.equipment||[],u.auras||[]),0.39);
       }
     }
     if(u.auras?.length) this.applyAuraLight(u);
@@ -133,7 +134,7 @@ export class BattleUI {
     if(!unit||!v)return;
     if(unit.hero){
       const app=deriveAppearance(this.run.evo,visualForRun(this.run));
-      this.scene.setUnitTexture(uid,composeEquippedSheet(this.app.assets,app,unit.equipment||[],unit.auras||[]),Math.min(.94,app.size*.76));
+      this.scene.setUnitTexture(uid,composeEquippedSheet(this.app.assets,app,unit.equipment||[],unit.auras||[]),Math.min(.53,app.size*.38));
     }else{
       let base=this.app.assets.images[v.key];if(!base)return;
       if(v.key==='mtg_friendlySoldier')base=recolorSkin(base,this.app.assets.images['mtg_friendlySoldier:skinMask'],skinToneForSeed(this.run.seed,uid));
@@ -293,7 +294,8 @@ export class BattleUI {
       const c = getCard(e.id); const why = this.busy ? 'Wait…' : castBlockReason(s, e.id); const cost = spellCost(s, e.id);
       const state = s.p.cast[e.id] ? 'used' : s.p.silenced === e.id ? 'silenced' : why && /mana/i.test(why) ? 'nomana' : why ? 'off' : 'ready';
       const label = { used: 'Cast this turn', silenced: 'Silenced', nomana: 'Not enough mana', off: why || '', ready: 'Ready' }[state];
-      return `<button type="button" class="handcard c-${c.color} ${this.spell === e.id ? 'sel' : ''} st-${state}" data-spell="${esc(e.id)}" style="--i:${i};--n:${s.spellbook.length}"
+      const hidden=this.initialHandConcealed || (s.spellbook.slice(i+1).filter(item=>item.id===e.id).length < (this.concealedDraws.get(e.id)||0));
+      return `<button type="button" class="handcard c-${c.color} ${hidden?'gb-draw-concealed ':''}${this.spell === e.id ? 'sel' : ''} st-${state}" data-spell="${esc(e.id)}" style="--i:${i};--n:${s.spellbook.length}"
           aria-pressed="${this.spell === e.id}" aria-label="${esc(c.name)}, ${cost} mana in GRAFTBOUND, level ${e.level}. ${esc(label)}. ${esc(formatSpellText(e.id, e.level, s.p.arcane))}">
         ${cardHTML(e.id, { small: true, level: e.level, arcane: s.p.arcane, uid: 'hand' + i, extraClass: 'in-hand' })}
         <span class="hc-cost ${cost > c.cost ? 'taxed' : ''}" title="GRAFTBOUND mana cost (not the printed Magic cost)">${ICON.gem}${cost}</span>
@@ -529,7 +531,7 @@ export class BattleUI {
     const opts = castOptions(this.s, id);
     if (getCard(id).target === 'self') { this.spell = null; this.act(() => this.exec({ type: 'cast', id, x: opts[0].x, y: opts[0].y })); return; }
     this.spell = id; this.pendingTap = null; this.refresh();
-    this.app.hint('target', 'Spells reach any foe on the battlefield — no need to walk closer. Pick a highlighted target; right-click or Esc to cancel.');
+    this.app.hint('target', 'Choose a highlighted legal target. Spells saying target creature can affect allies, your hero or foes; right-click or Esc to cancel.');
   }
   /** Player-facing deterministic choices for real spell/creature combo interactions. */
   promptComboChoices(){
@@ -538,7 +540,7 @@ export class BattleUI {
     const choice=comboChoices(this.s);if(!choice)return;
     this._comboShowing=true;
     const options=choice.choices.map(x=>`<button type="button" class="btn gb-combo-option" data-combo-arg="${esc(String(x.arg))}">${esc(x.label)}</button>`).join('');
-    const modal=this.app.openModal(`<div class="gb-combo-modal"><small class="sh-brand">Graftbound · Combo Engine</small><h2>${esc(choice.kind.replace(/([A-Z])/g,' $1'))}</h2><p class="muted">${esc(choice.subtitle)}</p><div class="gb-combo-options">${options}</div></div>`);
+    const modal=this.app.openModal(`<div class="gb-combo-modal"><small class="sh-brand">Graftbound · Combo Engine</small><h2>${esc(choice.kind==='mentor'?'Mentor of the Meek':choice.kind.replace(/([A-Z])/g,' $1'))}</h2><p class="gb-combo-note">${esc(choice.subtitle)}${choice.reason?' · '+esc(choice.reason):''}</p><div class="gb-combo-options">${options}</div></div>`);
     for(const btn of modal.querySelectorAll('[data-combo-arg]'))btn.onclick=async()=>{
       if(!this._comboShowing)return;this._comboShowing=false;
       const argText=btn.dataset.comboArg;const arg=/^\d+$/.test(argText)?Number(argText):argText;
@@ -619,8 +621,12 @@ export class BattleUI {
     this.busy = true; this.pendingTap = null; this.showInspect(null); this.scene.setOverlay([]); this.syncDisp();
     let ev;
     try { ev = await fn(); } catch (err) { this.busy = false; this.reject(err.message || 'Not allowed'); this.refresh(); this.maybeAutoEnd(); return; }
+    // Keep newly drawn cards concealed until their flights from the library finish.
+    this.concealedDraws=new Map();
+    for(const event of ev||[])if(event.t==='cardDraw'&&event.id)this.concealedDraws.set(event.id,(this.concealedDraws.get(event.id)||0)+1);
     this.app.save(); this.renderHUD();
     await this.play(ev);
+    this.concealedDraws.clear();
     this.busy = false; this.syncDisp(); this.refresh(); this.tutorialHints('after'); this.checkEnd(); this.promptComboChoices(); this.maybeAutoEnd();
   }
   async doStance(kind) {
@@ -808,7 +814,13 @@ export class BattleUI {
         case 'bossPhase': {const bossView=sc.units.get(e.uid??this.s?.units.find(u=>u.boss)?.uid);if(bossView){bossView.flash=1;bossView.aura=e.phase===3?[0.92,0.38,0.24]:[0.75,0.63,0.35];}this.audio.play('bossPhase'); sc.screenFlash([0.6, 0.35, 0.15], 0.3); if (!sc.reduced) sc.shake(0.12); await this.banner(e.phase ? `Phase ${e.phase} · ${e.text}` : (e.text || 'The foe changes'), 'boss'); break;}
         case 'stunnedSkip': this.float(e.uid, 'Stunned', 'note'); await this.wait(200); break;
         case 'slimeCounter': { const u=this.s.units.find(unit=>unit.uid===e.uid);if(u){this.float(e.uid,`☣ Slime ${e.total} · −${e.total}/−${e.total}`,'poison');sc.fx.burst(sc.centerPos(e.uid),[0.38,0.65,0.18],10,{speed:0.48,up:0.48,size:9});this.renderLabel(e.uid);if(u.hero)this.renderHUD();}au.play('poison');await this.wait(120);break; }
-        case 'cardDraw': au.play('flip'); await this.cardAnimations.play('draw',e); break;
+        case 'cardDraw': {
+          au.play('flip');await this.cardAnimations.play('draw',e);
+          const left=this.concealedDraws.get(e.id)||0;
+          if(left<=1)this.concealedDraws.delete(e.id);else this.concealedDraws.set(e.id,left-1);
+          this.renderHand(this.s);
+          break;
+        }
         case 'deckReshuffle': au.play('flip'); await this.cardAnimations.play('shuffle',e); if (sc.units.get(e.uid)) this.float(e.uid, `Graveyard reshuffled · ${e.count} card${e.count === 1 ? '' : 's'}`, 'note'); break;
         case 'equipmentAttach': {au.play('click');this.refreshUnitAttachments(e.uid);if(e.removed){for(const unit of this.s?.units||[])if(unit.uid!==e.uid)this.refreshUnitAttachments(unit.uid);}break;}
         case 'cardCastMove': await this.cardAnimations.play('cast',e); break;

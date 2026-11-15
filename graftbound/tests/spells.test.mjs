@@ -8,7 +8,7 @@ const book = ids => ids.map(id => ({ id: 'mtg:' + id, level: 1 }));
 const S = (rows, map, ids, opts = {}) => { const s = arena(rows, map, { spellbook: book(ids), ...opts }); s.p.mana = 12; s.p.maxMana = 12; return s; };
 test('LONG RANGE: Lightning Bolt hits a foe across the whole board, through rocks, without moving', () => {
   const s = S(['t.......', '########', '........', '........', '........', '........', '........', '.......P'], { t: 'tortoise' }, ['lightning-bolt']);
-  assert.deepEqual(castOptions(s, 'mtg:lightning-bolt'), [{ x: 0, y: 0 }]);
+  assert.deepEqual(castOptions(s, 'mtg:lightning-bolt'), [{ x: 7, y: 7 }, { x: 0, y: 0 }], 'printed any-target spells may also target their caster');
   cast(s, 'mtg:lightning-bolt', 0, 0); assert.equal(enemies(s).length,0,'three damage kills printed Dauntless Escort'); assert.deepEqual([player(s).x, player(s).y], [7, 7]);
   assert.equal(spellRange('mtg:lightning-bolt'), Infinity); assert.equal(rangeLabel('mtg:lightning-bolt'), 'anywhere');
 });

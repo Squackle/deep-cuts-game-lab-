@@ -109,5 +109,5 @@ export function toGameCard(sf) {
   const ad = SPELL_ADAPTATIONS[sf.name];
   if (!ad) return { ok: false, reasons: ['spell has no reviewed adaptation'] };
   const eff = getCard(ad.effect);
-  return { ok: true, card: { ...base, kind: 'spell', effect: ad.effect, bonus: ad.bonus || 0, cost: ad.cost ?? eff.cost, target: ['Giant Growth','Titanic Growth'].includes(sf.name)?'creature':eff.target, range: eff.range, category: eff.category, text: ad.text || eff.text, art: eff.art, vfx: ad.vfx, adaptationNote: ad.note } };
+  return { ok: true, card: { ...base, kind: 'spell', effect: ad.effect, bonus: ad.bonus || 0, cost: ad.cost ?? eff.cost, target: ['Giant Growth','Titanic Growth','Shock','Lightning Bolt','Flame Slash','Arc Lightning','Frost Breath','Disfigure','Lightning Strike','Murder','Drain Life'].includes(sf.name)?'creature':eff.target, range: eff.range, category: eff.category, text: ['Shock','Lightning Bolt','Flame Slash','Arc Lightning','Frost Breath','Disfigure','Lightning Strike','Murder','Drain Life'].includes(sf.name) ? (ad.text||eff.text).replace('a foe','target creature').replace('one foe','target creature') : (ad.text||eff.text), art: eff.art, vfx: ad.vfx, adaptationNote: ad.note } };
 }

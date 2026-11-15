@@ -707,3 +707,35 @@ html[data-card-motion="minimal"] .reward .slot.gb-reveal-surge .lc-card{animatio
 .topbtns .gb-graft-powers:disabled{opacity:.55;cursor:default}
 body:not([data-mode="battle"]) #graftPowers{display:none!important}
 @media (max-width:760px){.topbtns .gb-graft-powers{width:34px;height:34px;min-width:34px;font-size:18px}}
+
+/* v1.3.1: Reward concealment is a true two-face state. Never paint front art
+   behind a hidden back, including after live Scryfall enrichment on WebKit. */
+.rewardscr .fan .lc-card {transform:none!important;transform-style:flat!important;perspective:none!important;isolation:isolate}
+.rewardscr .fan .lc-card .face {backface-visibility:visible!important;-webkit-backface-visibility:visible!important;transform:none!important}
+.rewardscr .fan .lc-card.flipped .front {display:none!important;visibility:hidden!important}
+.rewardscr .fan .lc-card.flipped .back {display:grid!important;visibility:visible!important;inset:0;z-index:2}
+.rewardscr .fan .lc-card:not(.flipped) .back {display:none!important;visibility:hidden!important}
+.rewardscr .fan .lc-card:not(.flipped) .front {display:flex!important;visibility:visible!important;z-index:2}
+@keyframes gb131-card-arrive {from{opacity:.55;filter:brightness(1.4);transform:scaleX(.1)}to{opacity:1;filter:none;transform:scaleX(1)}}
+@media(prefers-reduced-motion:no-preference){.rewardscr .slot.revealed .lc-card .front{animation:gb131-card-arrive .26s ease-out both}}
+/* Drawing is authoritative immediately, but the new card is not visually present
+   in the hand until its flight from the Library has finished. */
+.handcard.gb-draw-concealed{visibility:hidden!important;pointer-events:none!important}
+/* All popups and ability choices use strong, parchment-appropriate contrast. */
+.modal-box .gb-combo-modal,.modal-box .gb-combo-modal h2,.modal-box .gb-combo-modal p,.modal-box .gb-combo-modal .sh-brand{color:#302619!important;text-shadow:none!important}
+.modal-box .gb-combo-modal .sh-brand{color:#6e4d21!important}
+.modal-box .gb-combo-modal .gb-combo-option{background:#17392b;color:#fff3d2!important;border-color:#97733c;overflow-wrap:anywhere}
+.modal-box .gb-combo-modal .gb-combo-option:disabled{opacity:.7;color:#c8beac!important}
+.modal-box .gb-combo-modal .gb-combo-note{color:#4d3825!important;line-height:1.4;font-size:.87rem}
+#tip{box-sizing:border-box;max-width:min(340px,calc(100vw - 16px));max-height:min(48dvh,330px);overflow:auto;overflow-wrap:anywhere;white-space:normal}
+.modal-box{box-sizing:border-box;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow-x:hidden;overflow-y:auto;overflow-wrap:anywhere}
+.modal-box .btn,.modal-box p,.modal-box small,.modal-box dd{overflow-wrap:anywhere}
+.hist li{min-width:0;overflow-wrap:anywhere}
+.hist li .gb-graft-details{display:block;font-size:.84em;line-height:1.42;white-space:normal;max-width:100%;color:#392f23}
+#inspect{max-width:calc(100vw - 18px);box-sizing:border-box;overflow-wrap:anywhere;overflow-y:auto}
+#inspect .in-head,#inspect .in-hp,#inspect .in-intent{min-width:0;overflow-wrap:anywhere;white-space:normal}
+@media(max-width:760px){
+  #inspect.show:not(.terrain-inspect){top:max(104px,calc(env(safe-area-inset-top) + 91px));bottom:auto!important;left:auto;right:8px;width:min(285px,calc(100vw - 16px));max-height:min(35dvh,185px);z-index:13}
+  #hud .gb-card-zones{z-index:14}
+  .modal-box .gb-combo-modal{width:100%;max-width:100%;max-height:calc(100dvh - 90px)}
+}

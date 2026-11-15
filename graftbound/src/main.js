@@ -148,7 +148,15 @@ class App {
       else if (k === 'm') $('btn-sound').click();
     });
     const tip = $('tip');
-    const showTip = el => { const r = el.getBoundingClientRect(); tip.textContent = el.dataset.tip; tip.classList.add('show'); tip.style.left = Math.min(innerWidth - 250, Math.max(8, r.left)) + 'px'; tip.style.top = (r.bottom + 6) + 'px'; };
+    const showTip = el => {
+      const r=el.getBoundingClientRect();tip.textContent=el.dataset.tip;tip.classList.add('show');
+      // Position from measured tooltip size, accounting for narrow and short screens.
+      const w=Math.min(tip.getBoundingClientRect().width||260,innerWidth-16);
+      const h=Math.min(tip.getBoundingClientRect().height||90,innerHeight-16);
+      const above=r.top-h-8, below=r.bottom+8;
+      tip.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left))+'px';
+      tip.style.top=Math.max(8,Math.min(innerHeight-h-8,below+h+8>innerHeight&&above>=8?above:below))+'px';
+    };
     document.addEventListener('pointerover', e => { const el = e.target.closest('[data-tip]'); if (el) showTip(el); else tip.classList.remove('show'); });
     document.addEventListener('focusin', e => { const el = e.target.closest('[data-tip]'); if (el) showTip(el); });
   }
@@ -238,7 +246,7 @@ class App {
     const { choice, arg } = await UI.shrineScreen(this);
     let res; try { res = shrineChoice(this.run, choice, arg); } catch (err) { this.toast(`<b>Can't</b> ${esc(err.message)}`, 'short'); return this.shrine(); }
     this.record({ type: 'shrine', choice, arg }); this.save();
-    const msg = { restoration: '<b>Restored</b><small>All wounds mended; 3 shield next battle</small>', spark: '<b>+3 Spark</b><small>Maximum health increased</small>', arcane: '<b>Arcane Font</b><small>+1 maximum mana</small>', inscribe: `<b>Inscribed</b><small>${res.cardId ? esc(getCard(res.cardId).name) + ' is now level ' + res.level : ''}</small>` }[res.kind];
+    const msg = { restoration: '<b>Restored</b><small>All wounds mended; 3 shield next battle</small>', spark: '<b>+3 Maximum Health</b><small>Maximum health increased</small>', arcane: '<b>Arcane Font</b><small>+1 maximum mana</small>', inscribe: `<b>Inscribed</b><small>${res.cardId ? esc(getCard(res.cardId).name) + ' is now level ' + res.level : ''}</small>` }[res.kind];
     if (msg) { this.toast(msg); this.audio.play('heal'); return this.goMap(); }
     return this.reward();
   }
@@ -247,7 +255,7 @@ class App {
     const { choice, arg } = await UI.eventScreen(this);
     let res; try { res = eventChoice(this.run, choice, arg); } catch (err) { this.closeModal(); this.toast(`<b>Can't</b> ${esc(err.message)}`, 'short'); return this.event(); }
     this.closeModal(); this.record({ type: 'event', choice, arg }); this.save();
-    const msg = { leave: '<b>You walk on</b>', well: '<b>The well takes its price</b><small>−3 Spark · +1 maximum and starting mana</small>' }[res.kind];
+    const msg = { leave: '<b>You walk on</b>', well: '<b>The well takes its price</b><small>−3 Maximum Health · +1 maximum and starting mana</small>' }[res.kind];
     if (msg) this.toast(msg);
     if (this.run.phase === 'reward') return this.reward();
     return this.goMap();
@@ -276,7 +284,7 @@ class App {
     if (!this.run.pending.cards.length) { this.run.pending = null; this.run.phase = 'map'; this.save(); return this.goMap(); }
     if (this.run.phase === 'won') return this.endRun(true);
     const { choice, rect, release } = await UI.rewardScreen(this, this.run.pending.cards, { tier: this.run.pending.tier, severed: this.run.pending.severed, firstVictoryPacks: this.run.pending.firstVictoryPacks });
-    if (choice === 'skip') { skipReward(this.run); this.record({ type: 'skip' }); this.save(); this.toast('<b>+1 Spark</b>'); }
+    if (choice === 'skip') { skipReward(this.run); this.record({ type: 'skip' }); this.save(); this.toast('<b>+1 Maximum Health</b>'); }
     else {
       const evoBefore = this.run.evo; let change;
       try { change = chooseReward(this.run, choice, release); } catch (err) { this.toast(`<b>Can't</b> ${esc(err.message)}`, 'short'); return this.reward(); }
@@ -338,7 +346,7 @@ class App {
       sc.fx.burst(sc.centerPos(uid), col, 80, { speed: 3, up: 2.5, size: 16 }); sc.fx.burst(sc.centerPos(uid), [1, 0.95, 0.7], 40, { speed: 1.6, up: 3, size: 10 });
       this.traitFx(uid, evoBefore);
       const kws = [...change.gained, ...change.raised].map(kw => keywordLabel(kw, this.run.evo.keywords[kw]));
-      this.bigText(`<div class="bt-pt">${evoBefore.power}/${evoBefore.toughness} <i>→</i> <b>${this.run.evo.power}/${this.run.evo.toughness}</b></div>${kws.length ? `<div class="bt-kw">${esc(kws.join(' · '))}</div>` : ''}${change.resonance ? `<div class="bt-res">Resonance +${change.resonance * 2} Spark</div>` : ''}${change.released ? `<div class="bt-src">${esc(change.released)} was released</div>` : ''}${this.traitLine(evoBefore)}<div class="bt-src">${esc(card.name)} is grafted to you · recorded in your Journal</div><small class="bt-skip">tap to continue</small>`, COLOR[card.color].glow);
+      this.bigText(`<div class="bt-pt">${evoBefore.power}/${evoBefore.toughness} <i>→</i> <b>${this.run.evo.power}/${this.run.evo.toughness}</b></div>${kws.length ? `<div class="bt-kw">${esc(kws.join(' · '))}</div>` : ''}${change.resonance ? `<div class="bt-res">Resonance +${change.resonance * 2} Maximum Health</div>` : ''}${change.released ? `<div class="bt-src">${esc(change.released)} was released</div>` : ''}${this.traitLine(evoBefore)}<div class="bt-src">${esc(card.name)} is grafted to you · recorded in your Journal</div><small class="bt-skip">tap to continue</small>`, COLOR[card.color].glow);
     } else {
       v.flash = 0.6; sc.fx.burst(sc.centerPos(uid), col, 40, { speed: 2, up: 2 });
       this.bigText(`<div class="bt-kw">${esc(change.kind === 'empower' ? `${card.name} · Level ${change.level}` : card.name)}</div><div class="bt-src">${change.kind === 'empower' ? 'Spell empowered' : 'Inscribed in your spellbook'}</div><small class="bt-skip">tap to continue</small>`, COLOR[card.color].glow);

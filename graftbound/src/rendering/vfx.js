@@ -7,6 +7,36 @@ const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
 const R = () => Math.random() - 0.5;
 const ELECTRIC = [0.62, 0.82, 1], ELECTRIC_CORE = [0.95, 0.98, 1];
+/** Transient creature-surface elemental envelope. All states are visual only. */
+export async function impactEnvelope(sc, target, kind, duration=840) {
+  if(target==null || !sc.units?.has(target))return;
+  const v=sc.units.get(target), center=()=>sc.centerPos(target);
+  const lightning=kind==='shock'||kind==='lightning';
+  const cold=kind==='frost', burning=kind==='flame'||kind==='fire';
+  const color=cold?[0.57,0.89,1]:burning?[1,0.46,0.13]:lightning?[0.82,0.94,1]:[0.56,0.92,0.36];
+  const initialCold=v.flashCold||0;
+  const reduced=sc.reduced||sc.speed>=50;
+  const total=reduced?1:Math.max(4,Math.round(duration/120));
+  try {
+    for(let k=0;k<total;k++){
+      if(!sc.units?.has(target)||v.hidden)break;
+      const p=center(),height=Math.max(.42,sc.heightOf(v)*.9),radius=Math.min(.42,.18+v.scale*.34);
+      const feet=[v.pos[0],.035,v.pos[2]];
+      if(cold){v.flashCold=Math.max(v.flashCold||0,.8);sc.addRing({pos:feet,r0:radius*.35,r1:radius*1.8,life:.32,col:color,width:.055,spokes:6,seg:12});}
+      if(burning){v.flash=Math.max(v.flash||0,.32);sc.fx.burst([p[0],Math.max(.13,p[1]-height*.25),p[2]],color,reduced?5:11,{speed:.35,up:1.6,grav:0,size:9,life:.32});}
+      if(lightning){
+        const a=k*1.7, y=.2+height*((k%3)/3);
+        const x=Math.cos(a)*radius,z=Math.sin(a)*radius;
+        sc.addBolt({a:[p[0]+x,y,p[2]+z],b:[p[0]-x,y+height*.35,p[2]-z],life:.19,width:.025,col:color,branches:2,segs:6});
+        if(k%2===0)sc.fx.burst([p[0],y,p[2]],color,reduced?3:6,{speed:.4,up:.3,size:8,life:.22});
+      }
+      if(cold)sc.fx.burst([p[0],p[1],p[2]],color,reduced?3:7,{speed:.22,up:.25,grav:-.2,size:8,life:.36});
+      if(k%2===0){sc.light(p,color,cold?1.6:1.2,.22,.8);if(burning)sc.addRing({pos:feet,r0:radius*.2,r1:radius*1.5,life:.24,col:color,width:.04,seg:12});}
+      if(!reduced)await sleep(sc,duration/total);
+    }
+  } finally {if(cold && sc.units?.get(target)===v)v.flashCold=initialCold;}
+}
+
 
 /** Lightning Bolt — flagship: charge → intensify → branching release → impact → dissipation (~1 s at normal speed). */
 export async function lightningBolt(sc, { from, to, target, big = true, charged = false, power = 1 }) {
@@ -41,6 +71,7 @@ export async function lightningBolt(sc, { from, to, target, big = true, charged 
   sc.addRing({ pos: [to[0], 0.03, to[2]], r0: 0.1, r1: big ? 1.3 : 0.7, life: 0.35, col: ELECTRIC, width: 0.08 });
   if (target != null) sc.hit(target, ELECTRIC, big, true);
   if (!sc.reduced) sc.shake(big ? 0.18 : 0.07);
+  await impactEnvelope(sc,target,'lightning',680);
   // Phase 5 — dissipation (async).
   (async () => { for (let i = 0; i < 4; i++) { await sleep(sc, 60); const p = add(to, [R() * 0.6, Math.random() * 0.4, R() * 0.6]); sc.addBolt({ a: p, b: add(p, [R() * 0.4, R() * 0.3, R() * 0.4]), life: 0.06, width: 0.015, col: ELECTRIC, segs: 3 }); } })();
 }
@@ -72,6 +103,7 @@ export async function shock(sc, { from, to, target, charged = false, power = 1, 
   sc.light(to,WHITE,2.2+lv*.55,.32,1.8+lv*.28);
   if(target!=null)sc.hit(target,Y,false,true);
   if(!sc.reduced && lv>=3)sc.shake(.038);
+  await impactEnvelope(sc,target,'shock',820);
 }
 /** Flame Slash — a curved crescent blade of fire sweeps across the target, leaving a burning arc. */
 export async function flameSlash(sc, { from, to, target, charged = false }) {
@@ -88,6 +120,7 @@ export async function flameSlash(sc, { from, to, target, charged = false }) {
   for (let k = 0; k < arc.length - 1; k++) sc.addBolt({ a: arc[k], b: arc[k + 1], life: 0.3, width: 0.06, col: O, segs: 2 });
   sc.fx.burst(to, [1, 0.75, 0.3], 30, { speed: 2.2, up: 1.6, size: 12 }); sc.light(to, O, 3, 0.4, 2.4);
   if (target != null) sc.hit(target, O, true); if (!sc.reduced) sc.shake(0.08);
+  await impactEnvelope(sc,target,'flame',850);
 }
 /** Healing Salve — a small, quick restorative pulse: glowing droplets fall and one gentle protective ring. */
 export async function salve(sc, { from }) {
@@ -109,6 +142,7 @@ export async function fire(sc, { from, to, target, charged = false }) {
   sc.fx.burst(to, [1, 0.75, 0.3], 44, { speed: 2.6, up: 2.2, size: 15 }); sc.fx.burst(to, [0.3, 0.12, 0.05], 16, { speed: 1, up: 1.5, size: 22, grav: 1 });
   sc.addRing({ pos: [to[0], 0.03, to[2]], r0: 0.1, r1: 1.1, life: 0.4, col: ORANGE, width: 0.12 });
   sc.light(to, ORANGE, 3.6, 0.5, 2.6); if (!sc.reduced) sc.shake(0.12); if (target != null) sc.hit(target, ORANGE, true);
+  await impactEnvelope(sc,target,'fire',780);
 }
 /** Fireball: a meteor falls on the area, telegraph ring, big blast. */
 export async function fireball(sc, { from, to, tiles = [], charged = false, power = 1 }) {
@@ -131,6 +165,7 @@ export async function frost(sc, { from, to, target, charged = false, power = 1 }
   for (let i = 0; i < 26; i++) sc.fx.emit({ pos: add(to, [R() * 0.3, 0, R() * 0.3]), vel: [R() * 2.4, 1 + Math.random() * 2.6, R() * 2.4], col: [0.85, 0.97, 1, 1], size: 8 + Math.random() * 6, life: 0.6, grav: -7, drag: 0.6 }, true);
   sc.addRing({ pos: [to[0], 0.03, to[2]], r0: 0.1, r1: 0.9, life: 0.5, col: ICE, width: 0.1, spokes: 6 });
   sc.light(to, ICE, 3, 0.45, 2.2); if (target != null) sc.hit(target, ICE, false, true); if (!sc.reduced) sc.shake(0.06);
+  await impactEnvelope(sc,target,'frost',850);
 }
 /** Poison: a lobbed glob bursts into a lingering, drifting toxic cloud over the area. */
 export async function poison(sc, { from, to, tiles = [], charged = false }) {
