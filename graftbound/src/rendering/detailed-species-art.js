@@ -77,6 +77,7 @@ function shadow(g){
 function spider(g,rig,palette,state,frame){
   const {dark,mid,light}=palette,back=rig.back,drop=rig.bodyDrop,advance=rig.advance*.3;
   const headX=back?39:60;
+  const breath=state===0?[0,-1,-2,-1][frame]:0;
   g.save();g.translate(advance,drop);
   // Legs behind the carapace: all eight keep their own knee + grounded tarsus.
   for(const leg of rig.legs){
@@ -89,13 +90,13 @@ function spider(g,rig,palette,state,frame){
     line(g,[[fx,fy],[fx+leg.side*2.5,fy+1]],light,.9);
   }
   // Abdominal segmentation with unbroken lighting (not a recolored dog body).
-  ell(g,39,57,17.5,15,gradient(g,35,51,26,light,mid,dark),ink,2);
+  ell(g,39,57+breath,17.5,15-breath*.15,gradient(g,35,51+breath,26,light,mid,dark),ink,2);
   for(let i=0;i<5;i++){
     const px=29+i*4,py=47+(i%2)*2;
     line(g,[[px,py],[px-2,py+8]],i%2?light:dark,1.6);
   }
   for(let j=0;j<3;j++)line(g,[[29,60+j*3],[49,60+j*3]],j%2?dark:mid,1);
-  const mouthY=56+rig.head*.32;
+  const mouthY=56+rig.head*.32+breath;
   ell(g,headX,mouthY,11.5,10.5,gradient(g,headX-3,mouthY-4,17,light,mid,dark),ink,1.7);
   for(const side of [-1,1]){
     ell(g,headX+side*4,mouthY-5,2.1,2.3,state===3?'#9bc6eb':'#e7aa6c',ink,.7);
