@@ -426,6 +426,7 @@ export function sheetModal(app) {
   }).join('');
   const visible = Object.entries(ap.slots).map(([, p]) => `${p.part}${p.tier > 1 ? ' II' : ''}`).concat(ap.effects);
   const m = app.openModal(`
+    <div class="gb-modal-topbar"><button type="button" class="gb-modal-x" data-close aria-label="Close character sheet">×</button></div>
     <div class="sheet">
       <section class="sh-main">
         <small class="sh-brand">${GAME.title} · Act ${ACT_ROMAN[run.act]}</small>
@@ -480,7 +481,7 @@ export function sheetModal(app) {
  * The hero has two equipment slots, eligible allies have one each. */
 function combatInventoryModal(app) {
  const run=app.run,s=run.battle;
- const m=app.openModal('<div class="gb-gear-inventory"><small class="sh-brand">GRAFTBOUND · Armory</small><h2>Battle Equipment</h2><p>Attach or transfer owned Equipment during your turn, paying its printed Equip mana cost. Select a bearer and slot below.</p><div data-gear-targets></div><div class="gb-gear-layout"><div class="gb-gear-avatar"><div data-gear-preview></div><p data-gear-bearer-name></p></div><div class="gb-gear-controls"><h3>Equipment slots</h3><div data-gear-slots></div><h3>Collected Equipment</h3><div data-gear-items></div><p class="small" role="status" aria-live="polite" data-gear-error></p></div></div></div><div class="modal-actions"><button type="button" class="btn primary" data-close>Close</button></div>','wide');
+ const m=app.openModal('<div class="gb-modal-topbar"><button type="button" class="gb-modal-x" data-close aria-label="Close inventory">×</button></div><div class="gb-gear-inventory"><small class="sh-brand">GRAFTBOUND · Armory</small><h2>Battle Equipment</h2><p>Attach or transfer owned Equipment during your turn, paying its printed Equip mana cost. Select a bearer and slot below.</p><div data-gear-targets></div><div class="gb-gear-layout"><div class="gb-gear-avatar"><div data-gear-preview></div><p data-gear-bearer-name></p></div><div class="gb-gear-controls"><h3>Equipment slots</h3><div data-gear-slots></div><h3>Collected Equipment</h3><div data-gear-items></div><p class="small" role="status" aria-live="polite" data-gear-error></p></div></div></div><div class="modal-actions"><button type="button" class="btn primary" data-close>Close</button></div>','wide');
  let targetUid=s.units.find(u=>u.hero)?.uid, slot=0;
  const render=()=>{
    const eligible=s.units.filter(u=>u.side==='player'&&u.hp>0);
@@ -527,7 +528,7 @@ export function inventoryModal(app) {
  const run=app.run;if(!run)return;
  if(run.phase==='battle')return combatInventoryModal(app);
  const editable=run.phase !== 'battle';
- const m=app.openModal(`<div class="gb-gear-inventory"><small class="sh-brand">${GAME.title} · Adventurer’s Armory</small>
+ const m=app.openModal(`<div class="gb-modal-topbar"><button type="button" class="gb-modal-x" data-close aria-label="Close inventory">×</button></div><div class="gb-gear-inventory"><small class="sh-brand">${GAME.title} · Adventurer’s Armory</small>
    <h2>Equipment Inventory</h2><p class="small">Two persistent Equipment slots. Gear changes visually on your evolved creature; equipping between encounters is free, printed Equip costs apply to future in-battle transfers. Auras are drawn in battle, not stored here.</p>
    <div class="gb-gear-layout"><div class="gb-gear-avatar"><figure class="sh-portrait"><div data-gear-preview></div><figcaption>Equipped form · ${esc(run.name)}</figcaption></figure></div>
    <div class="gb-gear-controls"><h3>Equipped</h3><div data-gear-slots></div><h3>Collected Equipment</h3><div data-gear-collection></div><p data-gear-message aria-live="polite" class="small"></p></div></div></div>
