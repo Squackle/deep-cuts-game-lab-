@@ -28,6 +28,7 @@ import { equipItem } from '../engine/attachments.js';
 import { newEvolution } from '../engine/evolution.js';
 import { setSpellEquipped, handCapacity, normalizedEquipped } from '../engine/loadout.js';
 import { RANKED_CHALLENGES, ACTIVE_CHALLENGE } from '../engine/ranked.js';
+import {previewNextWorldThreat,threatPreviewLabel} from '../engine/threat-preview.js';
 import { NODE_TYPES as NT } from '../engine/campaign.js';
 import { formatDuration } from '../engine/clock.js';
 import { packIdentity, packOrnament, treatmentFor, TREATMENT_NAMES } from './pack-opening.js';
@@ -186,6 +187,7 @@ export function mapScreen(app) {
       <title>${esc(label + ' — ' + (NODE_TIP[n.type] || ''))}</title><circle r="${n.type === 'boss' ? 6.5 : 4.6}"/><text y="1.7">${t.glyph}</text>${avail.has(n.id) || n.type === 'boss' ? `<text class="lbl" y="${n.type === 'boss' ? 11 : 9}">${esc(label)}</text>` : ''}</g>`;
   }).join('');
   const st = runStats(run), ap = deriveAppearance(run.evo, visualForRun(run)); const wounds = woundsOf(run);
+  const threatPreview=previewNextWorldThreat(run);
   const el = showScreen(`
     <div class="map-wrap act-${ACTS[run.act].theme}">
       <section class="map-sheet">
@@ -200,7 +202,7 @@ export function mapScreen(app) {
           <div class="mp-pt">${run.evo.power}<i>/</i>${run.evo.toughness}</div>
           <div class="mp-hp"><div class="bar"><i style="width:${run.hp / st.maxHealth * 100}%"></i></div><span>${ICON.heart}${run.hp}/${st.maxHealth}${wounds ? ` · <em>${wounds} wounds</em>` : ''}</span></div>
           <div class="mp-row">${ICON.gem}${st.maxMana} mana · ${ICON.move}${st.move} move · ${run.evo.absorbed.length}/${graftCapacity(run)} grafts</div>
-          <div class="mp-row world-threat" data-tip="World Threat rises after each enemy-damage-free victory or two low-damage wins. Heavy enemy damage eases pressure. Strong builds face extra encounter pressure, shields and counters up to level 12. Act reinforcement caps still apply." role="status" aria-label="World Threat ${run.worldThreat?.level||0} of 12">⚔ World Threat ${(run.worldThreat?.level||0)}/12 · ${run.worldThreat?.level>=9?'Relentless':run.worldThreat?.level>=6?'Hunting':run.worldThreat?.level>=3?'Restless':'Dormant'}</div>
+          <div class="mp-row world-threat" data-tip="Stored Threat rises after clean wins and falls after heavy enemy-caused damage. The next battle estimate also includes your current graft strength; it never silently changes the stored level. Shields and limited counter-units scale with the applied battle level." role="status" aria-label="World Threat: ${esc(threatPreviewLabel(threatPreview))}">⚔ World Threat · ${esc(threatPreviewLabel(threatPreview))}</div>
           <div class="mp-kw">${kwChips(run.evo.keywords) || '<span class="muted">No abilities yet</span>'}</div>
           <div class="mp-spells">${run.spellbook.map(s => `<span class="mp-sp c-${getCard(s.id).color}">${esc(getCard(s.id).name)}${s.level > 1 ? ' ' + '✦'.repeat(s.level - 1) : ''}</span>`).join('') || '<span class="muted">Spellbook empty</span>'}</div>
           <small class="open-sheet">Character sheet &amp; spellbook (C)</small>
