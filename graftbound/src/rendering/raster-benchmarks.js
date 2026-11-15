@@ -71,8 +71,9 @@ export function buildBenchmarkSheet(image,asset){
 /** Stage ALL files before replacing any runtime sprite, to avoid partial visual state. */
 export async function installRasterBenchmarks(images,manifest,loadPng){
   if(typeof document==='undefined')return 0;
-  // Blank artwork is staged in the repo but NOT installed: its 64px graft/Equipment layers fail painterly QA.
-  const staged=await Promise.all(BENCHMARKS.filter(asset=>asset.key!=='blank').map(async asset=>{
+  // The native Blank now has 128px pose-aware anatomical graft and Equipment layers.
+  // Validate its base and skin-material mask alongside the other benchmarks.
+  const staged=await Promise.all(BENCHMARKS.map(async asset=>{
     if(!manifest.sprites[asset.key])throw new Error('Missing existing GRAFTBOUND runtime identity '+asset.key);
     const source=await loadPng('hd2d/benchmarks/'+asset.file);
     validateBenchmarkAsset(source,asset);
@@ -88,7 +89,7 @@ export async function installRasterBenchmarks(images,manifest,loadPng){
       pixelScale:(prior.h / asset.size)*(prior.pixelScale||1),cols:COLS,
       views:BENCHMARK_VIEWS,anims:BENCHMARK_STATES,premium:true,
       artPack:'owner-raster-benchmarks-v1',artSource:asset.file,
-      qualityStatus:'front-pose-benchmark; rear animation and cast/hurt require authored frames'};
+      qualityStatus:'native front-pose benchmark; rear animation and cast/hurt require authored frames'};
   }
   return staged.length;
 }

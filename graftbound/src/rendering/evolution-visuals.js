@@ -2,6 +2,7 @@
 import { PALETTE } from '../engine/appearance.js';
 import { recolorSkin } from './premium-creatures.js';
 import { drawGraftSheet } from './graft-morphology.js';
+import { drawNativeBlankGraftSheet } from './native-blank-art.js';
 const memo=new WeakMap();
 export function composePlayerSheet(assets, app) {
  const base=assets.images.blank,mask=assets.images['blank:mask'];
@@ -10,7 +11,13 @@ export function composePlayerSheet(assets, app) {
  if(cache.has(key))return cache.get(key);
  const c=document.createElement('canvas');c.width=base.width;c.height=base.height;
  const g=c.getContext('2d',{willReadFrequently:true});g.imageSmoothingEnabled=false;
- const paintGrafts=(pass)=>{g.save();g.scale(base.width/(64*4),base.height/(64*10));drawGraftSheet(g,app,pass);g.restore();};
+ const native=assets.manifest.sprites.blank.artPack==='owner-raster-benchmarks-v1';
+ const paintGrafts=(pass)=>{
+  g.save();
+  if(native)drawNativeBlankGraftSheet(g,app,pass);
+  else {g.scale(base.width/(64*4),base.height/(64*10));drawGraftSheet(g,app,pass);}
+  g.restore();
+ };
  paintGrafts('behind');
  const b=recolorSkin(base,mask,app.skinTone??0),bx=b.getContext('2d',{willReadFrequently:true});
  if(app.tintMix>0){

@@ -2,6 +2,7 @@
 import { composePlayerSheet } from './evolution-visuals.js';
 import { drawEquipmentSheet, gearKinds, EQUIPMENT_PRINTINGS } from './gear-art.js';
 import { composeAuraSheet } from './aura-art.js';
+import { drawNativeBlankGearSheet } from './native-blank-art.js';
 export { gearKinds, EQUIPMENT_PRINTINGS };
 const memo=new WeakMap();
 export function composeEquippedSheet(assets,appearance,equipment=[],auras=[]){
@@ -12,7 +13,10 @@ export function composeEquippedSheet(assets,appearance,equipment=[],auras=[]){
  if(cache.has(key))return cache.get(key);
  const c=document.createElement('canvas');c.width=source.width;c.height=source.height;
  const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(source,0,0);
- g.save();g.scale(source.width/(64*4),source.height/(64*10));drawEquipmentSheet(g,appearance,ids);g.restore();
+ g.save();
+ if(assets.manifest.sprites.blank.artPack==='owner-raster-benchmarks-v1') drawNativeBlankGearSheet(g,ids);
+ else {g.scale(source.width/(64*4),source.height/(64*10));drawEquipmentSheet(g,appearance,ids);}
+ g.restore();
  const out=composeAuraSheet(c,assets.manifest.sprites.blank.w,auras,assets.manifest.cols);
  if(cache.size>=16)cache.delete(cache.keys().next().value);cache.set(key,out);
  return out;
