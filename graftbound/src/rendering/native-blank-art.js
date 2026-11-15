@@ -197,6 +197,8 @@ export function drawNativeBlankGraftSheet(g,app,pass){
   for(let view=0;view<2;view++)for(const [state,meta] of Object.entries(BENCHMARK_STATES)){
     for(let frame=0;frame<meta.frames;frame++){
       g.save();g.translate(frame*BLANK_NATIVE_FRAME,(view*5+meta.row)*BLANK_NATIVE_FRAME);
+      // Keep large anatomy on its own frame: never bleed pixels into the neighboring pose.
+      g.beginPath();g.rect(0,0,BLANK_NATIVE_FRAME,BLANK_NATIVE_FRAME);g.clip();
       paintGraftPose(g,app,blankNativeAnchor(state,frame,view),view,state,frame,pass);
       g.restore();
     }
@@ -244,7 +246,9 @@ function paintGearPose(g,A,view,state,frame,kind){
   if(kind==='spear'){
     const [x,y]=A.rightHand;
     const thrust=state==='attack'&&frame>=2;
-    const tip=thrust?[x+28,y-20]:[x+8,y-48];
+    // The far-reaching right-hand punch pose approaches the atlas edge. Keep
+    // the spear tip and crossguard within its cell while retaining the grip.
+    const tip=[Math.min(114,x+(thrust?28:8)),Math.max(17,y-(thrust?20:48))];
     line(g,[[x-5,y+16],tip],c.bronze,3.6);
     line(g,[[x-4,y+16],[tip[0]+.7,tip[1]]],c.gold,1);
     blade(g,[tip[0]-4,tip[1]+8],[tip[0]+4,tip[1]-13],4);
@@ -256,6 +260,7 @@ export function drawNativeBlankGearSheet(g,ids=[]){
   for(let view=0;view<2;view++)for(const [state,meta] of Object.entries(BENCHMARK_STATES))
     for(let frame=0;frame<meta.frames;frame++){
       g.save();g.translate(frame*BLANK_NATIVE_FRAME,(view*5+meta.row)*BLANK_NATIVE_FRAME);
+      g.beginPath();g.rect(0,0,BLANK_NATIVE_FRAME,BLANK_NATIVE_FRAME);g.clip();
       const A=blankNativeAnchor(state,frame,view);
       for(const kind of kinds)paintGearPose(g,A,view,state,frame,kind);
       g.restore();
