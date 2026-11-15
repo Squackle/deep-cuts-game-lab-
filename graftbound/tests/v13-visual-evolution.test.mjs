@@ -84,7 +84,7 @@ test('actual authored boss frames render distinct RGBA pixels in normal and atta
    for(const name of LEGENDARY_BOSS_KEYS){
     const key='mtg_'+name,canvas=images[key],meta=manifest.sprites[key];
     assert.equal(meta.w,112);assert.equal(canvas.width,448);
-    const advanced=name==='nemata'||name==='toxrill';
+    const advanced=['nemata','arasta','drakuseth','toxrill'].includes(name);
     assert.equal(canvas.height,advanced?1344:1120);
     if(advanced){
       assert.equal(meta.anims.defeat.row,5);
