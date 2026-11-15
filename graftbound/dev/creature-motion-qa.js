@@ -25,10 +25,10 @@ try{
   const cols=meta.cols||assets.manifest.cols;
   const box=document.createElement('article'),h=document.createElement('h2');
   h.textContent=label+' · '+key;box.append(h);
-  const canvas=document.createElement('canvas');canvas.width=480;canvas.height=5*100;
+  const canvas=document.createElement('canvas');canvas.width=480;canvas.height=6*100;
   const g=canvas.getContext('2d',{willReadFrequently:true});g.imageSmoothingEnabled=false;
   const stats={};
-  for(const [index,state] of ['idle','walk','attack','cast','hurt'].entries()){
+  for(const [index,state] of ['idle','walk','attack','cast','hurt','defeat'].entries()){
    const a=anims[state],ids=new Set(),alpha=[];
    if(!a)throw new Error(key+' missing '+state);
    for(let f=0;f<Math.min(4,a.frames);f++){
@@ -50,7 +50,9 @@ try{
   box.dataset.distinctWalk=String(stats.walk.distinct);
   box.dataset.distinctAttack=String(stats.attack.distinct);
   box.dataset.distinctCast=String(stats.cast.distinct);
+  box.dataset.distinctDefeat=String(stats.defeat.distinct);
   box.dataset.stats=JSON.stringify(stats);
+  if(stats.defeat.distinct<3)throw new Error(key+' requires visibly distinct defeat poses');
   $('families').append(box);
   records.push({label,key,stats});
  }
