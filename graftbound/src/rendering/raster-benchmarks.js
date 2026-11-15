@@ -71,7 +71,8 @@ export function buildBenchmarkSheet(image,asset){
 /** Stage ALL files before replacing any runtime sprite, to avoid partial visual state. */
 export async function installRasterBenchmarks(images,manifest,loadPng){
   if(typeof document==='undefined')return 0;
-  const staged=await Promise.all(BENCHMARKS.map(async asset=>{
+  // Blank artwork is staged in the repo but NOT installed: its 64px graft/Equipment layers fail painterly QA.
+  const staged=await Promise.all(BENCHMARKS.filter(asset=>asset.key!=='blank').map(async asset=>{
     if(!manifest.sprites[asset.key])throw new Error('Missing existing GRAFTBOUND runtime identity '+asset.key);
     const source=await loadPng('hd2d/benchmarks/'+asset.file);
     validateBenchmarkAsset(source,asset);
