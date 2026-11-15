@@ -80,6 +80,7 @@ export class BattleUI {
         await this.banner(s.nodeType === 'boss' ? s.name : s.nodeType === 'elite' ? 'Elite Lair · ' + s.name : s.name, s.nodeType === 'boss' ? 'boss' : '', s.nodeType === 'boss' ? bossTitleOf(s.act) : '');
         if (s.deck) await this.deckCeremony();
         this.initialHandConcealed=false;this.renderHand(s);
+        if (s.worldThreat > 0) await this.banner(`World Threat ${s.worldThreat}/12 · stronger enemy wards${s.worldThreatAdaptive ? ' · build pressure +' + s.worldThreatAdaptive : ''}`, 'foe');
         if (s.reinforced) { await this.banner(`The world answers your strength · +${s.reinforced} foe${s.reinforced > 1 ? 's' : ''}`, 'foe'); this.app.hint('reinforced', 'The stronger you become, the more foes answer. Reinforcements never have extra health — just more of them.'); }
         this.busy = false;
       }
