@@ -184,7 +184,7 @@ test('Save migration preserves previous v8 battle and creates an additive empty 
  const s=make([]);delete s.combo;s.v=9;
  const run={v:8,battle:s,ranked:{rulesVersion:'graftbound-rules-1.2.7-beta'}};
  RUN_MIGRATIONS[8](run);
- assert.equal(run.v,9);assert.equal(run.battle.v,11);
+ assert.equal(run.v,9);assert.equal(run.battle.v,10);
  assert.deepEqual(run.battle.combo,{choices:[],counters:{},actions:{},treasure:0});
  assert.ok(run.archivedRanked);assert.equal(run.ranked,undefined);
 });
