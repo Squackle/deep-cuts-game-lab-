@@ -739,3 +739,40 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
   #hud .gb-card-zones{z-index:14}
   .modal-box .gb-combo-modal{width:100%;max-width:100%;max-height:calc(100dvh - 90px)}
 }
+
+/* v1.3.3 mobile character sheet: explicitly place each graft description
+   in the full-width TEXT column. Previously the third child auto-flowed
+   into the 28px index column and wrapped every few characters. */
+.sheet, .sh-main, .sh-hist, .hist, .hist li { min-width: 0; max-width: 100%; }
+.sheet { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+.hist li { grid-template-columns: 28px minmax(0, 1fr); align-items: start; }
+.hist li > .n { grid-column: 1; grid-row: 1 / span 2; }
+.hist li > b, .hist li > small, .hist li > .gb-graft-details {
+  grid-column: 2; min-width: 0; max-width: 100%;
+  white-space: normal; overflow-wrap: break-word; word-break: normal;
+}
+.hist li > .gb-graft-details {
+  display: block; grid-column: 2; line-height: 1.48;
+  padding-top: 3px; font-size: .8rem;
+}
+/* Accessible close affordance in the upper-right of both the character
+   sheet and Equipment Inventory; the original footer Close remains. */
+.gb-modal-topbar {
+  position: sticky; top: 0; z-index: 25; display: flex;
+  justify-content: flex-end; align-items: flex-start;
+  min-height: 45px; margin: -10px -10px 6px 0; pointer-events: none;
+}
+.gb-modal-x {
+  pointer-events: auto; display: inline-grid; place-items: center;
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+  padding: 0; border: 2px solid #f3d1b7; border-radius: 9px;
+  background: #a41f26; color: #fff; font: 700 29px/1 Arial,sans-serif;
+  box-shadow: 0 2px 8px #24130975; cursor: pointer;
+}
+.gb-modal-x:hover,.gb-modal-x:focus-visible { background:#c82c32; outline: 3px solid #57421f; outline-offset: 2px; }
+@media(max-width:760px) {
+  .sheet { grid-template-columns: minmax(0,1fr); gap: 16px; }
+  .modal-box.wide { min-width: 0; }
+  .modal-box .sh-hist { width: 100%; min-width:0; }
+  .hist li { grid-template-columns: 28px minmax(0,1fr); }
+}
