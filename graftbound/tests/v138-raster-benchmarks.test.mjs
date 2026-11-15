@@ -47,4 +47,6 @@ test('no changes to engine RNG, game state or save keys are needed to load displ
   assert.doesNotMatch(source,/Math\.random|localStorage|player\.hp\s*=|window\.location/);
   const loader=readFileSync(new URL('../src/rendering/sprites.js',import.meta.url),'utf8');
   assert.match(loader,/await installRasterBenchmarks\(images,manifest,img\)/);
+  const raster=readFileSync(new URL('../src/rendering/raster-benchmarks.js',import.meta.url),'utf8');
+  assert.match(raster,/BENCHMARKS\.filter\(asset=>asset\.key!=='blank'\)/,'do not deploy the new Blank until native grafts and gear match');
 });
