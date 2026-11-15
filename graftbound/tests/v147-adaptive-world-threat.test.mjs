@@ -65,7 +65,7 @@ function prepareRun(seed,act=1){
   const target=run.map.nodes.find(n=>n.depth===2 && (n.type==='battle'||n.type==='elite'))
     || run.map.nodes.find(n=>n.depth===1 && n.type==='battle');
   assert.ok(target,'needs a real reachable Act II combat encounter');
-  const parent=run.map.nodes.find(n=>n.depth===1&&n.next.includes(target.id));
+  const parent=run.map.nodes.find(n=>n.depth===target.depth-1&&n.next.includes(target.id));
   assert.ok(parent);
   run.current=parent.id;run.visited=[parent.id];run.phase='map';
   return {run,nodeId:target.id,depth:target.depth};
