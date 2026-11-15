@@ -6,7 +6,7 @@ import {BOSS_PRINTINGS,LEGENDARY_BOSS_KEYS} from '../src/rendering/legendary-bos
 const art=readFileSync(new URL('../src/rendering/legendary-boss-art.js',import.meta.url),'utf8');
 
 test('all six distinctive legendary bosses have independently articulated runtime states',()=>{
-  assert.deepEqual(ADVANCED_BOSS_KEYS,['nemata','arasta','drakuseth','krenko','scarab','toxrill']);
+  assert.deepEqual(ADVANCED_BOSS_KEYS,['nemata','arasta','drakuseth','krenko','scarab','toxrill','thornmother','matron','unwritten']);
   assert.equal(BOSS_STATES.join(','),'idle,walk,attack,cast,hurt,defeat');
   for(const name of ADVANCED_BOSS_KEYS){
     assert.ok(LEGENDARY_BOSS_KEYS.includes(name),name+' must be a real boss');
