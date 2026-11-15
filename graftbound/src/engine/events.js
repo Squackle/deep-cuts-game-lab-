@@ -13,7 +13,7 @@ export const EVENTS = {
     text: 'Seven inscriptions circle a stone heart. A vacant eighth rune glimmers just beyond their reach.', when: run => handCapacity(run) < MAX_HAND_CAPACITY,
     choices: [
       { id: 'expand', label: 'Inscribe another memory', text: run => `Gain +1 active spell slot permanently for this adventure (${handCapacity(run)} → ${handCapacity(run) + 1}; maximum ${MAX_HAND_CAPACITY}). No spells are discarded.`, when: run => handCapacity(run) < MAX_HAND_CAPACITY },
-      { id: 'spark', label: 'Harvest the rune', text: () => 'Gain +2 Spark and heal 2 health instead of increasing capacity.', when: () => true },
+      { id: 'spark', label: 'Harvest the rune', text: () => 'Gain +2 Maximum Health and heal 2 health instead of increasing capacity.', when: () => true },
       { id: 'leave', label: 'Leave untouched', text: () => 'Nothing changes.', when: () => true },
     ] },
   echoingCauldron: { name: 'The Echoing Cauldron', glyph: '❂',
@@ -39,7 +39,7 @@ export const EVENTS = {
   cursedWell: { name: 'The Cursed Well', glyph: '◒',
     text: 'Black water that hums with stolen mana. It always takes its price first.', when: run => (run.wellDrunk || 0) < 1,
     choices: [
-      { id: 'drink', label: 'Drink deeply', text: () => `Permanently lose ${EVENT_COST.wellSpark} Spark (maximum health) and gain +1 maximum mana and +1 starting mana for the rest of the adventure.`, when: run => run.maxHp > EVENT_COST.wellSpark + 2 },
+      { id: 'drink', label: 'Drink deeply', text: () => `Permanently lose ${EVENT_COST.wellSpark} Maximum Health (maximum health) and gain +1 maximum mana and +1 starting mana for the rest of the adventure.`, when: run => run.maxHp > EVENT_COST.wellSpark + 2 },
       { id: 'leave', label: 'Do not drink', text: () => 'Nothing changes.', when: () => true },
     ] },
   forgottenTrial: { name: 'The Forgotten Trial', glyph: '⚖',
