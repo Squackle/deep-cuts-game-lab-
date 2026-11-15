@@ -10,7 +10,8 @@ export function composePlayerSheet(assets, app) {
  if(cache.has(key))return cache.get(key);
  const c=document.createElement('canvas');c.width=base.width;c.height=base.height;
  const g=c.getContext('2d',{willReadFrequently:true});g.imageSmoothingEnabled=false;
- drawGraftSheet(g,app,'behind');
+ const paintGrafts=(pass)=>{g.save();g.scale(base.width/(64*4),base.height/(64*10));drawGraftSheet(g,app,pass);g.restore();};
+ paintGrafts('behind');
  const b=recolorSkin(base,mask,app.skinTone??0),bx=b.getContext('2d',{willReadFrequently:true});
  if(app.tintMix>0){
   const bd=bx.getImageData(0,0,b.width,b.height),md=mask.getContext('2d',{willReadFrequently:true}).getImageData(0,0,b.width,b.height).data;
@@ -20,7 +21,7 @@ export function composePlayerSheet(assets, app) {
    for(let k=0;k<3;k++)d[i+k]=Math.round(d[i+k]*(1-app.tintMix)+Math.min(255,tint[k]*lum*1.55*255)*app.tintMix);
   }bx.putImageData(bd,0,0);
  }
- g.drawImage(b,0,0);drawGraftSheet(g,app,'front');
+ g.drawImage(b,0,0);paintGrafts('front');
  if(cache.size>=18)cache.delete(cache.keys().next().value);cache.set(key,c);
  return c;
 }
