@@ -2,6 +2,7 @@
 // sprite atlas is never relabeled: each identity receives a different visible model.
 // Generated once at asset load; no Magic card art, network requests or gameplay RNG.
 // Canvas-only: engine, simulation and ranked replay remain entirely DOM-free.
+import { creaturePose, materialLightDelta } from './creature-motion.js';
 
 const C = (base, dark, mid, light, feature, custom = false) => ({ base, dark, mid, light, feature, custom });
 export const REAL_CREATURE_MODELS = Object.freeze({
@@ -66,7 +67,8 @@ function recolor(frame, config) {
 }
 function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
   const back=view===1,attack=anim===2,walk=anim===1,cast=anim===3;
-  const c=Math.min(w/80,h/88),bob=walk?(frame%2?1:-1):anim===0?(frame%2?0:1):0;
+  const c=Math.min(w/80,h/88),motion=creaturePose(feature,anim,frame,back);
+  const bob=motion?motion.bob:walk?(frame%2?1:-1):anim===0?(frame%2?0:1):0;
   g.save();g.translate(w/2,h*0.63+bob);g.scale(c,c);
   g.lineJoin='round';g.lineCap='round';
   const poly=(pts,fill=mid,stroke=dark,thick=2)=>{g.beginPath();g.moveTo(...pts[0]);for(const p of pts.slice(1))g.lineTo(...p);g.closePath();g.fillStyle=fill;g.fill();if(stroke){g.strokeStyle=stroke;g.lineWidth=thick;g.stroke();}};
@@ -88,10 +90,30 @@ function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
       for(let i=-3;i<=3;i++){poly([[i*7,-2],[(i-1)*8,-29-(i%3)*7],[(i+1)*8,-17],[i*7,23]],i%2?mid:light,dark,2);}
       ell(0,0,16,22,mid,dark,2);poly([[-17,6],[-5,-29],[2,-6],[9,-39],[17,0]],light);
       eye(-5,-4,'#401c18');eye(6,-4,'#401c18');break;
-    case 'friendlyDrake':
-      poly([[-7,-12],[-35,-43],[-28,2],[-13,14]],light);poly([[7,-12],[35,-43],[28,2],[13,14]],light);
-      ell(0,4,11,16,mid);line([0,-8],[9,-30],mid,9);poly([[7,-30],[23,-29],[28,-22],[9,-20]],light);
-      poly([[-4,20],[-21,36],[-11,20]],dark);eye(11,-28,dark);break;
+    case 'friendlyDrake': {
+      const m=motion;
+      g.save();g.translate(m.advance*.55,m.bob*.25);
+      // Two independently articulated wings remain rooted at the shoulder.
+      for(const side of [-1,1]){
+        const spread=28+m.wing*.6,top=-37-m.wing;
+        poly([[side*7,-10],[side*spread,top],[side*(spread+5),-8-m.wing*.15],[side*15,15]],light);
+        line([side*7,-10],[side*spread,top],dark,2.5);
+        line([side*11,-7],[side*(spread+2),-6-m.wing*.2],mid,2);
+      }
+      // A supported hind-body, moving legs and a tapered tail.
+      poly([[-8,5],[-19,12],[-21-m.nearStep,27],[-13,25],[-5,12]],mid);
+      for(const [x,step] of [[-8,m.farStep],[8,m.nearStep]]){
+        line([x,11],[x+step*2,27],dark,5);ell(x+step*2,29,5,3,light);
+      }
+      ell(0,4,12,16,mid);
+      line([1,-5],[9+m.strike*.25,-26+m.head],mid,9);
+      poly([[6,-29+m.head],[19,-34+m.head],[30,-23+m.head],[15,-20+m.head]],light);
+      poly([[22,-25+m.head],[32,-21+m.head],[27,-18+m.head],[20,-18+m.head]],dark);
+      if(!back)eye(18,-29+m.head,dark);
+      for(let i=0;i<4;i++)poly([[-2+i*4,-9+i*5],[1+i*4,-14+i*5],[4+i*4,-8+i*5]],light,null);
+      if(cast){ell(27,-17+m.head,3+m.strike*.45,2+m.strike*.2,'#f1c16b',null);}
+      g.restore();break;
+    }
     case 'friendlyBirdIllusion':
       poly([[-5,-10],[-33,-37],[-26,3],[-10,13]],light);poly([[5,-10],[33,-37],[26,3],[10,13]],light);
       ell(0,-12,8,16,mid,dark,1);ell(0,-28,9,8,light,dark,1);poly([[0,6],[-9,27],[9,20]],mid);eye(-4,-29,dark);eye(4,-29,dark);break;
@@ -107,10 +129,24 @@ function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
     case 'friendlySnake':
       ell(-9,13,18,10,mid);ell(10,8,15,11,mid);
       line([14,2],[15,-24],mid,9);ell(15,-28,12,8,light);eye(18,-31,dark);line([26,-26],[34,-24],'#d85b5b',2);break;
-    case 'friendlyGoblin':
-      ell(0,-21,12,11,mid);poly([[-9,-21],[-27,-28],[-19,-14]],light);poly([[9,-21],[27,-28],[19,-14]],light);
-      poly([[-11,-8],[11,-8],[15,15],[-15,15]],dark);eye(-5,-22,light);eye(5,-22,light);
-      line([14,5],[25,-34],light,4);poly([[25,-40],[20,-28],[30,-27]],light);break;
+    case 'friendlyGoblin': {
+      const m=motion;
+      g.save();g.translate(m.advance*.25,m.collapse*.7);
+      for(const [x,step] of [[-7,m.farStep],[7,m.nearStep]]){
+        line([x,11],[x+step*4,25],dark,6);ell(x+step*4,26,5,3,mid);
+      }
+      poly([[-11,-8],[11,-8],[15,15],[-15,15]],dark);
+      poly([[-10,-4],[-8,6],[8,6],[11,-4]],mid,null);
+      ell(0,-21+m.head,12,11,mid);
+      poly([[-9,-21+m.head],[-27,-28+m.head],[-19,-14+m.head]],light);
+      poly([[9,-21+m.head],[27,-28+m.head],[19,-14+m.head]],light);
+      eye(-5,-22+m.head,light);eye(5,-22+m.head,light);
+      const wrist=[18+m.strike*.45,5-m.strike*.4],tip=[25+m.strike, -34-m.strike*.6];
+      line([12,1],wrist,mid,6);line(wrist,tip,dark,4);
+      poly([[tip[0],tip[1]-7],[tip[0]-4,tip[1]+5],[tip[0]+4,tip[1]+5]],light);
+      line([-12,0],[-19+m.farStep*2,7],mid,6);
+      g.restore();break;
+    }
     case 'friendlyHornet':
       ell(0,1,8,20,mid);for(let i=-1;i<=1;i++)ell(0,-12+i*13,8,3,i%2?dark:light);
       poly([[-7,-15],[-30,-36],[-23,-3]],light);poly([[7,-15],[30,-36],[23,-3]],light);
@@ -122,13 +158,34 @@ function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
       body();ears();poly([[-14,-31],[-25,-44],[-22,-19]],light);poly([[14,-31],[25,-44],[22,-19]],light);
       line([15,-10],[25,-35],light,4);poly([[25,-42],[19,-32],[30,-32]],light);eye(-5,-23,dark);eye(5,-23,dark);break;
     case 'caterpillar': for(let i=-2;i<=2;i++)ell(i*8,2+Math.sin(i)*2,6,9,i%2?mid:light);poly([[20,0],[31,-8],[27,4]],light);eye(18,-4);break;
-    case 'wolf':case 'direwolf':
-      // Grounded timber-wolf proportions: four paws, deep chest, long muzzle and a bushy tail.
-      poly([[-22,-8],[-29,-19],[-31,-27],[-25,-22],[-15,-13]],mid);
-      for(const x of [-17,-7,13,23]){line([x,7],[x-2,23],dark,6);ell(x-2,23,4,3,light);}
-      ell(-3,-5,26,13,mid);poly([[11,-12],[18,-29],[22,-15],[27,-25],[29,-8]],dark);
-      ell(18,-12,13,13,mid);poly([[21,-10],[40,-5],[43,1],[24,2]],light);
-      ell(33,1,3,2,dark,null);eye(22,-15,feature==='direwolf'?'#f0b36c':'#ebdb9a');break;
+    case 'wolf':case 'direwolf': {
+      const m=motion;
+      g.save();g.translate(m.advance*.38,m.bob*.4+m.collapse*.6);
+      // Four separate hips, hocks, paws and alternating diagonals. No sliding quadruped rig.
+      poly([[-22,-8],[-29,-14-m.tail],[-34,-23-m.tail],[-30,-26-m.tail],[-15,-13]],mid);
+      for(const [i,x] of [-17,-7,13,23].entries()){
+        const step=i===0||i===3?m.nearStep:m.farStep;
+        const hockY=15-Math.abs(step)*2;
+        line([x,3],[x+step*3,hockY],dark,6);
+        line([x+step*3,hockY],[x+step*4,24-Math.abs(step)*2],mid,4.8);
+        ell(x+step*4,25-Math.abs(step)*2,5,2.7,light);
+        for(let toe=-1;toe<=1;toe++)line([x+step*4+toe*2,26-Math.abs(step)*2],[x+step*4+toe*2+1,28-Math.abs(step)*2],dark,1);
+      }
+      ell(-3,-5,26,14,mid);
+      ell(-10,-9,16,10,light,null);
+      for(let i=0;i<6;i++)line([-21+i*5,-12-i%2],[-18+i*5,-17-i%3],i%2?mid:light,1.6);
+      poly([[11,-12],[18,-29+m.head],[22,-15+m.head],[27,-25+m.head],[29,-8]],dark);
+      ell(18,-12+m.head*.6,13,12,mid);
+      poly([[21,-9+m.head],[40,-5+m.head],[43,1+m.head],[24,2+m.head]],light);
+      // Distinct mouth opening on the strike, with eyes and muzzle anchored to the skull.
+      if(attack&&frame>=1&&frame<=2){
+        poly([[25,0+m.head],[41,1+m.head],[39,7+m.head],[30,5+m.head]],dark);
+        line([29,1+m.head],[38,2+m.head],'#f7e4c4',1.5);
+      }
+      ell(40,1+m.head,3,2,dark,null);
+      if(!back)eye(22,-15+m.head,feature==='direwolf'?'#f0b36c':'#ebdb9a');
+      g.restore();break;
+    }
     case 'spiderling':
       // Tiny eight-legged ground spider, never a floating moth rig.
       for(let i=0;i<4;i++){const y=-8+i*4;line([-5,y],[-12-i*2,-14+i*3],dark,3);line([-12-i*2,-14+i*3],[-22-i,8+i*3],mid,2);line([5,y],[12+i*2,-14+i*3],dark,3);line([12+i*2,-14+i*3],[22+i,8+i*3],mid,2);}
@@ -137,7 +194,24 @@ function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
     case 'rhino': horns();poly([[-3,-26],[5,-41],[9,-24]],light);ell(0,-12,17,9,mid);poly([[-20,-6],[-28,4],[-18,13]],light);lightLine([-10,0],[10,4]);break;
     case 'stinger': poly([[-25,-22],[-32,-7],[-12,-9]],light);poly([[25,-22],[32,-7],[12,-9]],light);line([12,6],[25,22],mid,4);poly([[25,22],[29,30],[20,26]],light);eye(3,-18);break;
     case 'blightcaster': line([18,-28],[20,19],light,3);ell(18,-31,5,5,'#bd79e5');poly([[-17,-3],[18,-3],[15,22],[-18,22]],dark);poly([[-13,-10],[12,-10],[7,-1],[-8,-1]],mid);eye(4,-21);break;
-    case 'torchgoblin': ears();ell(0,-20,12,11,mid);poly([[-11,-6],[11,-6],[15,16],[-15,16]],dark);line([18,5],[23,-25],'#5a3929',4);ell(23,-29,5,8,'#faaf4c');poly([[22,-37],[27,-29],[20,-27]],'#ffee80');eye(-5,-21);eye(5,-21);break;
+    case 'torchgoblin': {
+      const m=motion;
+      g.save();g.translate(m.advance*.2,m.collapse*.7);
+      for(const [x,step] of [[-7,m.farStep],[7,m.nearStep]]){
+        line([x,10],[x+step*3,25],mid,6);ell(x+step*3,27,5,3,dark);
+      }
+      ell(0,-20+m.head,12,11,mid);
+      poly([[-10,-20+m.head],[-28,-28+m.head],[-19,-13+m.head]],light);
+      poly([[10,-20+m.head],[28,-28+m.head],[19,-13+m.head]],light);
+      poly([[-11,-6],[11,-6],[15,16],[-15,16]],dark);
+      line([-11,-1],[-18+m.farStep*2,10],mid,5);
+      const hand=[18+m.strike*.4,5-m.strike*.5],torch=[23+m.strike*.7,-25-m.strike*.6];
+      line([12,-2],hand,mid,6);line(hand,torch,'#5a3929',4);
+      ell(torch[0],torch[1]-4,5,8,'#faaf4c');
+      poly([[torch[0]-1,torch[1]-13],[torch[0]+4,torch[1]-5],[torch[0]-3,torch[1]-3]],'#ffee80');
+      if(!back){eye(-5,-21+m.head);eye(5,-21+m.head);}
+      g.restore();break;
+    }
     case 'minotaur': horns();ell(0,-13,16,15,mid);poly([[-18,-12],[-8,6],[8,6],[19,-12]],dark);line([-10,9],[-18,24],mid,7);line([10,9],[17,24],mid,7);eye(-4,-18);eye(5,-18);break;
     case 'spikeshot': ears();ell(0,-20,11,11,mid);line([12,-1],[26,-10],dark,6);line([14,-5],[29,-17],light,3);poly([[26,-17],[35,-22],[27,-12]],light);poly([[12,-12],[20,-10],[14,-4]],'#d78f61');eye(-4,-21);eye(4,-21);break;
     case 'alchemist': body();line([14,2],[22,-16],dark,4);ell(22,-19,5,7,'#f5bd65');ell(22,-26,3,7,'#f8e87d');poly([[-13,0],[-21,18],[17,18],[12,0]],dark);break;
@@ -171,7 +245,28 @@ function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
       eye(9,-36,dark);eye(28,-38,dark);
       for(let i=0;i<4;i++)ell(-25+i*11,20,3,2,'#ade38a',null);break;
     case 'angel': poly([[-12,-4],[-31,-32],[-24,15]],light);poly([[12,-4],[31,-32],[24,15]],light);body();ell(0,-43,12,2,'#f7e49f');break;
-    case 'saproling': ell(0,3,12,14,mid);poly([[-20,-8],[0,-35],[19,-8]],light);eye(-4,-6);eye(4,-6);break;
+    case 'saproling': {
+      const m=motion;
+      g.save();g.translate(m.advance*.16,m.bob*.45+m.collapse*.7);
+      // Rooted feet flex through the walk rather than sliding a mushroom icon.
+      for(const [x,step] of [[-8,m.nearStep],[8,m.farStep]]){
+        line([x,12],[x+step*3,27],dark,6);
+        line([x+step*3,27],[x+step*4-5,29],mid,2);
+        line([x+step*3,27],[x+step*4+4,29],mid,2);
+      }
+      ell(0,4,13,14,mid);
+      poly([[-18,3],[-10,12],[10,12],[18,3]],dark,null);
+      // Tilt the cap around the stalk; underside folds and fungal texture stay attached.
+      g.save();g.translate(0,-14);g.rotate(m.tilt*Math.PI/360);
+      poly([[-22,7],[-14,-12],[-4,-23],[8,-24],[21,-10],[24,7]],light);
+      ell(0,6,23,4,mid,dark,1.2);
+      for(let i=-2;i<=2;i++){ell(i*8,-8-((i+2)%3)*3,2.3,1.5,mid,null);}
+      for(let i=-2;i<=2;i++)line([i*6,6],[i*7,9],dark,1.1);
+      g.restore();
+      if(!back){eye(-5,-3,light);eye(5,-3,light);}
+      if(cast)for(let i=0;i<3;i++){ell(-15+i*14,-23-m.strike,2.2,2.2,light,null);}
+      g.restore();break;
+    }
   }
   if(!back && ['bow','spikeshot','alchemist','minotaur','gearhulk'].includes(feature))ell(0,0,2,2,light,null);
   g.restore();
@@ -182,18 +277,11 @@ function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
 function polishMaterial(cell, material) {
   const c=cell.getContext('2d',{willReadFrequently:true});
   const img=c.getImageData(0,0,cell.width,cell.height),data=img.data,w=cell.width,h=cell.height;
-  const organic=/wolf|direwolf|caterpillar|squirrel|snake|saproling|wurm|rhino|cat|hornet|spider|stinger|stalker|toxrill/i.test(material);
-  const metal=/golem|titan|gearhulk|duelist|shinobi|bow|soldier|skeleton|sentinel|rhino|armor/i.test(material);
   const alpha=(x,y)=>x<0||y<0||x>=w||y>=h?0:data[(y*w+x)*4+3];
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
     const i=(y*w+x)*4;if(data[i+3]<128)continue;
     const edge=(alpha(x-1,y)<128?1:0)+(alpha(x+1,y)<128?1:0)+(alpha(x,y-1)<128?1:0)+(alpha(x,y+1)<128?1:0);
-    const n=(((x*47)^(y*89)^((x+y)*13))>>>0)%11;
-    let delta = (n===1?-9:n===6?7:0);
-    if(organic && (x+y)%7===0)delta-=4;
-    if(metal && (2*x+y)%13===0)delta+=7;
-    if(edge){delta += x%3===0?-9:3;}
-    else{delta+=x<w*.44?3:-3;delta+=y<h*.36?3:0;}
+    const delta=materialLightDelta(x,y,w,h,material,edge);
     for(let k=0;k<3;k++)data[i+k]=Math.max(0,Math.min(255,data[i+k]+delta));
   }
   c.putImageData(img,0,0);
