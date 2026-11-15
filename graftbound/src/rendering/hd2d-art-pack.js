@@ -17,7 +17,7 @@ export function validateHd2dManifest(pack, runtimeSprites) {
   return pack.units.map((unit, i) => {
     const id = 'units[' + i + ']';
     if (!unit || typeof unit !== 'object') error(id + ' must be an object');
-    if (typeof unit.key !== 'string' || !/^[a-z][a-z0-9_]*$/.test(unit.key)) error(id + ' has invalid identity');
+    if (typeof unit.key !== 'string' || !/^[a-z][A-Za-z0-9_]*$/.test(unit.key)) error(id + ' has invalid identity');
     if (keys.has(unit.key)) error('duplicate identity ' + unit.key);
     keys.add(unit.key);
     if (!runtimeSprites?.[unit.key]) error('unknown runtime identity ' + unit.key);
