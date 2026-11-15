@@ -14,7 +14,7 @@ test('all three original act bosses have six authored deterministic states in bo
     for(let state=0;state<BOSS_STATES.length;state++)for(const back of [false,true]){
       const poses=Array.from({length:4},(_,f)=>advancedBossPose(name,state,f,back));
       assert.ok(poses.every(x=>x.name===name&&x.back===back));
-      assert.equal(new Set(poses.map(p=>JSON.stringify(p))).size>=3,
+      assert.ok(new Set(poses.map(p=>JSON.stringify(p))).size>=3,
         name+' '+BOSS_STATES[state]+' is a repeated static frame');
       assert.deepEqual(poses,Array.from({length:4},(_,f)=>advancedBossPose(name,state,f,back)));
     }
