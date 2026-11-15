@@ -67,12 +67,13 @@ test('material illumination is directional, bounded and continuous without per-p
   assert.notEqual(materialLightDelta(42,30,96,96,'golem'),materialLightDelta(42,30,96,96,'wolf'));
 });
 test('actual runtime overlay consumes these poses; noisy material hash and gameplay changes are absent',()=>{
-  assert.match(source,/import \\{ creaturePose, materialLightDelta \\} from '\\.\\/creature-motion\\.js';/);
-  assert.match(source,/motion=creaturePose\\(feature,anim,frame,back\\)/);
-  assert.match(source,/const delta=materialLightDelta\\(x,y,w,h,material,edge\\);/);
+  assert.ok(source.includes("import { creaturePose, materialLightDelta } from './creature-motion.js';"));
+  assert.ok(source.includes('motion=creaturePose(feature,anim,frame,back)'));
+  assert.ok(source.includes('const delta=materialLightDelta(x,y,w,h,material,edge);'));
   for(const family of ['friendlyDrake','friendlyGoblin','wolf','torchgoblin','saproling'])
     assert.ok(source.includes("case '"+family+"'"),family+' does not render its motion');
-  assert.doesNotMatch(source,/\\(\\(\\(x\\*47\\)\\^\\(y\\*89\\)/,'old coordinate hash must be removed');
+  assert.equal(source.includes('((x*47)^(y*89)'),false,'old coordinate hash must be removed');
   const body=readFileSync(new URL('../src/rendering/creature-motion.js',import.meta.url),'utf8');
-  assert.doesNotMatch(body,/Math\\.random|localStorage|window\\.|player\\.hp\\s*=/);
+  for(const forbidden of ['Math.random','localStorage','window.','player.hp ='])
+    assert.equal(body.includes(forbidden),false,'drawing must not change combat simulation: '+forbidden);
 });
