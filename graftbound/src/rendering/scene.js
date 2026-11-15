@@ -6,6 +6,7 @@ import { mul, perspective, ortho, lookAt, xform, invert, I } from './math.js';
 import { Geo } from './geometry.js';
 import { buildEnvironment, swayFor, WIND } from './environment.js';
 import { Particles } from './particles.js';
+import { chooseSpriteDirection } from './hd2d-art-pack.js';
 
 export const PX = 1 / 19;
 const PITCH = 0.66;
@@ -50,6 +51,7 @@ export class Scene {
   addUnit(u, spriteKey, opts = {}) {
     const meta = this.man.sprites[spriteKey];
     const v = { uid: u.uid, side: u.side, key: spriteKey, tex: opts.tex || this.tex[spriteKey], fw: meta.w, fh: meta.h, pivot: meta.pivotY, hover: meta.hover ? 0.35 : 0,
+      pixelScale: meta.pixelScale || 1, animSet: meta.anims || this.man.anims, views: meta.views || this.man.views,
       pos: this.world(u.x, u.y), dir: u.side === 'enemy' ? [0, 1] : [0, -1], anim: 'idle', animT: Math.random(), scale: opts.scale || 1, flash: 0, flashCold: 0, dissolve: 0, outline: 0,
       lunge: [0, 0, 0], spawnK: 1, hidden: false, aura: null };
     this.units.set(u.uid, v); return v;
@@ -61,7 +63,7 @@ export class Scene {
   }
   removeUnit(uid) { this.units.delete(uid); }
   play(uid, anim) { const v = this.units.get(uid); if (v) { v.anim = anim; v.animT = 0; } }
-  heightOf(v) { return v.fh * PX * HCOMP * v.scale * 0.62; }
+  heightOf(v) { return v.fh * PX * HCOMP * v.scale * (v.pixelScale || 1) * 0.62; }
   headPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) * 0.95 + 0.05, v.pos[2]]; }
   centerPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0] + v.lunge[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) * 0.45, v.pos[2] + v.lunge[2]]; }
   face(v, to) { if (!v) return; const dx = to[0] - v.pos[0], dz = to[2] - v.pos[2]; if (Math.abs(dx) + Math.abs(dz) > 0.01) v.dir = [dx, dz]; }
@@ -198,15 +200,17 @@ export class Scene {
     for (const [tex, list] of byTex) {
       const start = off;
       for (const v of list) {
-        const A = man.anims[v.anim] || man.anims.idle; v.animT += dt * this.speed;
+        const anims = v.animSet || man.anims, A = anims[v.anim] || anims.idle; v.animT += dt * this.speed;
         let f = Math.floor(v.animT * A.fps); if (f >= A.frames) { if (A.loop) f %= A.frames; else { v.anim = 'idle'; v.animT = 0; f = 0; } }
-        const away = v.dir[0] * fwdH[0] + v.dir[1] * fwdH[1] > 0.05;
-        const flip = v.dir[0] * rH[0] + v.dir[1] * rH[1] > 0.05;
-        const row = (away ? 1 : 0) * Object.keys(man.anims).length + (man.anims[v.anim] || A).row;
+        const frontDot = v.dir[0] * fwdH[0] + v.dir[1] * fwdH[1];
+        const sideDot = v.dir[0] * rH[0] + v.dir[1] * rH[1];
+        const {index:viewIndex, flip} = chooseSpriteDirection(v.views || man.views, frontDot, sideDot);
+        const row = viewIndex * Object.keys(anims).length + (anims[v.anim] || A).row;
         const u0 = (f * v.fw) / tex.w, u1 = ((f + 1) * v.fw) / tex.w, v0 = (row * v.fh) / tex.h, v1 = ((row + 1) * v.fh) / tex.h;
-        const s = v.scale * v.spawnK; const wdt = v.fw * PX * s, hgt = v.fh * PX * HCOMP * s;
+        const s = v.scale * v.spawnK, pixelScale = v.pixelScale || 1;
+        const wdt = v.fw * PX * s * pixelScale, hgt = v.fh * PX * HCOMP * s * pixelScale;
         const bob = v.hover ? Math.sin(this.time * 3 + v.uid) * 0.06 : 0;
-        const c = [v.pos[0] + v.lunge[0], v.pos[1] + v.hover + (v.castLift || 0) + bob - (v.fh - v.pivot) * PX * HCOMP * s, v.pos[2] + v.lunge[2]];
+        const c = [v.pos[0] + v.lunge[0], v.pos[1] + v.hover + (v.castLift || 0) + bob - (v.fh - v.pivot) * PX * HCOMP * s * pixelScale, v.pos[2] + v.lunge[2]];
         v.flash = Math.max(0, v.flash - dt * 4);
         off = this.pushQuad(this.sprBuf, off, c, wdt, hgt, flip ? [u1, v0, u0, v1] : [u0, v0, u1, v1], [v.flash, v.dissolve, v.outline, v.flashCold]);
       }
