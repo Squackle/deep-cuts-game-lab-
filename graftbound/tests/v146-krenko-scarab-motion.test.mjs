@@ -7,7 +7,7 @@ import {BOSS_PRINTINGS,LEGENDARY_BOSS_KEYS} from '../src/rendering/legendary-bos
 const art=readFileSync(new URL('../src/rendering/legendary-boss-art.js',import.meta.url),'utf8');
 
 test('Krenko and Scarab God remain real legendary identities with all six animation states',()=>{
-  assert.equal(ADVANCED_BOSS_KEYS.length,6);
+  assert.equal(ADVANCED_BOSS_KEYS.length,9);
   for(const name of ['krenko','scarab']){
     assert.ok(ADVANCED_BOSS_KEYS.includes(name));
     assert.ok(LEGENDARY_BOSS_KEYS.includes(name));
