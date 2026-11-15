@@ -3,6 +3,7 @@
 // Generated once at asset load; no Magic card art, network requests or gameplay RNG.
 // Canvas-only: engine, simulation and ranked replay remain entirely DOM-free.
 import { CREATURE_MOTION_FAMILIES, creaturePose, materialLightDelta } from './creature-motion.js';
+import { SPECIES_FRAME, SPECIES_STUDY_FEATURES, drawSpeciesStudyFrame } from './detailed-species-art.js';
 
 const C = (base, dark, mid, light, feature, custom = false) => ({ base, dark, mid, light, feature, custom });
 export const REAL_CREATURE_MODELS = Object.freeze({
@@ -293,8 +294,11 @@ export function installRealCreatureModels(images,manifest) {
   for(const [name,config] of Object.entries(REAL_CREATURE_MODELS)) {
     const key='mtg_'+name,base=manifest.sprites[config.base],source=images[config.base];
     if(!base||!source)throw new Error('Missing original animation rig '+config.base+' for '+key);
-    const width=config.custom && ['arasta','drakuseth','krenko','scarab','toxrill'].includes(name)?96:base.w;
-    const height=config.custom && ['arasta','drakuseth','krenko','scarab','toxrill'].includes(name)?96:base.h;
+    // A native 96px identity-specific rendering rig replaces Hound/Moth borrowed art
+    // while retaining the original one-tile gameplay and apparent world height.
+    const detailed=SPECIES_STUDY_FEATURES.includes(config.feature);
+    const width=detailed?SPECIES_FRAME:config.custom && ['arasta','drakuseth','krenko','scarab','toxrill'].includes(name)?96:base.w;
+    const height=detailed?SPECIES_FRAME:config.custom && ['arasta','drakuseth','krenko','scarab','toxrill'].includes(name)?96:base.h;
     // Species-specific defeat poses retain the old simulation death timing.
     // The additional row belongs to these identities only; never move shared atlas rows.
     const authored=Boolean(CREATURE_MOTION_FAMILIES[config.feature]);
@@ -308,19 +312,23 @@ export function installRealCreatureModels(images,manifest) {
       const srcX=frame*base.w,srcY=(view*baseRows+Math.min(anim.row,baseRows-1))*base.h;
       // Death frames are drawn as a collapsing animal/body, never a still-living
       // borrowed base sprite with a pasted effect on top.
-      if(!config.custom && anim.row!==baseRows) {
+      if(!detailed && !config.custom && anim.row!==baseRows) {
         cctx.drawImage(source,srcX,srcY,base.w,base.h,0,0,width,height);
         recolor(cell,config);
       }
-      overlay(cctx,width,height,config,view,anim.row,frame);
+      if(detailed)drawSpeciesStudyFrame(cctx,config.feature,view,anim.row,frame,config);
+      else overlay(cctx,width,height,config,view,anim.row,frame);
       polishMaterial(cell,config.feature);
       sctx.drawImage(cell,frame*width,(view*rows+anim.row)*height);
     }
     images[key]=sheet;
-    manifest.sprites[key]={w:width,h:height,pivotY:height-3,
+    manifest.sprites[key]={w:width,h:height,pivotY:detailed?87:height-3,
       hover:(name==='spider'||name==='friendlySpider'||name==='hound'||name==='wolf'||name==='alpha'?0:(base.hover||0)),
       artWidth:Math.max(0,width-4),bleedX:2,generated:true,
-      ...(authored?{anims,views:manifest.views,cols}:{}),qualityStatus:authored?'species-specific motion study; original HD-2D art still required':undefined};
+      ...(detailed?{pixelScale:base.h*(base.pixelScale||1)/height,artPack:'species-anatomy-study-v1'}:{}),
+      ...(authored?{anims,views:manifest.views,cols}:{}),
+      qualityStatus:detailed?'native resolution original anatomy study; final hand-painted HD-2D quality pending':
+        authored?'species-specific motion study; original HD-2D art still required':undefined};
   }
   return Object.keys(REAL_CREATURE_MODELS).length;
 }
