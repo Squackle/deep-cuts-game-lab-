@@ -40,7 +40,7 @@ test('ranged enemy selects the visible ally capable of killing it next turn',()=
 
 test('Mentor identifies why the optional paid draw cannot be selected',()=>{
  const s=arena(['t....','.....','..P..'],{t:'tortoise'},{spellbook:book('shock')});
- s.traits=['mentor'];s.p.mana=0;
+ s.traits=['mentor'];s.p.mana=0;s.deck={hand:[],library:[{id:'mtg:shock'}],graveyard:[],capacity:5};
  const ev=[];comboToken(s,ev,'Squirrel');resolveComboEvents(s,ev);
  assert.equal(comboChoices(s)?.kind,'mentor');
  assert.match(comboChoices(s).reason,/Need 1 available mana/);
