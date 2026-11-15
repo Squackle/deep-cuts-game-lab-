@@ -1,8 +1,8 @@
 /**
- * Visual-only articulated phase poses for treefolk Nemata and slug-horror Toxrill.
+ * Visual-only articulated phase poses for Nemata, Arasta, Drakuseth and Toxrill.
  * Frame state is deterministic; bosses keep their existing combat AI and phases.
  */
-export const ADVANCED_BOSS_KEYS=Object.freeze(['nemata','toxrill']);
+export const ADVANCED_BOSS_KEYS=Object.freeze(['nemata','arasta','drakuseth','toxrill']);
 export const BOSS_STATES=Object.freeze(['idle','walk','attack','cast','hurt','defeat']);
 const WALK=Object.freeze([-2,0,2,-1]);
 const STRIKE=Object.freeze([0,3,8,2]);
@@ -29,6 +29,23 @@ export function advancedBossPose(name,state,frame,back=false){
     feelerBend:walk?[0,3,-1,-3][frame]:attack?[0,-2,-6,-1][frame]:
       cast?[0,-3,-7,-2][frame]:defeat?[0,3,8,11][frame]:[0,-1,-3,-1][frame],
     slugAdvance:attack?STRIKE[frame]*.42:hurt?recoil*.5:walk?move*.45:0,
-    slimePulse:cast?[0,2,5,1][frame]:attack?[0,2,4,1][frame]:walk?[0,1,2,0][frame]:[0,1,2,1][frame]
+    slimePulse:cast?[0,2,5,1][frame]:attack?[0,2,4,1][frame]:walk?[0,1,2,0][frame]:[0,1,2,1][frame],
+    // Arasta: all eight limb roots retain their identity while gait and lunge
+    // flex individual knees/tarsi. Idle and casting also change abdomen volume.
+    spiderStep:walk?[-2,0,3,1][frame]:attack?[0,1,3,0][frame]:0,
+    spiderLunge:attack?STRIKE[frame]*.52:hurt?recoil*.3:0,
+    abdomenBreath:walk?[0,1,2,1][frame]:cast?[0,2,4,1][frame]:
+      defeat?[-1,-2,-5,-8][frame]:[0,1,3,1][frame],
+    webTension:cast?[0,2,6,1][frame]:attack?[0,1,4,1][frame]:0,
+    // Drakuseth: the wing membranes and supported leading ribs articulate from
+    // the shoulder. Neck, jaws, tail and flame have their own timed arcs.
+    wingLift:walk?[0,3,6,2][frame]:attack?[0,4,9,3][frame]:
+      cast?[0,5,11,4][frame]:hurt?[0,-3,-6,-2][frame]:
+      defeat?[0,-2,-6,-10][frame]:[0,1,3,1][frame],
+    neckThrust:attack?STRIKE[frame]*.36:cast?CAST[frame]*.25:hurt?recoil*.25:0,
+    jawOpen:attack?[0,2,6,1][frame]:cast?[0,4,7,2][frame]:0,
+    tailFlex:walk?[-2,1,3,0][frame]:attack?[0,3,5,1][frame]:
+      defeat?[-1,-3,-5,-8][frame]:[0,1,2,0][frame],
+    flameBloom:attack?[0,2,5,1][frame]:cast?[0,3,7,2][frame]:0
   };
 }
