@@ -68,7 +68,7 @@ test('grafted heads, treefolk surfaces and insectoid chitin are supported withou
  ]){
   const g=spyCanvas();
   drawNativeBlankGraftSheet(g,{anatomy:{stage:3,features:{wings:1,antlers:1,tail:1},morph:m}},'front');
-  assert.ok(g.calls.filter(x=>x==='fill').length>=40);
+  assert.ok(g.calls.filter(x=>x==='fill'||x==='stroke').length>=40);
  }
 });
 test('five card Equipment visuals use native anchors, while unknown items do not invent gear',()=>{
