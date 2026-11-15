@@ -71,7 +71,7 @@ test('all six animation states contain at least three distinct source frames per
 test('battle renderer selects native beasts without changing combat scale or replay rules',()=>{
   assert.ok(loader.includes("BEAST_FRAME, BEAST_STUDY_FEATURES, drawBeastStudyFrame"));
   assert.ok(loader.includes('const beast=BEAST_STUDY_FEATURES.includes(config.feature);'));
-  assert.ok(loader.includes('const detailed=species||humanoid||beast||token||magic;'));
+  assert.ok(loader.includes('const detailed=species||humanoid||beast||token||magic||monster;'));
   assert.ok(loader.includes('else if(beast)drawBeastStudyFrame(cctx,config.feature,view,anim.row,frame,config);'));
   assert.ok(loader.includes("beast?'beast-anatomy-study-v1'"));
   assert.ok(loader.includes('pixelScale:base.h*(base.pixelScale||1)/height'));
