@@ -2,7 +2,7 @@
 import { newEvolution, absorb, deriveStats, rebuild, STARTING_NAME } from './evolution.js';
 import { generateMap, nodeById, availableNodes, ACT_COUNT } from './campaign.js';
 import { buildEncounter, templateFor, reinforcements, bossAdaptation, REINFORCE_CAP, COUNTERS, buildFocus } from './encounters.js';
-import { strengthOf } from './strength.js';
+import { strengthOf, expectedStrength } from './strength.js';
 import { createBattle } from './combat.js';
 import { generatePack, MAX_SPELL_LEVEL, primerPack } from './rewards.js';
 import { resolveCard } from '../cards/catalog.js';
@@ -13,7 +13,7 @@ import { journalNote, newJournal } from './journal.js';
 import { rollEvent, EVENTS, resolveEvent } from './events.js';
 import { newClock } from './clock.js';
 import { combatSpellbook, refreshLoadout, BASE_HAND_CAPACITY } from './loadout.js';
-import { newWorldThreat, settleWorldThreat, applyWorldThreat } from './world-threat.js';
+import { newWorldThreat, settleWorldThreat, applyWorldThreat, effectiveThreatLevel, threatModifiers } from './world-threat.js';
 import { giveEquipment, attachRunEquipment } from './attachments.js';
 import { skinToneForSeed } from './visual-identity.js';
 
@@ -58,12 +58,19 @@ export function enterNode(run, nodeId) {
   if (node.type === 'shrine') { run.phase = 'shrine'; run.shrine = { options: rollShrine(shrineView(run), node.seed), node: nodeId }; return run; }
   if (node.type === 'event') { run.phase = 'event'; run.event = { id: rollEvent(eventView(run), node.seed), node: nodeId }; return run; }
   const base = templateFor(run.act, node.type, node.depth, node.seed);
+  const strength = strengthOf(run.evo, { spellbook: run.spellbook, stats: runStats(run) });
+  const activeThreat = effectiveThreatLevel(run.worldThreat, {
+    strength: strength.score, expected: expectedStrength(stepOf(run.act, node.depth))
+  });
   const extra = reinforcements(run.act, node.type, node.depth, run.evo, node.seed, { spellbook: run.spellbook, stats: runStats(run) });
-  // At Threat 6+, add at most ONE extra foe, still within the existing act's total cap.
-  if ((run.worldThreat?.level||0)>=6 && !['tutorial','boss'].includes(node.type) && !(run.act===0&&node.depth<2) && extra.length<REINFORCE_CAP[run.act]) {
-    const profile=strengthOf(run.evo,{spellbook:run.spellbook,stats:runStats(run)}).profile;
-    const choices=COUNTERS[run.act][buildFocus(profile)];
-    extra.push(choices[(node.seed>>>0)%Math.min(2,choices.length)]);
+  // Threat counters the actual build: at high pressure up to two extra foes,
+  // bounded by the SAME act cap as the existing strength-based reinforcements.
+  if (!['tutorial','boss'].includes(node.type) && !(run.act===0&&node.depth<2)) {
+    const allowance = Math.min(threatModifiers({ level: activeThreat }).reinforcement,
+      Math.max(0, REINFORCE_CAP[run.act] - extra.length));
+    const choices = COUNTERS[run.act][buildFocus(strength.profile)];
+    for (let i = 0; i < allowance; i++)
+      extra.push(choices[((node.seed>>>0)+i)%Math.min(2,choices.length)]);
   }
   const tpl = extra.length ? { ...base, enemies: [...base.enemies, ...extra] } : base;
   const enc = buildEncounter(tpl, node.seed, node.type);
@@ -74,7 +81,11 @@ export function enterNode(run, nodeId) {
   if (run.wardNext) { const h = battle.units.find(u => u.hero); h.statuses.shield = (h.statuses.shield || 0) + run.wardNext; run.wardNext = 0; }
   if (run.challenges.includes('feral')) for (const u of battle.units) if (u.side === 'enemy') u.power += 1;
   battle.nodeType = node.type; battle.reinforced = extra.length; battle.nodeId = nodeId;
-  applyWorldThreat(battle, run.worldThreat);
+  // Snapshot the applied pressure for the battle UI and save. Never mutate the
+  // run's stored baseline by merely inspecting a stronger character.
+  battle.worldThreatBase = run.worldThreat?.level || 0;
+  battle.worldThreatAdaptive = Math.max(0, activeThreat - battle.worldThreatBase);
+  applyWorldThreat(battle, { level: activeThreat });
   if (node.type === 'boss') battle.adapt = bossAdaptation(run.act, run.evo, { spellbook: run.spellbook, stats: runStats(run) });
   battle.bench = encounterBenchmarks(node.type, run.act, enc.enemies.length);
   run.battle = battle; run.phase = 'battle';
