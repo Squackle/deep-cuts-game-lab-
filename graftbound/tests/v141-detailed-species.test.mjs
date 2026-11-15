@@ -87,3 +87,21 @@ test('real runtime replaces incompatible Hound/Moth bases without inflating a ti
       assert.ok(!c.includes(forbidden),relative+' must not affect combat or saves');
   }
 });
+
+test('all six animation states contain distinct actual drawn geometry in both views',()=>{
+  for(const feature of SPECIES_STUDY_FEATURES)for(const view of [0,1])for(let state=0;state<=5;state++){
+    const signatures=[];
+    for(let frame=0;frame<4;frame++){
+      const g=spy();
+      drawSpeciesStudyFrame(g,feature,view,state,frame,palette);
+      signatures.push(JSON.stringify(g.calls));
+    }
+    assert.ok(new Set(signatures).size>=3,feature+' view '+view+' state '+state+' must not be a static placeholder');
+  }
+});
+test('runtime species QA rejects clipped or identical frames before marking preview ready',()=>{
+  const qa=readFileSync(new URL('../dev/species-art-qa.js',import.meta.url),'utf8');
+  assert.ok(qa.includes("if(maxEdge>0)throw new Error"),'atlas boundary contact is a release blocker');
+  assert.ok(qa.includes('if(hashes.size<3)throw new Error'), 'repeated idle/defeat poses are rejected');
+  assert.ok(qa.includes("artPack!=='species-anatomy-study-v1'"),'QA must inspect shipped art, not posters');
+});
