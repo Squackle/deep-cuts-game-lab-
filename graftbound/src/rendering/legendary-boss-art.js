@@ -48,7 +48,8 @@ function nemata(g,S){const {back,phase,walk,cast,attack,hot,hurt}=S;
  // Foot roots and weighty trunk; top canopy intentionally asymmetrical.
  for(let k=0;k<5;k++){let x=51+(k-2)*7+S.lean+(m?m.rootStep*(k%2?1:-1)*.45:0),y=91+b;
   const tipX=x+(k-2)*4;
-  branch(g,55,74+b*.25,tipX,103+b);barb(g,tipX,103+b,tipX-5,106+b,P.woodHi);}
+  // Root stroke width and outline must stay inside the bottom atlas gutter.
+  branch(g,55,74+b*.25,tipX,100+b);barb(g,tipX,101+b,tipX-5,103+b,P.woodHi);}
  ell(g,57,65+b,19,30,P.wood);poly(g,[[47,37+b],[65,37+b],[77,57+b],[70,89+b],[51,91+b],[40,72+b]],P.wood);
  for(let side of [-1,1]){let sh=57+side*13,ex=57+side*27;
   const elbowX=ex+side*(attack?reach*.65:cast?reach*.38:0);
