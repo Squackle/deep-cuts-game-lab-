@@ -79,10 +79,16 @@ export function drawHero(g,m,view,anim,frame){
   px(g,29+x,41+y,2,1,skin[2]);px(g,34+x,41+y,2,1,skin[2]);
   // Only clothing: a tied, warm-brown cloth groin wrap. Clear its pixels from
   // the skin material mask so tone changes never recolor this fabric.
-  m.clearRect(21+x,42+y,23,14);
-  polygon(g,[[23+x,42+y],[41+x,42+y],[40+x,47+y],[37+x,51+y],[34+x,54+y],[29+x,52+y],[26+x,55+y],[23+x,51+y]],'#7c5743');
+  const apron=[[23+x,42+y],[41+x,42+y],[40+x,47+y],[37+x,51+y],[34+x,54+y],[29+x,52+y],[26+x,55+y],[23+x,51+y]];
+  const wrap=[[22+x,41+y],[42+x,41+y],[40+x,44+y],[24+x,44+y]];
+  // Remove mask only under the exact garment silhouette; exposed thighs on
+  // either side remain skin-masked (a rectangular cutout would erase them).
+  m.save();m.globalCompositeOperation='destination-out';
+  polygon(m,apron,'#ffffff',null);polygon(m,wrap,'#ffffff',null);
+  m.restore();
+  polygon(g,apron,'#7c5743');
   polygon(g,[[24+x,43+y],[40+x,43+y],[38+x,48+y],[34+x,51+y],[29+x,49+y],[26+x,53+y],[24+x,49+y]],'#a67b5a',null);
-  polygon(g,[[22+x,41+y],[42+x,41+y],[40+x,44+y],[24+x,44+y]],'#4a332b');
+  polygon(g,wrap,'#4a332b');
   line(g,24+x,42+y,40+x,42+y,'#d2a477',1);
   // Fold and uneven hem: cloth, not leather armor or a rigid belt.
   line(g,31+x,45+y,30+x,51+y,'#6a4437',1);
