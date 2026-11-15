@@ -71,7 +71,7 @@ test('all six Saproling animation states draw distinct native frames in both vie
 test('native Saproling runtime integration is visual only and preserves the one-tile scale',()=>{
   assert.ok(loader.includes('TOKEN_FRAME, TOKEN_STUDY_FEATURES, drawTokenStudyFrame'));
   assert.ok(loader.includes('const token=TOKEN_STUDY_FEATURES.includes(config.feature);'));
-  assert.ok(loader.includes('const detailed=species||humanoid||beast||token||magic;'));
+  assert.ok(loader.includes('const detailed=species||humanoid||beast||token||magic||monster;'));
   assert.ok(loader.includes('else if(token)drawTokenStudyFrame(cctx,config.feature,view,anim.row,frame,config);'));
   assert.ok(loader.includes("token?'token-anatomy-study-v1'"));
   assert.ok(loader.includes('pixelScale:base.h*(base.pixelScale||1)/height'));
