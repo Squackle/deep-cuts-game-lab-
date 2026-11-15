@@ -44,6 +44,7 @@ try{
       stats[state]={distinct:hashes.size,minOpaque,maxEdge};
       if(minOpaque<90)throw new Error(key+' '+view+' '+state+' contains an empty frame');
       if(hashes.size<3)throw new Error(key+' '+view+' '+state+' repeats its animation');
+      if(maxEdge>0)throw new Error(key+' '+view+' '+state+' reaches a clipped sprite-cell edge: '+maxEdge+' pixels');
     }
     report.viewStates[view]=stats;
   }
