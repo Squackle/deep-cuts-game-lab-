@@ -6,7 +6,7 @@ import { movePlayer, attack, cast, endTurn, interact, guard, channel, discard, e
 import { expeditionTotals } from './scoring.js';
 import { SCORING_VERSION } from '../data/scoring.js';
 
-export const RULES_VERSION = 'graftbound-rules-1.2.9-beta';
+export const RULES_VERSION = 'graftbound-rules-1.3.1-beta';
 export const CARD_POOL_VERSION = 'real-pool-133-v7';
 export const REPLAY_VERSION = 1;
 export const MAX_DECISIONS = 4000, MAX_SEGMENT = 400;
