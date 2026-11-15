@@ -19,7 +19,7 @@ const sample=(key='mtg_friendlySoldier')=>({
   pivotX:64,pivotY:119,views:['front','back','left','right'],animations:states(),
   anchors:{rightHand:[90,72],ground:[64,119]}
 });
-test('the empty approved-art intake leaves the current game's runtime untouched',async()=>{
+test("the empty approved-art intake leaves the current game's runtime untouched",async()=>{
   const manifest=base(),images={mtg_friendlySoldier:{width:256,height:640}};
   const old=structuredClone(manifest);
   const count=await installHd2dArtPack(images,manifest,async()=>({schemaVersion:1,units:[]}),
