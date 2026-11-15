@@ -1,6 +1,6 @@
 import {loadAssets} from '../src/rendering/sprites.js';
 const $=id=>document.getElementById(id);
-const models=[['Nemata, Grove Guardian','mtg_nemata'],['Toxrill, the Corrosive','mtg_toxrill']];
+const models=[['Nemata, Grove Guardian','mtg_nemata'],['Arasta of the Endless Web','mtg_arasta'],['Drakuseth, Maw of Flames','mtg_drakuseth'],['Toxrill, the Corrosive','mtg_toxrill']];
 const states=['idle','walk','attack','cast','hurt','defeat'];
 function signature(bytes){
   let hash=2166136261,opaque=0,edge=0,edgePoint=null;
