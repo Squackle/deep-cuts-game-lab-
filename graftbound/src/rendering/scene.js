@@ -11,7 +11,11 @@ import { chooseSpriteDirection } from './hd2d-art-pack.js';
 
 export const PX = 1 / 19;
 const PITCH = 0.66;
-const HCOMP = 1 / Math.cos(PITCH);
+/** v1.5.0 middle-mouse orbit: pitch limits keep the camera above the board and gameplay readable. */
+/** v1.5.0 depth separation for props under a creature (world units, along camera forward). */
+export const FOLIAGE_PUSH = 0.34;
+export const PITCH_MIN = 0.42, PITCH_MAX = 0.98;
+let HCOMP = 1 / Math.cos(PITCH);
 const ease = k => 1 - Math.pow(1 - k, 3);
 const easeIO = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
 const norm = v => { const l = Math.hypot(...v) || 1; return v.map(c => c / l); };
@@ -25,7 +29,7 @@ export class Scene {
     this.tex = {}; for (const k of Object.keys(this.man.sprites)) this.tex[k] = this.r.texture(assets.images[k]);
     this.foliageTex = this.r.texture(assets.images.foliage);
     this.units = new Map(); this.tweens = []; this.time = 0; this.speed = 1; this.reduced = false;
-    this.yaw = Math.PI / 4; this.yawTarget = this.yaw; this.zoom = 1; this.focus = [0, 0, 0]; this.focusTarget = [0, 0, 0];
+    this.yaw = Math.PI / 4; this.yawTarget = this.yaw; this.pitch = PITCH; this.pitchTarget = PITCH; this.zoom = 1; this.focus = [0, 0, 0]; this.focusTarget = [0, 0, 0];
     this.shakeAmt = 0; this.fx = new Particles(3200); this.fxLights = []; this.static = null; this.w = 8; this.h = 8;
     this.overlay = null; this.danger = null; this.hazard = null; this.blobs = null; this.fxMesh = null; this.ambientT = 0; this.dof = 1;
     this.bolts = []; this.rings = []; this.arrows = []; this.theme = 'hollow'; this.mote = [0.8, 1, 0.55];
@@ -148,6 +152,9 @@ export class Scene {
   screenFlash(col, amt = 0.35) { if (this.reduced) amt *= 0.4; this.r.flashCol = col; this.r.flash = amt; }
   shake(a) { this.shakeAmt = Math.max(this.shakeAmt, a); }
   rotate(dir) { this.yawTarget += dir * Math.PI / 2; }
+  /** v1.5.0: free orbit (middle mouse). dx/dy in CSS pixels. */
+  orbit(dx, dy) { this.yawTarget -= dx * 0.0085; this.pitchTarget = Math.min(PITCH_MAX, Math.max(PITCH_MIN, (this.pitchTarget ?? PITCH) + dy * 0.004)); }
+  resetPitch() { this.pitchTarget = PITCH; }
   tileQuads(tiles, y, colFn) {
     const g = new Geo();
     for (const t of tiles) {
@@ -169,7 +176,8 @@ export class Scene {
     const dist = need * 0.9 / this.zoom;
     const sh = this.shakeAmt ? [(Math.random() - 0.5) * this.shakeAmt, (Math.random() - 0.5) * this.shakeAmt] : [0, 0];
     const f = [this.focus[0] + sh[0], this.focus[1] + sh[1], this.focus[2]];
-    const dir = [Math.sin(this.yaw) * Math.cos(PITCH), Math.sin(PITCH), Math.cos(this.yaw) * Math.cos(PITCH)];
+    const P = this.pitch ?? PITCH; HCOMP = 1 / Math.cos(P);
+    const dir = [Math.sin(this.yaw) * Math.cos(P), Math.sin(P), Math.cos(this.yaw) * Math.cos(P)];
     const eye = [f[0] + dir[0] * dist, f[1] + dir[1] * dist, f[2] + dir[2] * dist];
     const view = lookAt(eye, f, [0, 1, 0]);
     const vp = mul(perspective(fov, aspect, 0.5, dist * 3), view);
@@ -222,7 +230,12 @@ export class Scene {
     }
     const fs = man.foliage.frames, ft = this.foliageTex; const start = off;
     const fx0 = this.focus[0], fz0 = this.focus[2];
-    for (const p of this.static.foliage) {
+    // v1.5.0: a prop sharing a tile with a creature (crystal, shard, mushroom...) used to sit in the SAME camera-facing
+    // plane as the creature and z-fight into a blended mess. Push it behind the occupant along the view direction.
+    const occupied = [...this.units.values()].filter(v => !v.hidden && v.dissolve < 0.99).map(v => v.pos);
+    const behind = (x, z) => occupied.some(q => Math.abs(q[0] - x) < 0.42 && Math.abs(q[2] - z) < 0.42) ? FOLIAGE_PUSH : 0;
+    for (const p0 of this.static.foliage) {
+      const push = behind(p0.x, p0.z); const p = push ? { ...p0, x: p0.x + fwdH[0] * push, z: p0.z + fwdH[1] * push } : p0;
       const fr = fs[p.kind]; if (!fr) continue; const s = p.s || 1;
       const along = (p.x - fx0) * fwdH[0] + (p.z - fz0) * fwdH[1], side = Math.abs((p.x - fx0) * rH[0] + (p.z - fz0) * rH[1]);
       const tall = fr.h * s > 40; const fade = tall && along < -2.5 && side < 7.5 ? Math.min(1, (-along - 2.5) * 0.9 + 0.55) : 0;
@@ -290,6 +303,7 @@ export class Scene {
     const dt = Math.max(0, Math.min(0.05, dtReal || 0)); this.time += dt;
     for (const tw of this.tweens.slice()) { tw.t += dt; const k = Math.min(1, tw.t / tw.dur); tw.fn(k); if (k >= 1) { this.tweens.splice(this.tweens.indexOf(tw), 1); tw.res(); } }
     this.yaw += (this.yawTarget - this.yaw) * Math.min(1, dt * 8);
+    this.pitchTarget = Math.min(PITCH_MAX, Math.max(PITCH_MIN, this.pitchTarget ?? PITCH)); this.pitch += (this.pitchTarget - this.pitch) * Math.min(1, dt * 10);
     for (let a = 0; a < 3; a++) this.focus[a] += (this.focusTarget[a] - this.focus[a]) * Math.min(1, dt * 4);
     this.shakeAmt *= Math.pow(0.002, dt); if (this.shakeAmt < 0.003) this.shakeAmt = 0;
     this.r.flash = Math.max(0, this.r.flash - dt * 1.6);

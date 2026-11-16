@@ -24,6 +24,7 @@ function spawnAlly(s,ev,name,power,toughness,keywords={}){
  ev.push({t:'summon',uid:u.uid,defId:u.defId,x:u.x,y:u.y,by:hero.uid,ally:true,trait:type,name});return u;
 }
 export function traitDraw(s,ev,n=1){
+  /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return;
  if(!s.deck)return 0;
  const old=refillFromGraveyard(s.deck);if(old)ev.push({t:'deckReshuffle',count:old,uid:player(s).uid});
  const cards=drawCards(s.deck,n);
@@ -31,6 +32,7 @@ export function traitDraw(s,ev,n=1){
  return cards.length;
 }
 export function onHeroDraw(s,ev){
+  /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return;
  if(!owns(s,'sheoldred')||!alive(player(s)))return;
  const gain=heal(s,ev,player(s),2,'sheoldred');
  if(gain)ev.push({t:'graftTrigger',name:'Sheoldred · draw grants 2 life',uid:player(s).uid,amount:gain});
@@ -44,12 +46,14 @@ export function onBattleGrafts(s,ev){
  if(owns(s,'visionary'))traitDraw(s,ev,1);
 }
 export function onHeroAttack(s,ev){
+  /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return;
  if(owns(s,'brimaz')){
   const token=spawnAlly(s,ev,'Cat Soldier',1,1);
   if(token)ev.push({t:'graftTrigger',name:'Brimaz · Cat Soldier',uid:player(s).uid});
  }
 }
 export function onHeroSpell(s,ev){
+  /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return;
  if(owns(s,'archmage'))traitDraw(s,ev,1);
  if(owns(s,'pyromancer'))spawnAlly(s,ev,'Elemental',1,1);
  if(owns(s,'talrand'))spawnAlly(s,ev,'Drake',2,2,{flying:1});
@@ -64,6 +68,7 @@ export function onHeroSpell(s,ev){
  }
 }
 export function onHeroHeal(s,ev,amount,kind){
+  /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return;
  if(!owns(s,'vito')||kind==='vito'||amount<=0)return;
  const target=nearestFoe(s);if(!target)return;
  ev.push({t:'graftTrigger',name:`Vito · deal ${amount} damage to ${target.name}`,uid:player(s).uid});

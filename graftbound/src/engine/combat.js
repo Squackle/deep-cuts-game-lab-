@@ -1,9 +1,9 @@
 // Battle state machine. A battle is a plain JSON object (saveable mid-fight). Player actions validate,
 // mutate state and return an ordered list of events consumed by the presentation layer.
-import { reachable, pathTo, manhattan, lineOfSight, tileAt, T, key } from '../core/grid.js';
+import { reachable, pathTo, manhattan, lineOfSight, tileAt, T, key, DIRS } from '../core/grid.js';
 import { makeRng } from '../core/rng.js';
 import { resolveCard as getCard } from '../cards/catalog.js';
-import { player, enemies, allies, alive, has, kv, heal, attackExchange, enterTiles, dealDamage } from './abilities.js';
+import { player, enemies, allies, alive, has, kv, heal, attackExchange, enterTiles, dealDamage, smashRock } from './abilities.js';
 import { spellTargets, castSpellEffect, castBlockReason, spellCost } from './spells.js';
 import { actEnemy, actAlly, spawnEnemy, previewIntent, announcePhase , spawnTokensAround, resolveToxrillEndStep } from './ai.js';
 import { STARTING_NAME } from './evolution.js';
@@ -344,12 +344,17 @@ export const crystalAt = (s, x, y) => (s.crystals || []).find(c => c.x === x && 
 export function interactOptions(s) {
   if (s.phase !== 'player') return [];
   const p = player(s);
-  return (s.crystals || []).filter(c => c.charged && manhattan(p, c) <= 1).map(c => ({ x: c.x, y: c.y, kind: 'crystal' }));
+  const crystals = (s.crystals || []).filter(c => c.charged && manhattan(p, c) <= 1).map(c => ({ x: c.x, y: c.y, kind: 'crystal' }));
+  // v1.5.0: smash an adjacent rock. Needs your attack; costs all remaining movement and attacks this turn.
+  const rocks = s.p.attacksLeft > 0 ? DIRS.map(([dx, dy]) => ({ x: p.x + dx, y: p.y + dy })).filter(t => t.x >= 0 && t.y >= 0 && t.x < s.w && t.y < s.h && tileAt(s, t.x, t.y) === T.ROCK).map(t => ({ ...t, kind: 'smash' })) : [];
+  return [...crystals, ...rocks];
 }
 export function interact(s, x, y) {
   ensurePlayerPhase(s);
   if (!interactOptions(s).some(o => o.x === x && o.y === y)) throw new Error('Nothing to use there');
-  const c = crystalAt(s, x, y); const ev = [];
+  const opt = interactOptions(s).find(o => o.x === x && o.y === y); const ev = [];
+  if (opt.kind === 'smash') { smashRock(s, ev, player(s), x, y); s.p.moveLeft = 0; s.p.attacksLeft = 0; s.stats.actions++; s.stats.interactions++; return finish(s, ev); }
+  const c = crystalAt(s, x, y);
   c.charged = false; s.stats.actions++; s.stats.interactions++;
   const before = s.p.mana; s.p.mana = Math.min(s.p.maxMana + TERRAIN_RULES.crystal.manaGain, s.p.mana + TERRAIN_RULES.crystal.manaGain);
   ev.push({ t: 'crystal', x, y, kind: 'attune' }, { t: 'mana', from: before, to: s.p.mana });

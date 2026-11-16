@@ -1,0 +1,18 @@
+<!doctype html><meta charset="utf-8"><title>hud</title>
+<link rel="stylesheet" href="../styles.css">
+<style>body{margin:0;background:#3c5a44}#app{position:relative;width:100vw;height:100vh}</style>
+<div id="app"><div id="hud"><div class="plate" id="plate"></div><div class="gb-action-counters" id="gb-action-counters"></div>
+<div class="inspect terrain-inspect terrain-plain show" id="inspect" style="left:auto;right:12px;top:12px;bottom:auto;opacity:1;transform:none"><div class="gb-terrain-brief-head"><strong>Ground</strong><span class="gb-terrain-role"></span><button class="gb-terrain-details-btn" type="button">Details</button></div><p class="gb-terrain-brief-copy">Ordinary footing. No effect.</p></div>
+<div class="inspect terrain-inspect show" id="inspect2" style="left:auto;right:12px;top:110px;bottom:auto;opacity:1;transform:none;width:300px"><div class="gb-terrain-brief-head"><strong>Lava</strong><span class="gb-terrain-role">Hazard</span><button class="gb-terrain-details-btn" type="button">Details</button></div><p class="gb-terrain-brief-copy">Molten rock. Deals 3 damage on entry and 2 if you end your turn on it. Fliers are immune. Frost hardens it for two rounds.</p></div>
+</div><div id="screen" class="screen show threatscr" style="left:auto;right:0;top:auto;bottom:0;width:480px;height:640px;position:absolute"></div></div>
+<script type="module">
+import { threatDialHTML } from '../src/ui/screens.js';
+document.getElementById('plate').innerHTML=`<div class="pl-top"><div><div class="pl-name">The Blank</div><div class="pl-stage">Awakened · 5 grafts</div></div><div class="pl-pt"><span>9</span>/<span>11</span></div></div>
+<div class="pl-hp"><div class="bar"><i style="width:72%"></i><u style="width:12%"></u></div><span>♥23<small>/32</small></span></div>
+<div class="pl-res"><span class="mana"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
+<div class="pl-act"><span class="moves">➜<b>3</b><small>move</small></span><span class="atk on">⚔<b>1</b><small>attack</small></span><span class="gb-reserve">Bank 2◆ · 1✧</span></div>
+<div class="pl-kw"><span class="chip">Flying</span><span class="chip">Trample</span><span class="chip">Lifelink</span></div>`;
+document.getElementById('screen').innerHTML=threatDialHTML({before:4,after:6,delta:2,reasons:['Flawless and fast: no damage taken in 3 turns or fewer.']});
+document.querySelector('.threat-dial').classList.add('settled');
+document.title='done';
+</script>

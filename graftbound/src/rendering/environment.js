@@ -74,6 +74,12 @@ export function buildEnvironment(battle, seed = 1, themeId = 'hollow') {
       else g.material(th.rock, q => q.with(at(cx, 0.1, cz, RY(rnd() * 3), S(s, 0.75 + rnd() * 0.45, s)), r => r.sphere(0.4, 7, 5, [1, 1, 1, 1], (i, j) => jitter([0.95, 0.95, 0.92, 1], 0.2, i * 3 + j * 7 + x))));
       if (themeId === 'hollow') g.material(MAT.moss, q => q.with(at(cx + 0.08, 0.38, cz - 0.05, S(1, 0.45, 1)), r => r.sphere(0.2, 6, 3, W)));
     }
+    // v1.5.0 rubble: a smashed rock leaves low walkable debris (deterministic per tile, independent of rnd()).
+    if (t !== TILE.ROCK && (battle.rubble || []).some(r => r.x === x && r.y === y)) {
+      for (let k = themeId === 'nexus' ? 2 : 3; k > 0; k--) rnd();   // keep every other rock's shape stable after a smash
+      for (let k = 0; k < 4; k++) { const ox = ((x * 37 + y * 11 + k * 23) % 7 - 3) * 0.09, oz = ((x * 13 + y * 29 + k * 17) % 7 - 3) * 0.09, rs = 0.11 + ((x + y + k) % 3) * 0.035;
+        g.material(th.rock, q => q.with(at(cx + ox, 0.03, cz + oz, RY(k * 1.3), S(1, 0.55, 1)), r => r.sphere(rs, 5, 3, [0.82, 0.8, 0.76, 1]))); }
+    }
     if (t === TILE.BRAMBLE) { foliage.push({ kind: 'bramble', x: cx - 0.18, z: cz + 0.12, s: 0.75 }); foliage.push({ kind: 'bramble', x: cx + 0.2, z: cz - 0.14, s: 0.6 }); }
     if (t === TILE.ICE) { lights.push({ pos: [cx, 0.3, cz], col: [0.46, 0.85, 1], radius: 1.8, intensity: 0.45, flicker: 0.06, prio: 0 }); emitters.push({ kind: 'rift', pos: [cx, 0.02, cz] }); }
     if (t === TILE.SPORES) { foliage.push({ kind: 'mushroom', x: cx - 0.14, z: cz, s: 0.52 }); lights.push({ pos: [cx, 0.18, cz], col: [0.4, 1, 0.42], radius: 1.3, intensity: 0.35, flicker: 0.15, prio: 0 }); }

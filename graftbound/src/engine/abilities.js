@@ -40,8 +40,10 @@ export function refreshTribalBonuses(s,ev=[]) {
     else if(u.tribalOnlyTrample){delete u.keywords.trample;u.tribalOnlyTrample=false;}
     if(!delta)continue;
     u.tribalBonus=total;u.power=Math.max(0,u.power+delta);u.toughness=Math.max(0,u.toughness+delta);
-    u.maxHp=Math.max(0,u.maxHp+delta);u.hp=Math.max(0,Math.min(u.maxHp,u.hp+Math.max(0,delta)));
+    // v1.5.0: marked damage persists when a bonus ends (simultaneous Pyroclasm on a pack resolves like the printed card).
+    u.maxHp=Math.max(0,u.maxHp+delta);u.hp=Math.max(0,Math.min(u.maxHp,u.hp+delta));
     ev.push({t:'status',uid:u.uid,status:'tribal',value:total,total});
+    if(u.hp<=0&&!u.deadResolved)kill(s,ev,u);
   }
 }
 
@@ -71,7 +73,36 @@ export function addStatus(s, ev, u, status, value) {
   u.statuses[status] = (u.statuses[status] || 0) + value;
   ev.push({ t: 'status', uid: u.uid, status, value, total: u.statuses[status] });
 }
+/** v1.5.0: the ONLY way a battle becomes won. Idempotent: one phase change, one 'victory' event, ever.
+ * During a simultaneous batch (s.batchDepth > 0) victory is deferred until the batch and its deaths finish. */
+export function declareVictory(s, ev) {
+  if (s.phase === 'lost' || s.victoryDeclared) return false;
+  if (s.batchDepth > 0) { s.victoryPending = true; return false; }
+  s.victoryDeclared = true; s.victoryPending = false; s.phase = 'won'; ev.push({ t: 'victory' }); return true;
+}
+export const battleOver = s => s.phase === 'won' || s.phase === 'lost' || !!s.victoryDeclared;
+const allEnemiesDown = s => s.units.every(e => e.side !== 'enemy' || e.hp <= 0);
+/** v1.5.0 simultaneous resolution: every target is chosen from ONE snapshot, all damage is applied first, then
+ * destruction/replacement and death triggers resolve in board order, then victory/defeat is checked once. */
+export function damageBatch(s, ev, src, entries, opts = {}) {
+  const list = entries.filter(([u]) => u && u.hp > 0);
+  ev.push({ t: 'batch', kind: opts.kind || 'spell', uids: list.map(([u]) => u.uid) });
+  s.batchDepth = (s.batchDepth || 0) + 1; const deferred = s.deferredDeaths || (s.deferredDeaths = []);
+  let total = 0;
+  try {
+    for (const [u, amt] of list) total += dealDamage(s, ev, src, u, amt, opts) || 0;
+  } finally { s.batchDepth--; }
+  if (s.batchDepth === 0) {
+    const due = deferred.splice(0);
+    for (const [u, el] of due) if (u.hp <= 0 && !u.deadResolved) kill(s, ev, u, el);
+    ev.push({ t: 'batchEnd' });
+    if (s.victoryPending || (allEnemiesDown(s) && s.phase !== 'lost' && !s.victoryDeclared && list.some(([u]) => u.side === 'enemy'))) declareVictory(s, ev);
+  }
+  return total;
+}
 function kill(s, ev, u, element = null) {
+  if (s.batchDepth > 0) { if (!s.deferredDeaths.some(([x]) => x === u)) s.deferredDeaths.push([u, element]); return; }
+  if (u.deadResolved) return; u.deadResolved = true;
   ev.push({ t: 'death', uid: u.uid, element, phase:s.phase,turn:s.turn });
   onUnitDeath(s,ev,u);
   if(u.side==='player' && !u.hero && u.slime>0 && s.units.some(x=>x.defId==='toxrill'&&x.hp>0))s.pendingSlugs=(s.pendingSlugs||0)+1;
@@ -106,11 +137,11 @@ function kill(s, ev, u, element = null) {
     }
     if (def && def.burst) { // Legacy-only rules; new printed creature records clear this property.
       ev.push({ t: 'burst', uid: u.uid, x: u.x, y: u.y });
-      for (const o of s.units.filter(o => o.hp > 0 && manhattan(o, u) === 1)) dealDamage(s, ev, null, o, def.burst, { kind: 'burst' });
+      damageBatch(s, ev, null, s.units.filter(o => o.hp > 0 && manhattan(o, u) === 1).map(o => [o, def.burst]), { kind: 'burst' });
     }
     refreshTribalBonuses(s,ev);
-    if (s.units.every(e => e.side !== 'enemy' || e.hp <= 0) && s.phase !== 'lost') { s.phase = 'won'; ev.push({ t: 'victory' }); }
-  } else if (u.hero && s.phase !== 'won') { s.phase = 'lost'; ev.push({ t: 'defeat' }); }
+    if (allEnemiesDown(s)) declareVictory(s, ev);
+  } else if (u.hero && !s.victoryDeclared && s.phase !== 'lost') { s.phase = 'lost'; ev.push({ t: 'defeat' }); }
 }
 /** A legal voluntary sacrifice still uses the authoritative death trigger pipeline. */
 export function sacrificeAlly(s,ev,u){
@@ -285,3 +316,15 @@ export function enterTiles(s, ev, u, path) {
     }
   }
 }
+/** v1.5.0 destructible rocks. Any living unit adjacent to a Rock may smash it, which costs ALL of that unit's remaining
+ * movement and attacks this turn. The tile becomes floor (recorded as rubble for presentation and saves); movement,
+ * line of sight, pathfinding and AI all read s.terrain, so the change is authoritative and deterministic. */
+export function smashRock(s, ev, u, x, y) {
+  if (!alive(u)) throw new Error('That creature cannot act');
+  if (!inBoundsTile(s, x, y) || tileAt(s, x, y) !== T.ROCK) throw new Error('There is no rock there');
+  if (manhattan(u, { x, y }) !== 1) throw new Error('Stand next to the rock to smash it');
+  s.terrain[y * s.w + x] = T.FLOOR; (s.rubble ||= []).push({ x, y });
+  u.smashedTurn = s.turn;
+  ev.push({ t: 'smash', uid: u.uid, x, y }, { t: 'terrain', tiles: [{ x, y }], kind: 'smash' });
+}
+const inBoundsTile = (s, x, y) => x >= 0 && y >= 0 && x < s.w && y < s.h;

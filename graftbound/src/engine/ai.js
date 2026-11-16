@@ -3,11 +3,11 @@
 import { reachable, pathTo, manhattan, unitAt, inBounds, tileAt, T, DIRS, lineOfSight } from '../core/grid.js';
 import { ENEMIES } from '../data/enemies.js';
 import { BOSS_BY_ID } from '../data/legendary.js';
-import { player, enemies, allies, alive, attackExchange, dealDamage, addShield, addStatus, enterTiles, strikePower, has } from './abilities.js';
+import { player, enemies, allies, alive, attackExchange, dealDamage, declareVictory, damageBatch, addShield, addStatus, enterTiles, strikePower, has } from './abilities.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
 import { resolveCard } from '../cards/catalog.js';
 const spellCostOf = id => (resolveCard(id) || { cost: 0 }).cost;
-import { refreshTribalBonuses, checkStateBasedDeath } from './abilities.js';
+import { refreshTribalBonuses, checkStateBasedDeath, smashRock } from './abilities.js';
 import { attachAura,detachAura,detachEquipment } from './attachments.js';
 import { registerSpawn, scarabUpkeep, scarabTargets, scarabReanimate } from './printed-triggers.js';
 
@@ -68,6 +68,20 @@ export function hazardDistanceField(s, target, unit) {
     }
   }
   return dist;
+}
+/** v1.5.0: should this ground unit smash an adjacent rock to reach target? Only when every route is blocked or is at
+ * least 4 steps (or a lethal hazard detour) longer than the straight route through rock, and only a rock that lies on
+ * that straight route. Never targets irrelevant rocks; never chosen when an open route of similar length exists. */
+export function smashChoice(s, u, target) {
+  if (!target || !alive(u) || has(u, 'flying') || manhattan(u, target) <= 1) return null;
+  const adj = DIRS.map(([dx, dy]) => ({ x: u.x + dx, y: u.y + dy })).filter(t => inBounds(s, t.x, t.y) && tileAt(s, t.x, t.y) === T.ROCK);
+  if (!adj.length) return null;
+  const n = s.w * s.h, free = new Array(n).fill(Infinity), q = [target]; free[target.y * s.w + target.x] = 0;
+  while (q.length) { const c = q.shift(); const d = free[c.y * s.w + c.x]; for (const [dx, dy] of DIRS) { const x = c.x + dx, y = c.y + dy; if (!inBounds(s, x, y)) continue; const i = y * s.w + x; if (free[i] > d + 1) { free[i] = d + 1; q.push({ x, y }); } } }
+  const here = free[u.y * s.w + u.x];
+  const blocked = hazardDistanceField(s, target, u)[u.y * s.w + u.x];
+  if (Number.isFinite(blocked) && blocked < here + 4) return null;
+  return adj.filter(r => free[r.y * s.w + r.x] === here - 1).sort(cmpTile)[0] || null;
 }
 function approach(s, e, target, list, map = null) {
   if (!list.length) return null;
@@ -162,6 +176,7 @@ export function planEnemy(s, e) {
   if (e.statuses.stunned) { plan.actions.push({ type: 'stunned' }); return plan; }
   const { map, list } = stops(s, e);
   const go = t => { if (t && (t.x !== e.x || t.y !== e.y)) { plan.to = { x: t.x, y: t.y }; plan.path = pathTo(map, t.x, t.y); } };
+  if (!BOSS_BY_ID[e.defId] && !e.boss && !['archer', 'harpooner', 'seer', 'hexer', 'skirmisher', 'stalker', 'thornmother', 'matron', 'unwritten', 'legendary'].includes(def?.ai)) { const r = smashChoice(s, e, meleeTarget(s, e)); if (r) { plan.actions.push({ type: 'smash', x: r.x, y: r.y }); return plan; } }
   const posAfter = () => plan.to || { x: e.x, y: e.y };
   const meleeIfAdjacent = tgt => {
     if (tgt && manhattan(posAfter(), tgt) === 1) {
@@ -408,6 +423,7 @@ export function previewIntent(s, e) {
   const brace = d => g0 ? Math.min(d, Math.max(g0, Math.floor(d / 2))) : 0;
   if (e.aim) return { uid: e.uid, kind: 'fire', damage: e.aim.damage - brace(e.aim.damage), guarded: brace(e.aim.damage), tiles: e.aim.tiles };
   const plan = planEnemy(s, e); const a = plan.actions;
+  const sm = a.find(x => x.type === 'smash'); if (sm) return { uid: e.uid, kind: 'smash', damage: 0, guarded: 0, poison: 0, weaken: 0, tiles: [{ x: sm.x, y: sm.y }], to: null, target: null };
   if (e.slam) {
     const atk = a.find(x => x.type === 'attack');
     return { uid: e.uid, kind: 'slam', damage: e.slam.damage - brace(e.slam.damage), guarded: brace(e.slam.damage), tiles: e.slam.tiles, extra: atk ? atk.damage : 0, target: atk && atk.target };
@@ -432,7 +448,7 @@ function resolvePending(s, ev, e) {
   if (e.slam) {
     const slam = e.slam; e.slam = null;
     ev.push({ t: 'slamHit', uid: e.uid, tiles: slam.tiles, kind: slam.kind });
-    for (const t of slam.tiles) { const u = unitAt(s, t.x, t.y); if (u && u !== e) dealDamage(s, ev, e, u, slam.damage, { kind: 'slam' }); }
+    damageBatch(s, ev, e, slam.tiles.map(t => unitAt(s, t.x, t.y)).filter(u => u && u !== e).map(u => [u, slam.damage]), { kind: 'slam' });
     return false;
   }
   return false;
@@ -445,6 +461,7 @@ export function actEnemy(s, ev, e) {
   if (s.phase !== 'enemy') return;
   const plan = planEnemy(s, e);
   const hero = player(s);
+  const sm = plan.actions.find(a => a.type === 'smash'); if (sm) { smashRock(s, ev, e, sm.x, sm.y); return; }
   for (const a of plan.actions.filter(a => a.type === 'mirror')) { e.keywords[a.keyword] = 1; ev.push({ t: 'mirror', uid: e.uid, keyword: a.keyword }); }
   if (plan.to) {
     if (plan.blink) { const from = { x: e.x, y: e.y }; e.x = plan.to.x; e.y = plan.to.y; ev.push({ t: 'teleport', uid: e.uid, from, x: e.x, y: e.y, kind: 'rift' }); }
@@ -499,7 +516,7 @@ export function actEnemy(s, ev, e) {
         else detachAura(u,a.id);
         e.hp=0;ev.push({t:'realAbility',uid:e.uid,name:'Caustic Caterpillar · destroy artifact or enchantment',target:u.uid,id:a.id});
         ev.push({t:'death',uid:e.uid,kind:'sacrifice'});refreshTribalBonuses(s,ev);
-        if(!enemies(s).length){s.phase='won';ev.push({t:'victory'});}
+        if(!enemies(s).length)declareVictory(s,ev);
         break;
       }
       case 'realPing': {
@@ -598,6 +615,7 @@ export function actAlly(s, ev, a) {
   if (a.tapped) { a.tapped = false; ev.push({ t: 'stunnedSkip', uid: a.uid, kind: 'reassembly' }); return; }
   const foes = enemies(s); if (!foes.length) return;
   const tgt = foes.slice().sort((x, y) => manhattan(a, x) - manhattan(a, y) || x.uid - y.uid)[0];
+  { const r = smashChoice(s, a, tgt); if (r) { smashRock(s, ev, a, r.x, r.y); return; } }   // v1.5.0 same legal mechanic as foes
   if (manhattan(a, tgt) !== 1) {
     const { map, list } = stops(s, a);
     const t = list.filter(v => manhattan(v, tgt) === 1).sort((x, y) => x.cost - y.cost || cmpTile(x, y))[0] || approach(s, a, tgt, list, map);

@@ -15,10 +15,15 @@ export const SHRINES = {
     when: run => run.evo.absorbed.length >= 2 },
   arcane: { name: 'Arcane Font', glyph: '◆', text: () => '+1 maximum mana and +1 mana at the start of every battle (permanent).',
     when: run => (run.manaBonus || 0) < MAX_MANA_FONTS, note: run => `${MAX_MANA_FONTS - (run.manaBonus || 0)} left this adventure` },
+  penance: { name: 'Penance Brazier', glyph: '◐', text: run => `Offer ${penanceCost(run)} health (cannot drop you below 1) to lower Global Threat by ${Math.min(PENANCE_REDUCTION, run.worldThreat?.level || 0)} (now ${run.worldThreat?.level || 0}).`,
+    when: run => (run.worldThreat?.level || 0) > 0 && run.hp > penanceCost(run) },
   inscribe: { name: 'Inscription Altar', glyph: '✎', text: () => 'Empower one spell in your spellbook by one level (max level 3).',
     when: run => run.spellbook.some(s => s.level < 3) },
 };
 export const offeringCost = run => Math.max(2, Math.ceil(run.maxHp * 0.2));
+/** v1.5.0 Penance: a quarter of maximum health for -2 Global Threat. */
+export const PENANCE_REDUCTION = 2;
+export const penanceCost = run => Math.max(3, Math.ceil((run.maxHp || 1) * 0.25));
 /** Deterministic offerings for a shrine node: up to 4 eligible options. */
 export function rollShrine(run, seed) {
   const eligible = Object.keys(SHRINES).filter(k => SHRINES[k].when(run));

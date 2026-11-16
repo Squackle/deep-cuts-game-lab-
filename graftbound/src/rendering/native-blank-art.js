@@ -61,33 +61,35 @@ function blade(g,start,tip,w){
   shape(g,[[x-px,y-py],[tx,ty],[x+px,y+py]],gloss(g,x,y,dist,c.hornLight,c.bronze),c.deep,.9);
   line(g,[[x,y],[tx,ty]],c.hornLight,1);
 }
+// v1.5.0 silhouette-scale anatomy: parts are sized to change the OUTLINE of the 128px body (readable at game zoom),
+// with 2px ink edges and a lit rim. Tier (1..3) grows each part. Deterministic; no RNG.
 function wings(g,A,kind,tier,view,state,frame){
-  const [bx,by]=A.back;
-  const spread=15+tier*4+(state==='cast'?[2,4,6,3][frame]:0);
+  const [bx,by]=A.back, flap=state==='walk'?[0,3,5,2][frame]:state==='cast'?[3,6,8,4][frame]:state==='attack'?[0,-4,-6,-2][frame]:[0,1,2,1][frame];
+  const span=Math.min(30+tier*9,bx-6,122-bx), lift=Math.min(44+tier*6,by-6);   // stays inside its 128px frame
   for(const side of [-1,1]){
-    const tx=bx+side*spread,ty=by-31;
-    const edge=kind==='feather'?c.feather:c.wing;
-    const shade=kind==='feather'?c.featherHi:c.wingLight;
-    g.beginPath();g.moveTo(bx+side*3,by-1);
-    g.quadraticCurveTo(bx+side*14,by-26,tx,ty);
-    g.quadraticCurveTo(bx+side*(spread+9),by-16,bx+side*(spread+16),by+7);
-    for(let i=3;i>=0;i--)g.lineTo(bx+side*(spread+3-i*4),by+5+i*4);
-    g.lineTo(bx+side*3,by+6);g.closePath();
-    g.fillStyle=gloss(g,bx+side*spread,by-12,40,shade,edge);
-    g.fill();g.lineWidth=2;g.strokeStyle=c.deep;g.stroke();
-    line(g,[[bx+side*3,by-1],[tx,ty]],shade,2);
-    for(let i=0;i<4;i++)line(g,[[bx+side*(7+i*2),by-5],[bx+side*(spread+5-i*4),by+3+i*3]],kind==='feather'?c.feather:c.bronze,1);
+    const root=[bx+side*4,by-2], tip=[bx+side*span,by-lift-flap], elbow=[bx+side*(span*0.45),by-lift*0.72-flap*0.5];
+    const edge=kind==='feather'?c.feather:c.wing, hi=kind==='feather'?c.featherHi:c.wingLight;
+    g.beginPath();g.moveTo(...root);g.quadraticCurveTo(elbow[0],elbow[1]-6,tip[0],tip[1]);
+    const n=kind==='feather'?5:4;
+    for(let i=0;i<=n;i++){const t=i/n, x=tip[0]+(root[0]-tip[0])*t*0.9+side*(1-t)*6, y=tip[1]+(by+14-tip[1])*Math.sin(t*Math.PI/2);
+      if(kind==='feather')g.lineTo(x+side*4,y+6);else g.quadraticCurveTo(x+side*7,y-3,x,y+(i%2?3:0));}
+    g.lineTo(root[0],by+12);g.closePath();
+    g.fillStyle=gloss(g,elbow[0],elbow[1],span,hi,edge);g.fill();g.lineWidth=2.4;g.strokeStyle=c.ink;g.stroke();
+    line(g,[root,elbow,tip],kind==='feather'?c.featherHi:c.deep,3);
+    if(kind!=='feather')for(let i=1;i<=3;i++)line(g,[elbow,[tip[0]+(root[0]-tip[0])*i/4,by+8-i*2]],c.deep,1.6);
+    else for(let i=1;i<=4;i++)line(g,[[elbow[0]+side*i*3,elbow[1]+i*6],[elbow[0]+side*(i*3+8),elbow[1]+i*6+6]],c.featherHi,1.4);
   }
 }
 function tail(g,A,kind,tier,view,frame){
-  const [hx,hy]=A.hip,sign=view===1?-1:1;
-  g.beginPath();g.moveTo(hx+sign*3,hy+3);
-  g.bezierCurveTo(hx+sign*(21+tier*2),hy+14,hx+sign*(24+tier*2),hy-19,hx+sign*26,hy-33);
-  g.bezierCurveTo(hx+sign*22,hy-40,hx+sign*16,hy-34,hx+sign*20,hy-24);
-  g.bezierCurveTo(hx+sign*14,hy-4,hx+sign*10,hy+1,hx+sign*3,hy+5);
-  g.closePath();g.fillStyle=gloss(g,hx+sign*16,hy-10,28,kind==='fur'?c.furHi:c.scaleLight,kind==='fur'?c.fur:c.scale);
-  g.fill();g.lineWidth=1.4;g.strokeStyle=c.deep;g.stroke();
-  for(let i=0;i<5;i++)line(g,[[hx+sign*(10+i*2),hy+1-i*4],[hx+sign*(13+i*2),hy-3-i*4]],kind==='fur'?c.furHi:c.scaleLight,1);
+  const [hx,hy]=A.hip,sign=view===1?-1:1, swish=[0,2,4,2][frame]||0, len=Math.min(34+tier*8,(sign>0?120-hx:hx-8)-8);
+  g.beginPath();g.moveTo(hx+sign*2,hy-4);
+  g.bezierCurveTo(hx+sign*(len*0.6),hy+2,hx+sign*(len*0.9),hy+22,hx+sign*len,hy+30-swish);
+  g.lineTo(hx+sign*(len+7),hy+34-swish);
+  g.bezierCurveTo(hx+sign*(len*0.82),hy+30,hx+sign*(len*0.5),hy+14,hx+sign*2,hy+8);g.closePath();
+  g.fillStyle=gloss(g,hx+sign*len*0.5,hy+8,len,kind==='fur'?c.furHi:c.scaleLight,kind==='fur'?c.fur:c.scale);
+  g.fill();g.lineWidth=2.2;g.strokeStyle=c.ink;g.stroke();
+  for(let i=1;i<6;i++){const x=hx+sign*(len*i/6),y=hy+4+i*4.5;line(g,[[x,y-3],[x+sign*3,y+3]],kind==='fur'?c.furHi:c.scaleLight,1.6);}
+  if(kind==='serpent'||kind==='scaled')blade(g,[hx+sign*(len+2),hy+30-swish],[hx+sign*(len+12),hy+26-swish],5);
 }
 function treeSurface(g,A){
   const [x,y]=A.chest;
@@ -98,18 +100,16 @@ function treeSurface(g,A){
   }
 }
 function armoredChest(g,A,tier){
-  const [x,y]=A.chest,w=10+tier*1.4;
-  shape(g,[[x-w,y-12],[x-4,y-14],[x,y-10],[x+4,y-14],[x+w,y-12],
-    [x+w+2,y+8],[x+5,y+15],[x-5,y+15],[x-w-2,y+8]],
-    gloss(g,x,y-4,24,c.steel,c.metal),c.deep,1.5);
-  line(g,[[x-w+3,y-9],[x,y-6],[x+w-3,y-9]],c.steelHi,1.5);
-  line(g,[[x,y-7],[x,y+13]],c.bronze,1.1);
-  for(let i=-1;i<=1;i++)oval(g,x+i*7,y+11,1.3,1.3,c.gold,null);
+  const [x,y]=A.chest,w=13+tier*2;
+  shape(g,[[x-w,y-13],[x-4,y-16],[x,y-11],[x+4,y-16],[x+w,y-13],[x+w+3,y+9],[x+6,y+18],[x-6,y+18],[x-w-3,y+9]],gloss(g,x,y-4,26,c.steel,c.metal),c.ink,2.2);
+  for(const side of [-1,1])shape(g,[[x+side*(w-2),y-15],[x+side*(w+10+tier*2),y-13],[x+side*(w+12+tier*2),y-4],[x+side*(w+2),y-2]],gloss(g,x+side*(w+6),y-12,14,c.steelHi,c.metal),c.ink,2);
+  line(g,[[x-w+3,y-9],[x,y-5],[x+w-3,y-9]],c.steelHi,2);line(g,[[x,y-6],[x,y+16]],c.bronze,1.6);
+  for(let i=-1;i<=1;i++)oval(g,x+i*7,y+12,1.8,1.8,c.gold,null);
 }
 function shell(g,A,tier){
-  const [x,y]=A.back;
-  oval(g,x,y,13+tier*2,16+tier*2,gloss(g,x,y,25,c.scaleLight,c.deep),c.deep,2);
-  for(let i=-2;i<=2;i++)line(g,[[x+i*4,y-12],[x+i*5,y+10]],c.scale,1.6);
+  const [x,y]=A.back, rx=19+tier*3, ry=22+tier*3;
+  oval(g,x,y+2,rx,ry,gloss(g,x-5,y-8,30,c.scaleLight,c.deep),c.ink,2.6);
+  for(let r=0;r<3;r++)for(let k=-1;k<=1;k++)shape(g,[[x+k*10-5,y-12+r*11],[x+k*10,y-16+r*11],[x+k*10+5,y-12+r*11],[x+k*10+4,y-6+r*11],[x+k*10-4,y-6+r*11]],r%2?c.scale:c.scaleLight,c.deep,1.2);
 }
 function surface(g,A,m){
   const [x,y]=A.chest;
@@ -143,21 +143,27 @@ function faceMorph(g,A,m,view){
   if(m.head==='beak'&&view!==1)blade(g,[fx+3,fy+3],[fx+13,fy+6],4);
 }
 function horns(g,A,tier){
-  const [x,y]=A.head;
-  for(const side of [-1,1])blade(g,[x+side*7,y-7],[x+side*(11+tier*2),Math.max(8,y-18-tier*2)],4);
+  const [x,y]=A.head, L=14+tier*5;
+  for(const side of [-1,1]){
+    g.beginPath();g.moveTo(x+side*3,y-9);g.quadraticCurveTo(x+side*(L+8),y-10,x+side*(L+3),Math.max(2,y-L-4));
+    g.quadraticCurveTo(x+side*(L-6),y-6,x+side*12,y);g.closePath();
+    g.fillStyle=gloss(g,x+side*L*0.7,y-L*0.5,L,c.hornLight,c.horn);g.fill();g.lineWidth=2;g.strokeStyle=c.ink;g.stroke();
+    for(let i=1;i<4;i++)line(g,[[x+side*(6+i*L/4),y-5-i*L/6],[x+side*(8+i*L/4),y-1-i*L/6]],c.bronze,1.2);
+  }
 }
 function antlers(g,A,tier){
   const [x,y]=A.head;
   for(const side of [-1,1]){
-    const st=[x+side*7,y-7],top=[x+side*(15+tier*2),y-18];
-    line(g,[st,top],c.bark,3.2);
-    line(g,[[x+side*12,y-12],[x+side*(5+tier),y-17]],c.barkHi,2);
-    line(g,[[x+side*14,y-15],[x+side*(23+tier),y-17]],c.barkHi,2);
+    const st=[x+side*6,y-7],top=[x+side*(20+tier*4),Math.max(2,y-26-tier*2)];
+    line(g,[st,top],c.ink,6);line(g,[st,top],c.bark,4);
+    for(const [a,b2] of [[0.35,[-6,-10]],[0.6,[9,-6]],[0.85,[2,-9]]]){const px=st[0]+(top[0]-st[0])*a,py=st[1]+(top[1]-st[1])*a;
+      line(g,[[px,py],[px+side*b2[0],py+b2[1]]],c.ink,4);line(g,[[px,py],[px+side*b2[0],py+b2[1]]],c.barkHi,2.4);}
   }
 }
 function claw(g,pos,side,tier){
-  const [x,y]=pos;for(let i=-1;i<=1;i++)
-    blade(g,[x+i*3,y-1],[x+side*(5+tier*1.3)+i*3,y+5],2.4);
+  const [x,y]=pos, L=8+tier*3;
+  oval(g,x,y,5,4.5,c.deep,c.ink,1.4);
+  for(let i=-1;i<=1;i++){blade(g,[x+i*3.5,y+1],[x+side*(L*0.6)+i*4.5,y+L],3.6);}
 }
 function moss(g,A){
   const [x,y]=A.chest;
@@ -165,6 +171,13 @@ function moss(g,A){
     const dx=((i*13)%30)-15,dy=((i*7)%31)-15;
     oval(g,x+dx,y+dy,1.5+(i%2),2.3,i%2?c.leaf:c.leafHi,null);
   }
+}
+/** v1.5.0: every absorbed creature leaves a visible stitched graft seam (up to 6), so even a vanilla graft reads. */
+function graftSeams(g,A,stage){
+  const spots=[[A.chest,[-10,-6],[8,-2]],[A.leftHand,[-2,-12],[4,-4]],[A.rightHand,[2,-12],[-4,-4]],[A.hip,[-12,2],[-2,6]],[A.neck,[-6,2],[6,2]],[A.hip,[4,4],[12,0]]];
+  for(let i=0;i<Math.min(6,stage);i++){const [[x,y],[ax,ay],[bx,by]]=spots[i];
+    line(g,[[x+ax,y+ay],[x+bx,y+by]],c.ink,3);line(g,[[x+ax,y+ay],[x+bx,y+by]],'#ffcf8a',1.4);
+    for(let k=1;k<4;k++){const px=x+ax+(bx-ax)*k/4,py=y+ay+(by-ay)*k/4;line(g,[[px-1.5,py-2],[px+1.5,py+2]],c.ink,1.2);}}
 }
 function paintGraftPose(g,app,A,view,state,frame,pass){
   const t=app?.anatomy?.features||{},m=app?.anatomy?.morph||{};
@@ -174,23 +187,24 @@ function paintGraftPose(g,app,A,view,state,frame,pass){
     if(t.wings)wings(g,A,m.wingKind,level(t.wings),view,state,frame);
     if(t.tail)tail(g,A,m.tailKind,level(t.tail),view,frame);
     if(t.shell)shell(g,A,level(t.shell));
-    if(t.spikes){const [x,y]=A.back;for(let i=-2;i<=2;i++)blade(g,[x+i*5,y-8],[x+i*7,y-19-(i%2)*5],3);}
+    if(t.spikes){const [x,y]=A.back,L=16+level(t.spikes)*5;for(let i=-2;i<=2;i++)blade(g,[x+i*6,y-10],[x+i*10,y-10-L+Math.abs(i)*4],5);}
     return;
   }
-  if(hasEvolution)surface(g,A,m);
+  // v1.5.0: body surface is now re-skinned through the skin mask in evolution-visuals.js (paintSurfaceSkin).
   if(hasEvolution)faceMorph(g,A,m,view);
   if(t.armor)armoredChest(g,A,level(t.armor));
   if(t.horns)horns(g,A,level(t.horns));
   if(t.antlers)antlers(g,A,level(t.antlers));
   if(t.crown){const [x,y]=A.head;for(let i=-2;i<=2;i++)blade(g,[x+i*4,y-7],[x+i*5,y-15+(i%2)*2],2);}
   if(t.claws)for(const p of [A.leftHand,A.rightHand])claw(g,p,view===1?-1:1,level(t.claws));
-  if(t.blades){blade(g,A.leftHand,[A.leftHand[0]-12,A.leftHand[1]-14],3);blade(g,A.rightHand,[A.rightHand[0]+12,A.rightHand[1]-14],3);}
+  if(t.blades){const L=18+level(t.blades)*4;blade(g,A.leftHand,[A.leftHand[0]-L*0.7,A.leftHand[1]-L],5);blade(g,A.rightHand,[A.rightHand[0]+L*0.7,A.rightHand[1]-L],5);}
   if(t.beak&&view!==1)blade(g,[A.face[0]+2,A.face[1]+3],[A.face[0]+13,A.face[1]+6],4);
   if(t.tusks&&view!==1)for(const side of [-1,1])blade(g,[A.face[0]+side*4,A.face[1]+5],[A.face[0]+side*7,A.face[1]-3],2);
   if(t.moss)moss(g,A);
   if(t.eyes&&view!==1){const [x,y]=A.head;oval(g,x+5,y-5,2,1,c.venom);}
-  if(t.venom)for(const p of [A.leftHand,A.rightHand])oval(g,p[0],p[1],2,3,c.venom);
-  if(t.tendrils){const [x,y]=A.hip;for(let i=-1;i<=1;i++)line(g,[[x+i*6,y],[x+i*9,y+15],[x+i*13,y+20]],c.venom,2);}
+  if(t.venom)for(const p of [A.leftHand,A.rightHand]){oval(g,p[0],p[1]+2,4,5,c.venom,c.ink,1.2);oval(g,p[0]-1,p[1],1.4,1.6,'#f0e2ff');}
+  graftSeams(g,A,app?.anatomy?.stage||0);
+  if(t.tendrils){const [x,y]=A.hip;for(let i=-1;i<=1;i++){line(g,[[x+i*6,y],[x+i*12,y+16],[x+i*18,y+26]],c.ink,5);line(g,[[x+i*6,y],[x+i*12,y+16],[x+i*18,y+26]],c.venom,3);}}
 }
 export function drawNativeBlankGraftSheet(g,app,pass){
   if(pass!=='behind'&&pass!=='front')throw new Error('Invalid Blank graft layer');
@@ -266,3 +280,4 @@ export function drawNativeBlankGearSheet(g,ids=[]){
       g.restore();
     }
 }
+export const __paintForPreview=(g,app,A,view,state,frame,pass)=>paintGraftPose(g,app,A,view,state,frame,pass);

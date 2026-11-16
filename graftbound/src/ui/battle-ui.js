@@ -24,6 +24,7 @@ import { ICON } from './icons.js';
 import { esc, cardHTML, backHTML } from './cards.js';
 import { CardAnimationDirector } from './card-animation-director.js';
 import { terrainInspectPlacement } from './terrain-inspect.js';
+import { exileZone } from '../engine/zones.js';
 
 const $ = id => document.getElementById(id);
 const SPELL_COL = { ember: [1, 0.55, 0.2], verdant: [0.5, 1, 0.4], tide: [0.4, 0.8, 1], umbral: [0.75, 0.45, 1], radiant: [1, 0.9, 0.5] };
@@ -34,6 +35,7 @@ export function kwChips(keywords, cls = '') {
   return Object.entries(keywords).filter(([k]) => KEYWORDS[k]).map(([k, v]) => `<span class="chip ${cls}" tabindex="0" data-tip="${esc(KEYWORDS[k].text)}"><em>${KEYWORDS[k].glyph}</em>${esc(keywordLabel(k, v))}</span>`).join('');
 }
 
+const exileCount = s => { const z = exileZone(s); return z.yours.length + z.foes.length; };
 export class BattleUI {
   constructor(app) {
     this.app = app; this.audio = app.audio;
@@ -65,10 +67,11 @@ export class BattleUI {
   }
   wait(ms) { return new Promise(r => setTimeout(r, ms / this.app.animFactor())); }
   async start(run, s, { fresh }) {
-    this._comboShowing=false;this.cardAnimations.stop(); this.concealedDraws.clear();this.initialHandConcealed=!!fresh&&!!s.deck;this.run = run; this.s = s; this.spell = null; this.hover = null; this.pendingTap = null;
+    this._comboShowing=false;this.victoryPlayed=false;this.ending=false;this.cardAnimations.stop(); this.concealedDraws.clear();this.initialHandConcealed=!!fresh&&!!s.deck;this.run = run; this.s = s; this.spell = null; this.hover = null; this.pendingTap = null;
     $('labels').innerHTML = ''; this.labels.clear(); this.disp.clear();
     this.scene.loadArena(s, s.rng.s ^ 0x77, ACTS[s.act || 0].theme); this.audio.setAct(s.act || 0);
     for (const u of s.units) if (u.hp > 0) this.addUnitView(u);
+    this.faceOpening(s);
     this.syncDisp(); $('hud').classList.remove('hidden'); $('enc-name').textContent = s.name;
     if (this.app.live && s.spellbook.length) this.app.live.enrichAll(s.spellbook.map(e => e.id)).then(() => { if (this.s === s) this.renderHUD(); });   // real card faces when online
     this.scene.zoom = 1; this.scene.focusTarget = [0, 0, 0]; this.scene.dof = 1;
@@ -182,7 +185,7 @@ export class BattleUI {
     const who = tgt && !tgt.hero ? ' your ' + tgt.name : ' you';
     return (({ attack: `Will strike${who} for ${it.damage}`, spit: `Will spit for ${it.damage} and poison ${it.poison}`, hex: `Will curse you: ${it.damage} damage and −${it.weaken} power on your next turn`,
       harpoon: `Harpoon: ${it.damage} damage${it.ground ? ' and Grounds you (no flying next turn)' : ''}`, aim: 'Will take aim along a line', fire: `Fires ${it.damage} along the red line`,
-      slam: `${it.damage} to every red tile${it.extra ? ` (and strikes for ${it.extra} if adjacent)` : ''}`, summon: 'Will summon reinforcements', support: 'Will empower its Saprolings', guard: 'Will shield adjacent allies', stunned: 'Stunned — loses its next action' })[it.kind] || 'Will move')
+      slam: `${it.damage} to every red tile${it.extra ? ` (and strikes for ${it.extra} if adjacent)` : ''}`, summon: 'Will summon reinforcements', smash: 'Will smash through the rock (uses its whole turn)', support: 'Will empower its Saprolings', guard: 'Will shield adjacent allies', stunned: 'Stunned — loses its next action' })[it.kind] || 'Will move')
       + (it.guarded ? ` · Guard blocks ${it.guarded}` : '') + (it.silence ? ` · Silences your ${getCard(it.silence).name} next turn` : '')
       + (it.redact ? ` · Redaction: your ${KEYWORDS[it.redact].name} is suppressed during your next turn (it returns after)` : '') + (it.briars ? ' · Briars will sprout around you (fire burns them)' : '') + (it.mirror ? ` · Will copy your ${KEYWORDS[it.mirror].name}` : '');
   }
@@ -195,11 +198,15 @@ export class BattleUI {
       <div class="pl-hp" tabindex="0" data-tip="Health ${d.hp}/${d.maxHp}${d.shield ? ` · shield ${d.shield} absorbs damage first` : ''}. Wounds carry between battles."><div class="bar"><i style="width:${(d.hp / d.maxHp) * 100}%"></i>${d.shield ? `<u style="width:${Math.min(100, d.shield / d.maxHp * 100)}%"></u>` : ''}</div>
       <span>${ICON.heart}${d.hp}<small>/${d.maxHp}</small>${d.shield ? ` <em class="shd">${ICON.shield}${d.shield}</em>` : ''}</span></div>
       <div class="pl-res"><span class="mana" tabindex="0" data-tip="Mana ${this.dispMana}/${s.p.maxMana}. Spells cost gems. You regain ${s.p.regen} each turn${s.p.arcane ? `; Arcane adds +${s.p.arcane} to spell numbers` : ''}.">${Array.from({ length: Math.max(s.p.maxMana, this.dispMana) }, (_, i) => `<i class="${i < this.dispMana ? 'on' : ''}">${ICON.gem}</i>`).join('')}</span>
-      <span class="gb-reserve" tabindex="0" data-tip="Banked mana and Channel charges persist; Treasure charges from Storm-Kiln Artist also pay for spells.">Bank ${s.p.storedMana||0} ${ICON.gem} · ${s.p.channel||0} ✧${s.combo?.treasure?' · 🟡'+s.combo.treasure+' Treasure':''}</span>
 </div>
+      <div class="pl-act" role="group" aria-label="Movement, attacks and banked mana"></div>
       <div class="pl-kw">${kwChips(p.keywords)}${d.poison ? `<span class="chip bad" tabindex="0" data-tip="Poison: lose ${d.poison} health at the start of your turn, then it drops by 1.">${ICON.poison}Poison ${d.poison}</span>` : ''}${p.slime ? `<span class="chip bad" tabindex="0" data-tip="Toxrill adds one slime counter at each end step. Each counter gives −1/−1 while Toxrill is alive.">☣ Slime ${p.slime}</span>` : ''}${d.grounded ? `<span class="chip bad" tabindex="0" data-tip="Grounded: no flying and −1 movement this turn.">${ICON.hook}Grounded</span>` : ''}${p.suppressed ? `<span class="chip bad" tabindex="0" data-tip="Redacted by the Unwritten for this turn only. It returns when your turn ends.">✖ ${esc(Object.keys(p.suppressed).map(k => KEYWORDS[k].name).join(', '))}</span>` : ''}</div>`;
-    $('gb-action-counters').innerHTML = `<span class="moves" tabindex="0" data-tip="Movement left this turn (tiles). Hazards may damage ground units.">${ICON.move} ${s.phase === 'player' ? s.p.moveLeft : 0}</span>
-      <span class="atk ${s.p.attacksLeft > 0 && s.phase === 'player' ? 'on' : ''}" tabindex="0" data-tip="Attacks left this turn.">${ICON.sword} ${s.phase === 'player' ? s.p.attacksLeft : 0}</span>`;
+    // v1.5.0 compact HUD: movement and attacks live in the hero plate's action strip (one coordinated panel).
+    $('gb-action-counters').innerHTML = '';
+    const strip = $('plate').querySelector('.pl-act');
+    if (strip) strip.innerHTML = `<span class="moves" tabindex="0" data-tip="Movement left this turn (tiles). Hazards may damage ground units.">${ICON.move}<b>${s.phase === 'player' ? s.p.moveLeft : 0}</b><small>move</small></span>
+      <span class="atk ${s.p.attacksLeft > 0 && s.phase === 'player' ? 'on' : ''}" tabindex="0" data-tip="Attacks left this turn.">${ICON.sword}<b>${s.phase === 'player' ? s.p.attacksLeft : 0}</b><small>attack</small></span>
+      <span class="gb-reserve" tabindex="0" data-tip="Banked mana and Channel charges persist; Treasure charges from Storm-Kiln Artist also pay for spells.">Bank ${s.p.storedMana||0}${ICON.gem} · ${s.p.channel||0}✧${s.combo?.treasure?' · '+s.combo.treasure+' Treasure':''}</span>`;
     $('enc-turn').textContent = s.phase === 'player' ? `Turn ${s.turn} · Your move` : `Turn ${s.turn} · Foes act`;
     this.renderHand(s);
     this.renderZones(s);
@@ -223,7 +230,10 @@ export class BattleUI {
         <span class="gb-zone-meta"><strong>Library</strong><em>${library.length}</em></span></button>
       <button type="button" class="gb-zone gb-zone-graveyard" data-zone="graveyard" aria-label="Graveyard, ${grave.length} cards. Latest: ${esc(label)}. Inspect graveyard.">
         <span class="gb-zone-art gb-grave-face">${last ? cardHTML(last.id || last,{small:true,uid:'graveyard-zone',extraClass:'gb-grave-top'}) : '<span class="gb-zone-empty">✧</span>'}</span>
-        <span class="gb-zone-meta"><strong>Graveyard</strong><em>${grave.length}</em></span></button>`;
+        <span class="gb-zone-meta"><strong>Graveyard</strong><em>${grave.length}</em></span></button>
+      <button type="button" class="gb-zone gb-zone-exile" data-zone="exile" aria-label="Exile, ${exileCount(s)} cards. Inspect exile.">
+        <span class="gb-zone-art gb-exile-portal" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="gb-zone-meta"><strong>Exile</strong><em>${exileCount(s)}</em></span></button>`;
     this.positionCardZones();
   }
   // Actual spell-hand height changes with screen size, orientation, and card count.
@@ -276,7 +286,8 @@ export class BattleUI {
       width:h.width,height:h.height,plate:relative(plate),zones:relative(zones),
       tray:relative(tray),endTurn:relative($('endTurn')),topButtons:relative(document.querySelector('.topbtns')),
       actions:$('gb-action-counters')?.classList.contains('gb-dock-no-room')?null:relative($('gb-action-counters')),
-      desiredHeight:unit?224:148,minHeight:unit?112:108,maxWidth:unit?350:330
+      // v1.5.0: ordinary ground gets a slim panel; complex terrain and creatures expand.
+      desiredHeight:unit?224:el.classList.contains('terrain-plain')?62:148,minHeight:unit?112:el.classList.contains('terrain-plain')?54:108,maxWidth:unit?350:el.classList.contains('terrain-plain')?240:330
     });
     if(pos.fits){
       el.style.setProperty('--gb-terrain-top',pos.top+'px');
@@ -299,6 +310,14 @@ export class BattleUI {
     const d=this.s.deck;
     if (zone === 'library') {
       this.app.openModal(`<h2>Library · ${d.library.length} cards</h2><p>Your shuffled library is face-down. Drawing moves the top card into your hand; its identity stays hidden until drawn.</p><button class="btn primary" type="button" data-close>Close</button>`);
+      return;
+    }
+    if (zone === 'exile') {
+      const z = exileZone(this.s);
+      this.app.openModal(`<h2>Exile · ${z.yours.length + z.foes.length} cards</h2><p class="small">Exiled cards are out of play: they never return to your library and graveyard recursion cannot reach them.</p>
+        <h3 class="gb-exile-h">Your cards · ${z.yours.length}</h3><div class="gb-grave-list">${z.yours.length ? z.yours.map((e,i)=>`<div class="gb-grave-list-card">${cardHTML(e.id,{small:true,uid:'exile-list'+i})}</div>`).join('') : '<p>None of your cards are in exile.</p>'}</div>
+        <h3 class="gb-exile-h">Exiled creatures · ${z.foes.length}</h3>${z.foes.length ? `<ul class="gb-exile-foes">${z.foes.map(f=>`<li>${esc(f.name)}<small>${esc(f.why)}</small></li>`).join('')}</ul>` : '<p>No opposing creatures are in exile.</p>'}
+        <button class="btn primary" type="button" data-close>Close</button>`);
       return;
     }
     const cards=[...d.graveyard].reverse();
@@ -414,7 +433,7 @@ export class BattleUI {
   }
   showInspect(u, preview) {
     const el = $('inspect');
-    el.classList.remove('terrain-inspect', 'unit-inspect', 'terrain-no-room');
+    el.classList.remove('terrain-inspect', 'unit-inspect', 'terrain-no-room', 'terrain-plain');
     if (!u) { el.classList.remove('show'); return; }
     const def = ENEMIES[u.defId]; const it = this.intents.find(i => i.uid === u.uid);
     const friendly = u.side === 'player';
@@ -440,17 +459,23 @@ export class BattleUI {
     let downAt = null; const touches = new Map(); let pinch0 = null;
     const pinchDist = () => { const [a, b] = [...touches.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
     const endTouch = e => { touches.delete(e.pointerId); if (touches.size < 2) pinch0 = null; };
+    let orbit = null;   // v1.5.0 middle-mouse orbit: never selects tiles, moves or attacks
+    cv.addEventListener('mousedown', e => { if (e.button === 1) e.preventDefault(); });   // no browser autoscroll
+    cv.addEventListener('auxclick', e => { if (e.button === 1) e.preventDefault(); });
     cv.addEventListener('pointerdown', e => {
+      if (e.button === 1 && e.pointerType === 'mouse') { e.preventDefault(); orbit = { x: e.clientX, y: e.clientY, id: e.pointerId }; downAt = null; try { cv.setPointerCapture(e.pointerId); } catch {} cv.classList.add('orbiting'); return; }
       this.app.audio.unlock();
       if (e.pointerType === 'touch') { touches.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (touches.size === 2) { pinch0 = { d: pinchDist(), z: this.scene.zoom }; downAt = null; return; } }
       if (!pinch0) downAt = { x: e.clientX, y: e.clientY };
     });
     cv.addEventListener('pointermove', e => {
+      if (orbit && e.pointerId === orbit.id) { this.scene.orbit(e.clientX - orbit.x, e.clientY - orbit.y); orbit.x = e.clientX; orbit.y = e.clientY; return; }
       if (touches.has(e.pointerId)) { touches.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (pinch0 && touches.size === 2) this.scene.zoom = Math.min(2, Math.max(0.8, pinch0.z * pinchDist() / pinch0.d)); return; }
       if (!this.s || e.pointerType === 'touch') return; this.setHover(this.scene.pick(e.offsetX, e.offsetY));
     });
-    cv.addEventListener('pointercancel', endTouch);
+    cv.addEventListener('pointercancel', e => { if (orbit && e.pointerId === orbit.id) { orbit = null; cv.classList.remove('orbiting'); } endTouch(e); });
     cv.addEventListener('pointerup', e => {
+      if (orbit && e.pointerId === orbit.id) { orbit = null; cv.classList.remove('orbiting'); try { cv.releasePointerCapture(e.pointerId); } catch {} downAt = null; return; }
       const wasPinch = !!pinch0 || touches.size > 1; endTouch(e);
       if (!this.s || !downAt || wasPinch) return;
       if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 12) return;
@@ -528,6 +553,7 @@ export class BattleUI {
     el.innerHTML = `<div class="gb-terrain-brief-head"><strong>${esc(label)}</strong><span class="gb-terrain-role">${role}</span><button class="gb-terrain-details-btn" type="button" data-terrain-details aria-label="More details about ${esc(label)}">Details</button></div>`
       + `<p class="gb-terrain-brief-copy">${esc(description)}</p>`;
     el.classList.remove('unit-inspect');
+    el.classList.toggle('terrain-plain', !w && rows.length <= 1 && rows.every(r => r.kind === 'info' && !/Rock|Crystal/i.test(r.name)));
     el.classList.add('terrain-inspect','show');
     this.positionTerrainInspect();
     // Ultra-short layouts cannot fit a panel between plate and controls.
@@ -547,7 +573,18 @@ export class BattleUI {
     }, 520 / Math.min(this.app.animFactor(), 10));
   }
   cancel() { this.spell = null; this.spellX = null; this.pendingTap = null; this.refresh(); }
-  reject(msg) { this.audio.play('nope'); this.app.toast(`<b>Can't</b> ${esc(msg)}`, 'short'); }
+  /** v1.5.0: opening orientation. The hero and allies face the centroid of living foes (or the board centre);
+   *  foes face the hero. Uses the same face() as movement/attacks, so directional animation stays consistent. */
+  faceOpening(s) {
+    const sc = this.scene, live = s.units.filter(u => u.hp > 0), foes = live.filter(u => u.side === 'enemy');
+    const centroid = list => { const ps = list.map(u => sc.world(u.x, u.y)); return [ps.reduce((a, p) => a + p[0], 0) / ps.length, 0, ps.reduce((a, p) => a + p[2], 0) / ps.length]; };
+    const foeC = foes.length ? centroid(foes) : sc.world((s.w - 1) / 2, (s.h - 1) / 2);
+    const hero = live.find(u => u.hero), heroP = hero ? sc.world(hero.x, hero.y) : foeC;
+    for (const u of live) { const v = sc.units.get(u.uid); if (v) sc.face(v, u.side === 'enemy' ? heroP : foeC); }
+  }
+  /** v1.5.0: once the battle is over (or ending), stray input is a quiet no-op: short sound, no error toast. */
+  inputClosed() { return !this.s || this.ending || this.s.phase === 'won' || this.s.phase === 'lost' || !!this.s.victoryDeclared; }
+  reject(msg) { this.audio.play('nope'); if (this.inputClosed()) { console.debug('[GRAFTBOUND] input ignored after battle end:', msg); return; } this.app.toast(`<b>Can't</b> ${esc(msg)}`, 'short'); }
   selectSpell(id) {
     if (!this.s || this.s.phase !== 'player' || this.busy) return;
     if (this.spell === id) { this.spell = null; this.spellX = null; this.refresh(); return; }
@@ -624,6 +661,7 @@ export class BattleUI {
       return;
     }
     if (u && u.hero && !interactOptions(s).some(o => o.x === t.x && o.y === t.y)) { this.app.openSheet(); return; }
+    { const o = interactOptions(s).find(o => o.x === t.x && o.y === t.y && o.kind === 'smash'); if (o) { this.app.confirm('Smash this rock? It becomes rubble you can walk through, but uses ALL of your remaining movement and attacks this turn.', 'Smash', () => this.act(() => this.exec({ type: 'interact', x: t.x, y: t.y }))); return; } }
     if (interactOptions(s).some(o => o.x === t.x && o.y === t.y)) { if (this.needConfirm(isTouch, tag)) return; this.act(() => this.exec({ type: 'interact', x: t.x, y: t.y })); return; }
     if (moveOptions(s).some(o => o.x === t.x && o.y === t.y)) {
       const warn = pathWarning(s, t.x, t.y);
@@ -644,6 +682,7 @@ export class BattleUI {
   }
   async act(fn) {
     if (this.busy) return;
+    if (this.inputClosed()) { this.audio.play('nope'); return; }
     this.busy = true; this.pendingTap = null; this.showInspect(null); this.scene.setOverlay([]); this.syncDisp();
     let ev;
     try { ev = await fn(); } catch (err) { this.busy = false; this.reject(err.message || 'Not allowed'); this.refresh(); this.maybeAutoEnd(); return; }
@@ -674,7 +713,7 @@ export class BattleUI {
     const modal=this.app.openModal(`<h2>Discard ${needed} card${needed===1?'':'s'}</h2><p>Choose a card for the graveyard. All cards remain in your permanent run collection.</p><div class="gb-discard-list">${choices}</div><div class="modal-actions"><button class="btn" data-close>Cancel</button></div>`);
     modal.addEventListener('click',async e=>{const b=e.target.closest('[data-discard]');if(!b)return;const id=b.dataset.discard;this.app.closeModal();await this.act(()=>this.exec({type:'discard',id}));if(this.s?.deck && ((this.s.deck.pendingDiscards||0)>0 || this.s.deck.hand.length>this.s.deck.capacity))this.chooseDiscard();});
   }
-  checkEnd() { if (!this.s) return; if (this.s.phase === 'won' || this.s.phase === 'lost') { const r = this.s.phase; const done = this.done; this.done = null; if (done) setTimeout(() => done(r), 300 / this.app.animFactor()); } }
+  checkEnd() { if (!this.s) return; if (this.s.phase === 'won' || this.s.phase === 'lost') { this.ending = true; const r = this.s.phase; const done = this.done; this.done = null; if (done) setTimeout(() => done(r), 300 / this.app.animFactor()); } }
   float(uid, text, cls) {
     if (!this.scene.cam) return;
     const p = this.scene.project(this.scene.headPos(uid));
@@ -794,12 +833,13 @@ export class BattleUI {
         case 'conduit': { const w = this.tile(e.x, e.y); sc.addRing({ pos: [w[0], 0.1, w[2]], r0: 0.2, r1: 0.7, life: 0.5, col: [0.35, 0.9, 1], width: 0.08, spokes: 8 }); break; }
         case 'crackPulse': au.play('slam'); for (const t of e.tiles) { const w = this.tile(t.x, t.y); sc.addRing({ pos: [w[0], 0.02, w[2]], r0: 0.1, r1: 0.55, life: 0.4, col: [1, 0.44, 0.2], width: 0.09, spokes: 6 }); } await this.wait(180); break;
         case 'riftPulse': au.play('zap'); for (const t of e.tiles) { const w = this.tile(t.x, t.y); sc.addRing({ pos: [w[0], 0.04, w[2]], r0: 0.05, r1: 0.6, life: 0.4, col: [0.75, 0.4, 1], width: 0.1, spokes: 4 }); sc.fx.burst([w[0], 0.2, w[2]], [0.75, 0.4, 1], 12, { speed: 1.2, up: 2 }); } await this.wait(220); break;
+        case 'smash': { const v = sc.units.get(e.uid); if (v) { sc.face(v, this.tile(e.x, e.y)); sc.play(e.uid, 'attack'); } const w = this.tile(e.x, e.y); sc.fx.burst([w[0], 0.35, w[2]], [0.72, 0.66, 0.58], 26, { speed: 1.6, up: 2.2 }); sc.shake && sc.shake(0.08); au.play('slam'); this.float(e.uid, 'Smash!', 'note'); await this.wait(260); break; }
         case 'terrain': {
           const C = { lava: [1, 0.5, 0.15], burn: [1, 0.6, 0.2], cool: [0.7, 0.9, 1], bramble: [0.4, 0.8, 0.3] }[e.kind] || [1, 0.5, 0.15];
           for (const t of e.tiles) { const w = this.tile(t.x, t.y); sc.fx.burst([w[0], 0.1, w[2]], C, 18, { speed: 1, up: 2.4 }); }
           this.scene.refreshTerrain(this.s, this.s.rng.s ^ 0x77); au.play(e.kind === 'cool' ? 'frost' : e.kind === 'bramble' ? 'spell' : 'fireboom');
           const hero = this.s.units.find(u => u.hero);
-          if (hero) this.float(hero.uid, { lava: 'The ground melts!', burn: 'The brambles burn away', cool: 'The lava hardens', bramble: 'Briars erupt!', sporefield: 'Toxic spores spread!', fissure: 'The earth cracks!', fracture: 'A dimensional tear opens!', crumble: 'The stone collapses!' }[e.kind] || 'The ground shifts', e.kind === 'cool' || e.kind === 'burn' ? 'note' : 'warn');
+          if (hero) this.float(hero.uid, { lava: 'The ground melts!', burn: 'The brambles burn away', cool: 'The lava hardens', bramble: 'Briars erupt!', sporefield: 'Toxic spores spread!', fissure: 'The earth cracks!', fracture: 'A dimensional tear opens!', crumble: 'The stone collapses!', smash: 'The rock shatters into rubble!' }[e.kind] || 'The ground shifts', e.kind === 'cool' || e.kind === 'burn' ? 'note' : 'warn');
           await this.wait(240); break;
         }
         case 'crystal': {
@@ -877,7 +917,7 @@ export class BattleUI {
         }
         case 'realAbility': if (e.name && sc.units.get(e.uid)) { this.float(e.uid, esc(e.name), 'note'); await this.wait(180); } break;
         case 'shinobiExile': au.play('flip'); if (sc.units.get(e.uid)) this.float(e.uid, `Exiled: ${esc(e.name)}`, 'warn'); await this.wait(220); break;
-        case 'victory': au.play('victory'); await this.banner('Victory', 'win'); break;
+        case 'victory': if (this.victoryPlayed) break; this.victoryPlayed = true; au.play('victory'); await this.banner('Victory', 'win'); break;   // v1.5.0: once per battle
         case 'defeat': au.play('defeat'); await this.banner('The graft unravels', 'lose'); break;
       }
     }

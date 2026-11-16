@@ -85,8 +85,9 @@ void main(){
 const SPR_VS = `#version 300 es
 in vec3 aCenter; in vec2 aCorner; in vec2 aSize; in vec4 aUV; in vec4 aFx; in float aSway;
 uniform mat4 uVP; uniform vec3 uRight; uniform float uWindT;
-out vec2 vUV; out vec4 vFx; out vec3 vW; out vec4 vRect;
+out vec2 vUV; out vec4 vFx; out vec3 vW; out vec4 vRect; flat out vec3 vAnchor;
 void main(){
+  vAnchor = aCenter + vec3(0.0, aSize.y * 0.45, 0.0);
   vec3 w = aCenter + uRight * (aCorner.x - 0.5) * aSize.x + vec3(0.0, aCorner.y * aSize.y, 0.0);
   // v0.6 wind: anchored canopy sway. Displacement grows with height² so the base never moves; irregular (two
   // incommensurate sines) and phase-offset per plant by its world position. aSway = 0 for every unit sprite.
@@ -98,7 +99,7 @@ void main(){
 }`;
 const SPR_FS = `#version 300 es
 precision highp float;
-in vec2 vUV; in vec4 vFx; in vec3 vW; in vec4 vRect;
+in vec2 vUV; in vec4 vFx; in vec3 vW; in vec4 vRect; flat in vec3 vAnchor;
 uniform sampler2D uTex; uniform vec2 uTexel; uniform vec3 uCamFwd; uniform float uDepthOnly; uniform vec3 uOutlineCol;
 ${COMMON}
 out vec4 o;
@@ -117,7 +118,9 @@ void main(){
   }
   if (uDepthOnly > 0.5) { o = vec4(1.0); return; }
   vec3 n = normalize(-uCamFwd * 0.75 + vec3(0.0, 0.55, 0.0));
-  float sh = shadowAt(vW + vec3(0.0, 0.05, 0.0) - uSunDir * 0.12, 0.004);
+  // v1.5.0: ONE shadow value per sprite, sampled at mid-body nudged toward the sun. Per-pixel sampling of an upright
+  // billboard that also writes the shadow map produced self-shadow acne: the blotchy patches on heroes and allies.
+  float sh = shadowAt(vAnchor + uSunDir * 0.45, 0.004);
   float d = max(dot(n, uSunDir), 0.0) * 0.7 + 0.3;
   vec3 amb = mix(uAmbBot, uAmbTop, 0.75);
   vec3 col = t.rgb * (amb * 1.15 + uSunCol * d * mix(0.45, 1.0, sh) + pointLights(vW, n, 1.0));

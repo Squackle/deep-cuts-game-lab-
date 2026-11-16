@@ -267,6 +267,8 @@ class App {
     const out = concludeBattle(this.run);
     const entry = this.run.scoring && this.run.scoring.encounters.at(-1);
     if (out.outcome === 'lost') { this.save(); await new Promise(r => setTimeout(r, 600)); return this.endRun(false); }
+    // v1.5.0: authoritative Global Threat dial, after the victory banner and before the encounter record. Never auto-dismissed.
+    if (this.run.lastThreat && !this.run.lastThreat.seen && this.run.lastBattle?.nodeType !== 'tutorial') { this.setMode('reward'); await UI.threatDialScreen(this, this.run.lastThreat); this.run.lastThreat.seen = true; this.save(); }
     if (entry && entry.key === act + ':' + this.run.current) { this.setMode('reward'); await UI.encounterResultScreen(this, entry, { verifiedNote: this.run.ranked ? 'RANKED PREVIEW · PROVISIONAL · UNSUBMITTED' : 'LOCAL · PROVISIONAL' }); }
     if (this.run.lastBattle.nodeType === 'tutorial') this.meta.tutorialDone = true;
     this.collect(evaluateAchievements(this.meta, { event: out.boss ? 'bossDown' : 'battleWon', act, elite: out.elite, battleStats: out.battleStats, attacks, run: this.run, evo: this.run.evo }));
@@ -285,6 +287,7 @@ class App {
     if (this.run.phase === 'won') return this.endRun(true);
     const { choice, rect, release } = await UI.rewardScreen(this, this.run.pending.cards, { tier: this.run.pending.tier, severed: this.run.pending.severed, firstVictoryPacks: this.run.pending.firstVictoryPacks });
     if (choice === 'skip') { skipReward(this.run); this.record({ type: 'skip' }); this.save(); this.toast('<b>+1 Maximum Health</b>'); }
+    else if (choice === 'skipThreat') { const r = skipReward(this.run, 'threat'); this.record({ type: 'skip', mode: 'threat' }); this.save(); this.toast(`<b>Global Threat ${r.amount}</b><small>Now ${this.run.worldThreat.level}</small>`); }
     else {
       const evoBefore = this.run.evo; let change;
       try { change = chooseReward(this.run, choice, release); } catch (err) { this.toast(`<b>Can't</b> ${esc(err.message)}`, 'short'); return this.reward(); }

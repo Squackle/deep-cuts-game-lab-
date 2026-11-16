@@ -3,33 +3,42 @@
  * The saved {level,flawlessStreak} shape remains backward compatible.
  */
 export const WORLD_THREAT_MAX = 12;
-export const newWorldThreat = () => ({ level: 0, flawlessStreak: 0 });
+export const newWorldThreat = () => ({ level: 0, flawlessStreak: 0, strongStreak: 0 });
 export function normalizedWorldThreat(state) {
   return { level: Math.max(0, Math.min(WORLD_THREAT_MAX, state?.level | 0)),
-    flawlessStreak: Math.max(0, Math.min(1, state?.flawlessStreak | 0)) };
+    flawlessStreak: Math.max(0, Math.min(1, state?.flawlessStreak | 0)),
+    strongStreak: Math.max(0, Math.min(9, state?.strongStreak | 0)) };
 }
-/** A clean win raises pressure immediately. Two light-hit wins do the same;
- * ordinary damage holds, while a truly dangerous win eases pressure.
- * Enemy-caused health loss, not terrain or temporary shield absorption, counts. */
-export function settleWorldThreat(state, { victory, enemyDamage = 0, maxHealth = 1, tutorial = false } = {}) {
-  const n = normalizedWorldThreat(state);
-  if (tutorial || !victory) return n;
-  const hp = Math.max(1, Number(maxHealth) || 1);
-  const lost = Math.max(0, Number(enemyDamage) || 0);
-  if (lost === 0) {
-    n.level = Math.min(WORLD_THREAT_MAX, n.level + 1);
-    n.flawlessStreak = 0;
-  } else if (lost <= Math.max(1, Math.floor(hp * 0.10))) {
-    n.flawlessStreak++;
-    if (n.flawlessStreak >= 2) {
-      n.level = Math.min(WORLD_THREAT_MAX, n.level + 1);
-      n.flawlessStreak = 0;
-    }
-  } else {
-    n.flawlessStreak = 0;
-    if (lost >= Math.ceil(hp * 0.2)) n.level = Math.max(0, n.level - 1);
-  }
-  return n;
+/** v1.5.0 settlement. Returns the NEW state; pass `report` to receive {before, after, delta, reasons}.
+ *  Rises faster for dominant play, falls for struggling play (enemy-caused health loss only):
+ *   - flawless (0 lost): +1; quick flawless (<= 3 turns): +2
+ *   - light (<= 10%): +1 every second consecutive light win (as before); quick light win: +1 immediately
+ *   - strong streak: the 3rd+ consecutive win losing <= 15% adds another +1 (momentum)
+ *   - moderate: holds and breaks streaks; serious (>= 20%): -1 (unchanged); near-death (>= 50%): -2
+ *  Scale stays 0..12. */
+export function settleWorldThreat(state, { victory, enemyDamage = 0, maxHealth = 1, tutorial = false, turns = 99 } = {}, report = null) {
+  const n = normalizedWorldThreat(state); const before = n.level; const reasons = [];
+  const out = () => { if (report) Object.assign(report, { before, after: n.level, delta: n.level - before, reasons: reasons.length ? reasons : ['Steady performance: threat holds.'], streak: n.strongStreak }); return n; };
+  if (tutorial) { reasons.push('Tutorial battles never change threat.'); return out(); }
+  if (!victory) { reasons.push('No victory: threat unchanged.'); return out(); }
+  const hp = Math.max(1, Number(maxHealth) || 1), lost = Math.max(0, Number(enemyDamage) || 0), quick = Number(turns) <= 3;
+  const up = (k, why) => { const b = n.level; n.level = Math.min(WORLD_THREAT_MAX, n.level + k); if (n.level > b) reasons.push(why); };
+  const down = (k, why) => { const b = n.level; n.level = Math.max(0, n.level - k); if (n.level < b) reasons.push(why); };
+  if (lost === 0) { up(quick ? 2 : 1, quick ? 'Flawless and fast: no damage taken in 3 turns or fewer.' : 'Flawless victory: no damage taken from foes.'); n.flawlessStreak = 0; }
+  else if (lost <= Math.max(1, Math.floor(hp * 0.10))) {
+    if (quick) { up(1, 'Efficient win: light damage in 3 turns or fewer.'); n.flawlessStreak = 0; }
+    else { n.flawlessStreak++; if (n.flawlessStreak >= 2) { up(1, 'Two light-damage wins in a row.'); n.flawlessStreak = 0; } else reasons.push('Light damage: one more light win raises threat.'); }
+  } else { n.flawlessStreak = 0; }
+  if (lost <= Math.floor(hp * 0.15)) { n.strongStreak = Math.min(9, n.strongStreak + 1); if (n.strongStreak >= 3) up(1, `Dominant streak: ${n.strongStreak} strong wins in a row.`); }
+  else n.strongStreak = 0;
+  if (lost >= Math.ceil(hp * 0.5)) down(2, 'Near-death victory: the world eases off.');
+  else if (lost >= Math.ceil(hp * 0.2)) down(1, 'Hard-fought victory: threat eases.');
+  return out();
+}
+/** v1.5.0 deliberate reduction (skipped packs, Wayshrine Penance). Never below 0. Returns the amount actually removed. */
+export function reduceWorldThreat(state, amount) {
+  const n = normalizedWorldThreat(state); const b = n.level; n.level = Math.max(0, n.level - Math.max(0, amount | 0)); n.strongStreak = 0;
+  return { state: n, removed: b - n.level };
 }
 /** Strong-than-expected builds cannot keep threat dormant simply by taking
  * a single point of damage each fight. Existing weak builds are NOT raised to

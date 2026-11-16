@@ -14,7 +14,9 @@ export const CREATURE_MOTION_FAMILIES=Object.freeze({
   golem:'construct',gearhulk:'construct',titan:'construct',
   friendlyElemental:'flame-being',friendlyBirdIllusion:'winged-illusion',
   friendlyTentacle:'tentacular',angel:'celestial',
-  caterpillar:'larval',rhino:'hoofed',wurm:'burrowing',toxrill:'slug-horror'
+  caterpillar:'larval',rhino:'hoofed',wurm:'burrowing',toxrill:'slug-horror',
+  // v1.5.0 native folk studies
+  bow:'biped',alchemist:'robed',blightcaster:'robed',minotaur:'biped',spikeshot:'biped',shinobi:'biped',duelist:'winged-biped',friendlySquirrel:'rodent'
 });
 const GAIT=Object.freeze([-1,0,1,0]);
 const HOP=Object.freeze([0,-2,-4,-1]);

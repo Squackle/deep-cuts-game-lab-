@@ -12,20 +12,21 @@ import './helpers.mjs';
 const win=(state,damage=0,hp=20)=>settleWorldThreat(state,{victory:true,enemyDamage:damage,maxHealth:hp});
 test('a flawless victory escalates Global Threat immediately; level never exceeds 12',()=>{
   let t=newWorldThreat();
-  assert.deepEqual(t,{level:0,flawlessStreak:0});
+  assert.deepEqual(t,{level:0,flawlessStreak:0,strongStreak:0});
   assert.equal(win(t,0).level,1);
   for(let i=0;i<30;i++)t=win(t,0);
-  assert.deepEqual(t,{level:WORLD_THREAT_MAX,flawlessStreak:0});
+  assert.deepEqual(t,{level:WORLD_THREAT_MAX,flawlessStreak:0,strongStreak:9});
 });
 test('repeated trivial scratches no longer freeze threat, but serious wounds lower it',()=>{
+  // v1.5.0: the 3rd consecutive strong (<=15%) win adds momentum; moderate damage breaks the streak.
   let t={level:3,flawlessStreak:0};
-  t=win(t,1,20);assert.deepEqual(t,{level:3,flawlessStreak:1});
-  t=win(t,2,20);assert.deepEqual(t,{level:4,flawlessStreak:0});
-  t=win(t,3,20);assert.deepEqual(t,{level:4,flawlessStreak:0});
-  t=win(t,4,20);assert.deepEqual(t,{level:3,flawlessStreak:0});
+  t=win(t,1,20);assert.deepEqual(t,{level:3,flawlessStreak:1,strongStreak:1});
+  t=win(t,2,20);assert.deepEqual(t,{level:4,flawlessStreak:0,strongStreak:2});
+  t=win(t,3,20);assert.deepEqual(t,{level:5,flawlessStreak:0,strongStreak:3});
+  t=win(t,4,20);assert.deepEqual(t,{level:4,flawlessStreak:0,strongStreak:0});
   assert.deepEqual(settleWorldThreat(t,{victory:true,enemyDamage:0,tutorial:true}),t);
   assert.deepEqual(settleWorldThreat(t,{victory:false,enemyDamage:0}),t);
-  assert.deepEqual(normalizedWorldThreat({level:1000,flawlessStreak:50}),{level:12,flawlessStreak:1});
+  assert.deepEqual(normalizedWorldThreat({level:1000,flawlessStreak:50}),{level:12,flawlessStreak:1,strongStreak:0});
 });
 test('adaptive floor increases with surplus strength, never punishes weak builds or mutates saves',()=>{
   const saved={level:2,flawlessStreak:1}, before=JSON.stringify(saved);
@@ -127,8 +128,8 @@ test('same run/seed produces byte-identical pressure and enemy starting lineup',
   assert.deepEqual(run.worldThreat,clone.worldThreat);
 });
 test('ranked replays are isolated from old Global Threat difficulty',()=>{
-  assert.equal(RULES_VERSION,'graftbound-rules-1.4.0-beta');
-  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,23);
+  assert.equal(RULES_VERSION,'graftbound-rules-1.5.0-beta');
+  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,24);
   assert.equal(startRanked().ranked.rulesVersion,RULES_VERSION);
   assert.throws(()=>replayRun('gb-expedition-01',[],{revision:20}),/retired challenge/);
   assert.throws(()=>replayRun('gb-expedition-01',[],{rulesVersion:'graftbound-rules-1.3.6-beta'}),/Rules version mismatch/);

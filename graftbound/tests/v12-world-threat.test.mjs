@@ -7,7 +7,7 @@ test('genuine enemy-damage-free wins raise capped world threat', () => {
 });
 test('minor hits hold and substantial enemy damage reduces threat; hazards do not lower it',()=>{
  let t={level:7,flawlessStreak:1};
- assert.deepEqual(settleWorldThreat(t,{victory:true,enemyDamage:1,maxHealth:20}),{level:8,flawlessStreak:0});
+ assert.deepEqual(settleWorldThreat(t,{victory:true,enemyDamage:1,maxHealth:20}),{level:8,flawlessStreak:0,strongStreak:1});
  assert.equal(settleWorldThreat(t,{victory:true,enemyDamage:4,maxHealth:20}).level,6);
  assert.equal(settleWorldThreat(t,{victory:true,enemyDamage:0,maxHealth:20,tutorial:true}).level,7);
 });

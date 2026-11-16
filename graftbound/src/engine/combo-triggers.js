@@ -28,6 +28,7 @@ const TYPES={
 export const COMBO_TOKEN_TYPES=TYPES;
 
 export function comboToken(s,ev,name,power=1,toughness=1,source='combo'){
+  /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return null;
   const spec=TYPES[name]||{types:[name],colors:[],feature:name.toLowerCase().replace(/\W/g,''),move:2,keywords:{}};
   const h=player(s);if(!alive(h))return null;
   let pos=null,dist=Infinity;
@@ -146,6 +147,7 @@ export function comboActivate(s,kind,arg){
 // Appended events (e.g. lifegain -> damage -> death -> draws -> new summons) are processed
 // in stable FIFO order. The normal mana/board/deck rules naturally constrain combos.
 export function resolveComboEvents(s,ev){
+  /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return ev;
  if(!s?.traits?.length)return ev;
  const co=state(s);let processed=0;
  for(let i=0;i<ev.length;i++){

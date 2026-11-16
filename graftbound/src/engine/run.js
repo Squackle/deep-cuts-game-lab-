@@ -7,13 +7,13 @@ import { createBattle } from './combat.js';
 import { generatePack, MAX_SPELL_LEVEL, primerPack } from './rewards.js';
 import { resolveCard } from '../cards/catalog.js';
 import { stepOf } from './power.js';
-import { SHRINES, rollShrine, offeringCost, MAX_SPARK_FONTS, MAX_MANA_FONTS } from './shrines.js';
+import { SHRINES, rollShrine, offeringCost, penanceCost, PENANCE_REDUCTION, MAX_SPARK_FONTS, MAX_MANA_FONTS } from './shrines.js';
 import { encounterBenchmarks, recordEncounter, newScoring } from './scoring.js';
 import { journalNote, newJournal } from './journal.js';
 import { rollEvent, EVENTS, resolveEvent } from './events.js';
 import { newClock } from './clock.js';
 import { combatSpellbook, refreshLoadout, BASE_HAND_CAPACITY } from './loadout.js';
-import { newWorldThreat, settleWorldThreat, applyWorldThreat, effectiveThreatLevel, threatModifiers } from './world-threat.js';
+import { newWorldThreat, settleWorldThreat, applyWorldThreat, effectiveThreatLevel, threatModifiers, reduceWorldThreat } from './world-threat.js';
 import { giveEquipment, attachRunEquipment } from './attachments.js';
 import { skinToneForSeed } from './visual-identity.js';
 
@@ -102,7 +102,8 @@ export function concludeBattle(run) {
   const hero = b.units.find(u => u.hero); const max = maxHpOf(run);
   run.stats.battlesWon++;
   if (b.stats.damageTaken === 0) run.stats.flawless++;
-  run.worldThreat = settleWorldThreat(run.worldThreat, { victory: true, tutorial: b.nodeType === 'tutorial', enemyDamage: b.stats.enemyHealthDamage || 0, maxHealth: b.units.find(u=>u.hero)?.maxHp || 1 });
+  { const report = {}; run.worldThreat = settleWorldThreat(run.worldThreat, { victory: true, tutorial: b.nodeType === 'tutorial', enemyDamage: b.stats.enemyHealthDamage || 0, maxHealth: b.units.find(u=>u.hero)?.maxHp || 1, turns: b.turn }, report);
+    run.lastThreat = { ...report, kind: 'battle', nodeType: b.nodeType, seen: false }; }   // v1.5.0 authoritative source for the Threat dial
   if (b.nodeType === 'elite') run.stats.elitesDefeated++;
   const isBoss = b.nodeType === 'boss';
   if (isBoss) { run.stats.bossesDefeated++; setHp(run, max); journalNote(run, 'boss', { name: b.name }); }                 // act boss: full recovery
@@ -175,8 +176,16 @@ export function chooseReward(run, cardId, releaseIndex) {
   finishReward(run);
   return change;
 }
-export function skipReward(run) {
+export const SKIP_THREAT_REDUCTION = 1;
+/** mode 'spark' (default, unchanged): +1 Maximum Health. mode 'threat' (v1.5.0): Global Threat -1 instead. */
+export function skipReward(run, mode = 'spark') {
   if (run.phase !== 'reward') throw new Error('No reward pending');
+  if (mode === 'threat') {
+    if (!(run.worldThreat?.level > 0)) throw new Error('Global Threat is already at its minimum');
+    const before = run.worldThreat.level; const r = reduceWorldThreat(run.worldThreat, SKIP_THREAT_REDUCTION); run.worldThreat = r.state;
+    run.lastThreat = { before, after: r.state.level, delta: -r.removed, reasons: ['You left a pack behind to calm the world.'], kind: 'skip', seen: true };
+    finishReward(run); return { kind: 'threat', amount: -r.removed };
+  }
   run.sparkBonus += 1; setHp(run, run.hp + 1); finishReward(run);
   return { kind: 'spark', amount: 1 };
 }
@@ -223,6 +232,12 @@ export function shrineChoice(run, choice, arg) {
     case 'inscribe': {
       const e = run.spellbook.find(s => s.id === arg && s.level < MAX_SPELL_LEVEL); if (!e) throw new Error('Choose a spell that can be empowered');
       e.level++; run.phase = 'map'; return done({ kind: 'inscribe', cardId: e.id, level: e.level });
+    }
+    case 'penance': {
+      const cost = penanceCost(shrineView(run)); if (run.hp <= cost) throw new Error('Penance would cost your last health');
+      setHp(run, run.hp - cost); const before = run.worldThreat?.level || 0; const r = reduceWorldThreat(run.worldThreat, PENANCE_REDUCTION); run.worldThreat = r.state;
+      run.lastThreat = { before, after: r.state.level, delta: -r.removed, reasons: [`Penance: ${cost} health offered at the Wayshrine.`], kind: 'penance', seen: true };
+      run.phase = 'map'; return done({ kind: 'penance', cost, amount: -r.removed });
     }
     case 'offering': {
       setHp(run, run.hp - offeringCost(shrineView(run)));

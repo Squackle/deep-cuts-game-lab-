@@ -272,7 +272,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
           <button type="button" class="zoom" data-zoom="${esc(id)}" aria-label="Inspect">${ICON.zoom}</button></div>`).join('')}</div>
       </div>
       <div class="rw-detail" id="rw-detail"></div>
-      <div class="rw-actions"><button type="button" class="btn small ghost" id="rw-ceremony-skip" aria-label="Skip pack opening ceremony, retain all rewards">Skip opening animation</button><button type="button" class="btn small ghost" id="rw-reveal">Reveal all</button>${tier !== 'graftsmith' ? `<button type="button" class="btn small ghost" id="rw-skip" hidden>Leave the pack · +1 Maximum Health</button>` : ''}</div>
+      <div class="rw-actions"><button type="button" class="btn small ghost" id="rw-ceremony-skip" aria-label="Skip pack opening ceremony, retain all rewards">Skip opening animation</button><button type="button" class="btn small ghost" id="rw-reveal">Reveal all</button>${tier !== 'graftsmith' ? `<button type="button" class="btn small ghost" id="rw-skip" hidden>Leave the pack · +1 Maximum Health</button>${(app.run?.worldThreat?.level || 0) > 0 ? `<button type="button" class="btn small ghost" id="rw-skip-threat" hidden>Leave the pack · Global Threat −1 (now ${app.run.worldThreat.level})</button>` : ''}` : ''}</div>
     </div>`, 'rewardscr' + (fast ? ' fast' : ''));
   app.hint('pack', 'Reveal all three cards, then choose one. Creatures are grafted into you; spells go into your spellbook. Tap the magnifier to inspect a card.');
   let showDetailRef = null;
@@ -303,7 +303,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
       pack.classList.add('open', 'gone'); fan.classList.add('out'); enterFan();
       ceremonyButton.hidden = true;
       $('rw-sub').textContent = 'Reveal the three fragments';
-      const sk = $('rw-skip'); if (sk) sk.hidden = false;
+      const sk = $('rw-skip'); if (sk) sk.hidden = false; const skt = $('rw-skip-threat'); if (skt) skt.hidden = false;
     };
     // Skip animation never consumes/chooses a card; queued visual transitions are cancelled.
     const skipCeremony = () => { ceremonySkipped = true; opened = true; finishOpen(); };
@@ -318,7 +318,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
       await wait(320); if (ceremonySkipped) return;
       pack.classList.add('open'); fan.classList.add('out'); enterFan();
       await wait(380); if (ceremonySkipped) return; pack.classList.add('gone'); ceremonyButton.hidden = true;
-      $('rw-sub').textContent = 'Reveal the three fragments'; const sk = $('rw-skip'); if (sk) sk.hidden = false;
+      $('rw-sub').textContent = 'Reveal the three fragments'; const sk = $('rw-skip'); if (sk) sk.hidden = false; const skt = $('rw-skip-threat'); if (skt) skt.hidden = false;
     })());
     pack.addEventListener('click', open);
     pack.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
@@ -357,6 +357,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
     } });
     $('rw-reveal').addEventListener('click', async () => { if (!opened) skipCeremony(); await open(); fan.querySelectorAll('.slot').forEach((s, i) => setTimeout(() => reveal(s), instant ? 0 : fast ? 60 * i : 180 + i * 220)); });
     const sk = $('rw-skip'); if (sk) sk.addEventListener('click', () => app.confirm('Leave all three cards behind and gain +1 Maximum Health (+1 max health) instead?', 'Leave them', () => res({ choice: 'skip' })));
+    const skt = $('rw-skip-threat'); if (skt) skt.addEventListener('click', () => app.confirm(`Leave all three cards behind to lower Global Threat by 1 (from ${app.run.worldThreat.level} to ${app.run.worldThreat.level - 1})? You gain no card and no Maximum Health.`, 'Lower threat', () => res({ choice: 'skipThreat' })));
     const showDetail = id => {
       const c = getCard(id); let body; const full = c.kind === 'creature' && graftsFull(run);
       if (c.kind === 'creature') {
@@ -749,4 +750,55 @@ export function endScreen(app, { won, earned, extra = {} }) {
     ${earned.length ? `<h3>Achievements</h3><ul class="ach">${earned.map(a => `<li class="got"><b>${a.name}</b><span>${a.text}</span></li>`).join('')}</ul>` : ''}
     <div class="modal-actions center"><button type="button" class="btn" data-a="journal">Evolution Journal</button><button type="button" class="btn primary" data-a="again">New Adventure</button><button type="button" class="btn" data-a="title">Home</button></div></div>`, 'endscr');
   return new Promise(res => el.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (!b) return; if (b.dataset.a === 'journal') { journalModal(app); return; } res(b.dataset.a); }));
+}
+/** v1.5.0 Global Threat dial. Shown after the victory banner and BEFORE the encounter record. Reads the authoritative
+ *  run.lastThreat written by concludeBattle/settleWorldThreat. Never auto-dismisses: Continue (click, tap, Enter,
+ *  Space or Escape) resolves it. The needle sweeps clockwise for a rise, counter-clockwise for a fall; reduced motion
+ *  shows the final state immediately. */
+export const THREAT_DIAL_MAX = 12;
+export const threatAngle = level => -150 + 300 * Math.max(0, Math.min(THREAT_DIAL_MAX, level)) / THREAT_DIAL_MAX;
+export function threatDialHTML(t) {
+  const d = t.after - t.before, word = d > 0 ? 'rises' : d < 0 ? 'falls' : 'holds';
+  const ticks = Array.from({ length: THREAT_DIAL_MAX + 1 }, (_, i) => { const a = (threatAngle(i) - 90) * Math.PI / 180, r1 = 78, r2 = i % 3 ? 70 : 64;
+    return `<line x1="${(100 + r1 * Math.cos(a)).toFixed(1)}" y1="${(100 + r1 * Math.sin(a)).toFixed(1)}" x2="${(100 + r2 * Math.cos(a)).toFixed(1)}" y2="${(100 + r2 * Math.sin(a)).toFixed(1)}" class="${i <= t.after ? 'on' : ''}"/>`; }).join('');
+  const arc = lvl => { const a0 = (threatAngle(0) - 90) * Math.PI / 180, a1 = (threatAngle(lvl) - 90) * Math.PI / 180, r = 86, large = (threatAngle(lvl) - threatAngle(0)) > 180 ? 1 : 0;
+    return lvl <= 0 ? '' : `M ${(100 + r * Math.cos(a0)).toFixed(2)} ${(100 + r * Math.sin(a0)).toFixed(2)} A ${r} ${r} 0 ${large} 1 ${(100 + r * Math.cos(a1)).toFixed(2)} ${(100 + r * Math.sin(a1)).toFixed(2)}`; };
+  return `<div class="threat-wrap"><section class="threat-panel" role="dialog" aria-modal="true" aria-labelledby="threat-h">
+    <small class="sh-brand">${GAME.title} · Global Threat</small>
+    <h2 id="threat-h">The world's threat ${word}</h2>
+    <div class="threat-dial ${d > 0 ? 'up' : d < 0 ? 'down' : 'hold'}" data-before="${t.before}" data-after="${t.after}">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <defs><radialGradient id="tdg" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#3a0b10"/><stop offset="1" stop-color="#12050a"/></radialGradient></defs>
+        <circle cx="100" cy="100" r="96" class="rim"/><circle cx="100" cy="100" r="90" fill="url(#tdg)"/>
+        <path d="${arc(THREAT_DIAL_MAX)}" class="track"/><path d="${arc(t.after)}" class="fill"/>
+        <g class="ticks">${ticks}</g>
+        <g class="needle" style="--from:${threatAngle(t.before)}deg;--to:${threatAngle(t.after)}deg"><polygon points="100,26 104.5,100 100,110 95.5,100"/></g>
+        <circle cx="100" cy="100" r="9" class="hub"/>
+      </svg>
+      <div class="threat-num" aria-live="polite"><b data-threat-now>${t.after}</b><small>/ ${THREAT_DIAL_MAX}</small></div>
+    </div>
+    <p class="threat-change"><span>Before <b>${t.before}</b></span><span class="delta ${d > 0 ? 'up' : d < 0 ? 'down' : ''}">${d > 0 ? '+' + d : d < 0 ? '−' + (-d) : '±0'}</span><span>Now <b>${t.after}</b></span></p>
+    <ul class="threat-why">${(t.reasons || []).map(r => `<li>${esc(r)}</li>`).join('')}</ul>
+    <p class="threat-note">${d === 0 ? 'No change this time.' : d > 0 ? 'Foes will answer with stronger wards, reinforcements and sharper tactics.' : 'Foes will press you less hard.'}</p>
+    <button type="button" class="btn primary big" data-threat-continue>Continue</button>
+  </section></div>`;
+}
+export function threatDialScreen(app, t) {
+  const el = showScreen(threatDialHTML(t), 'threatscr');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches || app.animFactor() > 50;
+  const dial = el.querySelector('.threat-dial'); const now = el.querySelector('[data-threat-now]');
+  if (reduced) dial.classList.add('settled');
+  else requestAnimationFrame(() => requestAnimationFrame(() => dial.classList.add('settled')));
+  if (!reduced && t.after !== t.before) {   // count the number in step with the needle
+    const steps = Math.abs(t.after - t.before), dir = Math.sign(t.after - t.before); let i = 0; now.textContent = t.before;
+    const tick = () => { if (!el.isConnected) return; i++; now.textContent = t.before + dir * i; if (i < steps) setTimeout(tick, 1100 / steps); };
+    setTimeout(tick, 1100 / steps);
+  }
+  if (t.delta > 0) app.audio.play('foe'); else if (t.delta < 0) app.audio.play('heal');
+  const btn = el.querySelector('[data-threat-continue]'); btn.focus({ preventScroll: true });
+  return new Promise(res => {
+    const go = () => { window.removeEventListener('keydown', key); app.audio.play('click'); res(); };
+    const key = e => { if (['Enter', ' ', 'Escape'].includes(e.key)) { e.preventDefault(); go(); } };
+    window.addEventListener('keydown', key); btn.addEventListener('click', go, { once: true });
+  });
 }

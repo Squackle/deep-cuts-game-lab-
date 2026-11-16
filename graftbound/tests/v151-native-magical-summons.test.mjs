@@ -64,7 +64,7 @@ test('all six states and two views have at least three different drawn poses, no
 });
 test('actual runtime loads and caches 96px native magical atlases with original world scale',()=>{
   assert.ok(loader.includes('MAGIC_FRAME, MAGIC_STUDY_FEATURES, drawMagicStudyFrame'));
-  assert.ok(loader.includes('const detailed=species||humanoid||beast||token||magic||monster;'));
+  assert.ok(loader.includes('const detailed=species||humanoid||beast||token||magic||monster||folk;'));
   assert.ok(loader.includes('else if(magic)drawMagicStudyFrame(cctx,config.feature,view,anim.row,frame,config);'));
   assert.ok(loader.includes("magic?'magic-anatomy-study-v1'"));
   assert.ok(loader.includes('pixelScale:base.h*(base.pixelScale||1)/height'));
