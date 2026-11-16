@@ -43,10 +43,18 @@ export function effectiveThreatLevel(state, { strength = 0, expected = 0 } = {})
 /** Wards are explicit temporary encounter shields (not printed Magic stats).
  * At higher pressure, extra enemies are selected by existing build counters,
  * and the total reinforcement pool still obeys each act's hard cap. */
-export function threatModifiers(state, { boss = false } = {}) {
+export function threatModifiers(state, { boss = false, heroPower = 0 } = {}) {
   const n = normalizedWorldThreat(state).level;
+  // HP-only percentage wards vanish in a single strike once the hero has many
+  // grafts. Above Threat 4, add a bounded, encounter-only ward proportional to
+  // the hero's ACTUAL attack. At Threat 10+, a strong build must spend another
+  // hit on ordinary defenders; weak builds still face only the small HP ward.
+  const power = Math.max(0, Number(heroPower) || 0);
+  const counterWardRate = Math.min(1, Math.max(0, (n - 4) / 6));
+  const wardFloor = Math.ceil(Math.min(56, power * counterWardRate * (boss ? 0.75 : 1)));
   return {
     level: n,
+    wardFloor,
     shieldRate: boss ? Math.min(0.27, n * 0.0225) : Math.min(0.42, n * 0.035),
     reinforcement: boss ? 0 : n >= 10 ? 2 : n >= 5 ? 1 : 0,
     peakPower: n === WORLD_THREAT_MAX && !boss ? 1 : 0
@@ -55,11 +63,12 @@ export function threatModifiers(state, { boss = false } = {}) {
 export function applyWorldThreat(battle, state) {
   if (!battle || battle.nodeType === 'tutorial') return battle;
   const boss = battle.nodeType === 'boss';
-  const mod = threatModifiers(state, { boss });
+  const heroPower = battle.units.find(u => u.hero)?.power || 0;
+  const mod = threatModifiers(state, { boss, heroPower });
   battle.worldThreat = mod.level;
   battle.worldThreatShieldRate = mod.shieldRate;
   for (const u of battle.units.filter(u => u.side === 'enemy')) {
-    const bonus = Math.ceil(u.maxHp * mod.shieldRate);
+    const bonus = Math.max(Math.ceil(u.maxHp * mod.shieldRate), mod.wardFloor);
     if (bonus) {
       u.statuses.shield = (u.statuses.shield || 0) + bonus;
       u.worldShield = bonus;
