@@ -44,8 +44,8 @@ test('exactly the 23 owner-selected identities are new: 133 total real reward ca
  assert.equal(buildReferenceSet().rejected.length,0);assert.equal(buildReferenceSet().cards.length,133);
  for(const name of picks){const t=GRAFT_TRAITS[name];assert.ok(t&&t.id&&t.trigger&&t.note,name);}
  assert.equal(BATTLE_VERSION,11);assert.equal(RUN_VERSION,9);
- assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,20);
- assert.equal(RULES_VERSION,'graftbound-rules-1.3.7-beta');assert.equal(CARD_POOL_VERSION,'real-pool-133-v7');
+ assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,21);
+ assert.equal(RULES_VERSION,'graftbound-rules-1.3.8-beta');assert.equal(CARD_POOL_VERSION,'real-pool-133-v7');
 });
 
 test('Soul Warden + Ajani + Vito: summoning heals/grows/bolts even at full health, across chained events',()=>{

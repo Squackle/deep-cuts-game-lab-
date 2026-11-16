@@ -230,7 +230,7 @@ export class BattleUI {
   positionCardZones() {
     const zones=$('gb-card-zones'),tray=$('tray'),hud=$('hud');
     if(!zones||!tray||!hud)return;
-    if(!window.matchMedia('(max-width: 760px)').matches){zones.style.removeProperty('--gb-zone-bottom');return;}
+    if(!window.matchMedia('(max-width: 760px)').matches){zones.style.removeProperty('--gb-zone-bottom');this.positionTerrainInspect();return;}
     const trayTop=tray.getBoundingClientRect().top, hudBottom=hud.getBoundingClientRect().bottom;
     if(!Number.isFinite(trayTop)||!Number.isFinite(hudBottom))return;
     const gap=14; // Also leaves room for the small selected-card lift.
@@ -241,12 +241,6 @@ export class BattleUI {
   positionTerrainInspect() {
     const el = $('inspect');
     if (!el?.classList.contains('terrain-inspect')) return;
-    if (!window.matchMedia('(max-width: 760px)').matches) {
-      el.style.removeProperty('--gb-terrain-top');
-      el.style.removeProperty('--gb-terrain-height');
-      el.classList.remove('terrain-no-room');
-      return;
-    }
     const plate = $('plate'), zones = $('gb-card-zones'), tray = $('tray'), hud = $('hud');
     if (!plate || !zones || !tray || !hud) return;
     const h = hud.getBoundingClientRect();

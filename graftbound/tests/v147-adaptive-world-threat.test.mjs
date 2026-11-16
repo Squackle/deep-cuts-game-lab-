@@ -57,6 +57,30 @@ test('higher threat adds bounded counter-reinforcements and more shields without
   applyWorldThreat(zero,{level:0});
   assert.equal(zero.units[1].statuses.shield,undefined);
 });
+test('high threat wards actually stop an oversized opening hit without changing printed stats',()=>{
+  const units=[
+    {uid:1,side:'player',hero:true,power:42,toughness:40,hp:48,maxHp:48,statuses:{}},
+    {uid:2,side:'enemy',power:2,toughness:7,hp:7,maxHp:7,statuses:{}}
+  ];
+  const low={nodeType:'battle',units:structuredClone(units)};
+  const high={nodeType:'battle',units:structuredClone(units)};
+  applyWorldThreat(low,{level:0});applyWorldThreat(high,{level:12});
+  assert.equal(low.units[1].statuses.shield,undefined);
+  assert.ok(high.units[1].worldShield>=units[0].power,
+    'at maximum Global Threat a high-power hero cannot immediately bypass the ward');
+  assert.equal(high.units[1].hp,7);
+  assert.equal(high.units[1].toughness,7);
+  assert.equal(high.units[1].power,3,'preserve existing +1 power at maximum Threat');
+  assert.equal(high.units[1].worldPower,1,'the existing peak Threat power mechanic still applies');
+  const intermediate={nodeType:'battle',units:structuredClone(units)};
+  applyWorldThreat(intermediate,{level:7});
+  assert.ok(intermediate.units[1].worldShield>0&&intermediate.units[1].worldShield<high.units[1].worldShield);
+  const boss={nodeType:'boss',units:structuredClone(units)};
+  applyWorldThreat(boss,{level:12});
+  assert.ok(boss.units[1].worldShield<high.units[1].worldShield,'bosses receive a gentler offensive ward floor');
+  assert.equal(boss.units[1].hp,7);
+});
+
 function prepareRun(seed,act=1){
   const run=newRun({seed,tutorial:false});
   run.act=act;run.map=generateMap(seed,{act});
@@ -103,9 +127,9 @@ test('same run/seed produces byte-identical pressure and enemy starting lineup',
   assert.deepEqual(run.worldThreat,clone.worldThreat);
 });
 test('ranked replays are isolated from old Global Threat difficulty',()=>{
-  assert.equal(RULES_VERSION,'graftbound-rules-1.3.7-beta');
-  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,20);
+  assert.equal(RULES_VERSION,'graftbound-rules-1.3.8-beta');
+  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,21);
   assert.equal(startRanked().ranked.rulesVersion,RULES_VERSION);
-  assert.throws(()=>replayRun('gb-expedition-01',[],{revision:19}),/retired challenge/);
+  assert.throws(()=>replayRun('gb-expedition-01',[],{revision:20}),/retired challenge/);
   assert.throws(()=>replayRun('gb-expedition-01',[],{rulesVersion:'graftbound-rules-1.3.6-beta'}),/Rules version mismatch/);
 });
