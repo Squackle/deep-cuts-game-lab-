@@ -196,9 +196,10 @@ export class BattleUI {
       <span>${ICON.heart}${d.hp}<small>/${d.maxHp}</small>${d.shield ? ` <em class="shd">${ICON.shield}${d.shield}</em>` : ''}</span></div>
       <div class="pl-res"><span class="mana" tabindex="0" data-tip="Mana ${this.dispMana}/${s.p.maxMana}. Spells cost gems. You regain ${s.p.regen} each turn${s.p.arcane ? `; Arcane adds +${s.p.arcane} to spell numbers` : ''}.">${Array.from({ length: Math.max(s.p.maxMana, this.dispMana) }, (_, i) => `<i class="${i < this.dispMana ? 'on' : ''}">${ICON.gem}</i>`).join('')}</span>
       <span class="gb-reserve" tabindex="0" data-tip="Banked mana and Channel charges persist; Treasure charges from Storm-Kiln Artist also pay for spells.">Bank ${s.p.storedMana||0} ${ICON.gem} · ${s.p.channel||0} ✧${s.combo?.treasure?' · 🟡'+s.combo.treasure+' Treasure':''}</span>
-      <span class="moves" tabindex="0" data-tip="Movement left this turn (tiles). Brambles, lava and crumbling tiles hurt ground units; ice chills and spores poison.">${ICON.move}${s.phase === 'player' ? s.p.moveLeft : 0}</span>
-      <span class="atk ${s.p.attacksLeft > 0 && s.phase === 'player' ? 'on' : ''}" tabindex="0" data-tip="Attacks left this turn. Attacking ends your movement unless you have Vigilance.">${ICON.sword}${s.phase === 'player' ? s.p.attacksLeft : 0}</span></div>
+</div>
       <div class="pl-kw">${kwChips(p.keywords)}${d.poison ? `<span class="chip bad" tabindex="0" data-tip="Poison: lose ${d.poison} health at the start of your turn, then it drops by 1.">${ICON.poison}Poison ${d.poison}</span>` : ''}${p.slime ? `<span class="chip bad" tabindex="0" data-tip="Toxrill adds one slime counter at each end step. Each counter gives −1/−1 while Toxrill is alive.">☣ Slime ${p.slime}</span>` : ''}${d.grounded ? `<span class="chip bad" tabindex="0" data-tip="Grounded: no flying and −1 movement this turn.">${ICON.hook}Grounded</span>` : ''}${p.suppressed ? `<span class="chip bad" tabindex="0" data-tip="Redacted by the Unwritten for this turn only. It returns when your turn ends.">✖ ${esc(Object.keys(p.suppressed).map(k => KEYWORDS[k].name).join(', '))}</span>` : ''}</div>`;
+    $('gb-action-counters').innerHTML = `<span class="moves" tabindex="0" data-tip="Movement left this turn (tiles). Hazards may damage ground units.">${ICON.move} ${s.phase === 'player' ? s.p.moveLeft : 0}</span>
+      <span class="atk ${s.p.attacksLeft > 0 && s.phase === 'player' ? 'on' : ''}" tabindex="0" data-tip="Attacks left this turn.">${ICON.sword} ${s.phase === 'player' ? s.p.attacksLeft : 0}</span>`;
     $('enc-turn').textContent = s.phase === 'player' ? `Turn ${s.turn} · Your move` : `Turn ${s.turn} · Foes act`;
     this.renderHand(s);
     this.renderZones(s);
@@ -230,32 +231,60 @@ export class BattleUI {
   positionCardZones() {
     const zones=$('gb-card-zones'),tray=$('tray'),hud=$('hud');
     if(!zones||!tray||!hud)return;
-    if(!window.matchMedia('(max-width: 760px)').matches){zones.style.removeProperty('--gb-zone-bottom');this.positionTerrainInspect();return;}
+    if(!window.matchMedia('(max-width: 760px)').matches){zones.style.removeProperty('--gb-zone-bottom');this.positionActionCounters();this.positionTerrainInspect();return;}
     const trayTop=tray.getBoundingClientRect().top, hudBottom=hud.getBoundingClientRect().bottom;
     if(!Number.isFinite(trayTop)||!Number.isFinite(hudBottom))return;
     const gap=14; // Also leaves room for the small selected-card lift.
     zones.style.setProperty('--gb-zone-bottom',`${Math.max(0,Math.ceil(hudBottom-trayTop+gap))}px`);
+    this.positionActionCounters();
     this.positionTerrainInspect();
   }
-  /** Portrait/mobile: fit summary between the hero plate and the card-zone controls. */
+  /** Position the separate movement/attack badges OUTSIDE the hero plate. */
+  positionActionCounters() {
+    const el=$('gb-action-counters'), plate=$('plate'), zones=$('gb-card-zones'), tray=$('tray'), hud=$('hud');
+    if(!el||!plate||!hud)return;
+    const h=hud.getBoundingClientRect(), p=plate.getBoundingClientRect();
+    const r=element=>{const v=element?.getBoundingClientRect();return v&&v.width&&v.height?{left:v.left-h.left,top:v.top-h.top,right:v.right-h.left,bottom:v.bottom-h.top}:null;};
+    const box=r(el); if(!box)return;
+    const obstacles=[r(zones),r(tray),r($('endTurn')),r(document.querySelector('.topbtns'))].filter(Boolean);
+    const pw=box.right-box.left, ph=box.bottom-box.top;
+    const px=p.left-h.left, py=p.bottom-h.top+8;
+    const overlaps=(a,b)=>a.left<b.right+6&&a.right>b.left-6&&a.top<b.bottom+6&&a.bottom>b.top-6;
+    const xs=[px,Math.max(8,h.width-pw-8),Math.max(8,p.right-h.left+8)];
+    let found=null;
+    for(let top=py;top+ph<=h.height-8&&!found;top+=8){
+      for(const left of xs){
+        const box={left,top,right:left+pw,bottom:top+ph};
+        if(left>=8&&box.right<=h.width-8&&obstacles.every(o=>!overlaps(box,o))){found=box;break;}
+      }
+    }
+    // A very short viewport may have no free dock. Never paint over card piles.
+    el.classList.toggle('gb-dock-no-room',!found);
+    if(found){el.style.setProperty('--gb-actions-left',found.left+'px');el.style.setProperty('--gb-actions-top',found.top+'px');}
+  }
+  /** Both creature and terrain inspectors use real obstacle-aware placement. */
   positionTerrainInspect() {
-    const el = $('inspect');
-    if (!el?.classList.contains('terrain-inspect')) return;
-    const plate = $('plate'), zones = $('gb-card-zones'), tray = $('tray'), hud = $('hud');
-    if (!plate || !zones || !tray || !hud) return;
-    const h = hud.getBoundingClientRect();
-    const relative = node => {const r=node?.getBoundingClientRect();return r ? {left:r.left-h.left,top:r.top-h.top,right:r.right-h.left,bottom:r.bottom-h.top}:null;};
-    const pos = terrainInspectPlacement({
+    const el=$('inspect');
+    if(!el?.classList.contains('show'))return;
+    const plate=$('plate'), zones=$('gb-card-zones'), tray=$('tray'), hud=$('hud');
+    if(!plate||!zones||!tray||!hud)return;
+    this.positionActionCounters();
+    const h=hud.getBoundingClientRect();
+    const relative=node=>{const r=node?.getBoundingClientRect();return r&&r.width&&r.height?{left:r.left-h.left,top:r.top-h.top,right:r.right-h.left,bottom:r.bottom-h.top}:null;};
+    const unit=el.classList.contains('unit-inspect');
+    const pos=terrainInspectPlacement({
       width:h.width,height:h.height,plate:relative(plate),zones:relative(zones),
-      tray:relative(tray),endTurn:relative($('endTurn')),topButtons:relative(document.querySelector('.topbtns'))
+      tray:relative(tray),endTurn:relative($('endTurn')),topButtons:relative(document.querySelector('.topbtns')),
+      actions:$('gb-action-counters')?.classList.contains('gb-dock-no-room')?null:relative($('gb-action-counters')),
+      desiredHeight:unit?224:148,minHeight:unit?112:108,maxWidth:unit?350:330
     });
     if(pos.fits){
-      el.style.setProperty('--gb-terrain-top', `${pos.top}px`);
-      el.style.setProperty('--gb-terrain-left', `${pos.left}px`);
-      el.style.setProperty('--gb-terrain-width', `${pos.width}px`);
-      el.style.setProperty('--gb-terrain-height', `${pos.height}px`);
+      el.style.setProperty('--gb-terrain-top',pos.top+'px');
+      el.style.setProperty('--gb-terrain-left',pos.left+'px');
+      el.style.setProperty('--gb-terrain-width',pos.width+'px');
+      el.style.setProperty('--gb-terrain-height',pos.height+'px');
     }
-    el.classList.toggle('terrain-no-room', !pos.fits);
+    el.classList.toggle('terrain-no-room',!pos.fits);
   }
   terrainDetailsHTML(t) {
     const rows=describeTile(this.s,t.x,t.y);
@@ -385,7 +414,7 @@ export class BattleUI {
   }
   showInspect(u, preview) {
     const el = $('inspect');
-    el.classList.remove('terrain-inspect', 'terrain-no-room');
+    el.classList.remove('terrain-inspect', 'unit-inspect', 'terrain-no-room');
     if (!u) { el.classList.remove('show'); return; }
     const def = ENEMIES[u.defId]; const it = this.intents.find(i => i.uid === u.uid);
     const friendly = u.side === 'player';
@@ -403,7 +432,8 @@ export class BattleUI {
       ${def?.affinity ? `<div class="in-affinity"><span>Resists ${esc(def.affinity.resist)} spells −1 damage</span><span>Weak to ${esc(def.affinity.weak)} spells +1 damage</span></div>` : ''}
       <p>${esc(friendly ? (u.hero ? 'Your evolving graftbound form.' : `${u.name} ally. It acts automatically when your turn ends. Friendly-target spells can enhance or shield it.`) : (def?.blurb || ''))}</p>
       ${it ? `<p class="in-intent">${esc(this.intentText(it))}</p>` : ''}${this.previewHTML(preview)}`;
-    el.classList.add('show');
+    el.classList.add('unit-inspect','show');
+    this.positionTerrainInspect();
   }
   bindInput() {
     const cv = $('gl');
@@ -497,6 +527,7 @@ export class BattleUI {
     this.terrainTile = {x:t.x,y:t.y};
     el.innerHTML = `<div class="gb-terrain-brief-head"><strong>${esc(label)}</strong><span class="gb-terrain-role">${role}</span><button class="gb-terrain-details-btn" type="button" data-terrain-details aria-label="More details about ${esc(label)}">Details</button></div>`
       + `<p class="gb-terrain-brief-copy">${esc(description)}</p>`;
+    el.classList.remove('unit-inspect');
     el.classList.add('terrain-inspect','show');
     this.positionTerrainInspect();
     // Ultra-short layouts cannot fit a panel between plate and controls.
@@ -589,7 +620,7 @@ export class BattleUI {
         if (!warn && this.needConfirm(isTouch, tag)) return;
         this.act(() => { const ev = []; if (plan.move) ev.push(...this.exec({ type: 'move', x: plan.to.x, y: plan.to.y })); if (s.phase === 'player') ev.push(...this.exec({ type: 'attack', uid: u.uid })); return ev; });
       }
-      else { this.showInspect(u); this.reject(s.p.attacksLeft <= 0 ? 'You already attacked this turn' : `${u.name} is out of reach this turn`); }
+      else { this.showInspect(u); if (isTouch && $('inspect').classList.contains('terrain-no-room')) this.app.openModal(`<h2>${esc(u.name)}</h2>${$('inspect').innerHTML}<button type="button" class="btn primary" data-close>Close</button>`); this.reject(s.p.attacksLeft <= 0 ? 'You already attacked this turn' : `${u.name} is out of reach this turn`); }
       return;
     }
     if (u && u.hero && !interactOptions(s).some(o => o.x === t.x && o.y === t.y)) { this.app.openSheet(); return; }

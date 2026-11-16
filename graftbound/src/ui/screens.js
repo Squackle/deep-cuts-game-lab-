@@ -2,7 +2,7 @@
 import { RARITY } from '../data/cards.js';
 import { resolveCard as getCard, rewardCards } from '../cards/catalog.js';
 import { KEYWORDS, keywordLabel } from '../data/keywords.js';
-import { cardHTML, COLOR, esc, sourcePanelHTML, backHTML } from './cards.js';
+import { cardHTML, COLOR, esc, sourcePanelHTML, backHTML, gameSummary } from './cards.js';
 import { availableNodes, nodeById, NODE_TYPES } from '../engine/campaign.js';
 import { absorb, deriveStats } from '../engine/evolution.js';
 import { runStats, CHALLENGES, graftCapacity, graftsFull, woundsOf, maxHpOf } from '../engine/run.js';
@@ -652,10 +652,24 @@ export function eventScreen(app) {
   return new Promise(res => el.querySelector('.shrine-opts').addEventListener('click', e => {
     const b = e.target.closest('[data-c]'); if (!b || b.disabled) return; const c = b.dataset.c; app.audio.play('click');
     if (id === 'graftExchange' && c === 'exchange') {
-      const m = app.openModal(`<h2>The Graft Exchange</h2><p>Choose a graft to release. You will lose exactly what is listed, then choose a replacement from a creature-only pack.</p>
-        <div class="release">${run.evo.absorbed.map((a, i) => { const ac = getCard(a.cardId); return `<button type="button" class="btn" data-g="${i}">${esc(a.name)} <small>lose +${a.power}/+${a.toughness}${ac && ac.keywords && Object.keys(ac.keywords).length ? ' and ' + esc(Object.keys(ac.keywords).map(k => KEYWORDS[k].name).join(', ')) : ''}</small></button>`; }).join('')}</div>
-        <div class="modal-actions"><button type="button" class="btn" data-close>Back</button></div>`);
-      m.addEventListener('click', ev => { const g = ev.target.closest('[data-g]'); if (g) { app.confirm(`Release ${run.evo.absorbed[+g.dataset.g].name}? This removes its power, toughness and abilities now.`, 'Release', () => res({ choice: c, arg: +g.dataset.g })); } });
+      const openExchange = () => {
+        const m = app.openModal(`<h2>The Graft Exchange</h2><p>Review what each graft does before releasing it. Your choice removes the listed bonuses, then offers a creature-only replacement.</p>
+          <div class="release gb-exchange-list">${run.evo.absorbed.map((a, i) => {
+            const ac = getCard(a.cardId);
+            const abilities = ac ? gameSummary(ac) : `+${a.power}/+${a.toughness}`;
+            const lost = `Lose +${a.power}/+${a.toughness}${ac?.keywords && Object.keys(ac.keywords).length ? ' and ' + Object.keys(ac.keywords).map(k=>KEYWORDS[k]?.name || k).join(', ') : ''}`;
+            return `<section class="gb-exchange-entry"><div class="gb-exchange-description"><strong>${esc(a.name)}</strong><small>${esc(lost)}</small><p><b>In GRAFTBOUND:</b> ${esc(abilities)}</p></div>
+              <div class="gb-exchange-actions"><button type="button" class="btn small" data-exchange-detail="${i}" aria-label="Inspect ${esc(a.name)}">Details</button><button type="button" class="btn small danger" data-g="${i}">Release</button></div></section>`;
+          }).join('')}</div>
+          <div class="modal-actions"><button type="button" class="btn" data-close>Back</button></div>`, 'wide');
+        m.addEventListener('click', ev => {
+          const detail = ev.target.closest('[data-exchange-detail]');
+          if (detail) { inspectCard(app, run.evo.absorbed[+detail.dataset.exchangeDetail].cardId, { back: openExchange }); return; }
+          const g = ev.target.closest('[data-g]');
+          if (g) { const i=+g.dataset.g; app.confirm(`Release ${run.evo.absorbed[i].name}? This removes its power, toughness and abilities now.`, 'Release', () => res({ choice: c, arg: i })); }
+        });
+      };
+      openExchange();
     } else if (id === 'archivist' && c === 'trade') {
       const m = app.openModal(`<h2>The Wandering Archivist</h2><p>Which page do you give away? It leaves your spellbook (and any levels it had).</p>
         <div class="release">${run.spellbook.map(sp => `<button type="button" class="btn" data-sp="${esc(sp.id)}">${esc(getCard(sp.id).name)} <small>Lv ${sp.level}</small></button>`).join('')}</div>
