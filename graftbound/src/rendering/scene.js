@@ -2,7 +2,7 @@
 // directional facing + animation state, dynamic lights, particles, procedural lightning/ring FX meshes,
 // tweens, picking and screen projection. Consumes game state; never decides game outcomes.
 import { createRenderer, SPR_FLOATS } from './gl.js';
-import { makeShadowAtlas, SHADOW_CELL, makeBoneAtlas, BONE_CELL } from './shadow-magic.js';
+import { makeShadowAtlas, SHADOW_CELL, makeBoneAtlas, BONE_CELL, makeToxicAtlas, TOXIC_CELL } from './shadow-magic.js';
 import { anchorsOf, visualScale, measureBounds, FACES_RIGHT, mirrorFor } from './creature-scale.js';
 import { mul, perspective, ortho, lookAt, xform, invert, I } from './math.js';
 import { Geo } from './geometry.js';
@@ -36,7 +36,7 @@ export class Scene {
     this.tex = {}; for (const k of Object.keys(this.man.sprites)) this.tex[k] = this.r.texture(assets.images[k]);
     this.foliageTex = this.r.texture(assets.images.foliage);
     this.shadowTex = this.r.texture(makeShadowAtlas()); this.shadows = [];
-    this.boneTex = this.r.texture(makeBoneAtlas());   // v1.7.0 skeleton bone pile   // v1.6.0 umbral spell sprites (alpha-tested pixel art)
+    this.boneTex = this.r.texture(makeBoneAtlas()); this.toxicTex = this.r.texture(makeToxicAtlas());   // v1.8.0 poison smoke   // v1.7.0 skeleton bone pile   // v1.6.0 umbral spell sprites (alpha-tested pixel art)
     this.units = new Map(); this.tweens = []; this.time = 0; this.speed = 1; this.reduced = false;
     this.yaw = Math.PI / 4; this.yawTarget = this.yaw; this.pitch = PITCH; this.pitchTarget = PITCH; this.zoom = 1; this.focus = [0, 0, 0]; this.focusTarget = [0, 0, 0];
     this.shakeAmt = 0; this.fx = new Particles(3200); this.fxLights = []; this.static = null; this.w = 8; this.h = 8;
@@ -252,7 +252,7 @@ export class Scene {
         const sideDot = v.dir[0] * rH[0] + v.dir[1] * rH[1];
         const dirSel = chooseSpriteDirection(v.views || man.views, frontDot, sideDot), viewIndex = dirSel.index;
         // v1.7.0: native-facing aware mirroring with hysteresis (no idle flip-flopping)
-        const hasSides = (v.views || man.views).includes('left'); const flip = hasSides ? dirSel.flip : (v.lastFlip = mirrorFor(FACES_RIGHT.has(v.key), sideDot, v.lastFlip ?? false));
+        const hasSides = (v.views || man.views).includes('left'); const flip = hasSides ? dirSel.flip : (v.lastFlip = mirrorFor(man.sprites[v.key]?.facesRight ?? FACES_RIGHT.has(v.key), sideDot, v.lastFlip ?? false));
         const row = viewIndex * Object.keys(anims).length + anims[v.anim].row;
         const u0 = (f * v.fw) / tex.w, u1 = ((f + 1) * v.fw) / tex.w, v0 = (row * v.fh) / tex.h, v1 = ((row + 1) * v.fh) / tex.h;
         const s = v.scale * v.spawnK, pixelScale = v.pixelScale || 1;
@@ -281,8 +281,8 @@ export class Scene {
     }
     batches.push({ tex: ft, data: this.sprBuf.subarray(start * SPR_FLOATS), count: off - start });
     if (this.shadows.length) {
-     for (const texKey of ['shadow', 'bones']) {
-      const st = texKey === 'bones' ? this.boneTex : this.shadowTex, sStart = off, C = texKey === 'bones' ? BONE_CELL : SHADOW_CELL;
+     for (const texKey of ['shadow', 'bones', 'toxic']) {
+      const st = texKey === 'bones' ? this.boneTex : texKey === 'toxic' ? this.toxicTex : this.shadowTex, sStart = off, C = texKey === 'bones' ? BONE_CELL : texKey === 'toxic' ? TOXIC_CELL : SHADOW_CELL;
       for (const e of this.shadows) {
         if (e.age < 0 || (e.tex || 'shadow') !== texKey) continue;
         const fr = e.seq ? e.seq.filter(k => k.at <= e.age).at(-1)?.frame || e.seq[0].frame : e.frames[Math.floor(e.age * e.fps) % e.frames.length];

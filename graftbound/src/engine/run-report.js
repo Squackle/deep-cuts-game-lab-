@@ -47,7 +47,7 @@ export function runStatsMarkdown(run, opts = {}) {
   L.push('');
   L.push(`- **Result:** ${won ? 'Expedition completed' : 'Defeated'} · ${run?.ranked ? `RANKED preview · ${cell(run.ranked.challengeId)} rev ${cell(run.ranked.revision)} · ${opts.verifiedLocally ? 'replay verified locally' : 'not verified'}` : 'Local · unranked (not submitted)'}`);
   L.push(`- **Version:** ${GAME.version}${run?.ranked?.rulesVersion ? ` · rules ${run.ranked.rulesVersion}` : ''}`);
-  L.push(`- **Final Global Threat:** ${threat == null ? '—' : `${threat}/12`}`);
+  L.push(`- **Final Global Threat:** ${threat == null ? '—' : `${threat}/24`}`);
   L.push(`- **Final form:** ${fmt(run?.evo?.power)}/${fmt(run?.evo?.toughness)}${Object.keys(run?.evo?.keywords || {}).length ? ` · ${Object.keys(run.evo.keywords).join(', ')}` : ''}`);
   L.push(`- **Battles won:** ${fmt(s.battlesWon)} · **Bosses defeated:** ${fmt(s.bossesDefeated ?? 0)} · **Foes defeated:** ${fmt(s.kills)}`);
   L.push(`- **Creatures grafted:** ${fmt(s.cardsAbsorbed)} · **Spells learned:** ${fmt(s.spellsLearned)}`);

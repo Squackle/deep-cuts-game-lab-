@@ -9,7 +9,8 @@ export function encounterBenchmarks(nodeType, act, foes) {
   return { tier, parActions: Math.max(2, Math.ceil(PAR_PER_FOE[tier] * Math.max(1, foes))), damageBudget: DAMAGE_BUDGET[tier][Math.max(0, Math.min(2, act))], multiplier: MULTIPLIER[tier] };
 }
 /** The formula from the design brief, verbatim. A loss scores 0. */
-export const threatBonusRate = threat => Math.min(THREAT_BONUS.cap, Math.max(0, Math.floor(Number(threat) || 0)) * THREAT_BONUS.perLevel);
+export const threatBonusRate = threat => { const t = Math.max(0, Math.min(24, Math.floor(Number(threat) || 0)));
+  return Math.min(THREAT_BONUS.upperCap, Math.min(THREAT_BONUS.cap, Math.min(12, t) * THREAT_BONUS.perLevel) + Math.max(0, t - 12) * THREAT_BONUS.upperPerLevel); };
 export function encounterScore({ victory, acceptedActions, rawHpDamageTaken, parActions, damageBudget, multiplier, threat = 0 }) {
   if (!victory) return { victory: 0, efficiency: 0, avoidance: 0, subtotal: 0, multiplier, threatBonus: 0, total: 0 };
   if (!(parActions > 0) || !(damageBudget > 0)) throw new Error('Benchmarks must be positive');

@@ -3,7 +3,7 @@ import { RARITY } from '../data/cards.js';
 import { resolveCard as getCard, rewardCards } from '../cards/catalog.js';
 import { KEYWORDS, keywordLabel } from '../data/keywords.js';
 import { expeditionTotals } from '../engine/scoring.js';
-import { threatModifiers, threatTactics } from '../engine/world-threat.js';
+import { threatModifiers, threatTactics, UPPER_TIERS } from '../engine/world-threat.js';
 import { runStatsMarkdown, copyText, derivedMetrics } from '../engine/run-report.js';
 import { duplicatePreview, traitLevelsOf, levelDef, levelText } from '../cards/graft-levels.js';
 import { cardHTML, COLOR, esc, sourcePanelHTML, backHTML, gameSummary } from './cards.js';
@@ -768,12 +768,12 @@ export function endScreen(app, { won, earned = [], extra = {} }) {
     <div class="gb-copy-row"><button type="button" class="btn primary gb-copy-stats" data-a="copy" aria-describedby="gb-copy-status">Copy Run Stats</button><span id="gb-copy-status" class="gb-copy-status" role="status" aria-live="polite"></span></div>
     <p class="rw-sub">${won ? 'You began as nothing. The final guardian could not stop what you became.' : `You fell in Act ${ACT_ROMAN[run.act]} · ${esc(ACTS[run.act].name)}. Every card you held is remembered in the Codex.`}</p>
     <header class="end-head">
-      <div class="end-high"><span><b>${run.evo.power}/${run.evo.toughness}</b><small>Final form</small></span><span><b>${run.worldThreat?.level ?? 0}/12</b><small>Global Threat</small></span><span><b>${expeditionTotals(run).total.toLocaleString()}</b><small>Score</small></span></div>
+      <div class="end-high"><span><b>${run.evo.power}/${run.evo.toughness}</b><small>Final form</small></span><span><b>${run.worldThreat?.level ?? 0}/24</b><small>Global Threat</small></span><span><b>${expeditionTotals(run).total.toLocaleString()}</b><small>Score</small></span></div>
       <div class="chips center">${kwChips(run.evo.keywords)}</div>
     </header>
     <div class="end-grid">
       <section class="end-col"><h3>Expedition</h3>
-    <table class="stats"><tr><td>Battles won</td><td>${s.battlesWon}</td></tr><tr><td>Bosses defeated</td><td>${s.bossesDefeated || 0}</td></tr><tr><td>Creatures grafted</td><td>${s.cardsAbsorbed}</td></tr><tr><td>Spells learned</td><td>${s.spellsLearned}</td></tr><tr><td>Foes defeated</td><td>${s.kills}</td></tr><tr><td>Final Global Threat</td><td>${run.worldThreat?.level ?? 0}/12</td></tr>${timeRows(run)}</table>
+    <table class="stats"><tr><td>Battles won</td><td>${s.battlesWon}</td></tr><tr><td>Bosses defeated</td><td>${s.bossesDefeated || 0}</td></tr><tr><td>Creatures grafted</td><td>${s.cardsAbsorbed}</td></tr><tr><td>Spells learned</td><td>${s.spellsLearned}</td></tr><tr><td>Foes defeated</td><td>${s.kills}</td></tr><tr><td>Final Global Threat</td><td>${run.worldThreat?.level ?? 0}/24</td></tr>${timeRows(run)}</table>
       </section>
       <section class="end-col"><h3>Achievements</h3>
     ${earned.length ? `<ul class="ach">${earned.map(a => `<li class="got"><b>${a.name}</b><span>${a.text}</span></li>`).join('')}</ul>` : '<p class="small muted">No achievements earned this run.</p>'}
@@ -796,7 +796,7 @@ export function endScreen(app, { won, earned = [], extra = {} }) {
  *  run.lastThreat written by concludeBattle/settleWorldThreat. Never auto-dismisses: Continue (click, tap, Enter,
  *  Space or Escape) resolves it. The needle sweeps clockwise for a rise, counter-clockwise for a fall; reduced motion
  *  shows the final state immediately. */
-export const THREAT_DIAL_MAX = 12;
+export const THREAT_DIAL_MAX = 24;   // v1.8.0
 export const threatAngle = level => -150 + 300 * Math.max(0, Math.min(THREAT_DIAL_MAX, level)) / THREAT_DIAL_MAX;
 /** What the NEW level actually does (generated from threatModifiers/threatTactics — not flavour text). */
 export function threatEffectsText(level) {
@@ -811,7 +811,7 @@ export function threatEffectsText(level) {
 }
 export function threatDialHTML(t) {
   const d = t.after - t.before, word = d > 0 ? 'rises' : d < 0 ? 'falls' : 'holds';
-  const ticks = Array.from({ length: THREAT_DIAL_MAX + 1 }, (_, i) => { const a = (threatAngle(i) - 90) * Math.PI / 180, r1 = 78, r2 = i % 3 ? 70 : 64;
+  const ticks = Array.from({ length: THREAT_DIAL_MAX + 1 }, (_, i) => { const a = (threatAngle(i) - 90) * Math.PI / 180, r1 = 78, r2 = i % 6 === 0 ? 62 : i % 3 ? 72 : 67;
     return `<line x1="${(100 + r1 * Math.cos(a)).toFixed(1)}" y1="${(100 + r1 * Math.sin(a)).toFixed(1)}" x2="${(100 + r2 * Math.cos(a)).toFixed(1)}" y2="${(100 + r2 * Math.sin(a)).toFixed(1)}" class="${i <= t.after ? 'on' : ''}"/>`; }).join('');
   const arc = lvl => { const a0 = (threatAngle(0) - 90) * Math.PI / 180, a1 = (threatAngle(lvl) - 90) * Math.PI / 180, r = 86, large = (threatAngle(lvl) - threatAngle(0)) > 180 ? 1 : 0;
     return lvl <= 0 ? '' : `M ${(100 + r * Math.cos(a0)).toFixed(2)} ${(100 + r * Math.sin(a0)).toFixed(2)} A ${r} ${r} 0 ${large} 1 ${(100 + r * Math.cos(a1)).toFixed(2)} ${(100 + r * Math.sin(a1)).toFixed(2)}`; };
@@ -839,6 +839,7 @@ export function threatDialHTML(t) {
       <li><b>${t.factors.strongStreak}</b><small>win streak</small></li>
       ${t.factors.boss ? '<li><b>Boss</b><small>encounter</small></li>' : ''}</ul>` : ''}
     <p class="threat-note">${threatEffectsText(t.after)}</p>
+    ${t.after > 12 ? `<ul class="threat-tiers">${UPPER_TIERS.map(x => `<li class="${t.after >= x.at ? 'on' : ''}"><b>${x.at}</b> ${esc(x.name)}<small>${esc(x.text)}</small></li>`).join('')}</ul>` : ''}
     <button type="button" class="btn primary big" data-threat-continue>Continue</button>
   </section></div>`;
 }

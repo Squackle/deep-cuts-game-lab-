@@ -172,3 +172,37 @@ export function makeBoneAtlas(doc = document) {
   g.fillStyle = 'rgba(45,38,32,0.45)'; g.fillRect(10, 44, 30, 2); g.restore();
   return c;
 }
+
+/** v1.8.0 toxic smoke: six original pixel-art cloud VOLUMES (64 px). Each billow is a cluster of overlapping spheres
+ *  shaded from the upper left (highlight → body → deep core → dark underside), with a controlled 8-colour poison palette
+ *  and an ordered-dither edge so it stays crisp pixel art when it dissolves. Deterministic (no Math.random). */
+export const TOXIC_CELL = 64, TOXIC_FRAMES = 6;
+export const TOXIC_PALETTE = Object.freeze(['#0a170c', '#122319', '#19331d', '#224622', '#2f5c28', '#40752f', '#5a8f38', '#82ad4c']);
+export function makeToxicAtlas(doc = document) {
+  const C = TOXIC_CELL, c = doc.createElement('canvas'); c.width = C * TOXIC_FRAMES; c.height = C;
+  const g = c.getContext('2d', { willReadFrequently: true }), im = g.createImageData(c.width, C), d = im.data;
+  const pal = TOXIC_PALETTE.map(h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)));
+  const BAY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + 0.5) / 16);
+  const noise = (x, y, f) => { const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi, h = (a, b) => hash(a, b, f + 9);
+    return h(xi, yi) * (1 - fx) * (1 - fy) + h(xi + 1, yi) * fx * (1 - fy) + h(xi, yi + 1) * (1 - fx) * fy + h(xi + 1, yi + 1) * fx * fy; };
+  for (let f = 0; f < TOXIC_FRAMES; f++) {
+    // a few LARGE soft billows (smoke, not foam) + a ragged, noise-eroded silhouette
+    const balls = Array.from({ length: 5 }, (_, k) => { const a = k * 2.399 + f * 1.3, r = k ? 13 + hash(f, k, 3) * 8 : 20;
+      return { x: 32 + (k ? Math.cos(a) * (9 + hash(f, k, 1) * 8) : 0), y: 37 + (k ? Math.sin(a) * (5 + hash(f, k, 2) * 5) - 3 : 0), r }; });
+    for (let y = 0; y < C; y++) for (let x = 0; x < C; x++) {
+      let field = 0, bx = 32, by = 37, br = 20, best = -9;
+      for (const b of balls) { const v = 1 - Math.hypot(x - b.x, (y - b.y) * 1.2) / b.r; field += Math.max(0, v); if (v > best) { best = v; bx = b.x; by = b.y; br = b.r; } }
+      field += (noise(x / 6, y / 6, f) - 0.5) * 0.55;                         // eroded, wispy edge
+      if (field <= 0.08) continue;
+      const edge = Math.min(1, (field - 0.08) / 0.42), bay = BAY[(y & 3) * 4 + (x & 3)];
+      if (edge < 1 && edge < bay) continue;                                     // thin dithered fringe = translucent wisps
+      const nx = (x - bx) / br, ny = (y - by) / br, nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny));
+      const lit = Math.max(0, -0.5 * nx - 0.62 * ny + 0.6 * nz);                // soft upper-left key light
+      const under = Math.max(0, (y - 42) / 20);
+      let k = 1.4 + lit * 4.2 + edge * 0.6 - under * 2 + (noise(x / 3, y / 3, f + 3) - 0.5) * 1.1 + (bay - 0.5) * 0.7;
+      k = Math.max(0, Math.min(pal.length - 1, Math.round(k)));
+      const i = (y * c.width + f * C + x) * 4; d[i] = pal[k][0]; d[i + 1] = pal[k][1]; d[i + 2] = pal[k][2]; d[i + 3] = 255;
+    }
+  }
+  g.putImageData(im, 0, 0); return c;
+}

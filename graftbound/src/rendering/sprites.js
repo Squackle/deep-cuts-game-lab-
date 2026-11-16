@@ -2,7 +2,7 @@ import { installRealCreatureModels } from './real-creature-models.js';
 import { installPremiumModels } from './premium-creatures.js';
 import { installLegendaryBosses } from './legendary-boss-art.js';
 import { installHd2dArtPack } from './hd2d-art-pack.js';
-import { installRasterBenchmarks } from './raster-benchmarks.js';
+import { installRasterBenchmarks, installCreatureArt } from './raster-benchmarks.js';
 import { installSpriteBounds } from './creature-scale.js';
 // Asset loading: sprite sheets + manifest, evolution layers, terrain atlas (+ pre-filtered blur atlas), foliage, card art.
 const BASE = new URL('../../assets/', import.meta.url).href;
@@ -29,6 +29,8 @@ export async function loadAssets(onProgress = () => {}) {
   await installRasterBenchmarks(images,manifest,img);
   // Native authored sheets replace matching runtime identities only after all frames validate.
   // An empty art-pack manifest preserves every existing model and save/replay rule.
+  // v1.8.0: painted creature sheets replace generated placeholder models wherever art exists.
+  await installCreatureArt(images, manifest, img, () => json('hd2d/creatures/index.json'));
   await installHd2dArtPack(images,manifest,()=>json('hd2d/manifest.json'),img);
   installSpriteBounds(images, manifest);   // v1.7.0 measured art bounds -> central scale + feet/centre anchors
   return { manifest, images, parts, base: BASE };

@@ -944,3 +944,8 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
 .end-full table.score{width:100%;font-variant-numeric:tabular-nums}.end-full table.score td:not(:first-child),.end-full table.score th:not(:first-child){text-align:right}
 .end .modal-actions{margin-top:16px}
 @media (max-width:760px){.end-grid{grid-template-columns:1fr}.end-high b{font-size:1.1rem}.end{padding:12px 10px 22px}}
+
+/* v1.8.0 threat 0..24: upper-band tier list on the dial */
+.threat-tiers{list-style:none;padding:0;margin:4px auto 12px;max-width:380px;text-align:left;font-size:.78rem}
+.threat-tiers li{opacity:.45;padding:2px 0}.threat-tiers li.on{opacity:1;color:#ffb3b8}.threat-tiers b{display:inline-block;width:26px;color:#ff6b74}
+.threat-tiers small{opacity:.75;margin-left:6px}

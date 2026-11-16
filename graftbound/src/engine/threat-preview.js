@@ -27,10 +27,10 @@ export function previewNextWorldThreat(run){
   return {base,range:{min:Math.min(...levels),max:Math.max(...levels)},nodes};
 }
 export function threatPreviewLabel(p){
-  const base='Stored '+p.base+'/12';
+  const base='Stored '+p.base+'/24';
   if(p.tutorial)return base+' · Tutorial has no Threat';
   if(!p.range)return base+' · Next battle adapts to your strength';
   const {min,max}=p.range;
   const value=min===max?String(min):min+'–'+max;
-  return base+' · Next battle '+value+'/12';
+  return base+' · Next battle '+value+'/24';
 }

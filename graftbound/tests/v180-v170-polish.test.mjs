@@ -63,7 +63,7 @@ test('#14 threat score bonus: +2.5%/level of encounter-start threat, capped at +
   const base = { victory: true, acceptedActions: 6, rawHpDamageTaken: 0, parActions: 6, damageBudget: 10, multiplier: 1 };
   assert.equal(encounterScore({ ...base, threat: 0 }).threatBonus, 0);
   assert.equal(encounterScore({ ...base, threat: 4 }).threatBonus, 200); assert.equal(encounterScore({ ...base, threat: 4 }).total, 2200);
-  assert.equal(threatBonusRate(99), 0.3); assert.equal(encounterScore({ ...base, victory: false, threat: 12 }).total, 0);
+  assert.equal(threatBonusRate(12), 0.3); assert.equal(threatBonusRate(99), 0.45);   // v1.8.0 assert.equal(encounterScore({ ...base, victory: false, threat: 12 }).total, 0);
   assert.match(src('src/engine/run.js'), /battle\.threatAtStart = node\.type === 'tutorial' \? 0 : activeThreat;/);
 });
 // #20 stepwise hazards
@@ -155,10 +155,10 @@ test('#6 bow rig: both hands on the weapon in every state; full draw pulls the s
 });
 test('#19 labels: priority layout + status folding; #21 torso-conforming graft layer; #11 results grid', () => {
   const ui = src('src/ui/battle-ui.js'); assert.match(ui, /pr: u\?\.hero \? 0 : u\?\.boss \? 1/); assert.match(ui, /stShown\.length > 3/);
-  assert.match(src('src/rendering/evolution-visuals.js'), /setPartFilter\('conform'\)/); assert.match(src('src/rendering/native-blank-art.js'), /function armoredBack/);
+  assert.match(src('src/rendering/evolution-visuals.js'), /layerOf\('front','conform'\)/); assert.match(src('src/rendering/native-blank-art.js'), /function armoredBack/);
   const s = src('src/ui/screens.js'); assert.match(s, /class="end-grid"/); assert.match(s, /Copy Run Stats<\/button>/);
 });
 test('v1.7.0 rules fingerprint and challenge revision', async () => {
   const { RULES_VERSION, RANKED_CHALLENGES } = await import('../src/engine/ranked.js'); const { GAME } = await import('../src/config.js');
-  assert.equal(GAME.version, '1.7.0-beta'); assert.equal(RULES_VERSION, 'graftbound-rules-1.7.0-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 26);
+  assert.equal(GAME.version, '1.8.0-beta'); assert.equal(RULES_VERSION, 'graftbound-rules-1.8.0-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 27);
 });

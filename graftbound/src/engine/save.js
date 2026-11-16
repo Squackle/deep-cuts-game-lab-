@@ -147,7 +147,7 @@ export function validateRun(r) {
   }
   if (!Array.isArray(r && r.spellbook) || r.spellbook.some(s => !resolveCard(s.id) || !isNum(s.level))) errs.push('spellbook');
   if (!Array.isArray(r?.equipmentInventory)||!Array.isArray(r?.equippedEquipment)||r.equippedEquipment.length!==2||r.equippedEquipment.some(id=>id&&!r.equipmentInventory.includes(id))) errs.push('equipment inventory');
-  if (!r?.worldThreat || !Number.isInteger(r.worldThreat.level) || r.worldThreat.level < 0 || r.worldThreat.level > 12) errs.push('world threat');
+  if (!r?.worldThreat || !Number.isInteger(r.worldThreat.level) || r.worldThreat.level < 0 || r.worldThreat.level > 24) errs.push('world threat');
   if (!Number.isInteger(r?.handCapacity) || r.handCapacity < BASE_HAND_CAPACITY || r.handCapacity > MAX_HAND_CAPACITY) errs.push('hand capacity');
   if (!Array.isArray(r?.equippedSpellIds) || r.equippedSpellIds.length > (r.handCapacity || 0) || new Set(r.equippedSpellIds).size !== r.equippedSpellIds.length || r.equippedSpellIds.some(id => !r.spellbook?.some(e => e.id === id))) errs.push('equipped spells');
   if (!r || !r.map || !Array.isArray(r.map.nodes) || !r.map.nodes.length) errs.push('map');

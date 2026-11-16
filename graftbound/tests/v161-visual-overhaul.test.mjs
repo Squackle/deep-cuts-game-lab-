@@ -38,7 +38,7 @@ test('graft surface re-skin: the Blank stays plain; strength grows with grafts a
 });
 test('graft anatomy is silhouette-scale and stays inside its frame', () => {
   const art = src('src/rendering/native-blank-art.js');
-  assert.match(art, /span=Math\.min\(30\+tier\*9/); assert.match(art, /function graftSeams/);
+  assert.match(art, /span=Math\.min\(22\+tier\*7/); assert.match(art, /function graftSeams/);
   assert.doesNotMatch(art, /\n  if\(hasEvolution\)surface\(g,A,m\);/);
 });
 test('middle-mouse orbit: yaw + clamped pitch, never selects tiles', async () => {
@@ -63,6 +63,6 @@ test('threat dial: never auto-dismisses, Continue + keyboard, clockwise/counter-
   const s = src('src/ui/screens.js');
   assert.match(s, /data-threat-continue>Continue<\/button>/); assert.doesNotMatch(s.slice(s.indexOf('export function threatDialScreen')), /setTimeout\(\(\) => \{? ?(go|res)\(/);
   assert.match(s, /prefers-reduced-motion: reduce/); const { threatAngle } = await import('../src/ui/screens.js').catch(() => ({}));
-  if (threatAngle) { assert.ok(threatAngle(6) > threatAngle(4)); assert.equal(threatAngle(99), threatAngle(12)); }
+  if (threatAngle) { assert.ok(threatAngle(6) > threatAngle(4)); assert.equal(threatAngle(99), threatAngle(24)); }
   const m = src('src/main.js'); assert.ok(m.indexOf('threatDialScreen') < m.indexOf('encounterResultScreen'), 'dial before the level statistics');
 });
