@@ -89,7 +89,7 @@ test("an active dossier and regroup countdown never mutate the run or boss timer
  assert.equal(run.runTicks,tick+1,"only a real gameplay tick changes the simulation");
 });
 test("the browser places blocking UI above the arena and guards replay-steering",()=>{
- const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../hive-run/index.html",import.meta.url),"utf8");
  const js=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
  const css=readFileSync(new URL("../styles.css",import.meta.url),"utf8");
  for(const id of ["bossBriefing","bossBriefingIcon","bossBriefingResume","bossBriefingMechanics",

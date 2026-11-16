@@ -7,7 +7,7 @@ import {codexEntry,CODEX_ORDER} from "../src/codex-preview.js";
 import {trapSignal,drawTrapHints} from "../src/trap-assist.js";
 
 test("Beacon is ordinary arcade without tutorial gates; replay rules remain unchanged",()=>{
- const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../hive-run/index.html",import.meta.url),"utf8");
  const main=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
  const css=readFileSync(new URL("../styles.css",import.meta.url),"utf8");
  assert.doesNotMatch(html,/trainingButton|trainingPrompt|FIRST HUNT · OPTIONAL TRAINING/);
@@ -60,7 +60,7 @@ test("amber feedback marks the last open escape without an added global HUD",()=
 test("Hive Codex stays in profile preview, never on game HUD, pending account integration",()=>{
  assert.equal(CODEX_ORDER.length,4);
  for(const id of CODEX_ORDER){const entry=codexEntry(id);assert.ok(entry?.name);assert.ok(entry?.tip);assert.ok(entry?.phases>=2)}
- const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../hive-run/index.html",import.meta.url),"utf8");
  const profile=readFileSync(new URL("../profile-preview.html",import.meta.url),"utf8");
  const main=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
  const policy=readFileSync(new URL("../docs/TEST-FIRST-RELEASE-POLICY.md",import.meta.url),"utf8");

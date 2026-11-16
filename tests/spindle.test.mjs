@@ -65,7 +65,7 @@ test("an enemy surrounded by its own powers waits; it does not vanish",()=>{
  }
 });
 test("encounter HUD is outside the full 18x22 arena, including Game Only",()=>{
- const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../hive-run/index.html",import.meta.url),"utf8");
  const css=readFileSync(new URL("../styles.css",import.meta.url),"utf8");
  const main=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
  const hud=html.indexOf('id="encounterHud"'),arena=html.indexOf('class="arena" id="arena"'),canvas=html.indexOf('id="gameCanvas"');
