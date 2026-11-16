@@ -13,9 +13,9 @@ import { journalNote, newJournal } from './journal.js';
 import { rollEvent, EVENTS, resolveEvent } from './events.js';
 import { newClock } from './clock.js';
 import { combatSpellbook, refreshLoadout, BASE_HAND_CAPACITY } from './loadout.js';
-import { newWorldThreat, settleWorldThreat, applyWorldThreat, effectiveThreatLevel, threatModifiers, reduceWorldThreat } from './world-threat.js';
+import { newWorldThreat, settleWorldThreat, applyWorldThreat, effectiveThreatLevel, threatModifiers, reduceWorldThreat, threatTactics } from './world-threat.js';
 import { giveEquipment, attachRunEquipment } from './attachments.js';
-import { skinToneForSeed } from './visual-identity.js';
+import { skinToneForSeed, skinPatternForSeed } from './visual-identity.js';
 
 export const RUN_VERSION = 9;
 export const TUTORIAL_CARD = 'mtg:typhoid-rats';  // real 1/1 Deathtouch: Blank 1/1 -> 2/2 Deathtouch
@@ -33,7 +33,7 @@ export const graftsFull = run => run.evo.absorbed.length >= graftCapacity(run);
 
 export function newRun({ seed, unlocks = {}, challenges = [], tutorial = false }) {
   const run = {
-    v: RUN_VERSION, seed: seed >>> 0, name: STARTING_NAME, visual: {skinTone: skinToneForSeed(seed)}, evo: newEvolution(), spellbook: [], equipmentInventory:[],equippedEquipment:[null,null], handCapacity: BASE_HAND_CAPACITY, equippedSpellIds: [], sparkBonus: 0, manaBonus: 0, sparkFonts: 0,
+    v: RUN_VERSION, seed: seed >>> 0, name: STARTING_NAME, visual: {skinTone: skinToneForSeed(seed), skinPattern: skinPatternForSeed(seed)}, evo: newEvolution(), spellbook: [], equipmentInventory:[],equippedEquipment:[null,null], handCapacity: BASE_HAND_CAPACITY, equippedSpellIds: [], sparkBonus: 0, manaBonus: 0, sparkFonts: 0,
     act: 0, map: generateMap(seed, { act: 0, tutorial }), current: null, visited: [], phase: 'map', battle: null, pending: null, shrine: null,
     unlocks: { ...unlocks }, challenges: challenges.slice(), tutorial, hp: null, wardNext: 0, actHistory: [], event: null, eventsSeen: [],
     scoring: newScoring(), journal: newJournal(), clock: newClock(false), worldThreat: newWorldThreat(),
@@ -72,7 +72,10 @@ export function enterNode(run, nodeId) {
     for (let i = 0; i < allowance; i++)
       extra.push(choices[((node.seed>>>0)+i)%Math.min(2,choices.length)]);
   }
-  const tpl = extra.length ? { ...base, enemies: [...base.enemies, ...extra] } : base;
+  const tac = threatTactics(activeThreat, { nodeType: node.type, streak: run.worldThreat?.strongStreak || 0 });
+  if (node.type === 'boss' && tac.bossEscorts) { const choices = COUNTERS[run.act][buildFocus(strength.profile)]; for (let i = 0; i < tac.bossEscorts; i++) extra.push(choices[((node.seed >>> 0) + i) % choices.length]); }
+  const tpl0 = extra.length ? { ...base, enemies: [...base.enemies, ...extra] } : base;
+  const tpl = tac.ambush && !(run.act === 0 && node.depth < 2) ? { ...tpl0, ambush: tac.ambush } : tpl0;
   const enc = buildEncounter(tpl, node.seed, node.type);
   const battle = createBattle({ evo: run.evo, stats: runStats(run), spellbook: run.spellbook.map(e=>({...e})), deckMode:true, handCapacity:run.handCapacity, encounter: enc, seed: node.seed, heroName: run.name, startHp: run.hp, act: run.act });
   attachRunEquipment(run,battle.units.find(u=>u.hero));
@@ -102,8 +105,9 @@ export function concludeBattle(run) {
   const hero = b.units.find(u => u.hero); const max = maxHpOf(run);
   run.stats.battlesWon++;
   if (b.stats.damageTaken === 0) run.stats.flawless++;
-  { const report = {}; run.worldThreat = settleWorldThreat(run.worldThreat, { victory: true, tutorial: b.nodeType === 'tutorial', enemyDamage: b.stats.enemyHealthDamage || 0, maxHealth: b.units.find(u=>u.hero)?.maxHp || 1, turns: b.turn }, report);
-    run.lastThreat = { ...report, kind: 'battle', nodeType: b.nodeType, seen: false }; }   // v1.5.0 authoritative source for the Threat dial
+  { const report = {}; run.worldThreat = settleWorldThreat(run.worldThreat, { victory: true, tutorial: b.nodeType === 'tutorial', enemyDamage: b.stats.enemyHealthDamage || 0, maxHealth: b.units.find(u=>u.hero)?.maxHp || 1, turns: b.turn, boss: b.nodeType === 'boss' }, report);
+    run.lastThreat = { ...report, kind: 'battle', nodeType: b.nodeType, seen: false };
+    const rec = run.scoring?.encounters?.at(-1); if (rec && rec.key === run.act + ':' + run.current) rec.threatAfter = report.after; }   // v1.5.0 authoritative source for the Threat dial
   if (b.nodeType === 'elite') run.stats.elitesDefeated++;
   const isBoss = b.nodeType === 'boss';
   if (isBoss) { run.stats.bossesDefeated++; setHp(run, max); journalNote(run, 'boss', { name: b.name }); }                 // act boss: full recovery

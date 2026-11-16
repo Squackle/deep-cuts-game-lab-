@@ -25,7 +25,10 @@ export function recordEncounter(run, b, key) {
   const victory = b.phase === 'won';
   const sc = encounterScore({ victory, acceptedActions: b.stats.actions, rawHpDamageTaken: b.stats.damageTaken, ...bm });
   const entry = { key, act: b.act || 0, nodeType: b.nodeType, name: b.name, actions: b.stats.actions, turns: b.stats.turns, tiles: b.stats.tilesMoved,
-    damage: b.stats.damageTaken, parActions: bm.parActions, damageBudget: bm.damageBudget, ...sc };
+    damage: b.stats.damageTaken, parActions: bm.parActions, damageBudget: bm.damageBudget, ...sc,
+    // v1.6.0 analysis-only fields (never part of the score): enemy-caused health loss, the hero's maximum health and
+    // the Global Threat applied to this encounter. threatAfter is filled in when threat settles.
+    enemyDamage: b.stats.enemyHealthDamage || 0, heroMaxHp: b.units.find(u => u.hero)?.maxHp || null, threat: b.worldThreat ?? null };
   run.scoring.encounters.push(entry);
   return entry;
 }

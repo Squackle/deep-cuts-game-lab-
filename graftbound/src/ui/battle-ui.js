@@ -24,7 +24,8 @@ import { ICON } from './icons.js';
 import { esc, cardHTML, backHTML } from './cards.js';
 import { CardAnimationDirector } from './card-animation-director.js';
 import { terrainInspectPlacement } from './terrain-inspect.js';
-import { exileZone } from '../engine/zones.js';
+import { exileZone, discardRequirement } from '../engine/zones.js';
+import { exilePortalCanvas } from './exile-portal.js';
 
 const $ = id => document.getElementById(id);
 const SPELL_COL = { ember: [1, 0.55, 0.2], verdant: [0.5, 1, 0.4], tide: [0.4, 0.8, 1], umbral: [0.75, 0.45, 1], radiant: [1, 0.9, 0.5] };
@@ -83,8 +84,8 @@ export class BattleUI {
         await this.banner(s.nodeType === 'boss' ? s.name : s.nodeType === 'elite' ? 'Elite Lair · ' + s.name : s.name, s.nodeType === 'boss' ? 'boss' : '', s.nodeType === 'boss' ? bossTitleOf(s.act) : '');
         if (s.deck) await this.deckCeremony();
         this.initialHandConcealed=false;this.renderHand(s);
-        if (s.worldThreat > 0) await this.banner(`World Threat ${s.worldThreat}/12 · stronger enemy wards${s.worldThreatAdaptive ? ' · build pressure +' + s.worldThreatAdaptive : ''}`, 'foe');
-        if (s.reinforced) { await this.banner(`The world answers your strength · +${s.reinforced} foe${s.reinforced > 1 ? 's' : ''}`, 'foe'); this.app.hint('reinforced', 'The stronger you become, the more foes answer. Reinforcements never have extra health — just more of them.'); }
+        if (s.worldThreat > 0) await this.banner(`Global Threat ${s.worldThreat}/12`, 'foe');
+        // v1.6.0: the post-victory Global Threat dial is the authoritative threat presentation; reinforcements still apply.
         this.busy = false;
       }
       this.refresh(); this.tutorialHints('start'); this.checkEnd(); this.promptComboChoices(); this.maybeAutoEnd();
@@ -121,7 +122,7 @@ export class BattleUI {
         u.traitToken === 'drake' ? 'mtg_friendlyDrake' :
         u.traitToken === 'catsoldier' ? 'mtg_friendlyCatSoldier' :
         u.name === 'Soldier' ? 'mtg_friendlySoldier' : 'mtg_friendlySproutling');
-      v = this.scene.addUnit(u, friend ? tokenKey : ENEMIES[u.defId].sprite, { scale: u.boss ? 0.46 : (tokenKey==='mtg_friendlySoldier' ? 0.39 : (tokenKey==='mtg_friendlySquirrel' ? 0.24 : (u.defId==='spider' || tokenKey==='mtg_friendlySpider' ? 0.34 : 0.56))) });
+      v = this.scene.addUnit(u, friend ? tokenKey : ENEMIES[u.defId].sprite, { scale: u.boss ? 0.46 : (tokenKey==='mtg_friendlySoldier' ? 0.39 : 0.56   /* v1.6.0: uniform study density — Squirrel/Spider size now comes from their art */) });
       if (friend && tokenKey === 'mtg_friendlySoldier') {
         const src=this.app.assets.images.mtg_friendlySoldier, mask=this.app.assets.images['mtg_friendlySoldier:skinMask'];
         this.scene.setUnitTexture(u.uid,composeAllyAttachments(recolorSkin(src,mask,skinToneForSeed(this.run.seed,u.uid)),v.fw,u.equipment||[],u.auras||[]),0.39);
@@ -232,8 +233,9 @@ export class BattleUI {
         <span class="gb-zone-art gb-grave-face">${last ? cardHTML(last.id || last,{small:true,uid:'graveyard-zone',extraClass:'gb-grave-top'}) : '<span class="gb-zone-empty">✧</span>'}</span>
         <span class="gb-zone-meta"><strong>Graveyard</strong><em>${grave.length}</em></span></button>
       <button type="button" class="gb-zone gb-zone-exile" data-zone="exile" aria-label="Exile, ${exileCount(s)} cards. Inspect exile.">
-        <span class="gb-zone-art gb-exile-portal" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="gb-zone-art gb-exile-portal" aria-hidden="true" data-portal-slot></span>
         <span class="gb-zone-meta"><strong>Exile</strong><em>${exileCount(s)}</em></span></button>`;
+    { const slot = parent.querySelector('[data-portal-slot]'), pc = exilePortalCanvas(); if (slot && pc) slot.appendChild(pc); }   // v1.6.0: same node every rebuild
     this.positionCardZones();
   }
   // Actual spell-hand height changes with screen size, orientation, and card count.
@@ -333,6 +335,10 @@ export class BattleUI {
     tray.classList.toggle('many', s.spellbook.length > 5);
     tray.classList.toggle('overflowing', s.spellbook.length > 7);
     tray.setAttribute('aria-label', `Spell hand, ${s.spellbook.length} spells, horizontally scroll to see more`);
+    const dr = discardRequirement(s), discarding = dr.need > 0 && !this.busy;
+    tray.classList.toggle('discard-mode', discarding);
+    if (!discarding) this.discardArmed = null;
+    this.renderDiscardBar(dr);
     tray.innerHTML = s.spellbook.map((e, i) => {
       const c = getCard(e.id); const why = this.busy ? 'Wait…' : castBlockReason(s, e.id); const cost = spellCost(s, e.id);
       const state = s.p.cast[e.id] ? 'used' : s.p.silenced === e.id ? 'silenced' : why && /mana/i.test(why) ? 'nomana' : why ? 'off' : 'ready';
@@ -344,7 +350,8 @@ export class BattleUI {
         <span class="hc-cost ${cost > c.cost ? 'taxed' : ''}" title="GRAFTBOUND mana cost (not the printed Magic cost)">${ICON.gem}${cost}</span>
         ${e.level > 1 ? `<span class="hc-lvl" title="Spell level">Lv ${e.level} · ${'✦'.repeat(e.level - 1)}</span>` : ''}
         <span class="hc-state">${esc(label)}</span><kbd>${i + 1}</kbd>
-        <span class="hc-info" data-inspect="${esc(e.id)}" role="button" tabindex="-1" aria-label="Inspect ${esc(c.name)}">i</span></button>`;
+        <span class="hc-info" data-inspect="${esc(e.id)}" role="button" tabindex="-1" aria-label="Inspect ${esc(c.name)}">i</span>
+        ${discarding ? `<span class="hc-discard ${this.discardArmed === i ? 'armed' : ''}" data-discard-i="${i}" role="button" tabindex="0" aria-label="Discard ${esc(c.name)} to your Graveyard">Discard</span>` : ''}</button>`;
     }).join('');
     tray.scrollLeft = scrollX;
   }
@@ -495,8 +502,14 @@ export class BattleUI {
     $('tray').addEventListener('focusout', e => { if (!e.relatedTarget?.closest?.('#tray')) this.hideHandPreview(); });
     $('tray').addEventListener('click', e => {
       const inf = e.target.closest('[data-inspect]'); if (inf) { e.stopPropagation(); this.app.inspectSpell(inf.dataset.inspect); return; }
-      const b = e.target.closest('[data-spell]'); if (b) this.selectSpell(b.dataset.spell);
+      const dz = e.target.closest('[data-discard-i]'); if (dz) { e.stopPropagation(); this.discardCard(+dz.dataset.discardI); return; }
+      const b = e.target.closest('[data-spell]'); if (!b) return;
+      // v1.6.0: while a discard is required, tapping a card ARMS it (shows its Discard button) — it never casts.
+      if ($('tray').classList.contains('discard-mode')) { const i = [...$('tray').querySelectorAll('button.handcard')].indexOf(b); this.discardArmed = this.discardArmed === i ? null : i; this.renderHand(this.s); return; }
+      this.selectSpell(b.dataset.spell);
     });
+    $('tray').addEventListener('keydown', e => { const dz = e.target.closest?.('[data-discard-i]'); if (dz && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); e.stopPropagation(); this.discardCard(+dz.dataset.discardI); } });
+    this.bindDiscardDrag();
     $('hud').addEventListener('click', e => { const st = e.target.closest('[data-stance]'); if (st) this.doStance(st.dataset.stance); });
     $('graftPowers').addEventListener('click', () => this.openGraftSkills());
     $('endTurn').addEventListener('click', () => this.doEndTurn());
@@ -699,9 +712,60 @@ export class BattleUI {
     const why = stanceBlockReason(this.s, kind); if (why) { this.reject(why); return; }
     this.spell = null; this.audio.play('click'); await this.act(() => this.exec({ type: kind }));
   }
+  /** v1.6.0 discard prompt: shown the moment a requirement exists, never only after pressing End Turn. */
+  renderDiscardBar(dr = discardRequirement(this.s)) {
+    const bar = $('gb-discard-bar'); if (!bar) return;
+    if (!dr.need || this.busy) { bar.hidden = true; bar.innerHTML = ''; $('hud').classList.remove('gb-discarding'); return; }
+    bar.hidden = false; $('hud').classList.add('gb-discarding');
+    bar.innerHTML = `<b>${esc(dr.text)}</b><small>${esc(dr.detail)} Drag a card onto your Graveyard, or tap a card and choose Discard.</small>`;
+  }
+  /** Animate the card into the Graveyard, then perform the authoritative discard (same rule path as before). */
+  async discardCard(index) {
+    const s = this.s; if (!s || this.busy || !discardRequirement(s).need) return;
+    const entry = s.deck?.hand?.[index]; if (!entry) return;
+    const card = $('tray').querySelectorAll('button.handcard')[index], grave = document.querySelector('#gb-card-zones .gb-zone-graveyard .gb-zone-art');
+    this.discardArmed = null; this.audio.play('flip');
+    if (card && grave && this.app.animFactor() < 50 && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const a = card.getBoundingClientRect(), b = grave.getBoundingClientRect(), ghost = card.cloneNode(true);
+      Object.assign(ghost.style, { position: 'fixed', left: a.left + 'px', top: a.top + 'px', width: a.width + 'px', height: a.height + 'px', margin: 0, zIndex: 60, pointerEvents: 'none', transition: 'transform .38s cubic-bezier(.4,.1,.3,1), opacity .38s' });
+      ghost.classList.add('gb-discard-ghost'); document.body.appendChild(ghost); card.style.visibility = 'hidden';
+      requestAnimationFrame(() => { ghost.style.transform = `translate(${b.left + b.width / 2 - (a.left + a.width / 2)}px, ${b.top + b.height / 2 - (a.top + a.height / 2)}px) scale(${Math.max(0.3, b.width / a.width)}) rotate(-8deg)`; ghost.style.opacity = '0.25'; });
+      await new Promise(r => setTimeout(r, 400)); ghost.remove();
+    }
+    await this.act(() => this.exec({ type: 'discard', id: entry.id }));
+  }
+  /** Drag a hand card onto the Graveyard to discard it. Only active in discard mode; any other drop is cancelled. */
+  bindDiscardDrag() {
+    const tray = $('tray'); let drag = null;
+    const graveAt = (x, y) => document.elementsFromPoint(x, y).some(el => el.closest?.('.gb-zone-graveyard'));
+    tray.addEventListener('pointerdown', e => {
+      if (!tray.classList.contains('discard-mode') || e.button > 0 || e.target.closest('[data-inspect],[data-discard-i]')) return;
+      const card = e.target.closest('button.handcard'); if (!card) return;
+      drag = { card, i: [...tray.querySelectorAll('button.handcard')].indexOf(card), x: e.clientX, y: e.clientY, ghost: null, id: e.pointerId };
+    });
+    window.addEventListener('pointermove', e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      if (!drag.ghost && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 8) {
+        const r = drag.card.getBoundingClientRect(); drag.ghost = drag.card.cloneNode(true); drag.ghost.classList.add('gb-discard-ghost', 'dragging');
+        Object.assign(drag.ghost.style, { position: 'fixed', left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', margin: 0, zIndex: 60, pointerEvents: 'none' });
+        document.body.appendChild(drag.ghost); drag.card.classList.add('gb-drag-source'); drag.ox = drag.x - r.left; drag.oy = drag.y - r.top;
+      }
+      if (drag.ghost) { drag.ghost.style.left = (e.clientX - drag.ox) + 'px'; drag.ghost.style.top = (e.clientY - drag.oy) + 'px';
+        document.querySelector('#gb-card-zones .gb-zone-graveyard')?.classList.toggle('drop-ready', graveAt(e.clientX, e.clientY)); }
+    });
+    const end = e => {
+      if (!drag || e.pointerId !== drag.id) return; const d = drag; drag = null;
+      document.querySelector('#gb-card-zones .gb-zone-graveyard')?.classList.remove('drop-ready');
+      if (!d.ghost) return;                                   // a tap: the click handler arms the card
+      d.ghost.remove(); d.card.classList.remove('gb-drag-source');
+      d.card.addEventListener('click', ev => { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true });
+      if (e.type === 'pointerup' && graveAt(e.clientX, e.clientY)) this.discardCard(d.i);   // anywhere else: cancelled, nothing moves
+    };
+    window.addEventListener('pointerup', end); window.addEventListener('pointercancel', end);
+  }
   async doEndTurn() {
     if (this.busy || !this.s || this.s.phase !== 'player') return;
-    if(this.s.deck && ((this.s.deck.pendingDiscards||0)>0 || this.s.deck.hand.length>this.s.deck.capacity)) { this.chooseDiscard();return;}
+    if (discardRequirement(this.s).need) { this.audio.play('nope'); const bar = $('gb-discard-bar'); bar?.classList.remove('pulse'); void bar?.offsetWidth; bar?.classList.add('pulse'); return; }
     this.spell = null; this.audio.play('click');
     await this.act(() => this.exec({ type: 'end' }));
   }
@@ -851,7 +915,7 @@ export class BattleUI {
           await this.wait(220); break;
         }
         case 'stance': {
-          const c = e.kind === 'guard' ? [0.55, 0.8, 1] : [0.75, 0.6, 1]; sc.play(e.uid, 'cast');
+          const c = e.kind === 'guard' ? [0.55, 0.8, 1] : [0.75, 0.6, 1]; const stanceAnim = sc.stance(e.uid, e.kind);   // v1.6.0: never the attack/cast rows
           const position = sc.units.get(e.uid)?.pos;
           if (position) {
             const base = [position[0], 0.035, position[2]];
@@ -863,6 +927,10 @@ export class BattleUI {
               sc.addRing({ pos: [base[0], 0.16, base[2]], r0: 0.17, r1: 0.62,
                 life: 0.8, col: c, width: 0.045, spokes: 6, seg: 6, spin: 0.5 });
               sc.fx.burst([base[0], 0.27, base[2]], c, 12, { speed: 0.55, up: 0.4, life: 0.6 });
+            }
+            if (e.kind === 'channel' && !sc.reduced) {   // v1.6.0: mana gathers inward and rises — concentration, not a strike
+              sc.addRing({ pos: [base[0], 0.05, base[2]], r0: 0.75, r1: 0.12, life: 0.55, col: [0.62, 0.5, 1], width: 0.05, spokes: 0, seg: 28 });
+              sc.fx.burst([base[0], 0.15, base[2]], [0.7, 0.62, 1], 16, { speed: 0.25, up: 1.9, life: 0.85 });
             }
           }
           sc.light(sc.centerPos(e.uid), c, e.kind === 'guard' ? 2.9 : 2.2, 0.55, 1.4);

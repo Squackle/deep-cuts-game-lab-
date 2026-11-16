@@ -1,3 +1,4 @@
+import { shadowMurder, shadowDisfigure, shadowDrain, shadowInfest } from './shadow-magic.js';
 // Spell VFX library (v0.5). Each spell IDENTITY maps to its own effect (Lightning Bolt ≠ Shock ≠ Flame Slash even
 // when they share a rules template). Effects are pure presentation: they never read or change game state and
 // only use time for animation, so frame rate cannot change outcomes. Every play* returns a promise that resolves
@@ -289,7 +290,7 @@ export async function snakeskin(sc, { from, to, target, charged = false }) {
 }
 /** Distinct hand-authored cast identities for the expanded real-card spellbook. */
 export async function strikeBolt(sc, args) { await lightningBolt(sc, args); }
-export async function murder(sc, args) { await disfigure(sc, args); }
+export async function murder(sc, args) { await shadowMurder(sc, args); }   // v1.6.0 umbral: grasping shadow hand
 export async function revitalize(sc, args) { await heal(sc, args); }
 export async function divination(sc, { from }) {
   const A = [0.45, 0.65, 1];
@@ -299,10 +300,12 @@ export async function divination(sc, { from }) {
   }
   sc.light(from,A,2,0.5,1.3);await sleep(sc,180);
 }
-export const VFX = { strikeBolt, murder, revitalize, divination, snakeskin, disfigure, titanic, pyroclasm, lightningBolt, spark, shock, chain, fire, flameSlash, fireball, frost, poison, heal, salve, shield, growth, drain, summon, wind };
+/** v1.6.0 black-spell identities (spectral hands in mist). The old violet-bolt versions stay exported for reference. */
+const disfigureShadow = args => shadowDisfigure(args.sc, args), drainShadow = null;
+export const VFX = { infest: (sc, a) => shadowInfest(sc, a), strikeBolt, murder, revitalize, divination, snakeskin, disfigure: (sc, a) => shadowDisfigure(sc, a), titanic, pyroclasm, lightningBolt, spark, shock, chain, fire, flameSlash, fireball, frost, poison, heal, salve, shield, growth, drain: (sc, a) => shadowDrain(sc, a), summon, wind };
 /** The 13 curated real spells and their unique VFX identities (dev/vfx.html gallery + tests). */
 export const SPELL_VFX = { 'Shock': 'shock', 'Lightning Bolt': 'lightningBolt', 'Flame Slash': 'flameSlash', 'Arc Lightning': 'chain', 'Fireball': 'fireball', 'Giant Growth': 'growth',
-  'Drain Life': 'drain', 'Infest': 'poison', 'Raise the Alarm': 'summon', 'Healing Hands': 'heal', 'Healing Salve': 'salve', 'Feat of Resistance': 'shield', 'Frost Breath': 'frost',
+  'Drain Life': 'drain', 'Infest': 'infest', 'Raise the Alarm': 'summon', 'Healing Hands': 'heal', 'Healing Salve': 'salve', 'Feat of Resistance': 'shield', 'Frost Breath': 'frost',
   'Snakeskin Veil': 'snakeskin', 'Disfigure': 'disfigure', 'Titanic Growth': 'titanic', 'Pyroclasm': 'pyroclasm',
   'Lightning Strike': 'strikeBolt', 'Murder': 'murder', 'Revitalize': 'revitalize', 'Divination': 'divination' };
 /** Template/legacy effect -> default visual family (used when a card has no explicit vfx). */

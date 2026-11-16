@@ -847,11 +847,6 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
 @media (prefers-reduced-motion:reduce){.threat-dial .needle{transition:none}}
 /* v1.5.0 Exile zone: small swirling black/purple portal with a readable count */
 .gb-exile-portal{display:grid!important;place-items:center;border-color:#9b6ad6!important;background:radial-gradient(circle at 50% 50%,#000 0 22%,#1b0b2b 40%,#2a0f45 62%,#0c0614 100%)!important;box-shadow:0 0 0 2px #151714,0 0 14px rgba(150,80,230,.45),0 5px 15px #0009!important}
-.gb-exile-portal i{position:absolute;inset:16% 10%;border-radius:50%;border:2px solid transparent;border-top-color:#b07cff;border-left-color:rgba(176,124,255,.35);animation:gbExileSwirl 3.2s linear infinite}
-.gb-exile-portal i:nth-child(2){inset:28% 20%;border-top-color:#e2c6ff;animation-duration:2.1s;animation-direction:reverse}
-.gb-exile-portal i:nth-child(3){inset:38% 30%;border-top-color:#7a3fd1;animation-duration:1.4s}
-@keyframes gbExileSwirl{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.gb-exile-portal i{animation:none}}
 .gb-zone-exile .gb-zone-meta em{background:#1e1030;border-color:#8a63c4}
 .gb-exile-h{margin:12px 0 6px;font-size:.95rem}.gb-exile-foes{margin:0;padding-left:18px}.gb-exile-foes small{display:block;opacity:.7}
 .gb-card-zones{max-width:260px}
@@ -883,3 +878,42 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
 #hud .pl-act .gb-reserve{background:rgba(240,219,167,.08);border-color:rgba(240,219,167,.35);color:#cfe3ee;padding:1px 6px}
 #hud #inspect.terrain-inspect.terrain-plain{height:auto!important;max-height:var(--gb-terrain-height,62px)!important;width:min(var(--gb-terrain-width,240px),240px)}
 #hud .plate{display:flex;flex-direction:column}#hud .plate>.pl-act{order:9}
+
+/* v1.6.0 graft levels */
+.gb-graft-level-ribbon{position:absolute;left:50%;bottom:-11px;transform:translateX(-50%);z-index:4;white-space:nowrap;padding:2px 9px;border-radius:99px;font:700 .7rem var(--sans);color:#1d140a;background:linear-gradient(#ffe39a,#d9a648);border:1px solid #5d4219;box-shadow:0 2px 6px #0008;pointer-events:none}
+.gb-graft-level-ribbon.maxed{background:linear-gradient(#ddd,#9a9a9a);color:#222}
+.gb-lv{font-style:normal;font-size:.72em;padding:1px 6px;margin-left:4px;border-radius:9px;background:#d9a648;color:#1d140a}
+
+/* v1.6.0 Exile portal: persistent pixel-art canvas inside a carved-stone frame */
+.gb-exile-portal{display:grid!important;place-items:center;border-color:#7e5bb8!important;background:radial-gradient(ellipse at 50% 55%,#1a1026 0,#0b0910 70%)!important;
+  box-shadow:0 0 0 2px #151714,inset 0 0 0 2px #2b2238,inset 0 0 10px #000,0 0 12px rgba(140,80,220,.35),0 5px 15px #0009!important}
+.gb-exile-canvas{width:84%;height:auto;aspect-ratio:31/44;image-rendering:pixelated;filter:drop-shadow(0 0 4px rgba(150,90,230,.55))}
+
+/* v1.6.0 mandatory discard */
+#hud .gb-discard-bar{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(max(12px,env(safe-area-inset-bottom)) + 190px);z-index:20;max-width:min(520px,92vw);
+  padding:8px 16px;border-radius:10px;text-align:center;background:linear-gradient(#3a1116,#220a0d);border:1px solid #d9a648;color:#ffe9c4;box-shadow:0 6px 20px #000a;font-family:var(--sans)}
+#hud .gb-discard-bar b{display:block;font-size:1rem;letter-spacing:.02em}#hud .gb-discard-bar small{display:block;opacity:.85;font-size:.76rem;margin-top:2px}
+#hud .gb-discard-bar.pulse{animation:gbDiscPulse .5s 2}@keyframes gbDiscPulse{50%{box-shadow:0 0 0 4px #ffcf6a,0 6px 20px #000a}}
+#hud .tray.discard-mode button.handcard{outline:2px dashed #ffcf6a;outline-offset:-3px;cursor:grab}
+#hud .tray.discard-mode button.handcard .hc-state{display:none}
+#hud .hc-discard{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);z-index:5;display:none;padding:4px 12px;border-radius:7px;background:#b4232f;color:#fff;font:700 .8rem var(--sans);border:1px solid #ffd2a0;box-shadow:0 2px 8px #000a}
+#hud .hc-discard.armed{display:block}#hud .hc-discard:focus-visible{display:block;outline:2px solid #fff}
+#hud.gb-discarding .gb-zone-graveyard .gb-zone-art{box-shadow:0 0 0 2px #ffcf6a,0 0 16px rgba(255,207,106,.6)}
+#hud .gb-zone-graveyard.drop-ready .gb-zone-art{transform:scale(1.08);box-shadow:0 0 0 3px #fff,0 0 22px #ffcf6a}
+.gb-discard-ghost.dragging{opacity:.9;transform:rotate(-4deg) scale(.92);filter:drop-shadow(0 8px 12px #000)}
+.gb-drag-source{opacity:.35}
+@media (prefers-reduced-motion:reduce){#hud .gb-discard-bar.pulse{animation:none}}
+
+/* v1.6.0 Copy Run Stats + balance metrics */
+.end .gb-copy-row{display:flex;align-items:center;justify-content:center;gap:10px;margin:4px 0 10px}
+.gb-copy-status{min-width:64px;font:700 .85rem var(--sans);color:#8fe3a0}
+.gb-copy-fallback{width:100%;font:12px/1.4 ui-monospace,monospace;background:#0e1410;color:#e9dfc8;border:1px solid #6b5a34;border-radius:6px;padding:8px}
+.gb-balance{margin:10px auto;max-width:640px;text-align:left}.gb-balance summary{cursor:pointer;font-weight:700}
+.gb-balance dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0}.gb-balance dt{font-weight:700}.gb-balance dd{margin:0}.gb-balance small{opacity:.7;margin-left:6px}
+
+/* v1.6.0 threat dial explanations */
+.threat-panel h2 .delta{font-size:.85em;padding:0 6px;border-radius:8px}.threat-panel h2 .delta.up{color:#ff6b74}.threat-panel h2 .delta.down{color:#8fe3a0}
+.threat-sub{margin:-4px 0 6px;opacity:.75;font-size:.85rem}
+.threat-factors{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;list-style:none;padding:0;margin:6px 0}
+.threat-factors li{display:flex;flex-direction:column;align-items:center;min-width:58px;padding:4px 8px;border-radius:8px;background:#24101399;border:1px solid #5b1c24}
+.threat-factors b{font-size:1rem}.threat-factors small{font-size:.66rem;opacity:.75}

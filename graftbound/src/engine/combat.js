@@ -1,11 +1,12 @@
 // Battle state machine. A battle is a plain JSON object (saveable mid-fight). Player actions validate,
 // mutate state and return an ordered list of events consumed by the presentation layer.
 import { reachable, pathTo, manhattan, lineOfSight, tileAt, T, key, DIRS } from '../core/grid.js';
+import { traitLevelsOf } from '../cards/graft-levels.js';
 import { makeRng } from '../core/rng.js';
 import { resolveCard as getCard } from '../cards/catalog.js';
 import { player, enemies, allies, alive, has, kv, heal, attackExchange, enterTiles, dealDamage, smashRock } from './abilities.js';
 import { spellTargets, castSpellEffect, castBlockReason, spellCost } from './spells.js';
-import { actEnemy, actAlly, spawnEnemy, previewIntent, announcePhase , spawnTokensAround, resolveToxrillEndStep } from './ai.js';
+import { actEnemy, actAlly, spawnEnemy, previewIntent, announcePhase , spawnTokensAround, resolveToxrillEndStep, surgeAfterAct } from './ai.js';
 import { STARTING_NAME } from './evolution.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
 import { TACTICS } from '../data/tactics.js';
@@ -26,6 +27,7 @@ export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroN
     combo:{choices:[],counters:{},actions:{},treasure:0},
     rng: makeRng(seed), spellbook: spellbook.map(x => ({ ...x })),
     traits:[...new Set((evo.absorbed||[]).map(x=>getCard(x.cardId)?.trait).filter(Boolean))],
+    traitLevels:traitLevelsOf(evo.absorbed||[]),   // v1.6.0 duplicate grafts level the ONE registered trait
     p: { mana: 0, storedMana:0, channel:0, channeledTurn:0, maxMana: stats.maxMana, regen: stats.manaRegen, startMana: stats.startMana, arcane: stats.arcane, moveLeft: 0, attacksLeft: 0, cast: {} },
     // v0.6 scoring counters: only actions ACCEPTED by this engine increment them (rejected input throws first).
     stats: { damageDealt: 0, damageTaken: 0, enemyHealthDamage: 0, kills: 0, spellsCast: 0, turns: 0, attacks: 0, actions: 0, moves: 0, tilesMoved: 0, interactions: 0 },
@@ -277,6 +279,7 @@ export function endTurn(s) {
     if (e.statuses.poison > 0) { dealDamage(s, ev, null, e, e.statuses.poison, { kind: 'poison' }); e.statuses.poison--; if (!alive(e)) continue; }
     ev.push({ t: 'enemyTurn', uid: e.uid });
     actEnemy(s, ev, e);
+    surgeAfterAct(s, ev, e);   // v1.6.0 high-threat telegraph (no-op unless battle.threatSurge)
   }
   // Only allies that survived the enemy wave get their actions. Killed Soldiers
   // cannot retaliate later in the same foe phase.

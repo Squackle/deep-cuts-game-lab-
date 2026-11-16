@@ -2,6 +2,9 @@
 import { RARITY } from '../data/cards.js';
 import { resolveCard as getCard, rewardCards } from '../cards/catalog.js';
 import { KEYWORDS, keywordLabel } from '../data/keywords.js';
+import { threatModifiers, threatTactics } from '../engine/world-threat.js';
+import { runStatsMarkdown, copyText, derivedMetrics } from '../engine/run-report.js';
+import { duplicatePreview, traitLevelsOf, levelDef, levelText } from '../cards/graft-levels.js';
 import { cardHTML, COLOR, esc, sourcePanelHTML, backHTML, gameSummary } from './cards.js';
 import { availableNodes, nodeById, NODE_TYPES } from '../engine/campaign.js';
 import { absorb, deriveStats, spellFocus, FOCUS_WARD } from '../engine/evolution.js';
@@ -167,7 +170,7 @@ export function settingsModal(app) {
     <h3>Controls</h3>
     <table class="keys"><tr><td>Move / strike / target</td><td>Click or tap (tap twice to confirm on touch)</td></tr><tr><td>Cursor</td><td>Arrow keys or WASD, Enter to confirm</td></tr><tr><td>Spells</td><td>1–9 — spells reach anywhere on the battlefield</td></tr><tr><td>End turn</td><td>Space</td></tr><tr><td>Rotate camera</td><td>Q / E</td></tr><tr><td>Zoom</td><td>Mouse wheel or pinch</td></tr><tr><td>Character sheet</td><td>C</td></tr><tr><td>Cancel</td><td>Esc or right-click</td></tr></table>
     <div class="modal-actions"><button type="button" class="btn danger" data-wipe>Erase all progress</button><button type="button" class="btn primary" data-close>Done</button></div>`);
-  m.addEventListener('change', e => { const k = e.target.dataset.k; if (!k) return; st[k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; app.applySettings(); app.saveMeta(); });
+  m.addEventListener('change', e => { const k = e.target.dataset.k; if (!k) return; st[k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; if (k === 'animSpeed') st.animSpeedChosen = true; app.applySettings(); app.saveMeta(); });
   m.querySelector('[data-wipe]').addEventListener('click', () => app.confirm('Erase every achievement, unlock, record and saved adventure? This cannot be undone.', 'Erase', () => app.wipe()));
 }
 
@@ -269,6 +272,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
         </button>
         <div class="fan" id="fan">${cards.map((id, i) => `<div class="slot treat-${treatments[i]} rarity-${esc(getCard(id).rarity)}" data-i="${i}" data-id="${esc(id)}" data-treatment="${treatments[i]}" style="--i:${i}" role="button" tabindex="0" aria-label="Card ${i + 1}">
           <span class="rays"></span><span class="gb-reward-seal" aria-hidden="true">${getCard(id).rarity === 'mythic' ? '✦' : getCard(id).rarity === 'rare' ? '◆' : getCard(id).rarity === 'uncommon' ? '◇' : '·'}</span>${cardHTML(id, { level: levelOf(id), arcane, uid: 'rw' + i, extraClass: 'flipped', evo: run.evo })}
+          ${(() => { const dp = duplicatePreview(run.evo.absorbed, id); return dp ? `<span class="gb-graft-level-ribbon ${dp.maxed ? 'maxed' : ''}" title="${esc(dp.maxed ? `${dp.name} is at its maximum level: another copy adds its printed power/toughness only.` : `${dp.before} → ${dp.after}`)}">${dp.maxed ? `Graft Lv ${dp.from} · max` : `Graft Lv ${dp.from} → ${dp.to}`}</span>` : ''; })()}
           <button type="button" class="zoom" data-zoom="${esc(id)}" aria-label="Inspect">${ICON.zoom}</button></div>`).join('')}</div>
       </div>
       <div class="rw-detail" id="rw-detail"></div>
@@ -420,12 +424,16 @@ export function shrineScreen(app) {
 export function sheetModal(app) {
   const run = app.run; if (!run) return;
   const st = runStats(run), ap = deriveAppearance(run.evo, visualForRun(run));
+  const levels = traitLevelsOf(run.evo.absorbed);
   const hist = run.evo.absorbed.map((a, i) => {
     const c = getCard(a.cardId); const col = c ? COLOR[c.color] : COLOR.verdant;
     const bits = [`+${a.power}/+${a.toughness}`, ...(a.gained||[]).map(k => KEYWORDS[k]?.name||k), ...(a.raised||[]).map(k => (KEYWORDS[k]?.name||k) + '↑'), a.resonance ? `Resonance +${a.resonance * 2} Maximum Health` : ''].filter(Boolean).join(' · ');
     const descriptions=[...(a.gained||[]),...(a.raised||[])].map(k=>KEYWORDS[k]?.text).filter(Boolean);
     if(c?.adaptationNote)descriptions.push(c.adaptationNote);
-    return `<li style="--frame:${col.frame}"><span class="n">${i + 1}</span><b>${esc(a.name || (c && c.name) || a.cardId)}${c && c.legacy ? ' <em class="lg">legacy</em>' : ''}</b><small>${esc(bits)}</small>${descriptions.length?`<small class="gb-graft-details">${esc(descriptions.join(' · '))}</small>`:''}</li>`;
+    const tid = c?.trait, lvlNow = tid ? (levels[tid] || 1) : 0, firstOfTrait = tid && run.evo.absorbed.findIndex(x => getCard(x.cardId)?.trait === tid) === i;
+    if (firstOfTrait) descriptions.unshift(`Graft Lv ${lvlNow}/${levelDef(tid).max}: ${levelText(tid, lvlNow)}`);
+    else if (tid) descriptions.unshift(`Duplicate copy: levels ${c.name} (see its first entry)`);
+    return `<li style="--frame:${col.frame}"><span class="n">${i + 1}</span><b>${esc(a.name || (c && c.name) || a.cardId)}${firstOfTrait && lvlNow > 1 ? ` <em class="gb-lv">Lv ${lvlNow}</em>` : ''}${c && c.legacy ? ' <em class="lg">legacy</em>' : ''}</b><small>${esc(bits)}</small>${descriptions.length?`<small class="gb-graft-details">${esc(descriptions.join(' · '))}</small>`:''}</li>`;
   }).join('');
   const visible = Object.entries(ap.slots).map(([, p]) => `${p.part}${p.tier > 1 ? ' II' : ''}`).concat(ap.effects);
   const m = app.openModal(`
@@ -737,19 +745,40 @@ export function victoryScreen(app){
  });
 }
 
-export function endScreen(app, { won, earned, extra = {} }) {
+/** v1.6.0 analysis metrics (definitions shown inline; never part of the score). */
+export function balanceMetricsHTML(run) {
+  const d = derivedMetrics(run); if (!d.encounters) return '';
+  return `<details class="gb-balance"><summary>Balance metrics</summary><dl>
+    <dt>Enemy-caused health lost</dt><dd>${d.enemyDamage ?? 'not recorded (older run)'} <small>health removed by foes; excludes terrain and self-inflicted costs</small></dd>
+    <dt>Flawless encounters</dt><dd>${d.flawless}/${d.encounters} · bosses ${d.bossesFlawless}/${d.bosses} <small>no ${d.flawlessBasis}</small></dd>
+    <dt>Actions vs par</dt><dd>${d.actionsVsPar ?? '—'} <small>total actions ÷ total par</small></dd>
+    <dt>Damage vs reference</dt><dd>${d.damageVsReference ?? '—'} <small>recorded damage ÷ total reference</small></dd>
+    <dt>Turns per encounter</dt><dd>${d.turnsPerEncounter ?? '—'}</dd>
+    ${d.threatPath ? `<dt>Threat by encounter</dt><dd>${esc(d.threatPath.join(' · '))}</dd>` : ''}</dl></details>`;
+}
+export function endScreen(app, { won, earned = [], extra = {} }) {
   const run = app.run; const s = run.stats;
   const el = showScreen(`<div class="end ${won ? 'won' : 'lost'}">
     <small class="presents">${GAME.title}</small>
     <h1>${won ? 'The Last Page Turns' : 'The Graft Unravels'}</h1>
+    <div class="gb-copy-row"><button type="button" class="btn primary gb-copy-stats" data-a="copy" aria-describedby="gb-copy-status">⧉ Copy Run Stats</button><span id="gb-copy-status" class="gb-copy-status" role="status" aria-live="polite"></span></div>
     <p class="rw-sub">${won ? 'You began as nothing. The final guardian could not stop what you became.' : `You fell in Act ${ACT_ROMAN[run.act]} · ${esc(ACTS[run.act].name)}. Every card you held is remembered in the Codex.`}</p>
     <div class="end-pt">${run.evo.power}/${run.evo.toughness}</div>
     <div class="chips center">${kwChips(run.evo.keywords)}</div>
-    <table class="stats"><tr><td>Battles won</td><td>${s.battlesWon}</td></tr><tr><td>Bosses defeated</td><td>${s.bossesDefeated || 0}</td></tr><tr><td>Creatures grafted</td><td>${s.cardsAbsorbed}</td></tr><tr><td>Spells learned</td><td>${s.spellsLearned}</td></tr><tr><td>Foes defeated</td><td>${s.kills}</td></tr>${timeRows(run)}</table>
+    <table class="stats"><tr><td>Battles won</td><td>${s.battlesWon}</td></tr><tr><td>Bosses defeated</td><td>${s.bossesDefeated || 0}</td></tr><tr><td>Creatures grafted</td><td>${s.cardsAbsorbed}</td></tr><tr><td>Spells learned</td><td>${s.spellsLearned}</td></tr><tr><td>Foes defeated</td><td>${s.kills}</td></tr><tr><td>Final Global Threat</td><td>${run.worldThreat?.level ?? 0}/12</td></tr>${timeRows(run)}</table>
     ${scoreBreakdownHTML(run, extra)}
-    ${earned.length ? `<h3>Achievements</h3><ul class="ach">${earned.map(a => `<li class="got"><b>${a.name}</b><span>${a.text}</span></li>`).join('')}</ul>` : ''}
+    ${balanceMetricsHTML(run)}
+    ${earned.length ? `<h3>Achievements</h3><ul class="ach">${earned.map(a => `<li class="got"><b>${a.name}</b><span>${a.text}</span></li>`).join('')}</ul>` : '<p class="small muted">No achievements earned this run.</p>'}
     <div class="modal-actions center"><button type="button" class="btn" data-a="journal">Evolution Journal</button><button type="button" class="btn primary" data-a="again">New Adventure</button><button type="button" class="btn" data-a="title">Home</button></div></div>`, 'endscr');
-  return new Promise(res => el.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (!b) return; if (b.dataset.a === 'journal') { journalModal(app); return; } res(b.dataset.a); }));
+  const copy = async () => {
+    const text = runStatsMarkdown(run, { won, earned, newBest: !!extra.newBest, verifiedLocally: !!extra.verifiedLocally });
+    const status = el.querySelector('#gb-copy-status'), ok = await copyText(text);
+    if (ok) { status.textContent = 'Copied!'; status.className = 'gb-copy-status ok'; app.audio.play('click'); setTimeout(() => { if (status.isConnected) status.textContent = ''; }, 2200); return; }
+    // Last resort (no clipboard permission): show the text, pre-selected, so the player can copy it by hand.
+    const m = app.openModal(`<h2>Copy Run Stats</h2><p class="small">Your browser blocked automatic copying. The record is selected below — press Ctrl/⌘+C or long-press → Copy.</p><textarea class="gb-copy-fallback" readonly rows="14">${esc(text)}</textarea><div class="modal-actions"><button type="button" class="btn primary" data-close>Done</button></div>`);
+    const ta = m.querySelector('textarea'); ta.focus(); ta.select();
+  };
+  return new Promise(res => el.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (!b) return; if (b.dataset.a === 'copy') { copy(); return; } if (b.dataset.a === 'journal') { journalModal(app); return; } res(b.dataset.a); }));
 }
 /** v1.5.0 Global Threat dial. Shown after the victory banner and BEFORE the encounter record. Reads the authoritative
  *  run.lastThreat written by concludeBattle/settleWorldThreat. Never auto-dismisses: Continue (click, tap, Enter,
@@ -757,6 +786,17 @@ export function endScreen(app, { won, earned, extra = {} }) {
  *  shows the final state immediately. */
 export const THREAT_DIAL_MAX = 12;
 export const threatAngle = level => -150 + 300 * Math.max(0, Math.min(THREAT_DIAL_MAX, level)) / THREAT_DIAL_MAX;
+/** What the NEW level actually does (generated from threatModifiers/threatTactics — not flavour text). */
+export function threatEffectsText(level) {
+  const m = threatModifiers({ level }), b = threatTactics(level, { nodeType: 'boss' }), e = threatTactics(level, { nodeType: 'elite' }), n = threatTactics(level);
+  const bits = [];
+  if (m.shieldRate) bits.push(`foes start with wards (${Math.round(m.shieldRate * 100)}% of their health${m.wardFloor || level > 4 ? ', more against hard hitters' : ''})`);
+  if (m.reinforcement) bits.push(`+${m.reinforcement} reinforcement${m.reinforcement > 1 ? 's' : ''} in ordinary fights`);
+  if (b.bossEscorts) bits.push(`bosses bring ${b.bossEscorts} escort${b.bossEscorts > 1 ? 's' : ''}`);
+  if (n.surge) bits.push(`every foe group telegraphs Threat Surges (${Math.round(n.surge.pct * 100)}% of your health, every ${n.surge.every} turns)`);
+  else if (e.surge) bits.push(`elites and bosses telegraph Threat Surges (${Math.round(e.surge.pct * 100)}% of your health, every ${e.surge.every} turns)`);
+  return bits.length ? `At Threat ${level}: ${bits.join('; ')}.` : `At Threat ${level}: foes fight at their printed strength.`;
+}
 export function threatDialHTML(t) {
   const d = t.after - t.before, word = d > 0 ? 'rises' : d < 0 ? 'falls' : 'holds';
   const ticks = Array.from({ length: THREAT_DIAL_MAX + 1 }, (_, i) => { const a = (threatAngle(i) - 90) * Math.PI / 180, r1 = 78, r2 = i % 3 ? 70 : 64;
@@ -765,7 +805,8 @@ export function threatDialHTML(t) {
     return lvl <= 0 ? '' : `M ${(100 + r * Math.cos(a0)).toFixed(2)} ${(100 + r * Math.sin(a0)).toFixed(2)} A ${r} ${r} 0 ${large} 1 ${(100 + r * Math.cos(a1)).toFixed(2)} ${(100 + r * Math.sin(a1)).toFixed(2)}`; };
   return `<div class="threat-wrap"><section class="threat-panel" role="dialog" aria-modal="true" aria-labelledby="threat-h">
     <small class="sh-brand">${GAME.title} · Global Threat</small>
-    <h2 id="threat-h">The world's threat ${word}</h2>
+    <h2 id="threat-h">Global Threat: ${t.before} → ${t.after} <span class="delta ${d > 0 ? 'up' : d < 0 ? 'down' : ''}">(${d > 0 ? '+' + d : d < 0 ? '−' + (-d) : '±0'})</span></h2>
+    <p class="threat-sub">The world's threat ${word}</p>
     <div class="threat-dial ${d > 0 ? 'up' : d < 0 ? 'down' : 'hold'}" data-before="${t.before}" data-after="${t.after}">
       <svg viewBox="0 0 200 200" aria-hidden="true">
         <defs><radialGradient id="tdg" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#3a0b10"/><stop offset="1" stop-color="#12050a"/></radialGradient></defs>
@@ -779,7 +820,13 @@ export function threatDialHTML(t) {
     </div>
     <p class="threat-change"><span>Before <b>${t.before}</b></span><span class="delta ${d > 0 ? 'up' : d < 0 ? 'down' : ''}">${d > 0 ? '+' + d : d < 0 ? '−' + (-d) : '±0'}</span><span>Now <b>${t.after}</b></span></p>
     <ul class="threat-why">${(t.reasons || []).map(r => `<li>${esc(r)}</li>`).join('')}</ul>
-    <p class="threat-note">${d === 0 ? 'No change this time.' : d > 0 ? 'Foes will answer with stronger wards, reinforcements and sharper tactics.' : 'Foes will press you less hard.'}</p>
+    ${t.factors ? `<ul class="threat-factors" aria-label="Performance factors">
+      <li><b>${t.factors.enemyDamage}</b><small>damage from foes</small></li>
+      <li><b>${t.factors.damagePct}%</b><small>of ${t.factors.maxHealth} health</small></li>
+      ${t.factors.turns != null ? `<li><b>${t.factors.turns}</b><small>turn${t.factors.turns === 1 ? '' : 's'}</small></li>` : ''}
+      <li><b>${t.factors.strongStreak}</b><small>win streak</small></li>
+      ${t.factors.boss ? '<li><b>Boss</b><small>encounter</small></li>' : ''}</ul>` : ''}
+    <p class="threat-note">${threatEffectsText(t.after)}</p>
     <button type="button" class="btn primary big" data-threat-continue>Continue</button>
   </section></div>`;
 }

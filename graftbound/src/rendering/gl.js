@@ -56,7 +56,15 @@ void main(){
   vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n;
   vec3 base = vC.rgb; vec3 glow = vec3(0.0);
   float water = 0.0;
-  if (vMat > 0.5) {
+  if (vMat > 16.5) {
+    // v1.6.0 special-tile glyphs: flat vertex-colored inlays that glow with a DIFFERENT motion per tile type.
+    float id = floor(vMat + 0.5), p = 1.0;
+    if (id == 17.0) p = 0.55 + 0.45 * sin((vW.x + vW.z) * 7.0 - uTime * 3.0);                       // Leyline: flow along the paths
+    else if (id == 18.0) p = 0.8 + 0.2 * sin(uTime * 0.9 + vW.x * 0.7);                            // Inscribed Page: slow steady glow
+    else if (id == 19.0) p = 0.55 + 0.45 * abs(sin(uTime * 2.3 + sin(uTime * 7.1) * 0.6));         // Rift: uneven unstable throb
+    else if (id == 20.0) p = 0.45 + 0.55 * step(0.62, fract(atan(vW.z - floor(vW.z) - 0.5, vW.x - floor(vW.x) - 0.5) / 6.2832 - uTime * 0.35));   // Conduit: stepped chase around the circuit
+    glow = base * p * (id == 18.0 ? 0.42 : 1.15);
+  } else if (vMat > 0.5) {
     vec3 an = abs(n); vec2 uv = an.y > 0.6 ? vW.xz : (an.x > an.z ? vW.zy : vW.xy);
     if (abs(vMat - 11.0) < 0.1) { water = 1.0; uv += vec2(uTime * 0.03, uTime * 0.02); }
     if (abs(vMat - 14.0) < 0.1) uv += vec2(sin(uTime * 0.4 + vW.z) * 0.05, uTime * 0.025);

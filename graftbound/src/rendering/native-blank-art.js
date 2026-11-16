@@ -8,6 +8,7 @@
  * Original effects; zero simulation dependencies and no random numbers.
  */
 import { BENCHMARK_STATES, poseFor } from './raster-benchmarks.js';
+import { SKIN_PALETTES } from '../engine/visual-identity.js';
 
 export const BLANK_NATIVE_FRAME = 128;
 
@@ -30,6 +31,14 @@ const c={ink:'#302723',deep:'#493a38',bronze:'#855f4a',horn:'#e5d4b1',
   fur:'#a98158',furHi:'#d9b78c',metal:'#5d7687',steel:'#bbcbd1',
   steelHi:'#f7ebd2',gold:'#d5ab62',venom:'#ab83cd'};
 const clamp=(n,min,max)=>Math.min(max,Math.max(min,n));
+/** v1.6.0: grafted flesh (sockets, wing roots, tail roots, reshaped hands) uses the adventure's generated skin palette. */
+let SK={light:'#e8bc91',mid:'#c78e62',dark:'#81583e'};
+export function setGraftSkin(pattern,tone=0){const t=pattern?.tones?.[0]??tone,p=SKIN_PALETTES[((t%SKIN_PALETTES.length)+SKIN_PALETTES.length)%SKIN_PALETTES.length];SK={light:p[0],mid:p[1],dark:p[2]};}
+const hexMix=(a,b,k)=>'#'+[1,3,5].map(i=>Math.round(parseInt(a.slice(i,i+2),16)*(1-k)+parseInt(b.slice(i,i+2),16)*k).toString(16).padStart(2,'0')).join('');
+/** A fleshy socket where a graft meets the body: skin-toned mound with a dark crease, so parts grow OUT of the body. */
+function socket(g,x,y,rx,ry,tint=null){const base=tint?hexMix(SK.mid,tint,0.35):SK.mid;
+  oval(g,x,y+1,rx+1,ry+1,SK.dark,null);oval(g,x,y,rx,ry,base,null);oval(g,x-rx*0.3,y-ry*0.35,rx*0.45,ry*0.4,SK.light,null);
+  g.strokeStyle='rgba(48,39,35,.55)';g.lineWidth=1;g.beginPath();g.ellipse(x,y,rx,ry,0,0.15*Math.PI,0.85*Math.PI);g.stroke();}
 const level=n=>clamp(Number(n)||0,0,3);
 
 export function blankNativeAnchor(state,frame,view){
@@ -63,7 +72,7 @@ function blade(g,start,tip,w){
 }
 // v1.5.0 silhouette-scale anatomy: parts are sized to change the OUTLINE of the 128px body (readable at game zoom),
 // with 2px ink edges and a lit rim. Tier (1..3) grows each part. Deterministic; no RNG.
-function wings(g,A,kind,tier,view,state,frame){
+function wings(g,A,kind,tier,view,state,frame,trim=null){
   const [bx,by]=A.back, flap=state==='walk'?[0,3,5,2][frame]:state==='cast'?[3,6,8,4][frame]:state==='attack'?[0,-4,-6,-2][frame]:[0,1,2,1][frame];
   const span=Math.min(30+tier*9,bx-6,122-bx), lift=Math.min(44+tier*6,by-6);   // stays inside its 128px frame
   for(const side of [-1,1]){
@@ -74,8 +83,12 @@ function wings(g,A,kind,tier,view,state,frame){
     for(let i=0;i<=n;i++){const t=i/n, x=tip[0]+(root[0]-tip[0])*t*0.9+side*(1-t)*6, y=tip[1]+(by+14-tip[1])*Math.sin(t*Math.PI/2);
       if(kind==='feather')g.lineTo(x+side*4,y+6);else g.quadraticCurveTo(x+side*7,y-3,x,y+(i%2?3:0));}
     g.lineTo(root[0],by+12);g.closePath();
-    g.fillStyle=gloss(g,elbow[0],elbow[1],span,hi,edge);g.fill();g.lineWidth=2.4;g.strokeStyle=c.ink;g.stroke();
+    { const lg=g.createLinearGradient(root[0],root[1],tip[0],tip[1]); lg.addColorStop(0,hexMix(SK.mid,edge,0.25)); lg.addColorStop(0.28,hexMix(SK.mid,hi,0.7)); lg.addColorStop(1,edge);
+      g.fillStyle=lg;g.fill();g.lineWidth=2.4;g.strokeStyle=c.ink;g.stroke(); }
+    if(trim==='feather')for(let i=1;i<=4;i++){const t=i/5,x=tip[0]+(root[0]-tip[0])*t*0.85,y=tip[1]+(by+12-tip[1])*Math.sin(t*Math.PI/2);shape(g,[[x,y],[x+side*3,y+9],[x-side*2,y+7]],c.featherHi,c.ink,1);}
+    if(trim==='membrane')line(g,[elbow,[elbow[0]+side*span*0.25,by-6]],c.deep,2.2);
     line(g,[root,elbow,tip],kind==='feather'?c.featherHi:c.deep,3);
+    socket(g,root[0]+side*1.5,root[1]+2,2.6+tier*0.5,1.8,kind==='feather'?c.feather:c.wing);   // scapula: the wing bone rises out of the shoulder blade
     if(kind!=='feather')for(let i=1;i<=3;i++)line(g,[elbow,[tip[0]+(root[0]-tip[0])*i/4,by+8-i*2]],c.deep,1.6);
     else for(let i=1;i<=4;i++)line(g,[[elbow[0]+side*i*3,elbow[1]+i*6],[elbow[0]+side*(i*3+8),elbow[1]+i*6+6]],c.featherHi,1.4);
   }
@@ -86,8 +99,9 @@ function tail(g,A,kind,tier,view,frame){
   g.bezierCurveTo(hx+sign*(len*0.6),hy+2,hx+sign*(len*0.9),hy+22,hx+sign*len,hy+30-swish);
   g.lineTo(hx+sign*(len+7),hy+34-swish);
   g.bezierCurveTo(hx+sign*(len*0.82),hy+30,hx+sign*(len*0.5),hy+14,hx+sign*2,hy+8);g.closePath();
-  g.fillStyle=gloss(g,hx+sign*len*0.5,hy+8,len,kind==='fur'?c.furHi:c.scaleLight,kind==='fur'?c.fur:c.scale);
-  g.fill();g.lineWidth=2.2;g.strokeStyle=c.ink;g.stroke();
+  { const tc=kind==='fur'?c.fur:c.scale, lg=g.createLinearGradient(hx,hy,hx+sign*len,hy+30); lg.addColorStop(0,SK.mid); lg.addColorStop(0.3,hexMix(SK.mid,tc,0.6)); lg.addColorStop(1,tc);
+    g.fillStyle=lg;g.fill();g.lineWidth=2.2;g.strokeStyle=c.ink;g.stroke(); }
+  socket(g,hx+sign*3,hy+1,3+tier*0.6,2.2,kind==='fur'?c.fur:c.scale);   // tail root grows from the sacrum
   for(let i=1;i<6;i++){const x=hx+sign*(len*i/6),y=hy+4+i*4.5;line(g,[[x,y-3],[x+sign*3,y+3]],kind==='fur'?c.furHi:c.scaleLight,1.6);}
   if(kind==='serpent'||kind==='scaled')blade(g,[hx+sign*(len+2),hy+30-swish],[hx+sign*(len+12),hy+26-swish],5);
 }
@@ -99,12 +113,14 @@ function treeSurface(g,A){
     line(g,[[x+dx+.5,y+dy],[x+dx+.5,y+dy+3]],c.barkHi,.9);
   }
 }
-function armoredChest(g,A,tier){
+const BONE={hi:'#f1e6c8',mid:'#cbbd9b',low:'#8f7f60'};
+function armoredChest(g,A,tier){   // v1.6.0: grown bone/keratin plates (biological graft), not forged steel
   const [x,y]=A.chest,w=13+tier*2;
-  shape(g,[[x-w,y-13],[x-4,y-16],[x,y-11],[x+4,y-16],[x+w,y-13],[x+w+3,y+9],[x+6,y+18],[x-6,y+18],[x-w-3,y+9]],gloss(g,x,y-4,26,c.steel,c.metal),c.ink,2.2);
-  for(const side of [-1,1])shape(g,[[x+side*(w-2),y-15],[x+side*(w+10+tier*2),y-13],[x+side*(w+12+tier*2),y-4],[x+side*(w+2),y-2]],gloss(g,x+side*(w+6),y-12,14,c.steelHi,c.metal),c.ink,2);
-  line(g,[[x-w+3,y-9],[x,y-5],[x+w-3,y-9]],c.steelHi,2);line(g,[[x,y-6],[x,y+16]],c.bronze,1.6);
-  for(let i=-1;i<=1;i++)oval(g,x+i*7,y+12,1.8,1.8,c.gold,null);
+  shape(g,[[x-w,y-13],[x-4,y-16],[x,y-11],[x+4,y-16],[x+w,y-13],[x+w+3,y+9],[x+6,y+18],[x-6,y+18],[x-w-3,y+9]],gloss(g,x,y-4,26,BONE.hi,BONE.mid),c.ink,2.2);
+  for(const side of [-1,1])shape(g,[[x+side*(w-2),y-15],[x+side*(w+10+tier*2),y-13],[x+side*(w+12+tier*2),y-4],[x+side*(w+2),y-2]],gloss(g,x+side*(w+6),y-12,14,BONE.hi,BONE.low),c.ink,2);
+  line(g,[[x-w+3,y-9],[x,y-5],[x+w-3,y-9]],BONE.hi,2);line(g,[[x,y-6],[x,y+16]],BONE.low,1.6);
+  for(let i=-1;i<=1;i++)line(g,[[x-w+4,y+2+i*5],[x+w-4,y+2+i*5]],BONE.low,1);   // growth ridges
+  for(const side of [-1,1])line(g,[[x+side*(w+1),y+10],[x+side*(w-3),y+17]],SK.dark,1.6);   // plates sink into the flesh at the edges
 }
 function shell(g,A,tier){
   const [x,y]=A.back, rx=19+tier*3, ry=22+tier*3;
@@ -137,23 +153,29 @@ function faceMorph(g,A,m,view){
     if(view!==1){oval(g,fx+2,fy+3,5,3,c.furHi);oval(g,fx+5,fy+2,1.8,1,c.deep);}
   }
   if(m.head==='draconic'){
-    for(const side of [-1,1])blade(g,[x+side*7,y-6],[x+side*12,Math.max(7,y-15)],4);
-    if(view!==1)for(let i=0;i<4;i++)line(g,[[fx-3+i*3,fy-2],[fx-2+i*3,fy-4]],c.scaleLight,1.25);
+    // v1.6.0: a heavy scaled brow ridge grown from the skull (horns come only from the horns graft)
+    const ridge=hexMix(SK.dark,c.scale,0.45),ridgeHi=hexMix(SK.mid,c.scaleLight,0.5);
+    for(const side of [-1,1]){line(g,[[x+side*2,y-7],[x+side*7,y-9],[x+side*11,y-6]],ridge,3.2);line(g,[[x+side*3,y-8],[x+side*7,y-10]],ridgeHi,1.2);}
+    if(view!==1)for(let i=0;i<3;i++)oval(g,fx-4+i*4,fy+1+(i%2),1.4,1,ridge,null);   // cheek scales
   }
   if(m.head==='beak'&&view!==1)blade(g,[fx+3,fy+3],[fx+13,fy+6],4);
 }
 function horns(g,A,tier){
-  const [x,y]=A.head, L=14+tier*5;
+  // v1.6.0: horns root in bony bosses on the CROWN (never across the face) and sweep up and outward.
+  const [x,y]=A.head, L=11+tier*5, by=y-10;
   for(const side of [-1,1]){
-    g.beginPath();g.moveTo(x+side*3,y-9);g.quadraticCurveTo(x+side*(L+8),y-10,x+side*(L+3),Math.max(2,y-L-4));
-    g.quadraticCurveTo(x+side*(L-6),y-6,x+side*12,y);g.closePath();
-    g.fillStyle=gloss(g,x+side*L*0.7,y-L*0.5,L,c.hornLight,c.horn);g.fill();g.lineWidth=2;g.strokeStyle=c.ink;g.stroke();
-    for(let i=1;i<4;i++)line(g,[[x+side*(6+i*L/4),y-5-i*L/6],[x+side*(8+i*L/4),y-1-i*L/6]],c.bronze,1.2);
+    socket(g,x+side*6,by+1,3.4+tier*0.5,2.4,c.horn);
+    const b0=[x+side*3.5,by-1], b1=[x+side*7.5,by+0.5], tip=[x+side*(9+L*0.75),Math.max(3,by-L*0.85)], ctl=[x+side*(8+L*0.55),by-L*0.3];
+    g.beginPath();g.moveTo(...b0);g.quadraticCurveTo(x+side*(3+L*0.3),by-L*0.7,...tip);g.quadraticCurveTo(...ctl,...b1);g.closePath();
+    const lg=g.createLinearGradient(b0[0],b0[1],tip[0],tip[1]);lg.addColorStop(0,hexMix(SK.mid,c.horn,0.55));lg.addColorStop(0.35,c.horn);lg.addColorStop(1,c.hornLight);
+    g.fillStyle=lg;g.fill();g.lineWidth=1.8;g.strokeStyle=c.ink;g.stroke();
+    for(let k=1;k<4;k++){const t=k/4.2,px=b0[0]+(tip[0]-b0[0])*t,py=b0[1]+(tip[1]-b0[1])*t;line(g,[[px-side*1.5,py+1.5],[px+side*2,py+2.5]],c.bronze,1);}
   }
 }
 function antlers(g,A,tier){
   const [x,y]=A.head;
   for(const side of [-1,1]){
+    socket(g,x+side*6,y-6,3.2,2.4,c.bark);   // antler pedicles
     const st=[x+side*6,y-7],top=[x+side*(20+tier*4),Math.max(2,y-26-tier*2)];
     line(g,[st,top],c.ink,6);line(g,[st,top],c.bark,4);
     for(const [a,b2] of [[0.35,[-6,-10]],[0.6,[9,-6]],[0.85,[2,-9]]]){const px=st[0]+(top[0]-st[0])*a,py=st[1]+(top[1]-st[1])*a;
@@ -161,9 +183,12 @@ function antlers(g,A,tier){
   }
 }
 function claw(g,pos,side,tier){
-  const [x,y]=pos, L=8+tier*3;
-  oval(g,x,y,5,4.5,c.deep,c.ink,1.4);
-  for(let i=-1;i<=1;i++){blade(g,[x+i*3.5,y+1],[x+side*(L*0.6)+i*4.5,y+L],3.6);}
+  // v1.6.0: the hand itself is RESHAPED — an enlarged knuckled paw in the body's own skin, ending in claws — instead of a
+  // dark accessory floating over the painted hand.
+  const [x,y]=pos, L=8+tier*3, r=6+tier*0.8;
+  oval(g,x,y+1,r+1.2,r,SK.dark,c.ink,1.6);oval(g,x-0.8,y,r,r-1,SK.mid,null);oval(g,x-2,y-2,r*0.5,r*0.38,SK.light,null);
+  for(let i=-1;i<=1;i++){line(g,[[x+i*3.4,y+r-2],[x+i*3.6,y+r+1]],SK.dark,2.2);}
+  for(let i=-1;i<=1;i++){blade(g,[x+i*3.6,y+r-1],[x+side*(L*0.5)+i*4.5,y+r+L],3.8);}
 }
 function moss(g,A){
   const [x,y]=A.chest;
@@ -175,21 +200,28 @@ function moss(g,A){
 /** v1.5.0: every absorbed creature leaves a visible stitched graft seam (up to 6), so even a vanilla graft reads. */
 function graftSeams(g,A,stage){
   const spots=[[A.chest,[-10,-6],[8,-2]],[A.leftHand,[-2,-12],[4,-4]],[A.rightHand,[2,-12],[-4,-4]],[A.hip,[-12,2],[-2,6]],[A.neck,[-6,2],[6,2]],[A.hip,[4,4],[12,0]]];
-  for(let i=0;i<Math.min(6,stage);i++){const [[x,y],[ax,ay],[bx,by]]=spots[i];
-    line(g,[[x+ax,y+ay],[x+bx,y+by]],c.ink,3);line(g,[[x+ax,y+ay],[x+bx,y+by]],'#ffcf8a',1.4);
-    for(let k=1;k<4;k++){const px=x+ax+(bx-ax)*k/4,py=y+ay+(by-ay)*k/4;line(g,[[px-1.5,py-2],[px+1.5,py+2]],c.ink,1.2);}}
+  // v1.6.0: healed graft scars, not stitches. They fade as the body integrates more grafts (fully absorbed by 8).
+  const a=stage>=8?0:stage>=5?0.25:0.45;if(!a)return;
+  g.save();g.globalAlpha=a;
+  for(let i=0;i<Math.min(4,stage);i++){const [[x,y],[ax,ay],[bx,by]]=spots[i];line(g,[[x+ax,y+ay],[x+(ax+bx)/2,y+(ay+by)/2+1],[x+bx,y+by]],SK.dark,1.4);}
+  g.restore();
 }
 function paintGraftPose(g,app,A,view,state,frame,pass){
   const t=app?.anatomy?.features||{},m=app?.anatomy?.morph||{};
   const hasEvolution=(app?.anatomy?.stage||0)>0;
   if(!hasEvolution&&!Object.values(t).some(Boolean))return;
-  if(pass==='behind'){
-    if(t.wings)wings(g,A,m.wingKind,level(t.wings),view,state,frame);
+  // v1.6.0 layering rules: from the FRONT, dorsal anatomy sits behind the body; from the BACK we look at the spine,
+  // so wings, tail, shell and spines are painted over the body where they visibly grow out of it.
+  const dorsal=(view===1)===(pass==='front');
+  if(dorsal){
+    if(t.wings)wings(g,A,m.wingKind,level(t.wings),view,state,frame,m.wingTrim);
     if(t.tail)tail(g,A,m.tailKind,level(t.tail),view,frame);
     if(t.shell)shell(g,A,level(t.shell));
-    if(t.spikes){const [x,y]=A.back,L=16+level(t.spikes)*5;for(let i=-2;i<=2;i++)blade(g,[x+i*6,y-10],[x+i*10,y-10-L+Math.abs(i)*4],5);}
-    return;
+    if(t.spikes){const [x,y]=A.back,L=16+level(t.spikes)*5;for(let i=-2;i<=2;i++){socket(g,x+i*6,y-9,3,2.2);blade(g,[x+i*6,y-10],[x+i*10,y-10-L+Math.abs(i)*4],5);}}
   }
+  if(pass==='behind')return;
+  // front view: the roots of dorsal anatomy are visible above/around the body outline
+  if(view!==1&&t.wings)for(const side of [-1,1])socket(g,A.chest[0]+side*12,A.chest[1]-12,3+level(t.wings)*0.6,2.4,m.wingKind==='feather'?c.feather:c.wing);
   // v1.5.0: body surface is now re-skinned through the skin mask in evolution-visuals.js (paintSurfaceSkin).
   if(hasEvolution)faceMorph(g,A,m,view);
   if(t.armor)armoredChest(g,A,level(t.armor));

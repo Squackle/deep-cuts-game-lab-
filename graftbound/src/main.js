@@ -1,5 +1,6 @@
 // GRAFTBOUND app controller: loading -> screens <-> run lifecycle <-> battle UI <-> saves. No game rules here.
 import { Scene } from './rendering/scene.js';
+import { duplicatePreview } from './cards/graft-levels.js';
 import { loadAssets } from './rendering/sprites.js';
 import { composePlayerSheet } from './rendering/evolution-visuals.js';
 import { composeEquippedSheet } from './rendering/equipment-visuals.js';
@@ -349,7 +350,7 @@ class App {
       sc.fx.burst(sc.centerPos(uid), col, 80, { speed: 3, up: 2.5, size: 16 }); sc.fx.burst(sc.centerPos(uid), [1, 0.95, 0.7], 40, { speed: 1.6, up: 3, size: 10 });
       this.traitFx(uid, evoBefore);
       const kws = [...change.gained, ...change.raised].map(kw => keywordLabel(kw, this.run.evo.keywords[kw]));
-      this.bigText(`<div class="bt-pt">${evoBefore.power}/${evoBefore.toughness} <i>→</i> <b>${this.run.evo.power}/${this.run.evo.toughness}</b></div>${kws.length ? `<div class="bt-kw">${esc(kws.join(' · '))}</div>` : ''}${change.resonance ? `<div class="bt-res">Resonance +${change.resonance * 2} Maximum Health</div>` : ''}${change.released ? `<div class="bt-src">${esc(change.released)} was released</div>` : ''}${this.traitLine(evoBefore)}<div class="bt-src">${esc(card.name)} is grafted to you · recorded in your Journal</div><small class="bt-skip">tap to continue</small>`, COLOR[card.color].glow);
+      this.bigText(`<div class="bt-pt">${evoBefore.power}/${evoBefore.toughness} <i>→</i> <b>${this.run.evo.power}/${this.run.evo.toughness}</b></div>${kws.length ? `<div class="bt-kw">${esc(kws.join(' · '))}</div>` : ''}${change.resonance ? `<div class="bt-res">Resonance +${change.resonance * 2} Maximum Health</div>` : ''}${change.released ? `<div class="bt-src">${esc(change.released)} was released</div>` : ''}${this.traitLine(evoBefore)}${(() => { const dp = duplicatePreview(evoBefore.absorbed, cardId); return dp ? `<div class="bt-res">${dp.maxed ? `${esc(dp.name)} is already at max level ${dp.from}` : `Graft level ${dp.from} → ${dp.to}: ${esc(dp.after)}`}</div>` : ''; })()}<div class="bt-src">${esc(card.name)} is grafted to you · recorded in your Journal</div><small class="bt-skip">tap to continue</small>`, COLOR[card.color].glow);
     } else {
       v.flash = 0.6; sc.fx.burst(sc.centerPos(uid), col, 40, { speed: 2, up: 2 });
       this.bigText(`<div class="bt-kw">${esc(change.kind === 'empower' ? `${card.name} · Level ${change.level}` : card.name)}</div><div class="bt-src">${change.kind === 'empower' ? 'Spell empowered' : 'Inscribed in your spellbook'}</div><small class="bt-skip">tap to continue</small>`, COLOR[card.color].glow);

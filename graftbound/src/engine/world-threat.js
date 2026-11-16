@@ -16,23 +16,37 @@ export function normalizedWorldThreat(state) {
  *   - strong streak: the 3rd+ consecutive win losing <= 15% adds another +1 (momentum)
  *   - moderate: holds and breaks streaks; serious (>= 20%): -1 (unchanged); near-death (>= 50%): -2
  *  Scale stays 0..12. */
-export function settleWorldThreat(state, { victory, enemyDamage = 0, maxHealth = 1, tutorial = false, turns = 99 } = {}, report = null) {
+export const MAX_RISE_PER_BATTLE = 3;
+export function settleWorldThreat(state, { victory, enemyDamage = 0, maxHealth = 1, tutorial = false, turns = 99, boss = false } = {}, report = null) {
   const n = normalizedWorldThreat(state); const before = n.level; const reasons = [];
-  const out = () => { if (report) Object.assign(report, { before, after: n.level, delta: n.level - before, reasons: reasons.length ? reasons : ['Steady performance: threat holds.'], streak: n.strongStreak }); return n; };
+  const hp = Math.max(1, Number(maxHealth) || 1), lost = Math.max(0, Number(enemyDamage) || 0), quick = Number(turns) <= 3;
+  const pct = Math.round(100 * lost / hp);
+  const out = () => {
+    if (report) {
+      if (!reasons.length) reasons.push(n.level >= WORLD_THREAT_MAX && before >= WORLD_THREAT_MAX ? `Threat is already at its maximum (${WORLD_THREAT_MAX}).`
+        : lost > 0 ? `Foes took ${lost} of ${hp} health (${pct}%): enough to stop the climb, not enough to ease it, so threat holds.` : 'Steady performance: threat holds.');
+      Object.assign(report, { before, after: n.level, delta: n.level - before, reasons, streak: n.strongStreak,
+        factors: { enemyDamage: lost, maxHealth: hp, damagePct: pct, turns: Number.isFinite(+turns) && turns < 99 ? +turns : null, quick, boss: !!boss, strongStreak: n.strongStreak } });
+    }
+    return n;
+  };
   if (tutorial) { reasons.push('Tutorial battles never change threat.'); return out(); }
   if (!victory) { reasons.push('No victory: threat unchanged.'); return out(); }
-  const hp = Math.max(1, Number(maxHealth) || 1), lost = Math.max(0, Number(enemyDamage) || 0), quick = Number(turns) <= 3;
-  const up = (k, why) => { const b = n.level; n.level = Math.min(WORLD_THREAT_MAX, n.level + k); if (n.level > b) reasons.push(why); };
+  const capped = () => n.level >= WORLD_THREAT_MAX;
+  const up = (k, why) => { const b = n.level; n.level = Math.min(WORLD_THREAT_MAX, n.level + k); if (n.level > b) reasons.push(why); else if (capped() && !reasons.some(r => r.includes('maximum'))) reasons.push(`${why} Threat is already at its maximum (${WORLD_THREAT_MAX}).`); };
   const down = (k, why) => { const b = n.level; n.level = Math.max(0, n.level - k); if (n.level < b) reasons.push(why); };
-  if (lost === 0) { up(quick ? 2 : 1, quick ? 'Flawless and fast: no damage taken in 3 turns or fewer.' : 'Flawless victory: no damage taken from foes.'); n.flawlessStreak = 0; }
+  if (lost === 0) { up(quick ? 2 : 1, quick ? `Flawless and fast: no damage from foes in ${turns} turn${turns === 1 ? '' : 's'}.` : 'Flawless victory: foes never wounded you.'); n.flawlessStreak = 0; }
   else if (lost <= Math.max(1, Math.floor(hp * 0.10))) {
-    if (quick) { up(1, 'Efficient win: light damage in 3 turns or fewer.'); n.flawlessStreak = 0; }
-    else { n.flawlessStreak++; if (n.flawlessStreak >= 2) { up(1, 'Two light-damage wins in a row.'); n.flawlessStreak = 0; } else reasons.push('Light damage: one more light win raises threat.'); }
+    if (quick) { up(1, `Efficient win: only ${lost} damage (${pct}%) in ${turns} turns.`); n.flawlessStreak = 0; }
+    else { n.flawlessStreak++; if (n.flawlessStreak >= 2) { up(1, 'Two light-damage wins in a row.'); n.flawlessStreak = 0; } else reasons.push(`Light damage (${lost}, ${pct}%): one more light win raises threat.`); }
   } else { n.flawlessStreak = 0; }
-  if (lost <= Math.floor(hp * 0.15)) { n.strongStreak = Math.min(9, n.strongStreak + 1); if (n.strongStreak >= 3) up(1, `Dominant streak: ${n.strongStreak} strong wins in a row.`); }
+  if (lost <= Math.floor(hp * 0.15)) { n.strongStreak = Math.min(9, n.strongStreak + 1); if (n.strongStreak >= 3) up(1, `Winning streak: ${n.strongStreak} dominant victories in a row increased enemy pressure.`); }
   else n.strongStreak = 0;
-  if (lost >= Math.ceil(hp * 0.5)) down(2, 'Near-death victory: the world eases off.');
-  else if (lost >= Math.ceil(hp * 0.2)) down(1, 'Hard-fought victory: threat eases.');
+  // v1.6.0: a boss that never wounds you is the clearest sign the world is under-matched (owner run: Toxrill, 0 damage).
+  if (boss && lost === 0) up(1, 'A boss fell without wounding you.');
+  if (n.level - before > MAX_RISE_PER_BATTLE) { n.level = before + MAX_RISE_PER_BATTLE; reasons.push(`Threat rises at most +${MAX_RISE_PER_BATTLE} per battle.`); }
+  if (lost >= Math.ceil(hp * 0.5)) down(2, `Heavy damage sustained (${pct}% of your health): the world eases its pressure.`);
+  else if (lost >= Math.ceil(hp * 0.2)) down(1, `Hard-fought victory (${pct}% of your health lost): threat eases.`);
   return out();
 }
 /** v1.5.0 deliberate reduction (skipped packs, Wayshrine Penance). Never below 0. Returns the amount actually removed. */
@@ -59,7 +73,8 @@ export function threatModifiers(state, { boss = false, heroPower = 0 } = {}) {
   // the hero's ACTUAL attack. At Threat 10+, a strong build must spend another
   // hit on ordinary defenders; weak builds still face only the small HP ward.
   const power = Math.max(0, Number(heroPower) || 0);
-  const counterWardRate = Math.min(1, Math.max(0, (n - 4) / 6));
+  // v1.6.0: reaches 1.0 only at Threat 12 (was Threat 10) — high threat now also presses with telegraphed Threat Surges.
+  const counterWardRate = Math.min(1, Math.max(0, (n - 4) / 8));
   const wardFloor = Math.ceil(Math.min(56, power * counterWardRate * (boss ? 0.75 : 1)));
   return {
     level: n,
@@ -69,6 +84,20 @@ export function threatModifiers(state, { boss = false, heroPower = 0 } = {}) {
     peakPower: n === WORLD_THREAT_MAX && !boss ? 1 : 0
   };
 }
+/** v1.6.0 tactical threat (bounded, telegraphed, deterministic). Returns what an encounter at `level` adds:
+ *  - surge: the strongest foe telegraphs a cross around the hero, resolved on the NEXT enemy turn (one step or Guard
+ *    avoids it). Elites/bosses from Threat 6, every encounter from Threat 9. Damage = pct of hero maximum health.
+ *  - bossEscorts: extra counter-picked foes for bosses (Threat 8: 1, Threat 11: 2). Bosses previously had none.
+ *  - ambush: foes that start on the hero's flanks after a dominant streak (no health is ever multiplied). */
+export function threatTactics(level, { nodeType = 'battle', streak = 0 } = {}) {
+  const n = Math.max(0, Math.min(WORLD_THREAT_MAX, level | 0)), big = nodeType === 'elite' || nodeType === 'boss';
+  if (nodeType === 'tutorial') return { level: n, surge: null, bossEscorts: 0, ambush: 0 };
+  const surgeOn = (big && n >= 6) || n >= 9;
+  return { level: n,
+    surge: surgeOn ? { every: n >= 10 ? 2 : 3, pct: Math.min(0.2, 0.1 + 0.02 * (n - 6)) } : null,
+    bossEscorts: nodeType === 'boss' ? (n >= 11 ? 2 : n >= 8 ? 1 : 0) : 0,
+    ambush: nodeType === 'boss' ? 0 : (streak >= 5 || n >= 10) && n >= 5 ? 2 : streak >= 3 && n >= 5 ? 1 : 0 };
+}
 export function applyWorldThreat(battle, state) {
   if (!battle || battle.nodeType === 'tutorial') return battle;
   const boss = battle.nodeType === 'boss';
@@ -76,6 +105,8 @@ export function applyWorldThreat(battle, state) {
   const mod = threatModifiers(state, { boss, heroPower });
   battle.worldThreat = mod.level;
   battle.worldThreatShieldRate = mod.shieldRate;
+  const tac = threatTactics(mod.level, { nodeType: battle.nodeType });
+  battle.threatSurge = tac.surge;   // read by surgeAfterAct (ai.js); serialized with the battle
   for (const u of battle.units.filter(u => u.side === 'enemy')) {
     const bonus = Math.max(Math.ceil(u.maxHp * mod.shieldRate), mod.wardFloor);
     if (bonus) {

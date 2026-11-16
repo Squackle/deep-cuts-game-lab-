@@ -33,7 +33,7 @@ test('graft surface re-skin: the Blank stays plain; strength grows with grafts a
   let prev = 0; for (let n = 1; n <= 12; n++) { const k = surfaceStrength(n); assert.ok(k >= prev && k <= 0.78); prev = k; }
   assert.deepEqual(Object.keys(SURFACE_STYLE).sort(), ['bark', 'chitin', 'fur', 'scales']);
   const ev = src('src/rendering/evolution-visuals.js');
-  assert.match(ev, /destination-in'; g\.drawImage\(mask/, 'surface pattern is clipped to the skin mask, never clothing/equipment');
+  assert.match(ev, /rg\.globalCompositeOperation = 'source-in'; rg\.drawImage\(mask/, 'surface pattern is clipped to the skin mask, never clothing/equipment');
   assert.match(ev, /app\.anatomy\?\.stage\]\)/, 'sheet cache is keyed on graft count');
 });
 test('graft anatomy is silhouette-scale and stays inside its frame', () => {

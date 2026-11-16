@@ -16,7 +16,7 @@ export const BENCHMARK_POSES = Object.freeze({
   idle:[0,1,0,1],
   walk:[2,3,2,3],
   attack:[4,5,5,4],
-  cast:[0,4,5,1],
+  cast:[0,4,4,1],   // v1.6.0: raised-hand casting only; pose 5 is the punch extension and belongs to attack
   hurt:[3,3,1,0]
 });
 export const BENCHMARKS=Object.freeze([

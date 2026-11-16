@@ -43,7 +43,7 @@ export const SPELL_ADAPTATIONS = {
   'Fireball':           { effect: 'starfall', cost: 4, vfx: 'fireball', note: 'Adapted: a fixed blast — 4 to the target tile and 2 to adjacent foes. X is not modeled.' },
   'Giant Growth':       { effect: 'sap_surge', cost: 1, vfx: 'growth',  note: 'Adapted: give target creature exactly +3/+3 until end of turn, following printed numbers.' },
   'Drain Life':         { effect: 'soul_siphon', cost: 2, vfx: 'drain', note: 'Adapted: choose X at cast time (1–available mana); pay 2 + X mana, deal X damage and heal the actual health removed. Black-mana restriction is not modeled.', text: 'Choose X: pay 2 + X mana, deal X damage to a foe, heal damage dealt.' },
-  'Infest':             { effect: 'venom_mist', cost: 2, vfx: 'poison', note: 'Adapted: Poison 2 to foes in a 3×3 area (instead of −2/−2 to all creatures).' },
+  'Infest':             { effect: 'venom_mist', cost: 2, vfx: 'infest', note: 'Adapted: Poison 2 to foes in a 3×3 area (instead of −2/−2 to all creatures).' },
   'Raise the Alarm':    { effect: 'call_sproutling', cost: 2, vfx: 'summon', note: 'Adapted: summon two separate white Soldiers on empty nearby tiles. Level 1: 1/1 each; Level 2: 2/2 each; Level 3: 3/3 each. Token power/toughness are not modified by Arcane.', text: 'Create two {1}/{2} white Soldier creature tokens on two empty nearby tiles.' },
   'Healing Hands':      { effect: 'mending_rain', cost: 2, vfx: 'heal',  note: 'Adapted: heal 4, cleanse poison and weakness, and draw one card. Printed prevention is represented as healing here.' },
   'Healing Salve':      { effect: 'mending_rain', bonus: -1, cost: 1, vfx: 'salve', note: 'Adapted: heal 3 and cleanse.' },

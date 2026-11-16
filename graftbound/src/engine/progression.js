@@ -1,6 +1,6 @@
 // Permanent, between-run progression: statistics, achievements, unlocks, settings. Never auto-resets.
-export const META_VERSION = 5;
-export const DEFAULT_SETTINGS = { sound: true, music: true, graphics: 'auto', animSpeed: 'normal', cardMotion: 'auto', autoEnd: true, ambient: true };
+export const META_VERSION = 6;
+export const DEFAULT_SETTINGS = { sound: true, music: true, graphics: 'auto', animSpeed: 'cinematic', cardMotion: 'auto', autoEnd: true, ambient: true };
 export function newMeta() {
   return {
     v: META_VERSION, tutorialDone: false, introSeen: false, hints: {}, seen: {}, achievements: {}, unlocks: {},

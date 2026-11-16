@@ -3,6 +3,7 @@
 import { player, enemies, alive, heal, dealDamage } from './abilities.js';
 import { tileAt, unitAt, T, manhattan } from '../core/grid.js';
 import { drawCards, refillFromGraveyard } from './deck.js';
+import { lv } from '../cards/graft-levels.js';
 
 const owns=(s,id)=>s.traits?.includes(id);
 const nearestFoe=s=>enemies(s).sort((a,b)=>manhattan(a,player(s))-manhattan(b,player(s))||a.uid-b.uid)[0];
@@ -34,31 +35,31 @@ export function traitDraw(s,ev,n=1){
 export function onHeroDraw(s,ev){
   /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return;
  if(!owns(s,'sheoldred')||!alive(player(s)))return;
- const gain=heal(s,ev,player(s),2,'sheoldred');
- if(gain)ev.push({t:'graftTrigger',name:'Sheoldred · draw grants 2 life',uid:player(s).uid,amount:gain});
+ const n=lv(s,'sheoldred').heal;const gain=heal(s,ev,player(s),n,'sheoldred');
+ if(gain)ev.push({t:'graftTrigger',name:`Sheoldred · draw grants ${n} life`,uid:player(s).uid,amount:gain});
 }
 export function onBattleGrafts(s,ev){
  const hero=player(s);if(!hero)return;
  if(owns(s,'ascendant') && hero.hp>=30){
-  hero.power+=3;hero.toughness+=3;hero.maxHp+=3;hero.hp+=3;hero.keywords.flying=1;
-  ev.push({t:'graftTrigger',name:'Serra Ascendant · +3/+3 and Flying at 30+ life',uid:hero.uid});
+  const b=lv(s,'ascendant').buff;hero.power+=b;hero.toughness+=b;hero.maxHp+=b;hero.hp+=b;hero.keywords.flying=1;
+  ev.push({t:'graftTrigger',name:`Serra Ascendant · +${b}/+${b} and Flying at 30+ life`,uid:hero.uid});
  }
- if(owns(s,'visionary'))traitDraw(s,ev,1);
+ if(owns(s,'visionary'))traitDraw(s,ev,lv(s,'visionary').draw);
 }
 export function onHeroAttack(s,ev){
   /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return;
  if(owns(s,'brimaz')){
-  const token=spawnAlly(s,ev,'Cat Soldier',1,1);
+  const token=spawnAlly(s,ev,'Cat Soldier',...lv(s,'brimaz').token);
   if(token)ev.push({t:'graftTrigger',name:'Brimaz · Cat Soldier',uid:player(s).uid});
  }
 }
 export function onHeroSpell(s,ev){
   /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return;
  if(owns(s,'archmage'))traitDraw(s,ev,1);
- if(owns(s,'pyromancer'))spawnAlly(s,ev,'Elemental',1,1);
- if(owns(s,'talrand'))spawnAlly(s,ev,'Drake',2,2,{flying:1});
- if(owns(s,'archaeomancer')&&!s.archaeomancerUsed){
-  s.archaeomancerUsed=true;
+ if(owns(s,'pyromancer'))spawnAlly(s,ev,'Elemental',...lv(s,'pyromancer').token);
+ if(owns(s,'talrand'))spawnAlly(s,ev,'Drake',...lv(s,'talrand').token,{flying:1});
+ if(owns(s,'archaeomancer')&&(s.archaeomancerUses||0)<lv(s,'archaeomancer').uses){
+  s.archaeomancerUses=(s.archaeomancerUses||0)+1;s.archaeomancerUsed=true;
   // The spell just cast occupies the newest graveyard position; recover a DIFFERENT card.
   const grave=s.deck?.graveyard;
   const i=grave&&grave.length>1?grave.length-2:-1;
@@ -71,15 +72,17 @@ export function onHeroHeal(s,ev,amount,kind){
   /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return;
  if(!owns(s,'vito')||kind==='vito'||amount<=0)return;
  const target=nearestFoe(s);if(!target)return;
- ev.push({t:'graftTrigger',name:`Vito · deal ${amount} damage to ${target.name}`,uid:player(s).uid});
- dealDamage(s,ev,player(s),target,amount,{kind:'vito',element:'umbral'});
+ const dmg=amount+lv(s,'vito').bonus;
+ ev.push({t:'graftTrigger',name:`Vito · deal ${dmg} damage to ${target.name}`,uid:player(s).uid});
+ dealDamage(s,ev,player(s),target,dmg,{kind:'vito',element:'umbral'});
 }
 export function onUnitDeath(s,ev,dead){
  if(!owns(s,'bloodArtist')||dead.hero)return;
  const target=nearestFoe(s);
  if(target && target!==dead){
-  ev.push({t:'graftTrigger',name:'Blood Artist · drain 1 life',uid:player(s).uid});
-  dealDamage(s,ev,player(s),target,1,{kind:'bloodArtist',element:'umbral'});
-  heal(s,ev,player(s),1,'bloodArtist');
+  const p=lv(s,'bloodArtist');
+  ev.push({t:'graftTrigger',name:`Blood Artist · drain ${p.drain} life`,uid:player(s).uid});
+  dealDamage(s,ev,player(s),target,p.drain,{kind:'bloodArtist',element:'umbral'});
+  heal(s,ev,player(s),p.heal,'bloodArtist');
  }
 }

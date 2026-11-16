@@ -67,7 +67,7 @@ test('actual runtime loads and caches 96px native magical atlases with original 
   assert.ok(loader.includes('const detailed=species||humanoid||beast||token||magic||monster||folk;'));
   assert.ok(loader.includes('else if(magic)drawMagicStudyFrame(cctx,config.feature,view,anim.row,frame,config);'));
   assert.ok(loader.includes("magic?'magic-anatomy-study-v1'"));
-  assert.ok(loader.includes('pixelScale:base.h*(base.pixelScale||1)/height'));
+  assert.ok(loader.includes('pixelScale:NATIVE_STUDY_DENSITY'));
   const art=readFileSync(new URL('../src/rendering/detailed-magic-art.js',import.meta.url),'utf8');
   for(const bad of ['Math.random','localStorage','window.','fetch(','player.hp =','s.rng ='])
     assert.equal(art.includes(bad),false,'no gameplay or network dependencies in runtime art');

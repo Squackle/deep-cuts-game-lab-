@@ -123,6 +123,12 @@ export const META_MIGRATIONS = {
   2: m => { m.v = 3; return m; },
   3: m => { m.v = 4; if (m.settings) delete m.settings.contentMode; return m; },
   4: m => { m.v = 5; m.settings = { ...DEFAULT_SETTINGS, ...(m.settings || {}) }; m.records = m.records || {}; return m; },
+  // v1.6.0: Cinematic becomes the default. Before v1.6 the game never recorded whether a speed was CHOSEN, so only the
+  // old default ('normal', or missing) moves to Cinematic. Fast / Instant / Cinematic are clearly deliberate and kept.
+  // From now on any change in Settings sets animSpeedChosen, and later migrations must respect it.
+  5: m => { m.v = 6; m.settings = { ...DEFAULT_SETTINGS, ...(m.settings || {}) };
+    if (!m.settings.animSpeedChosen && (m.settings.animSpeed === 'normal' || !m.settings.animSpeed)) m.settings.animSpeed = 'cinematic';
+    return m; },
 };
 export function migrate(data, from, to, table) {
   let v = from;

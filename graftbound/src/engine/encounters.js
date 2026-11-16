@@ -45,9 +45,13 @@ export function buildEncounter(template, seed, kind = 'battle') {
     for (const [dx, dy] of DIRS) { const x = playerStart.x + dx, y = playerStart.y + dy; if (x >= 0 && x < w && y >= 0 && y < h) reserved.add(y * w + x); }
     const enemySpots = [];
     const free = (x, y) => terrain[y * w + x] === T.FLOOR && !reserved.has(y * w + x);
-    for (const defId of template.enemies) {
+    const ambushIdx = new Set(template.ambush ? template.enemies.map((d, i) => BOSS_IDS.has(d) ? -1 : i).filter(i => i >= 0).slice(-template.ambush) : []);
+    for (const [ei, defId] of template.enemies.entries()) {
       for (let k = 0; k < 60; k++) {
-        const x = int(rng, w), y = BOSS_IDS.has(defId) ? 1 : int(rng, 3);
+        // v1.6.0 ambush: these foes start on the flanks (rows 3-5, outer columns), at least 3 steps from the hero.
+        const amb = ambushIdx.has(ei) && k < 45;
+        const x = amb ? (k % 2 ? w - 1 - int(rng, 2) : int(rng, 2)) : int(rng, w), y = amb ? 3 + int(rng, 3) : BOSS_IDS.has(defId) ? 1 : int(rng, 3);
+        if (amb && Math.abs(x - playerStart.x) + Math.abs(y - playerStart.y) < 3) continue;
         // v1.5.0: paired archers take different rows AND columns so their firing lanes cross.
         const laneClash = isLineShooter(defId) && enemySpots.some(e => isLineShooter(e.defId) && (e.x === x || e.y === y || Math.abs(e.x - x) < 2));
         if (free(x, y) && !laneClash && !enemySpots.some(e => Math.abs(e.x - x) + Math.abs(e.y - y) < 2)) { enemySpots.push({ defId, x, y }); reserved.add(y * w + x); break; }

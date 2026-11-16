@@ -71,6 +71,6 @@ test('spell cards cannot crop printed art or overflow the battle tray on short v
 });
 
 test('changes to hazard planning use an isolated deterministic ranked rules revision',()=>{
-  assert.equal(RULES_VERSION,'graftbound-rules-1.5.0-beta');
-  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,24);
+  assert.equal(RULES_VERSION,'graftbound-rules-1.6.0-beta');
+  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,25);
 });

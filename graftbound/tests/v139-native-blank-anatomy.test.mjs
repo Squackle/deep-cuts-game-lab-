@@ -15,7 +15,8 @@ function spyCanvas(){
   ellipse(...p){calls.push(['ellipse',...p])},
   bezierCurveTo(...p){calls.push(['bezier',...p])},
   quadraticCurveTo(...p){calls.push(['quad',...p])},
-  createRadialGradient(...p){calls.push(['gradient',...p]);return {addColorStop(){}}}
+  createRadialGradient(...p){calls.push(['gradient',...p]);return {addColorStop(){}}},
+  createLinearGradient(...p){calls.push(['gradient',...p]);return {addColorStop(){}}}
  };
  return g;
 }

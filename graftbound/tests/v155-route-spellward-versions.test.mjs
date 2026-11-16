@@ -34,11 +34,11 @@ test('Spellward: each spell-focus tier grants +3 max health and +1 Arcane; no sp
     assert.equal(st.arcane - base.arcane, spellFocus(n));
   }
 });
-test('game, package and ranked rules versions agree (1.5.0-beta, revision 24)', () => {
+test('game, package and ranked rules versions agree (1.6.0-beta, revision 25)', () => {
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-  assert.equal(GAME.version, '1.5.0-beta'); assert.equal(pkg.version, GAME.version);
+  assert.equal(GAME.version, '1.6.0-beta'); assert.equal(pkg.version, GAME.version);
   assert.equal(RULES_VERSION, 'graftbound-rules-' + GAME.version);
-  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 24);
+  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 25);
 });
 test('learning the spell that completes a focus tier grants the Spellward health immediately', async () => {
   const { newRun, maxHpOf, chooseReward } = await import('../src/engine/run.js');

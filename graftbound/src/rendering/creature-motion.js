@@ -75,3 +75,27 @@ export function materialLightDelta(x,y,w,h,feature,edgeSides=0){
   if(edgeSides) light+=(nx<.5||ny<.4)?6:-7;
   return Math.max(-24,Math.min(24,Math.round(light)));
 }
+
+/** v1.6.0 shared HD-2D finishing pass for every generated creature study, matching the hero/Soldier standard:
+ *  - selective outline (sel-out): edge pixels darken toward their OWN colour (never flat black), heavier on the
+ *    lower-right (shadow side) and lighter on the upper-left;
+ *  - rim light: a one-pixel warm highlight on upper-left silhouette edges (shared light direction);
+ *  - contact occlusion: the lowest opaque rows of each column darken slightly so creatures sit on the ground.
+ *  Deterministic, frame-local and alpha-preserving (silhouettes and hit areas are unchanged). */
+export function finishCreatureCell(data, w, h, { rim = [255, 236, 200], strength = 1 } = {}) {
+  const A = (x, y) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : data[(y * w + x) * 4 + 3]);
+  const src = new Uint8ClampedArray(data);
+  const lowest = new Int16Array(w).fill(-1);
+  for (let x = 0; x < w; x++) for (let y = h - 1; y >= 0; y--) if (src[(y * w + x) * 4 + 3] >= 128) { lowest[x] = y; break; }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = (y * w + x) * 4; if (src[i + 3] < 128) continue;
+    const openL = A(x - 1, y) < 128, openT = A(x, y - 1) < 128, openR = A(x + 1, y) < 128, openB = A(x, y + 1) < 128;
+    let k = 1, add = 0;
+    if (openR || openB) k = 0.5;                       // shadow-side sel-out
+    else if (openL || openT) { k = 0.82; add = 1; }    // light-side edge
+    if (add && (openT || openL) && !(openR || openB)) { for (let c = 0; c < 3; c++) data[i + c] = Math.round(src[i + c] * 0.45 + rim[c] * 0.55 * strength + src[i + c] * 0.55 * (1 - strength)); continue; }
+    if (lowest[x] >= 0 && y >= lowest[x] - 2) k *= 0.8;   // contact occlusion
+    if (k !== 1) for (let c = 0; c < 3; c++) data[i + c] = Math.round(src[i + c] * k);
+  }
+  return data;
+}

@@ -74,7 +74,7 @@ test('battle renderer selects native beasts without changing combat scale or rep
   assert.ok(loader.includes('const detailed=species||humanoid||beast||token||magic||monster||folk;'));
   assert.ok(loader.includes('else if(beast)drawBeastStudyFrame(cctx,config.feature,view,anim.row,frame,config);'));
   assert.ok(loader.includes("beast?'beast-anatomy-study-v1'"));
-  assert.ok(loader.includes('pixelScale:base.h*(base.pixelScale||1)/height'));
+  assert.ok(loader.includes('pixelScale:NATIVE_STUDY_DENSITY'));
   const source=readFileSync(new URL('../src/rendering/detailed-beast-art.js',import.meta.url),'utf8');
   for(const forbidden of ['Math.random','localStorage','window.','fetch(','player.hp =','s.rng ='])
     assert.ok(!source.includes(forbidden));

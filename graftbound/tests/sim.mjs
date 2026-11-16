@@ -7,6 +7,7 @@ import { resolveCard } from '../src/cards/catalog.js';
 import { graftRating } from '../src/engine/power.js';
 import { botPlay } from './helpers.mjs';
 
+export const SUMMON_TRAITS = new Set(['ophiomancer', 'rabblemaster', 'brimaz', 'pyromancer', 'talrand', 'mystic', 'skeleton', 'hornetQueen', 'hermit', 'nadir', 'zulaport', 'bloodArtist', 'ayara', 'lambholt']);
 export const POLICIES = {
   greedy: (run, c) => c.kind === 'creature' ? graftRating(c, run.evo) : ({ damage: 5, area: 5.5, weaken: 4, disable: 4, protection: 3.5, healing: 3.5, enhance: 3.5 }[c.category] || 3) - (run.spellbook.length >= 5 ? 3 : 0),
   random: () => 0,
@@ -14,6 +15,8 @@ export const POLICIES = {
   tank: (run, c) => c.kind === 'creature' ? c.toughness * 2 + (c.keywords.lifelink ? 3 : 0) : (c.category === 'protection' || c.category === 'healing' ? 5 : 0),
   // v1.4.0: a spell-FOCUSED player, not a spell-ONLY bot — prefers damaging/area spells, still grafts a body when the pack has no useful spell.
   spells: (run, c) => c.kind === 'spell' ? ({ damage: 12, area: 12.5, weaken: 9, disable: 9, protection: 6, healing: 6, enhance: 5 }[c.category] ?? 4) + c.cost * 0.5 - (run.spellbook.some(e => e.id === c.id) ? 2 : 0) : (run.evo.absorbed.length < 3 ? 11 : 0) + graftRating(c, run.evo) * 0.5,
+  // v1.6.0 summoning build: token-making grafts and summon spells first, then bodies.
+  summoner: (run, c) => c.kind === 'creature' ? (SUMMON_TRAITS.has(c.trait) ? 30 : 0) + graftRating(c, run.evo) * 0.6 : c.category === 'summon' ? 14 : ({ damage: 5, area: 5 }[c.category] || 2),
   flyDeath: (run, c) => c.kind === 'creature' ? (c.keywords.flying ? 6 : 0) + (c.keywords.deathtouch ? 6 : 0) + c.power + c.toughness : 1,
 };
 export function simulateRun(seed, { policy = 'greedy' } = {}) {
@@ -37,6 +40,7 @@ export function simulateRun(seed, { policy = 'greedy' } = {}) {
     if (run.phase === 'battle') {
       const boss = run.battle.nodeType === 'boss';
       botPlay(run.battle, 60); if (run.battle.phase === 'player') run.battle.phase = 'lost';
+      (log.per ||= []).push({ act: run.act, type: run.battle.nodeType, won: run.battle.phase === 'won', enemyDamage: run.battle.stats.enemyHealthDamage || 0, maxHp: run.battle.units.find(u => u.hero)?.maxHp || 1, turns: run.battle.turn, threat: run.battle.worldThreat || 0, reinforced: run.battle.reinforced || 0 });
       log.battles++; log.turns += run.battle.turn; log.taken += run.battle.stats.damageTaken; if (boss && run.battle.phase === 'won') log.bossWins++;
       concludeBattle(run);
     }
@@ -48,7 +52,7 @@ export function simulateRun(seed, { policy = 'greedy' } = {}) {
       chooseReward(run, pick, rel);
     }
   }
-  return { won: run.phase === 'won', act: run.act, depth: run.current != null ? run.map.nodes.find(n => n.id === run.current).depth : 0, power: run.evo.power, toughness: run.evo.toughness, kws: Object.keys(run.evo.keywords), maxHp: runStats(run).maxHealth, ...log };
+  return { finalThreat: run.worldThreat?.level || 0, per: log.per || [], won: run.phase === 'won', act: run.act, depth: run.current != null ? run.map.nodes.find(n => n.id === run.current).depth : 0, power: run.evo.power, toughness: run.evo.toughness, kws: Object.keys(run.evo.keywords), maxHp: runStats(run).maxHealth, ...log };
 }
 export function winRate(n, opts) {
   const runs = []; for (let s = 1; s <= n; s++) runs.push(simulateRun(s * 7919, opts));

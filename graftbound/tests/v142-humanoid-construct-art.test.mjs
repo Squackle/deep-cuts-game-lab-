@@ -93,7 +93,7 @@ test('real atlas loader uses the new body without drawing over borrowed legacy m
   assert.ok(source.includes('if(!detailed && !config.custom && anim.row!==baseRows)'));
   assert.ok(source.includes('if(humanoid)drawHumanoidStudyFrame(cctx,config.feature,view,anim.row,frame,config)'));
   assert.ok(source.includes("artPack:folk?'folk-anatomy-study-v1':humanoid?'humanoid-anatomy-study-v1':beast?'beast-anatomy-study-v1':token?'token-anatomy-study-v1':magic?'magic-anatomy-study-v1':monster?'monster-anatomy-study-v1':'species-anatomy-study-v1'"));
-  assert.ok(source.includes('pixelScale:base.h*(base.pixelScale||1)/height'));
+  assert.ok(source.includes('pixelScale:NATIVE_STUDY_DENSITY'));
   const art=readFileSync(new URL('../src/rendering/detailed-humanoid-art.js',import.meta.url),'utf8');
   for(const forbidden of ['Math.random','localStorage','fetch(','window.','player.hp ='])
     assert.ok(!art.includes(forbidden),'original art has forbidden engine dependency '+forbidden);

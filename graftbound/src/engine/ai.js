@@ -608,6 +608,19 @@ export function announcePhase(ev, e) {
   if ((e.phaseSeen || 1) < ph) { e.phaseSeen = ph; ev.push({ t: 'bossPhase', uid: e.uid, phase: ph, text: bossPhaseName(e, ph) }); }
 }
 
+/** v1.6.0 Threat Surge: after the designated caller (strongest living elite/boss, else strongest foe) acts on a cadence
+ *  turn, it telegraphs a cross on the hero's CURRENT tile. Resolution is the existing pending-slam path at the caller's
+ *  next action, so it is shown in intents and can be dodged by moving or reduced by Guard. Never on turn 1. */
+export function surgeAfterAct(s, ev, e) {
+  const sg = s.threatSurge; if (!sg || !alive(e) || e.slam || e.aim || s.phase !== 'enemy' || s.turn < 2 || s.turn % sg.every) return;
+  const foes = enemies(s).filter(alive); const pick = (foes.filter(u => u.boss || ENEMIES[u.defId]?.elite).length ? foes.filter(u => u.boss || ENEMIES[u.defId]?.elite) : foes)
+    .sort((a, b) => b.maxHp - a.maxHp || a.uid - b.uid)[0];
+  if (pick !== e || e.statuses.stunned) return;
+  const hero = player(s); if (!alive(hero)) return;
+  const tiles = [{ x: hero.x, y: hero.y }, ...DIRS.map(([dx, dy]) => ({ x: hero.x + dx, y: hero.y + dy }))].filter(t => inBounds(s, t.x, t.y) && tileAt(s, t.x, t.y) !== T.ROCK);
+  e.slam = { tiles, damage: Math.max(2, Math.ceil(hero.maxHp * sg.pct)), kind: 'surge' };
+  ev.push({ t: 'aim', uid: e.uid, tiles, slam: true, kind: 'surge' }, { t: 'realAbility', uid: e.uid, name: 'Threat Surge · telegraphed' });
+}
 export function actAlly(s, ev, a) {
   if (!alive(a) || s.phase !== 'enemy') return;
   // Reassembled Skeletons return exhausted: their first allied AI action must
