@@ -34,6 +34,6 @@ test('inventory and character sheet have visible top-right red close and preserv
 test('mobile inventory layout remains fixed under the current game and ranked version',()=>{
   const config=readFileSync(new URL('../src/config.js',import.meta.url),'utf8');
   const ranked=readFileSync(new URL('../src/engine/ranked.js',import.meta.url),'utf8');
-  assert.match(config,/version:\s*'1\.3\.7-beta'/);
-  assert.match(ranked,/graftbound-rules-1\.3\.9-beta/);
+  assert.match(config,/version:\s*'1\.4\.0-beta'/);
+  assert.match(ranked,/graftbound-rules-1\.4\.0-beta/);
 });

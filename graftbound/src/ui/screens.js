@@ -4,7 +4,7 @@ import { resolveCard as getCard, rewardCards } from '../cards/catalog.js';
 import { KEYWORDS, keywordLabel } from '../data/keywords.js';
 import { cardHTML, COLOR, esc, sourcePanelHTML, backHTML, gameSummary } from './cards.js';
 import { availableNodes, nodeById, NODE_TYPES } from '../engine/campaign.js';
-import { absorb, deriveStats } from '../engine/evolution.js';
+import { absorb, deriveStats, spellFocus, FOCUS_WARD } from '../engine/evolution.js';
 import { runStats, CHALLENGES, graftCapacity, graftsFull, woundsOf, maxHpOf } from '../engine/run.js';
 import { SHRINES } from '../engine/shrines.js';
 import { ACTS, bossNameOf } from '../data/encounters.js';
@@ -441,6 +441,7 @@ export function sheetModal(app) {
           <dt>${ICON.gem} Mana</dt><dd>${st.startMana} at start · +${st.manaRegen}/turn · max ${st.maxMana}</dd>
           <dt>⧉ Grafts</dt><dd>${run.evo.absorbed.length} of ${graftCapacity(run)} this act</dd>
           ${st.arcane ? `<dt>✦ Arcane</dt><dd>Spells +${st.arcane}</dd>` : ''}
+          ${spellFocus(run.spellbook.length) ? `<dt>✦ Spellward</dt><dd>+${FOCUS_WARD * spellFocus(run.spellbook.length)} Maximum Health, +${spellFocus(run.spellbook.length)} Arcane, +${spellFocus(run.spellbook.length)} mana/turn <small>(every 3 spells in your spellbook)</small></dd>` : ''}
           ${run.evo.resonance ? `<dt>◎ Resonance</dt><dd>+${run.evo.resonance * 2} Maximum Health from repeated abilities</dd>` : ''}
         </dl>
         <h3>Abilities</h3>

@@ -320,7 +320,7 @@ export function installRealCreatureModels(images,manifest) {
     const sctx=sheet.getContext('2d');sctx.imageSmoothingEnabled=false;
     for(let view=0;view<views;view++)for(const anim of Object.values(anims))for(let frame=0;frame<cols;frame++){
       const cell=document.createElement('canvas');cell.width=width;cell.height=height;
-      const cctx=cell.getContext('2d');cctx.imageSmoothingEnabled=false;
+      const cctx=cell.getContext('2d',{willReadFrequently:true});cctx.imageSmoothingEnabled=false; // v1.4.0: cells are read back by recolor/polishMaterial
       const srcX=frame*base.w,srcY=(view*baseRows+Math.min(anim.row,baseRows-1))*base.h;
       // Death frames are drawn as a collapsing animal/body, never a still-living
       // borrowed base sprite with a pasted effect on top.

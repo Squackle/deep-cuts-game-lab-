@@ -3,7 +3,7 @@
 // Duplicate flags and stack overflow convert into Resonance (+2 Spark each, v0.5) — see engine/evolution.js.
 // `mtg`: the Scryfall keyword this maps from (null = no real-card source; legacy/enemy only).
 export const KEYWORDS = {
-  deathtouch:  { name: 'Deathtouch',   kind: 'flag', glyph: '☠', mtg: 'Deathtouch',    text: 'Your strikes destroy any non-Legendary foe they damage (after armor and shields). Against Legendary foes, strikes deal +2 instead.' },
+  deathtouch:  { name: 'Deathtouch',   kind: 'flag', glyph: '☠', mtg: 'Deathtouch',    text: 'Your strikes destroy any non-Legendary foe they damage (after armor and shields). Against Legendary foes, strikes deal +2 instead. Against you, an enemy with Deathtouch deals +2 damage instead of destroying you.' },
   flying:      { name: 'Flying',       kind: 'flag', glyph: '❦', mtg: 'Flying',        text: '+1 movement. Fly over rocks, hazards and enemies. Ground melee foes cannot strike back at you. Harpoons can ground you.' },
   trample:     { name: 'Trample',      kind: 'flag', glyph: '➹', mtg: 'Trample',       text: 'When a strike kills, excess damage hits the foe directly behind it.' },
   firstStrike: { name: 'First Strike', kind: 'flag', glyph: '⚔', mtg: 'First strike',  text: 'Foes you attack cannot strike back. When attacked in melee, you strike first.' },

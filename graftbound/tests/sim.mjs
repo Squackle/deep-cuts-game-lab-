@@ -12,7 +12,8 @@ export const POLICIES = {
   random: () => 0,
   melee: (run, c) => c.kind === 'creature' ? c.power * 2 + (c.keywords.trample ? 3 : 0) + (c.keywords.doubleStrike ? 4 : 0) : 0,
   tank: (run, c) => c.kind === 'creature' ? c.toughness * 2 + (c.keywords.lifelink ? 3 : 0) : (c.category === 'protection' || c.category === 'healing' ? 5 : 0),
-  spells: (run, c) => c.kind === 'spell' ? 10 + c.cost : graftRating(c, run.evo) * 0.3,
+  // v1.4.0: a spell-FOCUSED player, not a spell-ONLY bot — prefers damaging/area spells, still grafts a body when the pack has no useful spell.
+  spells: (run, c) => c.kind === 'spell' ? ({ damage: 12, area: 12.5, weaken: 9, disable: 9, protection: 6, healing: 6, enhance: 5 }[c.category] ?? 4) + c.cost * 0.5 - (run.spellbook.some(e => e.id === c.id) ? 2 : 0) : (run.evo.absorbed.length < 3 ? 11 : 0) + graftRating(c, run.evo) * 0.5,
   flyDeath: (run, c) => c.kind === 'creature' ? (c.keywords.flying ? 6 : 0) + (c.keywords.deathtouch ? 6 : 0) + c.power + c.toughness : 1,
 };
 export function simulateRun(seed, { policy = 'greedy' } = {}) {

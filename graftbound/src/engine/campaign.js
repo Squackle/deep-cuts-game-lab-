@@ -45,6 +45,13 @@ export function generateMap(seed, { act = 0, tutorial = false } = {}) {
       if (sorted[1] && Math.abs(sorted[1].x - n.x) < 0.4) n.next.push(sorted[1].id);
     }
     for (const m of nxt) if (!cur.some(n => n.next.includes(m.id))) cur.slice().sort((a, b) => Math.abs(a.x - m.x) - Math.abs(b.x - m.x))[0].next.push(m.id);
+    // v1.4.0: an Elite Lair is always a CHOICE. If every exit from a node is an elite, also link the nearest non-elite
+    // node in the next layer (78% of maps previously forced at least one elite, often onto an ungrafted Act I Blank).
+    for (const n of cur) {
+      if (!n.next.length || !n.next.every(id => nodes[id].type === 'elite')) continue;
+      const alt = nxt.filter(m => m.type !== 'elite').sort((a, b) => Math.abs(a.x - n.x) - Math.abs(b.x - n.x))[0];
+      if (alt) { n.next.push(alt.id); n.next.sort((a, b) => nodes[a].x - nodes[b].x); }
+    }
   }
   return { seed, nodes, act, region: ACTS[act].name, boss: ACTS[act].bossName };
 }

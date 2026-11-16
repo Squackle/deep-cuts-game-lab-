@@ -737,7 +737,7 @@ export class BattleUI {
         case 'counter': await this.wait(e.first ? 40 : 110); await sc.lunge(e.uid, e.target); this.float(e.uid, e.first ? 'First Strike!' : 'Strikes back', 'note'); break;
         case 'noCounter': this.float(e.uid, esc(NO_COUNTER[e.reason] || 'No strike back'), 'note'); break;
         case 'capped': this.float(e.uid, `Unyielding: ${e.from} → ${e.to}`, 'note'); break;
-        case 'deathtouchResisted': this.float(e.uid, 'Legendary: resists Deathtouch', 'blocked'); au.play('armor'); break;
+        case 'deathtouchResisted': this.float(e.uid, this.s && this.s.units.find(u => u.uid === e.uid && u.hero) ? 'Deathtouch: +2 damage' : 'Legendary: resists Deathtouch', 'blocked'); au.play('armor'); break;
         case 'armored': au.play('armor'); this.float(e.uid, `▣ −${e.amount}`, 'blocked'); break;
         case 'damage': {
           if (e.kind === 'strike2') { const atk = events.slice(0, idx).reverse().find(x => x.t === 'attack'); if (atk) { this.float(atk.uid, 'Double Strike!', 'note'); await sc.lunge(atk.uid, e.uid); } }

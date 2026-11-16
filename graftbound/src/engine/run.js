@@ -117,7 +117,7 @@ export function concludeBattle(run) {
   }
   // Single-level Auras are consumed whether or not drawn. All ordinary learned spells persist.
   const consumedAuras=run.spellbook.filter(x=>resolveCard(x.id)?.kind==='aura').map(x=>x.id);
-  if(consumedAuras.length) {run.spellbook=run.spellbook.filter(x=>!consumedAuras.includes(x.id));run.equippedSpellIds=(run.equippedSpellIds||[]).filter(id=>!consumedAuras.includes(id));}
+  if(consumedAuras.length) {run.spellbook=run.spellbook.filter(x=>!consumedAuras.includes(x.id));run.equippedSpellIds=(run.equippedSpellIds||[]).filter(id=>!consumedAuras.includes(id));setHp(run,run.hp);}
   // The final defeated guardian IS the reward. Keep its score/achievement outcome, no pack or skip-Maximum Health.
   if(isBoss && run.act+1>=ACT_COUNT){
     run.actHistory.push({act:run.act,visited:run.visited.slice()});
@@ -164,9 +164,10 @@ export function chooseReward(run, cardId, releaseIndex) {
     journalNote(run,'spell',{cardId,name:card.name,level:1});
   } else {
     if (run.pending.tier === 'graftsmith') throw new Error('The Graftsmith offers creatures only');
-    const e = run.spellbook.find(s => s.id === cardId);
+    const e = run.spellbook.find(s => s.id === cardId); const wardBefore = maxHpOf(run);
     if (e) { e.level = Math.min(MAX_SPELL_LEVEL, e.level + 1); change = { kind: 'empower', cardId, level: e.level }; }
     else { run.spellbook.push({ id: cardId, level: 1 }); if ((run.equippedSpellIds || []).length < (run.handCapacity || BASE_HAND_CAPACITY)) (run.equippedSpellIds ||= []).push(cardId); change = { kind: 'learn', cardId, level: 1 }; }
+    if (maxHpOf(run) > wardBefore) setHp(run, run.hp + (maxHpOf(run) - wardBefore));   // v1.4.0 Spellward arrives as fresh health
     journalNote(run, 'spell', { cardId, name: card.name, level: change.level });
     run.stats.spellsLearned++;
   }

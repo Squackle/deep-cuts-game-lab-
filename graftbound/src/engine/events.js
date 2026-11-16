@@ -71,7 +71,7 @@ export function resolveEvent(run, id, choice, arg, { seed, packOpts, setHp, maxH
     case 'echoingCauldron:shield': run.wardNext = (run.wardNext || 0) + 4; return { kind: 'ward', amount: 4 };
     case 'archivist:trade': {
       const i = run.spellbook.findIndex(s => s.id === arg); if (i < 0) throw new Error('Choose one of your spells');
-      const [gone] = run.spellbook.splice(i, 1); run.equippedSpellIds = (run.equippedSpellIds || []).filter(id => id !== gone.id);
+      const [gone] = run.spellbook.splice(i, 1); run.equippedSpellIds = (run.equippedSpellIds || []).filter(id => id !== gone.id); setHp(run.hp);
       const cards = generatePack(seed ^ 0xa4c1, { tier: 'elite', ...packOpts, spellbook: run.spellbook, only: 'spell' }).filter(x => x !== gone.id);
       run.pending = { cards, tier: 'archivist', traded: resolveCard(gone.id).name }; return { kind: 'trade', gave: gone.id };
     }
