@@ -42,6 +42,14 @@ export const EVENTS = {
       { id: 'drink', label: 'Drink deeply', text: () => `Permanently lose ${EVENT_COST.wellSpark} Maximum Health (maximum health) and gain +1 maximum mana and +1 starting mana for the rest of the adventure.`, when: run => run.maxHp > EVENT_COST.wellSpark + 2 },
       { id: 'leave', label: 'Do not drink', text: () => 'Nothing changes.', when: () => true },
     ] },
+  // v1.7.0 rare Mystery: an ambush that skips ONLY the hero's battle-entry setup in the next ordinary battle.
+  stalkersThicket: { name: 'The Stalkers\u2019 Thicket', glyph: '⚠', rare: true,
+    text: 'Something has been pacing you through the undergrowth. If you press on, it strikes before your grafts can wake.',
+    when: run => (run.act || 0) >= 1 && !run.ambushNext,
+    choices: [
+      { id: 'pressOn', label: 'Press on into the ambush', text: () => 'Your NEXT ordinary battle or elite (never a boss) is an ambush: your grafts\u2019 battle-start setup does not fire at deployment — no starting tokens, opening draws, opening shields, starting Treasure or counters. Everything triggers normally after that. Surviving it upgrades that reward pack to elite tier.', when: () => true },
+      { id: 'detour', label: 'Take the long way round', text: run => `Lose ${pct(run, 0.1)} health (a wound; cannot drop you below 1). No ambush.`, when: run => run.hp > pct(run, 0.1) },
+    ] },
   forgottenTrial: { name: 'The Forgotten Trial', glyph: '⚖',
     text: 'An altar asks for blood before it opens its reliquary.', when: () => true,
     choices: [
@@ -53,8 +61,10 @@ export const EVENT_IDS = Object.keys(EVENTS);
 
 export function rollEvent(run, seed) {
   const seen = new Set(run.eventsSeen || []);
-  const ok = EVENT_IDS.filter(id => !seen.has(id) && EVENTS[id].when(run));
-  const list = ok.length ? ok : EVENT_IDS.filter(id => EVENTS[id].when(run));
+  // v1.7.0: rare events are offered only on a 1-in-4 deterministic roll from the node seed.
+  const rareOk = int(makeRng((seed ^ 0xa3b5) >>> 0), 4) === 0;
+  const ok = EVENT_IDS.filter(id => !seen.has(id) && EVENTS[id].when(run) && (!EVENTS[id].rare || rareOk));
+  const list = ok.length ? ok : EVENT_IDS.filter(id => EVENTS[id].when(run) && !EVENTS[id].rare);
   return list[int(makeRng((seed ^ 0xe7e7) >>> 0), list.length)] || 'forgottenTrial';
 }
 export function eventChoices(run, id) { return EVENTS[id].choices.map(c => ({ ...c, text: c.text(run), available: !!c.when(run) })); }
@@ -88,6 +98,8 @@ export function resolveEvent(run, id, choice, arg, { seed, packOpts, setHp, maxH
     }
     case 'cursedWell:drink': run.sparkBonus -= EVENT_COST.wellSpark; run.wellDrunk = (run.wellDrunk || 0) + 1; run.manaBonus = (run.manaBonus || 0) + 1; setHp(Math.min(run.hp, maxHp())); return { kind: 'well' };
     case 'forgottenTrial:sacrifice': setHp(run.hp - pct(view, EVENT_COST.trialHp)); run.pending = { cards: generatePack(seed ^ 0x71a1, { tier: 'elite', ...packOpts }), tier: 'elite' }; return { kind: 'trial' };
+    case 'stalkersThicket:pressOn': run.ambushNext = true; return { kind: 'ambush' };
+    case 'stalkersThicket:detour': setHp(run.hp - pct(view, 0.1)); return { kind: 'detour' };
     default: return { kind: 'leave' };
   }
 }

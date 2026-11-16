@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><title>crowd</title>
+<style>html,body{margin:0;background:#000}canvas{display:block;width:900px;height:600px}</style>
+<canvas id="gl"></canvas>
+<script type="module">
+// v1.7.0 QA: crowded encounter at in-game scale with the REAL scene renderer + central scale/anchors + wolf coats.
+import { Scene } from '../src/rendering/scene.js';
+import { T } from '../src/core/grid.js';
+import { installRealCreatureModels } from '../src/rendering/real-creature-models.js';
+import { installPremiumModels } from '../src/rendering/premium-creatures.js';
+import { installLegendaryBosses } from '../src/rendering/legendary-boss-art.js';
+import { installSpriteBounds } from '../src/rendering/creature-scale.js';
+import { wolfCoatFor, recoatSheet, WOLF_KEYS, LEADER_KEYS, LEADER_COAT } from '../src/rendering/creature-variants.js';
+const q = new URLSearchParams(location.search), BASE = new URL('../assets/', import.meta.url).href;
+const img = s => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(s); i.src = BASE + s; });
+const manifest = await (await fetch(BASE + 'sprites/manifest.json')).json(); const images = {};
+await Promise.all(Object.entries(manifest.sprites).map(([k, s]) => img('sprites/' + s.file).then(i => images[k] = i).catch(() => {})));
+installRealCreatureModels(images, manifest); installPremiumModels(images, manifest); installLegendaryBosses(images, manifest); installSpriteBounds(images, manifest);
+for (const k of Object.keys(manifest.sprites)) if (!images[k]) delete manifest.sprites[k];
+images.terrain = await img('textures/terrain.png'); images.terrainBlur = await img('textures/terrain_blur.png'); images.foliage = await img('sprites/foliage.png');
+const sc = new Scene(document.getElementById('gl'), { manifest, images, parts: {} }); sc.setQuality && sc.setQuality('balanced');
+const w = 8, h = 8, terrain = new Array(w * h).fill(T.FLOOR); terrain[2 * 8 + 6] = T.BRAMBLE; terrain[1 * 8 + 1] = T.ROCK;
+sc.loadArena({ w, h, terrain, crystals: [], units: [] }, 7, 'hollow');
+const L = q.get('set') === 'line' ? [[1,4,'mtg_friendlySquirrel'],[2,4,'mtg_friendlySnake'],[3,4,'mtg_wolf'],[4,4,'blank'],[5,4,'mtg_archer'],[6,4,'mtg_krenko']]
+ : [[3,5,'blank'],[2,5,'mtg_friendlySoldier'],[4,5,'mtg_friendlySquirrel'],[2,4,'mtg_friendlySnake'],[4,4,'mtg_wolf'],[5,4,'mtg_alpha'],[3,3,'mtg_archer'],[1,3,'mtg_friendlySkeleton'],[5,2,'mtg_krenko'],[2,2,'mtg_wolf'],[6,5,'mtg_friendlyHornet'],[1,5,'mtg_tortoise'],[6,3,'mtg_wolf']];
+L.forEach(([x, y, k], i) => { if (!manifest.sprites[k]) return; sc.addUnit({ uid: i + 1, side: 'player', x, y, facing: q.get('face') ? [+q.get('face'), 0] : null }, k);
+  const coat = LEADER_KEYS.has(k) ? LEADER_COAT : WOLF_KEYS.has(k) ? wolfCoatFor(7, i + 1) : null; if (coat && coat.hue != null) sc.setUnitTexture(i + 1, recoatSheet(images[k], coat, k)); });
+sc.zoom = +(q.get('zoom') || 1.3); sc.yaw = sc.yawTarget = +(q.get('yaw') || Math.PI / 4); sc.focus = [0, 0, +(q.get('fz') || 0.3)]; sc.focusTarget = sc.focus.slice();
+let k = 0; const tick = () => { sc.frame(0.05); k++; if (k < 3) setTimeout(tick, 0); else { window.__png = document.getElementById('gl').toDataURL('image/png'); document.title = 'done'; } }; setTimeout(tick, 0);
+</script>

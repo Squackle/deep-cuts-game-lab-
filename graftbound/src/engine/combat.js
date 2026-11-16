@@ -4,7 +4,7 @@ import { reachable, pathTo, manhattan, lineOfSight, tileAt, T, key, DIRS } from 
 import { traitLevelsOf } from '../cards/graft-levels.js';
 import { makeRng } from '../core/rng.js';
 import { resolveCard as getCard } from '../cards/catalog.js';
-import { player, enemies, allies, alive, has, kv, heal, attackExchange, enterTiles, dealDamage, smashRock } from './abilities.js';
+import { player, enemies, allies, alive, has, kv, heal, attackExchange, enterTiles, walkPath, dealDamage, smashRock } from './abilities.js';
 import { spellTargets, castSpellEffect, castBlockReason, spellCost } from './spells.js';
 import { actEnemy, actAlly, spawnEnemy, previewIntent, announcePhase , spawnTokensAround, resolveToxrillEndStep, surgeAfterAct } from './ai.js';
 import { STARTING_NAME } from './evolution.js';
@@ -20,7 +20,7 @@ import { initialComboEvents, resolveComboEvents, hasComboChoices, comboActivate,
 export const BATTLE_VERSION = 11;
 export const RIFT_DAMAGE = TERRAIN_RULES.rift.pulseDamage, LAVA_DAMAGE = TERRAIN_RULES.lava.endTurnDamage;
 
-export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroName = STARTING_NAME, startHp = null, act = 0, deckMode = false, handCapacity = 7 }) {
+export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroName = STARTING_NAME, startHp = null, act = 0, deckMode = false, handCapacity = 7, ambush = false }) {
   const s = {
     v: BATTLE_VERSION, w: encounter.w, h: encounter.h, terrain: encounter.terrain.slice(), act,
     name: encounter.name, kind: encounter.kind || 'battle', units: [], nextUid: 1, turn: 0, phase: 'player',
@@ -39,7 +39,8 @@ export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroN
   s.units.push({ uid: s.nextUid++, side: 'player', hero: true, defId: 'player', name: heroName, x: encounter.playerStart.x, y: encounter.playerStart.y,
     hp, maxHp: stats.maxHealth, power: stats.power, toughness: stats.toughness, move: stats.move, keywords: { ...evo.keywords }, statuses: {} });
   for (const en of encounter.enemies) spawnEnemy(s, en.defId, en.x, en.y);
-  const traitEvents=[];onBattleGrafts(s,traitEvents);initialComboEvents(s,traitEvents);
+  // v1.7.0 Ambush: ONLY the hero's battle-entry graft setup (onBattleGrafts + initialComboEvents) is skipped at deployment.
+  const traitEvents=[];if(ambush){s.ambushed=true;traitEvents.push({t:'ambush',uid:player(s)?.uid});}else{onBattleGrafts(s,traitEvents);initialComboEvents(s,traitEvents);}
   s.openingEvents = resolveComboEvents(s,[...(s.entryEvents || []), ...traitEvents, ...startPlayerTurn(s)]);
   return s;
 }
@@ -60,7 +61,10 @@ export function startPlayerTurn(s) {
   p.statuses.empowered = 0; p.statuses.guard = 0; // Channel charges persist until an eligible cast.
   s.p.conduit = tileAt(s, p.x, p.y) === T.CONDUIT ? TERRAIN_RULES.conduit.spellBonus : 0;
   if (s.p.conduit) ev.push({ t: 'conduit', uid: p.uid, amount: s.p.conduit, x: p.x, y: p.y });   // v0.8 stances last until your next turn begins
-  if (p.statuses.poison > 0) { dealDamage(s, ev, null, p, p.statuses.poison, { kind: 'poison' }); p.statuses.poison--; if (!alive(p)) return finish(s,ev); }
+  if (p.statuses.poison > 0) {   // v1.7.0: only the foe-inflicted share of poison counts as enemy damage
+    const n = p.statuses.poison, foe = Math.min(n, p.poisonByEnemy || 0);
+    if (foe) dealDamage(s, ev, null, p, foe, { kind: 'poison', cause: 'enemy' }); if (n - foe > 0 && alive(p)) dealDamage(s, ev, null, p, n - foe, { kind: 'poison' });
+    p.statuses.poison--; p.poisonByEnemy = Math.min(p.poisonByEnemy || 0, p.statuses.poison); if (!alive(p)) return finish(s,ev); }
   if (kv(p, 'regenerate')) heal(s, ev, p, kv(p, 'regenerate'), 'regenerate');
   if (kv(p, 'ward') && (p.statuses.shield || 0) < kv(p, 'ward')) {
     const add = kv(p, 'ward') - (p.statuses.shield || 0); p.statuses.shield = kv(p, 'ward'); ev.push({ t: 'shield', uid: p.uid, amount: add, total: p.statuses.shield, kind: 'ward' });
@@ -86,10 +90,10 @@ export function movePlayer(s, x, y) {
   ensurePlayerPhase(s);
   const p = player(s); const map = reachable(s, p, s.p.moveLeft); const n = map.get(key(x, y));
   if (!n || !n.stop || n.cost === 0) throw new Error(s.p.moveLeft ? 'Out of reach' : 'No movement left');
-  const path = pathTo(map, x, y); const ev = [{ t: 'move', uid: p.uid, path }];
-  p.x = x; p.y = y; s.p.moveLeft -= n.cost;
+  const path = pathTo(map, x, y); const ev = [];
+  s.p.moveLeft -= n.cost;
   s.stats.actions++; s.stats.moves++; s.stats.tilesMoved += n.cost;
-  enterTiles(s, ev, p, path);
+  walkPath(s, ev, p, path);   // v1.7.0 stepwise hazards
   return finish(s,ev);
 }
 /** A new 4/4 flying Angel is created for every attack by a Spear bearer. */

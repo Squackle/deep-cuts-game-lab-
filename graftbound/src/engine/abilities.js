@@ -68,9 +68,10 @@ export function addShield(s, ev, u, amount, kind = 'shield') {
   u.statuses.shield = (u.statuses.shield || 0) + amount;
   ev.push({ t: 'shield', uid: u.uid, amount, total: u.statuses.shield, kind });
 }
-export function addStatus(s, ev, u, status, value) {
+export function addStatus(s, ev, u, status, value, { bySide = null } = {}) {
   if (!alive(u)) return;
   u.statuses[status] = (u.statuses[status] || 0) + value;
+  if (status === 'poison' && bySide === 'enemy') u.poisonByEnemy = (u.poisonByEnemy || 0) + value;   // v1.7.0 attribution
   ev.push({ t: 'status', uid: u.uid, status, value, total: u.statuses[status] });
 }
 /** v1.5.0: the ONLY way a battle becomes won. Idempotent: one phase change, one 'victory' event, ever.
@@ -156,7 +157,7 @@ export function checkStateBasedDeath(s, ev, u) {
 }
 /** Damage pipeline: strike cap (bosses) -> armor (combat only) -> shield -> health.
  *  Only combat damage (strikes/counterblows) triggers Deathtouch and Lifelink; spells bypass armor. */
-export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hit', element = null } = {}) {
+export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hit', element = null, cause = null } = {}) {
   if (!alive(tgt) || amount <= 0) return 0;
   let a = amount;
   // Explicit per-enemy affinity only. Never grant automatic same-color resistance to all foes.
@@ -203,7 +204,9 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
   const lost = hpBefore - tgt.hp;
   ev.push({ t: 'damage', uid: tgt.uid, amount: a, blocked, deathtouch: dt, kind, element, src: src ? src.uid : null });
   if (src && src.side === 'player' && tgt.side === 'enemy') s.stats.damageDealt += lost;
-  if (tgt.hero) { s.stats.damageTaken += lost; if (src?.side === 'enemy') s.stats.enemyHealthDamage = (s.stats.enemyHealthDamage || 0) + lost; }
+  // v1.7.0 attribution: only ENEMY-caused health loss restrains Global Threat — a foe source, or an explicit cause:'enemy'
+  // (foe-created hazards, foe-inflicted poison). Self-damage, own spells/allies and neutral terrain never count.
+  if (tgt.hero) { s.stats.damageTaken += lost; if (src?.side === 'enemy' || (!src && cause === 'enemy')) s.stats.enemyHealthDamage = (s.stats.enemyHealthDamage || 0) + lost; }
   // Real infect replaces health damage with poison counters against a player.
   // Against creatures, damage is represented by persistent -1/-1 counters.
   if(combat && src?.keywords?.infect && a>0){
@@ -301,20 +304,40 @@ export function attackExchange(s, ev, atk, def) {
   }
 }
 /** Movement side effects for ground units: bramble and lava damage on each entered tile (see data/terrain.js). */
+const ENTER_HAZARDS = new Set([T.BRAMBLE, T.LAVA, T.ICE, T.SPORES, T.CRUMBLE]);
+/** On-enter terrain effect for ONE tile. Foe-created hazards (s.foeTiles) count as enemy-caused damage/poison. */
+export function hazardAt(s, ev, u, at) {
+  const t = tileAt(s, at.x, at.y), foe = (s.foeTiles || []).includes(at.y * s.w + at.x) ? 'enemy' : null;
+  if (t === T.BRAMBLE) dealDamage(s, ev, null, u, TERRAIN_RULES.bramble.enterDamage, { kind: 'bramble', cause: foe });
+  if (t === T.LAVA) dealDamage(s, ev, null, u, TERRAIN_RULES.lava.enterDamage, { kind: 'lava', cause: foe });
+  if (t === T.ICE && !(u.statuses.chilled || 0)) addStatus(s, ev, u, 'chilled', 1);
+  if (t === T.SPORES) addStatus(s, ev, u, 'poison', TERRAIN_RULES.spores.poisonOnEnter, { bySide: foe });
+  if (t === T.CRUMBLE) {
+    dealDamage(s, ev, null, u, TERRAIN_RULES.crumble.enterDamage, { kind: 'crumble', cause: foe });
+    s.terrain[at.y * s.w + at.x] = T.FLOOR;
+    ev.push({ t: 'terrain', tiles: [at], kind: 'crumble' });
+  }
+}
 export function enterTiles(s, ev, u, path) {
   if (has(u, 'flying')) return;
-  for (let i = 1; i < path.length && alive(u); i++) {
-    const t = tileAt(s, path[i].x, path[i].y);
-    if (t === T.BRAMBLE) dealDamage(s, ev, null, u, TERRAIN_RULES.bramble.enterDamage, { kind: 'bramble' });
-    if (t === T.LAVA) dealDamage(s, ev, null, u, TERRAIN_RULES.lava.enterDamage, { kind: 'lava' });
-    if (t === T.ICE && !(u.statuses.chilled || 0)) addStatus(s, ev, u, 'chilled', 1);
-    if (t === T.SPORES) addStatus(s, ev, u, 'poison', TERRAIN_RULES.spores.poisonOnEnter);
-    if (t === T.CRUMBLE) {
-      dealDamage(s, ev, null, u, TERRAIN_RULES.crumble.enterDamage, { kind: 'crumble' });
-      s.terrain[path[i].y * s.w + path[i].x] = T.FLOOR;
-      ev.push({ t: 'terrain', tiles: [path[i]], kind: 'crumble' });
+  for (let i = 1; i < path.length && alive(u); i++) hazardAt(s, ev, u, path[i]);
+}
+/** v1.7.0 STEPWISE movement: the unit really occupies each tile in turn. A hazardous tile resolves the moment it is
+ *  entered (the walk presentation is split there), and death stops the walk on that tile — later tiles never fire.
+ *  Also records the last-move direction (u.facing, presentation-only). Flying units ignore ground hazards. */
+export function walkPath(s, ev, u, path) {
+  if (!path || path.length < 2) return { x: u.x, y: u.y, stopped: false };
+  let seg = [path[0]];
+  const flush = () => { if (seg.length > 1) ev.push({ t: 'move', uid: u.uid, path: seg }); seg = [seg[seg.length - 1]]; };
+  for (let i = 1; i < path.length; i++) {
+    const at = path[i]; u.facing = [Math.sign(at.x - path[i - 1].x), Math.sign(at.y - path[i - 1].y)];
+    u.x = at.x; u.y = at.y; seg.push(at);
+    if (!has(u, 'flying') && ENTER_HAZARDS.has(tileAt(s, at.x, at.y))) {
+      flush(); hazardAt(s, ev, u, at);
+      if (!alive(u)) { ev.push({ t: 'moveStopped', uid: u.uid, x: at.x, y: at.y, reason: 'defeated' }); return { x: at.x, y: at.y, stopped: true }; }
     }
   }
+  flush(); return { x: u.x, y: u.y, stopped: false };
 }
 /** v1.5.0 destructible rocks. Any living unit adjacent to a Rock may smash it, which costs ALL of that unit's remaining
  * movement and attacks this turn. The tile becomes floor (recorded as rubble for presentation and saves); movement,

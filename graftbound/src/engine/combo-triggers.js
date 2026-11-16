@@ -95,7 +95,7 @@ export function comboChoices(s){
    for(const u of allies(s))choices.push({arg:u.uid,label:`+1/+1 counter → ${u.hero?'Hero':u.name}`});
  }
  const reason=c.kind==='mentor' ? (!canDraw(s)?'No cards remain in your Library or Graveyard to draw.':availableMana(s)<1?'Need 1 available mana to draw.':'Pay 1 mana to draw one card (optional).') : '';
- return {kind:c.kind,subtitle:c.kind==='oracle'?'Look at the top two real cards':c.kind==='mentor'?'A small ally entered (power 2 or less)':c.kind==='nadir'?'You drew a card':c.kind==='geists'?'Choose an enemy to freeze':'Green ally entered',reason,choices};
+ return {kind:c.kind,subtitle:c.kind==='oracle'?'Look at the top two real cards':c.kind==='mentor'?'Meek ally entered · power 2 or less':c.kind==='nadir'?'You drew a card':c.kind==='geists'?'Choose an enemy to freeze':'Green ally entered',reason,choices};
 }
 export function resolveComboChoice(s,kind,arg){
  const c=s.combo?.choices?.[0];if(!c||c.kind!==kind)throw Error('No matching pending combo choice');

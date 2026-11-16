@@ -57,11 +57,11 @@ export function runStatsMarkdown(run, opts = {}) {
   L.push('## Encounters');
   if (!e.length) L.push('_No scored encounters recorded._');
   else {
-    L.push('| # | Act | Encounter | Actions/par | Damage/ref | Enemy dmg | Turns | Threat | Eff. | Avoid. | Score |');
-    L.push('|---|---|---|---|---|---|---|---|---|---|---|');
-    e.forEach((x, i) => L.push(`| ${i + 1} | ${ROMAN[x.act] ?? '?'} | ${cell(x.name)}${x.nodeType === 'boss' ? ' (boss)' : x.nodeType === 'elite' ? ' (elite)' : ''}${x.multiplier && x.multiplier !== 1 ? ` ×${x.multiplier}` : ''} | ${fmt(x.actions)}/${fmt(x.parActions)} | ${fmt(x.damage)}/${fmt(x.damageBudget)} | ${fmt(x.enemyDamage)} | ${fmt(x.turns)} | ${n(x.threat) == null ? '—' : n(x.threatAfter) == null ? x.threat : `${x.threat}→${x.threatAfter}`} | ${n(x.efficiency) == null ? '—' : '+' + fmt(x.efficiency)} | ${n(x.avoidance) == null ? '—' : '+' + fmt(x.avoidance)} | ${fmt(x.total)} |`));
-    if (t.completionBonus) L.push(`|  |  | Expedition completed bonus |  |  |  |  |  |  |  | +${fmt(t.completionBonus)} |`);
-    L.push(`|  |  | **Total** | ${fmt(t.actions)} |  ${fmt(t.damage)} |  | ${hasAll(e, 'turns') ? fmt(t.turns) : '—'} |  |  |  | **${fmt(t.total)}** |`);
+    L.push('| # | Act | Encounter | Actions/par | Damage/ref | Enemy dmg | Turns | Threat | Eff. | Avoid. | Threat bonus | Score |');
+    L.push('|---|---|---|---|---|---|---|---|---|---|---|---|');
+    e.forEach((x, i) => L.push(`| ${i + 1} | ${ROMAN[x.act] ?? '?'} | ${cell(x.name)}${x.nodeType === 'boss' ? ' (boss)' : x.nodeType === 'elite' ? ' (elite)' : ''}${x.multiplier && x.multiplier !== 1 ? ` ×${x.multiplier}` : ''} | ${fmt(x.actions)}/${fmt(x.parActions)} | ${fmt(x.damage)}/${fmt(x.damageBudget)} | ${fmt(x.enemyDamage)} | ${fmt(x.turns)} | ${n(x.threat) == null ? '—' : n(x.threatAfter) == null ? x.threat : `${x.threat}→${x.threatAfter}`} | ${n(x.efficiency) == null ? '—' : '+' + fmt(x.efficiency)} | ${n(x.avoidance) == null ? '—' : '+' + fmt(x.avoidance)} | ${x.threatBonus ? '+' + fmt(x.threatBonus) : '—'} | ${fmt(x.total)} |`));
+    if (t.completionBonus) L.push(`|  |  | Expedition completed bonus |  |  |  |  |  |  |  |  | +${fmt(t.completionBonus)} |`);
+    L.push(`|  |  | **Total** | ${fmt(t.actions)} |  ${fmt(t.damage)} |  | ${hasAll(e, 'turns') ? fmt(t.turns) : '—'} |  |  |  |  | **${fmt(t.total)}** |`);
   }
   L.push('');
   L.push('## Balance metrics');

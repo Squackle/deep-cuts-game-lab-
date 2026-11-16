@@ -66,6 +66,39 @@ function flame(g, x, y, k = 1, t = 0) {
   shape(g, [[x - 5 * k, y], [x - 3 * k, y - 8 * k - f], [x, y - 14 * k - f], [x + 3 * k, y - 8 * k - f], [x + 5 * k, y]], '#ff8a2a', '#5a1d0c', 1);
   shape(g, [[x - 2.4 * k, y - 1], [x, y - 8 * k - f], [x + 2.4 * k, y - 1]], '#ffe58a', null);
 }
+/** v1.7.0 bow rig. States: 0 idle (bow held low across the body with both hands), 1 walk, 3 cast = PREPARED SHOT
+ *  (raise → nock → full draw → hold aim), 2 attack = FIRE (full draw → release → follow-through → recover), 4 hurt, 5 defeat.
+ *  Grip/nock positions drive the arms, string and arrow together, so weapon and hands always align. */
+export function bowPose(st, fr, A) {
+  const T = A.torsoY, deg = d => d * Math.PI / 180;
+  const rest = { grip: [33, T + 8], draw: [44, T + 12], ang: deg(-28), pull: 0, arrow: false };
+  const raise = { grip: [31, T - 2], draw: [45, T + 2], ang: deg(-12), pull: 1, arrow: true };
+  const nock = { grip: [28, T - 6], draw: [47, T - 5], ang: deg(-4), pull: 6, arrow: true };
+  const full = { grip: [26, T - 8], draw: [55, T - 9], ang: 0, pull: 13, arrow: true };
+  const release = { grip: [25, T - 8], draw: [60, T - 13], ang: deg(3), pull: 0, arrow: false, snap: true };
+  const follow = { grip: [27, T - 6], draw: [58, T - 6], ang: deg(-2), pull: 0, arrow: false };
+  const seq = st === 3 ? [raise, nock, full, full] : st === 2 ? [full, release, follow, raise] : st === 4 ? [rest, { ...rest, grip: [35, T + 12], ang: deg(-40) }, rest, rest]
+    : st === 5 ? [rest, { ...rest, grip: [37, T + 16], ang: deg(-60) }, { ...rest, grip: [40, T + 22], ang: deg(-80) }, { ...rest, grip: [42, T + 24], ang: deg(-85) }] : [rest, rest, rest, rest];
+  const p = seq[fr] || rest, bob = st === 1 ? [0, 1, 0, -1][fr] : 0;
+  return { ...p, grip: [p.grip[0], p.grip[1] + bob], draw: [p.draw[0], p.draw[1] + bob] };
+}
+const elbowFor = (sh, hand, side) => [(sh[0] + hand[0]) / 2 + side * 3, Math.max(sh[1], hand[1]) + 3];
+const rot = (p, o, a) => [o[0] + p[0] * Math.cos(a) - p[1] * Math.sin(a), o[1] + p[0] * Math.sin(a) + p[1] * Math.cos(a)];
+function bowGeom(pose) { const G = pose.grip, a = pose.ang; return { t1: rot([0, -25], G, a), t2: rot([0, 25], G, a), belly: rot([-9, 0], G, a), nockAt: rot([4 + pose.pull, 0], G, a) }; }
+function drawBow(g, pose) {
+  const { t1, t2, belly, nockAt } = bowGeom(pose);
+  g.beginPath(); g.moveTo(...t1); g.quadraticCurveTo(...belly, ...t2); g.lineWidth = 4.4; g.strokeStyle = INK; g.stroke(); g.lineWidth = 2.6; g.strokeStyle = '#a77b44'; g.stroke();
+  g.beginPath(); g.moveTo(t1[0] - 0.6, t1[1] + 2); g.quadraticCurveTo(belly[0] - 0.6, belly[1], t2[0] - 0.6, t2[1] - 2); g.lineWidth = 0.9; g.strokeStyle = '#d6aa6a'; g.stroke();
+  line(g, pose.snap ? [t1, rot([6, 0], pose.grip, pose.ang), t2] : [t1, pose.pull ? nockAt : rot([4, 0], pose.grip, pose.ang), t2], '#efe7cf', 1);
+  ell(g, pose.grip[0], pose.grip[1], 2.2, 3, '#5a3b1f', INK, 0.6);
+  if (pose.snap) for (let i = 0; i < 3; i++) line(g, [rot([8 + i * 3, -6 + i * 6], pose.grip, pose.ang), rot([11 + i * 3, -6 + i * 6], pose.grip, pose.ang)], '#fff7dd', 0.8);
+}
+function drawArrow(g, pose) {
+  const { nockAt } = bowGeom(pose), tip = rot([-23 + pose.pull * 0.15, 0], pose.grip, pose.ang);
+  line(g, [nockAt, tip], INK, 2.2); line(g, [nockAt, tip], '#d9c49a', 1.2);
+  shape(g, [tip, rot([-19.5 + pose.pull * 0.15, -2.4], pose.grip, pose.ang), rot([-19.5 + pose.pull * 0.15, 2.4], pose.grip, pose.ang)], '#cfd6dc', INK, 0.7);
+  for (const sd of [-1, 1]) line(g, [nockAt, rot([4 + pose.pull + 4, sd * 2.6], pose.grip, pose.ang)], '#c43a2a', 1.2);
+}
 const FEATURE_DRAW = {
   torchgoblin(g, A, P, st, fr) {   // Mudbutton Torchrunner: torch-carrying goblin in a scrap harness
     legs(g, A, P.mid, P.light, '#3c2a1c'); torso(g, A, ramp(g, 46, A.torsoY - 3, 26, P.light, P.mid, P.dark));
@@ -87,19 +120,25 @@ const FEATURE_DRAW = {
     for (let i = 0; i < 3; i++) shape(g, [[h[0] + 14, h[1] - 9 + i * 2], [h[0] + 21 + (st === 2 ? fr * 3 : 0), h[1] - 8 + i * 2], [h[0] + 14, h[1] - 7 + i * 2]], '#e7eef2', INK, .6);
     face(g, A, P.mid, '#ff6a2a', { ears: 8, big: 1.08 }); const [x, y] = A.head; ell(g, x + 3, y - 2, 4.5, 3.4, '#d9b44a', INK, 1); ell(g, x + 3, y - 2, 2.3, 1.8, '#5ac8ff', null);
   },
-  bow(g, A, P, st, fr) {           // Elvish Archers: slender hooded elf, longbow, quiver
-    shape(g, [[52, A.torsoY - 14], [58, A.torsoY - 16], [61, A.torsoY + 6], [55, A.torsoY + 8]], '#5c3d22', INK, 1.1);
-    for (let i = 0; i < 3; i++) line(g, [[54 + i * 2, A.torsoY - 15], [55 + i * 2, A.torsoY - 21]], '#e8e0c8', 1.2);
+  bow(g, A, P, st, fr) {           // Elvish Archers: hooded elf with a two-handed longbow (v1.7.0 rig)
+    const pose = bowPose(st, fr, A), back = A.back;
+    const qv = () => { shape(g, [[52, A.torsoY - 14], [58, A.torsoY - 16], [61, A.torsoY + 6], [55, A.torsoY + 8]], '#5c3d22', INK, 1.1);
+      for (let i = 0; i < 3; i++) line(g, [[54 + i * 2, A.torsoY - 15], [55 + i * 2, A.torsoY - 21]], '#e8e0c8', 1.2); };
+    if (!back) qv();
+    if (back) drawBow(g, pose);
     legs(g, A, '#3c4f33', '#6f8a54', '#3b2a1b');
     shape(g, [[36, A.torsoY - 12], [60, A.torsoY - 12], [64, A.torsoY + 24], [32, A.torsoY + 24]], ramp(g, 46, A.torsoY, 30, P.light, P.mid, P.dark), INK, 1.5);
     line(g, [[40, A.torsoY + 10], [56, A.torsoY + 10]], '#b08a4a', 2.4);
-    arms(g, A, P.mid, P.light, '#f1d9b6');
-    const h = A.leftHand, draw = st === 2 ? [0, 3, 6, 0][fr] : 0;
-    g.beginPath(); g.moveTo(h[0] - 2, h[1] - 26); g.quadraticCurveTo(h[0] - 12, h[1], h[0] - 2, h[1] + 26); g.lineWidth = 4.2; g.strokeStyle = INK; g.stroke(); g.lineWidth = 2.6; g.strokeStyle = '#a77b44'; g.stroke();
-    line(g, [[h[0] - 2, h[1] - 26], [h[0] + 4 + draw, h[1]], [h[0] - 2, h[1] + 26]], '#efe7cf', 1);
+    if (back) qv();
+    if (!back) drawBow(g, pose);
+    // BOTH hands are on the weapon: bow hand on the grip, string hand on the string/nock (or the lower limb at rest)
+    const B = { ...A, leftHand: pose.grip, rightHand: pose.draw, leftElbow: elbowFor(A.leftShoulder, pose.grip, -1), rightElbow: elbowFor(A.rightShoulder, pose.draw, 1) };
+    arms(g, B, P.mid, P.light, '#f1d9b6');
+    if (!back && pose.arrow) drawArrow(g, pose);
     face(g, A, '#efd3b0', '#2f7a4a', { ears: 10, big: .95 });
     const [x, y] = A.head; shape(g, [[x - 13, y + 2], [x - 10, y - 12], [x, y - 17], [x + 10, y - 12], [x + 13, y + 2], [x + 8, y - 6], [x - 8, y - 6]], P.mid, INK, 1.4);
   },
+
   alchemist(g, A, P, st, fr) {     // Thermo-Alchemist: goggled robed brewer with a glowing flask
     legs(g, A, '#4a3a33', '#7b6355', '#2e2420');
     shape(g, [[35, A.torsoY - 12], [61, A.torsoY - 12], [66, A.torsoY + 28], [30, A.torsoY + 28]], ramp(g, 46, A.torsoY, 32, P.light, P.mid, P.dark), INK, 1.6);

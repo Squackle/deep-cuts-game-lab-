@@ -55,7 +55,9 @@ test('Cinematic is the default; migration keeps deliberate choices', async () =>
 // ── 7. idle clock ──────────────────────────────────────────────────────────────────────────────────────────
 test('idle breathing runs on real time; actions follow the speed setting; reduced motion holds idle', async () => {
   const { idleClockStep } = await import('../src/rendering/scene.js');
-  for (const speed of [0.65, 1, 2.2]) assert.equal(idleClockStep('idle', 0.1, speed, false), 0.1);
+  // v1.7.0: idle is on real time at a calm fixed tempo (IDLE_TEMPO), identical for every speed setting
+  const { IDLE_TEMPO } = await import('../src/rendering/scene.js');
+  for (const speed of [0.65, 1, 2.2]) assert.ok(Math.abs(idleClockStep('idle', 0.1, speed, false) - 0.1 * IDLE_TEMPO) < 1e-12);
   assert.equal(idleClockStep('attack', 0.1, 2, false), 0.2); assert.equal(idleClockStep('idle', 0.1, 1, true), 0);
 });
 // ── 2. stances ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -183,7 +185,7 @@ test('Leyline, Inscribed Page, Rift and Arcane Conduit each have a distinct glyp
 // ── versioning ─────────────────────────────────────────────────────────────────────────────────────────────
 test('v1.6.0 rules fingerprint and challenge revision', async () => {
   const { RULES_VERSION, RANKED_CHALLENGES } = await import('../src/engine/ranked.js'); const { GAME } = await import('../src/config.js');
-  assert.equal(GAME.version, '1.6.0-beta'); assert.equal(RULES_VERSION, 'graftbound-rules-1.6.0-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 25);
+  assert.equal(GAME.version, '1.7.0-beta'); assert.equal(RULES_VERSION, 'graftbound-rules-1.7.0-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 26);
 });
 test('styles.css is structurally valid: every block closes (a single unclosed block silently disables all later rules)', () => {
   const css = src('styles.css').replace(/\/\*[\s\S]*?\*\//g, ''); let d = 0;

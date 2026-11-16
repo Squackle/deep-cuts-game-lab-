@@ -50,7 +50,8 @@ export function spellTargets(s, id, level = 1) {
   const range = spellRange(id, level);
   for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) {
     const d = Math.abs(x - p.x) + Math.abs(y - p.y);
-    if (c.target === 'tile') { if (tileAt(s, x, y) !== T.ROCK) out.push({ x, y }); continue; }
+    // v1.7.0: AREA spells may be centred on a rock tile.
+    if (c.target === 'tile') { if (tileAt(s, x, y) !== T.ROCK || c.category === 'area') out.push({ x, y }); continue; }
     if (d === 0 || d > range) continue;
     if (unitAt(s, x, y) || tileAt(s, x, y) === T.ROCK || tileAt(s, x, y) === T.LAVA) continue;
     out.push({ x, y });
@@ -120,6 +121,8 @@ export function castSpellEffect(s, ev, id, level, tx, ty, xValue = 1) {
     case 'venom_mist': ev.push({ t: 'area', x: tx, y: ty, r: 1, kind: 'mist' }); for (const e of enemies(s)) if (Math.abs(e.x - tx) <= 1 && Math.abs(e.y - ty) <= 1) addStatus(s, ev, e, 'poison', n[0]); break;
     case 'starfall': {
       ev.push({ t: 'area', x: tx, y: ty, r: 1, kind: 'star' });
+      // v1.7.0: a damaging blast centred on a rock shatters it into walkable rubble.
+      if (tileAt(s, tx, ty) === T.ROCK) { s.terrain[ty * s.w + tx] = T.FLOOR; (s.rubble ||= []).push({ x: tx, y: ty }); ev.push({ t: 'terrain', tiles: [{ x: tx, y: ty }], kind: 'smash' }); }
       damageBatch(s, ev, p, enemies(s).filter(e => manhattan(e, { x: tx, y: ty }) <= 1).map(e => [e, e.x === tx && e.y === ty ? n[0] : n[1]]), spellDamage);
       break;
     }

@@ -2,7 +2,8 @@
 // directional facing + animation state, dynamic lights, particles, procedural lightning/ring FX meshes,
 // tweens, picking and screen projection. Consumes game state; never decides game outcomes.
 import { createRenderer, SPR_FLOATS } from './gl.js';
-import { makeShadowAtlas, SHADOW_CELL } from './shadow-magic.js';
+import { makeShadowAtlas, SHADOW_CELL, makeBoneAtlas, BONE_CELL } from './shadow-magic.js';
+import { anchorsOf, visualScale, measureBounds, FACES_RIGHT, mirrorFor } from './creature-scale.js';
 import { mul, perspective, ortho, lookAt, xform, invert, I } from './math.js';
 import { Geo } from './geometry.js';
 import { buildEnvironment, swayFor, WIND } from './environment.js';
@@ -15,7 +16,10 @@ const PITCH = 0.66;
 /** v1.5.0 middle-mouse orbit: pitch limits keep the camera above the board and gameplay readable. */
 /** v1.5.0 depth separation for props under a creature (world units, along camera forward). */
 /** v1.6.0 presentation clocks (pure; exported for tests). */
-export const idleClockStep = (anim, dt, speed, reduced) => anim === 'idle' ? (reduced ? 0 : dt) : dt * speed;
+/** v1.7.0: idle runs at a calm fixed tempo (a full 4-frame breath ≈ 2.7 s at the authored 5 fps), on real time,
+ *  independent of Cinematic/Normal/Fast. Actions still follow the speed setting. */
+export const IDLE_TEMPO = 0.3;
+export const idleClockStep = (anim, dt, speed, reduced) => anim === 'idle' ? (reduced ? 0 : dt * IDLE_TEMPO) : dt * speed;
 export const FOLIAGE_PUSH = 0.34;
 export const PITCH_MIN = 0.42, PITCH_MAX = 0.98;
 let HCOMP = 1 / Math.cos(PITCH);
@@ -31,7 +35,8 @@ export class Scene {
     this.r.atlasBlur = this.r.texture(assets.images.terrainBlur || assets.images.terrain, { nearest: true, repeat: true });
     this.tex = {}; for (const k of Object.keys(this.man.sprites)) this.tex[k] = this.r.texture(assets.images[k]);
     this.foliageTex = this.r.texture(assets.images.foliage);
-    this.shadowTex = this.r.texture(makeShadowAtlas()); this.shadows = [];   // v1.6.0 umbral spell sprites (alpha-tested pixel art)
+    this.shadowTex = this.r.texture(makeShadowAtlas()); this.shadows = [];
+    this.boneTex = this.r.texture(makeBoneAtlas());   // v1.7.0 skeleton bone pile   // v1.6.0 umbral spell sprites (alpha-tested pixel art)
     this.units = new Map(); this.tweens = []; this.time = 0; this.speed = 1; this.reduced = false;
     this.yaw = Math.PI / 4; this.yawTarget = this.yaw; this.pitch = PITCH; this.pitchTarget = PITCH; this.zoom = 1; this.focus = [0, 0, 0]; this.focusTarget = [0, 0, 0];
     this.shakeAmt = 0; this.fx = new Particles(3200); this.fxLights = []; this.static = null; this.w = 8; this.h = 8;
@@ -59,16 +64,22 @@ export class Scene {
   }
   addUnit(u, spriteKey, opts = {}) {
     const meta = this.man.sprites[spriteKey];
-    const v = { uid: u.uid, side: u.side, key: spriteKey, tex: opts.tex || this.tex[spriteKey], fw: meta.w, fh: meta.h, pivot: meta.pivotY, hover: meta.hover ? 0.35 : 0,
+    // v1.7.0: feet + horizontal centre come from the MEASURED art bounds (creature-scale.js), not frame constants.
+    const an = anchorsOf(meta, meta.bounds);
+    const v = { uid: u.uid, side: u.side, key: spriteKey, tex: opts.tex || this.tex[spriteKey], fw: meta.w, fh: meta.h, pivot: an.pivot, cx: an.cx, topPx: (meta.boundsAll || meta.bounds)?.y0 ?? 0, hover: meta.hover ? 0.35 : 0,
       pixelScale: meta.pixelScale || 1, animSet: meta.anims || this.man.anims, views: meta.views || this.man.views,
       pos: this.world(u.x, u.y), dir: u.side === 'enemy' ? [0, 1] : [0, -1], anim: 'idle', animT: Math.random(), scale: opts.scale || 1, flash: 0, flashCold: 0, dissolve: 0, outline: 0,
       lunge: [0, 0, 0], spawnK: 1, hidden: false, aura: null };
+    if (!opts.scale) v.scale = visualScale(spriteKey, meta, meta.bounds);
+    if (u.facing) v.dir = [u.facing[0], u.facing[1]];   // v1.7.0: saved last-move direction (engine field)
     this.units.set(u.uid, v); return v;
   }
   setUnitTexture(uid, canvas, scale) {
     const v = this.units.get(uid); if (!v) return;
     if (v.ownTex) this.r.updateTexture(v.ownTex, canvas); else { v.ownTex = this.r.texture(canvas); }
     v.tex = v.ownTex; if (scale) v.scale = scale;
+    // v1.7.0: label/health-bar height from the COMPOSED model (wings, horns...) in front and back idle frames.
+    const rows = Object.keys(v.animSet || this.man.anims).length, b = measureBounds(canvas, v.fw, v.fh, [[0, 0], [0, rows]]); if (b) v.topPx = Math.min(b.y0, v.pivot - 4);
   }
   removeUnit(uid) { this.units.delete(uid); }
   /** v1.6.0: an alpha-tested shadow sprite (mist / spectral hand). frames: [[col,row],...] with fps, or seq [{at,frame}]. */
@@ -82,8 +93,8 @@ export class Scene {
     if (kind === 'guard') return this.tween(0.42, k => { const e = Math.sin(Math.PI * Math.min(1, k * 1.6)) * (k < 0.62 ? 1 : 0.55); v.squash = e; });
     return this.tween(0.5, k => { v.castLift = Math.sin(Math.PI * k) * 0.09; v.squash = -Math.sin(Math.PI * k) * 0.5; }).then(() => { v.castLift = 0; v.squash = 0; });
   }
-  heightOf(v) { return v.fh * PX * HCOMP * v.scale * (v.pixelScale || 1) * 0.62; }
-  headPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) * 0.95 + 0.05, v.pos[2]]; }
+  heightOf(v) { return Math.max(0.1, (v.pivot - (v.topPx ?? 0)) * PX * HCOMP * v.scale * (v.pixelScale || 1)); }   // v1.7.0: true visible height
+  headPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) + 0.1, v.pos[2]]; }   // v1.7.0: above the whole model
   centerPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0] + v.lunge[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) * 0.45, v.pos[2] + v.lunge[2]]; }
   face(v, to) { if (!v) return; const dx = to[0] - v.pos[0], dz = to[2] - v.pos[2]; if (Math.abs(dx) + Math.abs(dz) > 0.01) v.dir = [dx, dz]; }
   tween(dur, fn) { if (this.speed >= 50) { fn(1); return Promise.resolve(); } dur = dur / this.speed; return new Promise(res => this.tweens.push({ t: 0, dur: Math.max(0.001, dur), fn, res })); }
@@ -129,6 +140,12 @@ export class Scene {
   }
   async death(uid, element = null) {
     const v = this.units.get(uid); if (!v) return;
+    if (/Skeleton/i.test(v.key)) {   // v1.7.0: collapse into a bone pile, hold, then fade. The unit view is removed at once,
+      const at = [v.pos[0], v.pos[1], v.pos[2]];   // so there is never an invisible blocker; the pile is a pure decal.
+      await this.tween(0.22, k => { v.squash = k * 1.4; v.dissolve = k * 0.6; }); this.removeUnit(uid);
+      this.addShadow({ tex: 'bones', seq: [{ at: 0, frame: [0, 0] }, { at: 0.18, frame: [1, 0] }], pos: at, size: 0.7, life: this.reduced ? 0.6 : 1.6, fadeIn: 0, fadeOut: 0.5 });
+      return;
+    }
     const timing = defeatTiming(v.animSet); v.anim = timing.authored ? 'defeat' : 'hurt'; v.animT = 0;
     const c = this.centerPos(uid); const colors={fire:[1,0.35,0.1],frost:[0.65,0.9,1],lightning:[0.5,0.7,1],void:[0.48,0.15,0.55],poison:[0.35,0.9,0.3],nature:[0.4,0.9,0.35],radiant:[1,0.9,0.5]}; const col=colors[element]||[0.95,0.85,0.55];this.fx.burst(c,col,44,{speed:2.2,up:element==='frost'?1:2});this.fx.burst(c,element==='void'?[0.16,0.06,0.18]:[0.3,0.2,0.15],18,{speed:1.2,up:0.5,size:18});if(element==='fire'||element==='frost'||element==='void')this.addRing({pos:[c[0],0.08,c[2]],r0:0.15,r1:0.85,life:0.5,col,width:0.07,spokes:element==='frost'?6:5});
     await this.tween(timing.seconds, k => { const t = timing.fadeStart ? Math.max(0, (k - timing.fadeStart) / (1 - timing.fadeStart)) : k; v.dissolve = t; v.flash = 0.3 * (1 - t); }); this.removeUnit(uid);
@@ -233,14 +250,17 @@ export class Scene {
         const f = pose.frame;
         const frontDot = v.dir[0] * fwdH[0] + v.dir[1] * fwdH[1];
         const sideDot = v.dir[0] * rH[0] + v.dir[1] * rH[1];
-        const {index:viewIndex, flip} = chooseSpriteDirection(v.views || man.views, frontDot, sideDot);
+        const dirSel = chooseSpriteDirection(v.views || man.views, frontDot, sideDot), viewIndex = dirSel.index;
+        // v1.7.0: native-facing aware mirroring with hysteresis (no idle flip-flopping)
+        const hasSides = (v.views || man.views).includes('left'); const flip = hasSides ? dirSel.flip : (v.lastFlip = mirrorFor(FACES_RIGHT.has(v.key), sideDot, v.lastFlip ?? false));
         const row = viewIndex * Object.keys(anims).length + anims[v.anim].row;
         const u0 = (f * v.fw) / tex.w, u1 = ((f + 1) * v.fw) / tex.w, v0 = (row * v.fh) / tex.h, v1 = ((row + 1) * v.fh) / tex.h;
         const s = v.scale * v.spawnK, pixelScale = v.pixelScale || 1;
         const sq = v.squash || 0;   // v1.6.0 stance squash: + braces (lower, wider), - stretches (channel)
         const wdt = v.fw * PX * s * pixelScale * (1 + sq * 0.06), hgt = v.fh * PX * HCOMP * s * pixelScale * (1 - sq * 0.07);
         const bob = v.hover ? Math.sin(this.time * 3 + v.uid) * 0.06 : 0;
-        const c = [v.pos[0] + v.lunge[0], v.pos[1] + v.hover + (v.castLift || 0) + bob - (v.fh - v.pivot) * PX * HCOMP * s * pixelScale, v.pos[2] + v.lunge[2]];
+        const ox = -(v.cx || 0) * (flip ? -1 : 1) * PX * s * pixelScale;   // v1.7.0 centre the ART (not the frame) on the tile
+        const c = [v.pos[0] + v.lunge[0] + rH[0] * ox, v.pos[1] + v.hover + (v.castLift || 0) + bob - (v.fh - v.pivot) * PX * HCOMP * s * pixelScale, v.pos[2] + v.lunge[2] + rH[1] * ox];
         v.flash = Math.max(0, v.flash - dt * 4);
         off = this.pushQuad(this.sprBuf, off, c, wdt, hgt, flip ? [u1, v0, u0, v1] : [u0, v0, u1, v1], [v.flash, v.dissolve, v.outline, v.flashCold]);
       }
@@ -261,15 +281,17 @@ export class Scene {
     }
     batches.push({ tex: ft, data: this.sprBuf.subarray(start * SPR_FLOATS), count: off - start });
     if (this.shadows.length) {
-      const st = this.shadowTex, sStart = off, C = SHADOW_CELL;
+     for (const texKey of ['shadow', 'bones']) {
+      const st = texKey === 'bones' ? this.boneTex : this.shadowTex, sStart = off, C = texKey === 'bones' ? BONE_CELL : SHADOW_CELL;
       for (const e of this.shadows) {
-        if (e.age < 0) continue;
+        if (e.age < 0 || (e.tex || 'shadow') !== texKey) continue;
         const fr = e.seq ? e.seq.filter(k => k.at <= e.age).at(-1)?.frame || e.seq[0].frame : e.frames[Math.floor(e.age * e.fps) % e.frames.length];
         const u0 = fr[0] * C / st.w, u1 = (fr[0] + 1) * C / st.w; let v0 = fr[1] * C / st.h, v1 = (fr[1] + 1) * C / st.h; if (e.flipY) [v0, v1] = [v1, v0];
         const dis = Math.max(0, e.fadeIn ? 1 - e.age / e.fadeIn : 0, e.fadeOut ? (e.age - (e.life - e.fadeOut)) / e.fadeOut : 0);
         off = this.pushQuad(this.sprBuf, off, e.pos, e.size, e.size * HCOMP, [u0, v0, u1, v1], [0, Math.min(1, dis), 0, 0]);
       }
       if (off > sStart) batches.push({ tex: st, data: this.sprBuf.subarray(sStart * SPR_FLOATS), count: off - sStart });
+     }
     }
     return batches;
   }

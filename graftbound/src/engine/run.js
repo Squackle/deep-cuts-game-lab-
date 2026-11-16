@@ -77,7 +77,8 @@ export function enterNode(run, nodeId) {
   const tpl0 = extra.length ? { ...base, enemies: [...base.enemies, ...extra] } : base;
   const tpl = tac.ambush && !(run.act === 0 && node.depth < 2) ? { ...tpl0, ambush: tac.ambush } : tpl0;
   const enc = buildEncounter(tpl, node.seed, node.type);
-  const battle = createBattle({ evo: run.evo, stats: runStats(run), spellbook: run.spellbook.map(e=>({...e})), deckMode:true, handCapacity:run.handCapacity, encounter: enc, seed: node.seed, heroName: run.name, startHp: run.hp, act: run.act });
+  const ambush = !!run.ambushNext && !['tutorial', 'boss'].includes(node.type); if (ambush) run.ambushNext = false;
+  const battle = createBattle({ ambush, evo: run.evo, stats: runStats(run), spellbook: run.spellbook.map(e=>({...e})), deckMode:true, handCapacity:run.handCapacity, encounter: enc, seed: node.seed, heroName: run.name, startHp: run.hp, act: run.act });
   attachRunEquipment(run,battle.units.find(u=>u.hero));
   battle.equipmentInventory=[...(run.equipmentInventory||[])];
   battle.heroEquipmentSlots=[...(run.equippedEquipment||[null,null])];
@@ -88,6 +89,7 @@ export function enterNode(run, nodeId) {
   // run's stored baseline by merely inspecting a stronger character.
   battle.worldThreatBase = run.worldThreat?.level || 0;
   battle.worldThreatAdaptive = Math.max(0, activeThreat - battle.worldThreatBase);
+  battle.threatAtStart = node.type === 'tutorial' ? 0 : activeThreat;   // v1.7.0 immutable snapshot for the score bonus
   applyWorldThreat(battle, { level: activeThreat });
   if (node.type === 'boss') battle.adapt = bossAdaptation(run.act, run.evo, { spellbook: run.spellbook, stats: runStats(run) });
   battle.bench = encounterBenchmarks(node.type, run.act, enc.enemies.length);
@@ -130,7 +132,7 @@ export function concludeBattle(run) {
     run.victoryScene='pending';
     return {outcome:'won',boss:true,final:true,elite:false,battleStats:b.stats};
   }
-  const tier = isBoss ? 'boss' : b.nodeType === 'elite' ? 'elite' : 'battle';
+  const tier = isBoss ? 'boss' : b.nodeType === 'elite' || b.ambushed ? 'elite' : 'battle';   // v1.7.0: surviving an ambush pays an elite pack
   const forced = b.nodeType === 'tutorial' ? [TUTORIAL_CARD] : [];
   run.pending = { cards: generatePack(b.rng.s ^ 0x5eed, { tier, forced, ...packOpts(run) }), tier, boss: isBoss };
   // The first level grants three reward choices, each its own pack.

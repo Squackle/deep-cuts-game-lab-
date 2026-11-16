@@ -26,6 +26,8 @@ import { CardAnimationDirector } from './card-animation-director.js';
 import { terrainInspectPlacement } from './terrain-inspect.js';
 import { exileZone, discardRequirement } from '../engine/zones.js';
 import { exilePortalCanvas } from './exile-portal.js';
+import { visualScale } from '../rendering/creature-scale.js';
+import { wolfCoatFor, recoatSheet, WOLF_KEYS, LEADER_KEYS, LEADER_COAT } from '../rendering/creature-variants.js';
 
 const $ = id => document.getElementById(id);
 const SPELL_COL = { ember: [1, 0.55, 0.2], verdant: [0.5, 1, 0.4], tide: [0.4, 0.8, 1], umbral: [0.75, 0.45, 1], radiant: [1, 0.9, 0.5] };
@@ -84,7 +86,7 @@ export class BattleUI {
         await this.banner(s.nodeType === 'boss' ? s.name : s.nodeType === 'elite' ? 'Elite Lair · ' + s.name : s.name, s.nodeType === 'boss' ? 'boss' : '', s.nodeType === 'boss' ? bossTitleOf(s.act) : '');
         if (s.deck) await this.deckCeremony();
         this.initialHandConcealed=false;this.renderHand(s);
-        if (s.worldThreat > 0) await this.banner(`Global Threat ${s.worldThreat}/12`, 'foe');
+        // v1.7.0: no start-of-encounter threat banner; the post-victory dial is the only threat presentation.
         // v1.6.0: the post-victory Global Threat dial is the authoritative threat presentation; reinforcements still apply.
         this.busy = false;
       }
@@ -108,7 +110,7 @@ export class BattleUI {
     let v;
     if (u.hero) {
       const ap = deriveAppearance(this.run.evo, visualForRun(this.run));
-      v = this.scene.addUnit(u, 'blank'); this.scene.setUnitTexture(u.uid, composeEquippedSheet(this.app.assets, ap, u.equipment || [], u.auras || []), Math.min(0.53, ap.size * 0.38));
+      v = this.scene.addUnit(u, 'blank'); { const bm = this.app.assets.manifest.sprites.blank; this.scene.setUnitTexture(u.uid, composeEquippedSheet(this.app.assets, ap, u.equipment || [], u.auras || []), visualScale('blank', bm, bm.bounds, { heroSize: ap.size })); }
       v.aura = ap.effects.includes('aura') ? ap.glow : null;
       v.hover = u.keywords.flying ? 0.14 : 0;   // v0.6: fliers levitate; trample builds plant heavier steps (see play())
       v.style = { flying: !!u.keywords.flying, trample: !!u.keywords.trample, deathtouch: !!u.keywords.deathtouch, doubleStrike: !!u.keywords.doubleStrike, lifelink: !!u.keywords.lifelink,
@@ -122,10 +124,13 @@ export class BattleUI {
         u.traitToken === 'drake' ? 'mtg_friendlyDrake' :
         u.traitToken === 'catsoldier' ? 'mtg_friendlyCatSoldier' :
         u.name === 'Soldier' ? 'mtg_friendlySoldier' : 'mtg_friendlySproutling');
-      v = this.scene.addUnit(u, friend ? tokenKey : ENEMIES[u.defId].sprite, { scale: u.boss ? 0.46 : (tokenKey==='mtg_friendlySoldier' ? 0.39 : 0.56   /* v1.6.0: uniform study density — Squirrel/Spider size now comes from their art */) });
+      v = this.scene.addUnit(u, friend ? tokenKey : ENEMIES[u.defId].sprite);   // v1.7.0: size from the central species table
+      { const key = friend ? tokenKey : ENEMIES[u.defId].sprite, img = this.app.assets.images[key];   // v1.7.0 wolf coats / pack leader
+        const coat = LEADER_KEYS.has(key) ? LEADER_COAT : WOLF_KEYS.has(key) ? wolfCoatFor(this.run?.seed || 0, u.uid) : null;
+        if (coat && coat.hue != null && img) this.scene.setUnitTexture(u.uid, recoatSheet(img, coat, key)); }
       if (friend && tokenKey === 'mtg_friendlySoldier') {
         const src=this.app.assets.images.mtg_friendlySoldier, mask=this.app.assets.images['mtg_friendlySoldier:skinMask'];
-        this.scene.setUnitTexture(u.uid,composeAllyAttachments(recolorSkin(src,mask,skinToneForSeed(this.run.seed,u.uid)),v.fw,u.equipment||[],u.auras||[]),0.39);
+        this.scene.setUnitTexture(u.uid,composeAllyAttachments(recolorSkin(src,mask,skinToneForSeed(this.run.seed,u.uid)),v.fw,u.equipment||[],u.auras||[]));
       }
     }
     if(u.auras?.length) this.applyAuraLight(u);
@@ -139,7 +144,7 @@ export class BattleUI {
     if(!unit||!v)return;
     if(unit.hero){
       const app=deriveAppearance(this.run.evo,visualForRun(this.run));
-      this.scene.setUnitTexture(uid,composeEquippedSheet(this.app.assets,app,unit.equipment||[],unit.auras||[]),Math.min(.53,app.size*.38));
+      { const bm=this.app.assets.manifest.sprites.blank; this.scene.setUnitTexture(uid,composeEquippedSheet(this.app.assets,app,unit.equipment||[],unit.auras||[]),visualScale('blank',bm,bm.bounds,{heroSize:app.size})); }
     }else{
       let base=this.app.assets.images[v.key];if(!base)return;
       if(v.key==='mtg_friendlySoldier')base=recolorSkin(base,this.app.assets.images['mtg_friendlySoldier:skinMask'],skinToneForSeed(this.run.seed,uid));
@@ -160,10 +165,21 @@ export class BattleUI {
   }
   frame() {
     if (!this.s || !this.scene.cam) return;
+    // v1.7.0 priority-based, collision-aware label layout: hero > bosses > foes threatening damage > the rest.
+    // Lower-priority labels step up out of the way (max 3 steps), then collapse to a compact bar; intents stay visible.
+    const items = [];
     for (const [uid, el] of this.labels) {
       const v = this.scene.units.get(uid); if (!v) { el.style.display = 'none'; continue; }
       const p = this.scene.project(this.scene.headPos(uid)); el.style.display = '';
-      el.style.transform = `translate(${p.x | 0}px, ${p.y | 0}px)`;
+      const u = this.s.units.find(x => x.uid === uid), it = this.intents.find(i => i.uid === uid);
+      items.push({ el, x: p.x, y: p.y, h: el._h || 24, pr: u?.hero ? 0 : u?.boss ? 1 : it && it.damage ? 2 : 3 });
+    }
+    items.sort((a, b) => a.pr - b.pr || b.y - a.y);
+    const placed = [], W = 58, hit = (x, y, h) => placed.some(r => Math.abs(r.x - x) < W && y > r.y - r.h - 2 && y - h < r.y + 2);
+    for (const it of items) {
+      let y = it.y, steps = 0; while (hit(it.x, y, it.h) && steps < 3) { y -= Math.max(10, it.h * 0.55); steps++; }
+      const compact = it.pr >= 2 && hit(it.x, y, it.h); it.el.classList.toggle('compact', compact);
+      placed.push({ x: it.x, y, h: compact ? 10 : it.h }); it.el.style.transform = `translate(${it.x | 0}px, ${y | 0}px)`;
     }
   }
   renderLabel(uid) {
@@ -178,8 +194,11 @@ export class BattleUI {
     }
     const u = this.s.units.find(x => x.uid === uid);
     const armor = u && u.keywords && u.keywords.armor ? `<span class="st ar">▣${u.keywords.armor}</span>` : '';
-    const st = [armor, u?.slime ? `<span class="st gb-slime" title="Toxrill: ${u.slime} slime counter(s), -${u.slime}/-${u.slime}">☣${u.slime}</span>` : '', d.grounded ? `<span class="st gr">${ICON.hook}</span>` : '', d.weakened ? `<span class="st wk">−${d.weakened}⚔</span>` : '', d.shield ? `<span class="st sh">${ICON.shield}${d.shield}</span>` : '', d.poison ? `<span class="st ps">${ICON.poison}${d.poison}</span>` : '', d.stunned ? `<span class="st sn">${ICON.stun}</span>` : '', d.empowered ? `<span class="st em">+${d.empowered}</span>` : ''].join('');
+    const stList = [armor, u?.slime ? `<span class="st gb-slime" title="Toxrill: ${u.slime} slime counter(s), -${u.slime}/-${u.slime}">☣${u.slime}</span>` : '', d.grounded ? `<span class="st gr">${ICON.hook}</span>` : '', d.weakened ? `<span class="st wk">−${d.weakened}⚔</span>` : '', d.shield ? `<span class="st sh">${ICON.shield}${d.shield}</span>` : '', d.poison ? `<span class="st ps">${ICON.poison}${d.poison}</span>` : '', d.stunned ? `<span class="st sn">${ICON.stun}</span>` : '', d.empowered ? `<span class="st em">+${d.empowered}</span>` : ''];
+    // v1.7.0: at most 3 status chips; the rest fold into a '+n' chip (full list in its tooltip)
+    const stShown = stList.filter(Boolean), st = (stShown.length > 3 ? [...stShown.slice(0, 2), `<span class="st more" title="${esc(stShown.slice(2).map(x => x.replace(/<[^>]+>/g, '')).join(' · '))}">+${stShown.length - 2}</span>`] : stShown).join('');
     el.innerHTML = `${intent}<div class="hpbar"><i style="width:${pct}%"></i><span>${d.hp}</span></div><div class="sts">${st}</div>`;
+    el._h = el.offsetHeight || 24;
   }
   intentText(it) {
     const tgt = it.target && this.s.units.find(u => u.uid === it.target);
@@ -187,6 +206,7 @@ export class BattleUI {
     return (({ attack: `Will strike${who} for ${it.damage}`, spit: `Will spit for ${it.damage} and poison ${it.poison}`, hex: `Will curse you: ${it.damage} damage and −${it.weaken} power on your next turn`,
       harpoon: `Harpoon: ${it.damage} damage${it.ground ? ' and Grounds you (no flying next turn)' : ''}`, aim: 'Will take aim along a line', fire: `Fires ${it.damage} along the red line`,
       slam: `${it.damage} to every red tile${it.extra ? ` (and strikes for ${it.extra} if adjacent)` : ''}`, summon: 'Will summon reinforcements', smash: 'Will smash through the rock (uses its whole turn)', support: 'Will empower its Saprolings', guard: 'Will shield adjacent allies', stunned: 'Stunned — loses its next action' })[it.kind] || 'Will move')
+      + (it.quick ? ` · then a quick shot for ${it.quick.damage} at ${(t => !t || t.hero ? 'you' : 'your ' + t.name)(this.s.units.find(u => u.uid === it.quick.target))}` : '')
       + (it.guarded ? ` · Guard blocks ${it.guarded}` : '') + (it.silence ? ` · Silences your ${getCard(it.silence).name} next turn` : '')
       + (it.redact ? ` · Redaction: your ${KEYWORDS[it.redact].name} is suppressed during your next turn (it returns after)` : '') + (it.briars ? ' · Briars will sprout around you (fire burns them)' : '') + (it.mirror ? ` · Will copy your ${KEYWORDS[it.mirror].name}` : '');
   }
@@ -593,7 +613,7 @@ export class BattleUI {
     const centroid = list => { const ps = list.map(u => sc.world(u.x, u.y)); return [ps.reduce((a, p) => a + p[0], 0) / ps.length, 0, ps.reduce((a, p) => a + p[2], 0) / ps.length]; };
     const foeC = foes.length ? centroid(foes) : sc.world((s.w - 1) / 2, (s.h - 1) / 2);
     const hero = live.find(u => u.hero), heroP = hero ? sc.world(hero.x, hero.y) : foeC;
-    for (const u of live) { const v = sc.units.get(u.uid); if (v) sc.face(v, u.side === 'enemy' ? heroP : foeC); }
+    for (const u of live) { const v = sc.units.get(u.uid); if (v && !u.facing) sc.face(v, u.side === 'enemy' ? heroP : foeC); }   // v1.7.0: keep a saved last-move facing
   }
   /** v1.5.0: once the battle is over (or ending), stray input is a quiet no-op: short sound, no error toast. */
   inputClosed() { return !this.s || this.ending || this.s.phase === 'won' || this.s.phase === 'lost' || !!this.s.victoryDeclared; }
@@ -616,7 +636,8 @@ export class BattleUI {
     const choice=comboChoices(this.s);if(!choice)return;
     this._comboShowing=true;
     const options=choice.choices.map(x=>`<button type="button" class="btn gb-combo-option" data-combo-arg="${esc(String(x.arg))}">${esc(x.label)}</button>`).join('');
-    const modal=this.app.openModal(`<div class="gb-combo-modal"><small class="sh-brand">Graftbound · Combo Engine</small><h2>${esc(choice.kind==='mentor'?'Mentor of the Meek':choice.kind.replace(/([A-Z])/g,' $1'))}</h2><p class="gb-combo-note">${esc(choice.subtitle)}${choice.reason?' · '+esc(choice.reason):''}</p><div class="gb-combo-options">${options}</div></div>`);
+    // v1.7.0: locked — backdrop/Escape cannot dismiss an unresolved trigger; closeModal() re-prompts as a safety net.
+    const modal=this.app.openModal(`<div class="gb-combo-modal" role="alertdialog" aria-modal="true"><small class="sh-brand">Graftbound · Combo Engine</small><h2>${esc(choice.kind==='mentor'?'Mentor of the Meek':choice.kind.replace(/([A-Z])/g,' $1'))}</h2><p class="gb-combo-note">${esc(choice.subtitle)}${choice.reason?' · '+esc(choice.reason):''}</p><div class="gb-combo-options">${options}</div></div>`,'',{locked:true});
     for(const btn of modal.querySelectorAll('[data-combo-arg]'))btn.onclick=async()=>{
       if(!this._comboShowing)return;this._comboShowing=false;
       const argText=btn.dataset.comboArg;const arg=/^\d+$/.test(argText)?Number(argText):argText;
@@ -974,6 +995,7 @@ export class BattleUI {
         case 'revive': au.play('heal');this.float(e.uid,'Gift of Immortality!','note');break;
         case 'legendaryFlame': au.play('fireboom');sc.screenFlash([1,0.45,0.18],0.35);break;
         case 'legendaryAbility': au.play('bossPhase'); if (e.name && sc.units.get(e.uid)) this.float(e.uid, esc(e.name), 'note'); break;
+        case 'ambush': au.play('foe'); await this.banner('Ambush! Your grafts\u2019 battle-start effects did not fire', 'foe'); break;
         case 'graftTrigger': if(e.name && sc.units.get(e.uid)){
           this.float(e.uid,esc(e.name),'note');
           if (/Blood Artist|Vito|Sheoldred/i.test(e.name)) {

@@ -109,20 +109,26 @@ function gather(sc, at, n, radius = 0.55, height = 0.95) {
     addS(sc, { frames: [SHADOW_FRAMES.puff[i % 4]], pos: [at[0] + Math.cos(a) * radius, at[1] + height + R(i) * 0.15, at[2] + Math.sin(a) * radius], size: 0.42 + 0.06 * (i % 3), life: 1.2, vel: [-Math.cos(a) * radius * 0.7, 0.05, -Math.sin(a) * radius * 0.7], fadeIn: 0.18, fadeOut: 0.5 }); }
 }
 /** Shared grasp: mist gathers over `to`, a hand descends, then poses play. Resolves at the grip. */
+/** v1.7.0 four readable stages: (1) GATHER — charcoal mist converges above the target; (2) INTENSIFY — the cloud
+ *  thickens and darkens with a violet core; (3) EMERGE + STRIKE — the hand pushes out of that cloud and grips;
+ *  (4) DISSIPATE. The promise resolves at the grip, so the engine's already-resolved damage plays in sync. */
+export const GRASP_STAGES = Object.freeze({ gather: 420, intensify: 320, descend: 0.32 });
 async function grasp(sc, { from, to, target, finale = 'handClench', light = [0.75, 0.12, 0.25], hold = 0.7 }) {
-  const reduced = sc.reduced;
-  // the caster SENDS a ribbon of charcoal smoke to the target; the hand then forms out of that mist
-  if (from && sc.projectile) await sc.projectile(from, [to[0], to[1] + 0.8, to[2]], [0.2, 0.12, 0.24], 0.24, 0.12, { size: 20 });
-  gather(sc, to, reduced ? 3 : 7);
-  addS(sc, { frames: [SHADOW_FRAMES.wisp[0], SHADOW_FRAMES.wisp[1]], fps: 6, pos: [to[0], to[1] + 0.2, to[2]], size: 0.6, life: 1.4, vel: [0, 0.18, 0], fadeIn: 0.2, fadeOut: 0.6 });
-  await sleep(sc, 300);
-  const top = to[1] + 1.05, grip = to[1] + 0.12, descend = 0.32;
-  addS(sc, { seq: [{ at: 0, frame: SHADOW_FRAMES.handEmerge }, { at: 0.12, frame: SHADOW_FRAMES.handOpen }, { at: descend * 0.8, frame: SHADOW_FRAMES.handGrasp }, { at: descend + 0.08, frame: SHADOW_FRAMES[finale] }, { at: descend + hold, frame: SHADOW_FRAMES.handFade }],
-    pos: [to[0], top, to[2]], size: 0.95, life: descend + hold + 0.35, vel: [0, (grip - top) / descend, 0], stopAt: descend, fadeIn: 0.1, fadeOut: 0.3 });
+  const reduced = sc.reduced, cloud = [to[0], to[1] + 1.0, to[2]];
+  if (from && sc.projectile) await sc.projectile(from, cloud, [0.2, 0.12, 0.24], 0.24, 0.12, { size: 20 });
+  gather(sc, to, reduced ? 3 : 8, 0.62, 1.0);   // 1 · gather
+  addS(sc, { frames: [SHADOW_FRAMES.wisp[0], SHADOW_FRAMES.wisp[1]], fps: 6, pos: [to[0], to[1] + 0.2, to[2]], size: 0.6, life: 1.6, vel: [0, 0.18, 0], fadeIn: 0.2, fadeOut: 0.6 });
+  await sleep(sc, GRASP_STAGES.gather);
+  for (let i = 0; i < (reduced ? 2 : 5); i++) addS(sc, { frames: [SHADOW_FRAMES.puff[(i + 2) % 4]], pos: [cloud[0] + R(i + 11) * 0.18, cloud[1] + R(i + 5) * 0.08, cloud[2] + R(i + 7) * 0.18], size: 0.5 + i * 0.07, life: 1.5, vel: [0, 0, 0], fadeIn: 0.15, fadeOut: 0.5, delay: i * 0.05 });   // 2 · intensify
+  sc.light && sc.light(cloud, [0.45, 0.12, 0.55], 1.6, 0.6, 1.1);
+  await sleep(sc, GRASP_STAGES.intensify);
+  const top = cloud[1] + 0.05, grip = to[1] + 0.12, descend = GRASP_STAGES.descend;   // 3 · emerge from the cloud and strike
+  addS(sc, { seq: [{ at: 0, frame: SHADOW_FRAMES.handEmerge }, { at: 0.14, frame: SHADOW_FRAMES.handOpen }, { at: descend * 0.8, frame: SHADOW_FRAMES.handGrasp }, { at: descend + 0.08, frame: SHADOW_FRAMES[finale] }, { at: descend + hold, frame: SHADOW_FRAMES.handFade }],
+    pos: [to[0], top, to[2]], size: 0.95, life: descend + hold + 0.35, vel: [0, (grip - top) / descend, 0], stopAt: descend, fadeIn: 0.12, fadeOut: 0.3 });
   await sleep(sc, descend * 1000);
   if (target != null) sc.hit(target, [0.3, 0.06, 0.16], true);
   sc.light([to[0], to[1] + 0.3, to[2]], light, 2.4, 0.5, 1.6); sc.shake?.(reduced ? 0 : 0.05);
-  for (let i = 0; i < (reduced ? 2 : 5); i++) addS(sc, { frames: [SHADOW_FRAMES.puff[i % 4]], pos: [to[0] + R(i + 3) * 0.6, to[1] - 0.1, to[2] + R(i + 7) * 0.6], size: 0.36, life: 0.9, vel: [R(i) * 0.4, 0.35, R(i + 1) * 0.4], fadeIn: 0.05, fadeOut: 0.6 });
+  for (let i = 0; i < (reduced ? 2 : 5); i++) addS(sc, { frames: [SHADOW_FRAMES.puff[i % 4]], pos: [to[0] + R(i + 3) * 0.6, to[1] - 0.1, to[2] + R(i + 7) * 0.6], size: 0.36, life: 0.9, vel: [R(i) * 0.4, 0.35, R(i + 1) * 0.4], fadeIn: 0.05, fadeOut: 0.6 });   // 4 · dissipate
 }
 export async function shadowMurder(sc, { from, to, target }) { await grasp(sc, { from, to, target, finale: 'handClench' }); }
 export async function shadowDisfigure(sc, { from, to, target }) {
@@ -147,4 +153,22 @@ export async function shadowInfest(sc, { from, to, tiles = [] }) {
     addS(sc, { seq: [{ at: 0, frame: SHADOW_FRAMES.handOpen }, { at: 0.25, frame: SHADOW_FRAMES.handGrasp }, { at: 0.45, frame: SHADOW_FRAMES.handFade }], flipY: true, pos: [t[0] + R(i + 4) * 0.25, -0.25, t[2] + R(i + 6) * 0.25], size: 0.48, life: 0.7, vel: [0, 0.8, 0], stopAt: 0.3, fadeIn: 0.08, fadeOut: 0.25 }); });
   await sleep(sc, 300);
   sc.light([to[0], 0.3, to[2]], [0.5, 0.15, 0.5], 2.6, 0.5, 1.2);
+}
+
+/** v1.7.0 skeleton defeat: an original pixel bone pile (frame 0: tumbling bones, frame 1: settled pile). */
+export const BONE_CELL = 48;
+export function makeBoneAtlas(doc = document) {
+  const C = BONE_CELL, c = doc.createElement('canvas'); c.width = C * 2; c.height = C; const g = c.getContext('2d');
+  const INK = '#2d2620', BONE = '#e9dcbc', SH = '#b3a27f', HI = '#fff6e2';
+  const bone = (x, y, len, ang) => { g.save(); g.translate(x, y); g.rotate(ang);
+    g.fillStyle = INK; g.fillRect(-len / 2 - 1, -2, len + 2, 4); g.beginPath(); g.arc(-len / 2, 0, 3, 0, 7); g.arc(len / 2, 0, 3, 0, 7); g.fill();
+    g.fillStyle = BONE; g.fillRect(-len / 2, -1, len, 2); g.beginPath(); g.arc(-len / 2, 0, 2, 0, 7); g.arc(len / 2, 0, 2, 0, 7); g.fill();
+    g.fillStyle = HI; g.fillRect(-len / 2 + 2, -1, len - 4, 1); g.restore(); };
+  const skull = (x, y) => { g.fillStyle = INK; g.beginPath(); g.arc(x, y, 6, 0, 7); g.fill(); g.fillStyle = BONE; g.beginPath(); g.arc(x, y, 5, 0, 7); g.fill();
+    g.fillStyle = SH; g.fillRect(x - 4, y + 2, 8, 2); g.fillStyle = INK; g.fillRect(x - 3, y - 1, 2, 2); g.fillRect(x + 1, y - 1, 2, 2); g.fillRect(x - 1, y + 2, 2, 2); };
+  [[16, 22, 14, 0.9], [30, 18, 12, -0.6], [22, 30, 16, 0.2], [33, 30, 10, 1.4]].forEach(b => bone(...b)); skull(24, 12);
+  g.save(); g.translate(C, 0);
+  [[14, 36, 16, 0.15], [32, 37, 14, -0.2], [22, 40, 18, 0.05], [27, 33, 12, 1.1], [18, 32, 10, -1.0], [35, 41, 8, 0.6]].forEach(b => bone(...b)); skull(25, 31);
+  g.fillStyle = 'rgba(45,38,32,0.45)'; g.fillRect(10, 44, 30, 2); g.restore();
+  return c;
 }

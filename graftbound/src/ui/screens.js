@@ -2,6 +2,7 @@
 import { RARITY } from '../data/cards.js';
 import { resolveCard as getCard, rewardCards } from '../cards/catalog.js';
 import { KEYWORDS, keywordLabel } from '../data/keywords.js';
+import { expeditionTotals } from '../engine/scoring.js';
 import { threatModifiers, threatTactics } from '../engine/world-threat.js';
 import { runStatsMarkdown, copyText, derivedMetrics } from '../engine/run-report.js';
 import { duplicatePreview, traitLevelsOf, levelDef, levelText } from '../cards/graft-levels.js';
@@ -22,7 +23,6 @@ import { GAME } from '../config.js';
 import { kwChips, STAGE } from './battle-ui.js';
 import { ICON } from './icons.js';
 import { EVENTS, eventChoices, EVENT_COST } from '../engine/events.js';
-import { expeditionTotals } from '../engine/scoring.js';
 import { SCORE } from '../data/scoring.js';
 import { graftHistory } from '../engine/journal.js';
 import { composePlayerSheet } from '../rendering/evolution-visuals.js';
@@ -374,7 +374,9 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
           <div class="chips">${gained}${ability}${change.resonance ? `<span class="chip res" data-tip="Abilities you already have resonate: +2 Maximum Health (max health) each.">Resonance +${change.resonance * 2} Maximum Health</span>` : ''}</div></div>
           ${full ? `<div class="release"><p>Your body holds <b>${graftCapacity(run)}</b> grafts in this act. Choose one to release (its power, toughness and abilities leave you):</p>
             ${run.evo.absorbed.map((a, i) => { const ac = getCard(a.cardId); return `<label><input type="radio" name="rel" value="${i}"><b>${esc(a.name)}</b><small>${ac && ac.kind === 'creature' ? `+${ac.power}/+${ac.toughness}${Object.keys(ac.keywords).length ? ' · ' + Object.keys(ac.keywords).map(k => KEYWORDS[k].name).join(', ') : ''}${ac.trait ? ' · ✦ ' + esc(ac.adaptationNote) : ''}` : ''}</small></label>`; }).join('')}</div>` : ''}
-          ${sourcePanelHTML(id)}<button type="button" class="btn primary big" data-take ${full ? 'disabled' : ''}>Graft ${esc(c.name)}</button>`;
+          ${(dp => dp ? `<div class="becomes gb-levelup"><span class="lbl">${dp.maxed ? `${esc(c.name)} is already at its maximum level ${dp.from}` : `Level Up · ${esc(c.name)} Lv ${dp.from} → Lv ${dp.to}`}</span>
+            ${dp.maxed ? `<p class="small">This copy adds its printed +${c.power}/+${c.toughness} only; the ability stays at level ${dp.from}.</p>` : `<div class="upgrade-comparison"><span><b>Now · Lv ${dp.from}</b>${esc(dp.before)}</span><span><b>After · Lv ${dp.to}</b>${esc(dp.after)}</span></div><p class="small">Combines with your existing ${esc(c.name)} graft (one ability, stronger). The copy still adds its printed +${c.power}/+${c.toughness}.</p>`}</div>` : '')(duplicatePreview(run.evo.absorbed, id))}
+          ${sourcePanelHTML(id)}<button type="button" class="btn primary big" data-take ${full ? 'disabled' : ''}>${(dp => dp && !dp.maxed ? `Level Up ${esc(c.name)} → Lv ${dp.to}` : `Graft ${esc(c.name)}`)(duplicatePreview(run.evo.absorbed, id))}</button>`;
       } else {
         const e = run.spellbook.find(s => s.id === id);
         body = `<div class="becomes"><span class="lbl">${e ? `Empower to level ${e.level + 1}` : 'New spell'}</span>${e ? `<div class="upgrade-comparison"><span><b>Now · Lv ${e.level}</b>${esc(formatSpellText(id, e.level, arcane))}</span><span><b>After · Lv ${e.level + 1}</b>${esc(formatSpellText(id, e.level + 1, arcane))}</span></div>` : ''}<p class="sptext">${esc(formatSpellText(id, e ? e.level + 1 : 1, arcane))}</p><span class="hp">${ICON.gem} ${c.cost} mana · ${TARGET[c.target]} · ${rangeLabel(id, e ? e.level + 1 : 1)} · once per turn</span></div>
@@ -431,8 +433,10 @@ export function sheetModal(app) {
     const descriptions=[...(a.gained||[]),...(a.raised||[])].map(k=>KEYWORDS[k]?.text).filter(Boolean);
     if(c?.adaptationNote)descriptions.push(c.adaptationNote);
     const tid = c?.trait, lvlNow = tid ? (levels[tid] || 1) : 0, firstOfTrait = tid && run.evo.absorbed.findIndex(x => getCard(x.cardId)?.trait === tid) === i;
-    if (firstOfTrait) descriptions.unshift(`Graft Lv ${lvlNow}/${levelDef(tid).max}: ${levelText(tid, lvlNow)}`);
-    else if (tid) descriptions.unshift(`Duplicate copy: levels ${c.name} (see its first entry)`);
+    // v1.7.0: duplicates COMBINE into one entry (records are kept in run.evo.absorbed; only the display merges).
+    if (tid && !firstOfTrait) return '';
+    const copies = tid ? run.evo.absorbed.filter(x => getCard(x.cardId)?.trait === tid) : [];
+    if (firstOfTrait) descriptions.unshift(`Graft Lv ${lvlNow}/${levelDef(tid).max}: ${levelText(tid, lvlNow)}${copies.length > 1 ? ` · ${copies.length} copies absorbed (+${copies.reduce((t, x) => t + (x.power || 0), 0)}/+${copies.reduce((t, x) => t + (x.toughness || 0), 0)} total)` : ''}`);
     return `<li style="--frame:${col.frame}"><span class="n">${i + 1}</span><b>${esc(a.name || (c && c.name) || a.cardId)}${firstOfTrait && lvlNow > 1 ? ` <em class="gb-lv">Lv ${lvlNow}</em>` : ''}${c && c.legacy ? ' <em class="lg">legacy</em>' : ''}</b><small>${esc(bits)}</small>${descriptions.length?`<small class="gb-graft-details">${esc(descriptions.join(' · '))}</small>`:''}</li>`;
   }).join('');
   const visible = Object.entries(ap.slots).map(([, p]) => `${p.part}${p.tier > 1 ? ' II' : ''}`).concat(ap.effects);
@@ -710,10 +714,10 @@ export function scoreBreakdownHTML(run, extra = {}) {
   const t = expeditionTotals(run); const e = (run.scoring && run.scoring.encounters) || [];
   return `<section class="parch-record end-record"><h3>Expedition Record ${run.ranked ? `<small>${esc(run.ranked.challengeId)} · rev ${run.ranked.revision}</small>` : '<small>Adventure</small>'}</h3>
     <div class="end-total">${t.total.toLocaleString()} <small>points</small></div>
-    <table class="score"><tr><th>Encounter</th><th>Actions</th><th>Damage</th><th>Eff.</th><th>Avoid.</th><th>Score</th></tr>
-    ${e.map(x => `<tr><td>${esc(ACT_ROMAN[x.act])} · ${esc(x.name)}${x.multiplier !== 1 ? ` ×${x.multiplier}` : ''}</td><td>${x.actions}/${x.parActions}</td><td>${x.damage}/${x.damageBudget}</td><td>+${x.efficiency}</td><td>+${x.avoidance}</td><td>${x.total.toLocaleString()}</td></tr>`).join('')}
-    ${t.completionBonus ? `<tr><td colspan="5">Expedition completed</td><td>+${t.completionBonus.toLocaleString()}</td></tr>` : ''}
-    <tr class="tot"><td>Total</td><td>${t.actions}</td><td>${t.damage}</td><td colspan="2">${t.turns} turns</td><td>${t.total.toLocaleString()}</td></tr></table>
+    <table class="score"><tr><th>Encounter</th><th>Actions</th><th>Damage</th><th>Eff.</th><th>Avoid.</th><th title="+2.5% per level of encounter-start Global Threat, max +30%">Threat</th><th>Score</th></tr>
+    ${e.map(x => `<tr><td>${esc(ACT_ROMAN[x.act])} · ${esc(x.name)}${x.multiplier !== 1 ? ` ×${x.multiplier}` : ''}</td><td>${x.actions}/${x.parActions}</td><td>${x.damage}/${x.damageBudget}</td><td>${x.efficiency == null ? '—' : '+' + x.efficiency}</td><td>${x.avoidance == null ? '—' : '+' + x.avoidance}</td><td>${x.threatBonus ? `+${x.threatBonus} <small>T${x.threat}</small>` : '—'}</td><td>${x.total.toLocaleString()}</td></tr>`).join('')}
+    ${t.completionBonus ? `<tr><td colspan="6">Expedition completed</td><td>+${t.completionBonus.toLocaleString()}</td></tr>` : ''}
+    <tr class="tot"><td>Total</td><td>${t.actions}</td><td>${t.damage}</td><td colspan="3">${t.turns} turns</td><td>${t.total.toLocaleString()}</td></tr></table>
     ${extra.newBest ? '<p class="new-best">★ New local personal best</p>' : ''}
     <p class="small">${run.ranked ? (extra.verifiedLocally ? '✔ Replay re-verified locally from the challenge definition. ' : '✖ Local replay verification failed — this result is not eligible. ') : ''}<span class="badge-local">LOCAL · UNRANKED — not submitted</span></p>
     ${run.scoring && run.migratedFromV05 ? '<p class="small muted">Battles before the v0.6 update were not scored.</p>' : ''}</section>`;
@@ -761,14 +765,22 @@ export function endScreen(app, { won, earned = [], extra = {} }) {
   const el = showScreen(`<div class="end ${won ? 'won' : 'lost'}">
     <small class="presents">${GAME.title}</small>
     <h1>${won ? 'The Last Page Turns' : 'The Graft Unravels'}</h1>
-    <div class="gb-copy-row"><button type="button" class="btn primary gb-copy-stats" data-a="copy" aria-describedby="gb-copy-status">⧉ Copy Run Stats</button><span id="gb-copy-status" class="gb-copy-status" role="status" aria-live="polite"></span></div>
+    <div class="gb-copy-row"><button type="button" class="btn primary gb-copy-stats" data-a="copy" aria-describedby="gb-copy-status">Copy Run Stats</button><span id="gb-copy-status" class="gb-copy-status" role="status" aria-live="polite"></span></div>
     <p class="rw-sub">${won ? 'You began as nothing. The final guardian could not stop what you became.' : `You fell in Act ${ACT_ROMAN[run.act]} · ${esc(ACTS[run.act].name)}. Every card you held is remembered in the Codex.`}</p>
-    <div class="end-pt">${run.evo.power}/${run.evo.toughness}</div>
-    <div class="chips center">${kwChips(run.evo.keywords)}</div>
+    <header class="end-head">
+      <div class="end-high"><span><b>${run.evo.power}/${run.evo.toughness}</b><small>Final form</small></span><span><b>${run.worldThreat?.level ?? 0}/12</b><small>Global Threat</small></span><span><b>${expeditionTotals(run).total.toLocaleString()}</b><small>Score</small></span></div>
+      <div class="chips center">${kwChips(run.evo.keywords)}</div>
+    </header>
+    <div class="end-grid">
+      <section class="end-col"><h3>Expedition</h3>
     <table class="stats"><tr><td>Battles won</td><td>${s.battlesWon}</td></tr><tr><td>Bosses defeated</td><td>${s.bossesDefeated || 0}</td></tr><tr><td>Creatures grafted</td><td>${s.cardsAbsorbed}</td></tr><tr><td>Spells learned</td><td>${s.spellsLearned}</td></tr><tr><td>Foes defeated</td><td>${s.kills}</td></tr><tr><td>Final Global Threat</td><td>${run.worldThreat?.level ?? 0}/12</td></tr>${timeRows(run)}</table>
-    ${scoreBreakdownHTML(run, extra)}
+      </section>
+      <section class="end-col"><h3>Achievements</h3>
+    ${earned.length ? `<ul class="ach">${earned.map(a => `<li class="got"><b>${a.name}</b><span>${a.text}</span></li>`).join('')}</ul>` : '<p class="small muted">No achievements earned this run.</p>'}
     ${balanceMetricsHTML(run)}
-    ${earned.length ? `<h3>Achievements</h3><ul class="ach">${earned.map(a => `<li class="got"><b>${a.name}</b><span>${a.text}</span></li>`).join('')}</ul>` : '<p class="small muted">No achievements earned this run.</p>'}
+      </section>
+    </div>
+    <div class="end-full">${scoreBreakdownHTML(run, extra)}</div>
     <div class="modal-actions center"><button type="button" class="btn" data-a="journal">Evolution Journal</button><button type="button" class="btn primary" data-a="again">New Adventure</button><button type="button" class="btn" data-a="title">Home</button></div></div>`, 'endscr');
   const copy = async () => {
     const text = runStatsMarkdown(run, { won, earned, newBest: !!extra.newBest, verifiedLocally: !!extra.verifiedLocally });

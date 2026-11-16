@@ -917,3 +917,30 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
 .threat-factors{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;list-style:none;padding:0;margin:6px 0}
 .threat-factors li{display:flex;flex-direction:column;align-items:center;min-width:58px;padding:4px 8px;border-radius:8px;background:#24101399;border:1px solid #5b1c24}
 .threat-factors b{font-size:1rem}.threat-factors small{font-size:.66rem;opacity:.75}
+
+/* v1.7.0 graft Level Up */
+.gb-levelup{border:1px solid #d9a648;border-radius:10px;padding:8px 10px;margin:8px 0;background:linear-gradient(#3a2a10cc,#22180acc)}
+.gb-levelup .lbl{color:#ffe39a;font-weight:700}
+#bigtext .bt-levelup{font:700 1.1rem var(--sans);color:#ffe39a;margin:6px 0}#bigtext .bt-levelup small{display:block;font-weight:400;font-size:.8rem;color:#f2e6dc}
+
+/* v1.7.0 label decluttering */
+.ulabel.compact .sts,.ulabel.compact .intent.calm{display:none}.ulabel.compact .hpbar{height:5px}.ulabel.compact .hpbar span{display:none}
+.ulabel .st.more{background:#2a2a34;color:#e8e2ff}
+
+/* v1.7.0 expedition results: centred hierarchy + responsive two-column grid */
+.end{max-width:980px;margin:0 auto;padding:18px 20px 28px;text-align:center;box-sizing:border-box}
+.end h1{margin:4px 0 6px}.end .rw-sub{max-width:640px;margin:6px auto 12px;line-height:1.45}.end .gb-copy-row{margin:6px 0 12px}
+.end-head{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:14px}
+.end-high{display:grid;grid-template-columns:repeat(3,minmax(110px,1fr));gap:10px;width:min(560px,100%)}
+.end-high span{display:flex;flex-direction:column;align-items:center;padding:8px 6px;border-radius:10px;background:rgba(10,20,14,.55);border:1px solid rgba(217,166,72,.45)}
+.end-high b{font-size:1.45rem;font-variant-numeric:tabular-nums}.end-high small{opacity:.75;font-size:.75rem}
+.end-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:left;align-items:start}
+.end-col{background:rgba(10,20,14,.45);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 14px;min-width:0}
+.end-col h3{margin:2px 0 8px;font-size:1rem;text-align:center}
+.end-col table.stats{width:100%!important;max-width:none!important;margin:0!important;border-collapse:collapse}.end-col table.stats td{padding:3px 4px;border-bottom:1px solid rgba(255,255,255,.06)}
+.end-col table.stats td:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.end-col .ach{margin:0;padding:0;list-style:none}.end-col .gb-balance{margin:10px 0 0}
+.end-full{margin-top:16px;text-align:left;overflow-x:auto}.end-full .parch-record.end-record{max-width:none;width:100%;box-sizing:border-box;margin:0}
+.end-full table.score{width:100%;font-variant-numeric:tabular-nums}.end-full table.score td:not(:first-child),.end-full table.score th:not(:first-child){text-align:right}
+.end .modal-actions{margin-top:16px}
+@media (max-width:760px){.end-grid{grid-template-columns:1fr}.end-high b{font-size:1.1rem}.end{padding:12px 10px 22px}}

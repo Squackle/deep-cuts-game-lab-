@@ -29,7 +29,7 @@ export const CAST_PROFILE = {
   titanic:       { col: [0.45, 1, 0.35],  gather: 300, build: 200, tier: 2, motes: 56, fromGround: true, cue: 'castNature', origin: 'chest', self: true },
   strikeBolt:    { col:[0.65,0.85,1],gather:220,build:110,tier:1,motes:32,arcs:3,cue:'charge',origin:'hands' },
   murder:        { col:[0.4,0.12,0.45],gather:220,build:110,tier:1,motes:34,cue:'castDark',origin:'hands' },
-  infest:        { col:[0.38,0.14,0.42],gather:200,build:100,tier:1,motes:30,cue:'castDark',origin:'hands', fromGround: true },
+  infest:        { col:[0.45,1,0.3],gather:200,build:100,tier:1,motes:30,cue:'castNature',origin:'hands' },   // v1.7.0 toxic orb
   revitalize:    { col:[0.85,1,0.65],gather:200,build:115,tier:1,motes:30,cue:'castHoly',origin:'hands',self:true },
   divination:    { col:[0.45,0.65,1],gather:180,build:120,tier:1,motes:28,cue:'castArcane',origin:'chest',self:true },
   pyroclasm:     { col: [1, 0.42, 0.1],   gather: 320, build: 260, tier: 2, motes: 60, embers: true, fromGround: true, cue: 'castFire', origin: 'chest', self: true, core: true },
@@ -199,7 +199,7 @@ export const AFTERMATH_SIGILS = Object.freeze({
   growth: 'roots', titanic: 'roots', snakeskin: 'roots',
   frost: 'snowflake', drain: 'void', disfigure: 'void', poison: 'spores',
   summon: 'sunburst', heal: 'sunburst', salve: 'sunburst', shield: 'ward', wind: 'wind',
-  strikeBolt:'storm',murder:'void',infest:'void',revitalize:'sunburst',divination:'ward',
+  strikeBolt:'storm',murder:'void',infest:'spores',revitalize:'sunburst',divination:'ward',
 });
 const RESIDUE = Object.freeze({
   spark: { spokes: 3, seg: 8, spin: 0, radius: 0.42 },

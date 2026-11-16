@@ -1,0 +1,12 @@
+<!doctype html><meta charset="utf-8"><title>bow</title>
+<style>body{background:#3b4b3f;margin:0;padding:6px;color:#eee;font:12px sans-serif}canvas{image-rendering:pixelated}</style><p>Elvish Archers front rows: idle, walk, FIRE (attack), PREPARED SHOT (cast), hurt, defeat — 2x</p>
+<script type="module">
+import { installRealCreatureModels } from '../src/rendering/real-creature-models.js';
+const BASE = new URL('../assets/', import.meta.url).href;
+const img = s => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(s); i.src = BASE + s; });
+const manifest = await (await fetch(BASE + 'sprites/manifest.json')).json(); const images = {};
+await Promise.all(Object.entries(manifest.sprites).map(([k, s]) => img('sprites/' + s.file).then(i => images[k] = i).catch(() => {})));
+installRealCreatureModels(images, manifest);
+const im = images.mtg_archer, m = manifest.sprites.mtg_archer, c = document.createElement('canvas'); c.width = m.w * 4 * 2; c.height = m.h * 6 * 2; const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
+g.drawImage(im, 0, 0, m.w * 4, m.h * 6, 0, 0, c.width, c.height); document.body.appendChild(c); document.title = 'done';
+</script>

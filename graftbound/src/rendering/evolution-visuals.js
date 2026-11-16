@@ -2,7 +2,7 @@
 import { PALETTE } from '../engine/appearance.js';
 import { recolorSkin } from './premium-creatures.js';
 import { drawGraftSheet } from './graft-morphology.js';
-import { drawNativeBlankGraftSheet, blankNativeAnchor, setGraftSkin } from './native-blank-art.js';
+import { drawNativeBlankGraftSheet, blankNativeAnchor, setGraftSkin, setPartFilter } from './native-blank-art.js';
 import { BENCHMARK_STATES } from './raster-benchmarks.js';
 import { regionAt, styleWeight, ditherSmooth, R as REG } from './body-regions.js';
 const memo=new WeakMap();
@@ -33,7 +33,17 @@ export function composePlayerSheet(assets, app) {
   }bx.putImageData(bd,0,0);
  }
  paintSurfaceSkin(b,mask,app);
- g.drawImage(b,0,0);paintGrafts('front');
+ g.drawImage(b,0,0);
+ // v1.7.0: torso-conforming grafts (shell, bone plates) are clipped to the TORSO region of the body silhouette (dilated
+ // 1 px), so arms stay in front of them and nothing protrudes like a backpack. Then the rest of the anatomy.
+ if(native){const tmp=document.createElement('canvas');tmp.width=c.width;tmp.height=c.height;const tg=tmp.getContext('2d',{willReadFrequently:true});tg.imageSmoothingEnabled=false;
+  setPartFilter('conform');drawNativeBlankGraftSheet(tg,app,'front');setPartFilter(null);
+  const reg=regionField(c.width,c.height),bd=bx.getImageData(0,0,c.width,c.height).data,im=tg.getImageData(0,0,c.width,c.height),W=c.width;
+  for(let i=0;i<W*c.height;i++){if(!im.data[i*4+3])continue;let inBody=false;for(const o of [0,1,-1,W,-W])if(bd[(i+o)*4+3]>127){inBody=true;break;}
+   if(!inBody||reg[i]!==REG.torso)im.data[i*4+3]=0;}
+  tg.putImageData(im,0,0);g.drawImage(tmp,0,0);
+  setPartFilter('rest');paintGrafts('front');setPartFilter(null);}
+ else paintGrafts('front');
  if(cache.size>=18)cache.delete(cache.keys().next().value);cache.set(key,c);
  return c;
 }

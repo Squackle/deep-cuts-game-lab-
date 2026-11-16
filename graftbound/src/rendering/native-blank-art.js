@@ -122,10 +122,20 @@ function armoredChest(g,A,tier){   // v1.6.0: grown bone/keratin plates (biologi
   for(let i=-1;i<=1;i++)line(g,[[x-w+4,y+2+i*5],[x+w-4,y+2+i*5]],BONE.low,1);   // growth ridges
   for(const side of [-1,1])line(g,[[x+side*(w+1),y+10],[x+side*(w-3),y+17]],SK.dark,1.6);   // plates sink into the flesh at the edges
 }
-function shell(g,A,tier){
-  const [x,y]=A.back, rx=19+tier*3, ry=22+tier*3;
-  oval(g,x,y+2,rx,ry,gloss(g,x-5,y-8,30,c.scaleLight,c.deep),c.ink,2.6);
-  for(let r=0;r<3;r++)for(let k=-1;k<=1;k++)shape(g,[[x+k*10-5,y-12+r*11],[x+k*10,y-16+r*11],[x+k*10+5,y-12+r*11],[x+k*10+4,y-6+r*11],[x+k*10-4,y-6+r*11]],r%2?c.scale:c.scaleLight,c.deep,1.2);
+function shell(g,A,tier,view=1){
+  // v1.7.0 carapace: plates FOLLOW the back (clipped to the torso by the compositor), with a dorsal ridge.
+  const [x,y]=A.back, rx=17+tier*2, ry=24+tier*2;
+  if(view!==1){for(const side of [-1,1])shape(g,[[x+side*(rx-4),y-14],[x+side*(rx+2),y-4],[x+side*(rx+1),y+12],[x+side*(rx-5),y+16]],c.scale,c.deep,1);return;}
+  oval(g,x,y+3,rx,ry,gloss(g,x-6,y-10,32,c.scaleLight,c.scale),null);
+  for(let r=0;r<4;r++){const yy=y-14+r*9,w=rx-3-Math.abs(r-1.5)*2;
+    for(let k=-1;k<=1;k++)shape(g,[[x+k*w*0.62-w*0.3,yy],[x+k*w*0.62,yy-3],[x+k*w*0.62+w*0.3,yy],[x+k*w*0.62+w*0.26,yy+6],[x+k*w*0.62-w*0.26,yy+6]],(r+k)%2?c.scale:c.scaleLight,c.deep,1);}
+  line(g,[[x,y-20],[x,y+22]],c.deep,2.4);line(g,[[x-1,y-20],[x-1,y+20]],c.scaleLight,0.8);
+}
+function armoredBack(g,A,tier){
+  // v1.7.0 back view: overlapping bone plates down the spine + pauldrons on the shoulder line — never a chest plate on the back.
+  const [x,y]=A.back;
+  for(let r=0;r<4;r++){const yy=y-16+r*9,w=7+tier-Math.abs(r-1)*1.2;shape(g,[[x-w,yy],[x,yy-4],[x+w,yy],[x+w-2,yy+6],[x-w+2,yy+6]],gloss(g,x-3,yy-2,12,BONE.hi,BONE.mid),c.ink,1.2);line(g,[[x-w+2,yy+5],[x+w-2,yy+5]],BONE.low,1);}
+  for(const side of [-1,1])shape(g,[[x+side*9,y-18],[x+side*(18+tier),y-17],[x+side*(19+tier),y-9],[x+side*10,y-9]],gloss(g,x+side*14,y-16,10,BONE.hi,BONE.low),c.ink,1.2);
 }
 function surface(g,A,m){
   const [x,y]=A.chest;
@@ -206,6 +216,10 @@ function graftSeams(g,A,stage){
   for(let i=0;i<Math.min(4,stage);i++){const [[x,y],[ax,ay],[bx,by]]=spots[i];line(g,[[x+ax,y+ay],[x+(ax+bx)/2,y+(ay+by)/2+1],[x+bx,y+by]],SK.dark,1.4);}
   g.restore();
 }
+/** v1.7.0 part filter: 'conform' paints only torso-conforming anatomy (shell, bone plates) so the compositor can clip
+ *  it to the torso silhouette; 'rest' paints everything else; null paints all (legacy/tests). */
+let PART_FILTER=null;export const setPartFilter=f=>{PART_FILTER=f;};
+const want=kind=>!PART_FILTER||PART_FILTER===kind;
 function paintGraftPose(g,app,A,view,state,frame,pass){
   const t=app?.anatomy?.features||{},m=app?.anatomy?.morph||{};
   const hasEvolution=(app?.anatomy?.stage||0)>0;
@@ -214,17 +228,18 @@ function paintGraftPose(g,app,A,view,state,frame,pass){
   // so wings, tail, shell and spines are painted over the body where they visibly grow out of it.
   const dorsal=(view===1)===(pass==='front');
   if(dorsal){
-    if(t.wings)wings(g,A,m.wingKind,level(t.wings),view,state,frame,m.wingTrim);
-    if(t.tail)tail(g,A,m.tailKind,level(t.tail),view,frame);
-    if(t.shell)shell(g,A,level(t.shell));
-    if(t.spikes){const [x,y]=A.back,L=16+level(t.spikes)*5;for(let i=-2;i<=2;i++){socket(g,x+i*6,y-9,3,2.2);blade(g,[x+i*6,y-10],[x+i*10,y-10-L+Math.abs(i)*4],5);}}
+    if(t.wings&&want('rest'))wings(g,A,m.wingKind,level(t.wings),view,state,frame,m.wingTrim);
+    if(t.tail&&want('rest'))tail(g,A,m.tailKind,level(t.tail),view,frame);
+    if(t.shell&&want('conform'))shell(g,A,level(t.shell),view);
+    if(t.spikes&&want('rest')){const [x,y]=A.back,L=16+level(t.spikes)*5;for(let i=-2;i<=2;i++){socket(g,x+i*6,y-9,3,2.2);blade(g,[x+i*6,y-10],[x+i*10,y-10-L+Math.abs(i)*4],5);}}
   }
   if(pass==='behind')return;
+  if(PART_FILTER==='conform'){if(t.armor)(view===1?armoredBack:armoredChest)(g,A,level(t.armor));return;}
   // front view: the roots of dorsal anatomy are visible above/around the body outline
   if(view!==1&&t.wings)for(const side of [-1,1])socket(g,A.chest[0]+side*12,A.chest[1]-12,3+level(t.wings)*0.6,2.4,m.wingKind==='feather'?c.feather:c.wing);
   // v1.5.0: body surface is now re-skinned through the skin mask in evolution-visuals.js (paintSurfaceSkin).
   if(hasEvolution)faceMorph(g,A,m,view);
-  if(t.armor)armoredChest(g,A,level(t.armor));
+  if(t.armor&&!PART_FILTER)(view===1?armoredBack:armoredChest)(g,A,level(t.armor));
   if(t.horns)horns(g,A,level(t.horns));
   if(t.antlers)antlers(g,A,level(t.antlers));
   if(t.crown){const [x,y]=A.head;for(let i=-2;i<=2;i++)blade(g,[x+i*4,y-7],[x+i*5,y-15+(i%2)*2],2);}

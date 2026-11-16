@@ -3,7 +3,7 @@
 import { reachable, pathTo, manhattan, unitAt, inBounds, tileAt, T, DIRS, lineOfSight } from '../core/grid.js';
 import { ENEMIES } from '../data/enemies.js';
 import { BOSS_BY_ID } from '../data/legendary.js';
-import { player, enemies, allies, alive, attackExchange, dealDamage, declareVictory, damageBatch, addShield, addStatus, enterTiles, strikePower, has } from './abilities.js';
+import { player, enemies, allies, alive, attackExchange, dealDamage, declareVictory, damageBatch, addShield, addStatus, enterTiles, walkPath, strikePower, has } from './abilities.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
 import { resolveCard } from '../cards/catalog.js';
 const spellCostOf = id => (resolveCard(id) || { cost: 0 }).cost;
@@ -111,6 +111,15 @@ function straightLine(s, from, dir, range) {
 }
 /** Visible-board tactical threat. Nearby creatures that can kill the archer on
  * their next turn outrank the hero, but targets still obey range/line of sight. */
+/** v1.7.0 marksman ordinary shot: one per enemy turn, line of sight, printed Longbow damage, player team only. */
+export function quickShotTarget(s, e, from = e) { const q = ENEMIES[e.defId]?.quickShot; return q ? rangedPriority(s, e, q.range, from, true) : null; }
+function quickShot(s, ev, e, target = quickShotTarget(s, e)) {
+  const q = ENEMIES[e.defId]?.quickShot; if (!q || !target || !alive(target) || target.side === e.side) return;
+  ev.push({ t: 'attack', uid: e.uid, target: target.uid, ranged: true, kind: 'quickShot' }, { t: 'realAbility', uid: e.uid, name: 'Quick shot' });
+  dealDamage(s, ev, e, target, q.damage, { kind: 'arrow' });
+}
+/** v1.7.0: hazards created by foes are tagged, so their damage counts as enemy-caused for Global Threat. */
+export function markFoeTile(s, t) { const i = t.y * s.w + t.x; (s.foeTiles ||= []); if (!s.foeTiles.includes(i)) s.foeTiles.push(i); }
 export function rangedPriority(s,e,range=Infinity,from=e,los=false) {
   const candidates=allies(s).filter(alive).filter(u=>manhattan(from,u)<=range&&(!los||lineOfSight(s,from,u)));
   candidates.sort((a,b)=>{
@@ -313,7 +322,8 @@ export function planEnemy(s, e) {
         }).filter(o=>o.ok).sort((a,b)=>Math.abs(a.d-3)-Math.abs(b.d-3)||a.t.cost-b.t.cost||cmpTile(a.t,b.t));
         if(aligned.length){choice=aligned[0];break;}
       }
-      if(choice){go(choice.t);plan.actions.push({type:'aim',tiles:choice.line,damage:def.aimDamage});}
+      if(choice){go(choice.t);plan.actions.push({type:'aim',tiles:choice.line,damage:def.aimDamage});
+        const qt=quickShotTarget(s,e,posAfter());if(qt)plan.actions.push({type:'quickShot',target:qt.uid,damage:def.quickShot.damage});}
       else{const p=victims[0]||hero;const t=list.slice().sort((a,b)=>manhattan(a,p)-manhattan(b,p)||a.cost-b.cost||cmpTile(a,b))[0];go(t);meleeIfAdjacent(meleeTarget(s,{...e,...posAfter()}));}
       break;
     }
@@ -421,7 +431,8 @@ export function previewIntent(s, e) {
   const hero = player(s);
   const g0 = (hero && hero.statuses.guard) || 0;
   const brace = d => g0 ? Math.min(d, Math.max(g0, Math.floor(d / 2))) : 0;
-  if (e.aim) return { uid: e.uid, kind: 'fire', damage: e.aim.damage - brace(e.aim.damage), guarded: brace(e.aim.damage), tiles: e.aim.tiles };
+  const qs = ENEMIES[e.defId]?.quickShot ? quickShotTarget(s, e) : null;
+  if (e.aim) return { uid: e.uid, kind: 'fire', damage: e.aim.damage - brace(e.aim.damage), guarded: brace(e.aim.damage), tiles: e.aim.tiles, quick: qs ? { target: qs.uid, damage: ENEMIES[e.defId].quickShot.damage } : null };
   const plan = planEnemy(s, e); const a = plan.actions;
   const sm = a.find(x => x.type === 'smash'); if (sm) return { uid: e.uid, kind: 'smash', damage: 0, guarded: 0, poison: 0, weaken: 0, tiles: [{ x: sm.x, y: sm.y }], to: null, target: null };
   if (e.slam) {
@@ -433,6 +444,7 @@ export function previewIntent(s, e) {
   const dmg = (main && main.damage) || 0; const vsHero = main && (main.target === hero.uid || main.type === 'slam' || main.type === 'aim');
   const kind = main?.type === 'legendarySummon' || main?.type === 'scarabReanimate' ? 'summon' : main?.type === 'nemataPump' ? 'support' : main?.type === 'drakusethFlames' ? 'attack' : main?.type || 'move';
   return { uid: e.uid, kind, damage: vsHero && g ? Math.max(0, dmg - g) : dmg, guarded: vsHero && g ? Math.min(g, dmg) : 0, /* pending slams use the braced rule */ poison: (main && main.poison) || 0, weaken: (main && main.weaken) || 0, ground: !!(main && main.ground),
+    quick: (q => q ? { target: q.target, damage: q.damage } : null)(a.find(x => x.type === 'quickShot')),
     tiles: (main && main.type === 'aim') ? main.tiles : [], to: plan.to, target: main && main.target, mirror: (a.find(x => x.type === 'mirror') || {}).keyword,
     redact: (a.find(x => x.type === 'redact') || {}).keyword, silence: (a.find(x => x.type === 'silence') || {}).spell, briars: !!a.find(x => x.type === 'briars'), terrainThreat: a.find(x => ['sporefield','fissure','fracture'].includes(x.type))?.type || null, phase: e.boss ? bossPhaseOf(e) : 0 };
 }
@@ -441,8 +453,11 @@ function resolvePending(s, ev, e) {
   if (e.aim) {
     const aim = e.aim; e.aim = null;
     ev.push({ t: 'fire', uid: e.uid, tiles: aim.tiles });
-    const victim = aim.tiles.map(t => unitAt(s, t.x, t.y)).find(u => u && u !== e);
+    // v1.7.0: the arrow flies over its own side and stops at the FIRST player-team creature; a rock blocks it. No friendly fire.
+    let victim = null;
+    for (const t of aim.tiles) { if (tileAt(s, t.x, t.y) === T.ROCK) break; const u = unitAt(s, t.x, t.y); if (u && alive(u) && u.side !== e.side) { victim = u; break; } }
     if (victim) dealDamage(s, ev, e, victim, aim.damage, { kind: 'arrow' });
+    if (ENEMIES[e.defId]?.quickShot && alive(e) && s.phase === 'enemy') quickShot(s, ev, e);   // the turn's ordinary shot
     return true;
   }
   if (e.slam) {
@@ -465,7 +480,7 @@ export function actEnemy(s, ev, e) {
   for (const a of plan.actions.filter(a => a.type === 'mirror')) { e.keywords[a.keyword] = 1; ev.push({ t: 'mirror', uid: e.uid, keyword: a.keyword }); }
   if (plan.to) {
     if (plan.blink) { const from = { x: e.x, y: e.y }; e.x = plan.to.x; e.y = plan.to.y; ev.push({ t: 'teleport', uid: e.uid, from, x: e.x, y: e.y, kind: 'rift' }); }
-    else { ev.push({ t: 'move', uid: e.uid, path: plan.path }); e.x = plan.to.x; e.y = plan.to.y; enterTiles(s, ev, e, plan.path); }
+    else walkPath(s, ev, e, plan.path);   // v1.7.0 stepwise hazards
     if (!alive(e)) return;
   }
   if (e.boss && BOSS_BY_ID[e.defId]) {
@@ -541,17 +556,18 @@ export function actEnemy(s, ev, e) {
         break;
       }
       case 'attack': { if(e.auras?.includes('mtg:pacifism')||e.tapped)break; const t = s.units.find(u => u.uid === a.target); if (alive(t) && manhattan(e, t) === 1){attackExchange(s, ev, e, t);if(!has(e,'vigilance'))e.tapped=true;} break; }
-      case 'spit': {const tgt=s.units.find(u=>u.uid===a.target&&alive(u));if(!tgt)break;ev.push({t:'spit',uid:e.uid,target:tgt.uid});dealDamage(s,ev,e,tgt,a.damage,{kind:'spit'});if(alive(tgt))addStatus(s,ev,tgt,'poison',a.poison);break;}
+      case 'spit': {const tgt=s.units.find(u=>u.uid===a.target&&alive(u));if(!tgt)break;ev.push({t:'spit',uid:e.uid,target:tgt.uid});dealDamage(s,ev,e,tgt,a.damage,{kind:'spit'});if(alive(tgt))addStatus(s,ev,tgt,'poison',a.poison,{bySide:'enemy'});break;}
       case 'hex': {const tgt=s.units.find(u=>u.uid===a.target&&alive(u));if(!tgt)break;ev.push({t:'hex',uid:e.uid,target:tgt.uid});dealDamage(s,ev,e,tgt,a.damage,{kind:'hex'});if(alive(tgt))addStatus(s,ev,tgt,'weakened',a.weaken);break;}
       case 'harpoon': {const tgt=s.units.find(u=>u.uid===a.target&&alive(u));if(!tgt)break;ev.push({t:'harpoon',uid:e.uid,target:tgt.uid});dealDamage(s,ev,e,tgt,a.damage,{kind:'harpoon'});if(a.ground&&alive(tgt))addStatus(s,ev,tgt,'grounded',1);break;}
       case 'aim': e.aim = { tiles: a.tiles, damage: a.damage }; ev.push({ t: 'aim', uid: e.uid, tiles: a.tiles }); break;
+      case 'quickShot': { const tgt = s.units.find(u => u.uid === a.target && alive(u)); if (tgt) quickShot(s, ev, e, tgt); break; }
       case 'sporefield':
     case 'fissure':
     case 'fracture': {
       const type = a.type === 'sporefield' ? T.SPORES : a.type === 'fissure' ? T.UNSTABLE : T.RIFT;
       const close = areaTiles(s, hero, 2).filter(t => tileAt(s, t.x, t.y) === T.FLOOR && !unitAt(s, t.x, t.y));
       const cand = close.sort((x, y) => manhattan(x, hero) - manhattan(y, hero) || cmpTile(x, y)).slice(0, a.n || 1);
-      for (const t of cand) s.terrain[t.y * s.w + t.x] = type;
+      for (const t of cand) { markFoeTile(s, t); s.terrain[t.y * s.w + t.x] = type; }
       if (cand.length) ev.push({ t: 'terrain', tiles: cand, kind: a.type });
       break;
     }
@@ -563,7 +579,7 @@ export function actEnemy(s, ev, e) {
       }
       case 'briars': {
         const cand = areaTiles(s, hero, 1).filter(t => tileAt(s, t.x, t.y) === T.FLOOR && !unitAt(s, t.x, t.y)).sort(cmpTile).slice(0, a.n);
-        for (const t of cand) s.terrain[t.y * s.w + t.x] = T.BRAMBLE;
+        for (const t of cand) { markFoeTile(s, t); s.terrain[t.y * s.w + t.x] = T.BRAMBLE; }
         if (cand.length) ev.push({ t: 'terrain', tiles: cand, kind: 'bramble' });
         break;
       }
@@ -572,7 +588,7 @@ export function actEnemy(s, ev, e) {
       case 'lava': {
         const cand = areaTiles(s, hero, 2).filter(t => tileAt(s, t.x, t.y) === T.FLOOR && !unitAt(s, t.x, t.y) && !(t.x === hero.x && t.y === hero.y))
           .sort((p, q) => manhattan(p, hero) - manhattan(q, hero) || cmpTile(p, q)).slice(0, a.n);
-        for (const t of cand) s.terrain[t.y * s.w + t.x] = T.LAVA;
+        for (const t of cand) { markFoeTile(s, t); s.terrain[t.y * s.w + t.x] = T.LAVA; }
         if (cand.length) ev.push({ t: 'terrain', tiles: cand, kind: 'lava' });
         break;
       }
@@ -632,7 +648,7 @@ export function actAlly(s, ev, a) {
   if (manhattan(a, tgt) !== 1) {
     const { map, list } = stops(s, a);
     const t = list.filter(v => manhattan(v, tgt) === 1).sort((x, y) => x.cost - y.cost || cmpTile(x, y))[0] || approach(s, a, tgt, list, map);
-    if (t && (t.x !== a.x || t.y !== a.y)) { const path = pathTo(map, t.x, t.y); ev.push({ t: 'move', uid: a.uid, path }); a.x = t.x; a.y = t.y; enterTiles(s, ev, a, path); }
+    if (t && (t.x !== a.x || t.y !== a.y)) walkPath(s, ev, a, pathTo(map, t.x, t.y));
   }
   if (alive(a) && alive(tgt) && manhattan(a, tgt) === 1) attackExchange(s, ev, a, tgt);
 }
