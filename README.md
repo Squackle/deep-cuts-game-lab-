@@ -1,6 +1,6 @@
 # Deep Cuts Game Lab
 
-**One test site for three games:** [Unified playtest catalog](https://deep-cuts-game-lab.pages.dev/lab/). Hive Run remains at [the original root](https://deep-cuts-game-lab.pages.dev/), with [Stackbreaker](https://deep-cuts-game-lab.pages.dev/stackbreaker/) and [Mana Heist](https://deep-cuts-game-lab.pages.dev/mana-heist/) in isolated game folders. See [shared agent ownership and unified testing](docs/SHARED-GAME-LAB.md). The catalog is Lab-only, never a production Arcade deployment.
+**Four independent playtests, one Game Lab homepage:** [Open the catalog](https://deep-cuts-game-lab.pages.dev/) at `/` (legacy `/lab/` still works). Games: [Hive Run](/hive-run/), [Stackbreaker](/stackbreaker/), [Mana Heist](/mana-heist/), and [GRAFTBOUND](/graftbound/). Hive Run moved from the root **entry page only**; its original `src/**`, `assets/**`, `styles.css`, local-storage keys and other resources remain in place. See [shared agent ownership and unified testing](docs/SHARED-GAME-LAB.md). This is the separate test Lab, not the public Arcade.
 
 **Current release candidate: 1.0 — Paths of the Hive.** Two modes (Predator Hunt / Brood Trail), four encounter types, biome progression, daily seeded challenges and independently ranked replays. See the latest DEVLOG entry for deployment verification. Earlier sections below are retained as release history.
 
@@ -29,7 +29,7 @@ A mobile-first, Snake-inspired, retro fantasy arcade survival game. The current 
 4. **Done:** Connect independent Cloudflare Pages and verify the game live on mobile browser sizes.
 5. Iterate from real mobile playtesting, then consider linking from Deep Cuts EDH's Daily Games page.
 
-**LIVE TEST SITE: https://deep-cuts-game-lab.pages.dev/** (Cloudflare Pages project `deep-cuts-game-lab`, auto-deploys from the separate repository's `main` branch). This is a prototype test build, not a polished release.
+**LIVE TEST SITE: https://deep-cuts-game-lab.pages.dev/** (Game Lab homepage; Hive Run now lives at `/hive-run/`). Cloudflare Pages project `deep-cuts-game-lab` auto-deploys from the separate repository's `main` branch. The following older release entries are historical and may mention retired features or the former Hive Run root URL.
 
 **Run tests:** `npm test` using Node.js 22+. CI runs checks on game code changes.
 

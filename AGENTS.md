@@ -1,11 +1,11 @@
 # Deep Cuts Shared Game Lab — developer agent contracts
 
-This repository `Squackle/deep-cuts-game-lab-` is the **separate solo prototype environment for Hive Run, Stackbreaker, and Mana Heist**. The central playtest catalog is [Game Lab](lab/index.html), published at `/lab/`. The production website is `Squackle/deep-cuts-edh`. All original game routes stay intact.
+This repository `Squackle/deep-cuts-game-lab-` is the **separate solo prototype environment for Hive Run, Stackbreaker, and Mana Heist**. The central playtest catalog is published at `/` from `index.html`, with the previous `/lab/` page retained as an equivalent legacy entry. Hive Run's play page is `/hive-run/` (`hive-run/index.html`) while its existing engine and art remain under root-level `src/**` and `assets/**`. The production website is `Squackle/deep-cuts-edh`. Other original game routes stay intact.
 
-- **Hive Run developer** owns its existing root gameplay, mechanics, sprites, boss AI, music, rendering, balance, deterministic client/playback tests and Hive Lab releases here.
+- **Hive Run developer** owns `/hive-run/` gameplay and existing root-level `src/**`, `styles.css`, assets, deterministic client/playback tests and Hive Lab releases here. Shared catalog `index.html` and `lab/**` remain centrally coordinated.
 - **Stackbreaker developer** owns only `stackbreaker/**` in branches `game/stackbreaker-*`; never touches other game source.
 - **Mana Heist developer** owns only `mana-heist/**` in branches `game/mana-heist-*`; never touches other game source.
-- **Shared Lab catalog** lives in `lab/**` and is centrally coordinated; game agents request catalog changes rather than editing it. Research first when owner assigns research-only work.
+- **Shared Lab catalog** lives at root `index.html` (primary URL `/`) and `lab/index.html` (legacy URL `/lab/`), with shared `lab/**` assets, and is centrally coordinated; game agents request catalog changes rather than editing it. Research first when owner assigns research-only work.
 - **Website developer** owns production website, authenticated profiles, scored/replay-verified leaderboards, APIs, and **promotion** of tested gameplay into `deep-cuts-edh`.
 - **Project assistant** documents requirements/QA, maintains GitHub issue #14, reviews work, and does not silently change game code.
 
@@ -21,7 +21,7 @@ Read [docs/MAIN-SITE-PROMOTION.md](docs/MAIN-SITE-PROMOTION.md) and the main rep
 
 Branch protection must be enabled separately by the repo owner. CODEOWNERS with `@Squackle` is accountable ownership, not independent assistant identity.
 
-## One Lab, three independent playtests
+## One Lab, four independent playtests
 
 See [SHARED-GAME-LAB.md](docs/SHARED-GAME-LAB.md) for canonical game URLs, game-agent branch/path lanes, combined tests, and promotion requirements. This is a **single testing site**, never a single shared rules engine, shared score store, or authorization to modify the production Arcade.
 

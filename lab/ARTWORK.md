@@ -10,3 +10,7 @@ The four illustrations in `lab/covers/` are original, first-party SVG artworks s
 The illustrations use 960×540 SVG view boxes, local assets, accessible alt text and no runtime script. Game Lab card copy describes the currently released **GRAFTBOUND v1.3.9-beta**: a three-act tactical grafting RPG with adapted Magic card rewards, creature and spell grafts, route choices and rising Global Threat. The separate v1.4.0-beta branch is preview-only and is not advertised as deployed.
 
 The Lab catalog links to four independent playable routes. Guest progress stays game-specific, and no Game Lab release automatically promotes a game to the production Deep Cuts EDH Arcade.
+
+## Catalog URL and route preservation
+
+The canonical Lab homepage is now `/`, with the prior `/lab/` catalog retained for incoming links. Both catalog pages use the same text and four cover illustrations; only their local asset references differ. Hive Run moved its entry document to `/hive-run/`, while its original art and gameplay modules remain at their old paths. The catalog's automated tests verify both entry pages stay synchronized.
