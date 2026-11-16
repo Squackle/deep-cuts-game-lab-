@@ -75,7 +75,7 @@ test("browser-owned native fullscreen dismissal restores page mode",async()=>{
  assert.equal(c.isActive(),false);
 });
 test("game-only HTML/CSS retain streamlined solo gameplay and touch safeguards",()=>{
- const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../hive-run/index.html",import.meta.url),"utf8");
  const css=readFileSync(new URL("../styles.css",import.meta.url),"utf8");
  const js=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
  for(const id of ["fullscreenButton","gameCanvas","gameOverlay","mutationOverlay","pauseButton","restartButton","musicButton","patchNotesTitle","fieldGuide","devDiagnostics"]){

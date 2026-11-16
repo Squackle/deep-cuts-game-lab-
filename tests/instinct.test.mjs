@@ -106,7 +106,7 @@ test("SESSION BEST resets on reload and is scoped per mode and expedition",()=>{
 });
 test("browser gate freezes the frame loop and retains replay-rules version",()=>{
  const main=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
- const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../hive-run/index.html",import.meta.url),"utf8");
  assert.match(main,/if\(awaitingMutationResume\)\{[\s\S]*?draw\(\);requestAnimationFrame\(loop\);return;/);
  assert.match(main,/state\.lastFrame=0;state\.accumulator=0;/);
  assert.match(main,/resumeMutationByKey\(event\.key\)/);
@@ -149,7 +149,7 @@ test("Instinct Ready can resume with a safe mobile swipe, not a reverse or tap",
  }
  assert.equal(swipeHeading(NaN,25),null);
  const main=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
- const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../hive-run/index.html",import.meta.url),"utf8");
  assert.match(main,/awaitingMutationResume\s*\?\s*resumeMutationByKey\(SWIPE_RESUME_KEYS\[heading\]\)\s*:\s*handleDirection\(heading\)/);
  assert.match(html,/SWIPE OR PRESS A MOVEMENT KEY TO RESUME/);
 });

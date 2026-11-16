@@ -5,10 +5,11 @@ import path from "node:path";
 const read=x=>fs.readFileSync(x,"utf8");
 const hub=read("lab/index.html");
 const root=read("index.html");
+const hive=read("hive-run/index.html");
 
 test("Game Lab preserves four playable games and a redirect for GRAFTBOUNDs former route",()=>{
  for(const [name,route,file] of [
-  ["Hive Run","/","index.html"],
+  ["Hive Run","/hive-run/","hive-run/index.html"],
   ["Stackbreaker","/stackbreaker/","stackbreaker/index.html"],
   ["Mana Heist","/mana-heist/","mana-heist/index.html"]
  ]){
@@ -29,13 +30,21 @@ test("Game Lab preserves four playable games and a redirect for GRAFTBOUNDs form
  assert.match(hub,/TEST BUILDS, NOT PUBLIC RELEASES/);
 });
 
-test("Hive Run remains root game and links to the Lab, without moving its scripts",()=>{
- assert.match(root,/id="gameCanvas"/);
- assert.match(root,/src="\.\/src\/main\.js"/);
- assert.match(root,/href="\/lab\/"/);
- assert.match(root,/← ALL GAMES/);
- assert.match(root,/class="brand" href="\/lab\/"/);
- assert.match(root,/Back to Test Lab, choose another game/);
+test("Game Lab is the actual root homepage, while Hive Run remains playable without relocating its engine",()=>{
+ assert.match(root,/<title>Game Lab \| Deep Cuts EDH<\/title>/);
+ assert.match(root,/FOUR PROJECTS/);
+ assert.match(root,/href="\/hive-run\/"/);
+ assert.equal((root.match(/class="game-card game-/g)||[]).length,4);
+ assert.doesNotMatch(root,/id="gameCanvas"/);
+ assert.doesNotMatch(root,/src="\.\/src\/main\.js"/);
+ assert.match(hive,/id="gameCanvas"/);
+ assert.match(hive,/<base href="\/"/);
+ assert.match(hive,/href="\/hive-run\/#game"/);
+ assert.match(hive,/src="\.\/src\/main\.js"/);
+ assert.match(hive,/href="\/"/);
+ assert.match(hive,/← ALL GAMES/);
+ assert.match(hive,/class="brand" href="\/"/);
+ assert.match(hive,/Back to Test Lab, choose another game/);
  assert.ok(fs.existsSync("src/main.js"));
 });
 
@@ -66,6 +75,14 @@ test("Shared Lab hub cannot silently create identities, scores, APIs or remote s
  assert.match(stylesheet,/prefers-reduced-motion:reduce/);
  assert.match(stylesheet,/focus-visible/);
  assert.ok(!stylesheet.includes("url(http"));
+});
+
+test("Root homepage and legacy /lab/ catalog stay in sync without duplicating data dependencies",()=>{
+ const normalizedRoot=root.replace('href="/lab/lab.css"','href="./lab.css"').replaceAll('src="/lab/covers/','src="./covers/');
+ assert.equal(normalizedRoot,hub);
+ assert.match(root,/<meta name="robots" content="noindex, nofollow">/);
+ assert.match(root,/src="\/lab\/covers\/graftbound\.svg"/);
+ assert.match(hub,/class="lab-logo" href="\/"/);
 });
 
 test("Unified catalog paths are local, existing and free from traversal",()=>{
@@ -101,6 +118,7 @@ test("four playable game covers remain first-party, meaningful, and without exte
  }
  assert.match(hub,/GRAFT<em>BOUND\.<\/em>/);
  assert.match(hub,/v1\.3\.9-beta · 3 acts/);
+ assert.match(root,/v1\.3\.9-beta · 3 acts/);
  assert.match(hub,/Global Threat/);
  assert.doesNotMatch(hub,/v0\.6/);
  assert.match(read("lab/covers/graftbound.svg"),/id="tactical-arena"/);

@@ -49,7 +49,7 @@ test("Director's preview remains unranked and separate from authentic awardable 
  assert.match(director,/DIRECTOR_ONLY=true/);
 });
 test("Victory controls remain keyboard, touchscreen, ESC and assistive-technology friendly",()=>{
- const html=read("../index.html"),js=read("../src/main.js"),css=read("../styles.css");
+ const html=read("../hive-run/index.html"),js=read("../src/main.js"),css=read("../styles.css");
  assert.match(html,/id="victoryOverlay"[^>]*role="dialog" aria-modal="true"/);
  assert.match(html,/aria-labelledby="victoryHeading" aria-describedby="victoryStory"/);
  assert.match(js,/if\(victoryVisible\(\)\)\{\s*if\(event\.key==="Tab"\)/);
@@ -90,7 +90,7 @@ test("Victory soundtrack honors preference, browser permissions, mute and backgr
  assert.match(src,/window\.addEventListener\("blur",\(\)=>\{\s*victoryFanfare\.stop\(\)/);
 });
 test("No public score submission or leaderboard is accidentally added to standalone test build",()=>{
- const html=read("../index.html"),js=read("../src/main.js");
+ const html=read("../hive-run/index.html"),js=read("../src/main.js");
  assert.match(html,/NO ONLINE RANKING|NO ONLINE LEADERBOARD|SOLO EXPERIMENT/i);
  assert.doesNotMatch(js,/\/api\/leaderboard|fetch\(.*submit|HIVE_DB/);
  assert.match(read("../docs/MAIN-SITE-PROMOTION.md"),/director\/\*\*/);

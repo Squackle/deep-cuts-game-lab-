@@ -92,7 +92,7 @@ test("Brood Trail can be rehearsed without changing its ordinary growth or repla
 });
 test("The Lab-only preview route has real controls but no network, storage, authentication or fake achievements",()=>{
  const html=read("../director/index.html"),ui=read("../director/main.js"),mode=read("../director/mode.js");
- const promo=read("../docs/MAIN-SITE-PROMOTION.md"),labIndex=read("../index.html");
+ const promo=read("../docs/MAIN-SITE-PROMOTION.md"),labIndex=read("../hive-run/index.html");
  assert.match(html,/noindex,nofollow,noarchive/);
  assert.match(html,/DIRECTOR MODE/i);assert.match(html,/UNRANKED/);
  for(const id of ["directorGame","directorBoss","directorPhase","directorInvulnerable",

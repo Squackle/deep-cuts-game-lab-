@@ -94,7 +94,7 @@ test("Lair flash draws pixel telegraphs and honors reduced motion",()=>{
  assert.ok(count>8);
 });
 test("both page variants offer five accessible boss buttons and clear unranked status",()=>{
- const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../hive-run/index.html",import.meta.url),"utf8");
  const js=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
  const css=readFileSync(new URL("../styles.css",import.meta.url),"utf8");
  assert.match(html,/value="practice"/);

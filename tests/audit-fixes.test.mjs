@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {onRequestGet,onRequestPost} from "../functions/api/leaderboard.js";
 const main=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
-const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+const html=readFileSync(new URL("../hive-run/index.html",import.meta.url),"utf8");
 test("solo lab no longer references deleted alias/profile input",()=>{
  assert.doesNotMatch(main,/\$\("playerAlias"\)|hive-last-alias-v1/);
  assert.doesNotMatch(html,/id="playerAlias"|id="playerProfile"/);
