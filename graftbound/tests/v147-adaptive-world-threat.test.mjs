@@ -70,7 +70,8 @@ test('high threat wards actually stop an oversized opening hit without changing 
     'at maximum Global Threat a high-power hero cannot immediately bypass the ward');
   assert.equal(high.units[1].hp,7);
   assert.equal(high.units[1].toughness,7);
-  assert.equal(high.units[1].power,2,'only temporary shields change, not printed enemy statistics');
+  assert.equal(high.units[1].power,3,'preserve existing +1 power at maximum Threat');
+  assert.equal(high.units[1].worldPower,1,'the existing peak Threat power mechanic still applies');
   const intermediate={nodeType:'battle',units:structuredClone(units)};
   applyWorldThreat(intermediate,{level:7});
   assert.ok(intermediate.units[1].worldShield>0&&intermediate.units[1].worldShield<high.units[1].worldShield);
