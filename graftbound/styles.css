@@ -780,3 +780,42 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
   .modal-box .sh-hist { width: 100%; min-width:0; }
   .hist li { grid-template-columns: 28px minmax(0,1fr); }
 }
+
+/* v1.3.9: movement and attacks are independent of the character plate. */
+#hud .pl-res{min-width:0;gap:7px;flex-wrap:wrap}
+#hud .pl-res .mana{flex:0 1 auto;min-width:0;flex-wrap:wrap}
+#hud .pl-res .gb-reserve{max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere}
+#hud .gb-action-counters{position:absolute;left:var(--gb-actions-left,10px);top:var(--gb-actions-top,210px);bottom:auto;
+ display:flex;gap:10px;align-items:center;padding:7px 12px;border:1px solid var(--gold3);border-radius:9px;
+ background:rgba(10,29,24,.96);color:#f0dba7;font:700 13px var(--sans);box-shadow:0 4px 14px #0009;z-index:16;pointer-events:auto}
+#hud .gb-action-counters .moves,#hud .gb-action-counters .atk{color:#f0dba7;white-space:nowrap;gap:5px}
+#hud .gb-action-counters .atk.on{color:#ffb47f}
+#hud .gb-action-counters.gb-dock-no-room{visibility:hidden}
+/* Apply the same collision-safe dock to enemy/ally inspection and terrain;
+   no legacy bottom-left panel can sit behind Library/Graveyard. */
+#hud #inspect.unit-inspect,#hud #inspect.terrain-inspect{
+ position:absolute;top:var(--gb-terrain-top,210px);left:var(--gb-terrain-left,10px);right:auto;bottom:auto!important;
+ width:var(--gb-terrain-width,300px);height:var(--gb-terrain-height,148px);max-width:calc(100vw - 16px);
+ max-height:var(--gb-terrain-height,148px)!important;box-sizing:border-box;z-index:17;
+ overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;pointer-events:auto!important;
+ background:rgba(7,19,14,.97);box-shadow:0 5px 16px #0009;transition:opacity .14s ease,transform .14s ease}
+#hud #inspect.unit-inspect.terrain-no-room,#hud #inspect.terrain-inspect.terrain-no-room{opacity:0!important;pointer-events:none!important}
+#hud #inspect.terrain-inspect{padding:10px 12px;gap:7px}
+#hud #inspect.terrain-inspect .gb-terrain-brief-copy{display:block;overflow:visible;line-height:1.4;
+ -webkit-line-clamp:unset;white-space:normal;overflow-wrap:anywhere;font-size:12px;margin:2px 0 0!important}
+#hud #inspect.terrain-inspect .gb-terrain-brief-head{flex-wrap:wrap}
+#hud #inspect.unit-inspect .in-head{flex-wrap:wrap;gap:5px}
+#hud #inspect.unit-inspect .in-head .pt{margin-left:0}
+/* The exchange displays real GRAFTBOUND effects and lets players inspect full cards
+   without committing to a release. */
+.modal-box .gb-exchange-list{width:100%;max-width:none;gap:9px}
+.gb-exchange-entry{display:flex;align-items:center;justify-content:space-between;gap:12px;
+ padding:10px 12px;border-radius:8px;background:#173127;color:#f6dfae;border:1px solid #95793d}
+.gb-exchange-description{min-width:0;flex:1}
+.gb-exchange-description strong{display:block;font-size:1rem;line-height:1.3}
+.gb-exchange-description small{display:block;color:#ffd0a0;margin-top:3px}
+.gb-exchange-description p{margin:6px 0 0;font:500 .8rem/1.42 var(--sans);color:#e9e0c9;overflow-wrap:anywhere}
+.gb-exchange-actions{display:flex;flex:none;gap:6px;align-items:center}
+.gb-exchange-actions .btn{font-size:.85rem;white-space:nowrap;padding:8px 10px}
+@media(max-width:560px){.gb-exchange-entry{flex-direction:column;align-items:stretch}
+ .gb-exchange-actions{justify-content:flex-end}.gb-exchange-description strong{font-size:.95rem}}
