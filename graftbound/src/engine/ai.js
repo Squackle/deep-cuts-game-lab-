@@ -78,7 +78,13 @@ function approach(s, e, target, list, map = null) {
   // lethal. Otherwise, taking a safe detour (even one away from the hero initially)
   // should beat idling, and a nonlethal hazard crossing should remain possible.
   const options = list.slice().sort((a, b) => score(a) - score(b) || (hazard(s, a) - hazard(s, b)) || (b.cost - a.cost) || cmpTile(a, b));
-  return score(options[0]) < origin || !Number.isFinite(origin) ? options[0] : list.find(t => t.x === e.x && t.y === e.y) || options[0];
+  const best = options[0];
+  // Traversing unavoidable lava can leave the total weighted cost unchanged:
+  // we have paid the hazard cost but are now closer to the target. Treat that
+  // tie as progress instead of idling forever on the near side of the lava.
+  const progresses = best && df[best.y * s.w + best.x] < origin;
+  return best && (score(best) < origin || (score(best) <= origin && progresses) || !Number.isFinite(origin))
+    ? best : list.find(t => t.x === e.x && t.y === e.y) || best;
 }
 function straightLine(s, from, dir, range) {
   const tiles = [];

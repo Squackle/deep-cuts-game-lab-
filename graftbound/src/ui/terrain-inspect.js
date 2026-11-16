@@ -1,26 +1,30 @@
-// Presentation-only positioning. Find a small free rectangle for a mobile
-// terrain summary without covering the hero plate, spell hand, deck piles,
-// End Turn, or top actions. Positions are relative to the full-screen HUD.
-export function terrainInspectPlacement({width, height, plate, zones, tray, endTurn, topButtons, margin=8}) {
+// Presentation-only: place both unit and terrain inspectors in a free HUD rectangle.
+// Width/height are in HUD-local CSS pixels. Always consider the actual position
+// of the Library/Graveyard dock, hand, End Turn, character and action counters.
+export function terrainInspectPlacement({width,height,plate,zones,tray,endTurn,topButtons,actions,
+  desiredHeight=136,minHeight=100,maxWidth=336,margin=8}) {
   const finite=n=>typeof n==='number'&&Number.isFinite(n);
   if(!finite(width)||!finite(height)||width<=0||height<=0)return {fits:false};
-  const controls=[plate,zones,tray,endTurn,topButtons].filter(Boolean);
-  const rect=r=>({left:r.left,top:r.top,right:r.right,bottom:r.bottom});
+  const controls=[plate,zones,tray,endTurn,topButtons,actions].filter(Boolean);
   if(controls.some(r=>!['left','top','right','bottom'].every(k=>finite(r[k]))))return {fits:false};
   const overlaps=(a,b)=>a.left<b.right+margin&&a.right>b.left-margin&&a.top<b.bottom+margin&&a.bottom>b.top-margin;
   const topStart=Math.max(margin,Math.ceil((plate?.bottom??margin)+margin));
-  const topStop=Math.max(topStart,Math.floor(height-margin));
-  for(const w of [Math.min(265,width-margin*2),Math.min(224,width-margin*2),Math.min(178,width-margin*2)]){
-    if(w<150)continue;
-    const xs=[margin,Math.max(margin,Math.ceil((zones?.right??0)+margin)),Math.max(margin,Math.floor(width-w-margin))];
-    const ys=[topStart,...Array.from({length:Math.max(0,Math.ceil((topStop-topStart)/12))},(_,i)=>topStart+12*(i+1))];
-    for(const top of ys){
-      if(top+74>height-margin)continue;
-      for(const left of xs){
-        if(left+w>width-margin)continue;
-        const candidate={left,top,right:left+w,bottom:top+74};
-        if(controls.every(c=>!overlaps(candidate,rect(c))))return {fits:true,left,top,width:w,height:74};
-      }
+  const widths=[maxWidth,300,265,224,178].map(w=>Math.min(w,width-margin*2))
+    .filter((w,i,all)=>w>=150&&all.indexOf(w)===i);
+  const high=Math.min(Math.max(minHeight,desiredHeight),height-2*margin);
+  const heights=[];
+  for(let h=high;h>=minHeight;h-=12)heights.push(h);
+  if(heights.length&&heights.at(-1)!==minHeight)heights.push(minHeight);
+  // Try tall, readable panels first, then reduce dimensions only when necessary.
+  for(const ph of heights)for(const pw of widths){
+    const xs=[margin,Math.ceil((zones?.right??margin)+margin),Math.ceil((plate?.right??margin)+margin),Math.floor(width-pw-margin)];
+    const ys=[];
+    for(let y=topStart;y+ph<=height-margin;y+=8)ys.push(y);
+    if(ys.length&&ys.at(-1)+ph<height-margin)ys.push(Math.floor(height-ph-margin));
+    for(const top of ys)for(const left of xs){
+      if(left<margin||left+pw>width-margin)continue;
+      const candidate={left,top,right:left+pw,bottom:top+ph};
+      if(controls.every(c=>!overlaps(candidate,c)))return {fits:true,left,top,width:pw,height:ph};
     }
   }
   return {fits:false};

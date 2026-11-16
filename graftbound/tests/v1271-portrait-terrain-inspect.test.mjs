@@ -20,7 +20,7 @@ for(const scenario of [
     assert.equal(pos.fits,true,JSON.stringify({scenario,pos}));
     const box={left:pos.left,top:pos.top,right:pos.left+pos.width,bottom:pos.top+pos.height};
     for(const name of ['plate','zones','tray','endTurn','topButtons']) assert.equal(intersects(box,scenario[name]),false,`${name} intersects ${JSON.stringify(box)}`);
-    assert.ok(pos.width>=150&&pos.height<=74);
+    assert.ok(pos.width>=150&&pos.height>=100,`readable panel height: ${JSON.stringify(pos)}`);
   });
 }
 
@@ -41,7 +41,7 @@ test('terrain only: compact interactive summary and full rule details without ch
   assert.match(css,/#hud #inspect\.terrain-inspect\s*\{/);
   assert.ok(css.includes('/* Position selected terrain details beneath the hero plate at every screen size,'),'terrain placement CSS must apply on desktop too');
   assert.match(css,/pointer-events:auto!important/);
-  assert.match(css,/max-height:var\(--gb-terrain-height,74px\)!important/);
+  assert.match(css,/max-height:var\(--gb-terrain-height,148px\)!important/);
   assert.match(css,/transition:opacity \.14s ease,transform \.14s ease/, 'prevent panel position sweeping across UI controls');
   assert.match(rules,/R\.leyline\.manaBonus/,'Leyline details derive from live rules, not hardcoded preview text');
 });
