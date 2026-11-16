@@ -1,5 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="GRAFTBOUND original fantasy cover: a glowing blank creature evolving into an armored winged beast among ancient forest ruins">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-label="GRAFTBOUND original fantasy cover: The Blank evolves into a grafted winged hero amid a tactical battlefield, three fantasy realms, reward cards and a horned enemy">
 <defs>
+ <linearGradient id="lava" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffce7d"/><stop offset=".35" stop-color="#e05a37"/><stop offset="1" stop-color="#541e25"/></linearGradient>
+ <radialGradient id="nexus"><stop stop-color="#c4b6ff" stop-opacity=".7"/><stop offset=".5" stop-color="#625aa8" stop-opacity=".35"/><stop offset="1" stop-color="#31276f" stop-opacity="0"/></radialGradient>
  <linearGradient id="night" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071712"/><stop offset=".44" stop-color="#194235"/><stop offset="1" stop-color="#080f16"/></linearGradient>
  <radialGradient id="halo"><stop stop-color="#e8e2b0" stop-opacity=".92"/><stop offset=".26" stop-color="#a7e7a5" stop-opacity=".52"/><stop offset=".68" stop-color="#4ab6ac" stop-opacity=".2"/><stop offset="1" stop-color="#52c4a4" stop-opacity="0"/></radialGradient>
  <radialGradient id="gate"><stop stop-color="#2e7160"/><stop offset=".5" stop-color="#123c34"/><stop offset="1" stop-color="#061914"/></radialGradient>
@@ -14,6 +16,15 @@
 <rect width="960" height="540" fill="url(#night)"/>
 <path d="M0 180 80 70 151 212 248 40 312 203 425 92 545 220 631 48 723 210 811 80 960 188V540H0Z" fill="#071b19"/>
 <path d="M0 303 139 174 267 315 372 164 504 328 647 195 768 315 870 141 960 283V540H0Z" fill="#0b2924"/>
+<!-- Three act regions: ancient hollow, volcanic warrens and the fractured nexus -->
+<g opacity=".62" stroke-linejoin="round">
+ <path d="M540 130 603 53 661 145 707 64 775 173 814 89 960 183V317L634 271Z" fill="#4c282c" stroke="#915344" stroke-width="4"/>
+ <path d="M604 134 622 100 641 146 704 94 721 160 749 129 779 188 819 164 844 215 777 221 702 184 631 185Z" fill="url(#lava)"/>
+ <path d="M626 141 675 218M711 133 730 202M791 184 802 220" fill="none" stroke="#ffc47a" stroke-width="6"/>
+ <ellipse cx="857" cy="164" rx="146" ry="153" fill="url(#nexus)"/>
+ <path d="m856 35 23 85-25 74 31 78-28 68M919 66l-15 97 34 47-20 76" stroke="#c3b5f7" stroke-width="6" fill="none" opacity=".75"/>
+ <path d="m845 72 31 22-17 35-25-21Zm75 104 23 14-10 34-30-22Z" fill="#c5b3ff" stroke="#e7ddff" stroke-width="3"/>
+</g>
 <ellipse cx="490" cy="304" rx="394" ry="304" fill="url(#halo)"/>
 <g fill="none" stroke="#102c27" stroke-width="20" stroke-linejoin="round">
  <path d="M61 540Q104 258 6 108M54 345Q115 219 199 157M881 540Q843 282 967 77M888 350Q822 207 735 141"/>
@@ -28,6 +39,11 @@
  <path d="M293 277h42m-42 78h42m297-78h46m-46 78h46" stroke="#a6a477" stroke-width="7"/>
 </g>
 <ellipse cx="487" cy="293" rx="202" ry="183" fill="url(#halo)" opacity=".6"/>
+<!-- Geometric isometric combat floor signals tactical, turn-based play -->
+<g id="tactical-arena" fill="none" stroke="#ddc187" stroke-opacity=".44" stroke-width="3">
+ <path d="m243 439 77-40 78 40-77 42Zm156 0 77-40 77 40-77 42Zm154 0 77-40 77 40-77 42Zm-232 43 77-40 78 40-78 42Zm155 0 77-40 77 40-77 42Zm154 0 78-40 77 40-77 42Z"/>
+ <path d="m320 399 78-40 78 40-78 40Zm156 0 77-40 77 40-77 40Z" opacity=".65"/>
+</g>
 <!-- spectral wings, each with distinct silhouette -->
 <g filter="url(#shadow)" stroke="#89b799" stroke-width="4" stroke-linejoin="round">
  <path d="M462 260Q346 136 208 93L245 171 172 172 256 230 197 255Q297 272 402 351L461 317Z" fill="url(#wing)"/>
@@ -62,8 +78,22 @@
 </g>
 <!-- floating original card-shaped graft runes -->
 <g stroke="url(#gold)" stroke-width="4" fill="#14352d" filter="url(#shadow)">
- <g transform="translate(737 311) rotate(19)"><rect x="-57" y="-79" width="114" height="158" rx="8"/><rect x="-46" y="-65" width="92" height="125" rx="4" stroke="#719b80" stroke-width="2"/><path d="M0-45 30 4 0 49-30 4Z" fill="#568a69"/><circle r="9" fill="#e9d384" stroke="none"/></g>
- <g transform="translate(843 409) rotate(-16)"><rect x="-45" y="-64" width="90" height="128" rx="8"/><rect x="-34" y="-51" width="68" height="99" rx="4" stroke="#719b80" stroke-width="2"/><path d="M0-28 22 0 0 30-22 0Z" fill="#6d7d9a"/><circle r="6" fill="#e9d384" stroke="none"/></g>
+ <g transform="translate(758 197) rotate(19)"><rect x="-57" y="-79" width="114" height="158" rx="8"/><rect x="-46" y="-65" width="92" height="125" rx="4" stroke="#719b80" stroke-width="2"/><path d="M0-45 30 4 0 49-30 4Z" fill="#568a69"/><circle r="9" fill="#e9d384" stroke="none"/></g>
+ <g transform="translate(857 288) rotate(-16)"><rect x="-45" y="-64" width="90" height="128" rx="8"/><rect x="-34" y="-51" width="68" height="99" rx="4" stroke="#719b80" stroke-width="2"/><path d="M0-28 22 0 0 30-22 0Z" fill="#6d7d9a"/><circle r="6" fill="#e9d384" stroke="none"/></g>
+</g>
+<!-- Third fantasy reward card and a threatening enemy, all original art -->
+<g transform="translate(711 105) rotate(-18)" filter="url(#shadow)">
+ <rect x="-37" y="-51" width="74" height="103" rx="7" fill="#132b27" stroke="url(#gold)" stroke-width="4"/>
+ <path d="m0-30 21 31-21 32L-21 1Z" fill="#786088" stroke="#d9c9f2" stroke-width="3"/><circle r="7" fill="#f5cf8a"/>
+</g>
+<g id="enemy-threat" transform="translate(820 410)" filter="url(#shadow)" stroke-linejoin="round">
+ <ellipse cy="71" rx="103" ry="20" fill="#020b09" opacity=".85" stroke="none"/>
+ <path d="M-63 1-88-31-65-23-40-49-32-16 0-34 28-17 46-41 55-10 77 5 89 33 58 58-42 58-79 33Z" fill="#362d31" stroke="#a07a66" stroke-width="6"/>
+ <path d="m-47 35-31 39m62-18-6 28m49-29 18 27m30-39 30 25" fill="none" stroke="#685c56" stroke-width="13" stroke-linecap="round"/>
+ <path d="m-47-3 3-46 23 33m23-13 22-48 7 54m32 7 28-41 1 61" fill="#a77b61" stroke="#e8b477" stroke-width="4"/>
+ <path d="m-55 14 19-10 8 14-19 10Zm58-10 22 0-1 16-19 1Z" fill="#ffc179" stroke="none"/>
+ <path d="m-29 38 34 12 35-13-26 26-35-7Z" fill="#1b131c" stroke="#bc967a" stroke-width="3"/>
+ <path d="m-19 49 6 12 8-9 8 13 9-10" stroke="#fff3c5" stroke-width="3" fill="none"/>
 </g>
 <!-- golden and green orbiting magic -->
 <g fill="none" stroke-linecap="round">
@@ -77,6 +107,8 @@
 <g fill="#abf1cc" opacity=".85">
  <circle cx="176" cy="173" r="3"/><circle cx="260" cy="115" r="4"/><circle cx="716" cy="167" r="4"/><circle cx="892" cy="169" r="3"/><circle cx="904" cy="355" r="4"/><circle cx="81" cy="267" r="4"/>
 </g>
+<path d="M698 475Q834 450 960 449V506L753 501Z" fill="#a4402a" opacity=".32"/>
+<path d="m722 497 54-28 61 22 68-22 55 21" stroke="#ff995d" stroke-width="5" stroke-opacity=".8" fill="none"/>
 <path d="M0 481Q230 445 458 501Q710 455 960 471V540H0Z" fill="#091b17" opacity=".82"/>
 <path d="M0 506Q175 478 362 518Q613 479 960 513V540H0Z" fill="#071310"/>
 <rect width="960" height="540" fill="none" stroke="#b69e64" stroke-opacity=".3" stroke-width="8"/>

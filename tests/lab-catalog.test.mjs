@@ -86,7 +86,7 @@ test("four playable game covers remain first-party, meaningful, and without exte
   ["hive-run","alien","game-hive"],
   ["stackbreaker","spellcaster","game-stack"],
   ["mana-heist","Stone vault","game-mana"],
-  ["graftbound","winged armored monster","game-graftbound"]
+  ["graftbound","grafted creature facing a horned enemy","game-graftbound"]
  ];
  const css=read("lab/lab.css");
  assert.equal((hub.match(/class="game-cover"/g)||[]).length,4);
@@ -100,7 +100,11 @@ test("four playable game covers remain first-party, meaningful, and without exte
   assert.doesNotMatch(svg,/<script|<foreignObject|onload=|<image|href="https?:/i);
  }
  assert.match(hub,/GRAFT<em>BOUND\.<\/em>/);
- assert.match(hub,/v0\.6 · 3 acts/);
+ assert.match(hub,/v1\.3\.9-beta · 3 acts/);
+ assert.match(hub,/Global Threat/);
+ assert.doesNotMatch(hub,/v0\.6/);
+ assert.match(read("lab/covers/graftbound.svg"),/id="tactical-arena"/);
+ assert.match(read("lab/covers/graftbound.svg"),/id="enemy-threat"/);
  assert.doesNotMatch(hub,/game-art-living|living-card-mark/);
  assert.match(css,/\.game-cover\{display:block/);
  assert.match(css,/\.game-card:hover \.game-cover/);
