@@ -108,7 +108,7 @@ test("Music fanfare is deliberate one-shot, melodic, and honors mute/unlocked au
  assert.ok(audio.disconnected.length>=2,"stops disconnect audio for mute, replay and navigation");
 });
 test("Full-bleed responsive earned finale UI keeps score and controls outside painted art",()=>{
- const html=read("../index.html"),css=read("../styles.css"),main=read("../src/main.js");
+ const html=read("../hive-run/index.html"),css=read("../styles.css"),main=read("../src/main.js");
  const required=["victoryOverlay","victoryHuntDesktop","victoryHuntMobile","victoryTrailCanvas",
  "victoryHeading","victoryStory","victoryScore","victoryCount","victoryEvolutions",
  "victoryPlayAgain","victoryReturn","victoryRewatch"];

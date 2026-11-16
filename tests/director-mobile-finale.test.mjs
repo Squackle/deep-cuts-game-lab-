@@ -38,7 +38,7 @@ test("Director selects portrait only for Hunt in portrait mobile viewports",()=>
 test("Mobile finale remains permanently Game Lab-only",()=>{
  const promotion=read("../docs/MAIN-SITE-PROMOTION.md");
  const publicGame=read("../src/main.js");
- const root=read("../index.html");
+ const root=read("../hive-run/index.html");
  assert.match(promotion,/director\/\*\*/);
  assert.doesNotMatch(publicGame,/mobile-finale-art|HIVE_MOBILE_FINALE_WEBP/);
  assert.match(root,/href="\.\/director\//);
