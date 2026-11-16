@@ -29,7 +29,7 @@ test("Only random Arcade seeds are supported by offline practice",()=>{
  }finally{globalThis.fetch=prior}
 });
 test("standalone UI has no online rank, score submission or profile forms",()=>{
- const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../hive-run/index.html",import.meta.url),"utf8");
  const js=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
  assert.match(html,/id="patchNotesTitle"/);
  assert.doesNotMatch(html,/id="submissionPanel"|id="leaderboardEntries"|id="playerProfile"|id="playerAlias"/);

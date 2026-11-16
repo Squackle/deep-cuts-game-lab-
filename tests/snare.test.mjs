@@ -83,7 +83,7 @@ test("paused runs and encounter introductions do not artificially progress the s
  assert.equal(run.encounter.stunMs,stun);
 });
 test("Brood Trail has no expedition control; neither game page exposes Daily Ritual",()=>{
- const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../hive-run/index.html",import.meta.url),"utf8");
  const main=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
  const css=readFileSync(new URL("../styles.css",import.meta.url),"utf8");
  assert.doesNotMatch(html,/value="daily"|DAILY RITUAL|DAILY TEST SEED/i);
