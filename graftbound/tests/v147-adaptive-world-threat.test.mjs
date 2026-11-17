@@ -26,7 +26,7 @@ test('repeated trivial scratches no longer freeze threat, but serious wounds low
   t=win(t,4,20);assert.deepEqual(t,{level:4,flawlessStreak:0,strongStreak:0});
   assert.deepEqual(settleWorldThreat(t,{victory:true,enemyDamage:0,tutorial:true}),t);
   assert.deepEqual(settleWorldThreat(t,{victory:false,enemyDamage:0}),t);
-  assert.deepEqual(normalizedWorldThreat({level:1000,flawlessStreak:50}),{level:12,flawlessStreak:1,strongStreak:0});
+  assert.deepEqual(normalizedWorldThreat({level:1000,flawlessStreak:50}),{level:24,flawlessStreak:1,strongStreak:0});
 });
 test('adaptive floor increases with surplus strength, never punishes weak builds or mutates saves',()=>{
   const saved={level:2,flawlessStreak:1}, before=JSON.stringify(saved);
@@ -128,8 +128,8 @@ test('same run/seed produces byte-identical pressure and enemy starting lineup',
   assert.deepEqual(run.worldThreat,clone.worldThreat);
 });
 test('ranked replays are isolated from old Global Threat difficulty',()=>{
-  assert.equal(RULES_VERSION,'graftbound-rules-1.7.0-beta');
-  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,26);
+  assert.equal(RULES_VERSION,'graftbound-rules-1.8.0-beta');
+  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,27);
   assert.equal(startRanked().ranked.rulesVersion,RULES_VERSION);
   assert.throws(()=>replayRun('gb-expedition-01',[],{revision:20}),/retired challenge/);
   assert.throws(()=>replayRun('gb-expedition-01',[],{rulesVersion:'graftbound-rules-1.3.6-beta'}),/Rules version mismatch/);

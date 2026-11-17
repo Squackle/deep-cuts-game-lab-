@@ -93,7 +93,7 @@ test('threat reasons and factors come from the calculation; boss flawless raises
   const { settleWorldThreat, threatTactics } = await import('../src/engine/world-threat.js');
   let r = {}; settleWorldThreat({ level: 7 }, { victory: true, enemyDamage: 0, maxHealth: 40, turns: 3, boss: true }, r);
   assert.deepEqual([r.before, r.after], [7, 10]); assert.ok(r.reasons.some(x => /boss/i.test(x))); assert.equal(r.factors.damagePct, 0);
-  r = {}; settleWorldThreat({ level: 12 }, { victory: true, enemyDamage: 0, maxHealth: 40, turns: 5 }, r); assert.equal(r.delta, 0); assert.ok(r.reasons.some(x => /maximum/.test(x)));
+  r = {}; settleWorldThreat({ level: 24 }, { victory: true, enemyDamage: 0, maxHealth: 40, turns: 5 }, r); assert.equal(r.delta, 0);   // v1.8.0 cap 24 assert.ok(r.reasons.some(x => /maximum/.test(x)));
   r = {}; settleWorldThreat({ level: 5 }, { victory: true, enemyDamage: 5, maxHealth: 40, turns: 6 }, r); assert.equal(r.delta, 0); assert.match(r.reasons.join(' '), /threat holds/);
   r = {}; settleWorldThreat({ level: 11 }, { victory: true, enemyDamage: 22, maxHealth: 40, turns: 6 }, r); assert.equal(r.delta, -2); assert.match(r.reasons[0], /Heavy damage sustained/);
   assert.equal(threatTactics(5, { nodeType: 'elite' }).surge, null); assert.ok(threatTactics(6, { nodeType: 'elite' }).surge);
@@ -116,7 +116,7 @@ test('Copy Run Stats: full Markdown from real values; score unchanged; no ids; h
   const { LAST_PAGE_TURNS } = await import('./fixtures/last-page-turns.mjs'); const { expeditionTotals } = await import('../src/engine/scoring.js');
   assert.equal(expeditionTotals(LAST_PAGE_TURNS).total, 39945, 'scoring meaning (incl. completion bonus) preserved');
   const md = runStatsMarkdown({ ...LAST_PAGE_TURNS, seed: 987654321 }, { won: true, earned: [], newBest: true });
-  for (const want of ['The Last Page Turns', 'Final Global Threat:** 11/12', 'Battles won:** 17', 'Bosses defeated:** 3', '28m 35s', 'Act I 11m 47s', '39,945', 'Toxrill, the Corrosive (boss) | 9/8 | 0/48', 'Expedition completed bonus', 'Local · unranked', 'None earned this run']) assert.ok(md.includes(want), want);
+  for (const want of ['The Last Page Turns', 'Final Global Threat:** 11/24', 'Battles won:** 17', 'Bosses defeated:** 3', '28m 35s', 'Act I 11m 47s', '39,945', 'Toxrill, the Corrosive (boss) | 9/8 | 0/48', 'Expedition completed bonus', 'Local · unranked', 'None earned this run']) assert.ok(md.includes(want), want);
   assert.ok(!md.includes('987654321') && !/key|seed|token/i.test(md.replace(/Toxrill|tokens?/gi, '')), 'no internal identifiers');
   assert.ok(runStatsMarkdown({}, {}).includes('No scored encounters'), 'empty record is graceful');
   assert.equal(derivedMetrics(LAST_PAGE_TURNS).bossesFlawless, 1);
@@ -185,7 +185,7 @@ test('Leyline, Inscribed Page, Rift and Arcane Conduit each have a distinct glyp
 // ── versioning ─────────────────────────────────────────────────────────────────────────────────────────────
 test('v1.6.0 rules fingerprint and challenge revision', async () => {
   const { RULES_VERSION, RANKED_CHALLENGES } = await import('../src/engine/ranked.js'); const { GAME } = await import('../src/config.js');
-  assert.equal(GAME.version, '1.7.0-beta'); assert.equal(RULES_VERSION, 'graftbound-rules-1.7.0-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 26);
+  assert.equal(GAME.version, '1.8.0-beta'); assert.equal(RULES_VERSION, 'graftbound-rules-1.8.0-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 27);
 });
 test('styles.css is structurally valid: every block closes (a single unclosed block silently disables all later rules)', () => {
   const css = src('styles.css').replace(/\/\*[\s\S]*?\*\//g, ''); let d = 0;

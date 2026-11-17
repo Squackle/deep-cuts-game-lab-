@@ -93,3 +93,53 @@ export async function installRasterBenchmarks(images,manifest,loadPng){
   }
   return staged.length;
 }
+/**
+ * v1.8.0 painted CREATURE art. Every sheet listed in assets/hd2d/creatures/index.json (same 4x2 pose layout as the
+ * benchmarks: idle A, idle B, walk A, walk B / wind-up, strike, back view) REPLACES the generated model for that runtime
+ * identity. `art` lets one painted sheet serve several identities (e.g. enemy Spider tokens use the Spider sheet).
+ * Validation is all-or-nothing per sheet; failures are reported in CREATURE_ART_STATUS and never half-install.
+ * Painted sheets face screen-LEFT in front poses.
+ */
+export const CREATURE_SIZES = Object.freeze([96, 128, 192]);
+export const CREATURE_ART_STATUS = { installed: [], rejected: [] };
+export const runtimeKeyFor = (key, sprites) => sprites['mtg_' + key] ? 'mtg_' + key : sprites[key] ? key : null;
+export function validateCreatureIndex(index) {
+  if (!index || index.schemaVersion !== 1 || !Array.isArray(index.creatures)) throw new Error('creature art index: expected schemaVersion 1 and creatures[]');
+  const seen = new Set(), ok = k => typeof k === 'string' && /^[a-z][A-Za-z0-9]*$/.test(k);
+  return index.creatures.map((c, i) => {
+    if (!c || !ok(c.key)) throw new Error(`creature art index: creatures[${i}] invalid key`);
+    if (c.art !== undefined && !ok(c.art)) throw new Error(`creature art index: ${c.key} invalid art reference`);
+    if (seen.has(c.key)) throw new Error('creature art index: duplicate ' + c.key); seen.add(c.key);
+    if (!CREATURE_SIZES.includes(c.size)) throw new Error(`creature art index: ${c.key} size must be one of ${CREATURE_SIZES.join('/')}`);
+    return { key: c.key, size: c.size, pivot: c.size - 5, file: `creatures/${c.art || c.key}-poses.png` };
+  });
+}
+/** Runtime keys that will receive painted art (read before the generators run, so they can skip that work). */
+export async function paintedRuntimeKeys(manifest, readIndex) {
+  try { return new Set(validateCreatureIndex(await readIndex()).map(a => runtimeKeyFor(a.key, manifest.sprites) || 'mtg_' + a.key)); } catch { return new Set(); }
+}
+export async function installCreatureArt(images, manifest, loadPng, readIndex) {
+  CREATURE_ART_STATUS.installed = []; CREATURE_ART_STATUS.rejected = [];
+  if (typeof document === 'undefined') return 0;
+  let entries = [];
+  try { entries = validateCreatureIndex(await readIndex()); } catch (e) { CREATURE_ART_STATUS.rejected.push({ key: '*', reason: String(e.message || e) }); return 0; }
+  const cache = new Map();
+  const staged = await Promise.all(entries.map(async asset => {
+    const runtime = runtimeKeyFor(asset.key, manifest.sprites);
+    if (!runtime) return { asset, error: 'unknown runtime identity' };
+    try { if (!cache.has(asset.file)) cache.set(asset.file, loadPng('hd2d/' + asset.file));
+      const src = await cache.get(asset.file); validateBenchmarkAsset(src, { ...asset, key: runtime }); return { asset, runtime, sheet: buildBenchmarkSheet(src, asset) }; }
+    catch (e) { return { asset, error: String(e.message || e) }; }
+  }));
+  for (const st of staged) {
+    if (st.error) { CREATURE_ART_STATUS.rejected.push({ key: st.asset.key, reason: st.error }); continue; }
+    const prior = manifest.sprites[st.runtime];
+    images[st.runtime] = st.sheet;
+    manifest.sprites[st.runtime] = { ...prior, w: st.asset.size, h: st.asset.size, pivotY: st.asset.pivot, pixelScale: 0.5, cols: COLS,
+      views: BENCHMARK_VIEWS, anims: BENCHMARK_STATES, premium: true, painted: true, facesRight: false,
+      artPack: 'painted-creatures-v1', artSource: st.asset.file, qualityStatus: 'painted HD-2D sheet' };
+    delete manifest.sprites[st.runtime].bounds; delete manifest.sprites[st.runtime].boundsAll;
+    CREATURE_ART_STATUS.installed.push(st.runtime);
+  }
+  return CREATURE_ART_STATUS.installed.length;
+}

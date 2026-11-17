@@ -53,6 +53,8 @@ export function strikePower(s, u, target) {
   let p = effectivePower(u);
   const def = ENEMIES[u.defId];
   if (def && def.pack && target && s.units.some(o => o !== u && o.hp > 0 && o.side === u.side && manhattan(o, target) === 1)) p += 1;
+  // v1.8.0 Pack tactics (Threat 19+): a foe striking while another foe also stands next to the target gets +1.
+  else if (s.threatFlank && u.side === 'enemy' && target && s.units.some(o => o !== u && o.hp > 0 && o.side === 'enemy' && manhattan(o, target) === 1)) p += s.threatFlank;
   return p;
 }
 export function heal(s, ev, u, amount, kind = 'heal') {

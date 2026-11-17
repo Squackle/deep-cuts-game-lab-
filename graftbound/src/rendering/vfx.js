@@ -305,15 +305,26 @@ const disfigureShadow = args => shadowDisfigure(args.sc, args), drainShadow = nu
 /** v1.7.0 POISON spells: a green orb thrown by the caster bursts into toxic vapour that spreads from the centre over the
  *  ACTUAL affected tiles (centre → edges → corners) and fades. Low, translucent vapour keeps silhouettes and markers
  *  readable. Logical damage/status was already applied simultaneously by the engine; this resolves at the burst. */
+/** v1.8.0: the cloud is fully opaque for TOXIC_HOLD over the WHOLE footprint, then dissolves over TOXIC_FADE with an
+ *  ordered-dither pixel dissolve. Rolls outward from the impact by distance. Presentation only. */
+export const TOXIC_SPREAD = 0.22, TOXIC_HOLD = 1.0, TOXIC_FADE = 0.75;
 export async function toxicOrb(sc, { from, to, tiles = [], target }) {
-  const G = [0.45, 1, 0.3], DEEP = [0.15, 0.55, 0.12], c = [to[0], 0.32, to[2]];
+  const G = [0.45, 1, 0.3], c = [to[0], 0.32, to[2]];
   await sc.projectile(from || add(to, [0, 1, 0]), c, G, 0.34, 0.55, { size: 34 });
-  sc.light(c, G, 2.8, 0.5, 1.7); sc.addRing({ pos: [to[0], 0.04, to[2]], r0: 0.1, r1: 1.4, life: 0.5, col: G, width: 0.08 }); sc.fx.burst(c, G, sc.reduced ? 10 : 28, { speed: 1.8, up: 1, size: 14 });
+  sc.light(c, G, 3.2, 0.7, 1.8); sc.addRing({ pos: [to[0], 0.04, to[2]], r0: 0.1, r1: 1.5, life: 0.45, col: G, width: 0.1 });
+  sc.fx.burst(c, G, sc.reduced ? 8 : 22, { speed: 1.6, up: 0.9, size: 12 });
   if (target != null) sc.hit(target, G, false);
   const area = (tiles.length ? tiles : [to]).map(t => ({ t, d: Math.hypot(t[0] - to[0], t[2] - to[2]) })).sort((a, b) => a.d - b.d);
-  for (const { t, d } of area) setTimeout(() => {
-    for (let k = 0; k < (sc.reduced ? 3 : 9); k++) sc.fx.emit({ pos: [t[0] + R() * 0.7, 0.06 + Math.random() * 0.12, t[2] + R() * 0.7], vel: [R() * 0.35, 0.18 + Math.random() * 0.2, R() * 0.35], col: [...(k % 3 ? G : DEEP), 0.55], size: 22 + Math.random() * 14, life: 1.1 + Math.random() * 0.6, drag: 1.2 }, true);
-  }, (d * 140) / Math.max(0.1, sc.speed));
+  const maxD = Math.max(0.001, ...area.map(a => a.d)), per = sc.reduced ? 2 : 4;
+  area.forEach(({ t, d }, ti) => {
+    const delay = (d / maxD) * TOXIC_SPREAD, life = TOXIC_SPREAD - delay + TOXIC_HOLD + TOXIC_FADE;
+    for (let k = 0; k < per; k++) {
+      const a = ti * 2.4 + k * 1.57, r = k ? 0.26 : 0.05;
+      sc.addShadow?.({ tex: 'toxic', frames: [[(ti + k) % 6, 0]], pos: [t[0] + Math.cos(a) * r, -0.05 + k * 0.1, t[2] + Math.sin(a) * r], size: k ? 0.95 : 1.25,
+        life, delay, fadeIn: 0.12, fadeOut: TOXIC_FADE, vel: sc.reduced ? [0, 0, 0] : [Math.cos(a) * 0.05, 0.05, Math.sin(a) * 0.05] });
+    }
+  });
+  await sleep(sc, 120);
 }
 export const VFX = { infest: toxicOrb, toxicOrb, strikeBolt, murder, revitalize, divination, snakeskin, disfigure: (sc, a) => shadowDisfigure(sc, a), titanic, pyroclasm, lightningBolt, spark, shock, chain, fire, flameSlash, fireball, frost, poison, heal, salve, shield, growth, drain: (sc, a) => shadowDrain(sc, a), summon, wind };
 /** The 13 curated real spells and their unique VFX identities (dev/vfx.html gallery + tests). */

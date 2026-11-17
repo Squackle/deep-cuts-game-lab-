@@ -1,0 +1,180 @@
+{
+ "schemaVersion": 1,
+ "creatures": [
+  {
+   "key": "alpha",
+   "size": 128
+  },
+  {
+   "key": "angel",
+   "size": 128
+  },
+  {
+   "key": "arasta",
+   "size": 192
+  },
+  {
+   "key": "archer",
+   "size": 128
+  },
+  {
+   "key": "ashbrute",
+   "size": 128
+  },
+  {
+   "key": "champion",
+   "size": 128
+  },
+  {
+   "key": "cinderling",
+   "size": 96
+  },
+  {
+   "key": "drakuseth",
+   "size": 192
+  },
+  {
+   "key": "emberseer",
+   "size": 128
+  },
+  {
+   "key": "friendlyBirdIllusion",
+   "size": 96
+  },
+  {
+   "key": "friendlyCatSoldier",
+   "size": 128
+  },
+  {
+   "key": "friendlyDrake",
+   "size": 128
+  },
+  {
+   "key": "friendlyElemental",
+   "size": 96
+  },
+  {
+   "key": "friendlyGoblin",
+   "size": 96
+  },
+  {
+   "key": "friendlyHornet",
+   "size": 96
+  },
+  {
+   "key": "friendlySkeleton",
+   "size": 128
+  },
+  {
+   "key": "friendlySnake",
+   "size": 96
+  },
+  {
+   "key": "friendlySpider",
+   "size": 96
+  },
+  {
+   "key": "friendlySproutling",
+   "size": 96
+  },
+  {
+   "key": "friendlyTentacle",
+   "size": 96
+  },
+  {
+   "key": "golemFly",
+   "size": 128
+  },
+  {
+   "key": "golemTrample",
+   "size": 128
+  },
+  {
+   "key": "golemVigilance",
+   "size": 128
+  },
+  {
+   "key": "grub",
+   "size": 96
+  },
+  {
+   "key": "harpooner",
+   "size": 96
+  },
+  {
+   "key": "hexer",
+   "size": 128
+  },
+  {
+   "key": "hound",
+   "size": 128
+  },
+  {
+   "key": "krenko",
+   "size": 192
+  },
+  {
+   "key": "moth",
+   "size": 96
+  },
+  {
+   "key": "nemata",
+   "size": 192
+  },
+  {
+   "key": "nullwarden",
+   "size": 128
+  },
+  {
+   "key": "riftstalker",
+   "size": 128
+  },
+  {
+   "key": "scarab",
+   "size": 192
+  },
+  {
+   "key": "sentinel",
+   "size": 128
+  },
+  {
+   "key": "shardling",
+   "size": 96
+  },
+  {
+   "key": "slug",
+   "size": 96
+  },
+  {
+   "key": "tortoise",
+   "size": 128
+  },
+  {
+   "key": "toxrill",
+   "size": 192
+  },
+  {
+   "key": "wolf",
+   "size": 128
+  },
+  {
+   "key": "zombie",
+   "size": 128
+  },
+  {
+   "key": "spider",
+   "size": 96,
+   "art": "friendlySpider"
+  },
+  {
+   "key": "goblin",
+   "size": 96,
+   "art": "friendlyGoblin"
+  },
+  {
+   "key": "saproling",
+   "size": 96,
+   "art": "friendlySproutling"
+  }
+ ]
+}

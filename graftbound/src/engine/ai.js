@@ -629,11 +629,14 @@ export function announcePhase(ev, e) {
  *  next action, so it is shown in intents and can be dodged by moving or reduced by Guard. Never on turn 1. */
 export function surgeAfterAct(s, ev, e) {
   const sg = s.threatSurge; if (!sg || !alive(e) || e.slam || e.aim || s.phase !== 'enemy' || s.turn < 2 || s.turn % sg.every) return;
-  const foes = enemies(s).filter(alive); const pick = (foes.filter(u => u.boss || ENEMIES[u.defId]?.elite).length ? foes.filter(u => u.boss || ENEMIES[u.defId]?.elite) : foes)
-    .sort((a, b) => b.maxHp - a.maxHp || a.uid - b.uid)[0];
+  const foes = enemies(s).filter(alive); const ranked = (foes.filter(u => u.boss || ENEMIES[u.defId]?.elite).length ? foes.filter(u => u.boss || ENEMIES[u.defId]?.elite) : foes)
+    .slice().sort((a, b) => b.maxHp - a.maxHp || a.uid - b.uid);
+  // v1.8.0 second caller (Threat 16+): the two strongest foes alternate cadence turns. Otherwise only the strongest calls.
+  const callers = ranked.slice(0, sg.callers || 1), pick = callers[(Math.floor(s.turn / sg.every)) % callers.length] || ranked[0];
   if (pick !== e || e.statuses.stunned) return;
   const hero = player(s); if (!alive(hero)) return;
-  const tiles = [{ x: hero.x, y: hero.y }, ...DIRS.map(([dx, dy]) => ({ x: hero.x + dx, y: hero.y + dy }))].filter(t => inBounds(s, t.x, t.y) && tileAt(s, t.x, t.y) !== T.ROCK);
+  const offs = sg.wide ? [-1, 0, 1].flatMap(dy => [-1, 0, 1].map(dx => [dx, dy])) : [[0, 0], ...DIRS];   // v1.8.0 wide surges (Threat 15+)
+  const tiles = offs.map(([dx, dy]) => ({ x: hero.x + dx, y: hero.y + dy })).filter(t => inBounds(s, t.x, t.y) && tileAt(s, t.x, t.y) !== T.ROCK);
   e.slam = { tiles, damage: Math.max(2, Math.ceil(hero.maxHp * sg.pct)), kind: 'surge' };
   ev.push({ t: 'aim', uid: e.uid, tiles, slam: true, kind: 'surge' }, { t: 'realAbility', uid: e.uid, name: 'Threat Surge · telegraphed' });
 }

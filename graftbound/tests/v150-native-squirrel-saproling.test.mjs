@@ -34,7 +34,7 @@ test('approved high-fidelity Squirrel raster remains authoritative over procedur
   assert.deepEqual({file:approved.file,size:approved.size,pivot:approved.pivot},
     {file:'squirrel-poses.png',size:96,pivot:91});
   assert.equal(Object.keys(BENCHMARK_STATES).length,5,'real benchmark art is still a five-state pose study');
-  const creature=sources.indexOf('installRealCreatureModels(images,manifest);');
+  const creature=sources.indexOf('installRealCreatureModels(images,manifest,painted);');
   const raster=sources.indexOf('await installRasterBenchmarks(images,manifest,img);');
   assert.ok(creature>=0&&raster>creature,
     'approved painted Squirrel benchmark must override fallback sprite, never vice versa');

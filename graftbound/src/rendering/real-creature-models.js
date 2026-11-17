@@ -297,11 +297,13 @@ function polishMaterial(cell, material) {
   c.putImageData(img,0,0);
 }
 /** Append new namespaced sprite sheets and metadata to the loaded, original atlas. */
-export function installRealCreatureModels(images,manifest) {
+export function installRealCreatureModels(images,manifest,painted=new Set()) {
   if (typeof document === 'undefined') return 0;
   const baseRows=Object.keys(manifest.anims).length, views=manifest.views.length, cols=manifest.cols;
   for(const [name,config] of Object.entries(REAL_CREATURE_MODELS)) {
     const key='mtg_'+name,base=manifest.sprites[config.base],source=images[config.base];
+    // v1.8.0: identities with a painted HD-2D sheet never build (or show) the old generated model.
+    if(painted.has(key)){manifest.sprites[key]={w:96,h:96,pivotY:91,pendingPaintedArt:true};continue;}
     if(!base||!source)throw new Error('Missing original animation rig '+config.base+' for '+key);
     // A native 96px identity-specific rendering rig replaces Hound/Moth borrowed art
     // while retaining the original one-tile gameplay and apparent world height.

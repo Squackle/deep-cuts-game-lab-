@@ -24,7 +24,7 @@ const POSES = Object.freeze([
   {head:[72,25],face:[76,38],neck:[69,43],chest:[68,54],back:[67,54],hip:[67,79],leftHand:[48,76],rightHand:[88,77],leftFoot:[50,116],rightFoot:[90,115]}
 ].map(x=>Object.freeze(x)));
 
-const c={ink:'#302723',deep:'#493a38',bronze:'#855f4a',horn:'#e5d4b1',
+const c={ink:'#3b2419',deep:'#493a38',bronze:'#855f4a',horn:'#e5d4b1',
   hornLight:'#fff0cc',scale:'#5a746e',scaleLight:'#a0baac',
   wing:'#895352',wingLight:'#d49780',feather:'#d8c7b0',featherHi:'#fff0d1',
   bark:'#76513a',barkHi:'#b58d62',leaf:'#64874a',leafHi:'#b6d58c',
@@ -74,7 +74,7 @@ function blade(g,start,tip,w){
 // with 2px ink edges and a lit rim. Tier (1..3) grows each part. Deterministic; no RNG.
 function wings(g,A,kind,tier,view,state,frame,trim=null){
   const [bx,by]=A.back, flap=state==='walk'?[0,3,5,2][frame]:state==='cast'?[3,6,8,4][frame]:state==='attack'?[0,-4,-6,-2][frame]:[0,1,2,1][frame];
-  const span=Math.min(30+tier*9,bx-6,122-bx), lift=Math.min(44+tier*6,by-6);   // stays inside its 128px frame
+  const span=Math.min(22+tier*7,bx-6,122-bx), lift=Math.min(34+tier*5,by-6);   // v1.8.0: proportioned to the painted body   // stays inside its 128px frame
   for(const side of [-1,1]){
     const root=[bx+side*4,by-2], tip=[bx+side*span,by-lift-flap], elbow=[bx+side*(span*0.45),by-lift*0.72-flap*0.5];
     const edge=kind==='feather'?c.feather:c.wing, hi=kind==='feather'?c.featherHi:c.wingLight;
@@ -113,9 +113,9 @@ function treeSurface(g,A){
     line(g,[[x+dx+.5,y+dy],[x+dx+.5,y+dy+3]],c.barkHi,.9);
   }
 }
-const BONE={hi:'#f1e6c8',mid:'#cbbd9b',low:'#8f7f60'};
+const BONE={hi:'#d9c3a4',mid:'#a88c6c',low:'#6e5642'};   // v1.8.0: keratin plates tinted toward the skin, not white armour
 function armoredChest(g,A,tier){   // v1.6.0: grown bone/keratin plates (biological graft), not forged steel
-  const [x,y]=A.chest,w=13+tier*2;
+  const [x,y]=A.chest,w=10+tier*1.5;
   shape(g,[[x-w,y-13],[x-4,y-16],[x,y-11],[x+4,y-16],[x+w,y-13],[x+w+3,y+9],[x+6,y+18],[x-6,y+18],[x-w-3,y+9]],gloss(g,x,y-4,26,BONE.hi,BONE.mid),c.ink,2.2);
   for(const side of [-1,1])shape(g,[[x+side*(w-2),y-15],[x+side*(w+10+tier*2),y-13],[x+side*(w+12+tier*2),y-4],[x+side*(w+2),y-2]],gloss(g,x+side*(w+6),y-12,14,BONE.hi,BONE.low),c.ink,2);
   line(g,[[x-w+3,y-9],[x,y-5],[x+w-3,y-9]],BONE.hi,2);line(g,[[x,y-6],[x,y+16]],BONE.low,1.6);

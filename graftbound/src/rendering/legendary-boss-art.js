@@ -391,10 +391,12 @@ function sheet(name){
  return c;
 }
 /** Install AFTER generated generic identities so dedicated art is authoritative. */
-export function installLegendaryBosses(images,manifest){
+export function installLegendaryBosses(images,manifest,painted=new Set()){
  if(typeof document==='undefined')return;
  for(const name of Object.keys(DRAW)){
   const key=LEGENDARY_BOSS_KEYS.includes(name)?'mtg_'+name:name;
+  if(painted.has(key)){manifest.sprites[key]={w:192,h:192,pivotY:187,boss:true,pendingPaintedArt:true};continue;}   // v1.8.0 painted art
+  if(!LEGENDARY_BOSS_KEYS.includes(name))continue;   // v1.8.0: the original Thornmother / Pyre Matron / Unwritten are retired
   const advanced=ADVANCED_BOSS_KEYS.includes(name);
   images[key]=sheet(name);
   manifest.sprites[key]={w:W,h:W,pivotY:W-6,artWidth:W-12,bleedX:4,generated:true,premium:true,identity:name,

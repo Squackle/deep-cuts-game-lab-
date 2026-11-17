@@ -2,7 +2,7 @@ import { installRealCreatureModels } from './real-creature-models.js';
 import { installPremiumModels } from './premium-creatures.js';
 import { installLegendaryBosses } from './legendary-boss-art.js';
 import { installHd2dArtPack } from './hd2d-art-pack.js';
-import { installRasterBenchmarks } from './raster-benchmarks.js';
+import { installRasterBenchmarks, installCreatureArt, paintedRuntimeKeys } from './raster-benchmarks.js';
 import { installSpriteBounds } from './creature-scale.js';
 // Asset loading: sprite sheets + manifest, evolution layers, terrain atlas (+ pre-filtered blur atlas), foliage, card art.
 const BASE = new URL('../../assets/', import.meta.url).href;
@@ -22,11 +22,14 @@ export async function loadAssets(onProgress = () => {}) {
   jobs.push(img('sprites/foliage.png').then(i => (images.foliage = i)));
   let done = 0; jobs.forEach(j => j.then(() => onProgress(++done / jobs.length)));
   await Promise.all(jobs);
-  installRealCreatureModels(images,manifest);
+  // v1.8.0: read the painted-art index first so generators skip every identity that has a painted sheet.
+  const painted = await paintedRuntimeKeys(manifest, () => json('hd2d/creatures/index.json').catch(() => null));
+  installRealCreatureModels(images,manifest,painted);
   installPremiumModels(images,manifest);
-  installLegendaryBosses(images,manifest);
+  installLegendaryBosses(images,manifest,painted);
   // Install the three approved original raster pose studies into the actual runtime atlas.
   await installRasterBenchmarks(images,manifest,img);
+  await installCreatureArt(images, manifest, img, () => json('hd2d/creatures/index.json'));
   // Native authored sheets replace matching runtime identities only after all frames validate.
   // An empty art-pack manifest preserves every existing model and save/replay rule.
   await installHd2dArtPack(images,manifest,()=>json('hd2d/manifest.json'),img);
