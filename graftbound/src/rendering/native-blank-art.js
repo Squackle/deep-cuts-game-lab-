@@ -93,17 +93,34 @@ function wings(g,A,kind,tier,view,state,frame,trim=null){
     else for(let i=1;i<=4;i++)line(g,[[elbow[0]+side*i*3,elbow[1]+i*6],[elbow[0]+side*(i*3+8),elbow[1]+i*6+6]],c.featherHi,1.4);
   }
 }
+/** Presentation-only tail silhouette: the root is at the sacrum, the tip stays ABOVE the hip instead of dangling near the legs. */
+export function raisedTailGeometry(hip,tier,view,frame){
+  const [hx,hy]=hip,sign=view===1?-1:1,swish=[0,2,4,2][frame%4]||0;
+  const len=Math.max(12,Math.min(34+tier*8,(sign>0?120-hx:hx-8)-8));
+  const tipY=hy-6-swish;
+  return {hx,hy,sign,len,swish,tipY,
+    rootTop:[hx+sign*2,hy-6], upper1:[hx+sign*len*0.3,hy-14],
+    upper2:[hx+sign*len*0.74,hy-12-swish*0.5], tip:[hx+sign*len,tipY],
+    outerTip:[hx+sign*(len+6),tipY+3],
+    lower1:[hx+sign*len*0.84,hy+1], lower2:[hx+sign*len*0.4,hy+8],
+    rootBottom:[hx+sign*2,hy+7]};
+}
 function tail(g,A,kind,tier,view,frame){
-  const [hx,hy]=A.hip,sign=view===1?-1:1, swish=[0,2,4,2][frame]||0, len=Math.min(34+tier*8,(sign>0?120-hx:hx-8)-8);
-  g.beginPath();g.moveTo(hx+sign*2,hy-4);
-  g.bezierCurveTo(hx+sign*(len*0.6),hy+2,hx+sign*(len*0.9),hy+22,hx+sign*len,hy+30-swish);
-  g.lineTo(hx+sign*(len+7),hy+34-swish);
-  g.bezierCurveTo(hx+sign*(len*0.82),hy+30,hx+sign*(len*0.5),hy+14,hx+sign*2,hy+8);g.closePath();
-  { const tc=kind==='fur'?c.fur:c.scale, lg=g.createLinearGradient(hx,hy,hx+sign*len,hy+30); lg.addColorStop(0,SK.mid); lg.addColorStop(0.3,hexMix(SK.mid,tc,0.6)); lg.addColorStop(1,tc);
+  const t=raisedTailGeometry(A.hip,tier,view,frame),{hx,hy,sign,len,swish}=t;
+  g.beginPath();g.moveTo(...t.rootTop);
+  g.bezierCurveTo(...t.upper1,...t.upper2,...t.tip);
+  g.lineTo(...t.outerTip);
+  g.bezierCurveTo(...t.lower1,...t.lower2,...t.rootBottom);g.closePath();
+  { const tc=kind==='fur'?c.fur:c.scale,lg=g.createLinearGradient(hx,hy,hx+sign*len,t.tipY);
+    lg.addColorStop(0,SK.mid);lg.addColorStop(0.3,hexMix(SK.mid,tc,0.6));lg.addColorStop(1,tc);
     g.fillStyle=lg;g.fill();g.lineWidth=2.2;g.strokeStyle=c.ink;g.stroke(); }
-  socket(g,hx+sign*3,hy+1,3+tier*0.6,2.2,kind==='fur'?c.fur:c.scale);   // tail root grows from the sacrum
-  for(let i=1;i<6;i++){const x=hx+sign*(len*i/6),y=hy+4+i*4.5;line(g,[[x,y-3],[x+sign*3,y+3]],kind==='fur'?c.furHi:c.scaleLight,1.6);}
-  if(kind==='serpent'||kind==='scaled')blade(g,[hx+sign*(len+2),hy+30-swish],[hx+sign*(len+12),hy+26-swish],5);
+  socket(g,hx+sign*3,hy,3+tier*0.6,2.2,kind==='fur'?c.fur:c.scale);
+  for(let i=1;i<6;i++){
+    const p=i/6,x=hx+sign*len*p,y=hy+2-(8+swish)*p;
+    line(g,[[x,y-3],[x+sign*3,y+1]],kind==='fur'?c.furHi:c.scaleLight,1.6);
+  }
+  if(kind==='serpent'||kind==='scaled')
+    blade(g,[hx+sign*(len+2),t.tipY],[hx+sign*(len+11),t.tipY-4],5);
 }
 function treeSurface(g,A){
   const [x,y]=A.chest;

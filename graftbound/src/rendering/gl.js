@@ -96,12 +96,15 @@ uniform mat4 uVP; uniform vec3 uRight; uniform float uWindT;
 out vec2 vUV; out vec4 vFx; out vec3 vW; out vec4 vRect; flat out vec3 vAnchor;
 void main(){
   vAnchor = aCenter + vec3(0.0, aSize.y * 0.45, 0.0);
-  vec3 w = aCenter + uRight * (aCorner.x - 0.5) * aSize.x + vec3(0.0, aCorner.y * aSize.y, 0.0);
-  // v0.6 wind: anchored canopy sway. Displacement grows with height² so the base never moves; irregular (two
-  // incommensurate sines) and phase-offset per plant by its world position. aSway = 0 for every unit sprite.
+  // |aSway| > 2 encodes a signed lateral facing angle for the two-view Blank hero.
+  // Tilt the sprite plane around its vertical axis (max 1.05 rad) while retaining a readable silhouette.
+  // Ordinary foliage uses the original low-amplitude wind sway, unchanged.
+  float turn = abs(aSway) > 2.0 ? sign(aSway) * (abs(aSway) - 2.0) : 0.0;
+  vec3 facingRight = uRight * cos(turn) + vec3(-uRight.z, 0.0, uRight.x) * sin(turn);
+  vec3 w = aCenter + facingRight * (aCorner.x - 0.5) * aSize.x + vec3(0.0, aCorner.y * aSize.y, 0.0);
   float ph = aCenter.x * 1.37 + aCenter.z * 0.91;
   float gust = sin(uWindT * 0.83 + ph) * 0.7 + sin(uWindT * 1.91 + ph * 2.3) * 0.3;
-  w += uRight * (aCorner.y * aCorner.y) * aSway * gust;
+  if (abs(aSway) <= 2.0) w += uRight * (aCorner.y * aCorner.y) * aSway * gust;
   vW = w; vUV = mix(aUV.xy, aUV.zw, vec2(aCorner.x, 1.0 - aCorner.y)); vRect = aUV; vFx = aFx;
   gl_Position = uVP * vec4(w, 1.0);
 }`;

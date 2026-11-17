@@ -944,3 +944,12 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
 .end-full table.score{width:100%;font-variant-numeric:tabular-nums}.end-full table.score td:not(:first-child),.end-full table.score th:not(:first-child){text-align:right}
 .end .modal-actions{margin-top:16px}
 @media (max-width:760px){.end-grid{grid-template-columns:1fr}.end-high b{font-size:1.1rem}.end{padding:12px 10px 22px}}
+
+/* v1.7.0 hotfix: align all three zone cards from the TOP, independent of label lengths.
+   Reserve the same two-line metadata space for Library, Graveyard and Exile on every viewport. */
+#hud .gb-card-zones { align-items:flex-start; }
+#hud .gb-card-zones > .gb-zone { align-self:flex-start; justify-content:flex-start; }
+#hud .gb-card-zones .gb-zone-art { flex:0 0 auto; box-sizing:border-box; }
+#hud .gb-card-zones .gb-zone-meta { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:3px; width:100%; min-height:46px; }
+#hud .gb-card-zones .gb-zone-meta strong { white-space:nowrap; line-height:1.15; }
+#hud .gb-card-zones .gb-zone-meta em { flex:0 0 auto; }

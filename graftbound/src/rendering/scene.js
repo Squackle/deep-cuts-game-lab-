@@ -20,6 +20,13 @@ const PITCH = 0.66;
  *  independent of Cinematic/Normal/Fast. Actions still follow the speed setting. */
 export const IDLE_TEMPO = 0.3;
 export const idleClockStep = (anim, dt, speed, reduced) => anim === 'idle' ? (reduced ? 0 : dt * IDLE_TEMPO) : dt * speed;
+/** Two-view Blank art has no authored profile. Turn its billboard in 3D toward lateral travel,
+ *  retaining a readable half-width silhouette instead of running sideways while staring at the camera.
+ *  |encoded| > 2 distinguishes the yaw angle from ordinary foliage wind sway. */
+export function twoViewHeroTurn(key,views,frontDot,sideDot){
+  if(key!=='blank'||!Array.isArray(views)||views.length!==2||!Number.isFinite(frontDot)||!Number.isFinite(sideDot)||Math.abs(sideDot)<=0.08)return 0;
+  return Math.sign(sideDot)*(2+Math.min(1.05,Math.atan2(Math.abs(sideDot),Math.abs(frontDot))));
+}
 export const FOLIAGE_PUSH = 0.34;
 export const PITCH_MIN = 0.42, PITCH_MAX = 0.98;
 let HCOMP = 1 / Math.cos(PITCH);
@@ -68,7 +75,7 @@ export class Scene {
     const an = anchorsOf(meta, meta.bounds);
     const v = { uid: u.uid, side: u.side, key: spriteKey, tex: opts.tex || this.tex[spriteKey], fw: meta.w, fh: meta.h, pivot: an.pivot, cx: an.cx, topPx: (meta.boundsAll || meta.bounds)?.y0 ?? 0, hover: meta.hover ? 0.35 : 0,
       pixelScale: meta.pixelScale || 1, animSet: meta.anims || this.man.anims, views: meta.views || this.man.views,
-      pos: this.world(u.x, u.y), dir: u.side === 'enemy' ? [0, 1] : [0, -1], anim: 'idle', animT: Math.random(), scale: opts.scale || 1, flash: 0, flashCold: 0, dissolve: 0, outline: 0,
+      pos: this.world(u.x, u.y), dir: u.side === 'enemy' ? [0, 1] : [0, -1], hasMoved: !!u.facing, anim: 'idle', animT: Math.random(), scale: opts.scale || 1, flash: 0, flashCold: 0, dissolve: 0, outline: 0,
       lunge: [0, 0, 0], spawnK: 1, hidden: false, aura: null };
     if (!opts.scale) v.scale = visualScale(spriteKey, meta, meta.bounds);
     if (u.facing) v.dir = [u.facing[0], u.facing[1]];   // v1.7.0: saved last-move direction (engine field)
@@ -96,7 +103,7 @@ export class Scene {
   heightOf(v) { return Math.max(0.1, (v.pivot - (v.topPx ?? 0)) * PX * HCOMP * v.scale * (v.pixelScale || 1)); }   // v1.7.0: true visible height
   headPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) + 0.1, v.pos[2]]; }   // v1.7.0: above the whole model
   centerPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0] + v.lunge[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) * 0.45, v.pos[2] + v.lunge[2]]; }
-  face(v, to) { if (!v) return; const dx = to[0] - v.pos[0], dz = to[2] - v.pos[2]; if (Math.abs(dx) + Math.abs(dz) > 0.01) v.dir = [dx, dz]; }
+  face(v, to) { if (!v) return; const dx = to[0] - v.pos[0], dz = to[2] - v.pos[2], length = Math.hypot(dx, dz); if (length > 0.01) { v.dir = [dx / length, dz / length]; v.hasMoved = true; } }
   tween(dur, fn) { if (this.speed >= 50) { fn(1); return Promise.resolve(); } dur = dur / this.speed; return new Promise(res => this.tweens.push({ t: 0, dur: Math.max(0.001, dur), fn, res })); }
   async movePath(uid, path, perTile = 0.17) {
     const v = this.units.get(uid); if (!v) return; v.anim = 'walk';
@@ -262,7 +269,8 @@ export class Scene {
         const ox = -(v.cx || 0) * (flip ? -1 : 1) * PX * s * pixelScale;   // v1.7.0 centre the ART (not the frame) on the tile
         const c = [v.pos[0] + v.lunge[0] + rH[0] * ox, v.pos[1] + v.hover + (v.castLift || 0) + bob - (v.fh - v.pivot) * PX * HCOMP * s * pixelScale, v.pos[2] + v.lunge[2] + rH[1] * ox];
         v.flash = Math.max(0, v.flash - dt * 4);
-        off = this.pushQuad(this.sprBuf, off, c, wdt, hgt, flip ? [u1, v0, u0, v1] : [u0, v0, u1, v1], [v.flash, v.dissolve, v.outline, v.flashCold]);
+        const turn = v.hasMoved ? twoViewHeroTurn(v.key, v.views || man.views, frontDot, sideDot) : 0;
+        off = this.pushQuad(this.sprBuf, off, c, wdt, hgt, flip ? [u1, v0, u0, v1] : [u0, v0, u1, v1], [v.flash, v.dissolve, v.outline, v.flashCold], turn);
       }
       batches.push({ tex, data: this.sprBuf.subarray(start * SPR_FLOATS), count: off - start });
     }
