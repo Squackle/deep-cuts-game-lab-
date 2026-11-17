@@ -26,7 +26,7 @@ test('tile info is taller, scrollable and not forcibly limited to two text lines
  const css=source('styles.css'),ui=source('src/ui/battle-ui.js');
  assert.match(css,/#hud #inspect\.terrain-inspect \.gb-terrain-brief-copy\{display:block;overflow:visible/);
  assert.match(css,/max-height:var\(--gb-terrain-height,148px\)!important/);
- assert.match(ui,/desiredHeight:unit\?224:/);
+ assert.match(ui,/desiredHeight:unit\?\(mobile\?72:224\):/);
  assert.match(ui,/el\.classList\.add\('unit-inspect','show'\)/);
  assert.match(ui,/this\.positionActionCounters\(\)/);
  assert.match(css,/#hud #inspect\.unit-inspect,#hud #inspect\.terrain-inspect\{/);

@@ -304,12 +304,15 @@ export class BattleUI {
     const h=hud.getBoundingClientRect();
     const relative=node=>{const r=node?.getBoundingClientRect();return r&&r.width&&r.height?{left:r.left-h.left,top:r.top-h.top,right:r.right-h.left,bottom:r.bottom-h.top}:null;};
     const unit=el.classList.contains('unit-inspect');
+    const mobile=window.matchMedia('(max-width: 760px)').matches;
     const pos=terrainInspectPlacement({
       width:h.width,height:h.height,plate:relative(plate),zones:relative(zones),
       tray:relative(tray),endTurn:relative($('endTurn')),topButtons:relative(document.querySelector('.topbtns')),
       actions:$('gb-action-counters')?.classList.contains('gb-dock-no-room')?null:relative($('gb-action-counters')),
       // v1.5.0: ordinary ground gets a slim panel; complex terrain and creatures expand.
-      desiredHeight:unit?224:el.classList.contains('terrain-plain')?62:148,minHeight:unit?112:el.classList.contains('terrain-plain')?54:108,maxWidth:unit?350:el.classList.contains('terrain-plain')?240:330
+      desiredHeight:unit?(mobile?72:224):el.classList.contains('terrain-plain')?62:148,
+      minHeight:unit?(mobile?72:112):el.classList.contains('terrain-plain')?54:108,
+      maxWidth:unit?(mobile?300:350):el.classList.contains('terrain-plain')?240:330
     });
     if(pos.fits){
       el.style.setProperty('--gb-terrain-top',pos.top+'px');
@@ -461,14 +464,14 @@ export class BattleUI {
   showInspect(u, preview) {
     const el = $('inspect');
     el.classList.remove('terrain-inspect', 'unit-inspect', 'terrain-no-room', 'terrain-plain');
-    if (!u) { el.classList.remove('show'); return; }
+    if (!u) { this.unitDetailsHTML = null; el.classList.remove('show'); return; }
     const def = ENEMIES[u.defId]; const it = this.intents.find(i => i.uid === u.uid);
     const friendly = u.side === 'player';
     const type = friendly ? (u.hero ? 'Your creature' : `Summoned ally · ${u.name}`) : (def?.role || 'Foe');
     const statuses = Object.entries(u.statuses || {}).filter(([, val]) => typeof val === 'number' && val > 0)
       .map(([name, val]) => `<span class="chip ${name === 'poison' || name === 'weakened' ? 'bad' : ''}">${esc(name)} ${val}</span>`).join('');
     const currentPower = Math.max(0, u.power + (u.statuses?.empowered || 0) - (u.statuses?.weakened || 0));
-    el.innerHTML = `
+    const full = `
       <div class="in-head"><b>${esc(u.name)}</b><em class="role">${esc(type)}</em>${u.legendary ? '<em class="leg">Legendary</em>' : ''}<span class="pt">${currentPower}/${u.toughness}</span></div>
       <div class="in-types">${esc(u.creatureTypes || def?.tribe || (u.hero ? 'Grafted Hero' : u.token ? 'Soldier' : 'Creature'))}</div>
       <div class="in-hp">${ICON.heart}${u.hp}/${u.maxHp}${u.statuses?.shield ? ` · ${ICON.shield}${u.statuses.shield}` : ''}${u.boss ? ` · Printed ${u.power}/${u.toughness} · Legendary Vitality +${u.legendaryVitality || 0} · Deathtouch cannot instantly destroy this boss · Phase ${bossPhaseOf(u)}/3 · ${esc(bossPhaseName(u))}` : ''}</div>
@@ -478,6 +481,13 @@ export class BattleUI {
       ${def?.affinity ? `<div class="in-affinity"><span>Resists ${esc(def.affinity.resist)} spells −1 damage</span><span>Weak to ${esc(def.affinity.weak)} spells +1 damage</span></div>` : ''}
       <p>${esc(friendly ? (u.hero ? 'Your evolving graftbound form.' : `${u.name} ally. It acts automatically when your turn ends. Friendly-target spells can enhance or shield it.`) : (def?.blurb || ''))}</p>
       ${it ? `<p class="in-intent">${esc(this.intentText(it))}</p>` : ''}${this.previewHTML(preview)}`;
+    this.unitDetailsHTML = `<h2>${esc(u.name)} · Creature details</h2><div class="gb-unit-full">${full}</div><div class="modal-actions"><button type="button" class="btn primary" data-close>Close</button></div>`;
+    const compactPreview = preview ? `${preview.dealt.map(d => `${esc(d.e.name)} −${d.dmg}${d.dead ? ' defeated' : ''}`).join(' · ') || 'No damage'} · ${preview.taken > 0 ? `You take ${preview.taken}` : 'You take nothing'}` : '';
+    const compactIntent = it ? esc(this.intentText(it)) : (friendly ? 'Friendly' : 'Hostile');
+    el.innerHTML = `<div class="gb-unit-brief" aria-label="${esc(u.name)} summary">
+      <div class="gb-unit-brief-row"><strong>${esc(u.name)}</strong><span class="gb-unit-vitals">${currentPower}/${u.toughness} · ♥${u.hp}/${u.maxHp}</span><button type="button" class="gb-unit-details" data-unit-details aria-label="Full details for ${esc(u.name)}">Details</button><button type="button" class="gb-unit-dismiss" data-unit-dismiss aria-label="Dismiss creature information">×</button></div>
+      <div class="gb-unit-brief-context">${compactIntent}${compactPreview ? ` · ${compactPreview}` : ''}</div></div>
+      <div class="gb-unit-rich">${full}</div>`;
     el.classList.add('unit-inspect','show');
     this.positionTerrainInspect();
   }
@@ -513,7 +523,11 @@ export class BattleUI {
     cv.addEventListener('contextmenu', e => { e.preventDefault(); this.cancel(); });
     cv.addEventListener('wheel', e => { e.preventDefault(); this.scene.zoom = Math.min(2, Math.max(0.8, this.scene.zoom * (e.deltaY > 0 ? 0.92 : 1.08))); }, { passive: false });
     $('gb-card-zones').addEventListener('click',e=>{const el=e.target.closest('[data-zone]');if(el)this.inspectZone(el.dataset.zone);});
-    $('inspect').addEventListener('click',e=>{if(e.target.closest('[data-terrain-details]') && this.s && this.terrainTile) this.app.openModal(this.terrainDetailsHTML(this.terrainTile));});
+    $('inspect').addEventListener('click',e=>{
+      if(e.target.closest('[data-terrain-details]') && this.s && this.terrainTile) this.app.openModal(this.terrainDetailsHTML(this.terrainTile));
+      if(e.target.closest('[data-unit-details]') && this.s && this.unitDetailsHTML) this.app.openModal(this.unitDetailsHTML);
+      if(e.target.closest('[data-unit-dismiss]')) this.setHover(null);
+    });
     window.addEventListener('resize',()=>this.positionCardZones(),{passive:true});
     window.visualViewport?.addEventListener('resize',()=>this.positionCardZones(),{passive:true});
     $('tray').addEventListener('pointerover', e => { const c = e.target.closest('[data-spell]'); if (c) this.showHandPreview(c.dataset.spell); });
@@ -691,7 +705,7 @@ export class BattleUI {
         if (!warn && this.needConfirm(isTouch, tag)) return;
         this.act(() => { const ev = []; if (plan.move) ev.push(...this.exec({ type: 'move', x: plan.to.x, y: plan.to.y })); if (s.phase === 'player') ev.push(...this.exec({ type: 'attack', uid: u.uid })); return ev; });
       }
-      else { this.showInspect(u); if (isTouch && $('inspect').classList.contains('terrain-no-room')) this.app.openModal(`<h2>${esc(u.name)}</h2>${$('inspect').innerHTML}<button type="button" class="btn primary" data-close>Close</button>`); this.reject(s.p.attacksLeft <= 0 ? 'You already attacked this turn' : `${u.name} is out of reach this turn`); }
+      else { this.showInspect(u); if (isTouch && $('inspect').classList.contains('terrain-no-room')) this.app.openModal(this.unitDetailsHTML); this.reject(s.p.attacksLeft <= 0 ? 'You already attacked this turn' : `${u.name} is out of reach this turn`); }
       return;
     }
     if (u && u.hero && !interactOptions(s).some(o => o.x === t.x && o.y === t.y)) { this.app.openSheet(); return; }
