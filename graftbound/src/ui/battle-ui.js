@@ -486,6 +486,15 @@ export class BattleUI {
     el?.classList.remove('terrain-locking', 'terrain-locked');
     el?.removeAttribute?.('data-tile-pinned');
   }
+  /** Unpin on the FIRST game input without consuming that input. Reading remains pinned on hover. */
+  releasePinnedTileForAction() {
+    if (!this.tileInspectLatch?.locked && !this.pinnedTerrainTile) return;
+    this.resetTileInspectLock();
+    this.hover = null;
+    this.terrainTile = null;
+    $('inspect')?.classList.remove('show');
+    if (this.s) this.refreshHighlights();
+  }
   /** Opening terrain Details consumes the pin; closing the modal returns to normal hover/controls. */
   openTerrainDetails() {
     if (!this.s || !this.terrainTile) return;
@@ -535,6 +544,12 @@ export class BattleUI {
   }
   bindInput() {
     const cv = $('gl');
+    // Capture, but do not cancel, a player's first real click/tap anywhere in the game.
+    // The inspector is click-through except for Details, which unlocks itself on opening.
+    $('app').addEventListener('pointerdown', e => {
+      if (this.s && this.tileInspectLatch?.locked && !e.target.closest?.('[data-terrain-details]'))
+        this.releasePinnedTileForAction();
+    }, { capture: true });
     let downAt = null; const touches = new Map(); let pinch0 = null;
     const pinchDist = () => { const [a, b] = [...touches.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
     const endTouch = e => { touches.delete(e.pointerId); if (touches.size < 2) pinch0 = null; };
@@ -611,6 +626,8 @@ export class BattleUI {
       }
       if (document.activeElement?.matches?.('input,textarea,select,[contenteditable="true"]')) return;
       const k = e.key.toLowerCase();
+      if (this.tileInspectLatch?.locked && /^(arrowup|arrowdown|arrowleft|arrowright|w|a|s|d|enter| |g|h|[1-9])$/.test(k))
+        this.releasePinnedTileForAction();
       const mv = { arrowup: [0, -1], w: [0, -1], arrowdown: [0, 1], s: [0, 1], arrowleft: [-1, 0], a: [-1, 0], arrowright: [1, 0], d: [1, 0] }[k];
       if (mv) {
         e.preventDefault();
@@ -754,7 +771,7 @@ export class BattleUI {
   onTile(t, isTouch) {
     const s = this.s; if (this.busy) return;
     // Deliberate selections (mouse, touch, keyboard) release a locked inspector.
-    if (this.tileInspectLatch?.locked || this.pinnedTerrainTile) { this.resetTileInspectLock(); this.hover = null; this.setHover(t); }
+    if (this.tileInspectLatch?.locked || this.pinnedTerrainTile) { this.releasePinnedTileForAction(); this.setHover(t); }
     if (s.phase !== 'player') { this.reject('Wait for the foes to finish'); return; }
     const tag = key(t.x, t.y) + (this.spell || '');
     if (this.spell) {

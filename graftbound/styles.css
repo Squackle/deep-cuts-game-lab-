@@ -1055,5 +1055,6 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
 /* EU5-style pinned tile details: progress must finish before the panel is interactive.
    The gold line and timer call the same lock transition; unlocked hover stays pass-through. */
 #hud #inspect.terrain-inspect.terrain-locking{pointer-events:none!important}
-#hud #inspect.terrain-inspect.terrain-locked{pointer-events:auto!important;z-index:18}
-#hud #inspect.terrain-inspect.terrain-locked .gb-terrain-details-btn{pointer-events:auto;cursor:pointer}
+/* A pinned panel is informational, not a modal: clicks outside Details pass to the battlefield. */
+#hud #inspect.terrain-inspect.terrain-locked{pointer-events:none!important;z-index:18}
+#hud #inspect.terrain-inspect.terrain-locked .gb-terrain-details-btn{pointer-events:auto!important;cursor:pointer;position:relative;z-index:1}
