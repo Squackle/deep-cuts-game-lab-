@@ -17,6 +17,7 @@ kbd { font-family: var(--sans); font-size: .62em; padding: 1px 5px; border: 1px 
 .muted { opacity: .65; font-style: italic; } .small { font-size: .85rem; }
 #loading { position: absolute; inset: 0; z-index: 90; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: radial-gradient(#13261d, #050b08); transition: opacity .5s; }
 #loading p { font-style: italic; opacity: .8; margin: 0; }
+#loading .load-desktop-note { display: block; font: 400 .72rem/1.4 var(--sans); color: var(--parch2); opacity: .72; letter-spacing: .035em; text-align: center; }
 .load-logo { font-family: var(--display); font-size: 2.2rem; letter-spacing: .32em; color: var(--parch); text-shadow: 0 0 24px rgba(201,162,74,.35); }
 .load-logo b, .logo-word b { color: var(--gold2); font-weight: inherit; }
 #loading.done { opacity: 0; pointer-events: none; } .loadtrack { width: 220px; height: 4px; background: #1c3a2b; border-radius: 2px; overflow: hidden; } #loadbar { display: block; height: 100%; width: 0; background: var(--gold2); transition: width .2s; }
