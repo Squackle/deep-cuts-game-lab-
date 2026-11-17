@@ -16,7 +16,21 @@ export const LEADER_COAT = Object.freeze({ name: 'packLeader', hue: 220, sat: 0.
 export const WOLF_KEYS = Object.freeze(new Set(['mtg_wolf', 'mtg_hound']));
 export const LEADER_KEYS = Object.freeze(new Set(['mtg_alpha']));
 const mix32 = x => { x >>>= 0; x ^= x >>> 16; x = Math.imul(x, 0x7feb352d); x ^= x >>> 15; x = Math.imul(x, 0x846ca68b); x ^= x >>> 16; return x >>> 0; };
-export const wolfCoatFor = (seed, uid) => WOLF_COATS[mix32((seed >>> 0) ^ Math.imul(uid >>> 0, 0x9e3779b1)) % WOLF_COATS.length];
+/** v1.8.1 coat frequencies by BIOME (game-design weights, not a biological census — real wolf colour varies strongly with
+ *  latitude/habitat). Temperate forest: grey/timber common, white rare. Arctic: white common. Weights are integers summing
+ *  to 100; selection is a deterministic hash of (seed, uid) — never combat RNG — and has no rarity meaning in play. */
+export const COAT_WEIGHTS = Object.freeze({
+  temperate: Object.freeze({ timber: 35, grey: 35, russet: 15, shadow: 12, arctic: 3 }),
+  arctic: Object.freeze({ arctic: 70, grey: 20, timber: 5, shadow: 5, russet: 0 }),
+});
+/** Battle themes -> biome. Every current GRAFTBOUND act is temperate (forest hollow, ash warrens, ruined nexus). */
+export const THEME_BIOME = Object.freeze({ hollow: 'temperate', warrens: 'temperate', nexus: 'temperate', tundra: 'arctic', glacier: 'arctic' });
+export function wolfCoatFor(seed, uid, biome = 'temperate') {
+  const w = COAT_WEIGHTS[biome] || COAT_WEIGHTS.temperate, total = Object.values(w).reduce((a, b) => a + b, 0);
+  let r = mix32((seed >>> 0) ^ Math.imul(uid >>> 0, 0x9e3779b1)) % total;
+  for (const coat of WOLF_COATS) { const k = w[coat.name] || 0; if (r < k) return coat; r -= k; }
+  return WOLF_COATS[0];
+}
 function rgb2hsl(r, g, b) { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; if (mx === mn) return [0, 0, l];
   const d = mx - mn, s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn); let h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return [h * 60, s, l]; }
 function hsl2rgb(h, s, l) { const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)); return [f(0), f(8), f(4)].map(v => Math.round(Math.max(0, Math.min(1, v)) * 255)); }

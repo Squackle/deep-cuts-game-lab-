@@ -1058,3 +1058,13 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
 /* A pinned panel is informational, not a modal: clicks outside Details pass to the battlefield. */
 #hud #inspect.terrain-inspect.terrain-locked{pointer-events:none!important;z-index:18}
 #hud #inspect.terrain-inspect.terrain-locked .gb-terrain-details-btn{pointer-events:auto!important;cursor:pointer;position:relative;z-index:1}
+
+/* v1.8.1 Guard badge beside Shield (per-hit reduction, visually distinct from absorbing Shield) */
+.pl-hp .gb-guard{color:#9fd3ff;background:rgba(40,80,120,.35);border:1px dashed rgba(159,211,255,.7);border-radius:6px;padding:0 4px;margin-left:3px;font-style:normal;white-space:nowrap}
+.ulabel .st.gb-guard{background:#1e3a52;color:#cfe8ff;border:1px dashed #9fd3ff}
+@media (max-width:360px){.pl-hp .gb-guard{font-size:.68rem;padding:0 2px}}
+
+/* v1.8.1 ~2x status readability: stronger chip contrast, glow and separation (no layout change) */
+.ulabel .sts .st{box-shadow:0 0 0 1px rgba(0,0,0,.85),0 0 6px currentColor;filter:saturate(1.35) brightness(1.15);font-weight:700}
+.ulabel .intent{box-shadow:0 0 0 1px #000,0 0 8px rgba(255,120,90,.55)}
+@media (prefers-reduced-motion:reduce){.ulabel .sts .st{box-shadow:0 0 0 1px rgba(0,0,0,.85)}}
