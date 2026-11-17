@@ -58,14 +58,14 @@ function fakeTimer() {
   });
   return {latch,advance(ms){now+=ms;for(const [id,t] of [...timers])if(t.at<=now){timers.delete(id);t.fn();}}};
 }
-test('three seconds exactly locks the tile and moving before completion cancels it', () => {
-  assert.equal(TILE_INSPECT_LOCK_DELAY_MS,3000);
+test('one second exactly locks the tile and moving before completion cancels it', () => {
+  assert.equal(TILE_INSPECT_LOCK_DELAY_MS,1000);
   const h=fakeTimer();let a=0,b=0;
-  h.latch.watch({x:1,y:1},()=>a++);h.advance(2500);
+  h.latch.watch({x:1,y:1},()=>a++);h.advance(500);
   assert.equal(h.latch.locked,false);
   h.latch.watch({x:2,y:1},()=>b++);
   h.advance(500);assert.deepEqual([a,b,h.latch.locked],[0,0,false]);
-  h.advance(2500);assert.deepEqual([a,b,h.latch.locked],[0,1,true]);
+  h.advance(500);assert.deepEqual([a,b,h.latch.locked],[0,1,true]);
   h.latch.reset();assert.equal(h.latch.locked,false);
 });
 
@@ -77,7 +77,7 @@ test('the compact tile panel has a 2px gold progress line and a persistent Detai
   assert.match(ui,/this\.resetTileInspectLock\(\)/);
   assert.match(ui,/data-terrain-details/);
   assert.match(css,/\.gb-terrain-lock-progress\{[^}]*height:2px/);
-  assert.match(css,/gb-terrain-lock-fill 3000ms linear forwards/);
+  assert.match(css,/gb-terrain-lock-fill 1000ms linear forwards/);
   assert.match(css,/\.terrain-plain \.gb-terrain-details-btn\{display:inline-flex/);
 });
 
