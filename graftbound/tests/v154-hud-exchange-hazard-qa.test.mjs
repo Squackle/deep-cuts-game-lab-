@@ -22,21 +22,29 @@ for(const [type,desiredHeight,minHeight] of [['tile',148,108],['creature',224,11
    assert.ok(pos.height>=minHeight);
  });
 }
-test('tile info is taller, scrollable and not forcibly limited to two text lines',()=>{
+test('tile info is a short label and details row; the full rules and hazards stay in a modal',()=>{
  const css=source('styles.css'),ui=source('src/ui/battle-ui.js');
- assert.match(css,/#hud #inspect\.terrain-inspect \.gb-terrain-brief-copy\{display:block;overflow:visible/);
- assert.match(css,/max-height:var\(--gb-terrain-height,148px\)!important/);
- assert.match(ui,/desiredHeight:unit\?224:148/);
+ assert.match(css,/#hud #inspect\.terrain-inspect \.gb-terrain-brief-copy\{display:none!important\}/);
+ assert.match(css, /#hud #inspect\.terrain-inspect\{height:var\(--gb-terrain-height,54px\)!important/);
+ assert.match(ui,/desiredHeight:unit\?\(mobile\?48:224\):mobile\?48:/);
+ assert.match(ui,/data-terrain-details/);
+ assert.match(ui,/this\.terrainDetailsHTML\(this\.terrainTile\)/);
  assert.match(ui,/el\.classList\.add\('unit-inspect','show'\)/);
  assert.match(ui,/this\.positionActionCounters\(\)/);
  assert.match(css,/#hud #inspect\.unit-inspect,#hud #inspect\.terrain-inspect\{/);
 });
-test('movement and attack counters are rendered outside the hero card',()=>{
- const ui=source('src/ui/battle-ui.js'),html=source('index.html');
+test('v1.5.0: movement and attack counters are integrated into the hero plate action strip',()=>{
+ const ui=source('src/ui/battle-ui.js'),html=source('index.html'),css=source('styles.css');
  assert.match(html,/id="gb-action-counters"/);
- assert.match(ui,/\$\('gb-action-counters'\)\.innerHTML/);
- const hero=ui.slice(ui.indexOf("$('plate').innerHTML"),ui.indexOf("$('gb-action-counters').innerHTML"));
- assert.doesNotMatch(hero,/class="moves"|class="atk/);
+ const hero=ui.slice(ui.indexOf("$('plate').innerHTML"),ui.indexOf("$('enc-turn')"));
+ assert.match(hero,/class="pl-act"/); assert.match(hero,/class="moves"/); assert.match(hero,/class="atk/);
+ assert.match(css,/#hud \.gb-action-counters:empty\{display:none!important\}/);
+});
+test('v1.8.0: plain and special terrain both use compact inspection, with Details for special tiles',()=>{
+ const ui=source('src/ui/battle-ui.js'),css=source('styles.css');
+ assert.match(ui,/terrain-plain/); assert.match(css,/#inspect\.terrain-inspect\.terrain-plain/);
+ assert.match(ui,/terrain-plain'\)\?46:54/);
+ assert.match(ui,/data-terrain-details/);
 });
 test('exchange lists real GRAFTBOUND effects with separate inspect and confirmed release actions',()=>{
  const ui=source('src/ui/screens.js');
@@ -64,7 +72,7 @@ test('lethal mandatory lava crossing is still rejected',()=>{
  assert.equal(planEnemy(s,enemies(s)[0]).to,null);
 });
 test('AI rule changes have their own ranked replay fingerprint',()=>{
- assert.equal(RULES_VERSION,'graftbound-rules-1.3.9-beta');
- assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,22);
+ assert.equal(RULES_VERSION,'graftbound-rules-1.8.0-beta');
+ assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,27);
  assert.throws(()=>replayRun('gb-expedition-01',[],{revision:21}),/retired challenge/);
 });

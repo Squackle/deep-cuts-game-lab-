@@ -2,16 +2,28 @@
 // directional facing + animation state, dynamic lights, particles, procedural lightning/ring FX meshes,
 // tweens, picking and screen projection. Consumes game state; never decides game outcomes.
 import { createRenderer, SPR_FLOATS } from './gl.js';
+import { makeShadowAtlas, SHADOW_CELL, makeBoneAtlas, BONE_CELL, makeToxicAtlas, TOXIC_CELL } from './shadow-magic.js';
+import { anchorsOf, visualScale, measureBounds, FACES_RIGHT, mirrorFor } from './creature-scale.js';
 import { mul, perspective, ortho, lookAt, xform, invert, I } from './math.js';
 import { Geo } from './geometry.js';
 import { buildEnvironment, swayFor, WIND } from './environment.js';
 import { Particles } from './particles.js';
 import { spriteAnimationFrame, defeatTiming } from './sprite-animation.js';
 import { chooseSpriteDirection } from './hd2d-art-pack.js';
+import { combatFacingTarget } from './combat-facing.js';
 
 export const PX = 1 / 19;
 const PITCH = 0.66;
-const HCOMP = 1 / Math.cos(PITCH);
+/** v1.5.0 middle-mouse orbit: pitch limits keep the camera above the board and gameplay readable. */
+/** v1.5.0 depth separation for props under a creature (world units, along camera forward). */
+/** v1.6.0 presentation clocks (pure; exported for tests). */
+/** v1.7.0: idle runs at a calm fixed tempo (a full 4-frame breath ≈ 2.7 s at the authored 5 fps), on real time,
+ *  independent of Cinematic/Normal/Fast. Actions still follow the speed setting. */
+export const IDLE_TEMPO = 0.3;
+export const idleClockStep = (anim, dt, speed, reduced) => anim === 'idle' ? (reduced ? 0 : dt * IDLE_TEMPO) : dt * speed;
+export const FOLIAGE_PUSH = 0.34;
+export const PITCH_MIN = 0.42, PITCH_MAX = 0.98;
+let HCOMP = 1 / Math.cos(PITCH);
 const ease = k => 1 - Math.pow(1 - k, 3);
 const easeIO = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
 const norm = v => { const l = Math.hypot(...v) || 1; return v.map(c => c / l); };
@@ -24,8 +36,10 @@ export class Scene {
     this.r.atlasBlur = this.r.texture(assets.images.terrainBlur || assets.images.terrain, { nearest: true, repeat: true });
     this.tex = {}; for (const k of Object.keys(this.man.sprites)) this.tex[k] = this.r.texture(assets.images[k]);
     this.foliageTex = this.r.texture(assets.images.foliage);
+    this.shadowTex = this.r.texture(makeShadowAtlas()); this.shadows = [];
+    this.boneTex = this.r.texture(makeBoneAtlas()); this.toxicTex = this.r.texture(makeToxicAtlas());   // v1.8.0 poison smoke   // v1.7.0 skeleton bone pile   // v1.6.0 umbral spell sprites (alpha-tested pixel art)
     this.units = new Map(); this.tweens = []; this.time = 0; this.speed = 1; this.reduced = false;
-    this.yaw = Math.PI / 4; this.yawTarget = this.yaw; this.zoom = 1; this.focus = [0, 0, 0]; this.focusTarget = [0, 0, 0];
+    this.yaw = Math.PI / 4; this.yawTarget = this.yaw; this.pitch = PITCH; this.pitchTarget = PITCH; this.zoom = 1; this.focus = [0, 0, 0]; this.focusTarget = [0, 0, 0];
     this.shakeAmt = 0; this.fx = new Particles(3200); this.fxLights = []; this.static = null; this.w = 8; this.h = 8;
     this.overlay = null; this.danger = null; this.hazard = null; this.blobs = null; this.fxMesh = null; this.ambientT = 0; this.dof = 1;
     this.bolts = []; this.rings = []; this.arrows = []; this.theme = 'hollow'; this.mote = [0.8, 1, 0.55];
@@ -51,23 +65,47 @@ export class Scene {
   }
   addUnit(u, spriteKey, opts = {}) {
     const meta = this.man.sprites[spriteKey];
-    const v = { uid: u.uid, side: u.side, key: spriteKey, tex: opts.tex || this.tex[spriteKey], fw: meta.w, fh: meta.h, pivot: meta.pivotY, hover: meta.hover ? 0.35 : 0,
+    // v1.7.0: feet + horizontal centre come from the MEASURED art bounds (creature-scale.js), not frame constants.
+    const an = anchorsOf(meta, meta.bounds);
+    const v = { uid: u.uid, side: u.side, key: spriteKey, tex: opts.tex || this.tex[spriteKey], fw: meta.w, fh: meta.h, pivot: an.pivot, cx: an.cx, topPx: (meta.boundsAll || meta.bounds)?.y0 ?? 0, hover: meta.hover ? 0.35 : 0,
       pixelScale: meta.pixelScale || 1, animSet: meta.anims || this.man.anims, views: meta.views || this.man.views,
       pos: this.world(u.x, u.y), dir: u.side === 'enemy' ? [0, 1] : [0, -1], anim: 'idle', animT: Math.random(), scale: opts.scale || 1, flash: 0, flashCold: 0, dissolve: 0, outline: 0,
       lunge: [0, 0, 0], spawnK: 1, hidden: false, aura: null };
+    if (!opts.scale) v.scale = visualScale(spriteKey, meta, meta.bounds);
+    if (u.facing) v.dir = [u.facing[0], u.facing[1]];   // v1.7.0: saved last-move direction (engine field)
     this.units.set(u.uid, v); return v;
   }
   setUnitTexture(uid, canvas, scale) {
     const v = this.units.get(uid); if (!v) return;
     if (v.ownTex) this.r.updateTexture(v.ownTex, canvas); else { v.ownTex = this.r.texture(canvas); }
     v.tex = v.ownTex; if (scale) v.scale = scale;
+    // v1.7.0: label/health-bar height from the COMPOSED model (wings, horns...) in front and back idle frames.
+    const rows = Object.keys(v.animSet || this.man.anims).length, b = measureBounds(canvas, v.fw, v.fh, [[0, 0], [0, rows]]); if (b) v.topPx = Math.min(b.y0, v.pivot - 4);
   }
   removeUnit(uid) { this.units.delete(uid); }
+  /** v1.6.0: an alpha-tested shadow sprite (mist / spectral hand). frames: [[col,row],...] with fps, or seq [{at,frame}]. */
+  addShadow(o) { this.shadows.push({ age: -(o.delay || 0), fps: 6, fadeIn: 0.15, fadeOut: 0.3, vel: [0, 0, 0], ...o, pos: o.pos.slice() }); if (this.shadows.length > 160) this.shadows.shift(); }
   play(uid, anim) { const v = this.units.get(uid); if (v) { v.anim = anim; v.animT = 0; } }
-  heightOf(v) { return v.fh * PX * HCOMP * v.scale * (v.pixelScale || 1) * 0.62; }
-  headPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) * 0.95 + 0.05, v.pos[2]]; }
+  /** v1.6.0 non-attack stances. Never touches the attack/cast rows: Guard braces low and wide, Channel rises and
+   *  breathes in. Pure presentation (scale/offset tweens), so it cannot alter action timing or rules. */
+  stance(uid, kind) {
+    const v = this.units.get(uid); if (!v) return Promise.resolve();
+    v.anim = 'idle'; v.animT = 0;
+    if (kind === 'guard') return this.tween(0.42, k => { const e = Math.sin(Math.PI * Math.min(1, k * 1.6)) * (k < 0.62 ? 1 : 0.55); v.squash = e; });
+    return this.tween(0.5, k => { v.castLift = Math.sin(Math.PI * k) * 0.09; v.squash = -Math.sin(Math.PI * k) * 0.5; }).then(() => { v.castLift = 0; v.squash = 0; });
+  }
+  heightOf(v) { return Math.max(0.1, (v.pivot - (v.topPx ?? 0)) * PX * HCOMP * v.scale * (v.pixelScale || 1)); }   // v1.7.0: true visible height
+  headPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) + 0.1, v.pos[2]]; }   // v1.7.0: above the whole model
   centerPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0] + v.lunge[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) * 0.45, v.pos[2] + v.lunge[2]]; }
   face(v, to) { if (!v) return; const dx = to[0] - v.pos[0], dz = to[2] - v.pos[2]; if (Math.abs(dx) + Math.abs(dz) > 0.01) v.dir = [dx, dz]; }
+  /** Visual-only: turn the acting creature toward the real target or telegraphed tiles.
+   * Do not mutate combat units, saved facing or deterministic replay data. */
+  faceCombatEvent(event) {
+    const actor = this.units.get(event?.uid); if (!actor) return false;
+    const to = combatFacingTarget(event, uid => this.units.get(uid)?.pos || null, (x, y) => this.world(x, y));
+    if (!to) return false;
+    this.face(actor, to); return true;
+  }
   tween(dur, fn) { if (this.speed >= 50) { fn(1); return Promise.resolve(); } dur = dur / this.speed; return new Promise(res => this.tweens.push({ t: 0, dur: Math.max(0.001, dur), fn, res })); }
   async movePath(uid, path, perTile = 0.17) {
     const v = this.units.get(uid); if (!v) return; v.anim = 'walk';
@@ -78,7 +116,7 @@ export class Scene {
     }
     v.anim = 'idle';
   }
-  async slide(uid, path) { const v = this.units.get(uid); if (!v || path.length < 2) return; const a = this.world(path[0].x, path[0].y), b = this.world(path.at(-1).x, path.at(-1).y); v.anim = 'hurt'; v.animT = 0; await this.tween(0.25, k => { const e = ease(k); v.pos[0] = a[0] + (b[0] - a[0]) * e; v.pos[2] = a[2] + (b[2] - a[2]) * e; }); }
+  async slide(uid, path) { const v = this.units.get(uid); if (!v || path.length < 2) return; const a = this.world(path[0].x, path[0].y), b = this.world(path.at(-1).x, path.at(-1).y); this.face(v, b); v.anim = 'hurt'; v.animT = 0; await this.tween(0.25, k => { const e = ease(k); v.pos[0] = a[0] + (b[0] - a[0]) * e; v.pos[2] = a[2] + (b[2] - a[2]) * e; }); }
   async teleport(uid, x, y, col = [0.5, 0.8, 1]) {
     const v = this.units.get(uid); if (!v) return;
     this.fx.burst(this.centerPos(uid), col, 26, { speed: 1.2, up: 1 }); this.light(this.centerPos(uid), col, 3, 0.4);
@@ -111,6 +149,12 @@ export class Scene {
   }
   async death(uid, element = null) {
     const v = this.units.get(uid); if (!v) return;
+    if (/Skeleton/i.test(v.key)) {   // v1.7.0: collapse into a bone pile, hold, then fade. The unit view is removed at once,
+      const at = [v.pos[0], v.pos[1], v.pos[2]];   // so there is never an invisible blocker; the pile is a pure decal.
+      await this.tween(0.22, k => { v.squash = k * 1.4; v.dissolve = k * 0.6; }); this.removeUnit(uid);
+      this.addShadow({ tex: 'bones', seq: [{ at: 0, frame: [0, 0] }, { at: 0.18, frame: [1, 0] }], pos: at, size: 0.7, life: this.reduced ? 0.6 : 1.6, fadeIn: 0, fadeOut: 0.5 });
+      return;
+    }
     const timing = defeatTiming(v.animSet); v.anim = timing.authored ? 'defeat' : 'hurt'; v.animT = 0;
     const c = this.centerPos(uid); const colors={fire:[1,0.35,0.1],frost:[0.65,0.9,1],lightning:[0.5,0.7,1],void:[0.48,0.15,0.55],poison:[0.35,0.9,0.3],nature:[0.4,0.9,0.35],radiant:[1,0.9,0.5]}; const col=colors[element]||[0.95,0.85,0.55];this.fx.burst(c,col,44,{speed:2.2,up:element==='frost'?1:2});this.fx.burst(c,element==='void'?[0.16,0.06,0.18]:[0.3,0.2,0.15],18,{speed:1.2,up:0.5,size:18});if(element==='fire'||element==='frost'||element==='void')this.addRing({pos:[c[0],0.08,c[2]],r0:0.15,r1:0.85,life:0.5,col,width:0.07,spokes:element==='frost'?6:5});
     await this.tween(timing.seconds, k => { const t = timing.fadeStart ? Math.max(0, (k - timing.fadeStart) / (1 - timing.fadeStart)) : k; v.dissolve = t; v.flash = 0.3 * (1 - t); }); this.removeUnit(uid);
@@ -148,6 +192,9 @@ export class Scene {
   screenFlash(col, amt = 0.35) { if (this.reduced) amt *= 0.4; this.r.flashCol = col; this.r.flash = amt; }
   shake(a) { this.shakeAmt = Math.max(this.shakeAmt, a); }
   rotate(dir) { this.yawTarget += dir * Math.PI / 2; }
+  /** v1.5.0: free orbit (middle mouse). dx/dy in CSS pixels. */
+  orbit(dx, dy) { this.yawTarget -= dx * 0.0085; this.pitchTarget = Math.min(PITCH_MAX, Math.max(PITCH_MIN, (this.pitchTarget ?? PITCH) + dy * 0.004)); }
+  resetPitch() { this.pitchTarget = PITCH; }
   tileQuads(tiles, y, colFn) {
     const g = new Geo();
     for (const t of tiles) {
@@ -169,7 +216,8 @@ export class Scene {
     const dist = need * 0.9 / this.zoom;
     const sh = this.shakeAmt ? [(Math.random() - 0.5) * this.shakeAmt, (Math.random() - 0.5) * this.shakeAmt] : [0, 0];
     const f = [this.focus[0] + sh[0], this.focus[1] + sh[1], this.focus[2]];
-    const dir = [Math.sin(this.yaw) * Math.cos(PITCH), Math.sin(PITCH), Math.cos(this.yaw) * Math.cos(PITCH)];
+    const P = this.pitch ?? PITCH; HCOMP = 1 / Math.cos(P);
+    const dir = [Math.sin(this.yaw) * Math.cos(P), Math.sin(P), Math.cos(this.yaw) * Math.cos(P)];
     const eye = [f[0] + dir[0] * dist, f[1] + dir[1] * dist, f[2] + dir[2] * dist];
     const view = lookAt(eye, f, [0, 1, 0]);
     const vp = mul(perspective(fov, aspect, 0.5, dist * 3), view);
@@ -202,19 +250,26 @@ export class Scene {
     for (const [tex, list] of byTex) {
       const start = off;
       for (const v of list) {
-        const anims = v.animSet || man.anims; v.animT += dt * this.speed;
+        // v1.6.0: two clocks. ACTION rows (walk/attack/cast/hurt/defeat) follow the animation-speed setting; the IDLE row
+        // (breathing, sway) runs on steady real time so Cinematic/Normal/Fast never change breathing rate.
+        // Reduced motion holds idle on its first frame.
+        const anims = v.animSet || man.anims; v.animT += idleClockStep(v.anim, dt, this.speed, this.reduced);
         const pose = spriteAnimationFrame(v.anim, v.animT, anims);
         if (pose.reset) { v.anim = 'idle'; v.animT = 0; }
         const f = pose.frame;
         const frontDot = v.dir[0] * fwdH[0] + v.dir[1] * fwdH[1];
         const sideDot = v.dir[0] * rH[0] + v.dir[1] * rH[1];
-        const {index:viewIndex, flip} = chooseSpriteDirection(v.views || man.views, frontDot, sideDot);
+        const dirSel = chooseSpriteDirection(v.views || man.views, frontDot, sideDot), viewIndex = dirSel.index;
+        // v1.7.0: native-facing aware mirroring with hysteresis (no idle flip-flopping)
+        const hasSides = (v.views || man.views).includes('left'); const flip = hasSides ? dirSel.flip : (v.lastFlip = mirrorFor(man.sprites[v.key]?.facesRight ?? FACES_RIGHT.has(v.key), sideDot, v.lastFlip ?? false));
         const row = viewIndex * Object.keys(anims).length + anims[v.anim].row;
         const u0 = (f * v.fw) / tex.w, u1 = ((f + 1) * v.fw) / tex.w, v0 = (row * v.fh) / tex.h, v1 = ((row + 1) * v.fh) / tex.h;
         const s = v.scale * v.spawnK, pixelScale = v.pixelScale || 1;
-        const wdt = v.fw * PX * s * pixelScale, hgt = v.fh * PX * HCOMP * s * pixelScale;
+        const sq = v.squash || 0;   // v1.6.0 stance squash: + braces (lower, wider), - stretches (channel)
+        const wdt = v.fw * PX * s * pixelScale * (1 + sq * 0.06), hgt = v.fh * PX * HCOMP * s * pixelScale * (1 - sq * 0.07);
         const bob = v.hover ? Math.sin(this.time * 3 + v.uid) * 0.06 : 0;
-        const c = [v.pos[0] + v.lunge[0], v.pos[1] + v.hover + (v.castLift || 0) + bob - (v.fh - v.pivot) * PX * HCOMP * s * pixelScale, v.pos[2] + v.lunge[2]];
+        const ox = -(v.cx || 0) * (flip ? -1 : 1) * PX * s * pixelScale;   // v1.7.0 centre the ART (not the frame) on the tile
+        const c = [v.pos[0] + v.lunge[0] + rH[0] * ox, v.pos[1] + v.hover + (v.castLift || 0) + bob - (v.fh - v.pivot) * PX * HCOMP * s * pixelScale, v.pos[2] + v.lunge[2] + rH[1] * ox];
         v.flash = Math.max(0, v.flash - dt * 4);
         off = this.pushQuad(this.sprBuf, off, c, wdt, hgt, flip ? [u1, v0, u0, v1] : [u0, v0, u1, v1], [v.flash, v.dissolve, v.outline, v.flashCold]);
       }
@@ -222,13 +277,31 @@ export class Scene {
     }
     const fs = man.foliage.frames, ft = this.foliageTex; const start = off;
     const fx0 = this.focus[0], fz0 = this.focus[2];
-    for (const p of this.static.foliage) {
+    // v1.5.0: a prop sharing a tile with a creature (crystal, shard, mushroom...) used to sit in the SAME camera-facing
+    // plane as the creature and z-fight into a blended mess. Push it behind the occupant along the view direction.
+    const occupied = [...this.units.values()].filter(v => !v.hidden && v.dissolve < 0.99).map(v => v.pos);
+    const behind = (x, z) => occupied.some(q => Math.abs(q[0] - x) < 0.42 && Math.abs(q[2] - z) < 0.42) ? FOLIAGE_PUSH : 0;
+    for (const p0 of this.static.foliage) {
+      const push = behind(p0.x, p0.z); const p = push ? { ...p0, x: p0.x + fwdH[0] * push, z: p0.z + fwdH[1] * push } : p0;
       const fr = fs[p.kind]; if (!fr) continue; const s = p.s || 1;
       const along = (p.x - fx0) * fwdH[0] + (p.z - fz0) * fwdH[1], side = Math.abs((p.x - fx0) * rH[0] + (p.z - fz0) * rH[1]);
       const tall = fr.h * s > 40; const fade = tall && along < -2.5 && side < 7.5 ? Math.min(1, (-along - 2.5) * 0.9 + 0.55) : 0;
       off = this.pushQuad(this.sprBuf, off, [p.x, p.y || 0, p.z], fr.w * PX * s, fr.h * PX * HCOMP * s, [fr.x / ft.w, fr.y / ft.h, (fr.x + fr.w) / ft.w, (fr.y + fr.h) / ft.h], [0, fade, 0, 0], swayFor(p.kind, { reduced: this.reduced, enabled: this.ambientOn, quality: this.r.qName }));
     }
     batches.push({ tex: ft, data: this.sprBuf.subarray(start * SPR_FLOATS), count: off - start });
+    if (this.shadows.length) {
+     for (const texKey of ['shadow', 'bones', 'toxic']) {
+      const st = texKey === 'bones' ? this.boneTex : texKey === 'toxic' ? this.toxicTex : this.shadowTex, sStart = off, C = texKey === 'bones' ? BONE_CELL : texKey === 'toxic' ? TOXIC_CELL : SHADOW_CELL;
+      for (const e of this.shadows) {
+        if (e.age < 0 || (e.tex || 'shadow') !== texKey) continue;
+        const fr = e.seq ? e.seq.filter(k => k.at <= e.age).at(-1)?.frame || e.seq[0].frame : e.frames[Math.floor(e.age * e.fps) % e.frames.length];
+        const u0 = fr[0] * C / st.w, u1 = (fr[0] + 1) * C / st.w; let v0 = fr[1] * C / st.h, v1 = (fr[1] + 1) * C / st.h; if (e.flipY) [v0, v1] = [v1, v0];
+        const dis = Math.max(0, e.fadeIn ? 1 - e.age / e.fadeIn : 0, e.fadeOut ? (e.age - (e.life - e.fadeOut)) / e.fadeOut : 0);
+        off = this.pushQuad(this.sprBuf, off, e.pos, e.size, e.size * HCOMP, [u0, v0, u1, v1], [0, Math.min(1, dis), 0, 0]);
+      }
+      if (off > sStart) batches.push({ tex: st, data: this.sprBuf.subarray(sStart * SPR_FLOATS), count: off - sStart });
+     }
+    }
     return batches;
   }
   /** Builds the additive FX mesh: lightning ribbons (glow + white core) and ground rings/glyphs. */
@@ -288,8 +361,11 @@ export class Scene {
   }
   frame(dtReal) {
     const dt = Math.max(0, Math.min(0.05, dtReal || 0)); this.time += dt;
+    for (const e of this.shadows) { const k = dt * this.speed; e.age += k; if (e.age > 0 && !(e.stopAt != null && e.age > e.stopAt)) for (let a = 0; a < 3; a++) e.pos[a] += e.vel[a] * k; }
+    this.shadows = this.shadows.filter(e => e.age < e.life);
     for (const tw of this.tweens.slice()) { tw.t += dt; const k = Math.min(1, tw.t / tw.dur); tw.fn(k); if (k >= 1) { this.tweens.splice(this.tweens.indexOf(tw), 1); tw.res(); } }
     this.yaw += (this.yawTarget - this.yaw) * Math.min(1, dt * 8);
+    this.pitchTarget = Math.min(PITCH_MAX, Math.max(PITCH_MIN, this.pitchTarget ?? PITCH)); this.pitch += (this.pitchTarget - this.pitch) * Math.min(1, dt * 10);
     for (let a = 0; a < 3; a++) this.focus[a] += (this.focusTarget[a] - this.focus[a]) * Math.min(1, dt * 4);
     this.shakeAmt *= Math.pow(0.002, dt); if (this.shakeAmt < 0.003) this.shakeAmt = 0;
     this.r.flash = Math.max(0, this.r.flash - dt * 1.6);
@@ -329,6 +405,10 @@ export class Scene {
       vel: [W.dir[0] * (0.25 + r() * 0.15), W.rise + (leaf ? -0.05 : 0), W.dir[1] * (0.25 + r() * 0.15)], col: leaf ? [...W.leaf, 0.85] : [...m, 0.7], size: leaf ? 9 + r() * 4 : 4 + r() * 4, life: 5 + r() * 3, drag: 0, grav: leaf ? -0.04 : 0 }); }
     for (const e of this.static.emitters) {
       if (e.kind === 'ley' && r() < 0.35) this.fx.emit({ pos: [e.pos[0] + (r() - 0.5) * 0.6, 0.05, e.pos[2] + (r() - 0.5) * 0.6], vel: [0, 0.5 + r() * 0.4, 0], col: [1, 0.8, 0.35, 0.9], size: 7, life: 1.2, drag: 0.2 });
+      // v1.6.0: Inscribed Page lifts slow drifting glyph flecks; Conduit sparks run along its square channel.
+      if (e.kind === 'page' && r() < 0.18) this.fx.emit({ pos: [e.pos[0] + (r() - 0.5) * 0.5, 0.06, e.pos[2] + (r() - 0.5) * 0.4], vel: [(r() - 0.5) * 0.25, 0.22 + r() * 0.15, (r() - 0.5) * 0.25], col: [1, 0.86, 0.5, 0.85], size: 5, life: 2.2, drag: 0.4 });
+      if (e.kind === 'conduit' && r() < 0.4) { const side = Math.floor(r() * 4), u = r() * 0.64 - 0.32, p = [[u, -0.32], [0.32, u], [-u, 0.32], [-0.32, -u]][side], d = [[1, 0], [0, 1], [-1, 0], [0, -1]][side];
+        this.fx.emit({ pos: [e.pos[0] + p[0], 0.05, e.pos[2] + p[1]], vel: [d[0] * 0.9, 0.05, d[1] * 0.9], col: [0.45, 0.95, 1, 0.95], size: 5, life: 0.35, drag: 0 }); }
       if (e.kind === 'rift' && r() < 0.5) this.fx.emit({ pos: [e.pos[0] + (r() - 0.5) * 0.7, 0.05, e.pos[2] + (r() - 0.5) * 0.7], vel: [(r() - 0.5) * 0.3, 0.7 + r() * 0.5, (r() - 0.5) * 0.3], col: [0.75, 0.4, 1, 0.9], size: 8, life: 1, drag: 0.3 });
       if (e.kind === 'lava' && r() < 0.3) this.fx.emit({ pos: [e.pos[0] + (r() - 0.5) * 0.6, e.pos[1] + 0.02, e.pos[2] + (r() - 0.5) * 0.6], vel: [(r() - 0.5) * 0.2, 0.6 + r() * 0.8, (r() - 0.5) * 0.2], col: [1, 0.5 + r() * 0.3, 0.12, 1], size: 6 + r() * 5, life: 0.9, grav: -0.6, drag: 0.4 });
       if (e.kind === 'fire' || e.kind === 'voidfire') for (let k = 0; k < 2; k++) this.fx.emit({ pos: [e.pos[0] + (r() - 0.5) * 0.15, e.pos[1], e.pos[2] + (r() - 0.5) * 0.15], vel: [(r() - 0.5) * 0.2, 0.9 + r() * 0.6, (r() - 0.5) * 0.2], col: e.kind === 'voidfire' ? (r() < 0.3 ? [0.9, 0.8, 1, 1] : [0.6, 0.3, 1, 1]) : (r() < 0.3 ? [1, 0.9, 0.5, 1] : [1, 0.45, 0.12, 1]), size: 10 + r() * 8, life: 0.5 + r() * 0.3, drag: 1 });

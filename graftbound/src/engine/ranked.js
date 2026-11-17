@@ -6,14 +6,14 @@ import { movePlayer, attack, cast, endTurn, interact, guard, channel, discard, e
 import { expeditionTotals } from './scoring.js';
 import { SCORING_VERSION } from '../data/scoring.js';
 
-export const RULES_VERSION = 'graftbound-rules-1.3.9-beta';
+export const RULES_VERSION = 'graftbound-rules-1.8.0-beta';
 export const CARD_POOL_VERSION = 'real-pool-133-v7';
 export const REPLAY_VERSION = 1;
 export const MAX_DECISIONS = 4000, MAX_SEGMENT = 400;
 
 /** Fixed, versioned challenges. Seeds are authored here; servers never accept a client-chosen seed. */
 export const RANKED_CHALLENGES = {
-  'gb-expedition-01': { id: 'gb-expedition-01', revision: 22, name: 'The First Expedition', seed: 0x5eedcafe, tutorial: true,
+  'gb-expedition-01': { id: 'gb-expedition-01', revision: 27, name: 'The First Expedition', seed: 0x5eedcafe, tutorial: true,
     rulesVersion: RULES_VERSION, cardPoolVersion: CARD_POOL_VERSION, scoringVersion: SCORING_VERSION, status: 'active' },
 };
 export const ACTIVE_CHALLENGE = 'gb-expedition-01';
@@ -35,7 +35,7 @@ const INT = v => Number.isSafeInteger(v) && v >= 0 && v < 1e6;
 const ID = v => typeof v === 'string' && /^[a-z0-9:_-]{1,64}$/i.test(v);
 const SHAPES = {
   node: { node: INT }, move: { x: INT, y: INT }, attack: { uid: INT }, cast: { id: ID, x: INT, y: INT, xValue: v => v === undefined || (INT(v) && v >= 1 && v <= 99) }, interact: { x: INT, y: INT },
-  end: {}, guard: {}, channel: {}, discard: {id:ID}, equip: {id:ID,uid:INT,slot:INT}, reward: { card: ID, release: v => v === undefined || INT(v) }, skip: {}, shrine: { choice: ID, arg: v => v === undefined || INT(v) || ID(v) },
+  end: {}, guard: {}, channel: {}, discard: {id:ID}, equip: {id:ID,uid:INT,slot:INT}, reward: { card: ID, release: v => v === undefined || INT(v) }, skip: { mode: v => v === undefined || v === 'spark' || v === 'threat' }, shrine: { choice: ID, arg: v => v === undefined || INT(v) || ID(v) },
   event: { choice: ID, arg: v => v === undefined || INT(v) || ID(v) },
   combo: { kind: ID, arg: v => v === undefined || INT(v) || ID(v) },
   graft: { kind: ID, arg: v => v === undefined || INT(v) || ID(v) },
@@ -69,7 +69,7 @@ export function applyDecision(run, d) {
     case 'combo': need('battle'); chooseCombo(b,d.kind,d.arg); break;
     case 'graft': need('battle'); activateCombo(b,d.kind,d.arg); break;
     case 'reward': need('reward'); chooseReward(run, d.card, d.release); break;
-    case 'skip': need('reward'); skipReward(run); break;
+    case 'skip': need('reward'); skipReward(run, d.mode || 'spark'); break;
     case 'shrine': need('shrine'); shrineChoice(run, d.choice, d.arg); break;
     case 'event': need('event'); eventChoice(run, d.choice, d.arg); break;
   }

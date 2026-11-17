@@ -23,12 +23,13 @@ const NAME_TO_REGION = Object.freeze({
 });
 /** Resolve every physical feature, not just the strongest of each old single-feature slot. */
 export function resolveAnatomy(evo) {
-  const parts={...(evo?.parts||{})}, scores=Object.fromEntries(MORPH_TYPES.map(t=>[t,0]));
+  const parts={...(evo?.parts||{})}, scores=Object.fromEntries(MORPH_TYPES.map(t=>[t,0])), order=[];
   for(const absorbed of evo?.absorbed||[]){
     const c=resolveCard(absorbed.cardId),type=String(c?.type||c?.sourceInfo?.typeLine||'');
-    for(const [family,pattern] of Object.entries(FAMILY))if(pattern.test(type))scores[family]++;
+    for(const [family,pattern] of Object.entries(FAMILY))if(pattern.test(type)){scores[family]++;if(!order.includes(family))order.push(family);}
   }
-  const families=MORPH_TYPES.filter(t=>scores[t]>0).sort((a,b)=>scores[b]-scores[a]||MORPH_TYPES.indexOf(a)-MORPH_TYPES.indexOf(b));
+  // v1.6.0: ties are broken by ABSORPTION ORDER (first-grafted lineage leads), so Dragon→Bird differs from Bird→Dragon.
+  const families=MORPH_TYPES.filter(t=>scores[t]>0).sort((a,b)=>scores[b]-scores[a]||order.indexOf(a)-order.indexOf(b));
   const physical=Object.keys(parts).filter(k=>Number(parts[k])>0&&NAME_TO_REGION[k]&&!['aura','bulk','venom','moss','eyes','tendrils'].includes(k));
   const features=Object.fromEntries(Object.entries(parts).filter(([,v])=>v>0).map(([k,v])=>[k,Math.min(3,v|0)]));
   const regions=Object.fromEntries(MORPH_REGIONS.map(r=>[r,[]]));
@@ -36,10 +37,14 @@ export function resolveAnatomy(evo) {
   const head=features.beak?'beak':scores.feline>scores.draconic&&scores.feline>0?'feline':scores.draconic?'draconic':features.tusks?'tusked':'neutral';
   const surface=scores.arboreal>0&&scores.arboreal>=scores.draconic?'bark':scores.insectoid>0&&scores.insectoid>scores.draconic?'chitin':scores.draconic>0?'scales':scores.feline>0?'fur':'skin';
   const lower=scores.ungulate>=2?'ungulate':scores.serpentine>=2?'serpentine':'biped';
-  const morph={head,surface,lower,wingKind:scores.avian>scores.draconic?'feather':'membrane',
-    tailKind:scores.serpentine>scores.draconic?'serpent':scores.feline>scores.draconic?'fur':'scaled',
+  const first=(...fs)=>fs.filter(f=>scores[f]>0).sort((a,b)=>scores[b]-scores[a]||order.indexOf(a)-order.indexOf(b))[0];
+  const wingLead=first('avian','draconic'), tailLead=first('serpentine','feline','draconic');
+  const morph={head,surface,lower,wingKind:wingLead==='avian'?'feather':'membrane',
+    // the later lineage leaves a visible trace on the leading one (feather fringe on a membrane, finger struts on feathers)
+    wingTrim:scores.avian>0&&scores.draconic>0?(wingLead==='avian'?'membrane':'feather'):null,
+    tailKind:tailLead==='serpentine'?'serpent':tailLead==='feline'?'fur':'scaled',
     primary:families[0]||'neutral',secondary:families[1]||null};
-  return {features,physical,families,scores,regions,morph,stage:(evo?.absorbed||[]).length,bodyRegions:MORPH_REGIONS};
+  return {features,physical,families,order,scores,regions,morph,stage:(evo?.absorbed||[]).length,bodyRegions:MORPH_REGIONS};
 }
 export function anatomyAnchor(anatomy,name,base){
   if(!Array.isArray(base))return null;

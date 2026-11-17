@@ -1,0 +1,45 @@
+<!doctype html><meta charset="utf-8"><title>graft evolution</title>
+<style>body{background:#28362c;margin:0;padding:8px;color:#e8dcc4;font:12px sans-serif}.row{display:flex;gap:6px;align-items:flex-end;margin:4px 0}
+figure{margin:0;text-align:center;background:#1e2a22;padding:2px}canvas{image-rendering:pixelated;display:block}h3{margin:6px 0 0;font-size:13px}</style>
+<div id="out"></div>
+<script type="module">
+// QA for v1.6.0 graft integration. Uses the REAL composePlayerSheet + native graft pipeline. The painted Blank raster PNGs
+// are not in the text export, so the runtime premium hero is upscaled to the 128 px native frame as a PROXY body.
+import { installPremiumModels } from '../src/rendering/premium-creatures.js';
+import { composePlayerSheet } from '../src/rendering/evolution-visuals.js';
+import { deriveAppearance } from '../src/engine/appearance.js';
+import { newEvolution, absorb } from '../src/engine/evolution.js';
+import { installReferenceSet } from '../src/cards/reference-set.js';
+installReferenceSet();
+const q = new URLSearchParams(location.search), Z = +(q.get('z') || 1.25);
+// v1.8.0: the REAL painted Blank (assets/hd2d/benchmarks) — no proxy body.
+import('../src/rendering/raster-benchmarks.js');
+const { installRasterBenchmarks } = await import('../src/rendering/raster-benchmarks.js');
+const BASE = new URL('../assets/', import.meta.url).href, ld = s => new Promise((r, j) => { const i = new Image(); i.onload = () => r(i); i.onerror = () => j(s); i.src = BASE + s; });
+const images = {}, manifest = { sprites: { blank: { h: 64 }, mtg_friendlySoldier: { h: 64 }, mtg_friendlySquirrel: { h: 64 } } };
+await installRasterBenchmarks(images, manifest, ld);
+const assets = { images, manifest };
+const evoOf = ids => ids.reduce((e, id) => absorb(e, 'mtg:' + id).evo, newEvolution());
+const cell = (sheet, col, row) => { const c = document.createElement('canvas'); c.width = c.height = 128 * Z; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(sheet, col * 128, row * 128, 128, 128, 0, 0, 128 * Z, 128 * Z); return c; };
+const out = document.getElementById('out');
+const show = (title, ids, visual, frames = [[0, 0], [0, 5]]) => {
+  const h = document.createElement('h3'); h.textContent = title; out.appendChild(h); const row = document.createElement('div'); row.className = 'row'; out.appendChild(row);
+  for (const [n, list] of ids) { const app = deriveAppearance(evoOf(list), visual), sheet = composePlayerSheet(assets, app);
+    for (const [col, r] of frames) { const f = document.createElement('figure'); f.appendChild(cell(sheet, col, r)); const cap = document.createElement('figcaption'); cap.textContent = `${n} grafts${r >= 5 ? ' (back)' : ''}`; f.appendChild(cap); row.appendChild(f); } }
+};
+const ONLY = q.get('n') ? q.get('n').split(',').map(Number) : null;
+const DRAGON = ['volcanic-dragon', 'wind-drake', 'snapping-drake', 'canyon-minotaur', 'craw-wurm', 'savannah-lions', 'pillarfield-ox', 'spined-wurm', 'glory-seeker', 'war-mammoth'];
+const single = { skinTone: 4, skinPattern: { mode: 'single', tones: [4] } };
+const mode = q.get('m') || 'stages';
+if (mode === 'stages') show('Draconic path — 0 / 2 / 5 / 8 / 10 grafts (front + back)', (ONLY || [0, 2, 5, 8, 10]).map(n => [n, DRAGON.slice(0, n)]), single);
+if (mode === 'combos') {
+  show('Dragon → Bird (membrane wings, feather fringe)', [[2, ['volcanic-dragon', 'storm-crow']]], single, [[0, 0], [0, 5]]);
+  show('Bird → Dragon (feather wings, membrane struts)', [[2, ['storm-crow', 'volcanic-dragon']]], single, [[0, 0], [0, 5]]);
+  show('Cat warrior (claws, antlers, armor)', [[4, ['brimaz-king-of-oreskos', 'savannah-lions', 'fencing-ace', 'silvercoat-lion']]], { skinTone: 8, skinPattern: { mode: 'single', tones: [8] } }, [[0, 0], [0, 5]]);
+  show('Wurm + Minotaur (tail, horns, bulk)', [[5, ['craw-wurm', 'canyon-minotaur', 'war-mammoth', 'pharika-s-chosen', 'spined-wurm']]], { skinTone: 2, skinPattern: { mode: 'single', tones: [2] } }, [[0, 0], [0, 5]]);
+}
+if (mode === 'skin') {
+  for (const style of ['limbs', 'mantle', 'split', 'patches']) show(`Mixed skin: ${style} (tones 3 + 7)`, [[0, []], [5, DRAGON.slice(0, 5)]], { skinTone: 3, skinPattern: { mode: 'mixed', tones: [3, 7], style } }, [[0, 0], [1, 1], [0, 5]]);
+}
+document.title = 'done';
+</script>

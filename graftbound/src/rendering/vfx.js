@@ -1,3 +1,4 @@
+import { shadowMurder, shadowDisfigure, shadowDrain, shadowInfest } from './shadow-magic.js';
 // Spell VFX library (v0.5). Each spell IDENTITY maps to its own effect (Lightning Bolt ≠ Shock ≠ Flame Slash even
 // when they share a rules template). Effects are pure presentation: they never read or change game state and
 // only use time for animation, so frame rate cannot change outcomes. Every play* returns a promise that resolves
@@ -289,7 +290,7 @@ export async function snakeskin(sc, { from, to, target, charged = false }) {
 }
 /** Distinct hand-authored cast identities for the expanded real-card spellbook. */
 export async function strikeBolt(sc, args) { await lightningBolt(sc, args); }
-export async function murder(sc, args) { await disfigure(sc, args); }
+export async function murder(sc, args) { await shadowMurder(sc, args); }   // v1.6.0 umbral: grasping shadow hand
 export async function revitalize(sc, args) { await heal(sc, args); }
 export async function divination(sc, { from }) {
   const A = [0.45, 0.65, 1];
@@ -299,10 +300,36 @@ export async function divination(sc, { from }) {
   }
   sc.light(from,A,2,0.5,1.3);await sleep(sc,180);
 }
-export const VFX = { strikeBolt, murder, revitalize, divination, snakeskin, disfigure, titanic, pyroclasm, lightningBolt, spark, shock, chain, fire, flameSlash, fireball, frost, poison, heal, salve, shield, growth, drain, summon, wind };
+/** v1.6.0 black-spell identities (spectral hands in mist). The old violet-bolt versions stay exported for reference. */
+const disfigureShadow = args => shadowDisfigure(args.sc, args), drainShadow = null;
+/** v1.7.0 POISON spells: a green orb thrown by the caster bursts into toxic vapour that spreads from the centre over the
+ *  ACTUAL affected tiles (centre → edges → corners) and fades. Low, translucent vapour keeps silhouettes and markers
+ *  readable. Logical damage/status was already applied simultaneously by the engine; this resolves at the burst. */
+/** v1.8.0 timing (seconds, at speed 1): the cloud is fully opaque for TOXIC_HOLD over the WHOLE footprint, then
+ *  dissolves over TOXIC_FADE with an ordered-dither (pixel) dissolve. Rolls outward from the impact by distance. */
+export const TOXIC_SPREAD = 0.22, TOXIC_HOLD = 1.0, TOXIC_FADE = 0.75;
+export async function toxicOrb(sc, { from, to, tiles = [], target }) {
+  const G = [0.45, 1, 0.3], c = [to[0], 0.32, to[2]];
+  await sc.projectile(from || add(to, [0, 1, 0]), c, G, 0.34, 0.55, { size: 34 });   // 1 · the thrown orb
+  sc.light(c, G, 3.2, 0.7, 1.8); sc.addRing({ pos: [to[0], 0.04, to[2]], r0: 0.1, r1: 1.5, life: 0.45, col: G, width: 0.1 });
+  sc.fx.burst(c, G, sc.reduced ? 8 : 22, { speed: 1.6, up: 0.9, size: 12 });   // 2 · burst
+  if (target != null) sc.hit(target, G, false);
+  const area = (tiles.length ? tiles : [to]).map(t => ({ t, d: Math.hypot(t[0] - to[0], t[2] - to[2]) })).sort((a, b) => a.d - b.d);
+  const maxD = Math.max(0.001, ...area.map(a => a.d)), per = sc.reduced ? 2 : 4;
+  area.forEach(({ t, d }, ti) => {          // 3 · dense overlapping volumes roll out from the centre over the real tiles
+    const delay = (d / maxD) * TOXIC_SPREAD, life = TOXIC_SPREAD - delay + TOXIC_HOLD + TOXIC_FADE;
+    for (let k = 0; k < per; k++) {
+      const a = ti * 2.4 + k * 1.57, r = k ? 0.26 : 0.05;
+      sc.addShadow({ tex: 'toxic', frames: [[(ti + k) % 6, 0]], pos: [t[0] + Math.cos(a) * r, -0.05 + k * 0.1, t[2] + Math.sin(a) * r], size: k ? 0.95 : 1.25,
+        life, delay, fadeIn: 0.12, fadeOut: TOXIC_FADE, vel: sc.reduced ? [0, 0, 0] : [Math.cos(a) * 0.05, 0.05, Math.sin(a) * 0.05] });
+    }
+  });
+  await sleep(sc, 120);
+}
+export const VFX = { infest: toxicOrb, toxicOrb, strikeBolt, murder, revitalize, divination, snakeskin, disfigure: (sc, a) => shadowDisfigure(sc, a), titanic, pyroclasm, lightningBolt, spark, shock, chain, fire, flameSlash, fireball, frost, poison, heal, salve, shield, growth, drain: (sc, a) => shadowDrain(sc, a), summon, wind };
 /** The 13 curated real spells and their unique VFX identities (dev/vfx.html gallery + tests). */
 export const SPELL_VFX = { 'Shock': 'shock', 'Lightning Bolt': 'lightningBolt', 'Flame Slash': 'flameSlash', 'Arc Lightning': 'chain', 'Fireball': 'fireball', 'Giant Growth': 'growth',
-  'Drain Life': 'drain', 'Infest': 'poison', 'Raise the Alarm': 'summon', 'Healing Hands': 'heal', 'Healing Salve': 'salve', 'Feat of Resistance': 'shield', 'Frost Breath': 'frost',
+  'Drain Life': 'drain', 'Infest': 'infest', 'Raise the Alarm': 'summon', 'Healing Hands': 'heal', 'Healing Salve': 'salve', 'Feat of Resistance': 'shield', 'Frost Breath': 'frost',
   'Snakeskin Veil': 'snakeskin', 'Disfigure': 'disfigure', 'Titanic Growth': 'titanic', 'Pyroclasm': 'pyroclasm',
   'Lightning Strike': 'strikeBolt', 'Murder': 'murder', 'Revitalize': 'revitalize', 'Divination': 'divination' };
 /** Template/legacy effect -> default visual family (used when a card has no explicit vfx). */

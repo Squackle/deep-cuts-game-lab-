@@ -5,6 +5,7 @@ import { ACTS, REINFORCEMENTS } from '../data/encounters.js';
 import { stepOf } from './power.js';
 import { strengthOf, expectedStrength } from './strength.js';
 import { bossForSeed, BOSS_BY_ID } from '../data/legendary.js';
+import { ENEMIES } from '../data/enemies.js';
 
 export const ARENA_W = 8, ARENA_H = 8;
 function connected(terrain, w, h, start) {
@@ -20,7 +21,21 @@ function connected(terrain, w, h, start) {
   return terrain.every((t, i) => t === T.ROCK || seen.has(i));
 }
 const BOSS_IDS = new Set(['thornmother', 'matron', 'unwritten', ...Object.keys(BOSS_BY_ID)]);
+/** v1.5.0: line-shooting archers come in pairs (never a lone archer). Budget-neutral: a second archer REPLACES the
+ * weakest ordinary filler; if no filler exists, the lone archer becomes that act's basic foe instead. Deterministic. */
+export const isLineShooter = id => ENEMIES[id]?.ai === 'archer';
+export function pairLineShooters(list) {
+  const enemies = list.slice(); const idx = enemies.map((id, i) => isLineShooter(id) ? i : -1).filter(i => i >= 0);
+  if (idx.length !== 1) return enemies;
+  const archer = enemies[idx[0]];
+  const filler = enemies.map((id, i) => ({ id, i, d: ENEMIES[id] })).filter(o => o.d && !o.d.boss && !o.d.elite && !o.d.legendary && !isLineShooter(o.id) && !BOSS_IDS.has(o.id))
+    .sort((a, b) => (a.d.power + a.d.toughness) - (b.d.power + b.d.toughness) || b.i - a.i)[0];
+  if (filler) { enemies[filler.i] = archer; return enemies; }
+  const act = ENEMIES[archer]?.act || 0; const basic = REINFORCEMENTS[act]?.find(id => !isLineShooter(id)) || 'grub';
+  enemies[idx[0]] = basic; return enemies;
+}
 export function buildEncounter(template, seed, kind = 'battle') {
+  template = { ...template, enemies: pairLineShooters(template.enemies) };
   const w = ARENA_W, h = ARENA_H;
   for (let attempt = 0; attempt < 80; attempt++) {
     const rng = makeRng(seed + attempt * 7919);
@@ -30,10 +45,16 @@ export function buildEncounter(template, seed, kind = 'battle') {
     for (const [dx, dy] of DIRS) { const x = playerStart.x + dx, y = playerStart.y + dy; if (x >= 0 && x < w && y >= 0 && y < h) reserved.add(y * w + x); }
     const enemySpots = [];
     const free = (x, y) => terrain[y * w + x] === T.FLOOR && !reserved.has(y * w + x);
-    for (const defId of template.enemies) {
+    const ambushIdx = new Set(template.ambush ? template.enemies.map((d, i) => BOSS_IDS.has(d) ? -1 : i).filter(i => i >= 0).slice(-template.ambush) : []);
+    for (const [ei, defId] of template.enemies.entries()) {
       for (let k = 0; k < 60; k++) {
-        const x = int(rng, w), y = BOSS_IDS.has(defId) ? 1 : int(rng, 3);
-        if (free(x, y) && !enemySpots.some(e => Math.abs(e.x - x) + Math.abs(e.y - y) < 2)) { enemySpots.push({ defId, x, y }); reserved.add(y * w + x); break; }
+        // v1.6.0 ambush: these foes start on the flanks (rows 3-5, outer columns), at least 3 steps from the hero.
+        const amb = ambushIdx.has(ei) && k < 45;
+        const x = amb ? (k % 2 ? w - 1 - int(rng, 2) : int(rng, 2)) : int(rng, w), y = amb ? 3 + int(rng, 3) : BOSS_IDS.has(defId) ? 1 : int(rng, 3);
+        if (amb && Math.abs(x - playerStart.x) + Math.abs(y - playerStart.y) < 3) continue;
+        // v1.5.0: paired archers take different rows AND columns so their firing lanes cross.
+        const laneClash = isLineShooter(defId) && enemySpots.some(e => isLineShooter(e.defId) && (e.x === x || e.y === y || Math.abs(e.x - x) < 2));
+        if (free(x, y) && !laneClash && !enemySpots.some(e => Math.abs(e.x - x) + Math.abs(e.y - y) < 2)) { enemySpots.push({ defId, x, y }); reserved.add(y * w + x); break; }
       }
     }
     if (enemySpots.length !== template.enemies.length) continue;

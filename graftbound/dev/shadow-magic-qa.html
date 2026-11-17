@@ -1,0 +1,7 @@
+<!doctype html><meta charset="utf-8"><title>shadow</title>
+<style>body{background:#3a4a3e;margin:0;padding:12px;color:#eee;font:12px sans-serif}canvas{image-rendering:pixelated;background:#7d8f72}</style>
+<p>Shadow-magic atlas (row 0: mist, wisps, crimson mote; row 1: Emerge, Open, Curl, Grasp, Clench, Pull, Fade) at 4×, on a light ground.</p>
+<script type="module">
+import { makeShadowAtlas } from '../src/rendering/shadow-magic.js';
+const a=makeShadowAtlas(); const c=document.createElement('canvas'); c.width=a.width*4; c.height=a.height*4; const g=c.getContext('2d'); g.imageSmoothingEnabled=false; g.drawImage(a,0,0,c.width,c.height); document.body.appendChild(c); document.title='done';
+</script>

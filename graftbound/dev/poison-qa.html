@@ -1,0 +1,28 @@
+<!doctype html><meta charset="utf-8"><title>poison</title>
+<style>html,body{margin:0;background:#000}canvas{display:block;width:900px;height:600px}</style>
+<canvas id="gl"></canvas>
+<script type="module">
+// v1.8.0 QA: the REAL toxicOrb + scene renderer; real-time ticks so tweens and timers share one clock.
+import { Scene } from '../src/rendering/scene.js';
+import { T } from '../src/core/grid.js';
+import { installRealCreatureModels } from '../src/rendering/real-creature-models.js';
+import { installPremiumModels } from '../src/rendering/premium-creatures.js';
+import { installSpriteBounds } from '../src/rendering/creature-scale.js';
+import { toxicOrb } from '../src/rendering/vfx.js';
+const q = new URLSearchParams(location.search), BASE = new URL('../assets/', import.meta.url).href;
+const img = s => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(s); i.src = BASE + s; });
+const manifest = await (await fetch(BASE + 'sprites/manifest.json')).json(); const images = {};
+await Promise.all(Object.entries(manifest.sprites).map(([k, s]) => img('sprites/' + s.file).then(i => images[k] = i).catch(() => {})));
+installRealCreatureModels(images, manifest); installPremiumModels(images, manifest); installSpriteBounds(images, manifest);
+for (const k of Object.keys(manifest.sprites)) if (!images[k]) delete manifest.sprites[k];
+images.terrain = await img('textures/terrain.png'); images.terrainBlur = await img('textures/terrain_blur.png'); images.foliage = await img('sprites/foliage.png');
+const sc = new Scene(document.getElementById('gl'), { manifest, images, parts: {} }); sc.setQuality && sc.setQuality('balanced');
+const w = 8, h = 8, terrain = new Array(w * h).fill(T.FLOOR); sc.loadArena({ w, h, terrain, crystals: [], units: [] }, 7, 'hollow');
+[[4, 6, 'blank', 'player'], [4, 3, 'mtg_grub', 'enemy'], [3, 2, 'mtg_hound', 'enemy'], [5, 3, 'mtg_archer', 'enemy']].forEach(([x, y, k, side], i) => manifest.sprites[k] && sc.addUnit({ uid: i + 1, side, x, y }, k));
+sc.zoom = 1.9; sc.focus = [0, 0, -0.3]; sc.focusTarget = sc.focus.slice(); sc.speed = 1;
+const at = q.get('t') ? +q.get('t') : 0.2, center = sc.world(4, 3), tiles = []; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const p = sc.world(4 + dx, 3 + dy); tiles.push([p[0], 0, p[2]]); }
+const t0 = performance.now(); toxicOrb(sc, { from: [...sc.world(4, 6)].map((v, i) => i === 1 ? 0.6 : v), to: [center[0], 0.3, center[2]], tiles, target: 2 });
+let last = t0; const tick = () => { const now = performance.now(), dt = (now - last) / 1000; last = now; sc.frame(Math.min(0.05, dt));
+  if ((now - t0) / 1000 < at) setTimeout(tick, 16); else { window.__png = document.getElementById('gl').toDataURL('image/png'); document.title = 'done'; } };
+setTimeout(tick, 16);
+</script>

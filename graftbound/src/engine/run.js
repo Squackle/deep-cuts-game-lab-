@@ -7,15 +7,15 @@ import { createBattle } from './combat.js';
 import { generatePack, MAX_SPELL_LEVEL, primerPack } from './rewards.js';
 import { resolveCard } from '../cards/catalog.js';
 import { stepOf } from './power.js';
-import { SHRINES, rollShrine, offeringCost, MAX_SPARK_FONTS, MAX_MANA_FONTS } from './shrines.js';
+import { SHRINES, rollShrine, offeringCost, penanceCost, PENANCE_REDUCTION, MAX_SPARK_FONTS, MAX_MANA_FONTS } from './shrines.js';
 import { encounterBenchmarks, recordEncounter, newScoring } from './scoring.js';
 import { journalNote, newJournal } from './journal.js';
 import { rollEvent, EVENTS, resolveEvent } from './events.js';
 import { newClock } from './clock.js';
 import { combatSpellbook, refreshLoadout, BASE_HAND_CAPACITY } from './loadout.js';
-import { newWorldThreat, settleWorldThreat, applyWorldThreat, effectiveThreatLevel, threatModifiers } from './world-threat.js';
+import { newWorldThreat, settleWorldThreat, applyWorldThreat, effectiveThreatLevel, threatModifiers, reduceWorldThreat, threatTactics } from './world-threat.js';
 import { giveEquipment, attachRunEquipment } from './attachments.js';
-import { skinToneForSeed } from './visual-identity.js';
+import { skinToneForSeed, skinPatternForSeed } from './visual-identity.js';
 
 export const RUN_VERSION = 9;
 export const TUTORIAL_CARD = 'mtg:typhoid-rats';  // real 1/1 Deathtouch: Blank 1/1 -> 2/2 Deathtouch
@@ -33,7 +33,7 @@ export const graftsFull = run => run.evo.absorbed.length >= graftCapacity(run);
 
 export function newRun({ seed, unlocks = {}, challenges = [], tutorial = false }) {
   const run = {
-    v: RUN_VERSION, seed: seed >>> 0, name: STARTING_NAME, visual: {skinTone: skinToneForSeed(seed)}, evo: newEvolution(), spellbook: [], equipmentInventory:[],equippedEquipment:[null,null], handCapacity: BASE_HAND_CAPACITY, equippedSpellIds: [], sparkBonus: 0, manaBonus: 0, sparkFonts: 0,
+    v: RUN_VERSION, seed: seed >>> 0, name: STARTING_NAME, visual: {skinTone: skinToneForSeed(seed), skinPattern: skinPatternForSeed(seed)}, evo: newEvolution(), spellbook: [], equipmentInventory:[],equippedEquipment:[null,null], handCapacity: BASE_HAND_CAPACITY, equippedSpellIds: [], sparkBonus: 0, manaBonus: 0, sparkFonts: 0,
     act: 0, map: generateMap(seed, { act: 0, tutorial }), current: null, visited: [], phase: 'map', battle: null, pending: null, shrine: null,
     unlocks: { ...unlocks }, challenges: challenges.slice(), tutorial, hp: null, wardNext: 0, actHistory: [], event: null, eventsSeen: [],
     scoring: newScoring(), journal: newJournal(), clock: newClock(false), worldThreat: newWorldThreat(),
@@ -72,9 +72,13 @@ export function enterNode(run, nodeId) {
     for (let i = 0; i < allowance; i++)
       extra.push(choices[((node.seed>>>0)+i)%Math.min(2,choices.length)]);
   }
-  const tpl = extra.length ? { ...base, enemies: [...base.enemies, ...extra] } : base;
+  const tac = threatTactics(activeThreat, { nodeType: node.type, streak: run.worldThreat?.strongStreak || 0 });
+  if (node.type === 'boss' && tac.bossEscorts) { const choices = COUNTERS[run.act][buildFocus(strength.profile)]; for (let i = 0; i < tac.bossEscorts; i++) extra.push(choices[((node.seed >>> 0) + i) % choices.length]); }
+  const tpl0 = extra.length ? { ...base, enemies: [...base.enemies, ...extra] } : base;
+  const tpl = tac.ambush && !(run.act === 0 && node.depth < 2) ? { ...tpl0, ambush: tac.ambush } : tpl0;
   const enc = buildEncounter(tpl, node.seed, node.type);
-  const battle = createBattle({ evo: run.evo, stats: runStats(run), spellbook: run.spellbook.map(e=>({...e})), deckMode:true, handCapacity:run.handCapacity, encounter: enc, seed: node.seed, heroName: run.name, startHp: run.hp, act: run.act });
+  const ambush = !!run.ambushNext && !['tutorial', 'boss'].includes(node.type); if (ambush) run.ambushNext = false;
+  const battle = createBattle({ ambush, evo: run.evo, stats: runStats(run), spellbook: run.spellbook.map(e=>({...e})), deckMode:true, handCapacity:run.handCapacity, encounter: enc, seed: node.seed, heroName: run.name, startHp: run.hp, act: run.act });
   attachRunEquipment(run,battle.units.find(u=>u.hero));
   battle.equipmentInventory=[...(run.equipmentInventory||[])];
   battle.heroEquipmentSlots=[...(run.equippedEquipment||[null,null])];
@@ -85,6 +89,7 @@ export function enterNode(run, nodeId) {
   // run's stored baseline by merely inspecting a stronger character.
   battle.worldThreatBase = run.worldThreat?.level || 0;
   battle.worldThreatAdaptive = Math.max(0, activeThreat - battle.worldThreatBase);
+  battle.threatAtStart = node.type === 'tutorial' ? 0 : activeThreat;   // v1.7.0 immutable snapshot for the score bonus
   applyWorldThreat(battle, { level: activeThreat });
   if (node.type === 'boss') battle.adapt = bossAdaptation(run.act, run.evo, { spellbook: run.spellbook, stats: runStats(run) });
   battle.bench = encounterBenchmarks(node.type, run.act, enc.enemies.length);
@@ -102,7 +107,9 @@ export function concludeBattle(run) {
   const hero = b.units.find(u => u.hero); const max = maxHpOf(run);
   run.stats.battlesWon++;
   if (b.stats.damageTaken === 0) run.stats.flawless++;
-  run.worldThreat = settleWorldThreat(run.worldThreat, { victory: true, tutorial: b.nodeType === 'tutorial', enemyDamage: b.stats.enemyHealthDamage || 0, maxHealth: b.units.find(u=>u.hero)?.maxHp || 1 });
+  { const report = {}; run.worldThreat = settleWorldThreat(run.worldThreat, { victory: true, tutorial: b.nodeType === 'tutorial', enemyDamage: b.stats.enemyHealthDamage || 0, maxHealth: b.units.find(u=>u.hero)?.maxHp || 1, turns: b.turn, boss: b.nodeType === 'boss' }, report);
+    run.lastThreat = { ...report, kind: 'battle', nodeType: b.nodeType, seen: false };
+    const rec = run.scoring?.encounters?.at(-1); if (rec && rec.key === run.act + ':' + run.current) rec.threatAfter = report.after; }   // v1.5.0 authoritative source for the Threat dial
   if (b.nodeType === 'elite') run.stats.elitesDefeated++;
   const isBoss = b.nodeType === 'boss';
   if (isBoss) { run.stats.bossesDefeated++; setHp(run, max); journalNote(run, 'boss', { name: b.name }); }                 // act boss: full recovery
@@ -117,7 +124,7 @@ export function concludeBattle(run) {
   }
   // Single-level Auras are consumed whether or not drawn. All ordinary learned spells persist.
   const consumedAuras=run.spellbook.filter(x=>resolveCard(x.id)?.kind==='aura').map(x=>x.id);
-  if(consumedAuras.length) {run.spellbook=run.spellbook.filter(x=>!consumedAuras.includes(x.id));run.equippedSpellIds=(run.equippedSpellIds||[]).filter(id=>!consumedAuras.includes(id));}
+  if(consumedAuras.length) {run.spellbook=run.spellbook.filter(x=>!consumedAuras.includes(x.id));run.equippedSpellIds=(run.equippedSpellIds||[]).filter(id=>!consumedAuras.includes(id));setHp(run,run.hp);}
   // The final defeated guardian IS the reward. Keep its score/achievement outcome, no pack or skip-Maximum Health.
   if(isBoss && run.act+1>=ACT_COUNT){
     run.actHistory.push({act:run.act,visited:run.visited.slice()});
@@ -125,7 +132,7 @@ export function concludeBattle(run) {
     run.victoryScene='pending';
     return {outcome:'won',boss:true,final:true,elite:false,battleStats:b.stats};
   }
-  const tier = isBoss ? 'boss' : b.nodeType === 'elite' ? 'elite' : 'battle';
+  const tier = isBoss ? 'boss' : b.nodeType === 'elite' || b.ambushed ? 'elite' : 'battle';   // v1.7.0: surviving an ambush pays an elite pack
   const forced = b.nodeType === 'tutorial' ? [TUTORIAL_CARD] : [];
   run.pending = { cards: generatePack(b.rng.s ^ 0x5eed, { tier, forced, ...packOpts(run) }), tier, boss: isBoss };
   // The first level grants three reward choices, each its own pack.
@@ -164,9 +171,10 @@ export function chooseReward(run, cardId, releaseIndex) {
     journalNote(run,'spell',{cardId,name:card.name,level:1});
   } else {
     if (run.pending.tier === 'graftsmith') throw new Error('The Graftsmith offers creatures only');
-    const e = run.spellbook.find(s => s.id === cardId);
+    const e = run.spellbook.find(s => s.id === cardId); const wardBefore = maxHpOf(run);
     if (e) { e.level = Math.min(MAX_SPELL_LEVEL, e.level + 1); change = { kind: 'empower', cardId, level: e.level }; }
     else { run.spellbook.push({ id: cardId, level: 1 }); if ((run.equippedSpellIds || []).length < (run.handCapacity || BASE_HAND_CAPACITY)) (run.equippedSpellIds ||= []).push(cardId); change = { kind: 'learn', cardId, level: 1 }; }
+    if (maxHpOf(run) > wardBefore) setHp(run, run.hp + (maxHpOf(run) - wardBefore));   // v1.4.0 Spellward arrives as fresh health
     journalNote(run, 'spell', { cardId, name: card.name, level: change.level });
     run.stats.spellsLearned++;
   }
@@ -174,8 +182,16 @@ export function chooseReward(run, cardId, releaseIndex) {
   finishReward(run);
   return change;
 }
-export function skipReward(run) {
+export const SKIP_THREAT_REDUCTION = 1;
+/** mode 'spark' (default, unchanged): +1 Maximum Health. mode 'threat' (v1.5.0): Global Threat -1 instead. */
+export function skipReward(run, mode = 'spark') {
   if (run.phase !== 'reward') throw new Error('No reward pending');
+  if (mode === 'threat') {
+    if (!(run.worldThreat?.level > 0)) throw new Error('Global Threat is already at its minimum');
+    const before = run.worldThreat.level; const r = reduceWorldThreat(run.worldThreat, SKIP_THREAT_REDUCTION); run.worldThreat = r.state;
+    run.lastThreat = { before, after: r.state.level, delta: -r.removed, reasons: ['You left a pack behind to calm the world.'], kind: 'skip', seen: true };
+    finishReward(run); return { kind: 'threat', amount: -r.removed };
+  }
   run.sparkBonus += 1; setHp(run, run.hp + 1); finishReward(run);
   return { kind: 'spark', amount: 1 };
 }
@@ -222,6 +238,12 @@ export function shrineChoice(run, choice, arg) {
     case 'inscribe': {
       const e = run.spellbook.find(s => s.id === arg && s.level < MAX_SPELL_LEVEL); if (!e) throw new Error('Choose a spell that can be empowered');
       e.level++; run.phase = 'map'; return done({ kind: 'inscribe', cardId: e.id, level: e.level });
+    }
+    case 'penance': {
+      const cost = penanceCost(shrineView(run)); if (run.hp <= cost) throw new Error('Penance would cost your last health');
+      setHp(run, run.hp - cost); const before = run.worldThreat?.level || 0; const r = reduceWorldThreat(run.worldThreat, PENANCE_REDUCTION); run.worldThreat = r.state;
+      run.lastThreat = { before, after: r.state.level, delta: -r.removed, reasons: [`Penance: ${cost} health offered at the Wayshrine.`], kind: 'penance', seen: true };
+      run.phase = 'map'; return done({ kind: 'penance', cost, amount: -r.removed });
     }
     case 'offering': {
       setHp(run, run.hp - offeringCost(shrineView(run)));

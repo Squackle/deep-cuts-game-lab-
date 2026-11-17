@@ -67,7 +67,7 @@ test('material illumination is directional, bounded and continuous without per-p
   assert.notEqual(materialLightDelta(42,30,96,96,'golem'),materialLightDelta(42,30,96,96,'wolf'));
 });
 test('actual runtime overlay consumes these poses; noisy material hash and gameplay changes are absent',()=>{
-  assert.ok(source.includes("import { CREATURE_MOTION_FAMILIES, creaturePose, materialLightDelta } from './creature-motion.js';"));
+  assert.ok(source.includes("import { CREATURE_MOTION_FAMILIES, creaturePose, materialLightDelta, finishCreatureCell } from './creature-motion.js';"));
   assert.ok(source.includes('motion=creaturePose(feature,anim,frame,back)'));
   assert.ok(source.includes('const delta=materialLightDelta(x,y,w,h,material,edge);'));
   for(const family of ['friendlyDrake','friendlyGoblin','wolf','torchgoblin','saproling'])

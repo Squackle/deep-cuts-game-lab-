@@ -1,0 +1,31 @@
+<!doctype html><meta charset="utf-8"><title>gallery</title>
+<style>body{background:#33443a;margin:0;font:11px sans-serif;color:#eee}#g{display:flex;flex-wrap:wrap;gap:4px;padding:4px}
+figure{margin:0;background:#26332b;padding:2px;text-align:center}canvas{image-rendering:pixelated;display:block}</style>
+<div id="g"></div>
+<script type="module">
+import { installRealCreatureModels } from '../src/rendering/real-creature-models.js';
+import { installPremiumModels } from '../src/rendering/premium-creatures.js';
+import { installLegendaryBosses } from '../src/rendering/legendary-boss-art.js';
+const BASE=new URL('../assets/',import.meta.url).href;
+const img=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(src);i.src=BASE+src;});
+const manifest=await (await fetch(BASE+'sprites/manifest.json')).json();
+const images={};
+await Promise.all(Object.entries(manifest.sprites).map(([k,s])=>img('sprites/'+s.file).then(i=>images[k]=i).catch(()=>{})));
+const t0=performance.now();
+try{installRealCreatureModels(images,manifest);}catch(e){console.error('real',e.message)}
+try{installPremiumModels(images,manifest);}catch(e){console.error('prem',e.message)}
+try{installLegendaryBosses(images,manifest);}catch(e){console.error('boss',e.message)}
+console.log('install ms',Math.round(performance.now()-t0));
+const only=new URLSearchParams(location.search).get('only');
+for(const [k,m] of Object.entries(manifest.sprites)){
+  if(only&&!k.includes(only))continue;
+  const im=images[k]; if(!im)continue; const w=m.w||64,h=m.h||64;
+  const Z=Math.max(1,Math.round(128/Math.max(w,h)))*1.5;
+  const c=document.createElement('canvas');c.width=w*Z;c.height=h*Z;const g=c.getContext('2d');g.imageSmoothingEnabled=false;
+  const sheet=new URLSearchParams(location.search).get('sheet');
+  if(sheet){const rows=Math.round(im.height/h),cols=Math.round(im.width/w);c.width=w*cols*2;c.height=h*rows*2;g.imageSmoothingEnabled=false;g.drawImage(im,0,0,im.width*2,im.height*2);}
+  else g.drawImage(im,0,0,w,h,0,0,w*Z,h*Z);
+  const f=document.createElement('figure');f.appendChild(c);const cap=document.createElement('figcaption');cap.textContent=k+' '+w+'px';f.appendChild(cap);document.getElementById('g').appendChild(f);
+}
+document.title='done';
+</script>

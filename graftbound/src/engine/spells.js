@@ -4,7 +4,7 @@
 import { resolveCard } from '../cards/catalog.js';
 import { availableMana } from './mana.js';
 import { inBounds, unitAt, tileAt, T, manhattan } from '../core/grid.js';
-import { dealDamage, heal, addShield, addStatus, enemies, alive, player, enterTiles } from './abilities.js';
+import { dealDamage, damageBatch, heal, addShield, addStatus, enemies, alive, player, enterTiles } from './abilities.js';
 import { traitDraw } from './trait-triggers.js';
 import { ENEMIES } from '../data/enemies.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
@@ -50,7 +50,8 @@ export function spellTargets(s, id, level = 1) {
   const range = spellRange(id, level);
   for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) {
     const d = Math.abs(x - p.x) + Math.abs(y - p.y);
-    if (c.target === 'tile') { if (tileAt(s, x, y) !== T.ROCK) out.push({ x, y }); continue; }
+    // v1.7.0: AREA spells may be centred on a rock tile.
+    if (c.target === 'tile') { if (tileAt(s, x, y) !== T.ROCK || c.category === 'area') out.push({ x, y }); continue; }
     if (d === 0 || d > range) continue;
     if (unitAt(s, x, y) || tileAt(s, x, y) === T.ROCK || tileAt(s, x, y) === T.LAVA) continue;
     out.push({ x, y });
@@ -114,13 +115,15 @@ export function castSpellEffect(s, ev, id, level, tx, ty, xValue = 1) {
       ev.push({ t: 'area', x: p.x, y: p.y, r: 99, kind: 'firestorm' });
       // Pyroclasm's printed symmetrical damage is deliberate: friendly summons
       // and the hero are creatures too. Take a snapshot before death triggers.
-      for (const unit of s.units.filter(alive)) dealDamage(s, ev, p, unit, n[0], spellDamage);
+      damageBatch(s, ev, p, s.units.filter(alive).map(u => [u, n[0]]), spellDamage);
       break;
     }
     case 'venom_mist': ev.push({ t: 'area', x: tx, y: ty, r: 1, kind: 'mist' }); for (const e of enemies(s)) if (Math.abs(e.x - tx) <= 1 && Math.abs(e.y - ty) <= 1) addStatus(s, ev, e, 'poison', n[0]); break;
     case 'starfall': {
       ev.push({ t: 'area', x: tx, y: ty, r: 1, kind: 'star' });
-      for (const e of enemies(s).filter(e => manhattan(e, { x: tx, y: ty }) <= 1)) dealDamage(s, ev, p, e, e.x === tx && e.y === ty ? n[0] : n[1], spellDamage);
+      // v1.7.0: a damaging blast centred on a rock shatters it into walkable rubble.
+      if (tileAt(s, tx, ty) === T.ROCK) { s.terrain[ty * s.w + tx] = T.FLOOR; (s.rubble ||= []).push({ x: tx, y: ty }); ev.push({ t: 'terrain', tiles: [{ x: tx, y: ty }], kind: 'smash' }); }
+      damageBatch(s, ev, p, enemies(s).filter(e => manhattan(e, { x: tx, y: ty }) <= 1).map(e => [e, e.x === tx && e.y === ty ? n[0] : n[1]]), spellDamage);
       break;
     }
     case 'chain_lightning': {
@@ -190,6 +193,6 @@ function elementalInteraction(s, ev, id, tx, ty) {
   if (el === 'lightning') {   // lightning near a charged crystal makes it discharge once
     const c = (s.crystals || []).find(k => k.charged && near(k, { x: tx, y: ty }, 1)); if (!c) return;
     c.charged = false; ev.push({ t: 'crystal', x: c.x, y: c.y, kind: 'discharge' });
-    for (const e of enemies(s).filter(e => near(e, c, TERRAIN_RULES.crystal.dischargeRadius))) dealDamage(s, ev, player(s), e, TERRAIN_RULES.crystal.dischargeDamage, { kind: 'spell', element: 'lightning' });
+    damageBatch(s, ev, player(s), enemies(s).filter(e => near(e, c, TERRAIN_RULES.crystal.dischargeRadius)).map(e => [e, TERRAIN_RULES.crystal.dischargeDamage]), { kind: 'spell', element: 'lightning' });
   }
 }

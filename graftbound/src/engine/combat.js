@@ -1,11 +1,12 @@
 // Battle state machine. A battle is a plain JSON object (saveable mid-fight). Player actions validate,
 // mutate state and return an ordered list of events consumed by the presentation layer.
-import { reachable, pathTo, manhattan, lineOfSight, tileAt, T, key } from '../core/grid.js';
+import { reachable, pathTo, manhattan, lineOfSight, tileAt, T, key, DIRS } from '../core/grid.js';
+import { traitLevelsOf } from '../cards/graft-levels.js';
 import { makeRng } from '../core/rng.js';
 import { resolveCard as getCard } from '../cards/catalog.js';
-import { player, enemies, allies, alive, has, kv, heal, attackExchange, enterTiles, dealDamage } from './abilities.js';
+import { player, enemies, allies, alive, has, kv, heal, attackExchange, enterTiles, walkPath, dealDamage, smashRock } from './abilities.js';
 import { spellTargets, castSpellEffect, castBlockReason, spellCost } from './spells.js';
-import { actEnemy, actAlly, spawnEnemy, previewIntent, announcePhase , spawnTokensAround, resolveToxrillEndStep } from './ai.js';
+import { actEnemy, actAlly, spawnEnemy, previewIntent, announcePhase , spawnTokensAround, resolveToxrillEndStep, surgeAfterAct } from './ai.js';
 import { STARTING_NAME } from './evolution.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
 import { TACTICS } from '../data/tactics.js';
@@ -19,13 +20,14 @@ import { initialComboEvents, resolveComboEvents, hasComboChoices, comboActivate,
 export const BATTLE_VERSION = 11;
 export const RIFT_DAMAGE = TERRAIN_RULES.rift.pulseDamage, LAVA_DAMAGE = TERRAIN_RULES.lava.endTurnDamage;
 
-export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroName = STARTING_NAME, startHp = null, act = 0, deckMode = false, handCapacity = 7 }) {
+export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroName = STARTING_NAME, startHp = null, act = 0, deckMode = false, handCapacity = 7, ambush = false }) {
   const s = {
     v: BATTLE_VERSION, w: encounter.w, h: encounter.h, terrain: encounter.terrain.slice(), act,
     name: encounter.name, kind: encounter.kind || 'battle', units: [], nextUid: 1, turn: 0, phase: 'player',
     combo:{choices:[],counters:{},actions:{},treasure:0},
     rng: makeRng(seed), spellbook: spellbook.map(x => ({ ...x })),
     traits:[...new Set((evo.absorbed||[]).map(x=>getCard(x.cardId)?.trait).filter(Boolean))],
+    traitLevels:traitLevelsOf(evo.absorbed||[]),   // v1.6.0 duplicate grafts level the ONE registered trait
     p: { mana: 0, storedMana:0, channel:0, channeledTurn:0, maxMana: stats.maxMana, regen: stats.manaRegen, startMana: stats.startMana, arcane: stats.arcane, moveLeft: 0, attacksLeft: 0, cast: {} },
     // v0.6 scoring counters: only actions ACCEPTED by this engine increment them (rejected input throws first).
     stats: { damageDealt: 0, damageTaken: 0, enemyHealthDamage: 0, kills: 0, spellsCast: 0, turns: 0, attacks: 0, actions: 0, moves: 0, tilesMoved: 0, interactions: 0 },
@@ -37,7 +39,8 @@ export function createBattle({ evo, stats, spellbook, encounter, seed = 1, heroN
   s.units.push({ uid: s.nextUid++, side: 'player', hero: true, defId: 'player', name: heroName, x: encounter.playerStart.x, y: encounter.playerStart.y,
     hp, maxHp: stats.maxHealth, power: stats.power, toughness: stats.toughness, move: stats.move, keywords: { ...evo.keywords }, statuses: {} });
   for (const en of encounter.enemies) spawnEnemy(s, en.defId, en.x, en.y);
-  const traitEvents=[];onBattleGrafts(s,traitEvents);initialComboEvents(s,traitEvents);
+  // v1.7.0 Ambush: ONLY the hero's battle-entry graft setup (onBattleGrafts + initialComboEvents) is skipped at deployment.
+  const traitEvents=[];if(ambush){s.ambushed=true;traitEvents.push({t:'ambush',uid:player(s)?.uid});}else{onBattleGrafts(s,traitEvents);initialComboEvents(s,traitEvents);}
   s.openingEvents = resolveComboEvents(s,[...(s.entryEvents || []), ...traitEvents, ...startPlayerTurn(s)]);
   return s;
 }
@@ -58,7 +61,10 @@ export function startPlayerTurn(s) {
   p.statuses.empowered = 0; p.statuses.guard = 0; // Channel charges persist until an eligible cast.
   s.p.conduit = tileAt(s, p.x, p.y) === T.CONDUIT ? TERRAIN_RULES.conduit.spellBonus : 0;
   if (s.p.conduit) ev.push({ t: 'conduit', uid: p.uid, amount: s.p.conduit, x: p.x, y: p.y });   // v0.8 stances last until your next turn begins
-  if (p.statuses.poison > 0) { dealDamage(s, ev, null, p, p.statuses.poison, { kind: 'poison' }); p.statuses.poison--; if (!alive(p)) return finish(s,ev); }
+  if (p.statuses.poison > 0) {   // v1.7.0: only the foe-inflicted share of poison counts as enemy damage
+    const n = p.statuses.poison, foe = Math.min(n, p.poisonByEnemy || 0);
+    if (foe) dealDamage(s, ev, null, p, foe, { kind: 'poison', cause: 'enemy' }); if (n - foe > 0 && alive(p)) dealDamage(s, ev, null, p, n - foe, { kind: 'poison' });
+    p.statuses.poison--; p.poisonByEnemy = Math.min(p.poisonByEnemy || 0, p.statuses.poison); if (!alive(p)) return finish(s,ev); }
   if (kv(p, 'regenerate')) heal(s, ev, p, kv(p, 'regenerate'), 'regenerate');
   if (kv(p, 'ward') && (p.statuses.shield || 0) < kv(p, 'ward')) {
     const add = kv(p, 'ward') - (p.statuses.shield || 0); p.statuses.shield = kv(p, 'ward'); ev.push({ t: 'shield', uid: p.uid, amount: add, total: p.statuses.shield, kind: 'ward' });
@@ -84,10 +90,10 @@ export function movePlayer(s, x, y) {
   ensurePlayerPhase(s);
   const p = player(s); const map = reachable(s, p, s.p.moveLeft); const n = map.get(key(x, y));
   if (!n || !n.stop || n.cost === 0) throw new Error(s.p.moveLeft ? 'Out of reach' : 'No movement left');
-  const path = pathTo(map, x, y); const ev = [{ t: 'move', uid: p.uid, path }];
-  p.x = x; p.y = y; s.p.moveLeft -= n.cost;
+  const path = pathTo(map, x, y); const ev = [];
+  s.p.moveLeft -= n.cost;
   s.stats.actions++; s.stats.moves++; s.stats.tilesMoved += n.cost;
-  enterTiles(s, ev, p, path);
+  walkPath(s, ev, p, path);   // v1.7.0 stepwise hazards
   return finish(s,ev);
 }
 /** A new 4/4 flying Angel is created for every attack by a Spear bearer. */
@@ -277,6 +283,7 @@ export function endTurn(s) {
     if (e.statuses.poison > 0) { dealDamage(s, ev, null, e, e.statuses.poison, { kind: 'poison' }); e.statuses.poison--; if (!alive(e)) continue; }
     ev.push({ t: 'enemyTurn', uid: e.uid });
     actEnemy(s, ev, e);
+    surgeAfterAct(s, ev, e);   // v1.6.0 high-threat telegraph (no-op unless battle.threatSurge)
   }
   // Only allies that survived the enemy wave get their actions. Killed Soldiers
   // cannot retaliate later in the same foe phase.
@@ -344,12 +351,17 @@ export const crystalAt = (s, x, y) => (s.crystals || []).find(c => c.x === x && 
 export function interactOptions(s) {
   if (s.phase !== 'player') return [];
   const p = player(s);
-  return (s.crystals || []).filter(c => c.charged && manhattan(p, c) <= 1).map(c => ({ x: c.x, y: c.y, kind: 'crystal' }));
+  const crystals = (s.crystals || []).filter(c => c.charged && manhattan(p, c) <= 1).map(c => ({ x: c.x, y: c.y, kind: 'crystal' }));
+  // v1.5.0: smash an adjacent rock. Needs your attack; costs all remaining movement and attacks this turn.
+  const rocks = s.p.attacksLeft > 0 ? DIRS.map(([dx, dy]) => ({ x: p.x + dx, y: p.y + dy })).filter(t => t.x >= 0 && t.y >= 0 && t.x < s.w && t.y < s.h && tileAt(s, t.x, t.y) === T.ROCK).map(t => ({ ...t, kind: 'smash' })) : [];
+  return [...crystals, ...rocks];
 }
 export function interact(s, x, y) {
   ensurePlayerPhase(s);
   if (!interactOptions(s).some(o => o.x === x && o.y === y)) throw new Error('Nothing to use there');
-  const c = crystalAt(s, x, y); const ev = [];
+  const opt = interactOptions(s).find(o => o.x === x && o.y === y); const ev = [];
+  if (opt.kind === 'smash') { smashRock(s, ev, player(s), x, y); s.p.moveLeft = 0; s.p.attacksLeft = 0; s.stats.actions++; s.stats.interactions++; return finish(s, ev); }
+  const c = crystalAt(s, x, y);
   c.charged = false; s.stats.actions++; s.stats.interactions++;
   const before = s.p.mana; s.p.mana = Math.min(s.p.maxMana + TERRAIN_RULES.crystal.manaGain, s.p.mana + TERRAIN_RULES.crystal.manaGain);
   ev.push({ t: 'crystal', x, y, kind: 'attune' }, { t: 'mana', from: before, to: s.p.mana });

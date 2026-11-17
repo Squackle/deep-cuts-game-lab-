@@ -15,7 +15,8 @@ function spyCanvas(){
   ellipse(...p){calls.push(['ellipse',...p])},
   bezierCurveTo(...p){calls.push(['bezier',...p])},
   quadraticCurveTo(...p){calls.push(['quad',...p])},
-  createRadialGradient(...p){calls.push(['gradient',...p]);return {addColorStop(){}}}
+  createRadialGradient(...p){calls.push(['gradient',...p]);return {addColorStop(){}}},
+  createLinearGradient(...p){calls.push(['gradient',...p]);return {addColorStop(){}}}
  };
  return g;
 }
@@ -87,7 +88,7 @@ test('runtime integration selects native graft and equipment painters without ch
  const evo=source('../src/rendering/evolution-visuals.js');
  const equip=source('../src/rendering/equipment-visuals.js');
  assert.match(bench,/BENCHMARKS\.map\(async asset=>/);
- assert.match(evo,/if\(native\)drawNativeBlankGraftSheet\(g,app,pass\)/);
+ assert.match(evo,/if\(native\)drawNativeBlankGraftSheet\(lg,app,pass\)/);
  assert.match(equip,/drawNativeBlankGearSheet\(g,ids\)/);
  for(const path of ['../src/rendering/native-blank-art.js','../src/rendering/raster-benchmarks.js'])
   assert.doesNotMatch(source(path),/Math\.random|localStorage|score\s*=|player\.hp\s*=/);
