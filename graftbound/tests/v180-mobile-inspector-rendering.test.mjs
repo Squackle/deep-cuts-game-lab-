@@ -20,7 +20,7 @@ function inspectAt(width, options={}) {
   globalThis.window={
     innerWidth:options.innerWidth ?? width,
     matchMedia:()=>({matches:options.mediaMatches ?? width<=760}),
-    screen:{width:options.screenWidth ?? width},
+    screen:{width:options.screenWidth ?? width,height:options.screenHeight ?? width},
     visualViewport:{width:options.visualWidth ?? width},
     navigator:{maxTouchPoints:options.touch ?? 5}
   };
@@ -54,6 +54,12 @@ test('even a stale 980px CSS viewport on a touch iPhone stays compact',()=>{
   const p=inspectAt(390,{innerWidth:980,mediaMatches:false,visualWidth:390,screenWidth:390,touch:5});
   assert.ok(p.classes.has('unit-compact'));
   assert.doesNotMatch(p.html,/gb-unit-rich|Movement 2/);
+});
+test('landscape iPhone uses the compact inspector despite an 844px CSS viewport',()=>{
+  const p=inspectAt(390,{innerWidth:844,mediaMatches:false,visualWidth:844,screenWidth:844,screenHeight:390,touch:5});
+  // Screen dimensions may swap on orientation; the short edge still identifies a phone.
+  assert.ok(p.classes.has('unit-compact'));
+  assert.equal(p.styles.get('height')[0],'60px');
 });
 test('desktop retains the full creature inspector and no 60px cap',()=>{
   const p=inspectAt(1440,{touch:0});

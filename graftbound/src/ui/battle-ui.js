@@ -303,6 +303,7 @@ export class BattleUI {
       (Number.isFinite(w.innerWidth) && w.innerWidth <= 760) ||
       (w.navigator?.maxTouchPoints > 0 &&
         ((Number.isFinite(w.screen?.width) && w.screen.width <= 760) ||
+         (Number.isFinite(w.screen?.height) && w.screen.height <= 600) ||
          (Number.isFinite(w.visualViewport?.width) && w.visualViewport.width <= 760))));
   }
   /** Both creature and terrain inspectors use real obstacle-aware placement. */
