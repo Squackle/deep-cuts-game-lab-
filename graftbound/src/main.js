@@ -1,5 +1,6 @@
 // GRAFTBOUND app controller: loading -> screens <-> run lifecycle <-> battle UI <-> saves. No game rules here.
 import { Scene } from './rendering/scene.js';
+import { cameraFacingDirection } from './rendering/hd2d-art-pack.js';
 import { duplicatePreview } from './cards/graft-levels.js';
 import { loadAssets } from './rendering/sprites.js';
 import { composePlayerSheet } from './rendering/evolution-visuals.js';
@@ -65,7 +66,14 @@ class App {
     const loop = now => {
       const dt = Math.max(0, Math.min(0.1, (now - last) / 1000)); last = now;
 
-      if (this.mode === 'title' || this.mode === 'intro') this.scene.yawTarget += dt * 0.1;
+      if (this.mode === 'title' || this.mode === 'intro') {
+        this.scene.yawTarget += dt * 0.1;
+        // The title camera slowly orbits; keep only the showcase hero facing the viewer.
+        if (this.mode === 'title') {
+          const titleHero = this.scene.units.get(1);
+          if (titleHero?.side === 'player') titleHero.dir = cameraFacingDirection(this.scene.yaw);
+        }
+      }
       this.scene.frame(dt); this.battle.frame(); this.autoQuality(dt);
       requestAnimationFrame(loop);
     };
@@ -204,7 +212,7 @@ class App {
     this.battle.stop(); this.scene.loadArena(fake, 7, theme || (this.run ? ACTS[this.run.act].theme : 'hollow')); this.audio.setAct(this.run ? this.run.act : 0);
     const ap = deriveAppearance(evo, visualForRun(this.run));
     const v = this.scene.addUnit({ uid: 1, side: 'player', x: 3, y: 4 }, 'blank'); this.scene.setUnitTexture(1, composeEquippedSheet(this.assets,ap,this.run?.equippedEquipment||[]), Math.min(0.94, ap.size * 0.76));
-    v.pos[0] += 0.5; v.dir = [0.3, 1]; v.aura = ap.effects.includes('aura') ? ap.glow : null;
+    v.pos[0] += 0.5; v.dir = cameraFacingDirection(this.scene.yaw); v.aura = ap.effects.includes('aura') ? ap.glow : null;
     this.scene.zoom = 1.75; this.scene.focusTarget = [0.5, 0.2, 0.5]; this.scene.dof = 1.4;
   }
   toTitle() { this.setMode('title'); this.showcase(); UI.titleScreen(this); }
