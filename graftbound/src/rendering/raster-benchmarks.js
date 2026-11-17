@@ -106,12 +106,13 @@ export const CREATURE_ART_STATUS = { installed: [], rejected: [] };
 export const runtimeKeyFor = (key, sprites) => sprites['mtg_' + key] ? 'mtg_' + key : sprites[key] ? key : null;
 export function validateCreatureIndex(index) {
   if (!index || index.schemaVersion !== 1 || !Array.isArray(index.creatures)) throw new Error('creature art index: expected schemaVersion 1 and creatures[]');
-  const seen = new Set();
+  const seen = new Set(), validKey = k => typeof k === 'string' && /^[a-z][A-Za-z0-9]*$/.test(k);
   return index.creatures.map((c, i) => {
-    if (!c || typeof c.key !== 'string' || !/^[a-z][A-Za-z0-9]*$/.test(c.key)) throw new Error(`creature art index: creatures[${i}] invalid key`);
+    if (!c || !validKey(c.key)) throw new Error(`creature art index: creatures[${i}] invalid key`);
+    if (c.art !== undefined && !validKey(c.art)) throw new Error(`creature art index: ${c.key} invalid art reference`);
     if (seen.has(c.key)) throw new Error('creature art index: duplicate ' + c.key); seen.add(c.key);
     if (!CREATURE_SIZES.includes(c.size)) throw new Error(`creature art index: ${c.key} size must be one of ${CREATURE_SIZES.join('/')}`);
-    return { key: c.key, size: c.size, pivot: c.size - 5, file: `creatures/${c.key}-poses.png` };
+    return { key: c.key, size: c.size, pivot: c.size - 5, file: `creatures/${c.art || c.key}-poses.png` };
   });
 }
 export async function installCreatureArt(images, manifest, loadPng, readIndex) {
@@ -119,10 +120,17 @@ export async function installCreatureArt(images, manifest, loadPng, readIndex) {
   if (typeof document === 'undefined') return 0;
   let entries = [];
   try { entries = validateCreatureIndex(await readIndex()); } catch (e) { CREATURE_ART_STATUS.rejected.push({ key: '*', reason: String(e.message || e) }); return 0; }
+  // Alias entries share the same decoded image; never issue redundant network loads.
+  const sourceCache = new Map();
   const staged = await Promise.all(entries.map(async asset => {
     const runtime = runtimeKeyFor(asset.key, manifest.sprites);
     if (!runtime) return { asset, error: 'unknown runtime identity' };
-    try { const src = await loadPng('hd2d/' + asset.file); validateBenchmarkAsset(src, { ...asset, key: runtime }); return { asset, runtime, sheet: buildBenchmarkSheet(src, asset) }; }
+    try {
+      if (!sourceCache.has(asset.file)) sourceCache.set(asset.file, loadPng('hd2d/' + asset.file));
+      const src = await sourceCache.get(asset.file);
+      validateBenchmarkAsset(src, { ...asset, key: runtime });
+      return { asset, runtime, sheet: buildBenchmarkSheet(src, asset) };
+    }
     catch (e) { return { asset, error: String(e.message || e) }; }
   }));
   for (const st of staged) {

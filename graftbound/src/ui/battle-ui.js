@@ -23,7 +23,7 @@ import { castSpellVisual, withTimeout } from '../rendering/casting.js';
 import { ICON } from './icons.js';
 import { esc, cardHTML, backHTML } from './cards.js';
 import { CardAnimationDirector } from './card-animation-director.js';
-import { terrainInspectPlacement } from './terrain-inspect.js';
+import { terrainInspectPlacement, TileInspectLatch } from './terrain-inspect.js';
 import { exileZone, discardRequirement } from '../engine/zones.js';
 import { exilePortalCanvas } from './exile-portal.js';
 import { visualScale } from '../rendering/creature-scale.js';
@@ -44,6 +44,7 @@ export class BattleUI {
     this.app = app; this.audio = app.audio;
     this.disp = new Map(); this.labels = new Map(); this.busy = false; this.spell = null; this.hover = null; this.cursor = null; this.pendingTap = null; this.intents = [];
     this.cardAnimations = new CardAnimationDirector(app); this.concealedDraws=new Map();this.initialHandConcealed=false;
+    this.tileInspectLatch = new TileInspectLatch();
     this.bindInput();
   }
   get scene() { return this.app.scene; }
@@ -70,6 +71,7 @@ export class BattleUI {
   }
   wait(ms) { return new Promise(r => setTimeout(r, ms / this.app.animFactor())); }
   async start(run, s, { fresh }) {
+    this.resetTileInspectLock();
     this._comboShowing=false;this.victoryPlayed=false;this.ending=false;this.cardAnimations.stop(); this.concealedDraws.clear();this.initialHandConcealed=!!fresh&&!!s.deck;this.run = run; this.s = s; this.spell = null; this.hover = null; this.pendingTap = null;
     $('labels').innerHTML = ''; this.labels.clear(); this.disp.clear();
     this.scene.loadArena(s, s.rng.s ^ 0x77, ACTS[s.act || 0].theme); this.audio.setAct(s.act || 0);
@@ -105,7 +107,7 @@ export class BattleUI {
     const duration=this.app.animFactor()>1.5?550:1000;overlay.style.setProperty('--gb-shuffle-ms',duration+'ms');
     try{await new Promise(res=>setTimeout(res,duration+50));}finally{overlay.remove();}
   }
-  stop() { this._comboShowing=false;this.cardAnimations.stop(); this.hideHandPreview(); $('hud').classList.add('hidden'); $('labels').innerHTML = ''; this.labels.clear(); this.s = null; }
+  stop() { this.resetTileInspectLock();this._comboShowing=false;this.cardAnimations.stop(); this.hideHandPreview(); $('hud').classList.add('hidden'); $('labels').innerHTML = ''; this.labels.clear(); this.s = null; }
   addUnitView(u) {
     let v;
     if (u.hero) {
@@ -225,9 +227,12 @@ export class BattleUI {
     // v1.5.0 compact HUD: movement and attacks live in the hero plate's action strip (one coordinated panel).
     $('gb-action-counters').innerHTML = '';
     const strip = $('plate').querySelector('.pl-act');
-    if (strip) strip.innerHTML = `<span class="moves" tabindex="0" data-tip="Movement left this turn (tiles). Hazards may damage ground units.">${ICON.move}<b>${s.phase === 'player' ? s.p.moveLeft : 0}</b><small>move</small></span>
+    if (strip) {
+      strip.classList.toggle('has-treasure', (s.combo?.treasure || 0) > 0);
+      strip.innerHTML = `<span class="moves" tabindex="0" data-tip="Movement left this turn (tiles). Hazards may damage ground units.">${ICON.move}<b>${s.phase === 'player' ? s.p.moveLeft : 0}</b><small>move</small></span>
       <span class="atk ${s.p.attacksLeft > 0 && s.phase === 'player' ? 'on' : ''}" tabindex="0" data-tip="Attacks left this turn.">${ICON.sword}<b>${s.phase === 'player' ? s.p.attacksLeft : 0}</b><small>attack</small></span>
       <span class="gb-reserve" tabindex="0" data-tip="Banked mana and Channel charges persist; Treasure charges from Storm-Kiln Artist also pay for spells.">Bank ${s.p.storedMana||0}${ICON.gem} · ${s.p.channel||0}✧${s.combo?.treasure?' · '+s.combo.treasure+' Treasure':''}</span>`;
+    }
     $('enc-turn').textContent = s.phase === 'player' ? `Turn ${s.turn} · Your move` : `Turn ${s.turn} · Foes act`;
     this.renderHand(s);
     this.renderZones(s);
@@ -473,7 +478,12 @@ export class BattleUI {
     const dealt = pv.dealt.map(d => `${esc(d.e.name)}: −${d.dmg}${d.dead ? ' <b class="kill">defeated</b>' : ''}`).join('<br>');
     return `<div class="preview">${dealt || 'No damage'}${pv.taken > 0 ? `<br><span class="take">You take ${pv.taken}</span>` : '<br><span class="safe">You take nothing</span>'}</div>`;
   }
+  resetTileInspectLock() {
+    this.tileInspectLatch?.reset();
+    $('inspect')?.classList.remove('terrain-locking', 'terrain-locked');
+  }
   showInspect(u, preview) {
+    this.resetTileInspectLock();
     const el = $('inspect');
     el.classList.remove('terrain-inspect', 'unit-inspect', 'unit-compact', 'terrain-no-room', 'terrain-plain');
     if (!u) { this.unitDetailsHTML = null; el.classList.remove('show'); return; }
@@ -594,7 +604,10 @@ export class BattleUI {
     });
   }
   setHover(t) {
+    // Lock after three seconds: cursor movement cannot replace the selected tile's Details panel.
+    if (this.tileInspectLatch?.locked && $('inspect')?.classList.contains('terrain-inspect')) return;
     if ((t && this.hover && t.x === this.hover.x && t.y === this.hover.y) || (!t && !this.hover)) return;
+    this.resetTileInspectLock();
     this.hover = t; this.refreshHighlights();
     if (!t || !this.s) { this.showInspect(null); return; }
     const u = unitAt(this.s, t.x, t.y); let preview = null;
@@ -618,10 +631,17 @@ export class BattleUI {
     el.classList.remove('unit-inspect');
     el.classList.toggle('terrain-plain', !w && rows.length <= 1 && rows.every(r => r.kind === 'info' && !/Rock|Crystal/i.test(r.name)));
     el.classList.add('terrain-inspect','show');
+    el.innerHTML += '<div class="gb-terrain-lock-progress" aria-hidden="true"></div>';
     this.positionTerrainInspect();
     // Ultra-short layouts cannot fit a panel between plate and controls.
     // A direct tile tap can still open full details without obscuring the hand.
-    if(el.classList.contains('terrain-no-room')) el.classList.remove('show');
+    if(el.classList.contains('terrain-no-room')) { el.classList.remove('show'); return; }
+    el.classList.add('terrain-locking');
+    (this.tileInspectLatch ??= new TileInspectLatch()).watch(t, () => {
+      if (!this.s || !el.classList.contains('terrain-inspect') || !el.classList.contains('show')) return;
+      el.classList.remove('terrain-locking');
+      el.classList.add('terrain-locked');
+    });
   }
   maybeAutoEnd() {
     const s = this.s;
@@ -635,7 +655,7 @@ export class BattleUI {
       this.autoEnds = (this.autoEnds || 0) + 1; await this.doEndTurn();
     }, 520 / Math.min(this.app.animFactor(), 10));
   }
-  cancel() { this.spell = null; this.spellX = null; this.pendingTap = null; this.refresh(); }
+  cancel() { this.resetTileInspectLock(); this.spell = null; this.spellX = null; this.pendingTap = null; this.hover = null; $('inspect')?.classList.remove('show'); this.refresh(); }
   /** v1.5.0: opening orientation. The hero and allies face the centroid of living foes (or the board centre);
    *  foes face the hero. Uses the same face() as movement/attacks, so directional animation stays consistent. */
   faceOpening(s) {
@@ -705,6 +725,8 @@ export class BattleUI {
   }
   onTile(t, isTouch) {
     const s = this.s; if (this.busy) return;
+    // Deliberate selections (mouse, touch, keyboard) release a locked inspector.
+    if (this.tileInspectLatch?.locked) { this.resetTileInspectLock(); this.hover = null; this.setHover(t); }
     if (s.phase !== 'player') { this.reject('Wait for the foes to finish'); return; }
     const tag = key(t.x, t.y) + (this.spell || '');
     if (this.spell) {

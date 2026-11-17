@@ -38,7 +38,7 @@ export const SPELLS = [
   { id: 'gale_push',      name: 'Gale Push',      rarity: 'common',   color: 'tide',    cost: 1, target: 'enemy', art: 'wind',   category: 'control',    text: 'Push a foe 2 tiles away from you. If it collides, it and what it hits take {2}.' },
   { id: 'blink_step',     name: 'Blink Step',     rarity: 'uncommon', color: 'tide',    cost: 1, target: 'empty', range: 3, art: 'swirl',  category: 'movement',   text: 'Teleport to an empty tile up to {3} away.' },
   { id: 'rootsnare',      name: 'Rootsnare',      rarity: 'uncommon', color: 'verdant', cost: 2, target: 'enemy', art: 'root',   category: 'disable',    text: 'Deal {1} and Stun a foe: it loses its next action.' },
-  { id: 'venom_mist',     name: 'Venom Mist',     rarity: 'uncommon', color: 'umbral',  cost: 2, target: 'tile',  art: 'mist',   category: 'area',       text: 'Poison {2} to foes in a 3×3 area.' },
+  { id: 'venom_mist',     name: 'Venom Mist',     rarity: 'uncommon', color: 'umbral',  cost: 2, target: 'tile',  art: 'mist',   category: 'area',       text: 'Poison {2} to all creatures in a 3×3 area.' },
   { id: 'mending_rain',   name: 'Mending Rain',   rarity: 'uncommon', color: 'tide',    cost: 2, target: 'self',  art: 'rain',   category: 'healing',    text: 'Heal {4} and cleanse poison and weakness.' },
   { id: 'soul_siphon',    name: 'Soul Siphon',    rarity: 'uncommon', color: 'umbral',  cost: 2, target: 'enemy', art: 'siphon', category: 'damage',     text: 'Deal {2} damage and heal that much.' },
   { id: 'call_sproutling',name: 'Call Sproutling',rarity: 'uncommon', color: 'verdant', cost: 2, target: 'empty', range: 2, art: 'sprout', category: 'summon',     text: 'Summon a {2}/{2} ally beside you for this battle. It fights foes on its own.' },

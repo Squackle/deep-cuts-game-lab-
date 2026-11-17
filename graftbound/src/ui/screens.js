@@ -113,17 +113,40 @@ function challengesModal(app) {
 }
 function codexModal(app) {
   const seen = app.meta.seen; const all = rewardCards();
-  const w = rarityWeights(0); const tot = Object.values(w).reduce((a, b) => a + b, 0);
-  const m = app.openModal(`<h2>Codex <small>${all.filter(c => seen[c.id]).length} / ${all.length} real cards discovered</small></h2>
-    <p class="muted small">Card eligibility depends on your progress and GRAFTBOUND power budget; actual Common, Uncommon, Rare, and Mythic drop chances differ by pack tier. The cosmetic treatment is rolled separately.</p>
-    <div class="codex">${all.map(c => seen[c.id] ? `<button type="button" class="cx" data-zoom="${esc(c.id)}">${cardHTML(c.id, { small: true, uid: 'cx' })}</button>` : `<div class="lc-card unknown"><div class="face front"><div class="q">?</div><small>Undiscovered</small></div></div>`).join('')}</div>
+  const discovered = all.filter(c => seen[c.id]);
+  const m = app.openModal(`<h2>Codex <small>${discovered.length} / ${all.length} real cards discovered</small></h2>
+    <p class="muted small">Discovered cards display their actual Magic: The Gathering card images from Scryfall when online. Undiscovered cards keep their identities hidden. The GRAFTBOUND adaptations remain available under Details.</p>
+    <div class="codex">${all.map(c => seen[c.id] ? `<button type="button" class="cx" data-zoom="${esc(c.id)}" aria-label="Inspect ${esc(c.name)}">${cardHTML(c.id, { small: true, uid: 'cx' })}</button>` : `<div class="lc-card unknown codex-unknown" aria-label="Undiscovered Magic card"><div class="face front"><div class="codex-mtg-back">${backHTML()}</div><small class="unknown-label">Undiscovered</small></div></div>`).join('')}</div>
     <div class="modal-actions"><button type="button" class="btn" data-close>Close</button></div>`, 'wide');
   m.addEventListener('click', e => { const z = e.target.closest('[data-zoom]'); if (z) inspectCard(app, z.dataset.zoom, { back: () => codexModal(app) }); });
+  // The title-menu Codex previously rendered before any Scryfall enrichment.
+  // Fetch only visible discovered cards; the adapter rate-limits and caches requests.
+  // Replace just the card face, never the scroller or button, preserving scroll position.
+  if (app.live) {
+    const cards = [...m.querySelectorAll('.codex [data-zoom]')];
+    const paint = button => app.live.enrich(button.dataset.zoom).then(card => {
+      if (card && button.isConnected && m.isConnected)
+        button.innerHTML = cardHTML(button.dataset.zoom, { small: true, uid: 'cx' });
+    }).catch(() => { /* offline or rate limited: retain the accessible local card */ });
+    if (typeof IntersectionObserver === 'function') {
+      const observer = new IntersectionObserver(entries => {
+        if (!m.isConnected) { observer.disconnect(); return; }
+        for (const entry of entries) if (entry.isIntersecting) { observer.unobserve(entry.target); paint(entry.target); }
+      }, { rootMargin: '180px 0px' });
+      cards.forEach(button => observer.observe(button));
+    } else cards.forEach(paint);
+  }
 }
 export function inspectCard(app, id, { evo = null, level = 1, arcane = 0, back = null } = {}) {
   const m = app.openModal(`<div class="inspect-card">${cardHTML(id, { evo, level, arcane, uid: 'zm', extraClass: 'big' })}<div class="inspect-side">${sourcePanelHTML(id)}</div></div>
     <div class="modal-actions"><button type="button" class="btn primary" data-close>Close</button></div>`, 'wide dark');
   if (back) m.querySelector('[data-close]').addEventListener('click', () => setTimeout(back, 0));
+  // Upgrade an inspected Codex/reward card in place when its real Scryfall face arrives.
+  if (app.live) app.live.enrich(id).then(card => {
+    if (!card || !m.isConnected) return;
+    const panel = m.querySelector('.inspect-card');
+    if (panel) panel.innerHTML = `${cardHTML(id, { evo, level, arcane, uid: 'zm', extraClass: 'big' })}<div class="inspect-side">${sourcePanelHTML(id)}</div>`;
+  }).catch(() => {});
 }
 function achievementsModal(app) {
   const a = app.meta.achievements;

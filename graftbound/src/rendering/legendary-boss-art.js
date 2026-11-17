@@ -394,6 +394,7 @@ function sheet(name){
 export function installLegendaryBosses(images,manifest){
  if(typeof document==='undefined')return;
  for(const name of Object.keys(DRAW)){
+  if(!LEGENDARY_BOSS_KEYS.includes(name))continue; // retired original bosses never reappear in the art registry
   const key=LEGENDARY_BOSS_KEYS.includes(name)?'mtg_'+name:name;
   const advanced=ADVANCED_BOSS_KEYS.includes(name);
   images[key]=sheet(name);
