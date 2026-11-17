@@ -854,6 +854,9 @@ export class BattleUI {
     for (let idx = 0; idx < events.length; idx++) {
       const e = events[idx];
       const d = e.uid != null ? this.disp.get(e.uid) : null;
+      // Targeted blows, spells and telegraphed attacks use their actual visual aim point.
+      // Movement retains the per-step direction supplied by Scene.movePath.
+      if (e.uid != null) sc.faceCombatEvent(e);
       switch (e.t) {
         case 'turn':
           if (e.phase === 'player' && e.turn > 1) { au.play('turn'); await this.banner('Your Turn', 'you'); }

@@ -10,6 +10,7 @@ import { buildEnvironment, swayFor, WIND } from './environment.js';
 import { Particles } from './particles.js';
 import { spriteAnimationFrame, defeatTiming } from './sprite-animation.js';
 import { chooseSpriteDirection } from './hd2d-art-pack.js';
+import { combatFacingTarget } from './combat-facing.js';
 
 export const PX = 1 / 19;
 const PITCH = 0.66;
@@ -97,6 +98,14 @@ export class Scene {
   headPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) + 0.1, v.pos[2]]; }   // v1.7.0: above the whole model
   centerPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0] + v.lunge[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) * 0.45, v.pos[2] + v.lunge[2]]; }
   face(v, to) { if (!v) return; const dx = to[0] - v.pos[0], dz = to[2] - v.pos[2]; if (Math.abs(dx) + Math.abs(dz) > 0.01) v.dir = [dx, dz]; }
+  /** Visual-only: turn the acting creature toward the real target or telegraphed tiles.
+   * Do not mutate combat units, saved facing or deterministic replay data. */
+  faceCombatEvent(event) {
+    const actor = this.units.get(event?.uid); if (!actor) return false;
+    const to = combatFacingTarget(event, uid => this.units.get(uid)?.pos || null, (x, y) => this.world(x, y));
+    if (!to) return false;
+    this.face(actor, to); return true;
+  }
   tween(dur, fn) { if (this.speed >= 50) { fn(1); return Promise.resolve(); } dur = dur / this.speed; return new Promise(res => this.tweens.push({ t: 0, dur: Math.max(0.001, dur), fn, res })); }
   async movePath(uid, path, perTile = 0.17) {
     const v = this.units.get(uid); if (!v) return; v.anim = 'walk';
@@ -107,7 +116,7 @@ export class Scene {
     }
     v.anim = 'idle';
   }
-  async slide(uid, path) { const v = this.units.get(uid); if (!v || path.length < 2) return; const a = this.world(path[0].x, path[0].y), b = this.world(path.at(-1).x, path.at(-1).y); v.anim = 'hurt'; v.animT = 0; await this.tween(0.25, k => { const e = ease(k); v.pos[0] = a[0] + (b[0] - a[0]) * e; v.pos[2] = a[2] + (b[2] - a[2]) * e; }); }
+  async slide(uid, path) { const v = this.units.get(uid); if (!v || path.length < 2) return; const a = this.world(path[0].x, path[0].y), b = this.world(path.at(-1).x, path.at(-1).y); this.face(v, b); v.anim = 'hurt'; v.animT = 0; await this.tween(0.25, k => { const e = ease(k); v.pos[0] = a[0] + (b[0] - a[0]) * e; v.pos[2] = a[2] + (b[2] - a[2]) * e; }); }
   async teleport(uid, x, y, col = [0.5, 0.8, 1]) {
     const v = this.units.get(uid); if (!v) return;
     this.fx.burst(this.centerPos(uid), col, 26, { speed: 1.2, up: 1 }); this.light(this.centerPos(uid), col, 3, 0.4);
