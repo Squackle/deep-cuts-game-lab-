@@ -90,6 +90,47 @@ test('locked tile Details is pointer-interactive, while unlocked hover remains p
   assert.match(ui,/animationName === 'gb-terrain-lock-fill'/);
   assert.match(ui,/\.lockNow\(\)/);
   assert.match(ui,/\[data-terrain-details\]/);
-  assert.match(ui,/\.openModal\(this\.terrainDetailsHTML\(this\.terrainTile\)\)/);
+  assert.match(ui,/this\.openTerrainDetails\(\)/);
   assert.match(ui,/cv\.addEventListener\('pointerleave'/);
+});
+
+test('opening tile Details immediately releases the pin, hides the hover panel, and allows normal play on return',()=>{
+  const h=setup();try{
+    const {ui,inspect,clock}=h;
+    const opened=[];
+    ui.app.openModal=details=>opened.push(details);
+    ui.terrainDetailsHTML=t=>`Tile ${t.x},${t.y} rules`;
+    ui.setHover({x:1,y:1});clock.advance(TILE_INSPECT_LOCK_DELAY_MS);
+    assert.equal(clock.latch.locked,true);
+    const originalBattle=ui.s;
+    ui.openTerrainDetails();
+    assert.deepEqual(opened,['Tile 1,1 rules']);
+    assert.equal(clock.latch.locked,false,'Details clears lock immediately');
+    assert.equal(ui.pinnedTerrainTile,null);
+    assert.equal(ui.terrainTile,null,'Details cannot reopen a stale tile');
+    assert.equal(ui.hover,null);
+    assert.equal(inspect.classList.contains('show'),false,'panel no longer blocks play');
+    assert.equal(inspect.classList.contains('terrain-locked'),false);
+    assert.equal(ui.s,originalBattle,'only UI state was changed');
+    // The modal has now been dismissed: a new pointer hover must work without clicking unlock.
+    ui.setHover({x:4,y:4});
+    assert.deepEqual(ui.terrainTile,{x:4,y:4});
+    assert.equal(inspect.classList.contains('show'),true);
+    assert.equal(inspect.classList.contains('terrain-locking'),true);
+    assert.equal(clock.latch.locked,false);
+    clock.advance(TILE_INSPECT_LOCK_DELAY_MS);
+    assert.equal(clock.latch.locked,true);
+    assert.deepEqual(ui.pinnedTerrainTile,{x:4,y:4});
+  }finally{h.restore();}
+});
+test('terrain Details ignores absent battle or tile and never changes combat state',()=>{
+  const h=setup();try{
+    const {ui,clock}=h;
+    const opened=[];ui.app.openModal=html=>opened.push(html);ui.terrainDetailsHTML=t=>String(t.x);
+    ui.openTerrainDetails();assert.deepEqual(opened,[]);
+    ui.setHover({x:2,y:1});clock.advance(TILE_INSPECT_LOCK_DELAY_MS);
+    ui.s=null;
+    ui.openTerrainDetails();assert.deepEqual(opened,[]);
+    assert.equal(clock.latch.locked,true,'ignored click cannot accidentally reset an unrelated UI state');
+  }finally{h.restore();}
 });

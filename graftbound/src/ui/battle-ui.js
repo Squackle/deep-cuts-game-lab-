@@ -486,6 +486,17 @@ export class BattleUI {
     el?.classList.remove('terrain-locking', 'terrain-locked');
     el?.removeAttribute?.('data-tile-pinned');
   }
+  /** Opening terrain Details consumes the pin; closing the modal returns to normal hover/controls. */
+  openTerrainDetails() {
+    if (!this.s || !this.terrainTile) return;
+    const details = this.terrainDetailsHTML(this.terrainTile);
+    this.resetTileInspectLock();
+    this.terrainTile = null;
+    this.hover = null;
+    this.showInspect(null);
+    this.refreshHighlights();
+    this.app.openModal(details);
+  }
   showInspect(u, preview) {
     this.resetTileInspectLock();
     const el = $('inspect');
@@ -564,7 +575,7 @@ export class BattleUI {
           && $('inspect').classList.contains('terrain-locking')) this.tileInspectLatch?.lockNow();
     });
     $('inspect').addEventListener('click',e=>{
-      if(e.target.closest('[data-terrain-details]') && this.s && this.terrainTile) this.app.openModal(this.terrainDetailsHTML(this.terrainTile));
+      if (e.target.closest('[data-terrain-details]')) { e.stopPropagation(); this.openTerrainDetails(); return; }
       if(e.target.closest('[data-unit-details]') && this.s && this.unitDetailsHTML) this.app.openModal(this.unitDetailsHTML);
       if(e.target.closest('[data-unit-dismiss]')) this.setHover(null);
     });
