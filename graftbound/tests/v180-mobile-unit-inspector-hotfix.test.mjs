@@ -13,23 +13,23 @@ const mobileScreens = [
 ];
 for(const x of mobileScreens){
  test(`mobile unit mini-dock on ${x.name} fits without covering other HUD controls`,()=>{
-   const p=terrainInspectPlacement({...x,desiredHeight:72,minHeight:72,maxWidth:300});
-   assert.equal(p.fits,true,JSON.stringify(p));assert.equal(p.height,72);
+   const p=terrainInspectPlacement({...x,desiredHeight:60,minHeight:60,maxWidth:300});
+   assert.equal(p.fits,true,JSON.stringify(p));assert.equal(p.height,60);
    const dock=box(p.left,p.top,p.left+p.width,p.top+p.height);
    for(const name of ['plate','zones','tray','endTurn','topButtons']) assert.equal(overlap(dock,x[name]),false,`overlaps ${name}`);
  });
 }
-test('mobile uses a 72px compact creature summary with explicit on-demand detail and dismiss actions',()=>{
+test('mobile uses a 60px compact creature summary with explicit on-demand detail and dismiss actions',()=>{
  const js=src('src/ui/battle-ui.js'),css=src('styles.css');
- assert.match(js,/desiredHeight:unit\?\(mobile\?72:224\)/);
- assert.match(js,/minHeight:unit\?\(mobile\?72:112\)/);
+ assert.match(js,/desiredHeight:unit\?\(mobile\?60:224\)/);
+ assert.match(js,/minHeight:unit\?\(mobile\?60:112\)/);
  assert.match(js,/maxWidth:unit\?\(mobile\?300:350\)/);
  assert.match(js,/data-unit-details/);assert.match(js,/data-unit-dismiss/);
  assert.match(js,/this\.app\.openModal\(this\.unitDetailsHTML\)/);
  assert.match(js,/this\.setHover\(null\)/);
  assert.match(js,/gb-unit-vitals/);assert.match(js,/compactIntent/);assert.match(js,/compactPreview/);
  assert.match(js,/class="gb-unit-rich"/);
- assert.match(css,/#hud #inspect\.unit-inspect\{padding:5px 7px;max-height:72px!important;height:72px!important/);
+ assert.match(css,/#hud #inspect\.unit-inspect\{padding:4px 7px;max-height:60px!important;height:60px!important/);
  assert.match(css,/#hud #inspect\.unit-inspect \.gb-unit-rich\{display:none\}/);
  assert.match(css,/#hud #inspect\.unit-inspect \.gb-unit-brief\{display:flex/);
  assert.match(css,/@media\(max-width:760px\)/);

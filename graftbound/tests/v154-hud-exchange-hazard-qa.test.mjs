@@ -26,7 +26,7 @@ test('tile info is a short label and details row; the full rules and hazards sta
  const css=source('styles.css'),ui=source('src/ui/battle-ui.js');
  assert.match(css,/#hud #inspect\.terrain-inspect \.gb-terrain-brief-copy\{display:none!important\}/);
  assert.match(css, /#hud #inspect\.terrain-inspect\{height:var\(--gb-terrain-height,54px\)!important/);
- assert.match(ui,/desiredHeight:unit\?\(mobile\?72:224\):mobile\?48:/);
+ assert.match(ui,/desiredHeight:unit\?\(mobile\?60:224\):mobile\?48:/);
  assert.match(ui,/data-terrain-details/);
  assert.match(ui,/this\.terrainDetailsHTML\(this\.terrainTile\)/);
  assert.match(ui,/el\.classList\.add\('unit-inspect','show'\)/);
