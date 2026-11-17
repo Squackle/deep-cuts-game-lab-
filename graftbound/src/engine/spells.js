@@ -118,7 +118,12 @@ export function castSpellEffect(s, ev, id, level, tx, ty, xValue = 1) {
       damageBatch(s, ev, p, s.units.filter(alive).map(u => [u, n[0]]), spellDamage);
       break;
     }
-    case 'venom_mist': ev.push({ t: 'area', x: tx, y: ty, r: 1, kind: 'mist' }); for (const e of enemies(s)) if (Math.abs(e.x - tx) <= 1 && Math.abs(e.y - ty) <= 1) addStatus(s, ev, e, 'poison', n[0]); break;
+    case 'venom_mist': {
+      ev.push({ t: 'area', x: tx, y: ty, r: 1, kind: 'mist' });
+      // Infest/Venom Mist affects every living creature in the 3×3 footprint, including the caster and allies.
+      for (const u of s.units.filter(alive)) if (Math.abs(u.x - tx) <= 1 && Math.abs(u.y - ty) <= 1) addStatus(s, ev, u, 'poison', n[0]);
+      break;
+    }
     case 'starfall': {
       ev.push({ t: 'area', x: tx, y: ty, r: 1, kind: 'star' });
       // v1.7.0: a damaging blast centred on a rock shatters it into walkable rubble.

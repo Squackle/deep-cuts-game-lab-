@@ -225,9 +225,12 @@ export class BattleUI {
     // v1.5.0 compact HUD: movement and attacks live in the hero plate's action strip (one coordinated panel).
     $('gb-action-counters').innerHTML = '';
     const strip = $('plate').querySelector('.pl-act');
-    if (strip) strip.innerHTML = `<span class="moves" tabindex="0" data-tip="Movement left this turn (tiles). Hazards may damage ground units.">${ICON.move}<b>${s.phase === 'player' ? s.p.moveLeft : 0}</b><small>move</small></span>
+    if (strip) {
+      strip.classList.toggle('has-treasure', (s.combo?.treasure || 0) > 0);
+      strip.innerHTML = `<span class="moves" tabindex="0" data-tip="Movement left this turn (tiles). Hazards may damage ground units.">${ICON.move}<b>${s.phase === 'player' ? s.p.moveLeft : 0}</b><small>move</small></span>
       <span class="atk ${s.p.attacksLeft > 0 && s.phase === 'player' ? 'on' : ''}" tabindex="0" data-tip="Attacks left this turn.">${ICON.sword}<b>${s.phase === 'player' ? s.p.attacksLeft : 0}</b><small>attack</small></span>
       <span class="gb-reserve" tabindex="0" data-tip="Banked mana and Channel charges persist; Treasure charges from Storm-Kiln Artist also pay for spells.">Bank ${s.p.storedMana||0}${ICON.gem} · ${s.p.channel||0}✧${s.combo?.treasure?' · '+s.combo.treasure+' Treasure':''}</span>`;
+    }
     $('enc-turn').textContent = s.phase === 'player' ? `Turn ${s.turn} · Your move` : `Turn ${s.turn} · Foes act`;
     this.renderHand(s);
     this.renderZones(s);

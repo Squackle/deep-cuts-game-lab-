@@ -38,6 +38,13 @@ test('v1.5.0: movement and attack counters are integrated into the hero plate ac
  assert.match(hero,/class="pl-act"/); assert.match(hero,/class="moves"/); assert.match(hero,/class="atk/);
  assert.match(css,/#hud \.gb-action-counters:empty\{display:none!important\}/);
 });
+test('Treasure reserves wrap inside the hero plate rather than overflowing the action strip',()=>{
+ const ui=source('src/ui/battle-ui.js'),css=source('styles.css');
+ assert.match(ui,/strip\.classList\.toggle\('has-treasure', \(s\.combo\?\.treasure \|\| 0\) > 0\)/);
+ assert.match(css,/#hud \.pl-act\{flex-wrap:wrap;row-gap:4px\}/);
+ assert.match(css,/#hud \.pl-act \.gb-reserve\{[^}]*max-width:100%;white-space:normal;overflow-wrap:anywhere/);
+ assert.match(css,/#hud \.pl-act\.has-treasure \.gb-reserve\{flex:1 1 100%;margin-left:0/);
+});
 test('v1.5.0: plain ground uses a slim tile panel; complex terrain expands',()=>{
  const ui=source('src/ui/battle-ui.js'),css=source('styles.css');
  assert.match(ui,/terrain-plain/); assert.match(css,/#inspect\.terrain-inspect\.terrain-plain/);

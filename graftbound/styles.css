@@ -949,3 +949,8 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
 .threat-tiers{list-style:none;padding:0;margin:4px auto 12px;max-width:380px;text-align:left;font-size:.78rem}
 .threat-tiers li{opacity:.45;padding:2px 0}.threat-tiers li.on{opacity:1;color:#ffb3b8}.threat-tiers b{display:inline-block;width:26px;color:#ff6b74}
 .threat-tiers small{opacity:.75;margin-left:6px}
+
+/* v1.8.0-beta: Treasure reserve must remain inside the compact hero action strip. */
+#hud .pl-act{flex-wrap:wrap;row-gap:4px}
+#hud .pl-act .gb-reserve{box-sizing:border-box;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.25}
+#hud .pl-act.has-treasure .gb-reserve{flex:1 1 100%;margin-left:0;justify-content:flex-start}

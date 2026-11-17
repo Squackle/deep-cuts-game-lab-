@@ -17,6 +17,30 @@ test('area spells target any non-rock tile anywhere', () => {
   cast(s, 'mtg:infest', 0, 0); assert.ok(enemies(s).every(e => e.statuses.poison === 2));
   cast(s, 'mtg:fireball', 0, 0); assert.ok(enemies(s).every(e=>e.hp<=3),'damage applied with printed 3-toughness targets');
 });
+
+test('Infest and legacy Venom Mist poison every living creature in the 3×3 area, including the caster and allied summons', () => {
+  for (const id of ['mtg:infest', 'venom_mist']) {
+    const s = arena(['t...t', '.....', '..P..', '.....', '..t..'], { t: 'tortoise' }, { spellbook: [{ id, level: 1 }] });
+    s.p.mana = 12; s.p.maxMana = 12;
+    const hero = player(s);
+    const makeAlly = (x, y, hp = 2) => ({ uid: s.nextUid++, side: 'player', hero: false,
+      defId: 'sproutling', name: 'Friendly summon', x, y, hp, maxHp: 2, power: 1, toughness: 2,
+      move: 2, keywords: {}, statuses: {} });
+    const allyIn = makeAlly(1, 1), allyOut = makeAlly(4, 3), deadAlly = makeAlly(0, 2, 0);
+    s.units.push(allyIn, allyOut, deadAlly);
+    const enemyIn = enemies(s).find(e => e.x === 0 && e.y === 0);
+    const enemiesOut = enemies(s).filter(e => e !== enemyIn);
+    const events = cast(s, id, 1, 1);
+    for (const u of [hero, allyIn, enemyIn]) assert.equal(u.statuses.poison, 2, `${id}: ${u.name} in the mist receives poison`);
+    for (const u of [allyOut, deadAlly, ...enemiesOut]) assert.equal(u.statuses.poison || 0, 0, `${id}: unaffected/outside/dead unit remains unpoisoned`);
+    assert.equal(hero.poisonByEnemy || 0, 0, 'self-inflicted poison is not attributed to the foe');
+    assert.deepEqual(events.filter(e => e.t === 'status' && e.status === 'poison').map(e => e.uid).sort((a, b) => a - b),
+      [hero.uid, allyIn.uid, enemyIn.uid].sort((a, b) => a - b), 'a poison event is emitted for every living creature in the square');
+    assert.deepEqual(events.filter(e => e.t === 'area' && e.kind === 'mist').map(({ x, y, r }) => ({ x, y, r })), [{ x: 1, y: 1, r: 1 }]);
+    assert.match(formatSpellText(id), /all creatures in a 3×3 area/i);
+  }
+});
+
 test('invalid targets are rejected: empty tiles for creature spells; v1.7.0: area spells MAY centre on a rock', () => {
   const s = S(['t..#', '....', 'P...'], { t: 'tortoise' }, ['shock', 'infest']);
   assert.throws(() => cast(s, 'mtg:shock', 1, 1), /Not a valid target/); assert.throws(() => cast(s, 'mtg:shock', 3, 0), /Not a valid target/);
