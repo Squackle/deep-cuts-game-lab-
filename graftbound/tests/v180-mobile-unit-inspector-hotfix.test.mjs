@@ -37,7 +37,9 @@ test('mobile uses a 72px compact creature summary with explicit on-demand detail
 
 test('creature inspection renders concise vitals while retaining complete details and can dismiss without gameplay changes',async()=>{
   const {BattleUI}=await import('../src/ui/battle-ui.js');
-  const previous=globalThis.document;
+  const previous=globalThis.document, previousWindow=globalThis.window;
+  // Simulate an actual mobile viewport: production renders only the compact DOM.
+  globalThis.window={matchMedia:()=>({matches:true}),innerWidth:390,screen:{width:390},navigator:{maxTouchPoints:5}};
   const classes=new Set();
   const el={innerHTML:'',classList:{add:(...names)=>names.forEach(n=>classes.add(n)),remove:(...names)=>names.forEach(n=>classes.delete(n))}};
   globalThis.document={getElementById:id=>id==='inspect'?el:null};
@@ -64,5 +66,8 @@ test('creature inspection renders concise vitals while retaining complete detail
     inspector.showInspect(null);
     assert.equal(inspector.unitDetailsHTML,null);
     assert.equal(classes.has('show'),false);
-  }finally {if(previous===undefined)delete globalThis.document;else globalThis.document=previous;}
+  }finally {
+    if(previous===undefined)delete globalThis.document;else globalThis.document=previous;
+    if(previousWindow===undefined)delete globalThis.window;else globalThis.window=previousWindow;
+  }
 });

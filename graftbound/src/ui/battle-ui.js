@@ -294,6 +294,17 @@ export class BattleUI {
     el.classList.toggle('gb-dock-no-room',!found);
     if(found){el.style.setProperty('--gb-actions-left',found.left+'px');el.style.setProperty('--gb-actions-top',found.top+'px');}
   }
+  /** Mobile compactness is a rendering rule, not just a CSS breakpoint. On a
+   * touch phone, a stale viewport width must never expose the full rules panel. */
+  compactInspector() {
+    if (typeof window === 'undefined') return false;
+    const w = window;
+    return !!(w.matchMedia?.('(max-width: 760px)')?.matches ||
+      (Number.isFinite(w.innerWidth) && w.innerWidth <= 760) ||
+      (w.navigator?.maxTouchPoints > 0 &&
+        ((Number.isFinite(w.screen?.width) && w.screen.width <= 760) ||
+         (Number.isFinite(w.visualViewport?.width) && w.visualViewport.width <= 760))));
+  }
   /** Both creature and terrain inspectors use real obstacle-aware placement. */
   positionTerrainInspect() {
     const el=$('inspect');
@@ -304,14 +315,14 @@ export class BattleUI {
     const h=hud.getBoundingClientRect();
     const relative=node=>{const r=node?.getBoundingClientRect();return r&&r.width&&r.height?{left:r.left-h.left,top:r.top-h.top,right:r.right-h.left,bottom:r.bottom-h.top}:null;};
     const unit=el.classList.contains('unit-inspect');
-    const mobile=window.matchMedia('(max-width: 760px)').matches;
+    const mobile=this.compactInspector();
     const pos=terrainInspectPlacement({
       width:h.width,height:h.height,plate:relative(plate),zones:relative(zones),
       tray:relative(tray),endTurn:relative($('endTurn')),topButtons:relative(document.querySelector('.topbtns')),
       actions:$('gb-action-counters')?.classList.contains('gb-dock-no-room')?null:relative($('gb-action-counters')),
       // v1.5.0: ordinary ground gets a slim panel; complex terrain and creatures expand.
-      desiredHeight:unit?(mobile?72:224):mobile?48:el.classList.contains('terrain-plain')?46:54,
-      minHeight:unit?(mobile?72:112):mobile?48:el.classList.contains('terrain-plain')?46:50,
+      desiredHeight:unit?(mobile?60:224):mobile?48:el.classList.contains('terrain-plain')?46:54,
+      minHeight:unit?(mobile?60:112):mobile?48:el.classList.contains('terrain-plain')?46:50,
       maxWidth:unit?(mobile?300:350):el.classList.contains('terrain-plain')?240:330
     });
     if(pos.fits){
@@ -463,8 +474,9 @@ export class BattleUI {
   }
   showInspect(u, preview) {
     const el = $('inspect');
-    el.classList.remove('terrain-inspect', 'unit-inspect', 'terrain-no-room', 'terrain-plain');
+    el.classList.remove('terrain-inspect', 'unit-inspect', 'unit-compact', 'terrain-no-room', 'terrain-plain');
     if (!u) { this.unitDetailsHTML = null; el.classList.remove('show'); return; }
+    const compact = this.compactInspector();
     const def = ENEMIES[u.defId]; const it = this.intents.find(i => i.uid === u.uid);
     const friendly = u.side === 'player';
     const type = friendly ? (u.hero ? 'Your creature' : `Summoned ally · ${u.name}`) : (def?.role || 'Foe');
@@ -484,10 +496,17 @@ export class BattleUI {
     this.unitDetailsHTML = `<h2>${esc(u.name)} · Creature details</h2><div class="gb-unit-full">${full}</div><div class="modal-actions"><button type="button" class="btn primary" data-close>Close</button></div>`;
     const compactPreview = preview ? `${preview.dealt.map(d => `${esc(d.e.name)} −${d.dmg}${d.dead ? ' defeated' : ''}`).join(' · ') || 'No damage'} · ${preview.taken > 0 ? `You take ${preview.taken}` : 'You take nothing'}` : '';
     const compactIntent = it ? esc(this.intentText(it)) : (friendly ? 'Friendly' : 'Hostile');
-    el.innerHTML = `<div class="gb-unit-brief" aria-label="${esc(u.name)} summary">
+    // A phone NEVER receives the full description in the battlefield DOM.
+    // This prevents a missing/cached responsive stylesheet from expanding it.
+    const brief = `<div class="gb-unit-brief" style="display:flex;flex-direction:column;gap:2px;justify-content:center;height:100%" aria-label="${esc(u.name)} summary">
       <div class="gb-unit-brief-row"><strong>${esc(u.name)}</strong><span class="gb-unit-vitals">${currentPower}/${u.toughness} · ♥${u.hp}/${u.maxHp}</span><button type="button" class="gb-unit-details" data-unit-details aria-label="Full details for ${esc(u.name)}">Details</button><button type="button" class="gb-unit-dismiss" data-unit-dismiss aria-label="Dismiss creature information">×</button></div>
-      <div class="gb-unit-brief-context">${compactIntent}${compactPreview ? ` · ${compactPreview}` : ''}</div></div>
-      <div class="gb-unit-rich">${full}</div>`;
+      <div class="gb-unit-brief-context">${compactIntent}${compactPreview ? ` · ${compactPreview}` : ''}</div></div>`;
+    el.innerHTML = compact ? brief : `<div class="gb-unit-rich">${full}</div>`;
+    if (compact) el.classList.add('unit-compact');
+    // Inline caps are a fail-safe if Safari serves an older stylesheet.
+    el.style?.setProperty('height', compact ? '60px' : '', 'important');
+    el.style?.setProperty('max-height', compact ? '60px' : '', 'important');
+    el.style?.setProperty('overflow', compact ? 'hidden' : '');
     el.classList.add('unit-inspect','show');
     this.positionTerrainInspect();
   }
