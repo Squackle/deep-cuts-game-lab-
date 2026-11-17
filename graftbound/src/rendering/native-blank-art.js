@@ -93,15 +93,21 @@ function wings(g,A,kind,tier,view,state,frame,trim=null){
     else for(let i=1;i<=4;i++)line(g,[[elbow[0]+side*i*3,elbow[1]+i*6],[elbow[0]+side*(i*3+8),elbow[1]+i*6+6]],c.featherHi,1.4);
   }
 }
+/** Attach tails to the lumbar spine, above the pelvis. Interpolate each authored pose's
+ * back/hip anchors so swaying and attacking keep the base attached to the lower back. */
+export function blankNativeTailRoot(A){
+  const [bx,by]=A.back,[hx,hy]=A.hip;
+  return [Math.round(bx+(hx-bx)*0.45),Math.round(by+(hy-by)*0.48)];
+}
 function tail(g,A,kind,tier,view,frame){
-  const [hx,hy]=A.hip,sign=view===1?-1:1, swish=[0,2,4,2][frame]||0, len=Math.min(34+tier*8,(sign>0?120-hx:hx-8)-8);
+  const [hx,hy]=blankNativeTailRoot(A),sign=view===1?-1:1, swish=[0,2,4,2][frame]||0, len=Math.min(34+tier*8,(sign>0?120-hx:hx-8)-8);
   g.beginPath();g.moveTo(hx+sign*2,hy-4);
   g.bezierCurveTo(hx+sign*(len*0.6),hy+2,hx+sign*(len*0.9),hy+22,hx+sign*len,hy+30-swish);
   g.lineTo(hx+sign*(len+7),hy+34-swish);
   g.bezierCurveTo(hx+sign*(len*0.82),hy+30,hx+sign*(len*0.5),hy+14,hx+sign*2,hy+8);g.closePath();
   { const tc=kind==='fur'?c.fur:c.scale, lg=g.createLinearGradient(hx,hy,hx+sign*len,hy+30); lg.addColorStop(0,SK.mid); lg.addColorStop(0.3,hexMix(SK.mid,tc,0.6)); lg.addColorStop(1,tc);
     g.fillStyle=lg;g.fill();g.lineWidth=2.2;g.strokeStyle=c.ink;g.stroke(); }
-  socket(g,hx+sign*3,hy+1,3+tier*0.6,2.2,kind==='fur'?c.fur:c.scale);   // tail root grows from the sacrum
+  socket(g,hx+sign*3,hy+1,3+tier*0.6,2.2,kind==='fur'?c.fur:c.scale);   // tail root grows from the lumbar lower back, not the buttocks
   for(let i=1;i<6;i++){const x=hx+sign*(len*i/6),y=hy+4+i*4.5;line(g,[[x,y-3],[x+sign*3,y+3]],kind==='fur'?c.furHi:c.scaleLight,1.6);}
   if(kind==='serpent'||kind==='scaled')blade(g,[hx+sign*(len+2),hy+30-swish],[hx+sign*(len+12),hy+26-swish],5);
 }
