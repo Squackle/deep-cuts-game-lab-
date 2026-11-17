@@ -2,9 +2,13 @@
 import { RARITY } from '../data/cards.js';
 import { resolveCard as getCard, rewardCards } from '../cards/catalog.js';
 import { KEYWORDS, keywordLabel } from '../data/keywords.js';
+import { expeditionTotals } from '../engine/scoring.js';
+import { threatModifiers, threatTactics, UPPER_TIERS } from '../engine/world-threat.js';
+import { runStatsMarkdown, copyText, derivedMetrics } from '../engine/run-report.js';
+import { duplicatePreview, traitLevelsOf, levelDef, levelText } from '../cards/graft-levels.js';
 import { cardHTML, COLOR, esc, sourcePanelHTML, backHTML, gameSummary } from './cards.js';
 import { availableNodes, nodeById, NODE_TYPES } from '../engine/campaign.js';
-import { absorb, deriveStats } from '../engine/evolution.js';
+import { absorb, deriveStats, spellFocus, FOCUS_WARD } from '../engine/evolution.js';
 import { runStats, CHALLENGES, graftCapacity, graftsFull, woundsOf, maxHpOf } from '../engine/run.js';
 import { SHRINES } from '../engine/shrines.js';
 import { ACTS, bossNameOf } from '../data/encounters.js';
@@ -19,7 +23,6 @@ import { GAME } from '../config.js';
 import { kwChips, STAGE } from './battle-ui.js';
 import { ICON } from './icons.js';
 import { EVENTS, eventChoices, EVENT_COST } from '../engine/events.js';
-import { expeditionTotals } from '../engine/scoring.js';
 import { SCORE } from '../data/scoring.js';
 import { graftHistory } from '../engine/journal.js';
 import { composePlayerSheet } from '../rendering/evolution-visuals.js';
@@ -167,7 +170,7 @@ export function settingsModal(app) {
     <h3>Controls</h3>
     <table class="keys"><tr><td>Move / strike / target</td><td>Click or tap (tap twice to confirm on touch)</td></tr><tr><td>Cursor</td><td>Arrow keys or WASD, Enter to confirm</td></tr><tr><td>Spells</td><td>1–9 — spells reach anywhere on the battlefield</td></tr><tr><td>End turn</td><td>Space</td></tr><tr><td>Rotate camera</td><td>Q / E</td></tr><tr><td>Zoom</td><td>Mouse wheel or pinch</td></tr><tr><td>Character sheet</td><td>C</td></tr><tr><td>Cancel</td><td>Esc or right-click</td></tr></table>
     <div class="modal-actions"><button type="button" class="btn danger" data-wipe>Erase all progress</button><button type="button" class="btn primary" data-close>Done</button></div>`);
-  m.addEventListener('change', e => { const k = e.target.dataset.k; if (!k) return; st[k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; app.applySettings(); app.saveMeta(); });
+  m.addEventListener('change', e => { const k = e.target.dataset.k; if (!k) return; st[k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; if (k === 'animSpeed') st.animSpeedChosen = true; app.applySettings(); app.saveMeta(); });
   m.querySelector('[data-wipe]').addEventListener('click', () => app.confirm('Erase every achievement, unlock, record and saved adventure? This cannot be undone.', 'Erase', () => app.wipe()));
 }
 
@@ -269,10 +272,11 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
         </button>
         <div class="fan" id="fan">${cards.map((id, i) => `<div class="slot treat-${treatments[i]} rarity-${esc(getCard(id).rarity)}" data-i="${i}" data-id="${esc(id)}" data-treatment="${treatments[i]}" style="--i:${i}" role="button" tabindex="0" aria-label="Card ${i + 1}">
           <span class="rays"></span><span class="gb-reward-seal" aria-hidden="true">${getCard(id).rarity === 'mythic' ? '✦' : getCard(id).rarity === 'rare' ? '◆' : getCard(id).rarity === 'uncommon' ? '◇' : '·'}</span>${cardHTML(id, { level: levelOf(id), arcane, uid: 'rw' + i, extraClass: 'flipped', evo: run.evo })}
+          ${(() => { const dp = duplicatePreview(run.evo.absorbed, id); return dp ? `<span class="gb-graft-level-ribbon ${dp.maxed ? 'maxed' : ''}" title="${esc(dp.maxed ? `${dp.name} is at its maximum level: another copy adds its printed power/toughness only.` : `${dp.before} → ${dp.after}`)}">${dp.maxed ? `Graft Lv ${dp.from} · max` : `Graft Lv ${dp.from} → ${dp.to}`}</span>` : ''; })()}
           <button type="button" class="zoom" data-zoom="${esc(id)}" aria-label="Inspect">${ICON.zoom}</button></div>`).join('')}</div>
       </div>
       <div class="rw-detail" id="rw-detail"></div>
-      <div class="rw-actions"><button type="button" class="btn small ghost" id="rw-ceremony-skip" aria-label="Skip pack opening ceremony, retain all rewards">Skip opening animation</button><button type="button" class="btn small ghost" id="rw-reveal">Reveal all</button>${tier !== 'graftsmith' ? `<button type="button" class="btn small ghost" id="rw-skip" hidden>Leave the pack · +1 Maximum Health</button>` : ''}</div>
+      <div class="rw-actions"><button type="button" class="btn small ghost" id="rw-ceremony-skip" aria-label="Skip pack opening ceremony, retain all rewards">Skip opening animation</button><button type="button" class="btn small ghost" id="rw-reveal">Reveal all</button>${tier !== 'graftsmith' ? `<button type="button" class="btn small ghost" id="rw-skip" hidden>Leave the pack · +1 Maximum Health</button>${(app.run?.worldThreat?.level || 0) > 0 ? `<button type="button" class="btn small ghost" id="rw-skip-threat" hidden>Leave the pack · Global Threat −1 (now ${app.run.worldThreat.level})</button>` : ''}` : ''}</div>
     </div>`, 'rewardscr' + (fast ? ' fast' : ''));
   app.hint('pack', 'Reveal all three cards, then choose one. Creatures are grafted into you; spells go into your spellbook. Tap the magnifier to inspect a card.');
   let showDetailRef = null;
@@ -303,7 +307,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
       pack.classList.add('open', 'gone'); fan.classList.add('out'); enterFan();
       ceremonyButton.hidden = true;
       $('rw-sub').textContent = 'Reveal the three fragments';
-      const sk = $('rw-skip'); if (sk) sk.hidden = false;
+      const sk = $('rw-skip'); if (sk) sk.hidden = false; const skt = $('rw-skip-threat'); if (skt) skt.hidden = false;
     };
     // Skip animation never consumes/chooses a card; queued visual transitions are cancelled.
     const skipCeremony = () => { ceremonySkipped = true; opened = true; finishOpen(); };
@@ -318,7 +322,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
       await wait(320); if (ceremonySkipped) return;
       pack.classList.add('open'); fan.classList.add('out'); enterFan();
       await wait(380); if (ceremonySkipped) return; pack.classList.add('gone'); ceremonyButton.hidden = true;
-      $('rw-sub').textContent = 'Reveal the three fragments'; const sk = $('rw-skip'); if (sk) sk.hidden = false;
+      $('rw-sub').textContent = 'Reveal the three fragments'; const sk = $('rw-skip'); if (sk) sk.hidden = false; const skt = $('rw-skip-threat'); if (skt) skt.hidden = false;
     })());
     pack.addEventListener('click', open);
     pack.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
@@ -357,6 +361,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
     } });
     $('rw-reveal').addEventListener('click', async () => { if (!opened) skipCeremony(); await open(); fan.querySelectorAll('.slot').forEach((s, i) => setTimeout(() => reveal(s), instant ? 0 : fast ? 60 * i : 180 + i * 220)); });
     const sk = $('rw-skip'); if (sk) sk.addEventListener('click', () => app.confirm('Leave all three cards behind and gain +1 Maximum Health (+1 max health) instead?', 'Leave them', () => res({ choice: 'skip' })));
+    const skt = $('rw-skip-threat'); if (skt) skt.addEventListener('click', () => app.confirm(`Leave all three cards behind to lower Global Threat by 1 (from ${app.run.worldThreat.level} to ${app.run.worldThreat.level - 1})? You gain no card and no Maximum Health.`, 'Lower threat', () => res({ choice: 'skipThreat' })));
     const showDetail = id => {
       const c = getCard(id); let body; const full = c.kind === 'creature' && graftsFull(run);
       if (c.kind === 'creature') {
@@ -369,7 +374,9 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
           <div class="chips">${gained}${ability}${change.resonance ? `<span class="chip res" data-tip="Abilities you already have resonate: +2 Maximum Health (max health) each.">Resonance +${change.resonance * 2} Maximum Health</span>` : ''}</div></div>
           ${full ? `<div class="release"><p>Your body holds <b>${graftCapacity(run)}</b> grafts in this act. Choose one to release (its power, toughness and abilities leave you):</p>
             ${run.evo.absorbed.map((a, i) => { const ac = getCard(a.cardId); return `<label><input type="radio" name="rel" value="${i}"><b>${esc(a.name)}</b><small>${ac && ac.kind === 'creature' ? `+${ac.power}/+${ac.toughness}${Object.keys(ac.keywords).length ? ' · ' + Object.keys(ac.keywords).map(k => KEYWORDS[k].name).join(', ') : ''}${ac.trait ? ' · ✦ ' + esc(ac.adaptationNote) : ''}` : ''}</small></label>`; }).join('')}</div>` : ''}
-          ${sourcePanelHTML(id)}<button type="button" class="btn primary big" data-take ${full ? 'disabled' : ''}>Graft ${esc(c.name)}</button>`;
+          ${(dp => dp ? `<div class="becomes gb-levelup"><span class="lbl">${dp.maxed ? `${esc(c.name)} is already at its maximum level ${dp.from}` : `Level Up · ${esc(c.name)} Lv ${dp.from} → Lv ${dp.to}`}</span>
+            ${dp.maxed ? `<p class="small">This copy adds its printed +${c.power}/+${c.toughness} only; the ability stays at level ${dp.from}.</p>` : `<div class="upgrade-comparison"><span><b>Now · Lv ${dp.from}</b>${esc(dp.before)}</span><span><b>After · Lv ${dp.to}</b>${esc(dp.after)}</span></div><p class="small">Combines with your existing ${esc(c.name)} graft (one ability, stronger). The copy still adds its printed +${c.power}/+${c.toughness}.</p>`}</div>` : '')(duplicatePreview(run.evo.absorbed, id))}
+          ${sourcePanelHTML(id)}<button type="button" class="btn primary big" data-take ${full ? 'disabled' : ''}>${(dp => dp && !dp.maxed ? `Level Up ${esc(c.name)} → Lv ${dp.to}` : `Graft ${esc(c.name)}`)(duplicatePreview(run.evo.absorbed, id))}</button>`;
       } else {
         const e = run.spellbook.find(s => s.id === id);
         body = `<div class="becomes"><span class="lbl">${e ? `Empower to level ${e.level + 1}` : 'New spell'}</span>${e ? `<div class="upgrade-comparison"><span><b>Now · Lv ${e.level}</b>${esc(formatSpellText(id, e.level, arcane))}</span><span><b>After · Lv ${e.level + 1}</b>${esc(formatSpellText(id, e.level + 1, arcane))}</span></div>` : ''}<p class="sptext">${esc(formatSpellText(id, e ? e.level + 1 : 1, arcane))}</p><span class="hp">${ICON.gem} ${c.cost} mana · ${TARGET[c.target]} · ${rangeLabel(id, e ? e.level + 1 : 1)} · once per turn</span></div>
@@ -419,12 +426,18 @@ export function shrineScreen(app) {
 export function sheetModal(app) {
   const run = app.run; if (!run) return;
   const st = runStats(run), ap = deriveAppearance(run.evo, visualForRun(run));
+  const levels = traitLevelsOf(run.evo.absorbed);
   const hist = run.evo.absorbed.map((a, i) => {
     const c = getCard(a.cardId); const col = c ? COLOR[c.color] : COLOR.verdant;
     const bits = [`+${a.power}/+${a.toughness}`, ...(a.gained||[]).map(k => KEYWORDS[k]?.name||k), ...(a.raised||[]).map(k => (KEYWORDS[k]?.name||k) + '↑'), a.resonance ? `Resonance +${a.resonance * 2} Maximum Health` : ''].filter(Boolean).join(' · ');
     const descriptions=[...(a.gained||[]),...(a.raised||[])].map(k=>KEYWORDS[k]?.text).filter(Boolean);
     if(c?.adaptationNote)descriptions.push(c.adaptationNote);
-    return `<li style="--frame:${col.frame}"><span class="n">${i + 1}</span><b>${esc(a.name || (c && c.name) || a.cardId)}${c && c.legacy ? ' <em class="lg">legacy</em>' : ''}</b><small>${esc(bits)}</small>${descriptions.length?`<small class="gb-graft-details">${esc(descriptions.join(' · '))}</small>`:''}</li>`;
+    const tid = c?.trait, lvlNow = tid ? (levels[tid] || 1) : 0, firstOfTrait = tid && run.evo.absorbed.findIndex(x => getCard(x.cardId)?.trait === tid) === i;
+    // v1.7.0: duplicates COMBINE into one entry (records are kept in run.evo.absorbed; only the display merges).
+    if (tid && !firstOfTrait) return '';
+    const copies = tid ? run.evo.absorbed.filter(x => getCard(x.cardId)?.trait === tid) : [];
+    if (firstOfTrait) descriptions.unshift(`Graft Lv ${lvlNow}/${levelDef(tid).max}: ${levelText(tid, lvlNow)}${copies.length > 1 ? ` · ${copies.length} copies absorbed (+${copies.reduce((t, x) => t + (x.power || 0), 0)}/+${copies.reduce((t, x) => t + (x.toughness || 0), 0)} total)` : ''}`);
+    return `<li style="--frame:${col.frame}"><span class="n">${i + 1}</span><b>${esc(a.name || (c && c.name) || a.cardId)}${firstOfTrait && lvlNow > 1 ? ` <em class="gb-lv">Lv ${lvlNow}</em>` : ''}${c && c.legacy ? ' <em class="lg">legacy</em>' : ''}</b><small>${esc(bits)}</small>${descriptions.length?`<small class="gb-graft-details">${esc(descriptions.join(' · '))}</small>`:''}</li>`;
   }).join('');
   const visible = Object.entries(ap.slots).map(([, p]) => `${p.part}${p.tier > 1 ? ' II' : ''}`).concat(ap.effects);
   const m = app.openModal(`
@@ -441,6 +454,7 @@ export function sheetModal(app) {
           <dt>${ICON.gem} Mana</dt><dd>${st.startMana} at start · +${st.manaRegen}/turn · max ${st.maxMana}</dd>
           <dt>⧉ Grafts</dt><dd>${run.evo.absorbed.length} of ${graftCapacity(run)} this act</dd>
           ${st.arcane ? `<dt>✦ Arcane</dt><dd>Spells +${st.arcane}</dd>` : ''}
+          ${spellFocus(run.spellbook.length) ? `<dt>✦ Spellward</dt><dd>+${FOCUS_WARD * spellFocus(run.spellbook.length)} Maximum Health, +${spellFocus(run.spellbook.length)} Arcane, +${spellFocus(run.spellbook.length)} mana/turn <small>(every 3 spells in your spellbook)</small></dd>` : ''}
           ${run.evo.resonance ? `<dt>◎ Resonance</dt><dd>+${run.evo.resonance * 2} Maximum Health from repeated abilities</dd>` : ''}
         </dl>
         <h3>Abilities</h3>
@@ -700,10 +714,10 @@ export function scoreBreakdownHTML(run, extra = {}) {
   const t = expeditionTotals(run); const e = (run.scoring && run.scoring.encounters) || [];
   return `<section class="parch-record end-record"><h3>Expedition Record ${run.ranked ? `<small>${esc(run.ranked.challengeId)} · rev ${run.ranked.revision}</small>` : '<small>Adventure</small>'}</h3>
     <div class="end-total">${t.total.toLocaleString()} <small>points</small></div>
-    <table class="score"><tr><th>Encounter</th><th>Actions</th><th>Damage</th><th>Eff.</th><th>Avoid.</th><th>Score</th></tr>
-    ${e.map(x => `<tr><td>${esc(ACT_ROMAN[x.act])} · ${esc(x.name)}${x.multiplier !== 1 ? ` ×${x.multiplier}` : ''}</td><td>${x.actions}/${x.parActions}</td><td>${x.damage}/${x.damageBudget}</td><td>+${x.efficiency}</td><td>+${x.avoidance}</td><td>${x.total.toLocaleString()}</td></tr>`).join('')}
-    ${t.completionBonus ? `<tr><td colspan="5">Expedition completed</td><td>+${t.completionBonus.toLocaleString()}</td></tr>` : ''}
-    <tr class="tot"><td>Total</td><td>${t.actions}</td><td>${t.damage}</td><td colspan="2">${t.turns} turns</td><td>${t.total.toLocaleString()}</td></tr></table>
+    <table class="score"><tr><th>Encounter</th><th>Actions</th><th>Damage</th><th>Eff.</th><th>Avoid.</th><th title="+2.5% per level of encounter-start Global Threat, max +30%">Threat</th><th>Score</th></tr>
+    ${e.map(x => `<tr><td>${esc(ACT_ROMAN[x.act])} · ${esc(x.name)}${x.multiplier !== 1 ? ` ×${x.multiplier}` : ''}</td><td>${x.actions}/${x.parActions}</td><td>${x.damage}/${x.damageBudget}</td><td>${x.efficiency == null ? '—' : '+' + x.efficiency}</td><td>${x.avoidance == null ? '—' : '+' + x.avoidance}</td><td>${x.threatBonus ? `+${x.threatBonus} <small>T${x.threat}</small>` : '—'}</td><td>${x.total.toLocaleString()}</td></tr>`).join('')}
+    ${t.completionBonus ? `<tr><td colspan="6">Expedition completed</td><td>+${t.completionBonus.toLocaleString()}</td></tr>` : ''}
+    <tr class="tot"><td>Total</td><td>${t.actions}</td><td>${t.damage}</td><td colspan="3">${t.turns} turns</td><td>${t.total.toLocaleString()}</td></tr></table>
     ${extra.newBest ? '<p class="new-best">★ New local personal best</p>' : ''}
     <p class="small">${run.ranked ? (extra.verifiedLocally ? '✔ Replay re-verified locally from the challenge definition. ' : '✖ Local replay verification failed — this result is not eligible. ') : ''}<span class="badge-local">LOCAL · UNRANKED — not submitted</span></p>
     ${run.scoring && run.migratedFromV05 ? '<p class="small muted">Battles before the v0.6 update were not scored.</p>' : ''}</section>`;
@@ -735,17 +749,116 @@ export function victoryScreen(app){
  });
 }
 
-export function endScreen(app, { won, earned, extra = {} }) {
+/** v1.6.0 analysis metrics (definitions shown inline; never part of the score). */
+export function balanceMetricsHTML(run) {
+  const d = derivedMetrics(run); if (!d.encounters) return '';
+  return `<details class="gb-balance"><summary>Balance metrics</summary><dl>
+    <dt>Enemy-caused health lost</dt><dd>${d.enemyDamage ?? 'not recorded (older run)'} <small>health removed by foes; excludes terrain and self-inflicted costs</small></dd>
+    <dt>Flawless encounters</dt><dd>${d.flawless}/${d.encounters} · bosses ${d.bossesFlawless}/${d.bosses} <small>no ${d.flawlessBasis}</small></dd>
+    <dt>Actions vs par</dt><dd>${d.actionsVsPar ?? '—'} <small>total actions ÷ total par</small></dd>
+    <dt>Damage vs reference</dt><dd>${d.damageVsReference ?? '—'} <small>recorded damage ÷ total reference</small></dd>
+    <dt>Turns per encounter</dt><dd>${d.turnsPerEncounter ?? '—'}</dd>
+    ${d.threatPath ? `<dt>Threat by encounter</dt><dd>${esc(d.threatPath.join(' · '))}</dd>` : ''}</dl></details>`;
+}
+export function endScreen(app, { won, earned = [], extra = {} }) {
   const run = app.run; const s = run.stats;
   const el = showScreen(`<div class="end ${won ? 'won' : 'lost'}">
     <small class="presents">${GAME.title}</small>
     <h1>${won ? 'The Last Page Turns' : 'The Graft Unravels'}</h1>
+    <div class="gb-copy-row"><button type="button" class="btn primary gb-copy-stats" data-a="copy" aria-describedby="gb-copy-status">Copy Run Stats</button><span id="gb-copy-status" class="gb-copy-status" role="status" aria-live="polite"></span></div>
     <p class="rw-sub">${won ? 'You began as nothing. The final guardian could not stop what you became.' : `You fell in Act ${ACT_ROMAN[run.act]} · ${esc(ACTS[run.act].name)}. Every card you held is remembered in the Codex.`}</p>
-    <div class="end-pt">${run.evo.power}/${run.evo.toughness}</div>
-    <div class="chips center">${kwChips(run.evo.keywords)}</div>
-    <table class="stats"><tr><td>Battles won</td><td>${s.battlesWon}</td></tr><tr><td>Bosses defeated</td><td>${s.bossesDefeated || 0}</td></tr><tr><td>Creatures grafted</td><td>${s.cardsAbsorbed}</td></tr><tr><td>Spells learned</td><td>${s.spellsLearned}</td></tr><tr><td>Foes defeated</td><td>${s.kills}</td></tr>${timeRows(run)}</table>
-    ${scoreBreakdownHTML(run, extra)}
-    ${earned.length ? `<h3>Achievements</h3><ul class="ach">${earned.map(a => `<li class="got"><b>${a.name}</b><span>${a.text}</span></li>`).join('')}</ul>` : ''}
+    <header class="end-head">
+      <div class="end-high"><span><b>${run.evo.power}/${run.evo.toughness}</b><small>Final form</small></span><span><b>${run.worldThreat?.level ?? 0}/24</b><small>Global Threat</small></span><span><b>${expeditionTotals(run).total.toLocaleString()}</b><small>Score</small></span></div>
+      <div class="chips center">${kwChips(run.evo.keywords)}</div>
+    </header>
+    <div class="end-grid">
+      <section class="end-col"><h3>Expedition</h3>
+    <table class="stats"><tr><td>Battles won</td><td>${s.battlesWon}</td></tr><tr><td>Bosses defeated</td><td>${s.bossesDefeated || 0}</td></tr><tr><td>Creatures grafted</td><td>${s.cardsAbsorbed}</td></tr><tr><td>Spells learned</td><td>${s.spellsLearned}</td></tr><tr><td>Foes defeated</td><td>${s.kills}</td></tr><tr><td>Final Global Threat</td><td>${run.worldThreat?.level ?? 0}/24</td></tr>${timeRows(run)}</table>
+      </section>
+      <section class="end-col"><h3>Achievements</h3>
+    ${earned.length ? `<ul class="ach">${earned.map(a => `<li class="got"><b>${a.name}</b><span>${a.text}</span></li>`).join('')}</ul>` : '<p class="small muted">No achievements earned this run.</p>'}
+    ${balanceMetricsHTML(run)}
+      </section>
+    </div>
+    <div class="end-full">${scoreBreakdownHTML(run, extra)}</div>
     <div class="modal-actions center"><button type="button" class="btn" data-a="journal">Evolution Journal</button><button type="button" class="btn primary" data-a="again">New Adventure</button><button type="button" class="btn" data-a="title">Home</button></div></div>`, 'endscr');
-  return new Promise(res => el.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (!b) return; if (b.dataset.a === 'journal') { journalModal(app); return; } res(b.dataset.a); }));
+  const copy = async () => {
+    const text = runStatsMarkdown(run, { won, earned, newBest: !!extra.newBest, verifiedLocally: !!extra.verifiedLocally });
+    const status = el.querySelector('#gb-copy-status'), ok = await copyText(text);
+    if (ok) { status.textContent = 'Copied!'; status.className = 'gb-copy-status ok'; app.audio.play('click'); setTimeout(() => { if (status.isConnected) status.textContent = ''; }, 2200); return; }
+    // Last resort (no clipboard permission): show the text, pre-selected, so the player can copy it by hand.
+    const m = app.openModal(`<h2>Copy Run Stats</h2><p class="small">Your browser blocked automatic copying. The record is selected below — press Ctrl/⌘+C or long-press → Copy.</p><textarea class="gb-copy-fallback" readonly rows="14">${esc(text)}</textarea><div class="modal-actions"><button type="button" class="btn primary" data-close>Done</button></div>`);
+    const ta = m.querySelector('textarea'); ta.focus(); ta.select();
+  };
+  return new Promise(res => el.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (!b) return; if (b.dataset.a === 'copy') { copy(); return; } if (b.dataset.a === 'journal') { journalModal(app); return; } res(b.dataset.a); }));
+}
+/** v1.5.0 Global Threat dial. Shown after the victory banner and BEFORE the encounter record. Reads the authoritative
+ *  run.lastThreat written by concludeBattle/settleWorldThreat. Never auto-dismisses: Continue (click, tap, Enter,
+ *  Space or Escape) resolves it. The needle sweeps clockwise for a rise, counter-clockwise for a fall; reduced motion
+ *  shows the final state immediately. */
+export const THREAT_DIAL_MAX = 24;   // v1.8.0
+export const threatAngle = level => -150 + 300 * Math.max(0, Math.min(THREAT_DIAL_MAX, level)) / THREAT_DIAL_MAX;
+/** What the NEW level actually does (generated from threatModifiers/threatTactics — not flavour text). */
+export function threatEffectsText(level) {
+  const m = threatModifiers({ level }), b = threatTactics(level, { nodeType: 'boss' }), e = threatTactics(level, { nodeType: 'elite' }), n = threatTactics(level);
+  const bits = [];
+  if (m.shieldRate) bits.push(`foes start with wards (${Math.round(m.shieldRate * 100)}% of their health${m.wardFloor || level > 4 ? ', more against hard hitters' : ''})`);
+  if (m.reinforcement) bits.push(`+${m.reinforcement} reinforcement${m.reinforcement > 1 ? 's' : ''} in ordinary fights`);
+  if (b.bossEscorts) bits.push(`bosses bring ${b.bossEscorts} escort${b.bossEscorts > 1 ? 's' : ''}`);
+  if (n.surge) bits.push(`every foe group telegraphs Threat Surges (${Math.round(n.surge.pct * 100)}% of your health, every ${n.surge.every} turns)`);
+  else if (e.surge) bits.push(`elites and bosses telegraph Threat Surges (${Math.round(e.surge.pct * 100)}% of your health, every ${e.surge.every} turns)`);
+  return bits.length ? `At Threat ${level}: ${bits.join('; ')}.` : `At Threat ${level}: foes fight at their printed strength.`;
+}
+export function threatDialHTML(t) {
+  const d = t.after - t.before, word = d > 0 ? 'rises' : d < 0 ? 'falls' : 'holds';
+  const ticks = Array.from({ length: THREAT_DIAL_MAX + 1 }, (_, i) => { const a = (threatAngle(i) - 90) * Math.PI / 180, r1 = 78, r2 = i % 6 === 0 ? 62 : i % 3 ? 72 : 67;
+    return `<line x1="${(100 + r1 * Math.cos(a)).toFixed(1)}" y1="${(100 + r1 * Math.sin(a)).toFixed(1)}" x2="${(100 + r2 * Math.cos(a)).toFixed(1)}" y2="${(100 + r2 * Math.sin(a)).toFixed(1)}" class="${i <= t.after ? 'on' : ''}"/>`; }).join('');
+  const arc = lvl => { const a0 = (threatAngle(0) - 90) * Math.PI / 180, a1 = (threatAngle(lvl) - 90) * Math.PI / 180, r = 86, large = (threatAngle(lvl) - threatAngle(0)) > 180 ? 1 : 0;
+    return lvl <= 0 ? '' : `M ${(100 + r * Math.cos(a0)).toFixed(2)} ${(100 + r * Math.sin(a0)).toFixed(2)} A ${r} ${r} 0 ${large} 1 ${(100 + r * Math.cos(a1)).toFixed(2)} ${(100 + r * Math.sin(a1)).toFixed(2)}`; };
+  return `<div class="threat-wrap"><section class="threat-panel" role="dialog" aria-modal="true" aria-labelledby="threat-h">
+    <small class="sh-brand">${GAME.title} · Global Threat</small>
+    <h2 id="threat-h">Global Threat: ${t.before} → ${t.after} <span class="delta ${d > 0 ? 'up' : d < 0 ? 'down' : ''}">(${d > 0 ? '+' + d : d < 0 ? '−' + (-d) : '±0'})</span></h2>
+    <p class="threat-sub">The world's threat ${word}</p>
+    <div class="threat-dial ${d > 0 ? 'up' : d < 0 ? 'down' : 'hold'}" data-before="${t.before}" data-after="${t.after}">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <defs><radialGradient id="tdg" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#3a0b10"/><stop offset="1" stop-color="#12050a"/></radialGradient></defs>
+        <circle cx="100" cy="100" r="96" class="rim"/><circle cx="100" cy="100" r="90" fill="url(#tdg)"/>
+        <path d="${arc(THREAT_DIAL_MAX)}" class="track"/><path d="${arc(t.after)}" class="fill"/>
+        <g class="ticks">${ticks}</g>
+        <g class="needle" style="--from:${threatAngle(t.before)}deg;--to:${threatAngle(t.after)}deg"><polygon points="100,26 104.5,100 100,110 95.5,100"/></g>
+        <circle cx="100" cy="100" r="9" class="hub"/>
+      </svg>
+      <div class="threat-num" aria-live="polite"><b data-threat-now>${t.after}</b><small>/ ${THREAT_DIAL_MAX}</small></div>
+    </div>
+    <p class="threat-change"><span>Before <b>${t.before}</b></span><span class="delta ${d > 0 ? 'up' : d < 0 ? 'down' : ''}">${d > 0 ? '+' + d : d < 0 ? '−' + (-d) : '±0'}</span><span>Now <b>${t.after}</b></span></p>
+    <ul class="threat-why">${(t.reasons || []).map(r => `<li>${esc(r)}</li>`).join('')}</ul>
+    ${t.factors ? `<ul class="threat-factors" aria-label="Performance factors">
+      <li><b>${t.factors.enemyDamage}</b><small>damage from foes</small></li>
+      <li><b>${t.factors.damagePct}%</b><small>of ${t.factors.maxHealth} health</small></li>
+      ${t.factors.turns != null ? `<li><b>${t.factors.turns}</b><small>turn${t.factors.turns === 1 ? '' : 's'}</small></li>` : ''}
+      <li><b>${t.factors.strongStreak}</b><small>win streak</small></li>
+      ${t.factors.boss ? '<li><b>Boss</b><small>encounter</small></li>' : ''}</ul>` : ''}
+    <p class="threat-note">${threatEffectsText(t.after)}</p>
+    ${t.after > 12 ? `<ul class="threat-tiers">${UPPER_TIERS.map(x => `<li class="${t.after >= x.at ? 'on' : ''}"><b>${x.at}</b> ${esc(x.name)}<small>${esc(x.text)}</small></li>`).join('')}</ul>` : ''}
+    <button type="button" class="btn primary big" data-threat-continue>Continue</button>
+  </section></div>`;
+}
+export function threatDialScreen(app, t) {
+  const el = showScreen(threatDialHTML(t), 'threatscr');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches || app.animFactor() > 50;
+  const dial = el.querySelector('.threat-dial'); const now = el.querySelector('[data-threat-now]');
+  if (reduced) dial.classList.add('settled');
+  else requestAnimationFrame(() => requestAnimationFrame(() => dial.classList.add('settled')));
+  if (!reduced && t.after !== t.before) {   // count the number in step with the needle
+    const steps = Math.abs(t.after - t.before), dir = Math.sign(t.after - t.before); let i = 0; now.textContent = t.before;
+    const tick = () => { if (!el.isConnected) return; i++; now.textContent = t.before + dir * i; if (i < steps) setTimeout(tick, 1100 / steps); };
+    setTimeout(tick, 1100 / steps);
+  }
+  if (t.delta > 0) app.audio.play('foe'); else if (t.delta < 0) app.audio.play('heal');
+  const btn = el.querySelector('[data-threat-continue]'); btn.focus({ preventScroll: true });
+  return new Promise(res => {
+    const go = () => { window.removeEventListener('keydown', key); app.audio.play('click'); res(); };
+    const key = e => { if (['Enter', ' ', 'Escape'].includes(e.key)) { e.preventDefault(); go(); } };
+    window.addEventListener('keydown', key); btn.addEventListener('click', go, { once: true });
+  });
 }

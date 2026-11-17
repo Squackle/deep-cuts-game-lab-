@@ -40,6 +40,43 @@ export function swayFor(kind, { reduced = false, enabled = true, quality = 'high
 }
 const W = [1, 1, 1, 1];
 
+/** v1.6.0 special-tile glyphs (flat inlays a few millimetres above the floor; creatures always draw above them).
+ *  Shape, not just colour, identifies each tile: crossing flow paths / parchment script / jagged fracture / nested channels. */
+export const GLYPH_MAT = Object.freeze({ leyline: 17, page: 18, rift: 19, conduit: 20 });
+function tileGlyph(g, t, cx, cz, tx, ty) {
+  const Y = FLOOR_TOP + 0.004, P = (x, z, dy = 0) => [cx + x, Y + dy, cz + z];
+  const strip = (pts, w, col, dy = 0) => { for (let i = 0; i < pts.length - 1; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1], dx = bx - ax, dz = bz - az, m = Math.hypot(dx, dz) || 1, nx = -dz / m * w, nz = dx / m * w;
+    g.quad(P(ax - nx, az - nz, dy), P(bx - nx, bz - nz, dy), P(bx + nx, bz + nz, dy), P(ax + nx, az + nz, dy), col); } };
+  const poly = (pts, col, dy = 0) => { for (let i = 1; i < pts.length - 1; i++) g.tri(P(...pts[0], dy), P(...pts[i], dy), P(...pts[i + 1], dy), col); };
+  const box = (x, z, w, h, col, dy = 0) => g.quad(P(x - w, z + h, dy), P(x + w, z + h, dy), P(x + w, z - h, dy), P(x - w, z - h, dy), col);
+  if (t === TILE.LEYLINE) g.material(GLYPH_MAT.leyline, q => {
+    const GOLD = [1, 0.78, 0.32, 1], curve = s => Array.from({ length: 9 }, (_, i) => { const u = -0.44 + i * 0.11; return [u, s * u + Math.sin(u * 7) * 0.07]; });
+    strip(curve(1), 0.028, GOLD); strip(curve(-1), 0.028, GOLD);
+    poly([[0, -0.09], [0.09, 0], [0, 0.09], [-0.09, 0]], [1, 0.92, 0.6, 1], 0.001);                 // central node
+  });
+  if (t === TILE.ARCHIVE) {
+    const r = 0.06 * ((tx + ty) % 2 ? 1 : -1), rot = (x, z) => [x * Math.cos(r) - z * Math.sin(r), x * Math.sin(r) + z * Math.cos(r)];
+    g.material(0, q => { poly([rot(-0.32, -0.24), rot(0.32, -0.24), rot(0.32, 0.18), rot(0.22, 0.26), rot(-0.32, 0.26)], [0.68, 0.6, 0.45, 1]);   // parchment with a folded corner
+      poly([rot(0.32, 0.18), rot(0.22, 0.26), rot(0.22, 0.18)], [0.62, 0.53, 0.38, 1], 0.001); });
+    g.material(GLYPH_MAT.page, q => { for (let k = 0; k < 4; k++) { const z = -0.15 + k * 0.1; for (let w = 0; w < 4; w++) { const x0 = -0.24 + w * 0.13, len = 0.05 + ((tx * 7 + ty * 3 + k * 5 + w) % 3) * 0.02;
+        strip([rot(x0, z), rot(x0 + len, z)], 0.013, [0.62, 0.36, 0.1, 1], 0.001); } }
+      for (const [x, z] of [[-0.25, -0.19], [0.25, -0.19], [-0.25, 0.21]]) poly([rot(x, z - 0.035), rot(x + 0.035, z), rot(x, z + 0.035), rot(x - 0.035, z)], [1, 0.85, 0.45, 1], 0.002); });
+  }
+  if (t === TILE.RIFT) {
+    const jag = Array.from({ length: 12 }, (_, i) => { const a = i / 12 * Math.PI * 2, r0 = i % 2 ? 0.14 : 0.32 + ((tx * 5 + ty * 11 + i) % 3) * 0.035; return [Math.cos(a) * r0 * 1.15, Math.sin(a) * r0 * 0.8]; });
+    g.material(0, q => poly([[0, 0], ...jag, jag[0]], [0.02, 0, 0.04, 1], 0.001));                  // the black opening
+    g.material(GLYPH_MAT.rift, q => { for (let i = 0; i < 12; i += 2) { const [x, z] = jag[i]; strip([[x * 0.55, z * 0.55], [x * 1.18, z * 1.18]], 0.018, [0.72, 0.32, 1, 1], 0.002); }   // violet shards
+      strip([...jag, jag[0]].map(([x, z]) => [x * 1.02, z * 1.02]), 0.01, [0.55, 0.2, 0.85, 1], 0.002); });
+  }
+  if (t === TILE.CONDUIT) g.material(GLYPH_MAT.conduit, q => {
+    const CY = [0.35, 0.9, 1, 1], sq = s => [[-s, -s], [s, -s], [s, s], [-s, s], [-s, -s]];
+    strip(sq(0.32), 0.022, CY); strip(sq(0.16), 0.02, CY);
+    for (const [x, z] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) strip([[x * 0.16, z * 0.16], [x * 0.32, z * 0.32]], 0.016, CY), strip([[x * 0.32, z * 0.32], [x * 0.46, z * 0.46]], 0.012, [0.25, 0.6, 0.75, 1]);
+    for (const [x, z] of [[-0.32, -0.32], [0.32, -0.32], [0.32, 0.32], [-0.32, 0.32]]) box(x, z, 0.045, 0.045, [0.75, 1, 1, 1], 0.001);
+    box(0, 0, 0.06, 0.06, [0.85, 1, 1, 1], 0.001);
+  });
+}
+
 export function buildEnvironment(battle, seed = 1, themeId = 'hollow') {
   const th = THEMES[themeId] || THEMES.hollow;
   const g = new Geo(), fx = new Geo();
@@ -74,12 +111,19 @@ export function buildEnvironment(battle, seed = 1, themeId = 'hollow') {
       else g.material(th.rock, q => q.with(at(cx, 0.1, cz, RY(rnd() * 3), S(s, 0.75 + rnd() * 0.45, s)), r => r.sphere(0.4, 7, 5, [1, 1, 1, 1], (i, j) => jitter([0.95, 0.95, 0.92, 1], 0.2, i * 3 + j * 7 + x))));
       if (themeId === 'hollow') g.material(MAT.moss, q => q.with(at(cx + 0.08, 0.38, cz - 0.05, S(1, 0.45, 1)), r => r.sphere(0.2, 6, 3, W)));
     }
+    // v1.5.0 rubble: a smashed rock leaves low walkable debris (deterministic per tile, independent of rnd()).
+    if (t !== TILE.ROCK && (battle.rubble || []).some(r => r.x === x && r.y === y)) {
+      for (let k = themeId === 'nexus' ? 2 : 3; k > 0; k--) rnd();   // keep every other rock's shape stable after a smash
+      for (let k = 0; k < 4; k++) { const ox = ((x * 37 + y * 11 + k * 23) % 7 - 3) * 0.09, oz = ((x * 13 + y * 29 + k * 17) % 7 - 3) * 0.09, rs = 0.11 + ((x + y + k) % 3) * 0.035;
+        g.material(th.rock, q => q.with(at(cx + ox, 0.03, cz + oz, RY(k * 1.3), S(1, 0.55, 1)), r => r.sphere(rs, 5, 3, [0.82, 0.8, 0.76, 1]))); }
+    }
+    if (t === TILE.LEYLINE || t === TILE.ARCHIVE || t === TILE.RIFT || t === TILE.CONDUIT) tileGlyph(g, t, cx, cz, x, y);   // v1.6.0 distinct shapes
     if (t === TILE.BRAMBLE) { foliage.push({ kind: 'bramble', x: cx - 0.18, z: cz + 0.12, s: 0.75 }); foliage.push({ kind: 'bramble', x: cx + 0.2, z: cz - 0.14, s: 0.6 }); }
     if (t === TILE.ICE) { lights.push({ pos: [cx, 0.3, cz], col: [0.46, 0.85, 1], radius: 1.8, intensity: 0.45, flicker: 0.06, prio: 0 }); emitters.push({ kind: 'rift', pos: [cx, 0.02, cz] }); }
     if (t === TILE.SPORES) { foliage.push({ kind: 'mushroom', x: cx - 0.14, z: cz, s: 0.52 }); lights.push({ pos: [cx, 0.18, cz], col: [0.4, 1, 0.42], radius: 1.3, intensity: 0.35, flicker: 0.15, prio: 0 }); }
     if (t === TILE.UNSTABLE) { lights.push({ pos: [cx, 0.1, cz], col: [1, 0.36, 0.17], radius: 1.4, intensity: 0.4, flicker: 0.15, prio: 0 }); }
-    if (t === TILE.ARCHIVE) { lights.push({ pos: [cx, 0.24, cz], col: [0.58, 0.6, 1], radius: 1.65, intensity: 0.75, flicker: 0.12, prio: 1 }); emitters.push({ kind: 'ley', pos: [cx, 0.03, cz] }); }
-    if (t === TILE.CONDUIT) { lights.push({ pos: [cx, 0.35, cz], col: [0.4, 0.9, 1], radius: 2.1, intensity: 0.85, flicker: 0.12, prio: 2 }); emitters.push({ kind: 'ley', pos: [cx, 0.04, cz] }); }
+    if (t === TILE.ARCHIVE) { lights.push({ pos: [cx, 0.24, cz], col: [0.58, 0.6, 1], radius: 1.65, intensity: 0.75, flicker: 0.12, prio: 1 }); emitters.push({ kind: 'page', pos: [cx, 0.03, cz] }); }
+    if (t === TILE.CONDUIT) { lights.push({ pos: [cx, 0.35, cz], col: [0.4, 0.9, 1], radius: 2.1, intensity: 0.85, flicker: 0.12, prio: 2 }); emitters.push({ kind: 'conduit', pos: [cx, 0.04, cz] }); }
     if (t === TILE.CRUMBLE) { foliage.push({ kind: 'shard', x: cx, z: cz, s: 0.42 }); }
     if (t === TILE.LEYLINE) { lights.push({ pos: [cx, 0.35, cz], col: [1, 0.78, 0.35], radius: 1.8, intensity: 0.9, flicker: 0.15, prio: 1 }); emitters.push({ kind: 'ley', pos: [cx, 0.02, cz] }); }
     if (t === TILE.RIFT) { lights.push({ pos: [cx, 0.35, cz], col: [0.7, 0.35, 1], radius: 2, intensity: 1.1, flicker: 0.3, prio: 2 }); emitters.push({ kind: 'rift', pos: [cx, 0.02, cz] }); }

@@ -40,8 +40,10 @@ export function refreshTribalBonuses(s,ev=[]) {
     else if(u.tribalOnlyTrample){delete u.keywords.trample;u.tribalOnlyTrample=false;}
     if(!delta)continue;
     u.tribalBonus=total;u.power=Math.max(0,u.power+delta);u.toughness=Math.max(0,u.toughness+delta);
-    u.maxHp=Math.max(0,u.maxHp+delta);u.hp=Math.max(0,Math.min(u.maxHp,u.hp+Math.max(0,delta)));
+    // v1.5.0: marked damage persists when a bonus ends (simultaneous Pyroclasm on a pack resolves like the printed card).
+    u.maxHp=Math.max(0,u.maxHp+delta);u.hp=Math.max(0,Math.min(u.maxHp,u.hp+delta));
     ev.push({t:'status',uid:u.uid,status:'tribal',value:total,total});
+    if(u.hp<=0&&!u.deadResolved)kill(s,ev,u);
   }
 }
 
@@ -51,6 +53,8 @@ export function strikePower(s, u, target) {
   let p = effectivePower(u);
   const def = ENEMIES[u.defId];
   if (def && def.pack && target && s.units.some(o => o !== u && o.hp > 0 && o.side === u.side && manhattan(o, target) === 1)) p += 1;
+  // v1.8.0 Pack tactics (Threat 19+): a foe striking while another foe also stands next to the target gets +1.
+  else if (s.threatFlank && u.side === 'enemy' && target && s.units.some(o => o !== u && o.hp > 0 && o.side === 'enemy' && manhattan(o, target) === 1)) p += s.threatFlank;
   return p;
 }
 export function heal(s, ev, u, amount, kind = 'heal') {
@@ -66,12 +70,42 @@ export function addShield(s, ev, u, amount, kind = 'shield') {
   u.statuses.shield = (u.statuses.shield || 0) + amount;
   ev.push({ t: 'shield', uid: u.uid, amount, total: u.statuses.shield, kind });
 }
-export function addStatus(s, ev, u, status, value) {
+export function addStatus(s, ev, u, status, value, { bySide = null } = {}) {
   if (!alive(u)) return;
   u.statuses[status] = (u.statuses[status] || 0) + value;
+  if (status === 'poison' && bySide === 'enemy') u.poisonByEnemy = (u.poisonByEnemy || 0) + value;   // v1.7.0 attribution
   ev.push({ t: 'status', uid: u.uid, status, value, total: u.statuses[status] });
 }
+/** v1.5.0: the ONLY way a battle becomes won. Idempotent: one phase change, one 'victory' event, ever.
+ * During a simultaneous batch (s.batchDepth > 0) victory is deferred until the batch and its deaths finish. */
+export function declareVictory(s, ev) {
+  if (s.phase === 'lost' || s.victoryDeclared) return false;
+  if (s.batchDepth > 0) { s.victoryPending = true; return false; }
+  s.victoryDeclared = true; s.victoryPending = false; s.phase = 'won'; ev.push({ t: 'victory' }); return true;
+}
+export const battleOver = s => s.phase === 'won' || s.phase === 'lost' || !!s.victoryDeclared;
+const allEnemiesDown = s => s.units.every(e => e.side !== 'enemy' || e.hp <= 0);
+/** v1.5.0 simultaneous resolution: every target is chosen from ONE snapshot, all damage is applied first, then
+ * destruction/replacement and death triggers resolve in board order, then victory/defeat is checked once. */
+export function damageBatch(s, ev, src, entries, opts = {}) {
+  const list = entries.filter(([u]) => u && u.hp > 0);
+  ev.push({ t: 'batch', kind: opts.kind || 'spell', uids: list.map(([u]) => u.uid) });
+  s.batchDepth = (s.batchDepth || 0) + 1; const deferred = s.deferredDeaths || (s.deferredDeaths = []);
+  let total = 0;
+  try {
+    for (const [u, amt] of list) total += dealDamage(s, ev, src, u, amt, opts) || 0;
+  } finally { s.batchDepth--; }
+  if (s.batchDepth === 0) {
+    const due = deferred.splice(0);
+    for (const [u, el] of due) if (u.hp <= 0 && !u.deadResolved) kill(s, ev, u, el);
+    ev.push({ t: 'batchEnd' });
+    if (s.victoryPending || (allEnemiesDown(s) && s.phase !== 'lost' && !s.victoryDeclared && list.some(([u]) => u.side === 'enemy'))) declareVictory(s, ev);
+  }
+  return total;
+}
 function kill(s, ev, u, element = null) {
+  if (s.batchDepth > 0) { if (!s.deferredDeaths.some(([x]) => x === u)) s.deferredDeaths.push([u, element]); return; }
+  if (u.deadResolved) return; u.deadResolved = true;
   ev.push({ t: 'death', uid: u.uid, element, phase:s.phase,turn:s.turn });
   onUnitDeath(s,ev,u);
   if(u.side==='player' && !u.hero && u.slime>0 && s.units.some(x=>x.defId==='toxrill'&&x.hp>0))s.pendingSlugs=(s.pendingSlugs||0)+1;
@@ -106,11 +140,11 @@ function kill(s, ev, u, element = null) {
     }
     if (def && def.burst) { // Legacy-only rules; new printed creature records clear this property.
       ev.push({ t: 'burst', uid: u.uid, x: u.x, y: u.y });
-      for (const o of s.units.filter(o => o.hp > 0 && manhattan(o, u) === 1)) dealDamage(s, ev, null, o, def.burst, { kind: 'burst' });
+      damageBatch(s, ev, null, s.units.filter(o => o.hp > 0 && manhattan(o, u) === 1).map(o => [o, def.burst]), { kind: 'burst' });
     }
     refreshTribalBonuses(s,ev);
-    if (s.units.every(e => e.side !== 'enemy' || e.hp <= 0) && s.phase !== 'lost') { s.phase = 'won'; ev.push({ t: 'victory' }); }
-  } else if (u.hero && s.phase !== 'won') { s.phase = 'lost'; ev.push({ t: 'defeat' }); }
+    if (allEnemiesDown(s)) declareVictory(s, ev);
+  } else if (u.hero && !s.victoryDeclared && s.phase !== 'lost') { s.phase = 'lost'; ev.push({ t: 'defeat' }); }
 }
 /** A legal voluntary sacrifice still uses the authoritative death trigger pipeline. */
 export function sacrificeAlly(s,ev,u){
@@ -125,7 +159,7 @@ export function checkStateBasedDeath(s, ev, u) {
 }
 /** Damage pipeline: strike cap (bosses) -> armor (combat only) -> shield -> health.
  *  Only combat damage (strikes/counterblows) triggers Deathtouch and Lifelink; spells bypass armor. */
-export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hit', element = null } = {}) {
+export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hit', element = null, cause = null } = {}) {
   if (!alive(tgt) || amount <= 0) return 0;
   let a = amount;
   // Explicit per-enemy affinity only. Never grant automatic same-color resistance to all foes.
@@ -163,15 +197,18 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
   // Legendary bosses resist the instant-destroy clause of Deathtouch.
   // Ordinary creatures still die to it; bosses take printed combat damage
   // (plus the separately disclosed GRAFTBOUND boss chip bonus in strike()).
-  const bossResistsTouch = !!(combat && src && has(src, 'deathtouch') && a > 0 && tgt.boss);
+  const bossResistsTouch = !!(combat && src && has(src, 'deathtouch') && a > 0 && (tgt.boss || tgt.hero));
   if (bossResistsTouch) ev.push({ t: 'deathtouchResisted', uid: tgt.uid, src: src.uid });
-  const dt = combat && src && has(src, 'deathtouch') && a > 0 && !tgt.boss;
+  // v1.4.0: the hero is the player's life total, not a creature card — enemy Deathtouch deals its damage (+2), never instant death.
+  const dt = combat && src && has(src, 'deathtouch') && a > 0 && !tgt.boss && !tgt.hero;
   tgt.hp = dt ? 0 : Math.max(0, tgt.hp - a);
   if(tgt.statuses.indestructible && tgt.toughness>0 && tgt.hp<=0){tgt.hp=1;ev.push({t:'indestructible',uid:tgt.uid});}
   const lost = hpBefore - tgt.hp;
   ev.push({ t: 'damage', uid: tgt.uid, amount: a, blocked, deathtouch: dt, kind, element, src: src ? src.uid : null });
   if (src && src.side === 'player' && tgt.side === 'enemy') s.stats.damageDealt += lost;
-  if (tgt.hero) { s.stats.damageTaken += lost; if (src?.side === 'enemy') s.stats.enemyHealthDamage = (s.stats.enemyHealthDamage || 0) + lost; }
+  // v1.7.0 attribution: only ENEMY-caused health loss restrains Global Threat — a foe source, or an explicit cause:'enemy'
+  // (foe-created hazards, foe-inflicted poison). Self-damage, own spells/allies and neutral terrain never count.
+  if (tgt.hero) { s.stats.damageTaken += lost; if (src?.side === 'enemy' || (!src && cause === 'enemy')) s.stats.enemyHealthDamage = (s.stats.enemyHealthDamage || 0) + lost; }
   // Real infect replaces health damage with poison counters against a player.
   // Against creatures, damage is represented by persistent -1/-1 counters.
   if(combat && src?.keywords?.infect && a>0){
@@ -212,11 +249,11 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
 export function strike(s, ev, src, tgt, dir, kind = 'strike') {
   if (!alive(src) || !alive(tgt)) return;
   let amt = strikePower(s, src, tgt);
-  if (has(src, 'deathtouch') && tgt.boss && amt > 0) amt += 2; // Explicit Legendary Vitality adaptation: chip damage, not destruction.
+  if (has(src, 'deathtouch') && (tgt.boss || tgt.hero) && amt > 0) amt += 2; // Explicit Legendary Vitality adaptation: chip damage, not destruction.
   if (amt <= 0) { ev.push({ t: 'damage', uid: tgt.uid, amount: 0, blocked: 0, kind }); return; }
   const cap = ENEMIES[tgt.defId] && ENEMIES[tgt.defId].strikeCap;
   const shield = tgt.statuses.shield || 0, armor = kv(tgt, 'armor');
-  const lethal = armor + shield + (has(src, 'deathtouch') && !tgt.legendary ? 1 : tgt.hp);
+  const lethal = armor + shield + (has(src, 'deathtouch') && !tgt.legendary && !tgt.boss && !tgt.hero ? 1 : tgt.hp);
   const excess = Math.min(amt, cap || Infinity) - lethal;
   const tx = tgt.x, ty = tgt.y;
   dealDamage(s, ev, src, tgt, amt, { combat: true, kind });
@@ -269,18 +306,50 @@ export function attackExchange(s, ev, atk, def) {
   }
 }
 /** Movement side effects for ground units: bramble and lava damage on each entered tile (see data/terrain.js). */
-export function enterTiles(s, ev, u, path) {
-  if (has(u, 'flying')) return;
-  for (let i = 1; i < path.length && alive(u); i++) {
-    const t = tileAt(s, path[i].x, path[i].y);
-    if (t === T.BRAMBLE) dealDamage(s, ev, null, u, TERRAIN_RULES.bramble.enterDamage, { kind: 'bramble' });
-    if (t === T.LAVA) dealDamage(s, ev, null, u, TERRAIN_RULES.lava.enterDamage, { kind: 'lava' });
-    if (t === T.ICE && !(u.statuses.chilled || 0)) addStatus(s, ev, u, 'chilled', 1);
-    if (t === T.SPORES) addStatus(s, ev, u, 'poison', TERRAIN_RULES.spores.poisonOnEnter);
-    if (t === T.CRUMBLE) {
-      dealDamage(s, ev, null, u, TERRAIN_RULES.crumble.enterDamage, { kind: 'crumble' });
-      s.terrain[path[i].y * s.w + path[i].x] = T.FLOOR;
-      ev.push({ t: 'terrain', tiles: [path[i]], kind: 'crumble' });
-    }
+const ENTER_HAZARDS = new Set([T.BRAMBLE, T.LAVA, T.ICE, T.SPORES, T.CRUMBLE]);
+/** On-enter terrain effect for ONE tile. Foe-created hazards (s.foeTiles) count as enemy-caused damage/poison. */
+export function hazardAt(s, ev, u, at) {
+  const t = tileAt(s, at.x, at.y), foe = (s.foeTiles || []).includes(at.y * s.w + at.x) ? 'enemy' : null;
+  if (t === T.BRAMBLE) dealDamage(s, ev, null, u, TERRAIN_RULES.bramble.enterDamage, { kind: 'bramble', cause: foe });
+  if (t === T.LAVA) dealDamage(s, ev, null, u, TERRAIN_RULES.lava.enterDamage, { kind: 'lava', cause: foe });
+  if (t === T.ICE && !(u.statuses.chilled || 0)) addStatus(s, ev, u, 'chilled', 1);
+  if (t === T.SPORES) addStatus(s, ev, u, 'poison', TERRAIN_RULES.spores.poisonOnEnter, { bySide: foe });
+  if (t === T.CRUMBLE) {
+    dealDamage(s, ev, null, u, TERRAIN_RULES.crumble.enterDamage, { kind: 'crumble', cause: foe });
+    s.terrain[at.y * s.w + at.x] = T.FLOOR;
+    ev.push({ t: 'terrain', tiles: [at], kind: 'crumble' });
   }
 }
+export function enterTiles(s, ev, u, path) {
+  if (has(u, 'flying')) return;
+  for (let i = 1; i < path.length && alive(u); i++) hazardAt(s, ev, u, path[i]);
+}
+/** v1.7.0 STEPWISE movement: the unit really occupies each tile in turn. A hazardous tile resolves the moment it is
+ *  entered (the walk presentation is split there), and death stops the walk on that tile — later tiles never fire.
+ *  Also records the last-move direction (u.facing, presentation-only). Flying units ignore ground hazards. */
+export function walkPath(s, ev, u, path) {
+  if (!path || path.length < 2) return { x: u.x, y: u.y, stopped: false };
+  let seg = [path[0]];
+  const flush = () => { if (seg.length > 1) ev.push({ t: 'move', uid: u.uid, path: seg }); seg = [seg[seg.length - 1]]; };
+  for (let i = 1; i < path.length; i++) {
+    const at = path[i]; u.facing = [Math.sign(at.x - path[i - 1].x), Math.sign(at.y - path[i - 1].y)];
+    u.x = at.x; u.y = at.y; seg.push(at);
+    if (!has(u, 'flying') && ENTER_HAZARDS.has(tileAt(s, at.x, at.y))) {
+      flush(); hazardAt(s, ev, u, at);
+      if (!alive(u)) { ev.push({ t: 'moveStopped', uid: u.uid, x: at.x, y: at.y, reason: 'defeated' }); return { x: at.x, y: at.y, stopped: true }; }
+    }
+  }
+  flush(); return { x: u.x, y: u.y, stopped: false };
+}
+/** v1.5.0 destructible rocks. Any living unit adjacent to a Rock may smash it, which costs ALL of that unit's remaining
+ * movement and attacks this turn. The tile becomes floor (recorded as rubble for presentation and saves); movement,
+ * line of sight, pathfinding and AI all read s.terrain, so the change is authoritative and deterministic. */
+export function smashRock(s, ev, u, x, y) {
+  if (!alive(u)) throw new Error('That creature cannot act');
+  if (!inBoundsTile(s, x, y) || tileAt(s, x, y) !== T.ROCK) throw new Error('There is no rock there');
+  if (manhattan(u, { x, y }) !== 1) throw new Error('Stand next to the rock to smash it');
+  s.terrain[y * s.w + x] = T.FLOOR; (s.rubble ||= []).push({ x, y });
+  u.smashedTurn = s.turn;
+  ev.push({ t: 'smash', uid: u.uid, x, y }, { t: 'terrain', tiles: [{ x, y }], kind: 'smash' });
+}
+const inBoundsTile = (s, x, y) => x >= 0 && y >= 0 && x < s.w && y < s.h;

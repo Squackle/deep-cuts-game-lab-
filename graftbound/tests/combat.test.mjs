@@ -74,7 +74,9 @@ test('archer telegraphs a line, fires next turn; stepping out dodges', () => {
   const s = arena(['a.....', '......', '......', '......', '......', 'P.....'], { a: 'archer' });
   endTurn(s); const ar = E('archer')(s); assert.ok(ar.aim.tiles.some(t => t.x === player(s).x && t.y === player(s).y));
   const dodge = moveOptions(s).find(o => !ar.aim.tiles.some(t => t.x === o.x && t.y === o.y) && o.x !== ar.x && o.y !== ar.y);
-  movePlayer(s, dodge.x, dodge.y); const hp = player(s).hp; endTurn(s); assert.equal(player(s).hp, hp);
+  // v1.7.0: dodging the prepared (2) shot still leaves the marksman's ordinary 1-damage quick shot.
+  movePlayer(s, dodge.x, dodge.y); const hp = player(s).hp; const ev = endTurn(s);
+  assert.ok(player(s).hp >= hp - 1, 'the prepared shot missed'); assert.ok(!ev.some(e => e.t === 'damage' && e.amount === 2));
 });
 test('pack hounds flank (+1 power) and take the side opposite their packmate', () => {
   const p = arena(['.....', '.....', '.hPh.', '.....'], { h: 'hound' }); assert.deepEqual(intents(p).map(x => x.damage), [3, 3]);

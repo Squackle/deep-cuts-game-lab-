@@ -1,5 +1,7 @@
 // GRAFTBOUND app controller: loading -> screens <-> run lifecycle <-> battle UI <-> saves. No game rules here.
 import { Scene } from './rendering/scene.js';
+import { cameraFacingDirection } from './rendering/hd2d-art-pack.js';
+import { duplicatePreview } from './cards/graft-levels.js';
 import { loadAssets } from './rendering/sprites.js';
 import { composePlayerSheet } from './rendering/evolution-visuals.js';
 import { composeEquippedSheet } from './rendering/equipment-visuals.js';
@@ -64,7 +66,14 @@ class App {
     const loop = now => {
       const dt = Math.max(0, Math.min(0.1, (now - last) / 1000)); last = now;
 
-      if (this.mode === 'title' || this.mode === 'intro') this.scene.yawTarget += dt * 0.1;
+      if (this.mode === 'title' || this.mode === 'intro') {
+        this.scene.yawTarget += dt * 0.1;
+        // The title camera slowly orbits; keep only the showcase hero facing the viewer.
+        if (this.mode === 'title') {
+          const titleHero = this.scene.units.get(1);
+          if (titleHero?.side === 'player') titleHero.dir = cameraFacingDirection(this.scene.yaw);
+        }
+      }
       this.scene.frame(dt); this.battle.frame(); this.autoQuality(dt);
       requestAnimationFrame(loop);
     };
@@ -132,7 +141,8 @@ class App {
     $('btn-sound').addEventListener('click', () => { const on = !(this.meta.settings.sound || this.meta.settings.music); this.meta.settings.sound = this.meta.settings.music = on; this.applySettings(); this.saveMeta(); this.syncSoundBtn(); });
     $('btn-menu').addEventListener('click', () => this.pauseMenu());
     this.syncSoundBtn();
-    $('modal').addEventListener('click', e => { if (e.target.id === 'modal' || e.target.closest('[data-close]')) this.closeModal(); });
+    // v1.7.0: a LOCKED modal (pending mandatory choice) ignores backdrop clicks and Escape; only its own buttons resolve it.
+    $('modal').addEventListener('click', e => { if (this.modalLocked() && !e.target.closest('[data-close]')) return; if (e.target.id === 'modal' || e.target.closest('[data-close]')) this.closeModal(); });
     $('hint').addEventListener('click', () => $('hint').classList.remove('show'));
     $('bigtext').addEventListener('click', () => { if (this.skipAbsorb) this.skipAbsorb(); });
     document.addEventListener('pointerdown', () => this.audio.unlock());
@@ -140,7 +150,7 @@ class App {
     window.addEventListener('pagehide', () => { if (this.run) this.save(); });
     window.addEventListener('keydown', e => {
       const k = e.key.toLowerCase();
-      if (k === 'escape' && this.modalOpen()) { this.closeModal(); return; }
+      if (k === 'escape' && this.modalOpen()) { if (!this.modalLocked()) this.closeModal(); return; }
       if (this.skipAbsorb && (k === ' ' || k === 'enter' || k === 'escape')) { e.preventDefault(); this.skipAbsorb(); return; }
       if (this.modalOpen() || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
       if (k === 'q') this.scene.rotate(-1); else if (k === 'e') this.scene.rotate(1);
@@ -162,8 +172,11 @@ class App {
   }
   syncSoundBtn() { const on = this.meta.settings.sound || this.meta.settings.music; $('btn-sound').innerHTML = on ? ICON.sound : ICON.mute; $('btn-sound').setAttribute('aria-label', on ? 'Mute' : 'Unmute'); }
   modalOpen() { return $('modal').classList.contains('show'); }
-  openModal(html, cls = '') { const m = $('modal'); m.innerHTML = `<div class="modal-box ${cls}" role="dialog" aria-modal="true">${html}</div>`; m.classList.add('show'); const f = m.querySelector('button.primary, button'); if (f) f.focus({ preventScroll: true }); return m.firstElementChild; }
-  closeModal() { this.pauseOpen = false; $('modal').classList.remove('show'); $('modal').innerHTML = ''; }
+  openModal(html, cls = '', { locked = false } = {}) { const m = $('modal'); if (locked) m.dataset.locked = '1'; else delete m.dataset.locked; m.innerHTML = `<div class="modal-box ${cls}" role="dialog" aria-modal="true">${html}</div>`; m.classList.add('show'); const f = m.querySelector('button.primary, button'); if (f) f.focus({ preventScroll: true }); return m.firstElementChild; }
+  modalLocked() { return $('modal').dataset.locked === '1' && this.modalOpen(); }
+  closeModal() { this.pauseOpen = false; $('modal').classList.remove('show'); $('modal').innerHTML = ''; delete $('modal').dataset.locked;
+    // v1.7.0 safety net: whatever closed it, an unresolved graft choice re-opens on the next tick (never a soft-lock).
+    if (this.battle && this.mode === 'battle') setTimeout(() => this.battle.promptComboChoices(), 0); }
   confirm(text, yes, fn) { const m = this.openModal(`<p class="confirm">${esc(text)}</p><div class="modal-actions"><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn danger" data-yes>${esc(yes)}</button></div>`); m.querySelector('[data-yes]').addEventListener('click', () => { this.closeModal(); fn(); }); }
   toast(html, kind = '') { const t = $('toast'); t.innerHTML = html; t.className = 'toast ' + kind; void t.offsetWidth; t.classList.add('show'); }
   status(text) { $('status').textContent = text; $('status').classList.toggle('show', !!text); }
@@ -199,7 +212,7 @@ class App {
     this.battle.stop(); this.scene.loadArena(fake, 7, theme || (this.run ? ACTS[this.run.act].theme : 'hollow')); this.audio.setAct(this.run ? this.run.act : 0);
     const ap = deriveAppearance(evo, visualForRun(this.run));
     const v = this.scene.addUnit({ uid: 1, side: 'player', x: 3, y: 4 }, 'blank'); this.scene.setUnitTexture(1, composeEquippedSheet(this.assets,ap,this.run?.equippedEquipment||[]), Math.min(0.94, ap.size * 0.76));
-    v.pos[0] += 0.5; v.dir = [0.3, 1]; v.aura = ap.effects.includes('aura') ? ap.glow : null;
+    v.pos[0] += 0.5; v.dir = cameraFacingDirection(this.scene.yaw); v.aura = ap.effects.includes('aura') ? ap.glow : null;
     this.scene.zoom = 1.75; this.scene.focusTarget = [0.5, 0.2, 0.5]; this.scene.dof = 1.4;
   }
   toTitle() { this.setMode('title'); this.showcase(); UI.titleScreen(this); }
@@ -267,6 +280,8 @@ class App {
     const out = concludeBattle(this.run);
     const entry = this.run.scoring && this.run.scoring.encounters.at(-1);
     if (out.outcome === 'lost') { this.save(); await new Promise(r => setTimeout(r, 600)); return this.endRun(false); }
+    // v1.5.0: authoritative Global Threat dial, after the victory banner and before the encounter record. Never auto-dismissed.
+    if (this.run.lastThreat && !this.run.lastThreat.seen && this.run.lastBattle?.nodeType !== 'tutorial') { this.setMode('reward'); await UI.threatDialScreen(this, this.run.lastThreat); this.run.lastThreat.seen = true; this.save(); }
     if (entry && entry.key === act + ':' + this.run.current) { this.setMode('reward'); await UI.encounterResultScreen(this, entry, { verifiedNote: this.run.ranked ? 'RANKED PREVIEW · PROVISIONAL · UNSUBMITTED' : 'LOCAL · PROVISIONAL' }); }
     if (this.run.lastBattle.nodeType === 'tutorial') this.meta.tutorialDone = true;
     this.collect(evaluateAchievements(this.meta, { event: out.boss ? 'bossDown' : 'battleWon', act, elite: out.elite, battleStats: out.battleStats, attacks, run: this.run, evo: this.run.evo }));
@@ -285,6 +300,7 @@ class App {
     if (this.run.phase === 'won') return this.endRun(true);
     const { choice, rect, release } = await UI.rewardScreen(this, this.run.pending.cards, { tier: this.run.pending.tier, severed: this.run.pending.severed, firstVictoryPacks: this.run.pending.firstVictoryPacks });
     if (choice === 'skip') { skipReward(this.run); this.record({ type: 'skip' }); this.save(); this.toast('<b>+1 Maximum Health</b>'); }
+    else if (choice === 'skipThreat') { const r = skipReward(this.run, 'threat'); this.record({ type: 'skip', mode: 'threat' }); this.save(); this.toast(`<b>Global Threat ${r.amount}</b><small>Now ${this.run.worldThreat.level}</small>`); }
     else {
       const evoBefore = this.run.evo; let change;
       try { change = chooseReward(this.run, choice, release); } catch (err) { this.toast(`<b>Can't</b> ${esc(err.message)}`, 'short'); return this.reward(); }
@@ -346,7 +362,7 @@ class App {
       sc.fx.burst(sc.centerPos(uid), col, 80, { speed: 3, up: 2.5, size: 16 }); sc.fx.burst(sc.centerPos(uid), [1, 0.95, 0.7], 40, { speed: 1.6, up: 3, size: 10 });
       this.traitFx(uid, evoBefore);
       const kws = [...change.gained, ...change.raised].map(kw => keywordLabel(kw, this.run.evo.keywords[kw]));
-      this.bigText(`<div class="bt-pt">${evoBefore.power}/${evoBefore.toughness} <i>→</i> <b>${this.run.evo.power}/${this.run.evo.toughness}</b></div>${kws.length ? `<div class="bt-kw">${esc(kws.join(' · '))}</div>` : ''}${change.resonance ? `<div class="bt-res">Resonance +${change.resonance * 2} Maximum Health</div>` : ''}${change.released ? `<div class="bt-src">${esc(change.released)} was released</div>` : ''}${this.traitLine(evoBefore)}<div class="bt-src">${esc(card.name)} is grafted to you · recorded in your Journal</div><small class="bt-skip">tap to continue</small>`, COLOR[card.color].glow);
+      this.bigText(`<div class="bt-pt">${evoBefore.power}/${evoBefore.toughness} <i>→</i> <b>${this.run.evo.power}/${this.run.evo.toughness}</b></div>${kws.length ? `<div class="bt-kw">${esc(kws.join(' · '))}</div>` : ''}${change.resonance ? `<div class="bt-res">Resonance +${change.resonance * 2} Maximum Health</div>` : ''}${change.released ? `<div class="bt-src">${esc(change.released)} was released</div>` : ''}${this.traitLine(evoBefore)}${(() => { const dp = duplicatePreview(evoBefore.absorbed, cardId); return dp ? `<div class="bt-levelup">${dp.maxed ? `${esc(dp.name)} is already at max level ${dp.from}` : `<b>Level Up!</b> ${esc(dp.name)} Lv ${dp.from} → Lv ${dp.to}<small>${esc(dp.before)} → ${esc(dp.after)}</small>`}</div>` : ''; })()}<div class="bt-src">${esc(card.name)} is grafted to you · recorded in your Journal</div><small class="bt-skip">tap to continue</small>`, COLOR[card.color].glow);
     } else {
       v.flash = 0.6; sc.fx.burst(sc.centerPos(uid), col, 40, { speed: 2, up: 2 });
       this.bigText(`<div class="bt-kw">${esc(change.kind === 'empower' ? `${card.name} · Level ${change.level}` : card.name)}</div><div class="bt-src">${change.kind === 'empower' ? 'Spell empowered' : 'Inscribed in your spellbook'}</div><small class="bt-skip">tap to continue</small>`, COLOR[card.color].glow);

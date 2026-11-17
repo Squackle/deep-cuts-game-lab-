@@ -1,0 +1,31 @@
+<!doctype html><meta charset="utf-8"><title>Graft preview</title>
+<style>body{background:#2b3a2f;margin:0;font:12px sans-serif;color:#eee}canvas{image-rendering:pixelated}</style>
+<canvas id="c"></canvas>
+<script type="module">
+import { blankNativeAnchor } from '../src/rendering/native-blank-art.js';
+import * as N from '../src/rendering/native-blank-art.js';
+const builds=[
+ ['Blank',{features:{},morph:{surface:'skin'},stage:0}],
+ ['Bird+Bear (2)',{features:{wings:1,claws:1},morph:{wingKind:'feather',surface:'fur',tailKind:'fur'},stage:2}],
+ ['Drake/Wurm (5)',{features:{wings:2,horns:2,tail:2,spikes:1,claws:1},morph:{wingKind:'membrane',surface:'scales',tailKind:'scaled'},stage:5}],
+ ['Knight/Tree (7)',{features:{armor:2,antlers:2,blades:1,moss:1,tendrils:1,venom:1},morph:{surface:'bark'},stage:7}],
+ ['Max (10)',{features:{wings:3,horns:3,tail:3,spikes:3,claws:3,armor:3,shell:1,venom:1},morph:{wingKind:'membrane',surface:'scales',tailKind:'serpent'},stage:10}],
+];
+const S=128,Z=2,cv=document.getElementById('c');cv.width=S*Z*4;cv.height=S*Z*builds.length;
+const out=cv.getContext('2d');out.imageSmoothingEnabled=false;
+function body(g,A){g.fillStyle='#e8c7a4';g.strokeStyle='#302723';g.lineWidth=2;
+ const o=(x,y,rx,ry)=>{g.beginPath();g.ellipse(x,y,rx,ry,0,0,7);g.fill();g.stroke();};
+ o(A.hip[0],(A.hip[1]+A.leftFoot[1])/2,7,22);o(A.rightFoot[0]-6,(A.hip[1]+A.rightFoot[1])/2,7,22);
+ o(A.chest[0],A.chest[1]+8,15,22);o(A.leftHand[0]+6,(A.chest[1]+A.leftHand[1])/2,5,14);o(A.rightHand[0]-6,(A.chest[1]+A.rightHand[1])/2,5,14);o(A.head[0],A.head[1]+4,11,13);}
+builds.forEach(([name,anat],r)=>{
+ const app={anatomy:anat,skinTone:0};
+ [['idle',0,0],['walk',1,0],['attack',2,0],['idle',0,1]].forEach(([st,f,v],col)=>{
+  const c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');
+  const A=blankNativeAnchor(st,f,v);
+  N.__paintForPreview(g,app,A,v,st,f,'behind');body(g,A);N.__paintForPreview(g,app,A,v,st,f,'front');
+  out.drawImage(c,col*S*Z,r*S*Z,S*Z,S*Z);
+ });
+ out.fillStyle='#fff';out.fillText(name,4,r*S*Z+12);
+});
+document.title='done';
+</script>

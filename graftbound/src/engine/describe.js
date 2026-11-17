@@ -17,7 +17,7 @@ export function describeTile(s, x, y) {
   if (t === T.CONDUIT) add('Arcane conduit', `Start your turn here to empower your next spell by +${R.conduit.spellBonus}.`, 'At the start of your turn.', 'benefit');
   if (t === T.CRUMBLE) add('Crumbling tile', `A one-use brittle slab. Deals ${R.crumble.enterDamage} damage when a walker enters, then collapses into ordinary floor.`, 'Once; flying units avoid the pressure.', 'hazard');
   if (t === T.LEYLINE) add('Leyline', `Ancient channel of power. Start your turn here for +${R.leyline.manaBonus} mana (may exceed your maximum by 1).`, 'At the start of your turn.', 'benefit');
-  if (t === T.ROCK) add('Rock', 'Impassable for ground units. Fliers pass over it. Does not block spells.', 'Always.', 'info');
+  if (t === T.ROCK) add('Rock', 'Blocks ground units (fliers pass over). Any creature next to it can smash it into walkable rubble, using all of its remaining movement and attacks that turn.', 'Always.', 'info');
   const cooled = s && (s.cooled || []).find(c => c.i === y * s.w + x);
   if (cooled) add('Hardened lava', `Frost-cooled rock: safe to stand on; it melts back to lava at the end of round ${cooled.until}.`, 'Temporary.', 'benefit');
   const c = s && crystalAt(s, x, y);

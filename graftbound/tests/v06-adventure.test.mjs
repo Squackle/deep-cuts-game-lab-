@@ -15,7 +15,7 @@ const atEvent = (id, seed = 3) => { const r = newRun({ seed }); r.evo = ['mtg:gr
   r.hp = maxHpOf(r); const n = r.map.nodes.find(x => x.depth === 2); r.current = n.id; r.phase = 'event'; r.event = { id, node: n.id }; return r; };
 
 test('events: stable ids, descriptions, explicit costs, at least one valid choice; deterministic roll', () => {
-  assert.deepEqual(EVENT_IDS, ['mnemonicShrine', 'echoingCauldron', 'archivist', 'graftExchange', 'cursedWell', 'forgottenTrial']);
+  assert.deepEqual(EVENT_IDS, ['mnemonicShrine', 'echoingCauldron', 'archivist', 'graftExchange', 'cursedWell', 'stalkersThicket', 'forgottenTrial']);   // v1.7.0 rare ambush
   for (const id of EVENT_IDS) { const r = atEvent(id); const ch = eventChoices({ ...r, maxHp: maxHpOf(r) }, id); assert.ok(EVENTS[id].name && EVENTS[id].text); assert.ok(ch.some(c => c.available)); assert.ok(ch.every(c => c.text.length > 8)); }
   const r = atEvent('archivist'); assert.equal(rollEvent(r, 77), rollEvent(r, 77));
 });

@@ -123,6 +123,12 @@ export const META_MIGRATIONS = {
   2: m => { m.v = 3; return m; },
   3: m => { m.v = 4; if (m.settings) delete m.settings.contentMode; return m; },
   4: m => { m.v = 5; m.settings = { ...DEFAULT_SETTINGS, ...(m.settings || {}) }; m.records = m.records || {}; return m; },
+  // v1.6.0: Cinematic becomes the default. Before v1.6 the game never recorded whether a speed was CHOSEN, so only the
+  // old default ('normal', or missing) moves to Cinematic. Fast / Instant / Cinematic are clearly deliberate and kept.
+  // From now on any change in Settings sets animSpeedChosen, and later migrations must respect it.
+  5: m => { m.v = 6; m.settings = { ...DEFAULT_SETTINGS, ...(m.settings || {}) };
+    if (!m.settings.animSpeedChosen && (m.settings.animSpeed === 'normal' || !m.settings.animSpeed)) m.settings.animSpeed = 'cinematic';
+    return m; },
 };
 export function migrate(data, from, to, table) {
   let v = from;
@@ -141,7 +147,7 @@ export function validateRun(r) {
   }
   if (!Array.isArray(r && r.spellbook) || r.spellbook.some(s => !resolveCard(s.id) || !isNum(s.level))) errs.push('spellbook');
   if (!Array.isArray(r?.equipmentInventory)||!Array.isArray(r?.equippedEquipment)||r.equippedEquipment.length!==2||r.equippedEquipment.some(id=>id&&!r.equipmentInventory.includes(id))) errs.push('equipment inventory');
-  if (!r?.worldThreat || !Number.isInteger(r.worldThreat.level) || r.worldThreat.level < 0 || r.worldThreat.level > 12) errs.push('world threat');
+  if (!r?.worldThreat || !Number.isInteger(r.worldThreat.level) || r.worldThreat.level < 0 || r.worldThreat.level > 24) errs.push('world threat');
   if (!Number.isInteger(r?.handCapacity) || r.handCapacity < BASE_HAND_CAPACITY || r.handCapacity > MAX_HAND_CAPACITY) errs.push('hand capacity');
   if (!Array.isArray(r?.equippedSpellIds) || r.equippedSpellIds.length > (r.handCapacity || 0) || new Set(r.equippedSpellIds).size !== r.equippedSpellIds.length || r.equippedSpellIds.some(id => !r.spellbook?.some(e => e.id === id))) errs.push('equipped spells');
   if (!r || !r.map || !Array.isArray(r.map.nodes) || !r.map.nodes.length) errs.push('map');

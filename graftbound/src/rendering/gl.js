@@ -56,7 +56,15 @@ void main(){
   vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n;
   vec3 base = vC.rgb; vec3 glow = vec3(0.0);
   float water = 0.0;
-  if (vMat > 0.5) {
+  if (vMat > 16.5) {
+    // v1.6.0 special-tile glyphs: flat vertex-colored inlays that glow with a DIFFERENT motion per tile type.
+    float id = floor(vMat + 0.5), p = 1.0;
+    if (id == 17.0) p = 0.55 + 0.45 * sin((vW.x + vW.z) * 7.0 - uTime * 3.0);                       // Leyline: flow along the paths
+    else if (id == 18.0) p = 0.8 + 0.2 * sin(uTime * 0.9 + vW.x * 0.7);                            // Inscribed Page: slow steady glow
+    else if (id == 19.0) p = 0.55 + 0.45 * abs(sin(uTime * 2.3 + sin(uTime * 7.1) * 0.6));         // Rift: uneven unstable throb
+    else if (id == 20.0) p = 0.45 + 0.55 * step(0.62, fract(atan(vW.z - floor(vW.z) - 0.5, vW.x - floor(vW.x) - 0.5) / 6.2832 - uTime * 0.35));   // Conduit: stepped chase around the circuit
+    glow = base * p * (id == 18.0 ? 0.42 : 1.15);
+  } else if (vMat > 0.5) {
     vec3 an = abs(n); vec2 uv = an.y > 0.6 ? vW.xz : (an.x > an.z ? vW.zy : vW.xy);
     if (abs(vMat - 11.0) < 0.1) { water = 1.0; uv += vec2(uTime * 0.03, uTime * 0.02); }
     if (abs(vMat - 14.0) < 0.1) uv += vec2(sin(uTime * 0.4 + vW.z) * 0.05, uTime * 0.025);
@@ -85,8 +93,9 @@ void main(){
 const SPR_VS = `#version 300 es
 in vec3 aCenter; in vec2 aCorner; in vec2 aSize; in vec4 aUV; in vec4 aFx; in float aSway;
 uniform mat4 uVP; uniform vec3 uRight; uniform float uWindT;
-out vec2 vUV; out vec4 vFx; out vec3 vW; out vec4 vRect;
+out vec2 vUV; out vec4 vFx; out vec3 vW; out vec4 vRect; flat out vec3 vAnchor;
 void main(){
+  vAnchor = aCenter + vec3(0.0, aSize.y * 0.45, 0.0);
   vec3 w = aCenter + uRight * (aCorner.x - 0.5) * aSize.x + vec3(0.0, aCorner.y * aSize.y, 0.0);
   // v0.6 wind: anchored canopy sway. Displacement grows with height² so the base never moves; irregular (two
   // incommensurate sines) and phase-offset per plant by its world position. aSway = 0 for every unit sprite.
@@ -98,7 +107,7 @@ void main(){
 }`;
 const SPR_FS = `#version 300 es
 precision highp float;
-in vec2 vUV; in vec4 vFx; in vec3 vW; in vec4 vRect;
+in vec2 vUV; in vec4 vFx; in vec3 vW; in vec4 vRect; flat in vec3 vAnchor;
 uniform sampler2D uTex; uniform vec2 uTexel; uniform vec3 uCamFwd; uniform float uDepthOnly; uniform vec3 uOutlineCol;
 ${COMMON}
 out vec4 o;
@@ -117,7 +126,9 @@ void main(){
   }
   if (uDepthOnly > 0.5) { o = vec4(1.0); return; }
   vec3 n = normalize(-uCamFwd * 0.75 + vec3(0.0, 0.55, 0.0));
-  float sh = shadowAt(vW + vec3(0.0, 0.05, 0.0) - uSunDir * 0.12, 0.004);
+  // v1.5.0: ONE shadow value per sprite, sampled at mid-body nudged toward the sun. Per-pixel sampling of an upright
+  // billboard that also writes the shadow map produced self-shadow acne: the blotchy patches on heroes and allies.
+  float sh = shadowAt(vAnchor + uSunDir * 0.45, 0.004);
   float d = max(dot(n, uSunDir), 0.0) * 0.7 + 0.3;
   vec3 amb = mix(uAmbBot, uAmbTop, 0.75);
   vec3 col = t.rgb * (amb * 1.15 + uSunCol * d * mix(0.45, 1.0, sh) + pointLights(vW, n, 1.0));

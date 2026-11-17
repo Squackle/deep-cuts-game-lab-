@@ -83,7 +83,7 @@ export function scarabTargets(s, god) {
 
 export function scarabReanimate(s, ev, god, target) {
   const tile = openTileNear(s, god); if (!tile) return null;
-  if (target.from === 'battlefield') { const d = s.units.find(u => u.uid === target.uid); if (!d) return null; d.exiled = true; }
+  if (target.from === 'battlefield') { const d = s.units.find(u => u.uid === target.uid); if (!d) return null; d.exiled = true; d.exiledBy = 'The Scarab God: reanimated as a Zombie copy'; }
   else return null; // Only actual defeated creatures may be exiled.
   const u = spawnCard(s, target.defId, tile.x, tile.y);
   // Token copy, except 4/4 black Zombie. Printed abilities (and keywords) are kept; encounter Vitality is not.
@@ -103,6 +103,7 @@ export function scarabDied(s, god) {
 /** End step: The Scarab God returns to its owner's hand. If the opponent has no creatures left the encounter
  *  is already won and we do not model recasting it. */
 export function resolveScarabEndStep(s, ev) {
+  /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return;
   const r = s.scarabReturn; if (!r) return;
   s.scarabReturn = null;
   const god = s.units.find(u => u.uid === r.uid); if (!god) return;
@@ -112,6 +113,7 @@ export function resolveScarabEndStep(s, ev) {
 }
 /** Enemy-turn start: recast for {3}{U}{B} when the opponent's mana allows. Re-enters as printed 5/5, no Vitality. */
 export function scarabRecast(s, ev) {
+  /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return;
   const h = s.scarabInHand; if (!h || s.phase !== 'enemy' || !enemies(s).length) return;
   h.mana = Math.min(8, h.mana + 1);
   if (h.mana < SCARAB_RECAST_COST) { ev.push({ t: 'legendaryAbility', uid: 0, name: `The Scarab God waits in hand (${h.mana}/${SCARAB_RECAST_COST} mana)` }); return; }

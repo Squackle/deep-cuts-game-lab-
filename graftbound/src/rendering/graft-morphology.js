@@ -23,8 +23,8 @@ export function renderGraftFrame(g,app,view,anim,frame,pass){
  const xx=lean,yy=bob,level=Math.min(3,Math.max(1,Math.floor(A.stage/3)+1));
  const organic=m.surface==='bark'?[C.wood,C.woodHi]:m.surface==='chitin'?[C.metal,C.steel]:m.surface==='fur'?['#917d64','#d6b993']:[C.woodHi,C.bone];
  if(pass==='behind'){
-  // Tail belongs to the pelvis, not the torso overlay. Larger tails curl inward for grid readability.
-  if(t.tail){let k=t.tail,tx=42+xx,ty=48+yy;for(let i=0;i<9+k;i++){
+  // Legacy 64px fallback: tail sprouts from the lower back, above the pelvis.
+  if(t.tail){let k=t.tail,tx=42+xx,ty=42+yy;for(let i=0;i<9+k;i++){
     const fx=tx+i*1.4, fy=ty+Math.sin(i*.43+phase*.18)*2-i*.66;
     ellipse(g,fx,fy,Math.max(1.8,4-i*.17),Math.max(1.8,3-i*.12),m.tailKind==='fur'?'#b99b75':organic[0],C.ink);
     if(i%3===0)dot(g,fx,fy-2,2,1,organic[1]);

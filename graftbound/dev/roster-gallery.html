@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><title>roster</title>
+<style>body{background:#3b4b3f;margin:0;padding:8px;color:#eee;font:11px sans-serif}#g{display:flex;flex-wrap:wrap;gap:3px;align-items:flex-end}
+figure{margin:0;text-align:center;background:linear-gradient(#56685a,#45564a);padding:2px 2px 0;border-bottom:3px solid #2a352d}canvas{image-rendering:pixelated;display:block;margin:auto}figcaption{max-width:120px;overflow:hidden;white-space:nowrap}</style>
+<p>Every creature at its IN-GAME relative size (sprite height × pixelScale × battle scale), idle front frame. ?finish=0 shows the pre-v1.6 finish.</p>
+<div id="g"></div>
+<script type="module">
+import { installRealCreatureModels, setCreatureFinish } from '../src/rendering/real-creature-models.js';
+import { installPremiumModels } from '../src/rendering/premium-creatures.js';
+import { installLegendaryBosses } from '../src/rendering/legendary-boss-art.js';
+import { ENEMIES } from '../src/data/enemies.js';
+const q = new URLSearchParams(location.search); setCreatureFinish(q.get('finish') !== '0');
+const BASE = new URL('../assets/', import.meta.url).href;
+const img = s => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(s); i.src = BASE + s; });
+const manifest = await (await fetch(BASE + 'sprites/manifest.json')).json(); const images = {};
+await Promise.all(Object.entries(manifest.sprites).map(([k, s]) => img('sprites/' + s.file).then(i => images[k] = i).catch(() => {})));
+installRealCreatureModels(images, manifest); installPremiumModels(images, manifest); installLegendaryBosses(images, manifest);
+const K = +(q.get('k') || 3.1);
+const list = [['blank (hero, premium proxy)', 'blank', 0.53 / 0.53 * 0.45], ['Soldier ally', 'mtg_friendlySoldier', 0.39]];
+for (const [id, d] of Object.entries(ENEMIES)) if (!list.some(x => x[1] === d.sprite)) list.push([d.name, d.sprite, d.boss ? 0.46 : 0.56]);
+for (const k of Object.keys(manifest.sprites)) if (k.startsWith('mtg_friendly') && !list.some(x => x[1] === k)) list.push([k.slice(12), k, k === 'mtg_friendlySquirrel' ? 0.24 : k === 'mtg_friendlySpider' ? 0.34 : 0.56]);
+for (const [name, key, scale] of list) {
+  const m = manifest.sprites[key], im = images[key]; if (!m || !im) continue;
+  const w = m.w, h = m.h, ps = m.pixelScale || 1, Z = scale * ps * K;
+  const c = document.createElement('canvas'); c.width = Math.round(w * Z); c.height = Math.round(h * Z); const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
+  g.drawImage(im, 0, 0, w, h, 0, 0, c.width, c.height);
+  const f = document.createElement('figure'); f.appendChild(c); const cap = document.createElement('figcaption'); cap.textContent = name; f.appendChild(cap); document.getElementById('g').appendChild(f);
+}
+document.title = 'done';
+</script>

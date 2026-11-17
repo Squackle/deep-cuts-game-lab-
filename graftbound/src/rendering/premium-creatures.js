@@ -161,7 +161,7 @@ function drawSoldier(g,m,view,anim,frame){
 function sheet(draw){
   const canvas=document.createElement('canvas'),mask=document.createElement('canvas');
   canvas.width=mask.width=SIZE*COLS;canvas.height=mask.height=SIZE*ROWS;
-  const c=canvas.getContext('2d'),m=mask.getContext('2d');c.imageSmoothingEnabled=false;m.imageSmoothingEnabled=false;
+  const c=canvas.getContext('2d'),m=mask.getContext('2d',{willReadFrequently:true});c.imageSmoothingEnabled=false;m.imageSmoothingEnabled=false;
   for(let view=0;view<2;view++)for(let anim=0;anim<5;anim++)for(let f=0;f<COLS;f++){
     c.save();m.save();c.translate(f*SIZE,(view*5+anim)*SIZE);m.translate(f*SIZE,(view*5+anim)*SIZE);
     draw(c,m,view,anim,f);c.restore();m.restore();

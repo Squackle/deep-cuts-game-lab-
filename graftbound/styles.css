@@ -17,6 +17,7 @@ kbd { font-family: var(--sans); font-size: .62em; padding: 1px 5px; border: 1px 
 .muted { opacity: .65; font-style: italic; } .small { font-size: .85rem; }
 #loading { position: absolute; inset: 0; z-index: 90; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: radial-gradient(#13261d, #050b08); transition: opacity .5s; }
 #loading p { font-style: italic; opacity: .8; margin: 0; }
+#loading .load-desktop-note { display: block; font: 400 .72rem/1.4 var(--sans); color: var(--parch2); opacity: .72; letter-spacing: .035em; text-align: center; }
 .load-logo { font-family: var(--display); font-size: 2.2rem; letter-spacing: .32em; color: var(--parch); text-shadow: 0 0 24px rgba(201,162,74,.35); }
 .load-logo b, .logo-word b { color: var(--gold2); font-weight: inherit; }
 #loading.done { opacity: 0; pointer-events: none; } .loadtrack { width: 220px; height: 4px; background: #1c3a2b; border-radius: 2px; overflow: hidden; } #loadbar { display: block; height: 100%; width: 0; background: var(--gold2); transition: width .2s; }
@@ -819,3 +820,211 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
 .gb-exchange-actions .btn{font-size:.85rem;white-space:nowrap;padding:8px 10px}
 @media(max-width:560px){.gb-exchange-entry{flex-direction:column;align-items:stretch}
  .gb-exchange-actions{justify-content:flex-end}.gb-exchange-description strong{font-size:.95rem}}
+
+/* v1.5.0 middle-mouse orbit */
+#gl.orbiting{cursor:grabbing}
+/* v1.5.0 Global Threat dial */
+.threatscr{display:grid;place-items:center}
+.threat-wrap{display:grid;place-items:center;min-height:100%;padding:16px}
+.threat-panel{width:min(440px,94vw);text-align:center;padding:20px 22px 22px;border-radius:14px;background:linear-gradient(180deg,#1b0a0e,#0d0608);border:1px solid #6a1c24;box-shadow:0 0 0 1px #000,0 18px 60px rgba(0,0,0,.6),inset 0 0 40px rgba(160,20,30,.18);color:#f2e6dc}
+.threat-panel h2{margin:4px 0 8px;font-size:1.35rem;letter-spacing:.02em}
+.threat-dial{position:relative;width:min(240px,62vw);margin:0 auto}
+.threat-dial svg{display:block;width:100%;height:auto}
+.threat-dial .rim{fill:#2a0d12;stroke:#8a2630;stroke-width:3}
+.threat-dial .track{fill:none;stroke:#3b1418;stroke-width:9;stroke-linecap:round}
+.threat-dial .fill{fill:none;stroke:#e0313f;stroke-width:9;stroke-linecap:round;filter:drop-shadow(0 0 5px #ff3a48)}
+.threat-dial .ticks line{stroke:#6b3a3f;stroke-width:2}.threat-dial .ticks line.on{stroke:#ff8a8f}
+.threat-dial .needle{transform-origin:100px 100px;transform:rotate(var(--from));transition:transform 1.15s cubic-bezier(.3,.7,.2,1)}
+.threat-dial.settled .needle{transform:rotate(var(--to))}
+.threat-dial .needle polygon{fill:#ffd7d3;stroke:#7a0f19;stroke-width:1.2}
+.threat-dial .hub{fill:#e0313f;stroke:#ffd7d3;stroke-width:2}
+.threat-num{position:absolute;left:0;right:0;bottom:16%;font-variant-numeric:tabular-nums}
+.threat-num b{font-size:2rem;color:#fff}.threat-num small{opacity:.7;margin-left:3px}
+.threat-change{display:flex;justify-content:center;gap:16px;align-items:center;margin:10px 0 4px}
+.threat-change .delta{font-weight:700;padding:2px 10px;border-radius:99px;background:#2b1a1c}
+.threat-change .delta.up{color:#ff6b74;background:#3a1115}.threat-change .delta.down{color:#8fe3a0;background:#10291a}
+.threat-why{list-style:none;padding:0;margin:8px 0;font-size:.92rem;line-height:1.35}.threat-why li{margin:3px 0}
+.threat-note{opacity:.78;font-size:.85rem;margin:6px 0 14px}
+@media (prefers-reduced-motion:reduce){.threat-dial .needle{transition:none}}
+/* v1.5.0 Exile zone: small swirling black/purple portal with a readable count */
+.gb-exile-portal{display:grid!important;place-items:center;border-color:#9b6ad6!important;background:radial-gradient(circle at 50% 50%,#000 0 22%,#1b0b2b 40%,#2a0f45 62%,#0c0614 100%)!important;box-shadow:0 0 0 2px #151714,0 0 14px rgba(150,80,230,.45),0 5px 15px #0009!important}
+.gb-zone-exile .gb-zone-meta em{background:#1e1030;border-color:#8a63c4}
+.gb-exile-h{margin:12px 0 6px;font-size:.95rem}.gb-exile-foes{margin:0;padding-left:18px}.gb-exile-foes small{display:block;opacity:.7}
+.gb-card-zones{max-width:260px}
+/* ── v1.5.0 compact, coordinated combat HUD ─────────────────────────────────────────────── */
+#hud .plate{width:252px;padding:7px 10px 6px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.45),inset 0 0 0 1px rgba(120,90,40,.35)}
+#hud .pl-name{font-size:.95rem}#hud .pl-stage{font-size:.72rem}
+#hud .pl-pt{font-size:1.3rem;min-width:56px;padding:0 6px;border-width:1.5px}
+#hud .pl-hp{margin-top:5px;font-size:.82rem;gap:6px}#hud .pl-hp .bar{height:10px}
+#hud .pl-res{margin-top:4px;font-size:.8rem}
+#hud .pl-kw{margin-top:4px;gap:3px}#hud .pl-kw .chip{font-size:.68rem;padding:1px 6px}
+#hud .pl-act{display:flex;align-items:center;gap:6px;margin:6px -10px -6px;padding:5px 10px;border-radius:0 0 10px 10px;
+  background:linear-gradient(180deg,#1d2a22,#121b16);border-top:1px solid #8a7445;color:#f0dba7;font-family:var(--sans);font-size:.78rem}
+#hud .pl-act span{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+#hud .pl-act b{font-size:.95rem;font-variant-numeric:tabular-nums}#hud .pl-act small{opacity:.7;font-size:.66rem}
+#hud .pl-act .atk.on{color:#ffb47f}#hud .pl-act .gb-reserve{margin-left:auto;font-size:.7rem;opacity:.85}
+#hud .gb-action-counters:empty{display:none!important}
+/* Ordinary ground: a slim one-line tile panel. Complex terrain and creatures keep the expanding panel. */
+#hud #inspect.terrain-inspect.terrain-plain{padding:6px 10px;gap:2px}
+#hud #inspect.terrain-inspect.terrain-plain .gb-terrain-brief-copy{font-size:.76rem;line-height:1.25;margin:0;opacity:.8}
+#hud #inspect.terrain-inspect.terrain-plain .gb-terrain-details-btn{display:none}
+#hud #inspect.terrain-inspect.terrain-plain .gb-terrain-brief-head strong{font-size:.86rem}
+@media (max-width:760px){
+  #hud .plate{width:210px;padding:5px 8px 4px}#hud .pl-pt{font-size:1.1rem;min-width:46px}
+  #hud .pl-act{margin:4px -8px -4px;padding:4px 8px;gap:5px}#hud .pl-act small{display:none}
+  #hud .pl-act .gb-reserve{font-size:.64rem}
+}
+@media (max-height:520px){#hud .pl-kw{display:none}#hud .plate{width:220px}}
+#hud .pl-act .moves,#hud .pl-act .atk{color:#f0dba7}#hud .pl-act .atk.on{color:#ffb47f}
+#hud .pl-act .gb-reserve{background:rgba(240,219,167,.08);border-color:rgba(240,219,167,.35);color:#cfe3ee;padding:1px 6px}
+#hud #inspect.terrain-inspect.terrain-plain{height:auto!important;max-height:var(--gb-terrain-height,62px)!important;width:min(var(--gb-terrain-width,240px),240px)}
+#hud .plate{display:flex;flex-direction:column}#hud .plate>.pl-act{order:9}
+
+/* v1.6.0 graft levels */
+.gb-graft-level-ribbon{position:absolute;left:50%;bottom:-11px;transform:translateX(-50%);z-index:4;white-space:nowrap;padding:2px 9px;border-radius:99px;font:700 .7rem var(--sans);color:#1d140a;background:linear-gradient(#ffe39a,#d9a648);border:1px solid #5d4219;box-shadow:0 2px 6px #0008;pointer-events:none}
+.gb-graft-level-ribbon.maxed{background:linear-gradient(#ddd,#9a9a9a);color:#222}
+.gb-lv{font-style:normal;font-size:.72em;padding:1px 6px;margin-left:4px;border-radius:9px;background:#d9a648;color:#1d140a}
+
+/* v1.6.0 Exile portal: persistent pixel-art canvas inside a carved-stone frame */
+.gb-exile-portal{display:grid!important;place-items:center;border-color:#7e5bb8!important;background:radial-gradient(ellipse at 50% 55%,#1a1026 0,#0b0910 70%)!important;
+  box-shadow:0 0 0 2px #151714,inset 0 0 0 2px #2b2238,inset 0 0 10px #000,0 0 12px rgba(140,80,220,.35),0 5px 15px #0009!important}
+.gb-exile-canvas{width:84%;height:auto;aspect-ratio:31/44;image-rendering:pixelated;filter:drop-shadow(0 0 4px rgba(150,90,230,.55))}
+
+/* v1.6.0 mandatory discard */
+#hud .gb-discard-bar{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(max(12px,env(safe-area-inset-bottom)) + 190px);z-index:20;max-width:min(520px,92vw);
+  padding:8px 16px;border-radius:10px;text-align:center;background:linear-gradient(#3a1116,#220a0d);border:1px solid #d9a648;color:#ffe9c4;box-shadow:0 6px 20px #000a;font-family:var(--sans)}
+#hud .gb-discard-bar b{display:block;font-size:1rem;letter-spacing:.02em}#hud .gb-discard-bar small{display:block;opacity:.85;font-size:.76rem;margin-top:2px}
+#hud .gb-discard-bar.pulse{animation:gbDiscPulse .5s 2}@keyframes gbDiscPulse{50%{box-shadow:0 0 0 4px #ffcf6a,0 6px 20px #000a}}
+#hud .tray.discard-mode button.handcard{outline:2px dashed #ffcf6a;outline-offset:-3px;cursor:grab}
+#hud .tray.discard-mode button.handcard .hc-state{display:none}
+#hud .hc-discard{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);z-index:5;display:none;padding:4px 12px;border-radius:7px;background:#b4232f;color:#fff;font:700 .8rem var(--sans);border:1px solid #ffd2a0;box-shadow:0 2px 8px #000a}
+#hud .hc-discard.armed{display:block}#hud .hc-discard:focus-visible{display:block;outline:2px solid #fff}
+#hud.gb-discarding .gb-zone-graveyard .gb-zone-art{box-shadow:0 0 0 2px #ffcf6a,0 0 16px rgba(255,207,106,.6)}
+#hud .gb-zone-graveyard.drop-ready .gb-zone-art{transform:scale(1.08);box-shadow:0 0 0 3px #fff,0 0 22px #ffcf6a}
+.gb-discard-ghost.dragging{opacity:.9;transform:rotate(-4deg) scale(.92);filter:drop-shadow(0 8px 12px #000)}
+.gb-drag-source{opacity:.35}
+@media (prefers-reduced-motion:reduce){#hud .gb-discard-bar.pulse{animation:none}}
+
+/* v1.6.0 Copy Run Stats + balance metrics */
+.end .gb-copy-row{display:flex;align-items:center;justify-content:center;gap:10px;margin:4px 0 10px}
+.gb-copy-status{min-width:64px;font:700 .85rem var(--sans);color:#8fe3a0}
+.gb-copy-fallback{width:100%;font:12px/1.4 ui-monospace,monospace;background:#0e1410;color:#e9dfc8;border:1px solid #6b5a34;border-radius:6px;padding:8px}
+.gb-balance{margin:10px auto;max-width:640px;text-align:left}.gb-balance summary{cursor:pointer;font-weight:700}
+.gb-balance dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0}.gb-balance dt{font-weight:700}.gb-balance dd{margin:0}.gb-balance small{opacity:.7;margin-left:6px}
+
+/* v1.6.0 threat dial explanations */
+.threat-panel h2 .delta{font-size:.85em;padding:0 6px;border-radius:8px}.threat-panel h2 .delta.up{color:#ff6b74}.threat-panel h2 .delta.down{color:#8fe3a0}
+.threat-sub{margin:-4px 0 6px;opacity:.75;font-size:.85rem}
+.threat-factors{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;list-style:none;padding:0;margin:6px 0}
+.threat-factors li{display:flex;flex-direction:column;align-items:center;min-width:58px;padding:4px 8px;border-radius:8px;background:#24101399;border:1px solid #5b1c24}
+.threat-factors b{font-size:1rem}.threat-factors small{font-size:.66rem;opacity:.75}
+
+/* v1.7.0 graft Level Up */
+.gb-levelup{border:1px solid #d9a648;border-radius:10px;padding:8px 10px;margin:8px 0;background:linear-gradient(#3a2a10cc,#22180acc)}
+.gb-levelup .lbl{color:#ffe39a;font-weight:700}
+#bigtext .bt-levelup{font:700 1.1rem var(--sans);color:#ffe39a;margin:6px 0}#bigtext .bt-levelup small{display:block;font-weight:400;font-size:.8rem;color:#f2e6dc}
+
+/* v1.7.0 label decluttering */
+.ulabel.compact .sts,.ulabel.compact .intent.calm{display:none}.ulabel.compact .hpbar{height:5px}.ulabel.compact .hpbar span{display:none}
+.ulabel .st.more{background:#2a2a34;color:#e8e2ff}
+
+/* v1.7.0 expedition results: centred hierarchy + responsive two-column grid */
+.end{max-width:980px;margin:0 auto;padding:18px 20px 28px;text-align:center;box-sizing:border-box}
+.end h1{margin:4px 0 6px}.end .rw-sub{max-width:640px;margin:6px auto 12px;line-height:1.45}.end .gb-copy-row{margin:6px 0 12px}
+.end-head{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:14px}
+.end-high{display:grid;grid-template-columns:repeat(3,minmax(110px,1fr));gap:10px;width:min(560px,100%)}
+.end-high span{display:flex;flex-direction:column;align-items:center;padding:8px 6px;border-radius:10px;background:rgba(10,20,14,.55);border:1px solid rgba(217,166,72,.45)}
+.end-high b{font-size:1.45rem;font-variant-numeric:tabular-nums}.end-high small{opacity:.75;font-size:.75rem}
+.end-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:left;align-items:start}
+.end-col{background:rgba(10,20,14,.45);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 14px;min-width:0}
+.end-col h3{margin:2px 0 8px;font-size:1rem;text-align:center}
+.end-col table.stats{width:100%!important;max-width:none!important;margin:0!important;border-collapse:collapse}.end-col table.stats td{padding:3px 4px;border-bottom:1px solid rgba(255,255,255,.06)}
+.end-col table.stats td:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.end-col .ach{margin:0;padding:0;list-style:none}.end-col .gb-balance{margin:10px 0 0}
+.end-full{margin-top:16px;text-align:left;overflow-x:auto}.end-full .parch-record.end-record{max-width:none;width:100%;box-sizing:border-box;margin:0}
+.end-full table.score{width:100%;font-variant-numeric:tabular-nums}.end-full table.score td:not(:first-child),.end-full table.score th:not(:first-child){text-align:right}
+.end .modal-actions{margin-top:16px}
+@media (max-width:760px){.end-grid{grid-template-columns:1fr}.end-high b{font-size:1.1rem}.end{padding:12px 10px 22px}}
+
+/* v1.8.0 threat 0..24: upper-band tier list on the dial */
+.threat-tiers{list-style:none;padding:0;margin:4px auto 12px;max-width:380px;text-align:left;font-size:.78rem}
+.threat-tiers li{opacity:.45;padding:2px 0}.threat-tiers li.on{opacity:1;color:#ffb3b8}.threat-tiers b{display:inline-block;width:26px;color:#ff6b74}
+.threat-tiers small{opacity:.75;margin-left:6px}
+
+/* v1.8.0-beta mobile hotfix: creature information is a short, dismissible dock.
+   Full abilities, statuses, rule text and combat previews live in a Details modal.
+   Desktop keeps its existing full collision-safe inspection panel. */
+#hud #inspect.unit-inspect .gb-unit-brief{display:none}
+#hud #inspect.unit-inspect .gb-unit-rich{display:block}
+.modal-box .gb-unit-full{font-size:.94rem;line-height:1.45;text-align:left;overflow-wrap:anywhere}
+.modal-box .gb-unit-full .in-head{flex-wrap:wrap}
+.modal-box .gb-unit-full .in-head .pt{margin-left:0}
+.modal-box .gb-unit-full .preview{line-height:1.5;padding:10px 0}
+@media(max-width:760px){
+  #hud #inspect.unit-inspect{padding:4px 7px;max-height:48px!important;height:48px!important;overflow:hidden;
+    width:var(--gb-terrain-width,300px);font:500 11px/1.22 var(--sans)}
+  #hud #inspect.unit-inspect .gb-unit-rich{display:none}
+  #hud #inspect.unit-inspect .gb-unit-brief{display:flex;align-items:center;gap:0;min-width:0;height:100%;justify-content:center}
+  #hud #inspect.unit-inspect .gb-unit-brief-row{display:flex;align-items:center;gap:5px;min-width:0}
+  #hud #inspect.unit-inspect .gb-unit-brief-row strong{color:var(--gold2);font:700 12px/1.15 var(--serif);
+    min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #hud #inspect.unit-inspect .gb-unit-vitals{color:#ebdfba;white-space:nowrap;font:700 11px var(--sans)}
+  #hud #inspect.unit-inspect .gb-unit-details,#hud #inspect.unit-inspect .gb-unit-dismiss{
+    flex:none;min-height:32px;border:1px solid var(--gold3);border-radius:6px;
+    background:#29432e;color:#f8e7b8;font:700 11px var(--sans);cursor:pointer;touch-action:manipulation}
+  #hud #inspect.unit-inspect .gb-unit-details{padding:5px 6px}
+  #hud #inspect.unit-inspect .gb-unit-dismiss{padding:3px 7px;font-size:17px;line-height:1}
+  #hud #inspect.unit-inspect .gb-unit-details:focus-visible,#hud #inspect.unit-inspect .gb-unit-dismiss:focus-visible{
+    outline:2px solid #f6df9b;outline-offset:1px}
+  #hud #inspect.unit-inspect .gb-unit-brief-context{color:#f0bb9c;overflow:hidden;text-overflow:ellipsis;
+    display:block;white-space:nowrap;font-size:11px;line-height:1.22}
+}
+
+
+/* v1.8.0-beta preview: one-row tile summary; full tile and path warnings remain in Details. */
+#hud #inspect.terrain-inspect{height:var(--gb-terrain-height,54px)!important;max-height:var(--gb-terrain-height,54px)!important;padding:7px 10px;gap:0;justify-content:center;overflow:hidden}
+#hud #inspect.terrain-inspect .gb-terrain-brief-head{display:flex;align-items:center;flex-wrap:nowrap;gap:6px;width:100%;min-width:0}
+#hud #inspect.terrain-inspect .gb-terrain-brief-head strong{min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#hud #inspect.terrain-inspect .gb-terrain-brief-copy{display:none!important}
+#hud #inspect.terrain-inspect.terrain-plain{height:var(--gb-terrain-height,46px)!important}
+.gb-grave-empty{background:repeating-linear-gradient(45deg,#15261f,#15261f 6px,#1d3228 7px)}
+.gb-grave-empty .ic{display:block;width:31px;height:43px;max-height:92%;image-rendering:pixelated;filter:drop-shadow(0 2px 2px #0009)}
+@media(max-width:760px){
+  /* Same art, label and count-row heights on all three zone buttons, even when captions wrap. */
+  #hud .gb-card-zones{align-items:flex-start}
+  #hud .gb-zone{align-self:flex-start;justify-content:flex-start}
+  #hud .gb-zone-art{flex:0 0 auto}
+  #hud .gb-zone-meta{width:100%;height:34px;min-height:34px;display:flex;flex-direction:column;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:3px;line-height:1.1}
+  #hud .gb-zone-meta strong{display:block;width:100%;height:11px;line-height:11px;text-align:center;white-space:nowrap;font-size:9px;overflow:visible}
+  #hud .gb-zone-meta em{display:block;flex:0 0 auto;margin:0;line-height:13px}
+  #hud .gb-grave-empty .ic{width:26px;height:38px}
+  #hud #inspect.terrain-inspect{padding:6px 9px}
+}
+
+/* Safety net for iOS WebKit's reported viewport and cached media queries:
+   the renderer marks phone inspectors and never inserts full HTML there. */
+#hud #inspect.unit-inspect.unit-compact{
+  height:48px!important;max-height:48px!important;min-height:0!important;
+  box-sizing:border-box;overflow:hidden!important;padding:4px 7px!important;
+  width:min(var(--gb-terrain-width,300px),calc(100vw - 16px))!important;
+}
+#hud #inspect.unit-inspect.unit-compact .gb-unit-rich{display:none!important}
+#hud #inspect.unit-inspect.unit-compact .gb-unit-brief{
+  display:flex!important;align-items:center;justify-content:center;gap:0;height:100%;
+}
+#hud #inspect.unit-inspect.unit-compact .gb-unit-brief-row{display:flex;align-items:center;gap:6px;min-width:0;width:100%}
+#hud #inspect.unit-inspect.unit-compact .gb-unit-brief-row strong{
+  min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:var(--gold2);font:700 12px/1.15 var(--serif);
+}
+#hud #inspect.unit-inspect.unit-compact .gb-unit-vitals{white-space:nowrap;font:700 11px var(--sans)}
+#hud #inspect.unit-inspect.unit-compact .gb-unit-details,
+#hud #inspect.unit-inspect.unit-compact .gb-unit-dismiss{
+  flex:none;min-height:28px;border:1px solid var(--gold3);border-radius:6px;
+  background:#29432e;color:#f8e7b8;font:700 11px var(--sans);touch-action:manipulation
+}
+#hud #inspect.unit-inspect.unit-compact .gb-unit-details{padding:3px 5px}
+#hud #inspect.unit-inspect.unit-compact .gb-unit-dismiss{padding:1px 6px;font-size:17px}
+#hud #inspect.unit-inspect.unit-compact .gb-unit-brief-context{
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:500 11px/1.2 var(--sans);
+}

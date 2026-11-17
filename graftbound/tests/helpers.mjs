@@ -45,8 +45,9 @@ export function botPlay(s, maxTurns = 40, { tactics = true } = {}) {
     }
     // v0.8 tactics: trapped in a telegraph (or badly hurt and threatened) -> Guard instead of trading blows.
     if (tactics && s.p.attacksLeft > 0 && usefulStances(s).includes('guard')) { const p0 = player(s); const trapped = danger.has(p0.x + ',' + p0.y) && !moveOptions(s).some(safe); if (trapped) guard(s); }
-    while (attackTargets(s).length && s.phase === 'player') attack(s, attackTargets(s).sort((a, b) => a.hp - b.hp)[0].uid);
+    while (attackTargets(s).length && s.phase === 'player') { attack(s, attackTargets(s).sort((a, b) => a.hp - b.hp)[0].uid); settle(); }
     if (s.phase !== 'player') return s.phase;
+    settle();
     const p = player(s);
     if (danger.has(p.x + ',' + p.y) && s.p.moveLeft > 0) { const o = moveOptions(s).filter(safe)[0]; if (o) movePlayer(s, o.x, o.y); }
     if (s.phase !== 'player') return s.phase;

@@ -55,7 +55,7 @@ test('Wayshrine offerings: up to 4 eligible choices, each works, persists and ca
   const r0 = mk(); r0.shrine = { options: Object.keys(SHRINES) };
   assert.throws(() => shrineChoice({ ...r0, shrine: { options: ['spark'] } }, 'restoration'), /not available/);
   for (const k of Object.keys(SHRINES)) {
-    const r = mk(); r.shrine = { options: [k] }; const max0 = maxHpOf(r), hp0 = r.hp;
+    const r = mk(); r.shrine = { options: [k] }; if (k === 'penance') r.worldThreat = { level: 3, flawlessStreak: 0 }; const max0 = maxHpOf(r), hp0 = r.hp;
     const res = shrineChoice(r, k, k === 'inscribe' ? 'mtg:shock' : k === 'graftsmith' ? 0 : undefined);
     assert.equal(r.shrine, null, k + ' consumes the shrine'); assert.throws(() => shrineChoice(r, k), /Not at a shrine/);
     if (k === 'restoration') { assert.equal(r.hp, maxHpOf(r)); assert.equal(r.wardNext, 3); }

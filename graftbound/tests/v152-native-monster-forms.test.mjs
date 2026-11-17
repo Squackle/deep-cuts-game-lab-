@@ -74,10 +74,10 @@ test('all two-view and six-state 96px cells have distinct geometry and atlas cli
 });
 test('actual game caches originals rather than overlaying borrowed quadruped sprites',()=>{
   assert.ok(src.includes('MONSTER_FRAME, MONSTER_STUDY_FEATURES, drawMonsterStudyFrame'));
-  assert.ok(src.includes('const detailed=species||humanoid||beast||token||magic||monster;'));
+  assert.ok(src.includes('const detailed=species||humanoid||beast||token||magic||monster||folk;'));
   assert.ok(src.includes('else if(monster)drawMonsterStudyFrame(cctx,config.feature,view,anim.row,frame,config);'));
   assert.ok(src.includes("monster?'monster-anatomy-study-v1'"));
-  assert.ok(src.includes('pixelScale:base.h*(base.pixelScale||1)/height'));
+  assert.ok(src.includes('pixelScale:NATIVE_STUDY_DENSITY'));
   const art=readFileSync(new URL('../src/rendering/detailed-monster-art.js',import.meta.url),'utf8');
   for(const forbidden of ['Math.random','fetch(','localStorage','window.','player.hp =','s.rng ='])
     assert.ok(!art.includes(forbidden),'art code must not consume gameplay state or RNG');

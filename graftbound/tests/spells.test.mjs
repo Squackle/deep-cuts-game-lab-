@@ -17,9 +17,10 @@ test('area spells target any non-rock tile anywhere', () => {
   cast(s, 'mtg:infest', 0, 0); assert.ok(enemies(s).every(e => e.statuses.poison === 2));
   cast(s, 'mtg:fireball', 0, 0); assert.ok(enemies(s).every(e=>e.hp<=3),'damage applied with printed 3-toughness targets');
 });
-test('invalid targets are rejected: empty tiles for enemy spells, rocks for area spells', () => {
+test('invalid targets are rejected: empty tiles for creature spells; v1.7.0: area spells MAY centre on a rock', () => {
   const s = S(['t..#', '....', 'P...'], { t: 'tortoise' }, ['shock', 'infest']);
-  assert.throws(() => cast(s, 'mtg:shock', 1, 1), /Not a valid target/); assert.throws(() => cast(s, 'mtg:infest', 3, 0), /Not a valid target/);
+  assert.throws(() => cast(s, 'mtg:shock', 1, 1), /Not a valid target/); assert.throws(() => cast(s, 'mtg:shock', 3, 0), /Not a valid target/);
+  assert.doesNotThrow(() => cast(s, 'mtg:infest', 3, 0));
 });
 test('summon keeps a placement limit (range 2, empty, not lava)', () => {
   const s = S(['t.....', '......', '......', '......', '~.....', '.P....'], { t: 'tortoise' }, ['raise-the-alarm']);

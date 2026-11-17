@@ -68,6 +68,11 @@ export function chooseSpriteDirection(views, awayDot, rightDot) {
   return { index: views.indexOf(facing), flip: !hasSides && rightDot > 0.05 };
 }
 
+/** World-space facing toward the camera at its current orbit yaw (menu presentation only).
+ * scene.js camera forward on the arena plane is [-sin(yaw), -cos(yaw)];
+ * its opposite picks the original sprite sheet's 'front' view at any angle. */
+export const cameraFacingDirection = yaw => [Math.sin(yaw), Math.cos(yaw)];
+
 /** Stage/validate every image before mutating the live manifest: no half-loaded packs. */
 export async function installHd2dArtPack(images, manifest, readPack, loadPng) {
   const units = validateHd2dManifest(await readPack(), manifest.sprites);

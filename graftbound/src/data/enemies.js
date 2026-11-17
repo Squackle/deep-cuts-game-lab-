@@ -50,6 +50,6 @@ export const ENEMIES = Object.fromEntries(Object.entries(LEGACY_ENEMIES).map(([i
  const f=ENEMY_FACTS[id]; if(!f) return [id,REAL_CREATURE_MODELS[id]?{...d,sprite:'mtg_'+id}:d];
  return [id,{...d,...f, mtgName:f.name,printedPower:f.power,printedToughness:f.toughness,
     burst:undefined,pack:undefined,guard:undefined,rally:undefined,spellTax:id==='nullwarden'?1:undefined,
-    aimDamage:id==='archer'?1:undefined,poison:undefined,spitRange:undefined,hexRange:undefined,weaken:undefined,blastDamage:undefined,
+    aimDamage:id==='archer'?2:undefined,quickShot:id==='archer'?{damage:1,range:4}:undefined,poison:undefined,spitRange:undefined,hexRange:undefined,weaken:undefined,blastDamage:undefined,
     strikeCap:undefined,affinity:undefined,role:d.role, sprite:REAL_CREATURE_MODELS[id]?'mtg_'+id:d.sprite, oldEncounterName:d.name, blurb:f.oracle}];
 }));

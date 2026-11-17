@@ -1,0 +1,12 @@
+<!doctype html><meta charset="utf-8"><title>portal</title>
+<style>body{background:#1d2a22;margin:0;color:#ddd;font:12px sans-serif;display:flex;gap:18px;padding:14px;flex-wrap:wrap}canvas{image-rendering:pixelated}</style>
+<script type="module">
+import { portalIntensity, portalMotes, PORTAL_W, PORTAL_H, PORTAL_PALETTE } from '../src/ui/exile-portal.js';
+const PAL=PORTAL_PALETTE.map(h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)));
+const B=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(v=>(v+.5)/16-.5);
+for(const t of [0,0.8,1.6,2.4]){const c=document.createElement('canvas');c.width=PORTAL_W;c.height=PORTAL_H;const g=c.getContext('2d');const im=g.createImageData(PORTAL_W,PORTAL_H);
+ for(let y=0;y<PORTAL_H;y++)for(let x=0;x<PORTAL_W;x++){const u=(x+.5-PORTAL_W/2)/(PORTAL_W/2),v=(y+.5-PORTAL_H/2)/(PORTAL_H/2),k=portalIntensity(u,v,t),i=(y*PORTAL_W+x)*4;if(k<0)continue;const q=Math.max(0,Math.min(8,Math.round(k*8+B[(y&3)*4+(x&3)]*.9)));const cc=PAL[q];im.data.set([...cc,255],i);}
+ for(const m of portalMotes(t)){const x=Math.round((m.u+1)*PORTAL_W/2-.5),y=Math.round((m.v+1)*PORTAL_H/2-.5),i=(y*PORTAL_W+x)*4;if(im.data[i+3])im.data.set([...PAL[m.glow>.55?8:7],255],i);}
+ g.putImageData(im,0,0);c.style.width=(PORTAL_W*6)+'px';document.body.appendChild(c);}
+document.title='done';
+</script>

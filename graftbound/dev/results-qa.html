@@ -1,0 +1,11 @@
+<!doctype html><meta charset="utf-8"><title>results</title>
+<link rel="stylesheet" href="../styles.css"><style>body{margin:0;background:#1d2a22}</style>
+<div id="screen" class="screen show"></div><div id="modal"></div>
+<script type="module">
+import { endScreen } from '../src/ui/screens.js';
+import { LAST_PAGE_TURNS } from '../tests/fixtures/last-page-turns.mjs';
+const won = new URLSearchParams(location.search).get('won') !== '0';
+const run = { ...LAST_PAGE_TURNS, phase: won ? 'won' : 'lost', act: won ? 2 : 1, evo: { power: 30, toughness: 31, keywords: { flying: 1, trample: 1 } }, stats: { ...LAST_PAGE_TURNS.stats, flawless: 6 }, journal: { entries: [] } };
+endScreen({ run, audio: { play() {} }, openModal: () => document.createElement('div'), meta: { records: {} }, recordKey: () => 'x' }, { won, earned: won ? [{ name: 'Apex', text: 'Finish the expedition.' }] : [], extra: { newBest: true } });
+document.title = 'done';
+</script>

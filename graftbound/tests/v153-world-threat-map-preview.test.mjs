@@ -18,7 +18,7 @@ test('actual map previews stored and adaptive threat instead of showing misleadi
   assert.equal(view.nodes[0].id,availableNodes(run.map,null)[0].id);
   assert.ok(view.range.min>=5,'stronger grafted hero should see adaptive pressure on map');
   assert.equal(view.range.max,view.range.min);
-  assert.match(threatPreviewLabel(view),/Stored 0\/12 · Next battle \d+\/12/);
+  assert.match(threatPreviewLabel(view),/Stored 0\/24 · Next battle \d+\/24/);
   assert.equal(JSON.stringify(run.worldThreat),base,'UI calculation must never modify saved level');
   enterNode(run,view.nodes[0].id);
   assert.equal(run.battle.worldThreat,view.range.min,
@@ -29,7 +29,7 @@ test('ordinary weak builds see no surprise battle pressure and save stays unchan
   const view=previewNextWorldThreat(run);
   assert.deepEqual(view.range,{min:0,max:0});
   assert.equal(view.base,0);
-  assert.equal(threatPreviewLabel(view),'Stored 0/12 · Next battle 0/12');
+  assert.equal(threatPreviewLabel(view),'Stored 0/24 · Next battle 0/24');
   assert.equal(effectiveThreatLevel(run.worldThreat,{strength:1,expected:3}),0);
 });
 test('the scripted opening tutorial accurately reports that World Threat is disabled',()=>{
@@ -38,7 +38,7 @@ test('the scripted opening tutorial accurately reports that World Threat is disa
   assert.equal(preview.base,0);
   assert.equal(preview.tutorial,true);
   assert.equal(preview.range,null);
-  assert.equal(threatPreviewLabel(preview),'Stored 0/12 · Tutorial has no Threat');
+  assert.equal(threatPreviewLabel(preview),'Stored 0/24 · Tutorial has no Threat');
 });
 test('old saves with missing threat state render cleanly and established threat is displayed',()=>{
   const run=newRun({seed:42,tutorial:false});delete run.worldThreat;
@@ -47,7 +47,7 @@ test('old saves with missing threat state render cleanly and established threat 
   const p=previewNextWorldThreat(run);
   assert.equal(p.base,11);
   assert.ok(p.range.min>=11);
-  assert.match(threatPreviewLabel(p),/Stored 11\/12/);
+  assert.match(threatPreviewLabel(p),/Stored 11\/24/);
 });
 test('map preview safely handles reachable shrines/events without presenting them as battles',()=>{
   const run=newRun({seed:73,tutorial:false});

@@ -1,5 +1,5 @@
 // Deterministic scoring (v0.6). Identical code runs in the browser (provisional) and on the server verifier.
-import { SCORE, MULTIPLIER, PAR_PER_FOE, DAMAGE_BUDGET, SCORING_VERSION } from '../data/scoring.js';
+import { SCORE, MULTIPLIER, PAR_PER_FOE, DAMAGE_BUDGET, SCORING_VERSION, THREAT_BONUS } from '../data/scoring.js';
 export { SCORING_VERSION };
 
 const tierOf = nodeType => (MULTIPLIER[nodeType] != null ? nodeType : 'battle');
@@ -9,13 +9,16 @@ export function encounterBenchmarks(nodeType, act, foes) {
   return { tier, parActions: Math.max(2, Math.ceil(PAR_PER_FOE[tier] * Math.max(1, foes))), damageBudget: DAMAGE_BUDGET[tier][Math.max(0, Math.min(2, act))], multiplier: MULTIPLIER[tier] };
 }
 /** The formula from the design brief, verbatim. A loss scores 0. */
-export function encounterScore({ victory, acceptedActions, rawHpDamageTaken, parActions, damageBudget, multiplier }) {
-  if (!victory) return { victory: 0, efficiency: 0, avoidance: 0, subtotal: 0, multiplier, total: 0 };
+export const threatBonusRate = threat => { const t = Math.max(0, Math.min(24, Math.floor(Number(threat) || 0)));
+  return Math.min(THREAT_BONUS.upperCap, Math.min(THREAT_BONUS.cap, Math.min(12, t) * THREAT_BONUS.perLevel) + Math.max(0, t - 12) * THREAT_BONUS.upperPerLevel); };
+export function encounterScore({ victory, acceptedActions, rawHpDamageTaken, parActions, damageBudget, multiplier, threat = 0 }) {
+  if (!victory) return { victory: 0, efficiency: 0, avoidance: 0, subtotal: 0, multiplier, threatBonus: 0, total: 0 };
   if (!(parActions > 0) || !(damageBudget > 0)) throw new Error('Benchmarks must be positive');
   const efficiency = Math.round(SCORE.efficiencyMax * Math.min(1, parActions / Math.max(1, acceptedActions)));
   const avoidance = Math.round(SCORE.avoidanceMax * Math.max(0, 1 - rawHpDamageTaken / damageBudget));
   const subtotal = SCORE.victory + efficiency + avoidance;
-  return { victory: SCORE.victory, efficiency, avoidance, subtotal, multiplier, total: Math.round(subtotal * multiplier) };
+  const base = Math.round(subtotal * multiplier), threatBonus = Math.round(base * threatBonusRate(threat));
+  return { victory: SCORE.victory, efficiency, avoidance, subtotal, multiplier, threat: Math.max(0, Math.floor(Number(threat) || 0)), threatBonus, total: base + threatBonus };
 }
 /** Record one finished battle into run.scoring. Each encounter key counts once per run. */
 export function recordEncounter(run, b, key) {
@@ -23,9 +26,12 @@ export function recordEncounter(run, b, key) {
   if (b.unscored || run.scoring.encounters.some(e => e.key === key)) return null;   // no farming: one entry per encounter
   const bm = b.bench || encounterBenchmarks(b.nodeType, b.act || 0, b.units.filter(u => u.side === 'enemy' && !u.summoned).length);
   const victory = b.phase === 'won';
-  const sc = encounterScore({ victory, acceptedActions: b.stats.actions, rawHpDamageTaken: b.stats.damageTaken, ...bm });
+  const sc = encounterScore({ victory, acceptedActions: b.stats.actions, rawHpDamageTaken: b.stats.damageTaken, ...bm, threat: b.threatAtStart ?? 0 });
   const entry = { key, act: b.act || 0, nodeType: b.nodeType, name: b.name, actions: b.stats.actions, turns: b.stats.turns, tiles: b.stats.tilesMoved,
-    damage: b.stats.damageTaken, parActions: bm.parActions, damageBudget: bm.damageBudget, ...sc };
+    damage: b.stats.damageTaken, parActions: bm.parActions, damageBudget: bm.damageBudget, ...sc,
+    // v1.6.0 analysis-only fields (never part of the score): enemy-caused health loss, the hero's maximum health and
+    // the Global Threat applied to this encounter. threatAfter is filled in when threat settles.
+    enemyDamage: b.stats.enemyHealthDamage || 0, heroMaxHp: b.units.find(u => u.hero)?.maxHp || null, threat: b.worldThreat ?? null };
   run.scoring.encounters.push(entry);
   return entry;
 }
