@@ -117,7 +117,7 @@ test("four playable game covers remain first-party, meaningful, and without exte
   assert.doesNotMatch(svg,/<script|<foreignObject|onload=|<image|href="https?:/i);
  }
  assert.match(hub,/GRAFT<em>BOUND\.<\/em>/);
- assert.match(hub,/v1\.3\.9-beta · 3 acts/);
+ assert.match(hub,/v1\.8\.0-beta · 3 acts/);
  assert.match(root,/v1\.3\.9-beta · 3 acts/);
  assert.match(hub,/Global Threat/);
  assert.doesNotMatch(hub,/v0\.6/);
