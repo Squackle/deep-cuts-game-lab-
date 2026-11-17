@@ -35,23 +35,26 @@ export const TILE_INSPECT_LOCK_DELAY_MS = 3000;
 export class TileInspectLatch {
   constructor({ delay = TILE_INSPECT_LOCK_DELAY_MS, schedule = setTimeout, cancel = clearTimeout } = {}) {
     this.delay = delay; this.schedule = schedule; this.cancel = cancel;
-    this.key = null; this.locked = false; this.timer = null;
+    this.key = null; this.locked = false; this.timer = null; this.onLock = null;
   }
   watch(tile, onLock) {
     const next = tile ? `${tile.x},${tile.y}` : null;
     if (next === this.key) return;
     this.reset();
     if (next === null) return;
-    this.key = next;
-    this.timer = this.schedule(() => {
-      this.timer = null;
-      if (this.key !== next) return;
-      this.locked = true;
-      onLock?.();
-    }, this.delay);
+    this.key = next; this.onLock = onLock;
+    this.timer = this.schedule(() => this.lockNow(), this.delay);
+  }
+  /** One authoritative lock transition. The timer and visible gold-bar animation both use it. */
+  lockNow() {
+    if (this.locked || this.key === null) return false;
+    if (this.timer !== null) this.cancel(this.timer);
+    this.timer = null; this.locked = true;
+    this.onLock?.();
+    return true;
   }
   reset() {
     if (this.timer !== null) this.cancel(this.timer);
-    this.timer = null; this.key = null; this.locked = false;
+    this.timer = null; this.key = null; this.locked = false; this.onLock = null;
   }
 }
