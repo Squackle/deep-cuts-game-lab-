@@ -30,8 +30,8 @@ export function terrainInspectPlacement({width,height,plate,zones,tray,endTurn,t
   return {fits:false};
 }
 
-/** Three-second tile inspector latch. UI-only: never changes combat selection or state. */
-export const TILE_INSPECT_LOCK_DELAY_MS = 3000;
+/** One-second tile inspector latch. UI-only: never changes combat selection or state. */
+export const TILE_INSPECT_LOCK_DELAY_MS = 1000;
 export class TileInspectLatch {
   constructor({ delay = TILE_INSPECT_LOCK_DELAY_MS, schedule = setTimeout, cancel = clearTimeout } = {}) {
     this.delay = delay; this.schedule = schedule; this.cancel = cancel;

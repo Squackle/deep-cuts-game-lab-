@@ -33,7 +33,7 @@ function setup() {
   ui.app={};
   return {ui,inspect,clock,restore(){if(old===undefined)delete globalThis.document;else globalThis.document=old;}};
 }
-test('visible 3-second gold bar and JavaScript pin agree; cannot be unlocked by leaving or crossing tiles',()=>{
+test('visible 1-second gold bar and JavaScript pin agree; cannot be unlocked by leaving or crossing tiles',()=>{
   const h=setup();try{
     const {ui,inspect,clock}=h;
     ui.setHover({x:1,y:1});
@@ -67,18 +67,18 @@ test('visual animation completion activates the same pin once; late timer cannot
     ui.onTile({x:4,y:4},false); // deliberate selection, not hover
     assert.equal(ui.tileInspectLatch.locked,false);
     assert.equal(ui.pinnedTerrainTile,null);
-    clock.advance(2999);
+    clock.advance(999);
     assert.equal(ui.tileInspectLatch.locked,false, 'the old tile timer cannot re-pin after selection');
     clock.advance(1);
     assert.equal(ui.tileInspectLatch.locked,true, 'the deliberately selected tile gets its own fresh timer');
     assert.deepEqual(ui.pinnedTerrainTile,{x:4,y:4});
   }finally{h.restore();}
 });
-test('moving off the board before three seconds cancels pending lock',()=>{
+test('moving off the board before one second cancels pending lock',()=>{
   const h=setup();try{
     const {ui,clock}=h;
-    ui.setHover({x:1,y:1}); clock.advance(1000);
-    ui.setHover(null);clock.advance(3000);
+    ui.setHover({x:1,y:1}); clock.advance(500);
+    ui.setHover(null);clock.advance(1000);
     assert.equal(clock.latch.locked,false);
     assert.equal(ui.pinnedTerrainTile,null);
   }finally{h.restore();}

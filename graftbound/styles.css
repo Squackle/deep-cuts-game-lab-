@@ -1029,12 +1029,12 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:500 11px/1.2 var(--sans);
 }
 
-/* GRAFTBOUND canonical Game Lab: three-second tile inspector latch + slim gold countdown. */
+/* GRAFTBOUND canonical Game Lab: one-second tile inspector latch + slim gold countdown. */
 #hud #inspect.terrain-inspect{padding-bottom:11px!important}
 #hud #inspect.terrain-inspect .gb-terrain-details-btn{min-height:26px;padding:3px 7px}
 #hud #inspect.terrain-inspect .gb-terrain-lock-progress{position:absolute;left:8px;right:8px;bottom:3px;height:2px;background:rgba(201,162,74,.18);border-radius:3px;pointer-events:none;overflow:hidden}
 #hud #inspect.terrain-inspect .gb-terrain-lock-progress::after{content:"";display:block;width:100%;height:100%;background:linear-gradient(90deg,#b88b36,#f6d47b);transform:scaleX(0);transform-origin:left center}
-#hud #inspect.terrain-inspect.terrain-locking .gb-terrain-lock-progress::after{animation:gb-terrain-lock-fill 3000ms linear forwards}
+#hud #inspect.terrain-inspect.terrain-locking .gb-terrain-lock-progress::after{animation:gb-terrain-lock-fill 1000ms linear forwards}
 #hud #inspect.terrain-inspect.terrain-locked .gb-terrain-lock-progress::after{transform:scaleX(1)}
 @keyframes gb-terrain-lock-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 #hud #inspect.terrain-inspect.terrain-plain .gb-terrain-details-btn{display:inline-flex;align-items:center}
