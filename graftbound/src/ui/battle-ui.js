@@ -45,6 +45,7 @@ export class BattleUI {
     this.disp = new Map(); this.labels = new Map(); this.busy = false; this.spell = null; this.hover = null; this.cursor = null; this.pendingTap = null; this.intents = [];
     this.cardAnimations = new CardAnimationDirector(app); this.concealedDraws=new Map();this.initialHandConcealed=false;
     this.tileInspectLatch = new TileInspectLatch();
+    this.pinnedTerrainTile = null;
     this.bindInput();
   }
   get scene() { return this.app.scene; }
@@ -480,7 +481,10 @@ export class BattleUI {
   }
   resetTileInspectLock() {
     this.tileInspectLatch?.reset();
-    $('inspect')?.classList.remove('terrain-locking', 'terrain-locked');
+    this.pinnedTerrainTile = null;
+    const el = $('inspect');
+    el?.classList.remove('terrain-locking', 'terrain-locked');
+    el?.removeAttribute?.('data-tile-pinned');
   }
   showInspect(u, preview) {
     this.resetTileInspectLock();
@@ -537,6 +541,10 @@ export class BattleUI {
       if (touches.has(e.pointerId)) { touches.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (pinch0 && touches.size === 2) this.scene.zoom = Math.min(2, Math.max(0.8, pinch0.z * pinchDist() / pinch0.d)); return; }
       if (!this.s || e.pointerType === 'touch') return; this.setHover(this.scene.pick(e.offsetX, e.offsetY));
     });
+    // EU5-style timer lock: leaving the board only dismisses an UNLOCKED tooltip.
+    cv.addEventListener('pointerleave', e => {
+      if (this.s && e.pointerType !== 'touch' && !this.tileInspectLatch?.locked) this.setHover(null);
+    });
     cv.addEventListener('pointercancel', e => { if (orbit && e.pointerId === orbit.id) { orbit = null; cv.classList.remove('orbiting'); } endTouch(e); });
     cv.addEventListener('pointerup', e => {
       if (orbit && e.pointerId === orbit.id) { orbit = null; cv.classList.remove('orbiting'); try { cv.releasePointerCapture(e.pointerId); } catch {} downAt = null; return; }
@@ -550,6 +558,11 @@ export class BattleUI {
     cv.addEventListener('contextmenu', e => { e.preventDefault(); this.cancel(); });
     cv.addEventListener('wheel', e => { e.preventDefault(); this.scene.zoom = Math.min(2, Math.max(0.8, this.scene.zoom * (e.deltaY > 0 ? 0.92 : 1.08))); }, { passive: false });
     $('gb-card-zones').addEventListener('click',e=>{const el=e.target.closest('[data-zone]');if(el)this.inspectZone(el.dataset.zone);});
+    $('inspect').addEventListener('animationend', e => {
+      // CSS and JavaScript must never disagree about whether the gold bar finished.
+      if (e.animationName === 'gb-terrain-lock-fill' && e.target?.classList?.contains('gb-terrain-lock-progress')
+          && $('inspect').classList.contains('terrain-locking')) this.tileInspectLatch?.lockNow();
+    });
     $('inspect').addEventListener('click',e=>{
       if(e.target.closest('[data-terrain-details]') && this.s && this.terrainTile) this.app.openModal(this.terrainDetailsHTML(this.terrainTile));
       if(e.target.closest('[data-unit-details]') && this.s && this.unitDetailsHTML) this.app.openModal(this.unitDetailsHTML);
@@ -604,8 +617,9 @@ export class BattleUI {
     });
   }
   setHover(t) {
-    // Lock after three seconds: cursor movement cannot replace the selected tile's Details panel.
-    if (this.tileInspectLatch?.locked && $('inspect')?.classList.contains('terrain-inspect')) return;
+    // A pinned inspector owns its tile independent of transient canvas hover.
+    // Mouseleave, hovering other tiles or entering Details must NOT replace it.
+    if (this.pinnedTerrainTile && this.tileInspectLatch?.locked && $('inspect')?.classList.contains('terrain-locked')) return;
     if ((t && this.hover && t.x === this.hover.x && t.y === this.hover.y) || (!t && !this.hover)) return;
     this.resetTileInspectLock();
     this.hover = t; this.refreshHighlights();
@@ -639,8 +653,11 @@ export class BattleUI {
     el.classList.add('terrain-locking');
     (this.tileInspectLatch ??= new TileInspectLatch()).watch(t, () => {
       if (!this.s || !el.classList.contains('terrain-inspect') || !el.classList.contains('show')) return;
+      this.pinnedTerrainTile = { x: t.x, y: t.y };
+      this.terrainTile = { ...this.pinnedTerrainTile };
       el.classList.remove('terrain-locking');
       el.classList.add('terrain-locked');
+      el.setAttribute?.('data-tile-pinned', `${t.x},${t.y}`);
     });
   }
   maybeAutoEnd() {
@@ -726,7 +743,7 @@ export class BattleUI {
   onTile(t, isTouch) {
     const s = this.s; if (this.busy) return;
     // Deliberate selections (mouse, touch, keyboard) release a locked inspector.
-    if (this.tileInspectLatch?.locked) { this.resetTileInspectLock(); this.hover = null; this.setHover(t); }
+    if (this.tileInspectLatch?.locked || this.pinnedTerrainTile) { this.resetTileInspectLock(); this.hover = null; this.setHover(t); }
     if (s.phase !== 'player') { this.reject('Wait for the foes to finish'); return; }
     const tag = key(t.x, t.y) + (this.spell || '');
     if (this.spell) {
