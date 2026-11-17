@@ -250,7 +250,7 @@ export class BattleUI {
         <span class="gb-zone-art gb-deck-back">${backHTML()}</span>
         <span class="gb-zone-meta"><strong>Library</strong><em>${library.length}</em></span></button>
       <button type="button" class="gb-zone gb-zone-graveyard" data-zone="graveyard" aria-label="Graveyard, ${grave.length} cards. Latest: ${esc(label)}. Inspect graveyard.">
-        <span class="gb-zone-art gb-grave-face">${last ? cardHTML(last.id || last,{small:true,uid:'graveyard-zone',extraClass:'gb-grave-top'}) : '<span class="gb-zone-empty">✧</span>'}</span>
+        <span class="gb-zone-art gb-grave-face">${last ? cardHTML(last.id || last,{small:true,uid:'graveyard-zone',extraClass:'gb-grave-top'}) : `<span class="gb-zone-empty gb-grave-empty">${ICON.graveyard}</span>`}</span>
         <span class="gb-zone-meta"><strong>Graveyard</strong><em>${grave.length}</em></span></button>
       <button type="button" class="gb-zone gb-zone-exile" data-zone="exile" aria-label="Exile, ${exileCount(s)} cards. Inspect exile.">
         <span class="gb-zone-art gb-exile-portal" aria-hidden="true" data-portal-slot></span>
@@ -310,8 +310,8 @@ export class BattleUI {
       tray:relative(tray),endTurn:relative($('endTurn')),topButtons:relative(document.querySelector('.topbtns')),
       actions:$('gb-action-counters')?.classList.contains('gb-dock-no-room')?null:relative($('gb-action-counters')),
       // v1.5.0: ordinary ground gets a slim panel; complex terrain and creatures expand.
-      desiredHeight:unit?(mobile?72:224):el.classList.contains('terrain-plain')?62:148,
-      minHeight:unit?(mobile?72:112):el.classList.contains('terrain-plain')?54:108,
+      desiredHeight:unit?(mobile?72:224):mobile?48:el.classList.contains('terrain-plain')?46:54,
+      minHeight:unit?(mobile?72:112):mobile?48:el.classList.contains('terrain-plain')?46:50,
       maxWidth:unit?(mobile?300:350):el.classList.contains('terrain-plain')?240:330
     });
     if(pos.fits){
@@ -595,10 +595,9 @@ export class BattleUI {
     const s = this.s, el = $('inspect'); const rows = describeTile(s, t.x, t.y); const w = s.phase === 'player' ? pathWarning(s, t.x, t.y) : null;
     const label = rows.map(r=>r.name).join(' + ');
     const role = rows.some(r=>r.kind==='hazard') ? 'Hazard' : rows.some(r=>r.kind==='benefit') ? 'Benefit' : '';
-    const description = w ? `${w.text}${w.lethal?' This would defeat you.':''}` : rows.map(r=>r.text).join(' ');
+    // A selected tile is a single short label row; the full rule text and hazard warning live in Details.
     this.terrainTile = {x:t.x,y:t.y};
-    el.innerHTML = `<div class="gb-terrain-brief-head"><strong>${esc(label)}</strong><span class="gb-terrain-role">${role}</span><button class="gb-terrain-details-btn" type="button" data-terrain-details aria-label="More details about ${esc(label)}">Details</button></div>`
-      + `<p class="gb-terrain-brief-copy">${esc(description)}</p>`;
+    el.innerHTML = `<div class="gb-terrain-brief-head"><strong>${esc(label)}</strong><span class="gb-terrain-role">${role}</span><button class="gb-terrain-details-btn" type="button" data-terrain-details aria-label="More details about ${esc(label)}">Details</button></div>`;
     el.classList.remove('unit-inspect');
     el.classList.toggle('terrain-plain', !w && rows.length <= 1 && rows.every(r => r.kind === 'info' && !/Rock|Crystal/i.test(r.name)));
     el.classList.add('terrain-inspect','show');

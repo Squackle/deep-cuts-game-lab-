@@ -979,3 +979,24 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
   #hud #inspect.unit-inspect .gb-unit-brief-context{color:#f0bb9c;overflow:hidden;text-overflow:ellipsis;
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:11px;line-height:1.22}
 }
+
+
+/* v1.8.0-beta preview: one-row tile summary; full tile and path warnings remain in Details. */
+#hud #inspect.terrain-inspect{height:var(--gb-terrain-height,54px)!important;max-height:var(--gb-terrain-height,54px)!important;padding:7px 10px;gap:0;justify-content:center;overflow:hidden}
+#hud #inspect.terrain-inspect .gb-terrain-brief-head{display:flex;align-items:center;flex-wrap:nowrap;gap:6px;width:100%;min-width:0}
+#hud #inspect.terrain-inspect .gb-terrain-brief-head strong{min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#hud #inspect.terrain-inspect .gb-terrain-brief-copy{display:none!important}
+#hud #inspect.terrain-inspect.terrain-plain{height:var(--gb-terrain-height,46px)!important}
+.gb-grave-empty{background:repeating-linear-gradient(45deg,#15261f,#15261f 6px,#1d3228 7px)}
+.gb-grave-empty .ic{display:block;width:31px;height:43px;max-height:92%;image-rendering:pixelated;filter:drop-shadow(0 2px 2px #0009)}
+@media(max-width:760px){
+  /* Same art, label and count-row heights on all three zone buttons, even when captions wrap. */
+  #hud .gb-card-zones{align-items:flex-start}
+  #hud .gb-zone{align-self:flex-start;justify-content:flex-start}
+  #hud .gb-zone-art{flex:0 0 auto}
+  #hud .gb-zone-meta{width:100%;height:34px;min-height:34px;display:flex;flex-direction:column;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:3px;line-height:1.1}
+  #hud .gb-zone-meta strong{display:block;width:100%;height:11px;line-height:11px;text-align:center;white-space:nowrap;font-size:9px;overflow:visible}
+  #hud .gb-zone-meta em{display:block;flex:0 0 auto;margin:0;line-height:13px}
+  #hud .gb-grave-empty .ic{width:26px;height:38px}
+  #hud #inspect.terrain-inspect{padding:6px 9px}
+}

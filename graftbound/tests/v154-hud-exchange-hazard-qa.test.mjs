@@ -22,11 +22,13 @@ for(const [type,desiredHeight,minHeight] of [['tile',148,108],['creature',224,11
    assert.ok(pos.height>=minHeight);
  });
 }
-test('tile info is taller, scrollable and not forcibly limited to two text lines',()=>{
+test('tile info is a short label and details row; the full rules and hazards stay in a modal',()=>{
  const css=source('styles.css'),ui=source('src/ui/battle-ui.js');
- assert.match(css,/#hud #inspect\.terrain-inspect \.gb-terrain-brief-copy\{display:block;overflow:visible/);
- assert.match(css,/max-height:var\(--gb-terrain-height,148px\)!important/);
- assert.match(ui,/desiredHeight:unit\?\(mobile\?72:224\):/);
+ assert.match(css,/#hud #inspect\.terrain-inspect \.gb-terrain-brief-copy\{display:none!important\}/);
+ assert.match(css, /#hud #inspect\.terrain-inspect\{height:var\(--gb-terrain-height,54px\)!important/);
+ assert.match(ui,/desiredHeight:unit\?\(mobile\?72:224\):mobile\?48:/);
+ assert.match(ui,/data-terrain-details/);
+ assert.match(ui,/this\.terrainDetailsHTML\(this\.terrainTile\)/);
  assert.match(ui,/el\.classList\.add\('unit-inspect','show'\)/);
  assert.match(ui,/this\.positionActionCounters\(\)/);
  assert.match(css,/#hud #inspect\.unit-inspect,#hud #inspect\.terrain-inspect\{/);
@@ -38,10 +40,11 @@ test('v1.5.0: movement and attack counters are integrated into the hero plate ac
  assert.match(hero,/class="pl-act"/); assert.match(hero,/class="moves"/); assert.match(hero,/class="atk/);
  assert.match(css,/#hud \.gb-action-counters:empty\{display:none!important\}/);
 });
-test('v1.5.0: plain ground uses a slim tile panel; complex terrain expands',()=>{
+test('v1.8.0: plain and special terrain both use compact inspection, with Details for special tiles',()=>{
  const ui=source('src/ui/battle-ui.js'),css=source('styles.css');
  assert.match(ui,/terrain-plain/); assert.match(css,/#inspect\.terrain-inspect\.terrain-plain/);
- assert.match(ui,/terrain-plain'\)\?62:148/);
+ assert.match(ui,/terrain-plain'\)\?46:54/);
+ assert.match(ui,/data-terrain-details/);
 });
 test('exchange lists real GRAFTBOUND effects with separate inspect and confirmed release actions',()=>{
  const ui=source('src/ui/screens.js');
