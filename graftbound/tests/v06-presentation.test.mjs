@@ -14,10 +14,13 @@ test('wind: tiny sway amplitudes, rigid things never sway, reduced motion / ambi
   assert.equal(swayFor('pine', { reduced: true }), 0); assert.equal(swayFor('pine', { enabled: false }), 0); assert.ok(swayFor('pine', { quality: 'performance' }) < swayFor('pine'));
   for (const w of Object.values(WIND)) { assert.ok(w.rate <= 0.4, 'sparse particles'); assert.ok(Math.abs(Math.hypot(...w.dir) - 1) < 0.02, 'one consistent breeze direction'); }
 });
-test('foliage is anchored: shader displacement scales with corner height² (base never moves), units pass sway 0', () => {
+test('foliage remains anchored and hero turning cannot accidentally trigger canopy wind', () => {
   const gl = src('rendering/gl.js'), sc = src('rendering/scene.js');
-  assert.match(gl, /aCorner\.y \* aCorner\.y\) \* aSway \* gust/); assert.match(gl, /SPR_FLOATS = 16/);
-  assert.match(sc, /\[v\.flash, v\.dissolve, v\.outline, v\.flashCold\]\);/, 'unit quads use the default sway of 0');
+  assert.match(gl, /aCorner\.y \* aCorner\.y\) \* aSway \* gust/);
+  assert.match(gl, /SPR_FLOATS = 16/, 'sprite attribute stride remains compatible');
+  assert.match(gl, /abs\(aSway\) > 2\.0/, 'hero yaw uses disjoint encoded range');
+  assert.match(gl, /if \(abs\(aSway\) <= 2\.0\)/, 'only foliage can receive wind displacement');
+  assert.match(sc, /\[v\.flash, v\.dissolve, v\.outline, v\.flashCold\], turn\)/, 'unit quads pass controlled facing turn');
 });
 test('no terrain regression: crystals and v0.6 terrain keep the floor free of coplanar overlaps', () => {
   for (const act of [0, 1, 2]) for (let seed = 1; seed < 6; seed++) {
