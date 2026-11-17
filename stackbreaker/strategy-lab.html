@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101e27">
+<meta name="robots" content="noindex, nofollow">
+<title>Stackbreaker Decision Trials | Deep Cuts Game Lab</title>
+<meta name="description" content="Five optional unranked Stackbreaker training challenges using the authentic limited priority-and-stack game engine.">
+<link rel="stylesheet" href="./strategy-lab.css">
+<script type="module" src="./strategy-lab.js"></script>
+</head>
+<body>
+<a class="skip" href="#trial">Skip to challenges</a>
+<header class="masthead">
+ <a href="/" class="brand">DEEP CUTS <strong>GAME LAB</strong></a>
+ <nav aria-label="Game Lab navigation">
+  <a href="/stackbreaker/">Classic Stackbreaker</a>
+  <a href="/">All test games</a>
+ </nav>
+</header>
+<main id="trial" class="wrap">
+ <p class="eyebrow">STACK OPERATIONS / EXPERIMENTAL TRAINING</p>
+ <h1>STRATEGY <em>TRIALS.</em></h1>
+ <p class="lead">Five deliberately selected decision exercises. The same limited Stackbreaker rules engine, no leaderboard, no account, no saved score. Think about choices and consequences, not how many spells you cast.</p>
+ <p class="notice">These optional cases adapt five existing authored scenarios; they are not new official Magic cards or human-calibrated difficulty ratings. Your Classic campaign, Daily attempt, and all saved progress remain unchanged.</p>
+ <nav class="trial-nav" id="trialNav" aria-label="Choose a strategy trial"></nav>
+ <section class="panel" aria-labelledby="currentTrial">
+  <div class="panel-heading">
+   <div>
+    <p class="eyebrow" id="trialIndex"></p>
+    <h2 id="currentTrial"></h2>
+    <p id="trialPrompt"></p>
+   </div>
+   <div class="panel-actions"><button id="restart" type="button">Restart trial</button><button id="hint" type="button">Reveal hint</button></div>
+  </div>
+  <p id="hintText" class="hint" hidden></p>
+  <div id="notice" class="status" role="status" aria-live="polite">Select a challenge to start.</div>
+  <div class="arena">
+   <section class="zone"><h3>Objective &amp; life</h3><div id="objective"></div></section>
+   <section class="zone"><h3>The stack <small>(top resolves first)</small></h3><div id="stack"></div></section>
+   <section class="zone"><h3>Your creatures</h3><div id="units"></div></section>
+   <section class="zone"><h3>Mana sources</h3><div id="lands"></div></section>
+   <section class="zone wide"><h3>Your hand &amp; abilities</h3><div id="hand"></div></section>
+  </div>
+  <div class="footer-actions"><button id="pass" type="button" class="primary">PASS / RESOLVE TOP</button><span id="pool" aria-live="polite"></span></div>
+  <section id="outcome" class="outcome" hidden><h3 id="outcomeTitle"></h3><p id="outcomeText"></p></section>
+ </section>
+ <p class="fine">Educational fan-made practice game; a simplified rules subset, not an official Magic judge. The exercise examines only authored reference lines and possible alternatives. Do not read a suggested solution length as the minimum. No game data is submitted.</p>
+</main>
+</body>
+</html>
