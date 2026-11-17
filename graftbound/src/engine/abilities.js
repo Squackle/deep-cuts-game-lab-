@@ -208,13 +208,17 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
   if (src && src.side === 'player' && tgt.side === 'enemy') s.stats.damageDealt += lost;
   // v1.7.0 attribution: only ENEMY-caused health loss restrains Global Threat — a foe source, or an explicit cause:'enemy'
   // (foe-created hazards, foe-inflicted poison). Self-damage, own spells/allies and neutral terrain never count.
-  if (tgt.hero) { s.stats.damageTaken += lost; if (src?.side === 'enemy' || (!src && cause === 'enemy')) s.stats.enemyHealthDamage = (s.stats.enemyHealthDamage || 0) + lost; }
+  // v1.8.1: a foe's death trigger (e.g. Mudbutton Torchrunner) is the unavoidable RESULT of killing it. It still removes
+  // HP and counts as damage taken (scoring), but is tracked separately and does NOT count against Global Threat.
+  if (tgt.hero) { s.stats.damageTaken += lost;
+    if (kind === 'deathTrigger') s.stats.deathTriggerHp = (s.stats.deathTriggerHp || 0) + lost;
+    else if (src?.side === 'enemy' || (!src && cause === 'enemy')) s.stats.enemyHealthDamage = (s.stats.enemyHealthDamage || 0) + lost; }
   // Real infect replaces health damage with poison counters against a player.
   // Against creatures, damage is represented by persistent -1/-1 counters.
   if(combat && src?.keywords?.infect && a>0){
     if(tgt.hero){
       tgt.hp=hpBefore;s.stats.damageTaken=Math.max(0,s.stats.damageTaken-lost);
-      if(src.side==='enemy')s.stats.enemyHealthDamage=Math.max(0,(s.stats.enemyHealthDamage||0)-lost);
+      if(src.side==='enemy'&&kind!=='deathTrigger')s.stats.enemyHealthDamage=Math.max(0,(s.stats.enemyHealthDamage||0)-lost);
       s.poisonCounters=(s.poisonCounters||0)+a;
       ev.push({t:'poisonCounter',uid:tgt.uid,amount:a,total:s.poisonCounters});
       if(s.poisonCounters>=10){s.phase='lost';ev.push({t:'defeat',kind:'poison'});}

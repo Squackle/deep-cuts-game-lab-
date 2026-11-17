@@ -27,7 +27,7 @@ import { terrainInspectPlacement, TileInspectLatch } from './terrain-inspect.js'
 import { exileZone, discardRequirement } from '../engine/zones.js';
 import { exilePortalCanvas } from './exile-portal.js';
 import { visualScale } from '../rendering/creature-scale.js';
-import { wolfCoatFor, recoatSheet, WOLF_KEYS, LEADER_KEYS, LEADER_COAT } from '../rendering/creature-variants.js';
+import { wolfCoatFor, recoatSheet, WOLF_KEYS, LEADER_KEYS, LEADER_COAT, THEME_BIOME } from '../rendering/creature-variants.js';
 
 const $ = id => document.getElementById(id);
 const SPELL_COL = { ember: [1, 0.55, 0.2], verdant: [0.5, 1, 0.4], tide: [0.4, 0.8, 1], umbral: [0.75, 0.45, 1], radiant: [1, 0.9, 0.5] };
@@ -39,6 +39,18 @@ export function kwChips(keywords, cls = '') {
 }
 
 const exileCount = s => { const z = exileZone(s); return z.yours.length + z.foes.length; };
+/** v1.8.1 status presentation (pure). Friendly buffs rise, hostile effects drip; colours are fixed per status so they
+ *  stay distinguishable. Re-uses previous entries so pulse timers don't restart on every label refresh. */
+const s0Traits = ui => ui.s?.traits || [];
+export const STATUS_FX = Object.freeze({
+  empowered: { col: [1, 0.8, 0.3], hostile: false }, shield: { col: [0.5, 0.8, 1], hostile: false }, guard: { col: [0.62, 0.86, 1], hostile: false },
+  weakened: { col: [0.72, 0.32, 0.92], hostile: true }, poison: { col: [0.42, 0.95, 0.3], hostile: true }, stunned: { col: [1, 0.95, 0.45], hostile: true }, grounded: { col: [0.75, 0.55, 0.35], hostile: true },
+});
+export function statusVisuals(d, prev = []) {
+  const out = [];
+  for (const [k, spec] of Object.entries(STATUS_FX)) if (d?.[k] > 0) out.push(prev?.find(p => p.key === k) || { key: k, col: spec.col, hostile: spec.hostile, t: 0 });
+  return out;
+}
 export class BattleUI {
   constructor(app) {
     this.app = app; this.audio = app.audio;
@@ -115,6 +127,7 @@ export class BattleUI {
       const ap = deriveAppearance(this.run.evo, visualForRun(this.run));
       v = this.scene.addUnit(u, 'blank'); { const bm = this.app.assets.manifest.sprites.blank; this.scene.setUnitTexture(u.uid, composeEquippedSheet(this.app.assets, ap, u.equipment || [], u.auras || []), visualScale('blank', bm, bm.bounds, { heroSize: ap.size })); }
       v.aura = ap.effects.includes('aura') ? ap.glow : null;
+      v.electro = !!s0Traits(this).includes('electrofield');   // v1.8.1 passive Electrostatic Field arcs (visual only)
       v.hover = u.keywords.flying ? 0.14 : 0;   // v0.6: fliers levitate; trample builds plant heavier steps (see play())
       v.style = { flying: !!u.keywords.flying, trample: !!u.keywords.trample, deathtouch: !!u.keywords.deathtouch, doubleStrike: !!u.keywords.doubleStrike, lifelink: !!u.keywords.lifelink,
         armored: !!ap.slots.body || ap.size >= 1.45 };
@@ -129,7 +142,7 @@ export class BattleUI {
         u.name === 'Soldier' ? 'mtg_friendlySoldier' : 'mtg_friendlySproutling');
       v = this.scene.addUnit(u, friend ? tokenKey : ENEMIES[u.defId].sprite);   // v1.7.0: size from the central species table
       { const key = friend ? tokenKey : ENEMIES[u.defId].sprite, img = this.app.assets.images[key];   // v1.7.0 wolf coats / pack leader
-        const coat = LEADER_KEYS.has(key) ? LEADER_COAT : WOLF_KEYS.has(key) ? wolfCoatFor(this.run?.seed || 0, u.uid) : null;
+        const coat = LEADER_KEYS.has(key) ? LEADER_COAT : WOLF_KEYS.has(key) ? wolfCoatFor(this.run?.seed || 0, u.uid, THEME_BIOME[this.scene?.theme] || 'temperate') : null;
         if (coat && coat.hue != null && img) this.scene.setUnitTexture(u.uid, recoatSheet(img, coat, key)); }
       if (friend && tokenKey === 'mtg_friendlySoldier') {
         const src=this.app.assets.images.mtg_friendlySoldier, mask=this.app.assets.images['mtg_friendlySoldier:skinMask'];
@@ -163,7 +176,7 @@ export class BattleUI {
     else v.aura=null;
   }
   syncDisp() {
-    for (const u of this.s.units) this.disp.set(u.uid, { hp: u.hp, maxHp: u.maxHp, shield: u.statuses.shield || 0, poison: u.statuses.poison || 0, stunned: u.statuses.stunned || 0, empowered: u.statuses.empowered || 0, weakened: u.statuses.weakened || 0, grounded: u.statuses.grounded || 0 });
+    for (const u of this.s.units) this.disp.set(u.uid, { hp: u.hp, maxHp: u.maxHp, shield: u.statuses.shield || 0, guard: u.statuses.guard || 0, poison: u.statuses.poison || 0, stunned: u.statuses.stunned || 0, empowered: u.statuses.empowered || 0, weakened: u.statuses.weakened || 0, grounded: u.statuses.grounded || 0 });
     this.dispMana = availableMana(this.s);
   }
   frame() {
@@ -197,11 +210,12 @@ export class BattleUI {
     }
     const u = this.s.units.find(x => x.uid === uid);
     const armor = u && u.keywords && u.keywords.armor ? `<span class="st ar">▣${u.keywords.armor}</span>` : '';
-    const stList = [armor, u?.slime ? `<span class="st gb-slime" title="Toxrill: ${u.slime} slime counter(s), -${u.slime}/-${u.slime}">☣${u.slime}</span>` : '', d.grounded ? `<span class="st gr">${ICON.hook}</span>` : '', d.weakened ? `<span class="st wk">−${d.weakened}⚔</span>` : '', d.shield ? `<span class="st sh">${ICON.shield}${d.shield}</span>` : '', d.poison ? `<span class="st ps">${ICON.poison}${d.poison}</span>` : '', d.stunned ? `<span class="st sn">${ICON.stun}</span>` : '', d.empowered ? `<span class="st em">+${d.empowered}</span>` : ''];
+    const stList = [armor, u?.slime ? `<span class="st gb-slime" title="Toxrill: ${u.slime} slime counter(s), -${u.slime}/-${u.slime}">☣${u.slime}</span>` : '', d.grounded ? `<span class="st gr">${ICON.hook}</span>` : '', d.weakened ? `<span class="st wk">−${d.weakened}⚔</span>` : '', d.shield ? `<span class="st sh">${ICON.shield}${d.shield}</span>` : '', d.guard ? `<span class="st sh gb-guard" title="Guard ${d.guard}: each enemy hit is reduced by ${d.guard}">${ICON.guard}${d.guard}</span>` : '', d.poison ? `<span class="st ps">${ICON.poison}${d.poison}</span>` : '', d.stunned ? `<span class="st sn">${ICON.stun}</span>` : '', d.empowered ? `<span class="st em">+${d.empowered}</span>` : ''];
     // v1.7.0: at most 3 status chips; the rest fold into a '+n' chip (full list in its tooltip)
     const stShown = stList.filter(Boolean), st = (stShown.length > 3 ? [...stShown.slice(0, 2), `<span class="st more" title="${esc(stShown.slice(2).map(x => x.replace(/<[^>]+>/g, '')).join(' · '))}">+${stShown.length - 2}</span>`] : stShown).join('');
     el.innerHTML = `${intent}<div class="hpbar"><i style="width:${pct}%"></i><span>${d.hp}</span></div><div class="sts">${st}</div>`;
     el._h = el.offsetHeight || 24;
+    { const view = this.scene.units.get(uid); if (view) view.statusFx = statusVisuals(d, view.statusFx); }
   }
   intentText(it) {
     const tgt = it.target && this.s.units.find(u => u.uid === it.target);
@@ -219,8 +233,8 @@ export class BattleUI {
     $('plate').innerHTML = `
       <div class="pl-top"><div><div class="pl-name">${esc(this.run.name)}</div><div class="pl-stage">${STAGE[ap.stage]} · ${this.run.evo.absorbed.length} graft${this.run.evo.absorbed.length === 1 ? '' : 's'}</div></div>
       <div class="pl-pt" title="Power / Toughness"><span class="${d.empowered ? 'buff' : d.weakened ? 'debuff' : ''}">${Math.max(0, p.power + (d.empowered || 0) - (d.weakened || 0))}</span>/<span>${p.toughness}</span></div></div>
-      <div class="pl-hp" tabindex="0" data-tip="Health ${d.hp}/${d.maxHp}${d.shield ? ` · shield ${d.shield} absorbs damage first` : ''}. Wounds carry between battles."><div class="bar"><i style="width:${(d.hp / d.maxHp) * 100}%"></i>${d.shield ? `<u style="width:${Math.min(100, d.shield / d.maxHp * 100)}%"></u>` : ''}</div>
-      <span>${ICON.heart}${d.hp}<small>/${d.maxHp}</small>${d.shield ? ` <em class="shd">${ICON.shield}${d.shield}</em>` : ''}</span></div>
+      <div class="pl-hp" tabindex="0" data-tip="Health ${d.hp}/${d.maxHp}${d.shield ? ` · shield ${d.shield} absorbs damage first` : ''}${d.guard ? ` · Guard ${d.guard} reduces each enemy hit` : ''}. Wounds carry between battles."><div class="bar"><i style="width:${(d.hp / d.maxHp) * 100}%"></i>${d.shield ? `<u style="width:${Math.min(100, d.shield / d.maxHp * 100)}%"></u>` : ''}</div>
+      <span>${ICON.heart}${d.hp}<small>/${d.maxHp}</small>${d.shield ? ` <em class="shd" title="Shield ${d.shield}: absorbs ${d.shield} total damage, then is gone">${ICON.shield}${d.shield}</em>` : ''}${d.guard ? ` <em class="shd gb-guard" title="Guard ${d.guard}: each enemy hit is reduced by ${d.guard} (telegraphed blows at least halved) until your next turn">${ICON.guard}Guard ${d.guard}</em>` : ''}</span></div>
       <div class="pl-res"><span class="mana" tabindex="0" data-tip="Mana ${this.dispMana}/${s.p.maxMana}. Spells cost gems. You regain ${s.p.regen} each turn${s.p.arcane ? `; Arcane adds +${s.p.arcane} to spell numbers` : ''}.">${Array.from({ length: Math.max(s.p.maxMana, this.dispMana) }, (_, i) => `<i class="${i < this.dispMana ? 'on' : ''}">${ICON.gem}</i>`).join('')}</span>
 </div>
       <div class="pl-act" role="group" aria-label="Movement, attacks and banked mana"></div>

@@ -185,7 +185,7 @@ test('Leyline, Inscribed Page, Rift and Arcane Conduit each have a distinct glyp
 // ── versioning ─────────────────────────────────────────────────────────────────────────────────────────────
 test('v1.6.0 rules fingerprint and challenge revision', async () => {
   const { RULES_VERSION, RANKED_CHALLENGES } = await import('../src/engine/ranked.js'); const { GAME } = await import('../src/config.js');
-  assert.equal(GAME.version, '1.8.0-beta'); assert.equal(RULES_VERSION, 'graftbound-rules-1.8.0-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 27);
+  assert.equal(GAME.version, '1.8.1-beta'); assert.equal(RULES_VERSION, 'graftbound-rules-1.8.1-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 28);
 });
 test('styles.css is structurally valid: every block closes (a single unclosed block silently disables all later rules)', () => {
   const css = src('styles.css').replace(/\/\*[\s\S]*?\*\//g, ''); let d = 0;

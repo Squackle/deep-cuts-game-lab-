@@ -289,7 +289,31 @@ export async function snakeskin(sc, { from, to, target, charged = false }) {
   await sleep(sc, 210);
 }
 /** Distinct hand-authored cast identities for the expanded real-card spellbook. */
-export async function strikeBolt(sc, args) { await lightningBolt(sc, args); }
+/** v1.8.1 Lightning Strike: storm smoke gathers ABOVE THE CASTER'S HEAD, coalesces into a small thundercloud that pulses
+ *  with internal sparks, then the existing bolt launches FROM that cloud to the target; the cloud breaks into wisps after.
+ *  Presentation only: same bolt/branching/impact as before. Fast/instant: no cloud. Reduced motion: short static cloud. */
+export const STORM_CLOUD = Object.freeze({ gather: 420, pulse: 260, above: 0.42 });
+export async function strikeBolt(sc, args) {
+  const uid = args.uidFrom ?? args.uid, fast = sc.speed >= 50;
+  if (fast || uid == null || typeof sc.headPos !== 'function' || !sc.units?.get?.(uid)) { await lightningBolt(sc, args); return; }
+  const head = sc.headPos(uid), cloud = [head[0], head[1] + STORM_CLOUD.above, head[2]], reduced = sc.reduced;
+  const SMOKE = [0.36, 0.4, 0.5], DARK = [0.2, 0.22, 0.3];
+  // 1 · gather: dark grey/blue wisps spiral in toward a point above the head
+  for (let i = 0; i < (reduced ? 6 : 16); i++) { const a = i / 16 * 6.283, r = 0.55 + (i % 3) * 0.12;
+    sc.fx.emit({ pos: [cloud[0] + Math.cos(a) * r, cloud[1] - 0.15 + (i % 4) * 0.08, cloud[2] + Math.sin(a) * r], vel: [-Math.cos(a) * r * 1.8, 0.1, -Math.sin(a) * r * 1.8], col: [...(i % 2 ? SMOKE : DARK), 0.85], size: 18, life: 0.6, drag: 1.6, target: () => cloud }, true); }
+  sc.addShadow?.({ frames: [[0, 0], [1, 0]], fps: 4, pos: cloud, size: 0.55, life: (STORM_CLOUD.gather + STORM_CLOUD.pulse) / 1000 + 0.6, fadeIn: 0.25, fadeOut: 0.45 });   // smoke puff sprite
+  await sleep(sc, reduced ? 160 : STORM_CLOUD.gather);
+  // 2 · pulse: the cloud flickers with small internal sparks
+  const L = sc.light(cloud, [0.6, 0.8, 1], 1.8, 0.5, 1.3);
+  for (let i = 0; i < (reduced ? 1 : 3); i++) { const p = add(cloud, [R() * 0.25, R() * 0.1, R() * 0.25]); sc.addBolt({ a: p, b: add(p, [R() * 0.3, R() * 0.15, R() * 0.3]), life: 0.08, width: 0.02, col: ELECTRIC, segs: 3 }); }
+  await sleep(sc, reduced ? 90 : STORM_CLOUD.pulse);
+  // 3 · release from the cloud (existing bolt; charged=true skips the old hand charge)
+  await lightningBolt(sc, { ...args, from: cloud, charged: true });
+  L.life = Math.min(L.life, 0.15);
+  // 4 · disperse into drifting wisps
+  for (let i = 0; i < (reduced ? 3 : 10); i++) { const a = i * 0.63;
+    sc.fx.emit({ pos: add(cloud, [Math.cos(a) * 0.12, 0, Math.sin(a) * 0.12]), vel: [Math.cos(a) * 0.5, 0.25, Math.sin(a) * 0.5], col: [...SMOKE, 0.7], size: 16, life: 0.7, drag: 1.2 }, true); }
+}
 export async function murder(sc, args) { await shadowMurder(sc, args); }   // v1.6.0 umbral: grasping shadow hand
 export async function revitalize(sc, args) { await heal(sc, args); }
 export async function divination(sc, { from }) {

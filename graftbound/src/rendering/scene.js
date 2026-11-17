@@ -413,9 +413,30 @@ export class Scene {
       if (e.kind === 'lava' && r() < 0.3) this.fx.emit({ pos: [e.pos[0] + (r() - 0.5) * 0.6, e.pos[1] + 0.02, e.pos[2] + (r() - 0.5) * 0.6], vel: [(r() - 0.5) * 0.2, 0.6 + r() * 0.8, (r() - 0.5) * 0.2], col: [1, 0.5 + r() * 0.3, 0.12, 1], size: 6 + r() * 5, life: 0.9, grav: -0.6, drag: 0.4 });
       if (e.kind === 'fire' || e.kind === 'voidfire') for (let k = 0; k < 2; k++) this.fx.emit({ pos: [e.pos[0] + (r() - 0.5) * 0.15, e.pos[1], e.pos[2] + (r() - 0.5) * 0.15], vel: [(r() - 0.5) * 0.2, 0.9 + r() * 0.6, (r() - 0.5) * 0.2], col: e.kind === 'voidfire' ? (r() < 0.3 ? [0.9, 0.8, 1, 1] : [0.6, 0.3, 1, 1]) : (r() < 0.3 ? [1, 0.9, 0.5, 1] : [1, 0.45, 0.12, 1]), size: 10 + r() * 8, life: 0.5 + r() * 0.3, drag: 1 });
     }
-    for (const v of this.units.values()) if (v.aura && r() < 0.6) {
-      const a = r() * 6.28; const h = this.heightOf(v);
-      this.fx.emit({ pos: [v.pos[0] + Math.cos(a) * 0.3 * v.scale, v.pos[1] + 0.1 + r() * h, v.pos[2] + Math.sin(a) * 0.3 * v.scale], vel: [0, 0.35, 0], col: [...v.aura, 0.9], size: 7, life: 1, drag: 0.3 });
+    // v1.8.1: buffs/auras/statuses read ~2x stronger (presentation only; see statusVisuals in battle-ui.js).
+    // Permanent auras: a steady column of rising motes (2x rate, ~1.6x size, brighter core).
+    // Temporary statuses: a pulsing ground ring + motes; friendly effects RISE, hostile effects DRIP DOWN.
+    const pulse = this.reduced ? 1.6 : 0.9, dens = Math.max(0.35, this.fx.density || 1);
+    for (const v of this.units.values()) {
+      if (v.hidden || v.dissolve > 0.5) continue;
+      const h = this.heightOf(v), rad = 0.32 * Math.min(1.6, v.scale * 2);
+      if (v.aura && r() < (this.reduced ? 0.5 : 1) * dens) for (let k = 0; k < 2; k++) { const a = r() * 6.28;
+        this.fx.emit({ pos: [v.pos[0] + Math.cos(a) * rad, v.pos[1] + 0.1 + r() * h, v.pos[2] + Math.sin(a) * rad], vel: [0, 0.4, 0], col: [...v.aura, 1], size: k ? 11 : 7, life: 1.1, drag: 0.3 }); }
+      // v1.8.1 Electrostatic Field graft: a tiny cool-blue arc crawls over the body every ~3 s (scene clock, no gameplay
+      // events, no simulation RNG). Size follows the sprite; reduced motion shows a single faint flicker less often.
+      if (v.electro) { v.electroT = (v.electroT ?? (v.uid % 7) * 0.4) + dt; const every = this.reduced ? 6 : 2.8;
+        if (v.electroT >= every) { v.electroT = 0; const n = this.reduced ? 1 : 3;
+          for (let k = 0; k < n; k++) { const a = (this.time * 1.7 + k * 2.1) % 6.283, y0 = v.pos[1] + h * (0.25 + 0.5 * ((k * 0.37 + this.time * 0.13) % 1));
+            const p = [v.pos[0] + Math.cos(a) * rad * 0.8, y0, v.pos[2] + Math.sin(a) * rad * 0.8];
+            this.addBolt({ a: p, b: [p[0] + Math.cos(a + 1.2) * 0.18, p[1] + 0.12, p[2] + Math.sin(a + 1.2) * 0.18], life: 0.12, width: 0.018, col: [0.55, 0.85, 1], segs: 4 }); }
+          if (!this.reduced) this.light([v.pos[0], v.pos[1] + h * 0.5, v.pos[2]], [0.5, 0.8, 1], 1.0, 0.18, 0.7); } }
+      for (const fx of v.statusFx || []) {
+        fx.t = (fx.t || r() * pulse) + dt;
+        if (fx.t >= pulse) { fx.t = 0; this.addRing({ pos: [v.pos[0], 0.035, v.pos[2]], r0: fx.hostile ? rad * 1.5 : rad * 0.6, r1: fx.hostile ? rad * 0.6 : rad * 1.5, life: 0.6, col: fx.col, width: 0.07, seg: 24 }); }
+        if (!this.reduced && r() < 0.55 * dens) { const a = r() * 6.28;
+          this.fx.emit({ pos: [v.pos[0] + Math.cos(a) * rad, v.pos[1] + (fx.hostile ? h * (0.6 + r() * 0.4) : 0.1 + r() * h * 0.5), v.pos[2] + Math.sin(a) * rad],
+            vel: [0, fx.hostile ? -0.45 : 0.5, 0], col: [...fx.col, 1], size: 10, life: 0.9, drag: 0.2 }); }
+      }
     }
   }
 }

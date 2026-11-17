@@ -113,8 +113,14 @@ function straightLine(s, from, dir, range) {
  * their next turn outrank the hero, but targets still obey range/line of sight. */
 /** v1.7.0 marksman ordinary shot: one per enemy turn, line of sight, printed Longbow damage, player team only. */
 export function quickShotTarget(s, e, from = e) { const q = ENEMIES[e.defId]?.quickShot; return q ? rangedPriority(s, e, q.range, from, true) : null; }
-function quickShot(s, ev, e, target = quickShotTarget(s, e)) {
-  const q = ENEMIES[e.defId]?.quickShot; if (!q || !target || !alive(target) || target.side === e.side) return;
+/** v1.8.1: the ordinary shot happens AT MOST ONCE per enemy turn (guarded by e.quickShotTurn), from the archer's CURRENT
+ *  position, re-validating range/line of sight against the live board (targets that moved or died are re-picked). */
+function quickShot(s, ev, e, preferred = null) {
+  const q = ENEMIES[e.defId]?.quickShot; if (!q || !alive(e) || s.phase !== 'enemy' || e.statuses?.stunned || e.quickShotTurn === s.turn) return;
+  const ok = u => u && alive(u) && u.side !== e.side && manhattan(e, u) <= q.range && lineOfSight(s, e, u);
+  const target = ok(preferred) ? preferred : quickShotTarget(s, e);
+  if (!ok(target)) return;
+  e.quickShotTurn = s.turn;
   ev.push({ t: 'attack', uid: e.uid, target: target.uid, ranged: true, kind: 'quickShot' }, { t: 'realAbility', uid: e.uid, name: 'Quick shot' });
   dealDamage(s, ev, e, target, q.damage, { kind: 'arrow' });
 }
@@ -324,7 +330,9 @@ export function planEnemy(s, e) {
       }
       if(choice){go(choice.t);plan.actions.push({type:'aim',tiles:choice.line,damage:def.aimDamage});
         const qt=quickShotTarget(s,e,posAfter());if(qt)plan.actions.push({type:'quickShot',target:qt.uid,damage:def.quickShot.damage});}
-      else{const p=victims[0]||hero;const t=list.slice().sort((a,b)=>manhattan(a,p)-manhattan(b,p)||a.cost-b.cost||cmpTile(a,b))[0];go(t);meleeIfAdjacent(meleeTarget(s,{...e,...posAfter()}));}
+      // v1.8.1: no prepared line -> still take the ordinary ranged shot if anything is in range/sight; melee only otherwise
+      else{const p=victims[0]||hero;const t=list.slice().sort((a,b)=>manhattan(a,p)-manhattan(b,p)||a.cost-b.cost||cmpTile(a,b))[0];go(t);
+        const qt=quickShotTarget(s,e,posAfter());if(qt)plan.actions.push({type:'quickShot',target:qt.uid,damage:def.quickShot.damage});else meleeIfAdjacent(meleeTarget(s,{...e,...posAfter()}));}
       break;
     }
     case 'guardian': {
@@ -457,7 +465,7 @@ function resolvePending(s, ev, e) {
     let victim = null;
     for (const t of aim.tiles) { if (tileAt(s, t.x, t.y) === T.ROCK) break; const u = unitAt(s, t.x, t.y); if (u && alive(u) && u.side !== e.side) { victim = u; break; } }
     if (victim) dealDamage(s, ev, e, victim, aim.damage, { kind: 'arrow' });
-    if (ENEMIES[e.defId]?.quickShot && alive(e) && s.phase === 'enemy') quickShot(s, ev, e);   // the turn's ordinary shot
+    quickShot(s, ev, e);   // the turn's ordinary shot (guarded: once per turn)
     return true;
   }
   if (e.slam) {
@@ -560,7 +568,7 @@ export function actEnemy(s, ev, e) {
       case 'hex': {const tgt=s.units.find(u=>u.uid===a.target&&alive(u));if(!tgt)break;ev.push({t:'hex',uid:e.uid,target:tgt.uid});dealDamage(s,ev,e,tgt,a.damage,{kind:'hex'});if(alive(tgt))addStatus(s,ev,tgt,'weakened',a.weaken);break;}
       case 'harpoon': {const tgt=s.units.find(u=>u.uid===a.target&&alive(u));if(!tgt)break;ev.push({t:'harpoon',uid:e.uid,target:tgt.uid});dealDamage(s,ev,e,tgt,a.damage,{kind:'harpoon'});if(a.ground&&alive(tgt))addStatus(s,ev,tgt,'grounded',1);break;}
       case 'aim': e.aim = { tiles: a.tiles, damage: a.damage }; ev.push({ t: 'aim', uid: e.uid, tiles: a.tiles }); break;
-      case 'quickShot': { const tgt = s.units.find(u => u.uid === a.target && alive(u)); if (tgt) quickShot(s, ev, e, tgt); break; }
+      case 'quickShot': quickShot(s, ev, e, s.units.find(u => u.uid === a.target)); break;
       case 'sporefield':
     case 'fissure':
     case 'fracture': {
