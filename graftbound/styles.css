@@ -1192,3 +1192,27 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
     animation:none!important;
   }
 }
+
+
+/* Shared, immediately visible Reveal All action for every reward pack.
+   Located above the cards, including Wayshrine and primer offerings. */
+.rewardscr .rw-reveal-actions {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  margin:14px 0 2px;
+  position:relative;
+  z-index:10;
+}
+.rewardscr #rw-reveal {
+  min-width:154px;
+  min-height:44px;
+  padding:10px 20px;
+  font-weight:750;
+}
+.rewardscr #rw-reveal:disabled {opacity:.7;cursor:default}
+@media(max-width:760px) {
+  .rewardscr .rw-reveal-actions {margin:10px 0 3px}
+  .rewardscr #rw-reveal {min-width:162px}
+}
