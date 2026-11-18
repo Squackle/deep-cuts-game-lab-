@@ -150,3 +150,28 @@ test('left and incomplete drags spring back without dismissing a revealed card',
     assert.equal(f.api.complete, false);
   }
 });
+
+
+test('Reveal All is a prominent button before the pack on every reward screen', () => {
+  const screens = readFileSync(new URL('../src/ui/screens.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+  const reward = screens.slice(
+    screens.indexOf('export function rewardScreen'),
+    screens.indexOf('export function shrineScreen'),
+  );
+  const button = reward.indexOf('id="rw-reveal">Reveal All</button>');
+  const stage = reward.indexOf('class="pack-stage"');
+  assert.ok(button > 0 && stage > button, 'Reveal All must be shown before the pack/card stack');
+  assert.equal((reward.match(/id="rw-reveal"/g) || []).length, 1, 'one visible, accessible Reveal All button');
+  assert.match(reward, /class="rw-reveal-actions"/);
+  assert.match(reward, /aria-label="Reveal all cards in this pack"/);
+  assert.match(reward, /if \(mobileStack\) \{ mobileStack\.revealAll\(\); return; \}/);
+  assert.match(reward, /if \(!opened\) skipCeremony\(\)/);
+  assert.ok(reward.includes('packIdentity(tier)'), 'all tier types share one pack opening');
+  for (const tier of ['battle', 'elite', 'boss', 'shrine', 'primer', 'archivist', 'graftsmith']) {
+    assert.match(reward, new RegExp('\\b' + tier + '\\b'), tier);
+  }
+  assert.match(css, /\.rewardscr \.rw-reveal-actions/);
+  assert.match(css, /\.rewardscr #rw-reveal/);
+  assert.match(css, /min-height:44px/);
+});
