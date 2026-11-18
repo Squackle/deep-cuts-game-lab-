@@ -2,7 +2,7 @@
 // role: the tactical identity shown to the player. counters: which build it is designed to pressure.
 import { LEGENDARY_BOSSES } from './legendary.js';
 import { ENEMY_FACTS } from '../cards/enemy-facts.js';
-import { REAL_CREATURE_MODELS } from '../rendering/real-creature-models.js';
+import { REAL_CREATURE_MODELS } from './creature-models.js';
 const LEGACY_ENEMIES = {
   angel: {act:1,name:'Angel',role:'Token',power:4,toughness:4,move:3,ai:'melee',sprite:'moth',keywords:{flying:1},token:true},
   saproling: { act:0,name:'Saproling',role:'Token',power:1,toughness:1,move:2,ai:'melee',sprite:'grub',token:true },
