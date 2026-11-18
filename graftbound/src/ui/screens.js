@@ -300,7 +300,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
           <button type="button" class="zoom" data-zoom="${esc(id)}" aria-label="Inspect">${ICON.zoom}</button></div>`).join('')}</div>
       </div>
       <div class="rw-detail" id="rw-detail"></div>
-      <div class="rw-actions"><button type="button" class="btn small ghost" id="rw-ceremony-skip" aria-label="Skip pack opening ceremony, retain all rewards">Skip opening animation</button><button type="button" class="btn small ghost" id="rw-reveal">Reveal all</button>${tier !== 'graftsmith' ? `<button type="button" class="btn small ghost" id="rw-skip" hidden>Leave the pack · +1 Maximum Health</button>${(app.run?.worldThreat?.level || 0) > 0 ? `<button type="button" class="btn small ghost" id="rw-skip-threat" hidden>Leave the pack · Global Threat −1 (now ${app.run.worldThreat.level})</button>` : ''}` : ''}</div>
+      <div class="rw-actions"><button type="button" class="btn small ghost" id="rw-ceremony-skip" aria-label="Skip pack opening ceremony, retain all rewards">Skip opening animation</button><button type="button" class="btn small ghost" id="rw-reveal">Reveal All</button>${tier !== 'graftsmith' ? `<button type="button" class="btn small ghost" id="rw-skip" hidden>Leave the pack · +1 Maximum Health</button>${(app.run?.worldThreat?.level || 0) > 0 ? `<button type="button" class="btn small ghost" id="rw-skip-threat" hidden>Leave the pack · Global Threat −1 (now ${app.run.worldThreat.level})</button>` : ''}` : ''}</div>
     </div>`, 'rewardscr' + (fast ? ' fast' : ''));
   app.hint('pack', 'On phones, tap each card to flip it, then swipe right to continue. Reveal All is always available. Choose one card after reviewing all three.');
   let showDetailRef = null;
@@ -397,7 +397,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
       if (matchMedia('(max-width: 760px)').matches) $('rw-detail').scrollIntoView({ behavior: instant ? 'auto' : 'smooth', block: 'nearest' });
     });
     fan.addEventListener('dblclick', e => {
-      if (claimed || !opened) return;
+      if (claimed || !opened || (mobileStack && !mobileStack.complete)) return;
       const slot = e.target.closest('.slot'); if (!slot || !slot.classList.contains('revealed')) return;
       const id = slot.dataset.id;
       fan.querySelectorAll('.slot').forEach(s => s.classList.toggle('sel', s === slot));
