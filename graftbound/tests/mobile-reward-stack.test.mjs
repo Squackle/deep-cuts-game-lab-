@@ -132,3 +132,21 @@ test('every reward tier includes the visible Reveal All button and shared mobile
   assert.match(css,/\.fan\.gb-stack-mode:not\(\.gb-stack-complete\)/);
   assert.match(css,/\.fan\.gb-stack-mode\.gb-stack-complete/);
 });
+
+
+test('left and incomplete drags spring back without dismissing a revealed card', async () => {
+  const f = fixture();
+  f.api.handleTap(tap(f.slots[0]));
+  await settle();
+  for (const dx of [-125, 35]) {
+    const pointerId = dx < 0 ? 7 : 8;
+    const target = { closest: selector => selector === '.slot' ? f.slots[0] : null };
+    f.fan.fire('pointerdown', { isPrimary: true, pointerId, clientX: 180, clientY: 100, target });
+    f.fan.fire('pointermove', { pointerId, clientX: 180 + dx, clientY: 103, cancelable: true, preventDefault() {} });
+    f.fan.fire('pointerup', { pointerId, clientX: 180 + dx, clientY: 103 });
+    await settle();
+    assert.equal(f.slots[0].classList.contains('gb-stack-top'), true);
+    assert.equal(f.slots[1].classList.contains('gb-stack-under'), true);
+    assert.equal(f.api.complete, false);
+  }
+});
