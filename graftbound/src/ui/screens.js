@@ -260,6 +260,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
       <h2 class="rw-title">${titles[tier] || titles.battle}</h2>
       ${firstVictoryPacks ? `<p class="rw-pack-count" aria-label="First level booster ${firstVictoryPacks.index} of ${firstVictoryPacks.total}">Pack ${firstVictoryPacks.index} of ${firstVictoryPacks.total}</p>` : ''}
       <p class="rw-sub" id="rw-sub" aria-live="polite">${severed ? `You severed <b>${esc(severed)}</b>. ` : ''}${esc(identity.cue)}</p><p class="rw-omen">${esc(identity.omen)}</p>
+      <div class="rw-reveal-actions"><button type="button" class="btn primary" aria-label="Reveal all cards in this pack" id="rw-reveal">Reveal All</button></div>
       <div class="pack-stage" id="pstage">
         <button type="button" class="pack ${tier}" id="pack" aria-label="Break the seal and open the booster"><span class="pack-rank">${esc(identity.rank)}</span>
           <span class="pk-shadow"></span>
@@ -300,7 +301,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
           <button type="button" class="zoom" data-zoom="${esc(id)}" aria-label="Inspect">${ICON.zoom}</button></div>`).join('')}</div>
       </div>
       <div class="rw-detail" id="rw-detail"></div>
-      <div class="rw-actions"><button type="button" class="btn small ghost" id="rw-ceremony-skip" aria-label="Skip pack opening ceremony, retain all rewards">Skip opening animation</button><button type="button" class="btn small ghost" id="rw-reveal">Reveal All</button>${tier !== 'graftsmith' ? `<button type="button" class="btn small ghost" id="rw-skip" hidden>Leave the pack · +1 Maximum Health</button>${(app.run?.worldThreat?.level || 0) > 0 ? `<button type="button" class="btn small ghost" id="rw-skip-threat" hidden>Leave the pack · Global Threat −1 (now ${app.run.worldThreat.level})</button>` : ''}` : ''}</div>
+      <div class="rw-actions"><button type="button" class="btn small ghost" id="rw-ceremony-skip" aria-label="Skip pack opening ceremony, retain all rewards">Skip opening animation</button>${tier !== 'graftsmith' ? `<button type="button" class="btn small ghost" id="rw-skip" hidden>Leave the pack · +1 Maximum Health</button>${(app.run?.worldThreat?.level || 0) > 0 ? `<button type="button" class="btn small ghost" id="rw-skip-threat" hidden>Leave the pack · Global Threat −1 (now ${app.run.worldThreat.level})</button>` : ''}` : ''}</div>
     </div>`, 'rewardscr' + (fast ? ' fast' : ''));
   app.hint('pack', 'On phones, tap each card to flip it, then swipe right to continue. Reveal All is always available. Choose one card after reviewing all three.');
   let showDetailRef = null;
