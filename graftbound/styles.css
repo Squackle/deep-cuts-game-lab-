@@ -1081,6 +1081,8 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
     overflow:visible;
   }
   .rewardscr .pack-stage:has(.gb-stack-mode) .pack {display:none!important}
+  /* Keep Reveal All in view on short phone screens until a reward is selected. */
+  .rewardscr .reward:has(.gb-stack-mode) .rw-detail:not(.show) {min-height:0;margin-top:0;padding:0}
   .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) {
     --gb-stack-card:min(73vw,265px);
     width:100%;
