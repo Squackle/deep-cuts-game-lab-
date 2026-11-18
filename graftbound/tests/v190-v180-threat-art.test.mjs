@@ -62,5 +62,5 @@ test('graft finishing: supersampled, form-shaded, sel-out edges and flesh roots 
 });
 test('v1.8.0 rules fingerprint and challenge revision', async () => {
   const { RULES_VERSION, RANKED_CHALLENGES } = await import('../src/engine/ranked.js'); const { GAME } = await import('../src/config.js');
-  assert.equal(GAME.version, '1.8.2-beta'); assert.equal(RULES_VERSION, 'graftbound-rules-1.8.2-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 29);
+  assert.equal(GAME.version, '1.8.3-beta'); assert.equal(RULES_VERSION, 'graftbound-rules-1.8.3-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 30);
 });

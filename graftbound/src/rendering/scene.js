@@ -67,7 +67,7 @@ export class Scene {
     const meta = this.man.sprites[spriteKey];
     // v1.7.0: feet + horizontal centre come from the MEASURED art bounds (creature-scale.js), not frame constants.
     const an = anchorsOf(meta, meta.bounds);
-    const v = { uid: u.uid, side: u.side, key: spriteKey, tex: opts.tex || this.tex[spriteKey], fw: meta.w, fh: meta.h, pivot: an.pivot, cx: an.cx, topPx: (meta.boundsAll || meta.bounds)?.y0 ?? 0, hover: meta.hover ? 0.35 : 0,
+    const v = { uid: u.uid, side: u.side, key: spriteKey, tex: opts.tex || this.tex[spriteKey], fw: meta.w, fh: meta.h, pivot: an.pivot, cx: an.cx, topPx: (meta.boundsAll || meta.bounds)?.y0 ?? 0, hover: u.keywords?.flying && !u.statuses?.grounded ? (meta.hover ? 0.35 : 0.14) : 0,
       pixelScale: meta.pixelScale || 1, animSet: meta.anims || this.man.anims, views: meta.views || this.man.views,
       pos: this.world(u.x, u.y), dir: u.side === 'enemy' ? [0, 1] : [0, -1], anim: 'idle', animT: Math.random(), scale: opts.scale || 1, flash: 0, flashCold: 0, dissolve: 0, outline: 0,
       lunge: [0, 0, 0], spawnK: 1, hidden: false, aura: null };

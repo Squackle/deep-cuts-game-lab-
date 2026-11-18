@@ -62,7 +62,7 @@ function comboDraw(s,ev,n=1){
 function gainLife(s,ev,n,source){
  const h=player(s);if(!alive(h)||n<=0)return;
  const actual=heal(s,ev,h,n,source);
- // Life gain still triggers Magic-style synergies at full RPG HP, but cannot overheal.
+ // GRAFTBOUND keeps MTG life-gain triggers at full RPG HP even when health is capped.
  if(!actual){ev.push({t:'graftTrigger',name:`${source}: gained ${n} life (health already full)`,uid:h.uid});onHeroHeal(s,ev,n,source);}
  ev.push({t:'comboLifeGain',uid:h.uid,amount:n,kind:source});
 }
@@ -135,13 +135,23 @@ export function resolveComboChoice(s,kind,arg){
  pruneUnpayableComboChoices(s); // A subsequent paid trigger may now be unaffordable.
  return resolved;
 }
+export function reassembleReason(s) {
+  if (!s?.traits?.includes('skeleton')) return 'Reassembling Skeleton graft not owned';
+  if (s.phase !== 'player') return 'Only during your turn';
+  if (hasComboChoices(s)) return 'Resolve the pending choice';
+  const cost = lv(s,'skeleton').cost;
+  if (availableMana(s) < cost) return `Reassemble costs ${cost} mana (${availableMana(s)} available)`;
+  if (allies(s).some(u=>u.sourceGraft==='skeleton')) return 'Your Reassembling Skeleton is still on the battlefield';
+  if (!hasOpenTile(s)) return 'No free tile for the Skeleton';
+  return null;
+}
 export function comboActiveOptions(s){
  if(!s||s.phase!=='player'||hasComboChoices(s))return [];
  const co=state(s),out=[];
  if(owns(s,'ayara')&&co.actions.ayaraTurn!==s.turn){
   for(const u of allies(s))if(!u.hero&&(u.colors||[]).includes('B'))out.push({kind:'ayara',arg:u.uid,label:`Ayara · sacrifice ${u.name} → draw`});
  }
- if(owns(s,'skeleton')&&availableMana(s)>=lv(s,'skeleton').cost&&hasOpenTile(s)&&!allies(s).some(u=>u.sourceGraft==='skeleton'))out.push({kind:'skeleton',arg:0,label:`Reassemble Skeleton · ${lv(s,'skeleton').cost} mana`});
+ if(owns(s,'skeleton') && !reassembleReason(s))out.push({kind:'skeleton',arg:0,label:`Reassemble Skeleton · ${lv(s,'skeleton').cost} mana`});
  if(owns(s,'witness')&&(co.actions.witnessUses||0)<lv(s,'witness').uses&&s.deck)for(const c of s.deck.graveyard)if(!out.some(x=>x.kind==='witness'&&x.arg===c.id))out.push({kind:'witness',arg:c.id,label:`Eternal Witness · return ${c.id.replace(/^mtg:/,'').replaceAll('-',' ')}`});
  return out;
 }

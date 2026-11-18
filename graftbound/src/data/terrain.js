@@ -10,6 +10,6 @@ export const TERRAIN_RULES = {
   ice: { slowNextMovement: 1 },       // crossing ice chills walkers (ground only), for their next action
   spores: { poisonOnEnter: 1 },       // poisonous mushroom field; fire clears it
   unstable: { pulseDamage: 2, every: 2 }, // telegraphed stone fissures, no permanent softlock
-  conduit: { spellBonus: 1 },        // standing here at turn start empowers one spell this turn
+  conduit: { spellBonus: 1 },        // starting or first entering this tile empowers one spell on the same turn
   crumble: { enterDamage: 1 },      // one-shot falling stone, becomes ordinary floor after entry
 };

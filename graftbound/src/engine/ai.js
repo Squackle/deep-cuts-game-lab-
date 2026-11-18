@@ -437,7 +437,7 @@ export function planEnemy(s, e) {
 
 export function previewIntent(s, e) {
   const hero = player(s);
-  const g0 = (hero && hero.statuses.guard) || 0;
+  const g0 = 0; // Finite Guard shield is handled by the shared shield pipeline.
   const brace = d => g0 ? Math.min(d, Math.max(g0, Math.floor(d / 2))) : 0;
   const qs = ENEMIES[e.defId]?.quickShot ? quickShotTarget(s, e) : null;
   if (e.aim) return { uid: e.uid, kind: 'fire', damage: e.aim.damage - brace(e.aim.damage), guarded: brace(e.aim.damage), tiles: e.aim.tiles, quick: qs ? { target: qs.uid, damage: ENEMIES[e.defId].quickShot.damage } : null };
@@ -448,7 +448,7 @@ export function previewIntent(s, e) {
     return { uid: e.uid, kind: 'slam', damage: e.slam.damage - brace(e.slam.damage), guarded: brace(e.slam.damage), tiles: e.slam.tiles, extra: atk ? atk.damage : 0, target: atk && atk.target };
   }
   const main = a.find(x => x.type === 'attack') || a.find(x => x.type === 'drakusethFlames') || a.find(x => x.type === 'realPing') || a.find(x => x.type === 'harpoon') || a.find(x => x.type === 'spit') || a.find(x => x.type === 'hex') || a.find(x => x.type === 'aim') || a.find(x => x.type === 'slam') || a.find(x => x.type === 'legendarySummon') || a.find(x => x.type === 'scarabReanimate') || a.find(x => x.type === 'nemataPump') || a.find(x => x.type === 'summon') || a.find(x => x.type === 'guard') || a.find(x => x.type === 'stunned');
-  const g = (hero && hero.statuses.guard) || 0;   // v0.8: intents show what you will ACTUALLY take while guarding
+  const g = 0; // Shield is finite, not an unlimited per-hit reduction.
   const dmg = (main && main.damage) || 0; const vsHero = main && (main.target === hero.uid || main.type === 'slam' || main.type === 'aim');
   const kind = main?.type === 'legendarySummon' || main?.type === 'scarabReanimate' ? 'summon' : main?.type === 'nemataPump' ? 'support' : main?.type === 'drakusethFlames' ? 'attack' : main?.type || 'move';
   return { uid: e.uid, kind, damage: vsHero && g ? Math.max(0, dmg - g) : dmg, guarded: vsHero && g ? Math.min(g, dmg) : 0, /* pending slams use the braced rule */ poison: (main && main.poison) || 0, weaken: (main && main.weaken) || 0, ground: !!(main && main.ground),

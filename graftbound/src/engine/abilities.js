@@ -174,8 +174,14 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
   if (a <= 0) { ev.push({ t: 'damage', uid: tgt.uid, amount: 0, blocked: 0, kind }); return 0; }
   const cap = combat && ENEMIES[tgt.defId] && ENEMIES[tgt.defId].strikeCap;
   if (cap && a > cap) { ev.push({ t: 'capped', uid: tgt.uid, from: a, to: cap }); a = cap; }
-  // v0.8 Guard: every hit from an enemy (strikes, arrows, slams, breath) is reduced; hazards and poison are not.
-  if (tgt.statuses && tgt.statuses.guard && src && src.side !== tgt.side) { const braced = kind === 'slam' || kind === 'arrow'; const cut = Math.min(a, braced ? Math.max(tgt.statuses.guard, Math.floor(a / 2)) : tgt.statuses.guard); /* telegraphed blows are at least halved */ a -= cut; if (cut) ev.push({ t: 'guarded', uid: tgt.uid, amount: cut }); if (a <= 0) { ev.push({ t: 'damage', uid: tgt.uid, amount: 0, blocked: 0, kind }); return 0; } }
+  // Healing Salve: prevent the next 3 damage this turn before reducing finite shields or health.
+  const saved = Math.min(a, tgt.statuses?.damagePrevention || 0);
+  if (saved) {
+    tgt.statuses.damagePrevention -= saved; a -= saved;
+    ev.push({ t: 'prevented', uid: tgt.uid, amount: saved });
+  }
+  if (a <= 0) { ev.push({ t: 'damage', uid: tgt.uid, amount: 0, blocked: 0, kind }); return 0; }
+  // Guard is an ordinary finite shield pool; no per-hit subtraction remains.
   const armor = combat ? kv(tgt, 'armor') : 0;
   if (armor) { const cut = Math.min(armor, a); a -= cut; if (cut) ev.push({ t: 'armored', uid: tgt.uid, amount: cut }); }
   if (a <= 0) { ev.push({ t: 'damage', uid: tgt.uid, amount: 0, blocked: 0, kind }); return 0; }
@@ -192,7 +198,7 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
   }
   const sh = tgt.statuses.shield || 0;
   const blocked = Math.min(sh, a);
-  if (blocked) { tgt.statuses.shield = sh - blocked; a -= blocked; }
+  if (blocked) { tgt.statuses.shield = sh - blocked; tgt.statuses.guardShield = Math.max(0, (tgt.statuses.guardShield || 0) - blocked); a -= blocked; }
   const hpBefore = tgt.hp;
   // Legendary bosses resist the instant-destroy clause of Deathtouch.
   // Ordinary creatures still die to it; bosses take printed combat damage
@@ -247,6 +253,16 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
     (s.pendingAuras ||= []).push({uid:tgt.uid,id:'mtg:gift-of-immortality'});
     ev.push({t:'revive',uid:tgt.uid,kind:'gift',hp:tgt.hp});
   } else if(tgt.hp <= 0) kill(s, ev, tgt, element);
+  return lost;
+}
+/** Target player life loss (GRAFTBOUND foe-proxy adaptation), NOT damage: ignores armor, shield,
+ * prevention and deathtouch, does not count as damage dealt, and still resolves death/victory. */
+export function loseLife(s, ev, src, tgt, amount, kind = 'lifeLoss') {
+  if (!alive(tgt) || !Number.isFinite(amount) || amount <= 0) return 0;
+  const lost = Math.min(tgt.hp, Math.floor(amount));
+  tgt.hp -= lost;
+  ev.push({ t: 'lifeLoss', uid: tgt.uid, amount: lost, src: src?.uid || null, kind });
+  if (tgt.hp <= 0) kill(s, ev, tgt);
   return lost;
 }
 /** One combat strike. dir = [dx,dy] of the attack (used by Trample). */
@@ -324,6 +340,16 @@ export function hazardAt(s, ev, u, at) {
     ev.push({ t: 'terrain', tiles: [at], kind: 'crumble' });
   }
 }
+/** First Conduit entry of the player turn grants the next spell bonus immediately.
+ * No repeated harvesting through moving away/back or teleportation. */
+export function grantConduitOnEntry(s, ev, u, x, y) {
+  if (!u?.hero || s.phase !== 'player' || tileAt(s, x, y) !== T.CONDUIT || s.p.conduitGrantedTurn === s.turn) return false;
+  const amount = TERRAIN_RULES.conduit.spellBonus;
+  s.p.conduit = Math.max(s.p.conduit || 0, amount);
+  s.p.conduitGrantedTurn = s.turn;
+  ev.push({ t: 'conduit', uid: u.uid, amount, x, y });
+  return true;
+}
 export function enterTiles(s, ev, u, path) {
   if (has(u, 'flying')) return;
   for (let i = 1; i < path.length && alive(u); i++) hazardAt(s, ev, u, path[i]);
@@ -338,6 +364,7 @@ export function walkPath(s, ev, u, path) {
   for (let i = 1; i < path.length; i++) {
     const at = path[i]; u.facing = [Math.sign(at.x - path[i - 1].x), Math.sign(at.y - path[i - 1].y)];
     u.x = at.x; u.y = at.y; seg.push(at);
+    grantConduitOnEntry(s, ev, u, at.x, at.y);
     if (!has(u, 'flying') && ENTER_HAZARDS.has(tileAt(s, at.x, at.y))) {
       flush(); hazardAt(s, ev, u, at);
       if (!alive(u)) { ev.push({ t: 'moveStopped', uid: u.uid, x: at.x, y: at.y, reason: 'defeated' }); return { x: at.x, y: at.y, stopped: true }; }

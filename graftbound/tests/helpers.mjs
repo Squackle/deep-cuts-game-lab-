@@ -34,7 +34,8 @@ export function botPlay(s, maxTurns = 40, { tactics = true } = {}) {
       const opts = castOptions(s, sp.id); if (!opts.length) continue;
       if (c.category === 'healing' && player(s).hp > player(s).maxHp * 0.6) continue;
       const tgt = opts.map(o => ({ o, u: enemies(s).find(e => e.x === o.x && e.y === o.y) })).sort((a, b) => (a.u ? a.u.hp : 99) - (b.u ? b.u.hp : 99))[0];
-      cast(s, sp.id, tgt.o.x, tgt.o.y); settle(); if (s.phase !== 'player') return s.phase;
+      if (sp.id === 'mtg:healing-salve') cast(s, sp.id, player(s).x, player(s).y, 1, 'heal');
+      else cast(s, sp.id, tgt.o.x, tgt.o.y); settle(); if (s.phase !== 'player') return s.phase;
     }
     const safe = o => !danger.has(o.x + ',' + o.y) && tileAt(s, o.x, o.y) !== T.LAVA;
     if (!attackTargets(s).length) {

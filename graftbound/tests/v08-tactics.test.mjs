@@ -108,13 +108,20 @@ test('Spell Primer: after the first victory, a free spells-only choice of 3 affo
 });
 
 // ── 4. Tactical stances ────────────────────────────────────────────────────
-test('Guard: costs an attack and ALL movement, counts as one action, reduces every enemy hit until your next turn, never hazards', () => {
+test('Guard: costs an attack and ALL movement; four shield points are consumed once and expire at next turn', () => {
   const s = arena(['....', '.h..', '.P..', '....'], { h: 'hound' }, { evo: evoWith('mtg:pillarfield-ox') }); const p = player(s); E('hound')(s).hp = 99;
   const v = guardValue(p); assert.equal(v, Math.min(TACTICS.guard.max, TACTICS.guard.base + Math.floor(p.toughness / TACTICS.guard.perToughness)));
-  guard(s); assert.equal(s.p.attacksLeft, 0); assert.equal(s.p.moveLeft, 0); assert.equal(s.stats.actions, 1); assert.throws(() => attack(s, E('hound')(s).uid), /already attacked/); assert.throws(() => guard(s), /already used/);
-  assert.equal(intents(s)[0].guarded > 0, true, 'intents show the reduced damage'); const hp = p.hp; endTurn(s);
-  assert.equal(p.hp, hp - Math.max(0, 2 - v), 'the hound strike is reduced by Guard'); assert.equal(p.statuses.guard, 0, 'expires when your turn begins');
-  const l = arena(['....g', '.....', '~....', 'P....'], { g: 'grub' }); guard(l); const h0 = player(l).hp; dealDamage(l, [], null, player(l), 2, { kind: 'lava' }); assert.equal(player(l).hp, h0 - 2, 'lava ignores guard');
+  guard(s); assert.equal(s.p.attacksLeft, 0); assert.equal(s.p.moveLeft, 0); assert.equal(s.stats.actions, 1);
+  assert.equal(p.statuses.guardShield, v); assert.equal(p.statuses.shield, v);
+  assert.throws(() => attack(s, E('hound')(s).uid), /already attacked/); assert.throws(() => guard(s), /already used/);
+  assert.equal(intents(s)[0].guarded || 0, 0, 'intents never suggest unbounded per-hit Guard reduction');
+  const hp = p.hp; endTurn(s);
+  assert.equal(p.hp, hp, 'one strike is absorbed by finite Guard shield');
+  assert.equal(p.statuses.guard, 0, 'Guard expires when the next turn begins');
+  assert.equal(p.statuses.guardShield, 0, 'unused temporary shield expires');
+  const l = arena(['....g', '.....', '~....', 'P....'], { g: 'grub' }); guard(l);
+  const h0 = player(l).hp; dealDamage(l, [], null, player(l), 2, { kind: 'lava' });
+  assert.equal(player(l).hp, h0, 'temporary shield is actual shield and can protect against terrain');
 });
 test('Channel: costs attack and movement; stores mana and spell bonus independently across turns', () => {
   const s = arena(['g...', '....', 'P...'], { g: 'tortoise' }, { spellbook: book(['shock']) }); s.p.mana = 0;
@@ -130,9 +137,9 @@ test('auto-end: stances keep the turn only when useful (Guard when threatened, C
   ch.units[1].x = 3; ch.units[1].y = 0; assert.ok(usefulStances(ch).includes('channel'));
 });
 test('ranked replays include stances and remain byte-identical under the current rules revision', () => {
-  assert.equal(RULES_VERSION, 'graftbound-rules-1.8.2-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 29);
+  assert.equal(RULES_VERSION, 'graftbound-rules-1.8.3-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 30);
   const { run, log } = playRanked(); assert.ok(log.length >= 15, 'the bot made a meaningful deterministic decision sequence; stance legality is tested in controlled arenas above');
-  assert.equal(JSON.stringify(replayRun('gb-expedition-01', log, { revision: 29 }).run), JSON.stringify(run));
+  assert.equal(JSON.stringify(replayRun('gb-expedition-01', log, { revision: 30 }).run), JSON.stringify(run));
   const i = log.findIndex(d => d.type === 'guard'); if (i >= 0) { const bad = log.map(d => ({ ...d })); bad.splice(i, 0, { ...bad[i] }); bad.forEach((d, k) => (d.seq = k)); assert.throws(() => replayRun('gb-expedition-01', bad)); }
 });
 
@@ -174,18 +181,17 @@ test('Rageblood Shaman gives only other Minotaurs +1/+1 and Trample, never unrel
   assert.equal(E('hound')(s).power,2,'Wolf receives no Minotaur anthem');
 });
 
-test('Guard reduces a real Drakuseth multi-target attack without inventing boss-specific immunities', () => {
-  const guarded=arena(['.....','..D..','..P..'],{D:'drakuseth'});
-  const open=arena(['.....','..D..','..P..'],{D:'drakuseth'});
-  // Guard is a full-movement defensive stance, preserving the printed 7/7 boss.
+test('Guard creates finite shielding against a real Drakuseth attack, never per-hit immunity', () => {
+  const guarded = arena(['.....','..D..','..P..'],{D:'drakuseth'});
+  const open = arena(['.....','..D..','..P..'],{D:'drakuseth'});
   guard(guarded);
-  const beforeA=player(guarded).hp,beforeB=player(open).hp;
+  const hpA=player(guarded).hp,hpB=player(open).hp;
   const evA=endTurn(guarded),evB=endTurn(open);
   assert.equal(ENEMIES.drakuseth.power,7);
-  assert.ok(evA.some(x=>x.t==='guarded'));
-  assert.ok(beforeA-player(guarded).hp<=beforeB-player(open).hp,'Guard should never increase incoming damage');
+  assert.ok(evA.some(x=>x.t==='damage'&&x.blocked>0),'one finite pool absorbs damage');
+  assert.ok(hpA-player(guarded).hp <= hpB-player(open).hp,'the finite shield never makes damage worse');
+  assert.ok(!evA.some(x=>x.t==='guarded'),'no legacy endless per-hit Guard remains');
 });
-
 test('spell events carry the RESOLVED magnitude; bigger hits mean bigger effects on a bounded curve', () => {
   const s = arena(['t...', '....', 'P...'], { t: 'tortoise' }, { spellbook: [{ id: 'mtg:lightning-bolt', level: 3 }, { id: 'mtg:shock', level: 1 }] }); s.p.mana = 9; s.p.maxMana = 9;
   const t = E('tortoise')(s); t.hp = t.maxHp = 50; t.power=1; const ev = cast(s, 'mtg:lightning-bolt', t.x, t.y); const sp = ev.find(e => e.t === 'spell');
