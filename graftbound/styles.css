@@ -1084,7 +1084,7 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
   .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) {
     --gb-stack-card:min(73vw,265px);
     width:100%;
-    height:calc(var(--gb-stack-card) * 1.4 + 40px);
+    height:calc(min(102.2vw,371px) + 40px);
     max-width:100%;
     position:relative;
     display:block!important;
@@ -1100,7 +1100,7 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
     left:50%;
     top:18px;
     width:var(--gb-stack-card);
-    height:calc(var(--gb-stack-card) * 1.4);
+    height:min(102.2vw,371px);
     margin:0;
     opacity:1;
     visibility:visible;
