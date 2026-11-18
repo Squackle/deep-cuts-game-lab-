@@ -20,7 +20,9 @@ export function newEvolution() {
 }
 
 export function absorb(evoIn, cardOrId) {
+  if (isBossCard(cardOrId)) throw new Error('Boss creatures are encounter-only and cannot be grafted');
   const card = typeof cardOrId === 'string' ? resolveCard(cardOrId) : cardOrId;
+  if (isBossCard(card)) throw new Error('Boss creatures are encounter-only and cannot be grafted');
   if (!card || card.kind !== 'creature') throw new Error('Not a creature card: ' + (card ? card.id : cardOrId));
   const evo = structuredClone(evoIn);
   const change = { cardId: card.id, power: card.power, toughness: card.toughness, gained: [], raised: [], resonance: 0 };
@@ -47,6 +49,7 @@ export function absorb(evoIn, cardOrId) {
 }
 import { KEYWORDS as KEYWORDS_REF } from '../data/keywords.js';
 import { resolveCard } from '../cards/catalog.js';
+import { isBossCard } from '../data/legendary.js';
 
 /** Rebuild an evolution from a list of card objects (used by the Graftsmith's Sever). */
 export function rebuild(cards) { let e = newEvolution(); for (const c of cards) e = absorb(e, c).evo; return e; }
