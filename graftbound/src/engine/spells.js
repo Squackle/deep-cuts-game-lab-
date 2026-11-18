@@ -128,7 +128,10 @@ export function castSpellEffect(s, ev, id, level, tx, ty, xValue = 1) {
       ev.push({ t: 'area', x: tx, y: ty, r: 1, kind: 'star' });
       // v1.7.0: a damaging blast centred on a rock shatters it into walkable rubble.
       if (tileAt(s, tx, ty) === T.ROCK) { s.terrain[ty * s.w + tx] = T.FLOOR; (s.rubble ||= []).push({ x: tx, y: ty }); ev.push({ t: 'terrain', tiles: [{ x: tx, y: ty }], kind: 'smash' }); }
-      damageBatch(s, ev, p, enemies(s).filter(e => manhattan(e, { x: tx, y: ty }) <= 1).map(e => [e, e.x === tx && e.y === ty ? n[0] : n[1]]), spellDamage);
+      // The cross-shaped blast hits ALL living creatures, including the hero and
+      // friendly tokens. Snapshot first so mutual kills and death triggers settle once.
+      damageBatch(s, ev, p, s.units.filter(u => alive(u) && manhattan(u, { x: tx, y: ty }) <= 1)
+        .map(u => [u, u.x === tx && u.y === ty ? n[0] : n[1]]), spellDamage);
       break;
     }
     case 'chain_lightning': {
@@ -198,6 +201,8 @@ function elementalInteraction(s, ev, id, tx, ty) {
   if (el === 'lightning') {   // lightning near a charged crystal makes it discharge once
     const c = (s.crystals || []).find(k => k.charged && near(k, { x: tx, y: ty }, 1)); if (!c) return;
     c.charged = false; ev.push({ t: 'crystal', x: c.x, y: c.y, kind: 'discharge' });
-    damageBatch(s, ev, player(s), enemies(s).filter(e => near(e, c, TERRAIN_RULES.crystal.dischargeRadius)).map(e => [e, TERRAIN_RULES.crystal.dischargeDamage]), { kind: 'spell', element: 'lightning' });
+    // A crystal discharge is also an area spell effect: no invisible ally immunity.
+    damageBatch(s, ev, player(s), s.units.filter(u => alive(u) && near(u, c, TERRAIN_RULES.crystal.dischargeRadius))
+      .map(u => [u, TERRAIN_RULES.crystal.dischargeDamage]), { kind: 'spell', element: 'lightning' });
   }
 }

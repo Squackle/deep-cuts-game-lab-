@@ -162,15 +162,22 @@ export async function fire(sc, { from, to, target, charged = false }) {
   sc.light(to, ORANGE, 3.6, 0.5, 2.6); if (!sc.reduced) sc.shake(0.12); if (target != null) sc.hit(target, ORANGE, true);
   lingerOnImpact(sc,target,'fire',920);
 }
-/** Fireball: a meteor falls on the area, telegraph ring, big blast. */
+/** Fireball: a heavy molten-rock core with black clasts, burning wake and an area blast. */
+export const FIREBALL_METEOR = Object.freeze({ baseSize: 108, perPower: 32, maxPower: 2.5, chunks: 5 });
 export async function fireball(sc, { from, to, tiles = [], charged = false, power = 1 }) {
   const ORANGE = [1, 0.5, 0.15]; const hand = charged ? from : add(from, [0, 0.3, 0]);
   if (!charged) { sc.fx.swirl(hand, () => hand, ORANGE, 50, 0.45); await sleep(sc, 240); }
   sc.addRing({ pos: [to[0], 0.03, to[2]], r0: 1.3, r1: 1.2, life: 0.6, col: [1, 0.35, 0.1], width: 0.06 });   // target telegraph
   sc.fx.burst(hand, [1, 0.8, 0.4], 18, { speed: 1.6, up: 0.6, size: 12, life: 0.25 });                       // launch flare at the caster
-  await sc.projectile(hand, to, ORANGE, 0.55, 0.9, { embers: true, size: 44 + 22 * power });   // v0.8: slower, visible flight; sphere size scales
+  await sc.projectile(hand, to, ORANGE, 0.62, 0.92, {
+    embers: true, molten: true,
+    size: FIREBALL_METEOR.baseSize + FIREBALL_METEOR.perPower * Math.min(FIREBALL_METEOR.maxPower, power),
+  }); // x2+ the original visual mass; rough, obsidian-studded lava orb (no new damage)
   sc.screenFlash([1, 0.7, 0.4], 0.32); if (!sc.reduced) sc.shake(0.24);
-  for (const t of tiles) sc.fx.burst([t[0], 0.2, t[2]], [1, 0.7, 0.25], 16, { speed: 1.8, up: 2.4, size: 14 });
+  for (const t of tiles) {
+    sc.fx.burst([t[0], 0.2, t[2]], [1, 0.57, 0.17], 16, { speed: 1.8, up: 2.4, size: 16 });
+    sc.fx.burst([t[0], 0.15, t[2]], [0.10, 0.075, 0.068], sc.reduced ? 3 : 8, { speed: 1.4, up: 1.1, size: 14, grav: -2 });
+  }
   sc.addRing({ pos: [to[0], 0.03, to[2]], r0: 0.2, r1: Math.min(2.6, 1.2 + 0.6 * power), life: 0.55, col: ORANGE, width: 0.12 + 0.08 * power });
   sc.light(to, ORANGE, 5, 0.6, 3);
 }

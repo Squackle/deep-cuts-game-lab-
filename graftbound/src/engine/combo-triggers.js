@@ -72,11 +72,29 @@ function drain(s,ev,source,n,healN=n){
  dealDamage(s,ev,player(s),foe,n,{kind:source,element:'umbral'});
  gainLife(s,ev,healN,source);
 }
-function queue(s,kind,detail={}){
- state(s).choices.push({kind,...detail});
+// An optional paid trigger cannot be accepted on credit: Channel is a separate
+// stance and cannot be taken while a combo-choice dialog is awaiting resolution.
+// Always count regular mana, banked mana and Treasure, never Channel spell POWER.
+const paidChoice = kind => kind === 'mentor' || kind === 'nadir';
+const canPayChoice = (s, kind) => availableMana(s) >= 1 && (kind !== 'mentor' || canDraw(s));
+/** Drop stale optional paid choices after another trigger spent the last mana.
+ *  Also repairs old saved queues, without discarding unpaid/non-mana choices. */
+export function pruneUnpayableComboChoices(s){
+ const pending=s?.combo?.choices;
+ if(!pending?.length)return 0;
+ const keep=pending.filter(c=>!paidChoice(c.kind)||canPayChoice(s,c.kind));
+ const removed=pending.length-keep.length;
+ if(removed)pending.splice(0,pending.length,...keep);
+ return removed;
 }
-export const hasComboChoices=s=>!!s?.combo?.choices?.length;
+function queue(s,kind,detail={}){
+ if(paidChoice(kind) && !canPayChoice(s,kind))return false;
+ state(s).choices.push({kind,...detail});
+ return true;
+}
+export const hasComboChoices=s=>{pruneUnpayableComboChoices(s);return !!s?.combo?.choices?.length;};
 export function comboChoices(s){
+ pruneUnpayableComboChoices(s);
  const c=s?.combo?.choices?.[0];if(!c)return null;
  const choices=[];
  if(c.kind==='mentor'||c.kind==='nadir'){
@@ -98,6 +116,7 @@ export function comboChoices(s){
  return {kind:c.kind,subtitle:c.kind==='oracle'?'Look at the top two real cards':c.kind==='mentor'?'Meek ally entered · power 2 or less':c.kind==='nadir'?'You drew a card':c.kind==='geists'?'Choose an enemy to freeze':'Green ally entered',reason,choices};
 }
 export function resolveComboChoice(s,kind,arg){
+ pruneUnpayableComboChoices(s);
  const c=s.combo?.choices?.[0];if(!c||c.kind!==kind)throw Error('No matching pending combo choice');
  const view=comboChoices(s);if(!view.choices.some(x=>x.arg===arg))throw Error('Invalid combo choice or insufficient mana');
  const ev=[],h=player(s);
@@ -112,7 +131,9 @@ export function resolveComboChoice(s,kind,arg){
  }
  if(kind==='geists'&&arg){const foe=s.units.find(u=>u.uid===arg&&alive(u));if(foe){const g=lv(s,'geists'),n=foe.boss?g.bossStun:g.stun;foe.statuses.stunned=(foe.statuses.stunned||0)+n;ev.push({t:'status',uid:foe.uid,status:'stunned',value:n,total:foe.statuses.stunned});}}
  if(kind==='ivy')giveCounter(s,ev,s.units.find(u=>u.uid===arg),'ivy');
- return resolveComboEvents(s,ev);
+ const resolved=resolveComboEvents(s,ev);
+ pruneUnpayableComboChoices(s); // A subsequent paid trigger may now be unaffordable.
+ return resolved;
 }
 export function comboActiveOptions(s){
  if(!s||s.phase!=='player'||hasComboChoices(s))return [];
