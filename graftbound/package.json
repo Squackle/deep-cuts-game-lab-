@@ -3,11 +3,12 @@
   "private": true,
   "version": "1.8.3-beta",
   "type": "module",
-  "description": "GRAFTBOUND \u2014 HD-2D creature-grafting tactics RPG (Deep Cuts EDH Game Lab, route /graftbound/)",
+  "description": "GRAFTBOUND — HD-2D creature-grafting tactics RPG (Deep Cuts EDH Game Lab, route /graftbound/)",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "test:e2e": "python3 tests/e2e.py",
     "assets": "python3 tools/build_assets.py",
-    "sim": "node tests/sim-report.mjs"
+    "sim": "node tests/sim-report.mjs",
+    "integration:manifest": "node tools/integration-manifest.mjs"
   }
 }
