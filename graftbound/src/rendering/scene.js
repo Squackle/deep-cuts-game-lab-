@@ -37,16 +37,16 @@ export class Scene {
     this.tex = {}; for (const k of Object.keys(this.man.sprites)) this.tex[k] = this.r.texture(assets.images[k]);
     this.foliageTex = this.r.texture(assets.images.foliage);
     this.shadowTex = this.r.texture(makeShadowAtlas()); this.shadows = [];
-    this.boneTex = this.r.texture(makeBoneAtlas()); this.toxicTex = this.r.texture(makeToxicAtlas());   // v1.8.0 poison smoke   // v1.7.0 skeleton bone pile   // v1.6.0 umbral spell sprites (alpha-tested pixel art)
+    this.boneTex = this.r.texture(assets.images.skeletonBones || makeBoneAtlas()); this.toxicTex = this.r.texture(makeToxicAtlas());   // v1.8.0 poison smoke   // v1.7.0 skeleton bone pile   // v1.6.0 umbral spell sprites (alpha-tested pixel art)
     this.units = new Map(); this.tweens = []; this.time = 0; this.speed = 1; this.reduced = false;
     this.yaw = Math.PI / 4; this.yawTarget = this.yaw; this.pitch = PITCH; this.pitchTarget = PITCH; this.zoom = 1; this.focus = [0, 0, 0]; this.focusTarget = [0, 0, 0];
-    this.shakeAmt = 0; this.fx = new Particles(3200); this.fxLights = []; this.static = null; this.w = 8; this.h = 8;
+    this.shakeAmt = 0; this.fx = new Particles(3200); this.rockFx = new Particles(320); this.fxLights = []; this.static = null; this.w = 8; this.h = 8;
     this.overlay = null; this.danger = null; this.hazard = null; this.blobs = null; this.fxMesh = null; this.ambientT = 0; this.dof = 1;
     this.bolts = []; this.rings = []; this.arrows = []; this.theme = 'hollow'; this.mote = [0.8, 1, 0.55];
     this.r.env = { sunDir: norm([-0.55, 0.75, -0.38]), sunCol: [0.9, 0.76, 0.58], ambTop: [0.34, 0.42, 0.44], ambBot: [0.12, 0.13, 0.1], fog: [0.07, 0.11, 0.1], fogR: [7.5, 15] };
     this.sprBuf = new Float32Array(SPR_FLOATS * 6 * 500); this.ambientOn = true;
   }
-  setQuality(name) { this.r.setQuality(name); this.fx.density = this.r.q.particles * (this.reduced ? 0.5 : 1); }
+  setQuality(name) { this.r.setQuality(name); this.fx.density = this.r.q.particles * (this.reduced ? 0.5 : 1); this.rockFx.density = this.fx.density; }
   world(x, y) { return [x - this.w / 2 + 0.5, 0, y - this.h / 2 + 0.5]; }
   loadArena(battle, seed, theme = 'hollow') {
     if (this.static) { this.r.free(this.static.mesh); this.r.free(this.static.shafts); }
@@ -55,7 +55,7 @@ export class Scene {
     this.r.env = { ...env.env, sunDir: norm(env.env.sunDir) }; this.r.tint = env.tint; this.mote = env.mote;
     this.static = { mesh: this.r.upload(env.opaque), shafts: this.r.upload(env.shafts), foliage: env.foliage, lights: env.lights, emitters: env.emitters };
     for (const uid of [...this.units.keys()]) this.units.delete(uid);
-    this.fx.clear(); this.fxLights = []; this.bolts = []; this.rings = []; this.arrows = []; this.setOverlay([]); this.setDanger([]); this.setHazard([]);
+    this.fx.clear(); this.rockFx.clear(); this.fxLights = []; this.bolts = []; this.rings = []; this.arrows = []; this.setOverlay([]); this.setDanger([]); this.setHazard([]);
   }
   /** Rebuild only the static environment (e.g. the Pyre Matron melts tiles into lava); units/FX are kept. */
   refreshTerrain(battle, seed) {
@@ -160,14 +160,35 @@ export class Scene {
     await this.tween(timing.seconds, k => { const t = timing.fadeStart ? Math.max(0, (k - timing.fadeStart) / (1 - timing.fadeStart)) : k; v.dissolve = t; v.flash = 0.3 * (1 - t); }); this.removeUnit(uid);
   }
   async spawn(uid) { const v = this.units.get(uid); if (!v) return; v.dissolve = 1; this.fx.burst(v.pos, [0.4, 0.9, 0.35], 28, { speed: 1.2, up: 2 }); await this.tween(0.45, k => { v.dissolve = 1 - k; }); v.dissolve = 0; }
-  async projectile(from, to, color, dur = 0.28, arc = 0.5, { embers = false, size = 30 } = {}) {
+  async projectile(from, to, color, dur = 0.28, arc = 0.5, { embers = false, size = 30, molten = false } = {}) {
     let last = 0; const L = this.light(from, color, 2.6, dur + 0.15, 1.6);
     await this.tween(dur, k => {
       const p = [from[0] + (to[0] - from[0]) * k, from[1] + (to[1] - from[1]) * k + Math.sin(k * Math.PI) * arc, from[2] + (to[2] - from[2]) * k];
       L.pos = p;
       if (k - last > 0.025) { last = k;
-        this.fx.emit({ pos: p, col: [...color, 1], size, life: 0.3, drag: 3 }, true); this.fx.emit({ pos: p, col: [1, 1, 1, 0.9], size: size * 0.4, life: 0.15 }, true);
-        if (embers) for (let i = 0; i < 2; i++) this.fx.emit({ pos: p, vel: [(Math.random() - 0.5) * 0.8, 0.4 + Math.random(), (Math.random() - 0.5) * 0.8], col: [1, 0.55 + Math.random() * 0.3, 0.15, 1], size: 7, life: 0.6, grav: -2 });
+        if (molten) {
+          // Fireball is a LAVA METEOR, not a uniformly glowing dot: oversized
+          // incandescent core, broken obsidian clasts and a ragged flaming wake.
+          // Purely cosmetic; never reads or changes the battle RNG/state.
+          const low = this.reduced || this.r.q.particles < 0.5;
+          this.fx.emit({ pos: p, col: [0.98, 0.32, 0.055, 1], size, life: 0.30, drag: 3 }, true);
+          this.fx.emit({ pos: [p[0]-0.03,p[1]+0.04,p[2]], col: [1, 0.72, 0.20, 1], size: size * 0.53, life: 0.22, drag: 4 }, true);
+          const chunks = low ? 2 : 5;
+          for (let i = 0; i < chunks; i++) {
+            const a = k * 18 + i * 2.4;
+            const r = 0.13 + (i % 3) * 0.065;
+            this.rockFx.emit({ pos: [p[0]+Math.cos(a)*r, p[1]+Math.sin(a*0.7)*r*0.7, p[2]+Math.sin(a)*r],
+              vel: [-0.15*(to[0]-from[0]), -0.12, -0.15*(to[2]-from[2])],
+              col: i%2?[0.055,0.048,0.045,1]:[0.16,0.073,0.045,1], size: size*(0.26+(i%3)*0.05), life: 0.33, drag: 3.5 }, true);
+          }
+          if (!low) for (let i=0;i<3;i++) this.fx.emit({ pos:[p[0]+(Math.random()-.5)*0.28,p[1],p[2]+(Math.random()-.5)*0.28],
+            vel:[(Math.random()-.5)*0.5,0.3+Math.random()*0.6,(Math.random()-.5)*0.5],
+            col:[1,0.43+Math.random()*0.24,0.07,1], size:size*0.15,life:0.45,grav:-1.5 },true);
+        } else {
+          this.fx.emit({ pos: p, col: [...color, 1], size, life: 0.3, drag: 3 }, true);
+          this.fx.emit({ pos: p, col: [1, 1, 1, 0.9], size: size * 0.4, life: 0.15 }, true);
+        }
+        if (embers && !molten) for (let i = 0; i < 2; i++) this.fx.emit({ pos: p, vel: [(Math.random() - 0.5) * 0.8, 0.4 + Math.random(), (Math.random() - 0.5) * 0.8], col: [1, 0.55 + Math.random() * 0.3, 0.15, 1], size: 7, life: 0.6, grav: -2 });
       }
     });
   }
@@ -370,7 +391,7 @@ export class Scene {
     this.shakeAmt *= Math.pow(0.002, dt); if (this.shakeAmt < 0.003) this.shakeAmt = 0;
     this.r.flash = Math.max(0, this.r.flash - dt * 1.6);
     if (!this.static) return;
-    this.ambient(dt); this.fx.update(dt);
+    this.ambient(dt); this.fx.update(dt); this.rockFx.update(dt);
     this.fxLights = this.fxLights.filter(l => (l.life -= dt) > 0);
     for (const l of this.fxLights) { l.intensity = l.base * Math.min(1, l.life / l.maxLife * 2); if (l.follow) l.pos = l.follow(); }   // v0.7: cast glows follow the caster
     const st = this.static.lights.map(l => ({ ...l, intensity: l.intensity * (1 - (l.flicker || 0) * (0.5 + 0.5 * Math.sin(this.time * 13 + l.pos[0] * 7) * Math.sin(this.time * 7.3 + l.pos[2]))) }));
@@ -394,6 +415,7 @@ export class Scene {
         { mesh: this.fxMesh, model: I(), blend: true, additive: true, unlit: true },
       ],
       particles: { data: this.fx.pack(), count: this.fx.n, scale: 0.012 },
+      rockParticles: { data: this.rockFx.pack(), count: this.rockFx.n, scale: 0.012 },
     });
   }
   ambient(dt) {

@@ -307,14 +307,14 @@ export function createRenderer(canvas) {
     }
     for (let i = 0; i < 8; i++) gl.disableVertexAttribArray(i);
   }
-  function drawPoints(cam, data, count, scale) {
+  function drawPoints(cam, data, count, scale, alphaBlend = false) {
     if (!count) return;
     const p = P.pt; gl.useProgram(p.p); gl.uniformMatrix4fv(p.u.uVP, false, cam.vp); gl.uniform1f(p.u.uScale, scale);
     gl.bindBuffer(gl.ARRAY_BUFFER, ptBuf); gl.bufferData(gl.ARRAY_BUFFER, data.subarray(0, count * 8), gl.STREAM_DRAW);
     gl.enableVertexAttribArray(p.a.aPos); gl.vertexAttribPointer(p.a.aPos, 3, gl.FLOAT, false, 32, 0);
     gl.enableVertexAttribArray(p.a.aCol); gl.vertexAttribPointer(p.a.aCol, 4, gl.FLOAT, false, 32, 12);
     gl.enableVertexAttribArray(p.a.aSize); gl.vertexAttribPointer(p.a.aSize, 1, gl.FLOAT, false, 32, 28);
-    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.depthMask(false);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, alphaBlend ? gl.ONE_MINUS_SRC_ALPHA : gl.ONE); gl.depthMask(false);
     gl.drawArrays(gl.POINTS, 0, count);
     gl.disable(gl.BLEND); gl.depthMask(true);
     for (let i = 0; i < 8; i++) gl.disableVertexAttribArray(i);
@@ -339,6 +339,8 @@ export function createRenderer(canvas) {
     drawSprites(scene.sprites, false, cam);
     drawMeshes(P.mesh, scene.overlays, false, cam);
     if (scene.particles) drawPoints(cam, scene.particles.data, scene.particles.count, scene.particles.scale * h);
+    // Occluding obsidian clasts in Fireball use proper alpha blending. Additive blending would make black invisible.
+    if (scene.rockParticles) drawPoints(cam, scene.rockParticles.data, scene.rockParticles.count, scene.rockParticles.scale * h, true);
     if (targets) {
       gl.disable(gl.DEPTH_TEST);
       const pass = (prog, src, dst, set) => { gl.bindFramebuffer(gl.FRAMEBUFFER, dst ? dst.fb : null); gl.viewport(0, 0, dst ? dst.w : w, dst ? dst.h : h); gl.useProgram(prog.p); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, src.tex); gl.uniform1i(prog.u.uSrc, 0); if (set) set(prog.u); fullscreen(prog); };

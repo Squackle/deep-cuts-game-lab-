@@ -42,9 +42,8 @@ test('Mentor identifies why the optional paid draw cannot be selected',()=>{
  const s=arena(['t....','.....','..P..'],{t:'tortoise'},{spellbook:book('shock')});
  s.traits=['mentor'];s.p.mana=0;s.deck={hand:[],library:[{id:'mtg:shock'}],graveyard:[],capacity:5};
  const ev=[];comboToken(s,ev,'Squirrel');resolveComboEvents(s,ev);
- assert.equal(comboChoices(s)?.kind,'mentor');
- assert.match(comboChoices(s).reason,/Need 1 available mana/);
- assert.equal(comboChoices(s).choices.some(c=>c.arg===1),false);
+ assert.equal(comboChoices(s),null,'no pointless paid trigger popup when mana is empty');
+ assert.equal(s.combo.choices.length,0,'optional paid trigger is not even queued');
 });
 
 test('wolf and spider models are distinct, grounded and no longer use moth rig',()=>{
@@ -74,7 +73,7 @@ test('concealed reward fronts and deferred hand drawings have runtime hooks',()=
 });
 
 test('rules change gets new ranked revision without changing score API',()=>{
- assert.equal(RULES_VERSION,'graftbound-rules-1.8.1-beta');
- assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,28);
+ assert.equal(RULES_VERSION,'graftbound-rules-1.8.2-beta');
+ assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,29);
  assert.equal(resolveCard('mtg:shock').target,'creature');
 });

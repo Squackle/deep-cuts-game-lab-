@@ -44,8 +44,8 @@ test('exactly the 23 owner-selected identities are new: 133 total real reward ca
  assert.equal(buildReferenceSet().rejected.length,0);assert.equal(buildReferenceSet().cards.length,133);
  for(const name of picks){const t=GRAFT_TRAITS[name];assert.ok(t&&t.id&&t.trigger&&t.note,name);}
  assert.equal(BATTLE_VERSION,11);assert.equal(RUN_VERSION,9);
- assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,28);
- assert.equal(RULES_VERSION,'graftbound-rules-1.8.1-beta');assert.equal(CARD_POOL_VERSION,'real-pool-133-v7');
+ assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,29);
+ assert.equal(RULES_VERSION,'graftbound-rules-1.8.2-beta');assert.equal(CARD_POOL_VERSION,'real-pool-133-v7');
 });
 
 test('Soul Warden + Ajani + Vito: summoning heals/grows/bolts even at full health, across chained events',()=>{
@@ -256,14 +256,11 @@ test('Mentor of the Meek cannot charge mana to draw from an empty Library and Gr
  const s=make(['Mentor of the Meek']);closeChoice(s);
  s.deck.library=[];s.deck.graveyard=[];
  const ev=[];comboToken(s,ev,'Squirrel');resolveComboEvents(s,ev);
- const view=comboChoices(s),mana=availableMana(s),actions=s.stats.actions;
- assert.equal(view.kind,'mentor');
- assert.deepEqual(view.choices.map(x=>x.arg),[0]);
- assert.throws(()=>chooseCombo(s,'mentor',1),/Invalid combo choice/);
+ const mana=availableMana(s),actions=s.stats.actions;
+ assert.equal(comboChoices(s),null,'an empty Library and Graveyard cannot justify a paid draw');
+ assert.equal(hasComboChoices(s),false);
  assert.equal(availableMana(s),mana);
  assert.equal(s.stats.actions,actions);
- chooseCombo(s,'mentor',0);
- assert.equal(hasComboChoices(s),false);
  // A recyclable real card makes the paid option legitimate again.
  const c=s.deck.hand[0];s.deck.graveyard.push(c);
  const other=[];comboToken(s,other,'Squirrel');resolveComboEvents(s,other);

@@ -20,6 +20,8 @@ export async function loadAssets(onProgress = () => {}) {
   jobs.push(img('textures/terrain.png').then(i => (images.terrain = i)));
   jobs.push(img('textures/terrain_blur.png').then(i => (images.terrainBlur = i)));
   jobs.push(img('sprites/foliage.png').then(i => (images.foliage = i)));
+  // Original 48px two-frame bone drop derived from the current Skeleton pose sheet.
+  jobs.push(img('hd2d/creatures/skeleton-bone-pile.png').then(i => (images.skeletonBones = i)));
   let done = 0; jobs.forEach(j => j.then(() => onProgress(++done / jobs.length)));
   await Promise.all(jobs);
   installRealCreatureModels(images,manifest);

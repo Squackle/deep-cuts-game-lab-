@@ -40,7 +40,7 @@ export const SPELL_ADAPTATIONS = {
   'Lightning Bolt':     { effect: 'ember_dart', bonus: 1, cost: 2, vfx: 'lightningBolt', note: 'Adapted: 3 damage to one foe anywhere on the battlefield (costs 2 gems here).' },
   'Flame Slash':        { effect: 'ember_dart', bonus: 2, cost: 3, vfx: 'flameSlash',  note: 'Adapted: 4 damage to one foe (costs 3 gems here).' },
   'Arc Lightning':      { effect: 'chain_lightning', bonus: -1, cost: 3, vfx: 'chain', note: 'Adapted: 2 damage, then 1 arcs to up to two other foes anywhere (the real card divides 3 damage).' },
-  'Fireball':           { effect: 'starfall', cost: 4, vfx: 'fireball', note: 'Adapted: a fixed blast — 4 to the target tile and 2 to adjacent foes. X is not modeled.' },
+  'Fireball':           { effect: 'starfall', cost: 4, vfx: 'fireball', note: 'Adapted: a fixed cross-shaped blast — 4 to creatures on the target tile, 2 to orthogonally adjacent creatures (including the caster and allies). X is not modeled.' },
   'Giant Growth':       { effect: 'sap_surge', cost: 1, vfx: 'growth',  note: 'Adapted: give target creature exactly +3/+3 until end of turn, following printed numbers.' },
   'Drain Life':         { effect: 'soul_siphon', cost: 2, vfx: 'drain', note: 'Adapted: choose X at cast time (1–available mana); pay 2 + X mana, deal X damage and heal the actual health removed. Black-mana restriction is not modeled.', text: 'Choose X: pay 2 + X mana, deal X damage to a foe, heal damage dealt.' },
   'Infest':             { effect: 'venom_mist', cost: 2, vfx: 'infest', note: 'Adapted: Poison 2 to all creatures in a 3×3 area (instead of −2/−2 to all creatures).' },
