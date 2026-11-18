@@ -1,0 +1,35 @@
+name: GRAFTBOUND verifier readiness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'graftbound/**'
+      - '.github/workflows/graftbound-verifier.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'graftbound/**'
+      - '.github/workflows/graftbound-verifier.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  graftbound-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run complete GRAFTBOUND regression suite
+        working-directory: graftbound
+        run: npm test
+      - name: Validate integration manifest from exact checked-out source
+        working-directory: graftbound
+        run: |
+          node tools/integration-manifest.mjs > /tmp/graftbound-integration-manifest.json
+          node --input-type=module -e "import fs from 'node:fs'; const m=JSON.parse(fs.readFileSync('/tmp/graftbound-integration-manifest.json','utf8')); if(m.fileCount<30 || !/^[0-9a-f]{64}$/.test(m.rulesDigestSha256)) process.exit(1); console.log('Verifier source files:',m.fileCount,'digest:',m.rulesDigestSha256,'rules:',m.rulesVersion,'challenge revision:',m.challenge.revision);"
