@@ -1,3 +1,9 @@
+# HISTORICAL ARCHIVE — v0.6 (not current release status)
+
+The text below documents an early sandbox handoff, **not** today's deployment. The current Game Lab version is v1.8.3-beta; use `package.json` and `src/engine/ranked.js` for live version/challenge metadata. For future main-site verifier packaging, see [integration/README.md](integration/README.md). Do not follow the obsolete 'not deployed' or old release instructions below.
+
+---
+
 # Status — GRAFTBOUND v0.6.0 (local build; not merged, not deployed)
 
 Built on the **actual PR #138 source** (Game Lab `game/graftbound-v0.5-overhaul` @ `e784fc7507daddec6556a2c151c21cbdbb5318b8`), recovered from GPT's verified text bundles. Nothing has been committed to GitHub, because this sandbox has no GitHub or network access.
