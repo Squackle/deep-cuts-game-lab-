@@ -35,6 +35,7 @@ import {previewNextWorldThreat,threatPreviewLabel} from '../engine/threat-previe
 import { NODE_TYPES as NT } from '../engine/campaign.js';
 import { formatDuration } from '../engine/clock.js';
 import { packIdentity, packOrnament, treatmentFor, TREATMENT_NAMES } from './pack-opening.js';
+import { attachMobileRewardStack } from './mobile-reward-stack.js';
 
 const $ = id => document.getElementById(id);
 const TARGET = { enemy: 'One foe, anywhere', ally: 'Friendly creature, anywhere', self: 'Yourself', tile: 'Any tile (area)', empty: 'Empty tile' };
@@ -301,7 +302,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
       <div class="rw-detail" id="rw-detail"></div>
       <div class="rw-actions"><button type="button" class="btn small ghost" id="rw-ceremony-skip" aria-label="Skip pack opening ceremony, retain all rewards">Skip opening animation</button><button type="button" class="btn small ghost" id="rw-reveal">Reveal all</button>${tier !== 'graftsmith' ? `<button type="button" class="btn small ghost" id="rw-skip" hidden>Leave the pack · +1 Maximum Health</button>${(app.run?.worldThreat?.level || 0) > 0 ? `<button type="button" class="btn small ghost" id="rw-skip-threat" hidden>Leave the pack · Global Threat −1 (now ${app.run.worldThreat.level})</button>` : ''}` : ''}</div>
     </div>`, 'rewardscr' + (fast ? ' fast' : ''));
-  app.hint('pack', 'Reveal all three cards, then choose one. Creatures are grafted into you; spells go into your spellbook. Tap the magnifier to inspect a card.');
+  app.hint('pack', 'On phones, tap each card to flip it, then swipe right to continue. Reveal All is always available. Choose one card after reviewing all three.');
   let showDetailRef = null;
   const realIds = cards.filter(id => getCard(id).reference);
   if (app.live && realIds.length) app.live.enrichAll(realIds).then(() => {
@@ -317,6 +318,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
   stage.addEventListener('pointerleave', () => { pack.style.setProperty('--rx', '0deg'); pack.style.setProperty('--ry', '0deg'); });
   return new Promise(res => {
     let opened = false, opening = null, claimed = false, ceremonySkipped = false;
+    let mobileStack = null;
     const ceremonyButton = $('rw-ceremony-skip');
     // Reward rows are horizontally scrollable on phones. Center the first/selected
     // card using the row's own scroll offset, never scroll the entire reward page.
@@ -358,12 +360,37 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
       app.audio.play(fx); slot.classList.add('rv-' + c.rarity);
       if(!matchMedia('(prefers-reduced-motion: reduce)').matches && app.meta.settings.cardMotion !== 'off' && c.rarity!=='common')slot.classList.add('gb-reveal-surge');
       if ((c.rarity === 'rare' || c.rarity === 'mythic') && app.scene) app.scene.screenFlash(c.rarity === 'mythic' ? [1, 0.7, 0.4] : [1, 0.92, 0.65], 0.18);
-      if (fan.querySelectorAll('.lc-card.flipped').length === 0) { $('rw-sub').textContent = 'Choose one card to keep · double-click to confirm'; $('rw-reveal').hidden = true; }
+      if (fan.querySelectorAll('.lc-card.flipped').length === 0) { $('rw-sub').textContent = 'Choose one card to keep · double-click to confirm'; $('rw-reveal').disabled = true; $('rw-reveal').textContent = 'All cards revealed'; }
       return true;
     };
+    // Phones start with a single face-down stack, not the wax-wrapper ceremony.
+    // Every reward tier (including Wayshrines) uses this same shared screen.
+    if (matchMedia('(max-width: 760px)').matches) {
+      opened = true;
+      pack.classList.add('open', 'gone');
+      ceremonyButton.hidden = true;
+      const skipHealth = $('rw-skip'), skipThreat = $('rw-skip-threat');
+      if (skipHealth) skipHealth.hidden = false;
+      if (skipThreat) skipThreat.hidden = false;
+      mobileStack = attachMobileRewardStack(fan, {
+        onReveal: reveal,
+        onProgress: ({ index, total, phase }) => {
+          if (phase === 'complete') return;
+          $('rw-sub').textContent = `Card ${index + 1} of ${total} · ${phase === 'revealed' ? 'Swipe right for the next card' : 'Tap the card to flip'}`;
+        },
+        onComplete: () => {
+          $('rw-sub').textContent = 'All cards revealed · choose one card to keep';
+          $('rw-reveal').disabled = true;
+          $('rw-reveal').textContent = 'All cards revealed';
+          fan.querySelector('.slot')?.focus({ preventScroll: true });
+        },
+        reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches || app.meta?.settings?.cardMotion === 'off',
+      });
+    }
     fan.addEventListener('click', async e => {
       const z = e.target.closest('[data-zoom]'); if (z) { e.stopPropagation(); if (z.closest('.slot').classList.contains('revealed')) inspectCard(app, z.dataset.zoom, { evo: run.evo, level: levelOf(z.dataset.zoom), arcane }); return; }
       const slot = e.target.closest('.slot'); if (!slot) return;
+      if (mobileStack && mobileStack.handleTap(e)) return;
       if (!opened) { await open(); return; }
       if (reveal(slot)) return;
       fan.querySelectorAll('.slot').forEach(s => s.classList.toggle('sel', s === slot)); centerSlot(slot); showDetail(slot.dataset.id);
@@ -382,7 +409,12 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
         const take = $('rw-detail')?.querySelector('[data-take]'); if (take && !take.disabled) take.click();
       } else e.target.click();
     } });
-    $('rw-reveal').addEventListener('click', async () => { if (!opened) skipCeremony(); await open(); fan.querySelectorAll('.slot').forEach((s, i) => setTimeout(() => reveal(s), instant ? 0 : fast ? 60 * i : 180 + i * 220)); });
+    $('rw-reveal').addEventListener('click', async () => {
+      if (mobileStack) { mobileStack.revealAll(); return; }
+      if (!opened) skipCeremony();
+      await open();
+      fan.querySelectorAll('.slot').forEach((s, i) => setTimeout(() => reveal(s), instant ? 0 : fast ? 60 * i : 180 + i * 220));
+    });
     const sk = $('rw-skip'); if (sk) sk.addEventListener('click', () => app.confirm('Leave all three cards behind and gain +1 Maximum Health (+1 max health) instead?', 'Leave them', () => res({ choice: 'skip' })));
     const skt = $('rw-skip-threat'); if (skt) skt.addEventListener('click', () => app.confirm(`Leave all three cards behind to lower Global Threat by 1 (from ${app.run.worldThreat.level} to ${app.run.worldThreat.level - 1})? You gain no card and no Maximum Health.`, 'Lower threat', () => res({ choice: 'skipThreat' })));
     const showDetail = id => {
