@@ -5,6 +5,9 @@ import { readFileSync } from 'node:fs';
 import { integrationManifest, verifierSourceFiles, verifierDigest } from '../tools/integration-manifest.mjs';
 import { startRanked, replayRun, validDecision, RULES_VERSION, RANKED_CHALLENGES, REPLAY_VERSION } from '../src/engine/ranked.js';
 import { GAME } from '../src/config.js';
+import { ENEMIES } from '../src/data/enemies.js';
+import { REAL_CREATURE_MODELS as RULE_MODELS } from '../src/data/creature-models.js';
+import { REAL_CREATURE_MODELS as RENDER_MODELS } from '../src/rendering/real-creature-models.js';
 
 test('website verifier inventory follows ALL current rule imports, never an obsolete handpicked v0.6 list', () => {
   const m = integrationManifest();
@@ -54,4 +57,12 @@ test('release metadata requires a real source SHA and cannot silently change ran
   assert.equal(validDecision({ seq: 0, type: 'node', node: 0, score: 999999 }, 0), false);
   assert.throws(() => replayRun(pinned.challenge.id, [], { revision: pinned.challenge.revision - 1 }), /Unknown/);
   assert.throws(() => replayRun(pinned.challenge.id, [], { rulesVersion: 'graftbound-rules-0.6.0' }), /Rules version/);
+});
+
+test('renderer and DOM-free rules consume one identical creature model registry', () => {
+  assert.strictEqual(RULE_MODELS, RENDER_MODELS, 'render must reuse the exact registry object');
+  assert.equal(Object.keys(RULE_MODELS).length, 45);
+  for (const id of Object.keys(RULE_MODELS)) {
+    if (ENEMIES[id]) assert.equal(ENEMIES[id].sprite, 'mtg_' + id, id + ' sprite mapping must remain unchanged');
+  }
 });
