@@ -7,7 +7,7 @@ export const GRAFT_TRAITS = Object.freeze({
   'Talrand, Sky Summoner': { id:'talrand', trigger:'spellCast', value:1, note:'Casting an instant or sorcery creates a 2/2 Flying Drake ally, limited only by legal board space.' },
   'Archaeomancer': { id:'archaeomancer', trigger:'spellCast', value:1, note:'The first spell you cast each encounter retrieves the most recent different spell in your Graveyard; if none exists, draw one.' },
   'Blood Artist': { id:'bloodArtist', trigger:'unitDied', value:1, note:'When another creature dies, drain 1 life from the nearest living foe and heal 1; a tactical adaptation of target-opponent life loss.' },
-  'Vito, Thorn of the Dusk Rose': { id:'vito', trigger:'lifeGained', value:1, note:'When the hero gains health, deal that much damage to the nearest enemy (never chains from Vito itself).' },
+  'Vito, Thorn of the Dusk Rose': { id:'vito', trigger:'lifeGained', value:1, note:'When the hero gains life, the nearest foe loses that much life (bypasses shields; never chains from Vito itself).' },
   'Sheoldred, the Apocalypse': { id:'sheoldred', trigger:'cardDraw', value:2, note:'When the hero draws a card, gain 2 health; the printed opponent-draw trigger is not modeled.' },
   'Young Pyromancer': { id:'pyromancer', trigger:'spellCast', value:1, note:'Casting an instant or sorcery creates a 1/1 red Elemental ally, limited only by legal board space.' },
   'Elvish Visionary': { id:'visionary', trigger:'battleStart', value:1, note:'Draw one additional spell when an encounter begins; adapted from its enter-the-battlefield draw.' },

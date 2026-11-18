@@ -59,7 +59,7 @@ test('#10 other avoidable enemy damage still counts; settlement treats a death-t
 });
 // ── presentation items (contracts; rendered results are in qa-screenshots) ───────────────────────────────
 test('#5 Guard is shown next to Shield with distinct tooltips; mechanics untouched', () => {
-  const ui = src('src/ui/battle-ui.js'); assert.match(ui, /guard: u\.statuses\.guard \|\| 0/); assert.match(ui, /Guard \$\{d\.guard\}: each enemy hit is reduced by/);
+  const ui = src('src/ui/battle-ui.js'); assert.match(ui, /guard: u\.statuses\.guard \|\| 0/); assert.match(ui, /temporary shield points from Guard/);
   assert.match(ui, /Shield \$\{d\.shield\}: absorbs \$\{d\.shield\} total damage/); assert.match(src('styles.css'), /\.pl-hp \.gb-guard/);
 });
 test('#3 wolf coats: biome-weighted, deterministic, no gameplay meaning; white rare in forest, common in arctic', async () => {
@@ -120,5 +120,5 @@ test('#4/#7 boss sheets keep layout, frame order and binary alpha after the read
 });
 test('v1.8.1 rules fingerprint and challenge revision (archer + threat attribution change replays)', async () => {
   const { RULES_VERSION, RANKED_CHALLENGES } = await import('../src/engine/ranked.js'); const { GAME } = await import('../src/config.js');
-  assert.equal(GAME.version, '1.8.2-beta'); assert.equal(RULES_VERSION, 'graftbound-rules-1.8.2-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 29);
+  assert.equal(GAME.version, '1.8.3-beta'); assert.equal(RULES_VERSION, 'graftbound-rules-1.8.3-beta'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 30);
 });

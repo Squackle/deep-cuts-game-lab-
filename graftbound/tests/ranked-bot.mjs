@@ -17,6 +17,7 @@ export function nextBattleDecision(s) {
     if (c.category === 'healing' && p.hp > p.maxHp * 0.6) continue;
     if (c.target === 'empty') continue;
     const t = opts.map(o => ({ o, u: enemies(s).find(e => e.x === o.x && e.y === o.y) })).sort((a, b) => (a.u ? a.u.hp : 99) - (b.u ? b.u.hp : 99))[0].o;
+    if (sp.id === 'mtg:healing-salve') return { type: 'cast', id: sp.id, x: p.x, y: p.y, mode: 'heal' };
     return { type: 'cast', id: sp.id, x: t.x, y: t.y };
   }
   const io = interactOptions(s); if (io.length) return { type: 'interact', x: io[0].x, y: io[0].y };

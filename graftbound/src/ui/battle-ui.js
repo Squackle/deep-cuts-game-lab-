@@ -1,6 +1,6 @@
 // Battle HUD, input (mouse / touch / keyboard) and event playback onto the HD-2D scene.
 import { availableMana } from '../engine/mana.js';
-import { hasComboChoices, comboChoices, comboActiveOptions } from '../engine/combo-triggers.js';
+import { hasComboChoices, comboChoices, comboActiveOptions, reassembleReason } from '../engine/combo-triggers.js';
 import { moveOptions, movePlayer, attackTargets, attack, castOptions, cast, endTurn, intents, canAttack, player, enemies, hazardPreview, interact, interactOptions, crystalAt, guard, channel, guardValue, stanceBlockReason, stanceMovementCost, discard, equipBattle, chooseCombo, activateCombo } from '../engine/combat.js';
 import { TACTICS } from '../data/tactics.js';
 import { getLegalPlayerActions, shouldAutoEnd } from '../engine/legal.js';
@@ -54,7 +54,7 @@ export function statusVisuals(d, prev = []) {
 export class BattleUI {
   constructor(app) {
     this.app = app; this.audio = app.audio;
-    this.disp = new Map(); this.labels = new Map(); this.busy = false; this.spell = null; this.hover = null; this.cursor = null; this.pendingTap = null; this.intents = [];
+    this.disp = new Map(); this.labels = new Map(); this.busy = false; this.spell = null; this.spellMode = null; this.hover = null; this.cursor = null; this.pendingTap = null; this.intents = [];
     this.cardAnimations = new CardAnimationDirector(app); this.concealedDraws=new Map();this.initialHandConcealed=false;
     this.tileInspectLatch = new TileInspectLatch();
     this.pinnedTerrainTile = null;
@@ -67,7 +67,7 @@ export class BattleUI {
     switch (d.type) {
       case 'move': ev = movePlayer(s, d.x, d.y); break;
       case 'attack': ev = attack(s, d.uid); break;
-      case 'cast': ev = cast(s, d.id, d.x, d.y, d.xValue ?? 1); break;
+      case 'cast': ev = cast(s, d.id, d.x, d.y, d.xValue ?? 1, d.mode ?? null); break;
       case 'interact': ev = interact(s, d.x, d.y); break;
       case 'end': ev = endTurn(s); break;
       case 'discard': ev = discard(s, d.id); break;
@@ -85,7 +85,7 @@ export class BattleUI {
   wait(ms) { return new Promise(r => setTimeout(r, ms / this.app.animFactor())); }
   async start(run, s, { fresh }) {
     this.resetTileInspectLock();
-    this._comboShowing=false;this.victoryPlayed=false;this.ending=false;this.cardAnimations.stop(); this.concealedDraws.clear();this.initialHandConcealed=!!fresh&&!!s.deck;this.run = run; this.s = s; this.spell = null; this.hover = null; this.pendingTap = null;
+    this._comboShowing=false;this.victoryPlayed=false;this.ending=false;this.cardAnimations.stop(); this.concealedDraws.clear();this.initialHandConcealed=!!fresh&&!!s.deck;this.run = run; this.s = s; this.spell = null; this.spellMode = null; this.hover = null; this.pendingTap = null;
     $('labels').innerHTML = ''; this.labels.clear(); this.disp.clear();
     this.scene.loadArena(s, s.rng.s ^ 0x77, ACTS[s.act || 0].theme); this.audio.setAct(s.act || 0);
     for (const u of s.units) if (u.hp > 0) this.addUnitView(u);
@@ -141,6 +141,12 @@ export class BattleUI {
         u.traitToken === 'catsoldier' ? 'mtg_friendlyCatSoldier' :
         u.name === 'Soldier' ? 'mtg_friendlySoldier' : 'mtg_friendlySproutling');
       v = this.scene.addUnit(u, friend ? tokenKey : ENEMIES[u.defId].sprite);   // v1.7.0: size from the central species table
+      // Triplicate Titan's three printed tokens have distinct animations and keywords:
+      // only the Flying token may hover. The other two must plant their feet.
+      if (['golemFly', 'golemVigilance', 'golemTrample'].includes(u.defId)) {
+        v.hover = u.defId === 'golemFly' && u.keywords?.flying ? 0.14 : 0;
+        v.style = { ...(v.style || {}), flying: !!(u.defId === 'golemFly' && u.keywords?.flying), armored: true };
+      }
       { const key = friend ? tokenKey : ENEMIES[u.defId].sprite, img = this.app.assets.images[key];   // v1.7.0 wolf coats / pack leader
         const coat = LEADER_KEYS.has(key) ? LEADER_COAT : WOLF_KEYS.has(key) ? wolfCoatFor(this.run?.seed || 0, u.uid, THEME_BIOME[this.scene?.theme] || 'temperate') : null;
         if (coat && coat.hue != null && img) this.scene.setUnitTexture(u.uid, recoatSheet(img, coat, key)); }
@@ -210,7 +216,7 @@ export class BattleUI {
     }
     const u = this.s.units.find(x => x.uid === uid);
     const armor = u && u.keywords && u.keywords.armor ? `<span class="st ar">▣${u.keywords.armor}</span>` : '';
-    const stList = [armor, u?.slime ? `<span class="st gb-slime" title="Toxrill: ${u.slime} slime counter(s), -${u.slime}/-${u.slime}">☣${u.slime}</span>` : '', d.grounded ? `<span class="st gr">${ICON.hook}</span>` : '', d.weakened ? `<span class="st wk">−${d.weakened}⚔</span>` : '', d.shield ? `<span class="st sh">${ICON.shield}${d.shield}</span>` : '', d.guard ? `<span class="st sh gb-guard" title="Guard ${d.guard}: each enemy hit is reduced by ${d.guard}">${ICON.guard}${d.guard}</span>` : '', d.poison ? `<span class="st ps">${ICON.poison}${d.poison}</span>` : '', d.stunned ? `<span class="st sn">${ICON.stun}</span>` : '', d.empowered ? `<span class="st em">+${d.empowered}</span>` : ''];
+    const stList = [armor, u?.slime ? `<span class="st gb-slime" title="Toxrill: ${u.slime} slime counter(s), -${u.slime}/-${u.slime}">☣${u.slime}</span>` : '', d.grounded ? `<span class="st gr">${ICON.hook}</span>` : '', d.weakened ? `<span class="st wk">−${d.weakened}⚔</span>` : '', d.shield ? `<span class="st sh">${ICON.shield}${d.shield}</span>` : '', u?.statuses?.guardShield > 0 ? `<span class="st sh gb-guard" title="Guard: ${u.statuses.guardShield} temporary shield remains until next turn">${ICON.guard}${u.statuses.guardShield}</span>` : '', d.poison ? `<span class="st ps">${ICON.poison}${d.poison}</span>` : '', d.stunned ? `<span class="st sn">${ICON.stun}</span>` : '', d.empowered ? `<span class="st em">+${d.empowered}</span>` : ''];
     // v1.7.0: at most 3 status chips; the rest fold into a '+n' chip (full list in its tooltip)
     const stShown = stList.filter(Boolean), st = (stShown.length > 3 ? [...stShown.slice(0, 2), `<span class="st more" title="${esc(stShown.slice(2).map(x => x.replace(/<[^>]+>/g, '')).join(' · '))}">+${stShown.length - 2}</span>`] : stShown).join('');
     el.innerHTML = `${intent}<div class="hpbar"><i style="width:${pct}%"></i><span>${d.hp}</span></div><div class="sts">${st}</div>`;
@@ -224,17 +230,18 @@ export class BattleUI {
       harpoon: `Harpoon: ${it.damage} damage${it.ground ? ' and Grounds you (no flying next turn)' : ''}`, aim: 'Will take aim along a line', fire: `Fires ${it.damage} along the red line`,
       slam: `${it.damage} to every red tile${it.extra ? ` (and strikes for ${it.extra} if adjacent)` : ''}`, summon: 'Will summon reinforcements', smash: 'Will smash through the rock (uses its whole turn)', support: 'Will empower its Saprolings', guard: 'Will shield adjacent allies', stunned: 'Stunned — loses its next action' })[it.kind] || 'Will move')
       + (it.quick ? ` · then a quick shot for ${it.quick.damage} at ${(t => !t || t.hero ? 'you' : 'your ' + t.name)(this.s.units.find(u => u.uid === it.quick.target))}` : '')
-      + (it.guarded ? ` · Guard blocks ${it.guarded}` : '') + (it.silence ? ` · Silences your ${getCard(it.silence).name} next turn` : '')
+      + (it.guarded ? ` · Blocks ${it.guarded}` : '') + (it.silence ? ` · Silences your ${getCard(it.silence).name} next turn` : '')
       + (it.redact ? ` · Redaction: your ${KEYWORDS[it.redact].name} is suppressed during your next turn (it returns after)` : '') + (it.briars ? ' · Briars will sprout around you (fire burns them)' : '') + (it.mirror ? ` · Will copy your ${KEYWORDS[it.mirror].name}` : '');
   }
   renderHUD() {
     const s = this.s; const p = player(s); const d = this.disp.get(p.uid) || { hp: p.hp, maxHp: p.maxHp, shield: 0 };
     const ap = deriveAppearance(this.run.evo, visualForRun(this.run));
+    d.guardShield = p.statuses.guardShield || 0;
     $('plate').innerHTML = `
       <div class="pl-top"><div><div class="pl-name">${esc(this.run.name)}</div><div class="pl-stage">${STAGE[ap.stage]} · ${this.run.evo.absorbed.length} graft${this.run.evo.absorbed.length === 1 ? '' : 's'}</div></div>
       <div class="pl-pt" title="Power / Toughness"><span class="${d.empowered ? 'buff' : d.weakened ? 'debuff' : ''}">${Math.max(0, p.power + (d.empowered || 0) - (d.weakened || 0))}</span>/<span>${p.toughness}</span></div></div>
-      <div class="pl-hp" tabindex="0" data-tip="Health ${d.hp}/${d.maxHp}${d.shield ? ` · shield ${d.shield} absorbs damage first` : ''}${d.guard ? ` · Guard ${d.guard} reduces each enemy hit` : ''}. Wounds carry between battles."><div class="bar"><i style="width:${(d.hp / d.maxHp) * 100}%"></i>${d.shield ? `<u style="width:${Math.min(100, d.shield / d.maxHp * 100)}%"></u>` : ''}</div>
-      <span>${ICON.heart}${d.hp}<small>/${d.maxHp}</small>${d.shield ? ` <em class="shd" title="Shield ${d.shield}: absorbs ${d.shield} total damage, then is gone">${ICON.shield}${d.shield}</em>` : ''}${d.guard ? ` <em class="shd gb-guard" title="Guard ${d.guard}: each enemy hit is reduced by ${d.guard} (telegraphed blows at least halved) until your next turn">${ICON.guard}Guard ${d.guard}</em>` : ''}</span></div>
+      <div class="pl-hp" tabindex="0" data-tip="Health ${d.hp}/${d.maxHp}${d.shield ? ` · shield ${d.shield} absorbs damage first` : ''}${d.guardShield ? ` · ${d.guardShield} temporary Guard shield expires next turn` : ''}. Wounds carry between battles."><div class="bar"><i style="width:${(d.hp / d.maxHp) * 100}%"></i>${d.shield ? `<u style="width:${Math.min(100, d.shield / d.maxHp * 100)}%"></u>` : ''}</div>
+      <span>${ICON.heart}${d.hp}<small>/${d.maxHp}</small>${d.shield ? ` <em class="shd" title="Shield ${d.shield}: absorbs ${d.shield} total damage, then is gone">${ICON.shield}${d.shield}</em>` : ''}${d.guardShield ? ` <em class="shd gb-guard" title="${d.guardShield} temporary shield points from Guard. Absorbed once and expire next turn.">${ICON.guard}Temp ${d.guardShield}</em>` : ''}</span></div>
       <div class="pl-res"><span class="mana" tabindex="0" data-tip="Mana ${this.dispMana}/${s.p.maxMana}. Spells cost gems. You regain ${s.p.regen} each turn${s.p.arcane ? `; Arcane adds +${s.p.arcane} to spell numbers` : ''}.">${Array.from({ length: Math.max(s.p.maxMana, this.dispMana) }, (_, i) => `<i class="${i < this.dispMana ? 'on' : ''}">${ICON.gem}</i>`).join('')}</span>
 </div>
       <div class="pl-act" role="group" aria-label="Movement, attacks and banked mana"></div>
@@ -254,7 +261,7 @@ export class BattleUI {
     if(s.deck){$('tray').setAttribute('aria-label',`Spell hand · ${s.deck.hand.length} cards · library ${s.deck.library.length} · graveyard ${s.deck.graveyard.length}`);}
     this.renderStances(s);
     const skill=$('graftPowers'), options=comboActiveOptions(s);
-    if(skill){skill.hidden=!options.length;skill.disabled=this.busy||s.phase!=='player'||hasComboChoices(s);skill.textContent='✦';skill.setAttribute('aria-label',`Open ${options.length} available Graft Powers`);skill.title=`Graft Powers (${options.length})`; }
+    if(skill){skill.hidden=!options.length&&!s.traits?.includes('skeleton');skill.disabled=this.busy||s.phase!=='player'||hasComboChoices(s)||!options.length;skill.textContent='✦';skill.setAttribute('aria-label',`Open ${options.length} available Graft Powers`);skill.title=`Graft Powers (${options.length})`;  if(!options.length&&s.traits?.includes('skeleton'))skill.title=reassembleReason(s)||'Reassemble available';}
     $('endTurn').disabled = this.busy || s.phase !== 'player';
     $('endTurn').classList.toggle('glow', s.phase === 'player' && !this.busy && !getLegalPlayerActions(s).any);
   }
@@ -418,7 +425,7 @@ export class BattleUI {
     const why = castBlockReason(this.s, id);
     el.innerHTML = `<small>Spellbook · level ${e.level}</small><b>${esc(c.name)}</b>
       <p>${esc(formatSpellText(id, e.level, this.s.p.arcane))}</p>
-      <span>${ICON.gem}${spellCost(this.s, id)} mana · ${esc(rangeLabel(id, e.level))} · ${c.target === 'ally' ? 'Choose a friendly creature' : c.target === 'enemy' ? 'Choose a foe' : c.target === 'self' ? 'Self' : 'Choose a tile'}</span>
+      <span>${ICON.gem}${spellCost(this.s, id)} mana · ${esc(rangeLabel(id, e.level))} · ${id === 'mtg:healing-salve' ? 'Choose one of two modes' : c.target === 'ally' ? 'Choose a friendly creature' : c.target === 'enemy' ? 'Choose a foe' : c.target === 'self' ? 'Self' : 'Choose a tile'}</span>
       <em>${why ? esc(why) : 'Ready to cast'}</em>`;
     el.classList.add('show');
   }
@@ -428,7 +435,7 @@ export class BattleUI {
     let el = $('stances'); if (!el) { el = document.createElement('div'); el.id = 'stances'; el.className = 'stances'; $('hud').appendChild(el); }
     const p = player(s); const gv = guardValue(p);
     const b = (kind, label, tip, key) => { const why = this.busy ? 'Wait…' : stanceBlockReason(s, kind); return `<button type="button" class="stance ${why ? 'off' : ''} ${p.statuses[kind] || (kind === 'channel' && s.p.channel) ? 'on' : ''}" data-stance="${kind}" data-tip="${esc(tip + (why ? ' — ' + why : ''))}" aria-label="${esc(label + '. ' + tip + (why ? '. ' + why : ''))}"><b>${label}</b><span class="stance-cost">${ICON.move}${kind === 'guard' ? 'ALL ' + stanceMovementCost(s, 'guard') : TACTICS[kind].moveCost} · ${ICON.sword}1</span><kbd>${key}</kbd></button>`; };
-    el.innerHTML = b('guard', `${ICON.shield} Guard ${gv}`, `Spend ALL ${stanceMovementCost(s, 'guard')} movement and your attack (you must Guard before moving). Until your next turn, every hit from a foe deals ${gv} less (2 + toughness ÷ ${TACTICS.guard.perToughness}, max ${TACTICS.guard.max}); telegraphed slams, breath and aimed arrows are at least halved. Hazards and poison are not reduced.`, 'G')
+    el.innerHTML = b('guard', `${ICON.shield} Guard ${gv}`, `Spend ALL ${stanceMovementCost(s, 'guard')} movement and your attack before moving. Gain ${gv} temporary Shield (2 + toughness ÷ ${TACTICS.guard.perToughness}, max ${TACTICS.guard.max}); it absorbs ${gv} total damage, then expires at the start of your next turn. It does not reduce every hit.`, 'G')
       + b('channel', `${ICON.gem} Channel`, `Spend ${TACTICS.channel.moveCost} movement and your attack: bank up to 2 reserve mana and 2 spell charges. Both persist across turns until spent.`, 'H');
   }
   refresh() {
@@ -448,7 +455,7 @@ export class BattleUI {
     if (this.busy || s.phase !== 'player') { this.scene.setOverlay(this.cursorTiles([])); return; }
     const hv = this.scene.units.get(player(s).uid); if (hv) hv.outline = 0.25;
     if (this.spell) {
-      const opts = castOptions(s, this.spell); const c = getCard(this.spell);
+      const opts = castOptions(s, this.spell, this.spellMode); const c = getCard(this.spell);
       for (const t of opts) tiles.push({ ...t, col: c.target === 'enemy' ? [0.75, 0.5, 1, 0.55] : [0.6, 0.45, 1, 0.28], ring: c.target === 'enemy' });
       for (const t of opts) { const u = unitAt(s, t.x, t.y); if (u) { const v = this.scene.units.get(u.uid); if (v) v.outline = 0.5; } }
       const h = this.hover;
@@ -661,14 +668,17 @@ export class BattleUI {
   setHover(t) {
     // A pinned inspector owns its tile independent of transient canvas hover.
     // Mouseleave, hovering other tiles or entering Details must NOT replace it.
-    if (this.pinnedTerrainTile && this.tileInspectLatch?.locked && $('inspect')?.classList.contains('terrain-locked')) return;
+    // Live pointer hover drives movement/attack/path overlays even while the DETAILS panel is pinned.
+    // The pin freezes only the displayed inspector HTML, never the tactical cursor.
+    const pinned = !!(this.pinnedTerrainTile && this.tileInspectLatch?.locked && $('inspect')?.classList.contains('terrain-locked'));
     if ((t && this.hover && t.x === this.hover.x && t.y === this.hover.y) || (!t && !this.hover)) return;
+    if (pinned) { this.hover = t; this.refreshHighlights(); return; }
     this.resetTileInspectLock();
     this.hover = t; this.refreshHighlights();
     if (!t || !this.s) { this.showInspect(null); return; }
     const u = unitAt(this.s, t.x, t.y); let preview = null;
     if (this.s.phase === 'player' && !this.busy) {
-      if (this.spell && castOptions(this.s, this.spell).some(o => o.x === t.x && o.y === t.y)) preview = this.simulate(c => cast(c, this.spell, t.x, t.y));
+      if (this.spell && castOptions(this.s, this.spell, this.spellMode).some(o => o.x === t.x && o.y === t.y)) preview = this.simulate(c => cast(c, this.spell, t.x, t.y, this.spellX ?? 1, this.spellMode));
       else if (u && u.side === 'enemy') { const plan = this.autoAttackPlan(u); if (plan) preview = this.simulate(c => { if (plan.move) movePlayer(c, plan.to.x, plan.to.y); attack(c, u.uid); }); }
     }
     if (u) this.showInspect(u, preview);
@@ -714,7 +724,7 @@ export class BattleUI {
       this.autoEnds = (this.autoEnds || 0) + 1; await this.doEndTurn();
     }, 520 / Math.min(this.app.animFactor(), 10));
   }
-  cancel() { this.resetTileInspectLock(); this.spell = null; this.spellX = null; this.pendingTap = null; this.hover = null; $('inspect')?.classList.remove('show'); this.refresh(); }
+  cancel() { this.resetTileInspectLock(); this.spell = null; this.spellMode = null; this.spellX = null; this.pendingTap = null; this.hover = null; $('inspect')?.classList.remove('show'); this.refresh(); }
   /** v1.5.0: opening orientation. The hero and allies face the centroid of living foes (or the board centre);
    *  foes face the hero. Uses the same face() as movement/attacks, so directional animation stays consistent. */
   faceOpening(s) {
@@ -729,14 +739,32 @@ export class BattleUI {
   reject(msg) { this.audio.play('nope'); if (this.inputClosed()) { console.debug('[GRAFTBOUND] input ignored after battle end:', msg); return; } this.app.toast(`<b>Can't</b> ${esc(msg)}`, 'short'); }
   selectSpell(id) {
     if (!this.s || this.s.phase !== 'player' || this.busy) return;
-    if (this.spell === id) { this.spell = null; this.spellX = null; this.refresh(); return; }
+    if (this.spell === id) { this.spell = null; this.spellMode = null; this.spellX = null; this.refresh(); return; }
     const why = castBlockReason(this.s, id); if (why) { this.flashTray(id); this.reject(why); return; }
     this.audio.play('click');
     if (id === 'mtg:drain-life') { this.chooseDrainX(id); return; }
+    if (id === 'mtg:healing-salve') { this.chooseHealingSalve(id); return; }
     const opts = castOptions(this.s, id);
     if (getCard(id).target === 'self') { this.spell = null; this.act(() => this.exec({ type: 'cast', id, x: opts[0].x, y: opts[0].y })); return; }
     this.spell = id; this.pendingTap = null; this.refresh();
     this.app.hint('target', 'Choose a highlighted legal target. Spells saying target creature can affect allies, your hero or foes; right-click or Esc to cancel.');
+  }
+  /** True Magic choice: choose Healing Salve's mode before spending mana or choosing a target. */
+  chooseHealingSalve(id) {
+    const modal = this.app.openModal(`<div class="gb-combo-modal"><small class="sh-brand">Healing Salve · Choose One</small><h2>How should it help?</h2><div class="gb-combo-options"><button class="btn gb-combo-option" type="button" data-salve="heal">Gain 3 life</button><button class="btn gb-combo-option" type="button" data-salve="prevent">Prevent next 3 damage to a creature or player this turn</button></div><button class="btn" type="button" data-close>Cancel</button></div>`);
+    for (const button of modal.querySelectorAll('[data-salve]')) button.onclick = () => {
+      if (!this.s || this.busy) return;
+      const mode = button.dataset.salve;
+      this.app.closeModal(); this.pendingTap = null;
+      if (mode === 'heal') {
+        const p = player(this.s);
+        this.spell = null; this.spellMode = null;
+        this.act(() => this.exec({ type: 'cast', id, x: p.x, y: p.y, mode }));
+      } else {
+        this.spell = id; this.spellMode = mode; this.refresh();
+        this.app.hint('target', 'Choose the creature that should be protected from the next 3 damage this turn.');
+      }
+    };
   }
   /** Player-facing deterministic choices for real spell/creature combo interactions. */
   promptComboChoices(){
@@ -789,7 +817,7 @@ export class BattleUI {
     if (s.phase !== 'player') { this.reject('Wait for the foes to finish'); return; }
     const tag = key(t.x, t.y) + (this.spell || '');
     if (this.spell) {
-      if (castOptions(s, this.spell).some(o => o.x === t.x && o.y === t.y)) { if (this.needConfirm(isTouch, tag)) return; const id = this.spell, xValue = this.spellX ?? 1; this.spell = null; this.spellX = null; this.act(() => this.exec({ type: 'cast', id, x: t.x, y: t.y, ...(id === 'mtg:drain-life' ? { xValue } : {}) })); }
+      if (castOptions(s, this.spell, this.spellMode).some(o => o.x === t.x && o.y === t.y)) { if (this.needConfirm(isTouch, tag)) return; const id = this.spell, xValue = this.spellX ?? 1, mode = this.spellMode; this.spell = null; this.spellMode = null; this.spellX = null; this.act(() => this.exec({ type: 'cast', id, x: t.x, y: t.y, ...(id === 'mtg:drain-life' ? { xValue } : {}), ...(mode ? { mode } : {}) })); }
       else this.reject(`${getCard(this.spell).name} can't target that tile`);
       return;
     }
@@ -991,8 +1019,9 @@ export class BattleUI {
           this.renderLabel(e.uid); if (this.isHero(e.uid)) this.renderHUD();
           await this.wait(big ? 230 : 140); break;
         }
+        case 'lifeLoss': if (d) d.hp = Math.max(0, d.hp - e.amount); this.float(e.uid, `−${e.amount} life (Vito)`, 'dmg'); this.renderLabel(e.uid); this.renderHUD(); await this.wait(110); break;
         case 'heal': if (d) d.hp += e.amount; au.play('heal'); if (e.kind === 'lifelink') { const atk = events.slice(0, idx).reverse().find(x => x.t === 'attack' && x.uid === e.uid); if (atk && sc.units.get(atk.target)) sc.fx.swirl(sc.centerPos(atk.target), () => sc.centerPos(e.uid), [1, 0.45, 0.5], 22, 0.6); } this.float(e.uid, `+${e.amount}${e.kind === 'lifelink' ? ' Lifelink' : e.kind === 'regenerate' ? ' Regenerate' : ''}`, 'heal'); sc.fx.burst(sc.centerPos(e.uid), [0.5, 1, 0.5], 14, { speed: 0.8, up: 1.5, grav: 1 }); this.renderLabel(e.uid); this.renderHUD(); await this.wait(140); break;
-        case 'shield': if (d) d.shield = e.total; if (e.kind !== 'barkskin') au.play('block'); this.float(e.uid, `${ICON.shield}+${e.amount}${e.kind === 'ward' ? ' Bulwark' : ''}`, 'shieldf'); this.renderLabel(e.uid); this.renderHUD(); await this.wait(120); break;
+        case 'shield': if (d) { d.shield = e.total; if (e.kind === 'guard') d.guardShield = (d.guardShield || 0) + e.amount; if (e.kind === 'guardExpire') d.guardShield = 0; } if (e.kind !== 'barkskin' && e.amount > 0) au.play('block'); if (e.amount > 0) this.float(e.uid, `${ICON.shield}+${e.amount}${e.kind === 'guard' ? ' Guard' : e.kind === 'ward' ? ' Bulwark' : ''}`, 'shieldf'); this.renderLabel(e.uid); this.renderHUD(); if (e.amount > 0) await this.wait(120); break;
         case 'status': {
           if (d) d[e.status] = e.total;
           const lbl = { poison: `${ICON.poison}Poison ${e.value}`, stunned: `${ICON.stun}Stunned`, empowered: `+${e.value} power`, weakened: `Hexed −${e.value} power`, grounded: `${ICON.hook}Grounded` }[e.status];
@@ -1031,7 +1060,14 @@ export class BattleUI {
         case 'archiveDraw': { const w = this.tile(e.x,e.y); sc.addRing({pos:[w[0],0.04,w[2]],r0:0.1,r1:0.7,life:0.5,col:[0.58,0.65,1],width:0.07,spokes:4});this.float(e.uid,e.count?'Inscribed Page · Draw +1':'Inscribed Page · Empty deck','note');break;}
         case 'conduit': { const w = this.tile(e.x, e.y); sc.addRing({ pos: [w[0], 0.1, w[2]], r0: 0.2, r1: 0.7, life: 0.5, col: [0.35, 0.9, 1], width: 0.08, spokes: 8 }); break; }
         case 'crackPulse': au.play('slam'); for (const t of e.tiles) { const w = this.tile(t.x, t.y); sc.addRing({ pos: [w[0], 0.02, w[2]], r0: 0.1, r1: 0.55, life: 0.4, col: [1, 0.44, 0.2], width: 0.09, spokes: 6 }); } await this.wait(180); break;
-        case 'riftPulse': au.play('zap'); for (const t of e.tiles) { const w = this.tile(t.x, t.y); sc.addRing({ pos: [w[0], 0.04, w[2]], r0: 0.05, r1: 0.6, life: 0.4, col: [0.75, 0.4, 1], width: 0.1, spokes: 4 }); sc.fx.burst([w[0], 0.2, w[2]], [0.75, 0.4, 1], 12, { speed: 1.2, up: 2 }); } await this.wait(220); break;
+        case 'riftPulse': au.play('zap'); for (const t of e.tiles) { const w = this.tile(t.x, t.y); sc.addRing({ pos: [w[0], 0.04, w[2]], r0: 0.05, r1: 0.6, life: 0.4, col: [0.75, 0.4, 1], width: 0.1, spokes: 4 }); sc.fx.burst([w[0], 0.2, w[2]], [0.75, 0.4, 1], 12, { speed: 1.2, up: 2 });
+          // An upright violet crystal spike erupts at each pulsing rift (no additional damage).
+          sc.addBolt({ a: [w[0], 0.04, w[2]], b: [w[0], 2.2, w[2]], life: 0.46,
+            width: 0.22, col: [0.49, 0.15, 0.85], segs: 1 });
+          sc.addBolt({ a: [w[0], 0.09, w[2]], b: [w[0], 2.45, w[2]], life: 0.33,
+            width: 0.085, col: [0.90, 0.65, 1], segs: 1 });
+          sc.light([w[0], 1.15, w[2]], [0.75, 0.4, 1], 2.5, 0.35, 1.5);
+          } await this.wait(300); break;
         case 'smash': { const v = sc.units.get(e.uid); if (v) { sc.face(v, this.tile(e.x, e.y)); sc.play(e.uid, 'attack'); } const w = this.tile(e.x, e.y); sc.fx.burst([w[0], 0.35, w[2]], [0.72, 0.66, 0.58], 26, { speed: 1.6, up: 2.2 }); sc.shake && sc.shake(0.08); au.play('slam'); this.float(e.uid, 'Smash!', 'note'); await this.wait(260); break; }
         case 'terrain': {
           const C = { lava: [1, 0.5, 0.15], burn: [1, 0.6, 0.2], cool: [0.7, 0.9, 1], bramble: [0.4, 0.8, 0.3] }[e.kind] || [1, 0.5, 0.15];
@@ -1070,15 +1106,31 @@ export class BattleUI {
           }
           sc.light(sc.centerPos(e.uid), c, e.kind === 'guard' ? 2.9 : 2.2, 0.55, 1.4);
           au.play(e.kind === 'guard' ? 'block' : 'castArcane');
-          this.float(e.uid, e.kind === 'guard' ? `Guard −${e.amount} per hit` : `Channel: next spell +${e.amount}`, 'note'); await this.wait(260); break;
+          this.float(e.uid, e.kind === 'guard' ? `Guard +${e.amount} temporary shield` : `Channel: next spell +${e.amount}`, 'note'); await this.wait(260); break;
         }
-        case 'guarded': this.float(e.uid, `Guarded −${e.amount}`, 'blocked'); break;
+        case 'guarded': this.float(e.uid, `Shield absorbs ${e.amount}`, 'blocked'); break;
+        case 'prevented': this.float(e.uid, `Healing Salve prevents ${e.amount}`, 'blocked'); break;
         case 'resisted': this.float(e.uid, `${e.element} resist −${e.amount}`, 'blocked'); break;
         case 'weakpoint': this.float(e.uid, `${e.element} weak +${e.amount}`, 'dmg'); break;
         case 'silence': { const h = this.s.units.find(u => u.hero); if (h) this.float(h.uid, `${getCard(e.spell).name} silenced (this turn)`, 'warn'); sc.screenFlash([0.85, 0.8, 1], 0.2); au.play('spell'); await this.wait(280); break; }
         case 'redact': { sc.screenFlash([0.85, 0.8, 1], 0.25); const h = this.s.units.find(u => u.hero); if (h) this.float(h.uid, `${KEYWORDS[e.keyword].name} redacted (this turn)`, 'warn'); au.play('spell'); await this.wait(300); break; }
         case 'restored': this.float(e.uid, `${KEYWORDS[e.keyword].name} restored`, 'note'); break;
-        case 'summon': { const u = this.s.units.find(x => x.uid === e.uid); if (u) { if (e.ally) await VFX.summon(sc, { from: sc.units.get(e.by) ? sc.centerPos(e.by) : null, to: this.tile(e.x, e.y) }); this.disp.set(u.uid, { hp: u.maxHp, maxHp: u.maxHp, shield: 0, poison: 0, stunned: 0, empowered: 0 }); this.addUnitView({ ...u, x: e.x, y: e.y }); this.renderLabel(u.uid); await sc.spawn(u.uid); } break; }
+        case 'summon': {
+          // Consecutive summons belong to one rules event: prepare all units before fading ANY in.
+          // Engine event order, placement and ETB resolution remain unchanged.
+          const group = [e];
+          while (events[idx + 1]?.t === 'summon') group.push(events[++idx]);
+          const newcomers = group.map(entry => ({ entry, unit: this.s.units.find(u => u.uid === entry.uid) })).filter(x => x.unit);
+          for (const { entry, unit } of newcomers) {
+            this.disp.set(unit.uid, { hp: unit.maxHp, maxHp: unit.maxHp, shield: 0, poison: 0, stunned: 0, empowered: 0 });
+            this.addUnitView({ ...unit, x: entry.x, y: entry.y }); this.renderLabel(unit.uid);
+          }
+          await Promise.all(newcomers.map(async ({ entry, unit }) => {
+            if (entry.ally) await VFX.summon(sc, { from: sc.units.get(entry.by) ? sc.centerPos(entry.by) : null, to: this.tile(entry.x, entry.y) });
+            await sc.spawn(unit.uid);
+          }));
+          break;
+        }
         case 'mirror': { sc.screenFlash([0.85, 0.8, 1], 0.25); this.float(e.uid, `Copies your ${KEYWORDS[e.keyword].name}!`, 'warn'); au.play('spell'); await this.wait(300); break; }
         case 'bossPhase': {const bossView=sc.units.get(e.uid??this.s?.units.find(u=>u.boss)?.uid);if(bossView){bossView.flash=1;bossView.aura=e.phase===3?[0.92,0.38,0.24]:[0.75,0.63,0.35];}this.audio.play('bossPhase'); sc.screenFlash([0.6, 0.35, 0.15], 0.3); if (!sc.reduced) sc.shake(0.12); await this.banner(e.phase ? `Phase ${e.phase} · ${e.text}` : (e.text || 'The foe changes'), 'boss'); break;}
         case 'stunnedSkip': this.float(e.uid, 'Stunned', 'note'); await this.wait(200); break;

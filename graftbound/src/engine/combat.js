@@ -4,7 +4,7 @@ import { reachable, pathTo, manhattan, lineOfSight, tileAt, T, key, DIRS } from 
 import { traitLevelsOf } from '../cards/graft-levels.js';
 import { makeRng } from '../core/rng.js';
 import { resolveCard as getCard } from '../cards/catalog.js';
-import { player, enemies, allies, alive, has, kv, heal, attackExchange, enterTiles, walkPath, dealDamage, smashRock } from './abilities.js';
+import { player, enemies, allies, alive, has, kv, heal, addShield, attackExchange, enterTiles, walkPath, dealDamage, smashRock } from './abilities.js';
 import { spellTargets, castSpellEffect, castBlockReason, spellCost } from './spells.js';
 import { actEnemy, actAlly, spawnEnemy, previewIntent, announcePhase , spawnTokensAround, resolveToxrillEndStep, surgeAfterAct } from './ai.js';
 import { STARTING_NAME } from './evolution.js';
@@ -59,8 +59,12 @@ export function startPlayerTurn(s) {
   if (p.suppressed && p.suppressedTurn == null) p.suppressedTurn = s.turn;   // Redaction lasts for exactly this turn
   ev.push({ t: 'turn', phase: 'player', turn: s.turn });
   p.statuses.empowered = 0; p.statuses.guard = 0; // Channel charges persist until an eligible cast.
+  // Guard creates a finite temporary shield pool, never persistent per-hit damage reduction.
+  const guardLeft = Math.min(p.statuses.shield || 0, p.statuses.guardShield || 0);
+  if (guardLeft) { p.statuses.shield -= guardLeft; ev.push({ t: 'shield', uid: p.uid, amount: -guardLeft, total: p.statuses.shield, kind: 'guardExpire' }); }
+  p.statuses.guardShield = 0;
   s.p.conduit = tileAt(s, p.x, p.y) === T.CONDUIT ? TERRAIN_RULES.conduit.spellBonus : 0;
-  if (s.p.conduit) ev.push({ t: 'conduit', uid: p.uid, amount: s.p.conduit, x: p.x, y: p.y });   // v0.8 stances last until your next turn begins
+  if (s.p.conduit) { s.p.conduitGrantedTurn = s.turn; ev.push({ t: 'conduit', uid: p.uid, amount: s.p.conduit, x: p.x, y: p.y }); }   // v0.8 stances last until your next turn begins
   if (p.statuses.poison > 0) {   // v1.7.0: only the foe-inflicted share of poison counts as enemy damage
     const n = p.statuses.poison, foe = Math.min(n, p.poisonByEnemy || 0);
     if (foe) dealDamage(s, ev, null, p, foe, { kind: 'poison', cause: 'enemy' }); if (n - foe > 0 && alive(p)) dealDamage(s, ev, null, p, n - foe, { kind: 'poison' });
@@ -198,12 +202,15 @@ export function stanceBlockReason(s, kind) {
   if (kind === 'channel' && (s.p.storedMana||0) >= CHANNEL_MANA_CAP && (s.p.channel||0) >= CHANNEL_CHARGE_CAP) return 'Channel Reserve is full';
   return null;
 }
-/** GUARD: give up your attack; until your next turn, every hit from a foe (strikes, arrows, slams, breath) is reduced. */
+/** GUARD: spend attack and all movement to gain a finite, expiring temporary shield. */
 export function guard(s) {
   ensurePlayerPhase(s); const why = stanceBlockReason(s, 'guard'); if (why) throw new Error(why);
   const p = player(s); const v = guardValue(p); p.statuses.guard = v; s.p.attacksLeft = 0; s.p.moveLeft = 0;
   s.stats.actions++; s.stats.stances = (s.stats.stances || 0) + 1;
-  return finish(s,[{ t: 'stance', uid: p.uid, kind: 'guard', amount: v }, { t: 'status', uid: p.uid, status: 'guard', value: v, total: v }]);
+  const ev = [{ t: 'stance', uid: p.uid, kind: 'guard', amount: v }];
+  addShield(s, ev, p, v, 'guard');
+  p.statuses.guardShield = (p.statuses.guardShield || 0) + v;
+  return finish(s, ev);
 }
 /** CHANNEL: give up attack and movement for banked +1 mana and +1 next eligible spell power, across turns. */
 export function channel(s) {
@@ -214,16 +221,18 @@ export function channel(s) {
   return finish(s,[{ t: 'stance', uid: p.uid, kind: 'channel', amount: TACTICS.channel.spellBonus }, manaEvent]);
 }
 
-export function castOptions(s, spellId) {
+export function castOptions(s, spellId, mode = null) {
   if (castBlockReason(s, spellId)) return [];
   const entry = s.spellbook.find(x => x.id === spellId);
-  return spellTargets(s, spellId, entry.level);
+  return spellTargets(s, spellId, entry.level, mode);
 }
-export function cast(s, spellId, x, y, xValue = 1) {
+export function cast(s, spellId, x, y, xValue = 1, mode = null) {
   ensurePlayerPhase(s);
+  if (spellId === 'mtg:healing-salve' && !['heal','prevent'].includes(mode)) throw new Error('Choose a Healing Salve mode first');
+  if (spellId !== 'mtg:healing-salve' && mode != null) throw new Error('This spell has no mode choice');
   const why = castBlockReason(s, spellId, xValue); if (why) throw new Error(why);
   const entry = s.spellbook.find(e => e.id === spellId);
-  if (!castOptions(s, spellId).some(t => t.x === x && t.y === y)) throw new Error('Not a valid target for ' + getCard(spellId).name);
+  if (!castOptions(s, spellId, mode).some(t => t.x === x && t.y === y)) throw new Error('Not a valid target for ' + getCard(spellId).name);
   const ev = []; const cost = spellCost(s, spellId, xValue);
   ev.push(spendMana(s,cost)); s.p.cast[spellId] = true; s.stats.spellsCast++; s.stats.actions++;
   const card=getCard(spellId);
@@ -233,7 +242,7 @@ export function cast(s, spellId, x, y, xValue = 1) {
   if(card.kind==='aura'){
     const target=s.units.find(u=>u.hp>0&&u.x===x&&u.y===y);
     attachAura(target,spellId);ev.push({t:'auraCast',uid:player(s).uid,target:target.uid,id:spellId,x,y,name:card.name,color:card.color});ev.push({t:'auraAttach',uid:target.uid,id:spellId,x,y,name:card.name});
-  } else castSpellEffect(s, ev, spellId, entry.level, x, y, xValue);
+  } else castSpellEffect(s, ev, spellId, entry.level, x, y, xValue, mode);
   if(s.deck){playFromHand(s.deck,spellId,{permanent:card.kind==='aura'});s.spellbook=s.deck.hand;}
   if(card.kind==='spell'&&/^(Instant|Sorcery)\b/.test(card.sourceInfo?.typeLine||'')){
     onHeroSpell(s,ev);ev.push({t:'comboSpellCast',uid:player(s).uid,id:spellId});
@@ -242,7 +251,7 @@ export function cast(s, spellId, x, y, xValue = 1) {
   const arasta = enemies(s).find(e=>e.defId==='arasta');
   if(arasta && alive(arasta) && card.kind==='spell' && /^(Instant|Sorcery)\b/.test(card.sourceInfo?.typeLine||'')) spawnTokensAround(s,ev,arasta,'spider',1);
   const spellEvent = ev.find(x => x.t === 'spell' && x.id === spellId);
-  if (spellEvent) { spellEvent.manaCost = cost; if (spellId === 'mtg:drain-life') spellEvent.xValue = xValue; } // presentation-only; exact paid cost includes Null Warden tax
+  if (spellEvent) { spellEvent.manaCost = cost; if (mode) spellEvent.mode = mode; if (spellId === 'mtg:drain-life') spellEvent.xValue = xValue; } // presentation-only; exact paid cost includes Null Warden tax
   return finish(s,ev);
 }
 export function discard(s,id){
@@ -261,6 +270,8 @@ export function endTurn(s) {
   }
   if (tileAt(s, p.x, p.y) === T.LAVA && !has(p, 'flying')) dealDamage(s, ev, null, p, LAVA_DAMAGE, { kind: 'lava' });
   if (s.phase !== 'player') return finish(s,ev);
+  // Damage-prevention mode expires at this turn's end, even if unused.
+  for (const u of s.units) if (u.statuses.damagePrevention) { u.statuses.damagePrevention = 0; ev.push({ t: 'status', uid: u.uid, status: 'damagePrevention', value: 0, total: 0 }); }
   // End-of-turn stat buffs expire on their target, including allies and foes.
   for(const u of s.units){const t=u.statuses.temporaryToughness||0;if(t){u.maxHp=Math.max(0,u.maxHp-t);u.hp=Math.min(u.hp,u.maxHp);u.toughness=Math.max(0,u.toughness-t);u.statuses.temporaryToughness=0;u.statuses.empowered=0;}}
   p.statuses.empowered = 0; p.statuses.weakened = 0; p.statuses.grounded = 0; if (p.statuses.stunned) p.statuses.stunned = 0; s.p.silenced = null;

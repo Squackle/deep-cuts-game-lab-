@@ -59,8 +59,46 @@ export function paintBenchmarkFrame(ctx,image,asset,state,frame,view){
   ctx.drawImage(image,srcX,srcY,N,N,0,0,N,N);
   ctx.restore();
 }
+/** Clean detached atlas-edge shards from the supplied Angel source without redrawing its real poses.
+ * Frame-local 8-connectivity preserves wings, robe, sword and facial pixels in the main figure.
+ * This is performed once at asset intake (not during rendering), with no gameplay randomness. */
+export function stripAngelAtlasDebris(image, size) {
+  const out = document.createElement('canvas'); out.width = image.width; out.height = image.height;
+  const g = out.getContext('2d', { willReadFrequently: true }); g.drawImage(image, 0, 0);
+  const pixels = g.getImageData(0, 0, out.width, out.height), data = pixels.data;
+  const cols = out.width / size;
+  for (let pose = 0; pose < 7; pose++) {
+    const ox = (pose % cols) * size, oy = Math.floor(pose / cols) * size;
+    const seen = new Uint8Array(size * size); const pieces = [];
+    for (let py = 0; py < size; py++) for (let px = 0; px < size; px++) {
+      const start = py * size + px, si = ((oy + py) * out.width + ox + px) * 4 + 3;
+      if (seen[start] || data[si] === 0) continue;
+      const stack = [start], piece = []; seen[start] = 1;
+      while (stack.length) {
+        const q = stack.pop(), x = q % size, y = Math.floor(q / size); piece.push(q);
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx, ny = y + dy;
+          if (!dx && !dy || nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+          const ni = ny * size + nx, alpha = ((oy + ny) * out.width + ox + nx) * 4 + 3;
+          if (!seen[ni] && data[alpha]) { seen[ni] = 1; stack.push(ni); }
+        }
+      }
+      pieces.push(piece);
+    }
+    // The authored Angel occupies thousands of connected pixels; disconnected edge shards
+    // have at most a few dozen. Keep the largest connected figure in every pose.
+    const main = pieces.sort((a,b) => b.length-a.length)[0];
+    for (const piece of pieces) if (piece !== main && piece.length < 150) for (const q of piece) {
+      const i = ((oy + Math.floor(q / size)) * out.width + ox + q % size) * 4;
+      data[i] = data[i+1] = data[i+2] = data[i+3] = 0;
+    }
+  }
+  g.putImageData(pixels, 0, 0);
+  return out;
+}
 export function buildBenchmarkSheet(image,asset){
   validateBenchmarkAsset(image,asset);
+  if (asset.key === 'angel') image = stripAngelAtlasDebris(image, asset.size);
   const output=canvasForAsset(asset),g=output.getContext('2d');
   if(!g)throw new Error('Canvas 2D required for GRAFTBOUND source composition');
   for(let view=0;view<BENCHMARK_VIEWS.length;view++)

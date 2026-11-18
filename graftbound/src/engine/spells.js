@@ -4,7 +4,7 @@
 import { resolveCard } from '../cards/catalog.js';
 import { availableMana } from './mana.js';
 import { inBounds, unitAt, tileAt, T, manhattan } from '../core/grid.js';
-import { dealDamage, damageBatch, heal, addShield, addStatus, enemies, alive, player, enterTiles } from './abilities.js';
+import { dealDamage, damageBatch, heal, addShield, addStatus, enemies, alive, player, enterTiles, grantConduitOnEntry } from './abilities.js';
 import { traitDraw } from './trait-triggers.js';
 import { ENEMIES } from '../data/enemies.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
@@ -41,8 +41,9 @@ export function spellCost(s, id, xValue = 1) {
   const tax = s ? enemies(s).reduce((a, e) => a + ((ENEMIES[e.defId] && ENEMIES[e.defId].spellTax) || 0), 0) : 0;
   return (s?.p?.freeCast ? 0 : getCard(id).cost + tax) + (isDrainLife(id) ? xValue : 0); // X itself always requires mana.
 }
-export function spellTargets(s, id, level = 1) {
+export function spellTargets(s, id, level = 1, mode = null) {
   const c = getCard(id), p = player(s), out = [];
+  if (id === 'mtg:healing-salve' && mode === 'heal') return [{ x: p.x, y: p.y }];
   if (c.target === 'self') return [{ x: p.x, y: p.y }];
   if(c.target==='creature') return s.units.filter(u=>u.hp>0&&(u.side==='player'||!u.keywords?.hexproof)).map(u=>({x:u.x,y:u.y}));
   if (c.target === 'ally') return s.units.filter(u => u.side === 'player' && u.hp > 0).map(u => ({ x: u.x, y: u.y }));
@@ -73,7 +74,7 @@ export function castBlockReason(s, id, xValue = 1) {
   if (!spellTargets(s, id, entry.level).length) return getCard(id).target === 'enemy' ? 'No foe on the battlefield' : 'No valid target';
   return null;
 }
-export function castSpellEffect(s, ev, id, level, tx, ty, xValue = 1) {
+export function castSpellEffect(s, ev, id, level, tx, ty, xValue = 1, mode = null) {
   const p = player(s); const n = spellNumbers(id, level, s.p.arcane);
   const target = unitAt(s, tx, ty);
   const c = getCard(id);
@@ -81,7 +82,7 @@ export function castSpellEffect(s, ev, id, level, tx, ty, xValue = 1) {
   const channel=eligible?(s.p.channel||0):0, boost=channel+(eligible?(s.p.conduit||0):0);
   if(boost)for(let i=0;i<n.length;i++)n[i]+=boost;
   if(eligible){s.p.channel=0;s.p.conduit=0;} // No-Arcane casts never consume stored Channel power.
-  ev.push({ t: 'spell', id, uid: p.uid, x: tx, y: ty, target: target ? target.uid : null, vfx: c.vfx || effectOf(id), channeled: !!channel, level, intensity: Math.min(3,Math.max(1,level)), channelPower:channel });
+  ev.push({ t: 'spell', id, uid: p.uid, x: tx, y: ty, target: target ? target.uid : null, mode, vfx: c.vfx || effectOf(id), channeled: !!channel, level, intensity: Math.min(3,Math.max(1,level)), channelPower:channel });
   const spellDamage = { kind: 'spell', element: spellElement(id) };
   if (isDrainLife(id)) n[0] = xValue; // Player-selected paid mana, not a fixed template number.
   switch (effectOf(id)) {
@@ -92,13 +93,20 @@ export function castSpellEffect(s, ev, id, level, tx, ty, xValue = 1) {
       target.maxHp+=n[0];target.hp+=n[0];target.toughness+=n[0];target.statuses.temporaryToughness=(target.statuses.temporaryToughness||0)+n[0];
       ev.push({t:'status',uid:target.uid,status:'toughness',value:n[0],total:target.statuses.temporaryToughness});break;
     case 'page_draw': { if(s.deck)traitDraw(s,ev,2); break; }
-    case 'mending_rain': heal(s, ev, p, n[0]);
-      for (const st of ['poison', 'weakened']) if (p.statuses[st]) { p.statuses[st] = 0; ev.push({ t: 'status', uid: p.uid, status: st, value: 0, total: 0 }); }
+    case 'mending_rain':
+      if (id === 'mtg:healing-salve' && mode === 'prevent') {
+        if (!alive(target)) throw new Error('Healing Salve prevention needs a living target');
+        target.statuses.damagePrevention = (target.statuses.damagePrevention || 0) + 3;
+        ev.push({ t: 'status', uid: target.uid, status: 'damagePrevention', value: 3, total: target.statuses.damagePrevention });
+        break;
+      }
+      heal(s, ev, p, n[0]);
+      for (const st of (id === 'mtg:healing-salve' ? [] : ['poison', 'weakened'])) if (p.statuses[st]) { p.statuses[st] = 0; ev.push({ t: 'status', uid: p.uid, status: st, value: 0, total: 0 }); }
       if (id === 'mtg:healing-hands' || id === 'mtg:revitalize') traitDraw(s, ev, 1);
       break;
     case 'soul_siphon': { const d = dealDamage(s, ev, p, target, n[0], spellDamage); heal(s, ev, p, d, 'siphon'); break; }
     case 'rootsnare': dealDamage(s, ev, p, target, n[0], spellDamage); if (alive(target)) addStatus(s, ev, target, 'stunned', 1); break;
-    case 'blink_step': { const from = { x: p.x, y: p.y }; p.x = tx; p.y = ty; ev.push({ t: 'teleport', uid: p.uid, from, x: tx, y: ty }); break; }
+    case 'blink_step': { const from = { x: p.x, y: p.y }; p.x = tx; p.y = ty; ev.push({ t: 'teleport', uid: p.uid, from, x: tx, y: ty }); grantConduitOnEntry(s, ev, p, tx, ty); break; }
     case 'call_sproutling': {
       const second = spellTargets(s, id, level).filter(t => t.x !== tx || t.y !== ty)
         .sort((a, b) => Math.abs(a.x - tx) + Math.abs(a.y - ty) - Math.abs(b.x - tx) - Math.abs(b.y - ty) || a.y - b.y || a.x - b.x)[0];

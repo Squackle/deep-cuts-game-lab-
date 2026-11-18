@@ -1,6 +1,6 @@
 // Reviewed, bounded printed-creature adaptations for permanent hero grafts.
 // Authoritative DOM-free triggers; every effect uses explicit battle events and board state.
-import { player, enemies, alive, heal, dealDamage } from './abilities.js';
+import { player, enemies, alive, heal, dealDamage, loseLife } from './abilities.js';
 import { tileAt, unitAt, T, manhattan } from '../core/grid.js';
 import { drawCards, refillFromGraveyard } from './deck.js';
 import { lv } from '../cards/graft-levels.js';
@@ -73,8 +73,8 @@ export function onHeroHeal(s,ev,amount,kind){
  if(!owns(s,'vito')||kind==='vito'||amount<=0)return;
  const target=nearestFoe(s);if(!target)return;
  const dmg=amount+lv(s,'vito').bonus;
- ev.push({t:'graftTrigger',name:`Vito · deal ${dmg} damage to ${target.name}`,uid:player(s).uid});
- dealDamage(s,ev,player(s),target,dmg,{kind:'vito',element:'umbral'});
+ ev.push({t:'graftTrigger',name:`Vito · ${dmg} life loss to ${target.name}`,uid:player(s).uid});
+ loseLife(s,ev,player(s),target,dmg,'vito');
 }
 export function onUnitDeath(s,ev,dead){
  if(!owns(s,'bloodArtist')||dead.hero)return;
