@@ -43,7 +43,7 @@ export function attachMobileRewardStack(fan, {
   const sequence = createRevealSequence(slots.length);
   const flipMs = reducedMotion ? 0 : 360;
   const leaveMs = reducedMotion ? 0 : 260;
-  let busy = false, gesture = null, suppressTapUntil = 0;
+  let busy = false, gesture = null, suppressTapUntil = 0, suppressTapSlot = null;
   const timers = new Set();
   const schedule = (fn, ms) => {
     const timer = setTimeout(() => { timers.delete(timer); fn(); }, ms);
@@ -132,7 +132,7 @@ export function attachMobileRewardStack(fan, {
   function handleTap(e) {
     if (sequence.done) return false; // The original choice handler takes over.
     const slot = e.target.closest('.slot');
-    if (slot === slots[sequence.index] && Date.now() >= suppressTapUntil) {
+    if (slot === slots[sequence.index] && !(slot === suppressTapSlot && Date.now() < suppressTapUntil)) {
       if (!sequence.flipped) flipTop();
     }
     return true;
@@ -161,8 +161,8 @@ export function attachMobileRewardStack(fan, {
     if (!gesture || e.pointerId !== gesture.id) return;
     const { slot, dx, dy, moved } = gesture;
     gesture = null;
-    slot.releasePointerCapture?.(e.pointerId);
-    if (moved) suppressTapUntil = Date.now() + 450;
+    try { slot.releasePointerCapture?.(e.pointerId); } catch (_) { /* Pointer may already have been released. */ }
+    if (moved) { suppressTapSlot = slot; suppressTapUntil = Date.now() + 450; }
     slot.classList.remove('gb-stack-dragging');
     if (!cancelled && isRightSwipe(dx, dy, slot.getBoundingClientRect().width)) {
       dismissTop();
