@@ -1068,3 +1068,125 @@ body:not([data-mode="battle"]) #graftPowers{display:none!important}
 .ulabel .sts .st{box-shadow:0 0 0 1px rgba(0,0,0,.85),0 0 6px currentColor;filter:saturate(1.35) brightness(1.15);font-weight:700}
 .ulabel .intent{box-shadow:0 0 0 1px #000,0 0 8px rgba(255,120,90,.55)}
 @media (prefers-reduced-motion:reduce){.ulabel .sts .st{box-shadow:0 0 0 1px rgba(0,0,0,.85)}}
+
+
+/* Tap-to-flip reward stack on phones only. All pack tiers share rewardScreen.
+   The final card swipe restores the normal three-card chooser. */
+@media (max-width:760px) {
+  .rewardscr .pack-stage:has(.gb-stack-mode) {
+    padding-top:0!important;
+    min-height:0!important;
+    display:block;
+    margin-top:18px;
+    overflow:visible;
+  }
+  .rewardscr .pack-stage:has(.gb-stack-mode) .pack {display:none!important}
+  .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) {
+    --gb-stack-card:min(73vw,265px);
+    width:100%;
+    height:calc(var(--gb-stack-card) * 1.4 + 40px);
+    max-width:100%;
+    position:relative;
+    display:block!important;
+    overflow:visible!important;
+    padding:0!important;
+    margin:0;
+    touch-action:pan-y;
+    scroll-snap-type:none;
+  }
+  .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) .slot {
+    --cw:var(--gb-stack-card);
+    position:absolute!important;
+    left:50%;
+    top:18px;
+    width:var(--gb-stack-card);
+    height:calc(var(--gb-stack-card) * 1.4);
+    margin:0;
+    opacity:1;
+    visibility:visible;
+    scroll-snap-align:none;
+    touch-action:pan-y;
+    will-change:transform;
+    transition:transform .26s cubic-bezier(.2,.7,.2,1),opacity .26s ease;
+  }
+  .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) .slot.gb-stack-under {
+    pointer-events:none;
+    transform:translateX(-50%) translateY(calc(var(--gb-stack-depth) * 6px)) scale(.985)!important;
+    filter:brightness(.78)!important;
+  }
+  .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) .slot.gb-stack-past {
+    pointer-events:none;
+    opacity:0!important;
+    visibility:hidden;
+    transform:translateX(-50%) translateX(110vw)!important;
+  }
+  .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) .slot.gb-stack-top {
+    pointer-events:auto;
+    transform:translateX(calc(-50% + var(--gb-drag-x,0px))) rotate(var(--gb-drag-rot,0deg))!important;
+    filter:none!important;
+  }
+  .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) .slot.gb-stack-top.gb-stack-dragging {
+    transition:none!important;
+  }
+  .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) .slot.gb-stack-top.gb-stack-leaving {
+    transform:translateX(calc(-50% + 112vw)) rotate(18deg)!important;
+    opacity:0!important;
+    transition:transform .26s cubic-bezier(.2,.65,.3,1),opacity .26s!important;
+    pointer-events:none;
+  }
+  .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) .slot:not(.revealed) .gb-reward-seal,
+  .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) .slot:not(.revealed) .gb-graft-level-ribbon {
+    visibility:hidden;
+  }
+  .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) .slot:not(.revealed).treat-masterwork::before,
+  .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) .slot:not(.revealed).treat-masterwork::after {
+    display:none!important;
+  }
+  .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) .slot:not(.revealed) .lc-card {
+    filter:none!important;
+    outline:none!important;
+    box-shadow:0 12px 32px #0009!important;
+  }
+  .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) .slot .zoom {display:none!important}
+  .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) .slot.gb-stack-turn .lc-card {
+    animation:gb-stack-flip .36s cubic-bezier(.45,.02,.55,1) both;
+  }
+  .rewardscr .fan.gb-stack-mode.gb-stack-complete {
+    width:100%;
+    min-height:0;
+    display:flex;
+    justify-content:flex-start;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    padding-left:calc((100% - min(73vw,265px))/2)!important;
+    padding-right:calc((100% - min(73vw,265px))/2)!important;
+    padding-top:26px!important;
+    padding-bottom:22px!important;
+    gap:14px;
+  }
+  .rewardscr .fan.gb-stack-mode.gb-stack-complete .slot {
+    --cw:min(73vw,265px);
+    position:relative!important;
+    top:auto;
+    left:auto;
+    flex:none;
+    width:var(--cw);
+    height:auto;
+    opacity:1!important;
+    visibility:visible!important;
+    transform:none!important;
+    transition:none;
+    scroll-snap-align:center;
+    pointer-events:auto;
+  }
+}
+@keyframes gb-stack-flip {
+  0% {scale:1 1}
+  48%,52% {scale:.025 1}
+  100% {scale:1 1}
+}
+@media(max-width:760px) and (prefers-reduced-motion:reduce) {
+  .rewardscr .fan.gb-stack-mode:not(.gb-stack-complete) .slot.gb-stack-turn .lc-card {
+    animation:none!important;
+  }
+}
