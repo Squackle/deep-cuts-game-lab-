@@ -260,7 +260,7 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
       <h2 class="rw-title">${titles[tier] || titles.battle}</h2>
       ${firstVictoryPacks ? `<p class="rw-pack-count" aria-label="First level booster ${firstVictoryPacks.index} of ${firstVictoryPacks.total}">Pack ${firstVictoryPacks.index} of ${firstVictoryPacks.total}</p>` : ''}
       <p class="rw-sub" id="rw-sub" aria-live="polite">${severed ? `You severed <b>${esc(severed)}</b>. ` : ''}${esc(identity.cue)}</p><p class="rw-omen">${esc(identity.omen)}</p>
-      <div class="rw-reveal-actions"><button type="button" class="btn primary" id="rw-reveal" aria-label="Reveal all cards in this pack">Reveal All</button></div>
+      <div class="rw-reveal-actions"><button type="button" class="btn primary" aria-label="Reveal all cards in this pack" id="rw-reveal">Reveal All</button></div>
       <div class="pack-stage" id="pstage">
         <button type="button" class="pack ${tier}" id="pack" aria-label="Break the seal and open the booster"><span class="pack-rank">${esc(identity.rank)}</span>
           <span class="pk-shadow"></span>
