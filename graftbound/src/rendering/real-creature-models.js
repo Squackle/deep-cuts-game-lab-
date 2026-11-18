@@ -14,54 +14,9 @@ import { MAGIC_FRAME, MAGIC_STUDY_FEATURES, drawMagicStudyFrame } from './detail
 import { MONSTER_FRAME, MONSTER_STUDY_FEATURES, drawMonsterStudyFrame } from './detailed-monster-art.js';
 import { FOLK_FRAME, FOLK_STUDY_FEATURES, drawFolkStudyFrame } from './detailed-folk-art.js';
 
-const C = (base, dark, mid, light, feature, custom = false) => ({ base, dark, mid, light, feature, custom });
-export const REAL_CREATURE_MODELS = Object.freeze({
-  friendlySoldier: C('archer','#293341','#63768c','#e7d1a1','friendlySoldier',true),
-  friendlyElemental: C('emberseer','#57241b','#db5a29','#ffdb82','friendlyElemental',true),
-  friendlyDrake: C('moth','#18394a','#377e9f','#b9e8f1','friendlyDrake',true),
-  friendlyCatSoldier: C('archer','#54442c','#bd9762','#f4dbb1','friendlyCatSoldier',true),
-  friendlySproutling: C('grub','#20542b','#5cbd63','#d5f2a4','saproling',true),
-  friendlyBirdIllusion: C('moth','#142e51','#7191db','#d9f5ff','friendlyBirdIllusion',true),
-  friendlyTentacle: C('grub','#173d65','#3697bb','#caecff','friendlyTentacle',true),
-  friendlySkeleton: C('riftstalker','#31343d','#a5a1a0','#fff1d8','friendlySkeleton',true),
-  friendlySnake: C('hound','#25432a','#60a569','#e0ed94','friendlySnake',true),
-  friendlyGoblin: C('cinderling','#62321c','#ad693c','#f9c67d','friendlyGoblin',true),
-  friendlyHornet: C('moth','#292b19','#bc9d32','#f8e47c','friendlyHornet',true),
-  friendlySquirrel: C('hound','#382a20','#a36e48','#f7d29e','friendlySquirrel',true),
-  friendlySpider: C('hound','#261d17','#624532','#b68b5a','spiderling',true),
-  grub: C('grub','#19391d','#54a54a','#d4e988','caterpillar'),
-  hound: C('hound','#241912','#7f5131','#d5a36c','wolf'),
-  archer: C('archer','#123b31','#4a8760','#d2dca0','bow'),
-  tortoise: C('warden','#52514a','#a4a69a','#e6e2cd','rhino'),
-  moth: C('moth','#312043','#786293','#bbf1c2','stinger'),
-  hexer: C('hexer','#24152f','#6b3b89','#d1a0e7','blightcaster'),
-  alpha: C('alpha','#2a1a14','#76513a','#d7b07a','direwolf'),
-  cinderling: C('cinderling','#592824','#b35b35','#f3d391','torchgoblin'),
-  ashbrute: C('ashbrute','#4a2526','#a04c47','#ffd18a','minotaur'),
-  harpooner: C('harpooner','#572d25','#b26c44','#ffdda4','spikeshot'),
-  emberseer: C('emberseer','#492b27','#a44e32','#ffde91','alchemist'),
-  champion: C('champion','#3e4036','#8e7a55','#d8c98e','wurm'),
-  riftstalker: C('riftstalker','#141d33','#425a89','#a4b7df','shinobi'),
-  nullwarden: C('nullwarden','#26333b','#687d83','#c7dbe0','golem'),
-  shardling: C('shardling','#26365b','#666ab6','#d0c3f2','duelist'),
-  sentinel: C('sentinel','#343842','#888ca0','#e5d2ad','titan'),
-  nemata: C('thornmother','#203824','#547741','#bdd67a','nemata'),
-  arasta: C('thornmother','#2b203c','#5a407c','#c0b7e2','spiderboss',true),
-  drakuseth: C('matron','#4a1717','#b53e25','#ffd37d','dragon',true),
-  krenko: C('matron','#51321f','#9e613e','#f5bd7f','krenko',true),
-  scarab: C('unwritten','#152d48','#3a8090','#e7c57a','scarabgod',true),
-  toxrill: C('unwritten','#34203b','#734d8c','#addb75','toxrill',true),
-  angel: C('moth','#7f6d4f','#e2cfa5','#ffffff','angel',true),
-  saproling: C('grub','#27542d','#68aa63','#d1f0a1','saproling',true),
-  spider: C('hound','#211912','#58402d','#c39a6b','spiderling',true),
-  goblin: C('cinderling','#583026','#bb8052','#e8d38f','torchgoblin',true),
-  zombie: C('riftstalker','#283e42','#5d8a8c','#c5d3bc','zombie'),
-  slug: C('grub','#34213d','#76538b','#bbeb88','toxrill',true),
-  wolf: C('hound','#241912','#8a5835','#dbac72','wolf'),
-  golemFly: C('sentinel','#374354','#8c9ba4','#dbd8c0','titan'),
-  golemVigilance: C('sentinel','#4a4537','#b3a17c','#f8e2a9','golem'),
-  golemTrample: C('sentinel','#463c42','#987985','#e3c3d6','gearhulk'),
-});
+// Canonical model metadata is shared with the DOM-free enemy rule definitions.
+import { REAL_CREATURE_MODELS } from '../data/creature-models.js';
+export { REAL_CREATURE_MODELS };
 
 const rgb = hex => [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];
 const mix = (a,b,k) => a.map((v,i)=>Math.round(v*(1-k)+b[i]*k));
