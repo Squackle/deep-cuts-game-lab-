@@ -12,6 +12,12 @@ export function createRevealSequence(total) {
       flipped = true;
       return true;
     },
+    finish() {
+      if (index === total) return false;
+      index = total;
+      flipped = false;
+      return true;
+    },
     dismiss() {
       if (index === total || !flipped) return false;
       index++;
@@ -60,6 +66,7 @@ export function attachMobileRewardStack(fan, {
       slot.tabIndex = complete || i === sequence.index ? 0 : -1;
       slot.setAttribute('aria-hidden', String(!complete && i !== sequence.index));
       slot.style.zIndex = complete ? '' : String(slots.length - i);
+      slot.style.setProperty('--gb-depth', String(Math.max(0, i - sequence.index)));
       slot.style.setProperty('--gb-stack-depth', String(Math.max(0, i - sequence.index)));
       slot.querySelectorAll('button').forEach(button => {
         button.tabIndex = complete ? 0 : -1;
@@ -94,6 +101,7 @@ export function attachMobileRewardStack(fan, {
     if (busy || sequence.done || !sequence.flipped) return false;
     busy = true;
     const slot = slots[sequence.index];
+    const token = ++epoch;
     slot.classList.remove('gb-stack-dragging');
     slot.style.removeProperty('--gb-drag-x');
     slot.style.removeProperty('--gb-drag-rot');
@@ -123,6 +131,23 @@ export function attachMobileRewardStack(fan, {
       if (slot.querySelector('.lc-card.flipped')) onReveal(slot);
     }
     sequence.revealAll();
+    fan.classList.add('gb-stack-complete');
+    update();
+    onComplete();
+    return true;
+  }
+
+  function revealAll() {
+    if (sequence.done) return false;
+    epoch++;
+    busy = false;
+    for (const slot of slots) {
+      slot.classList.remove('gb-stack-turn', 'gb-stack-dragging', 'gb-stack-leaving');
+      slot.style.removeProperty('--gb-drag-x');
+      slot.style.removeProperty('--gb-drag-rot');
+      onReveal(slot);
+    }
+    sequence.finish();
     fan.classList.add('gb-stack-complete');
     update();
     onComplete();
