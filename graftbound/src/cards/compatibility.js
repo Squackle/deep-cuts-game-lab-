@@ -4,6 +4,7 @@ import { KEYWORDS } from '../data/keywords.js';
 import { getCard } from '../data/cards.js';
 import { ATTACHMENT_BY_NAME } from './attachments.js';
 import { traitOf } from './trait-registry.js';
+import { isBossCard } from '../data/legendary.js';
 
 export const MTG_TO_GAME_KEYWORD = Object.fromEntries(Object.entries(KEYWORDS).filter(([, d]) => d.mtg).map(([id, d]) => [d.mtg.toLowerCase(), id]));
 const KEYWORD_PARTS = { flying: 'wings', deathtouch: 'venom', trample: 'horns', firstStrike: 'blades', doubleStrike: 'claws', lifelink: 'tendrils', vigilance: 'antlers', haste: 'tail' };
@@ -75,6 +76,7 @@ export function partsFor(kws, typeLine) {
 export function toGameCard(sf) {
   const reasons = [];
   if (!sf || sf.source !== 'scryfall') return { ok: false, reasons: ['not a normalized Scryfall record'] };
+  if (isBossCard(sf)) return { ok: false, reasons: ['GRAFTBOUND boss identity is encounter-only and cannot become a graft or reward'] };
   const isCreature = /\bCreature\b/.test(sf.typeLine);
   const base = { id: 'mtg:' + slug(sf.name), reference: true, name: sf.name, rarity: sf.rarity, color: COLOR_MAP[sf.colors[0]] || 'radiant',
     mv: typeof sf.cmc === 'number' ? sf.cmc : null,

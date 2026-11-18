@@ -15,5 +15,17 @@ export const LEGENDARY_BOSSES = Object.freeze([
   ],
 ]);
 export const BOSS_BY_ID = Object.fromEntries(LEGENDARY_BOSSES.flat().map(b=>[b.id,b]));
+// The encounter roster owns these identities. Bosses can never enter the reward catalog or hero grafts.
+// Derive the denylist from this registry so future added bosses are automatically protected.
+const bossCardId = name => 'mtg:' + String(name).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+export const BOSS_CARD_IDS = Object.freeze(Object.values(BOSS_BY_ID).map(b => bossCardId(b.name)));
+const BOSS_CARD_ID_SET = new Set(BOSS_CARD_IDS);
+const BOSS_CARD_NAMES = new Set(Object.values(BOSS_BY_ID).map(b => b.name.trim().toLowerCase()));
+export function isBossCard(cardOrId) {
+  const id = typeof cardOrId === 'string' ? cardOrId : cardOrId?.id;
+  const name = typeof cardOrId === 'string' ? cardOrId : cardOrId?.name;
+  return BOSS_CARD_ID_SET.has(String(id || '')) ||
+    (typeof name === 'string' && BOSS_CARD_NAMES.has(name.trim().toLowerCase()));
+}
 export const bossForSeed = (act, seed) => LEGENDARY_BOSSES[Math.max(0,Math.min(2,act|0))][((seed>>>0)>>>1)&1];
 export const BOSS_VITALITY = Object.fromEntries(LEGENDARY_BOSSES.flat().map(b=>[b.id,b.vitality]));

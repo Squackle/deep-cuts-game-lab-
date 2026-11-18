@@ -6,6 +6,7 @@ import { strengthOf, expectedStrength } from './strength.js';
 import { createBattle } from './combat.js';
 import { generatePack, MAX_SPELL_LEVEL, primerPack } from './rewards.js';
 import { resolveCard } from '../cards/catalog.js';
+import { isBossCard } from '../data/legendary.js';
 import { stepOf } from './power.js';
 import { SHRINES, rollShrine, offeringCost, penanceCost, PENANCE_REDUCTION, MAX_SPARK_FONTS, MAX_MANA_FONTS } from './shrines.js';
 import { encounterBenchmarks, recordEncounter, newScoring } from './scoring.js';
@@ -147,7 +148,9 @@ const summarize = b => ({ name: b.name, nodeType: b.nodeType, stats: { ...b.stat
 /** Choose a reward. For a creature while grafts are full, `releaseIndex` names the graft to release first. */
 export function chooseReward(run, cardId, releaseIndex) {
   if (run.phase !== 'reward' || !run.pending || !run.pending.cards.includes(cardId)) throw new Error('Invalid reward choice');
+  if (isBossCard(cardId)) throw new Error('Boss creatures are encounter-only and cannot be chosen as rewards');
   const card = resolveCard(cardId); if (!card || !card.reference) throw new Error('Unknown card ' + cardId);
+  if (isBossCard(card)) throw new Error('Boss creatures are encounter-only and cannot be chosen as rewards');
   let change;
   const maxBefore = maxHpOf(run);
   if (card.kind === 'creature') {
