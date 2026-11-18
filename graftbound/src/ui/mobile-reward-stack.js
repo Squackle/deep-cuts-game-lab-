@@ -18,6 +18,12 @@ export function createRevealSequence(total) {
       flipped = false;
       return true;
     },
+    revealAll() {
+      if (index === total) return false;
+      index = total;
+      flipped = false;
+      return true;
+    },
   };
 }
 
@@ -38,6 +44,11 @@ export function attachMobileRewardStack(fan, {
   const flipMs = reducedMotion ? 0 : 360;
   const leaveMs = reducedMotion ? 0 : 260;
   let busy = false, gesture = null, suppressTapUntil = 0;
+  const timers = new Set();
+  const schedule = (fn, ms) => {
+    const timer = setTimeout(() => { timers.delete(timer); fn(); }, ms);
+    timers.add(timer);
+  };
   fan.classList.add('out', 'gb-stack-mode');
 
   function update() {
@@ -49,6 +60,7 @@ export function attachMobileRewardStack(fan, {
       slot.tabIndex = complete || i === sequence.index ? 0 : -1;
       slot.setAttribute('aria-hidden', String(!complete && i !== sequence.index));
       slot.style.zIndex = complete ? '' : String(slots.length - i);
+      slot.style.setProperty('--gb-stack-depth', String(Math.max(0, i - sequence.index)));
       slot.querySelectorAll('button').forEach(button => {
         button.tabIndex = complete ? 0 : -1;
       });
@@ -69,8 +81,8 @@ export function attachMobileRewardStack(fan, {
     busy = true;
     const slot = slots[sequence.index];
     slot.classList.add('gb-stack-turn');
-    setTimeout(() => { onReveal(slot); }, flipMs / 2);
-    setTimeout(() => {
+    schedule(() => { onReveal(slot); }, flipMs / 2);
+    schedule(() => {
       slot.classList.remove('gb-stack-turn');
       busy = false;
       update();
@@ -86,7 +98,7 @@ export function attachMobileRewardStack(fan, {
     slot.style.removeProperty('--gb-drag-x');
     slot.style.removeProperty('--gb-drag-rot');
     slot.classList.add('gb-stack-leaving');
-    setTimeout(() => {
+    schedule(() => {
       if (!sequence.dismiss()) return;
       slot.classList.remove('gb-stack-leaving');
       busy = false;
@@ -95,6 +107,25 @@ export function attachMobileRewardStack(fan, {
       if (sequence.done) onComplete();
       else slots[sequence.index].focus({ preventScroll: true });
     }, leaveMs);
+    return true;
+  }
+
+  function revealAll() {
+    if (sequence.done) return false;
+    for (const timer of timers) clearTimeout(timer);
+    timers.clear();
+    busy = false;
+    gesture = null;
+    for (const slot of slots) {
+      slot.classList.remove('gb-stack-turn', 'gb-stack-dragging', 'gb-stack-leaving');
+      slot.style.removeProperty('--gb-drag-x');
+      slot.style.removeProperty('--gb-drag-rot');
+      if (slot.querySelector('.lc-card.flipped')) onReveal(slot);
+    }
+    sequence.revealAll();
+    fan.classList.add('gb-stack-complete');
+    update();
+    onComplete();
     return true;
   }
 
@@ -154,5 +185,5 @@ export function attachMobileRewardStack(fan, {
   }, true);
 
   update();
-  return { handleTap, dismissTop, get complete() { return sequence.done; } };
+  return { handleTap, dismissTop, revealAll, get complete() { return sequence.done; } };
 }
