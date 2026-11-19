@@ -16,7 +16,7 @@ test('Ash A is a pure grayscale, low powder mound with no attached orange flame'
     'Ash A is pale grayscale powder, not bonfire rocks or glowing embers');
  assert.ok(p.some(([r])=>r>=180),'ash has pale dust highlights');
  assert.ok(p.some(([r])=>r<80),'ash has dark powdered depth');
- assert.ok(p.some(a=>Math.floor(a[4]/a.width)!==0));
+ assert.ok(p.some(pixel=>Math.floor(pixel[4]/a.width)>15),'the dust pile occupies the lower area of its sprite');
 });
 test('Rising Ember B animates an ascending, fading pixel cluster',()=>{
  const frames=Array.from({length:8},(_,i)=>makeRisingEmber(i));
