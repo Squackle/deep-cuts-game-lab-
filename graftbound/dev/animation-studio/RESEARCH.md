@@ -27,3 +27,13 @@ November 19, 2026. Visual test only: `/graftbound/dev/animation-studio/`.
 - The same scene is replayable and does not mutate real game saves, card rules, equipment, ranked replay, server scores, or D1.
 - Hardware iPhone/Android acceptance and subjective smoke look require human review after deployment. Test spatially progressive emission (first second), outward traveling clouds (middle), all-entity damage (impact), and ashes (aftermath).
 - Rollback: revert the isolated smoke module and its studio imports/tests; no gameplay version migration needed.
+
+## November 19 — invisible battlefield box
+
+- The gas grid is now **square in GRAFTBOUND world coordinates**, exactly matching the actual 8×8 tile bounds. It is no longer a rectangular screen-space field.
+- All four walls have **zero-normal velocity**; tangential airflow is damped but free to slide. Inward restitution produces a visible rebound where gusts strike the boundary. Density/heat ghost cells reflect back into the chamber rather than disappearing off the edges.
+- Ember streaks and charcoal billows bounce within the same limits and use the same simulated flow; there is no smoke spawned outside the caster.
+- `arena-projection.js` takes actual `Scene.world()` and `Scene.project()` coordinates. A perspective-corrected patch mesh projects the smoke texture onto the arena; the tile-footprint polygon strictly clips blurred wisps and glows away from surrounding lava and environment props.
+- A second lightweight elevated smoke sheet gives a subtle illusion of height while preserving the same battlefield outline. This **is not full 3D collision or true volumetric CFD**—walls are simulated in the 2D horizontal velocity field and projected in screen space.
+- Smoke density and pressure now respond to walls. No visible boundary geometry is drawn. The illusion is an invisible arena-sized enclosure.
+- Tests enforce zero outward velocity on all walls, trapped particle centers, retained edge density, and correctly projected/masked tile geometry. Check rotations and mobile camera after each release.
