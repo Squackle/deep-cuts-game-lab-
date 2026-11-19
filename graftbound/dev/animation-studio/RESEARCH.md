@@ -1,4 +1,4 @@
-# Cinderstorm smoke study — game references and engineering notes
+# Pyroclasm / red fire-board-wipe effect study — research and engineering notes
 
 November 19, 2026. Visual test only: `/graftbound/dev/animation-studio/`.
 
@@ -82,8 +82,18 @@ Important: This is **original procedural pixel art approximating the owner's cho
 
 ## November 19 — comparing fire sprite quantities
 
-Added an independent **Fire sprite density** selector to the Cinderstorm preview with `Original 1×`, `Light 1.35×`, `Requested 1.5×`, and `Full 1.75×`. The three larger settings are intentionally compared against the previously approved 1× baseline.
+Added an independent **Fire sprite density** selector to the Pyroclasm / red fire-board-wipe preview with `Original 1×`, `Light 1.35×`, `Requested 1.5×`, and `Full 1.75×`. The three larger settings are intentionally compared against the previously approved 1× baseline.
 
 This control affects **only** the frequency and corresponding live cap of the original Rising Ember B and Curling Flame C particles. A deterministic fractional spawn accumulator preserves the requested average factor (including 1.35× and 1.75×, which cannot be represented by rounding each spawn tick independently). Actual advected smoke, heat, fuel, fire combustion field, Ash A graphics, 2-damage fixture, and creature health bars remain unchanged. Density changes replay the fixture from the beginning for a useful visual comparison; the HUD shows active B/C counts and their peak counts after completion.
 
 Sprite population and reduced-motion caps scale together; the original 1× behavior remains the default. QA must confirm both particle families are visibly more numerous at all three higher presets, the 8×8 board mask still clips them, and the preview works on desktop/mobile without changing live gameplay or saved runs.
+
+## November 19 — effect scope and card association
+
+**Primary reference spell:** **Pyroclasm**, a red sorcery that deals 2 damage to each creature. The seven-unit fixture remains the demonstration of exactly that effect.
+
+**Effect family:** `red-fire-board-wipe`. Reuse is allowed only for creature board wipes whose approved card adaptation explicitly identifies red mana/color identity, a fire-based visual theme, an all-creature target scope, and a board-wipe action. A helper `isFireBoardWipeEligible` provides this narrow metadata contract (it is *not* a live-engine dispatcher). A generic red spell, non-fire sweeper, creature-targeted burn spell, or unrelated animation is not eligible.
+
+The former experimental effect name is retired. The Animation Lab preview and catalog should say **Pyroclasm / Red Fire Board Wipes**, not invent or imply another playable spell. This is a *presentation-only* update and does **not** assign any card triggers in actual GRAFTBOUND gameplay. Future integration must be reviewed against the real card's adaptation, real damage amount, and targeting rules; this demo's 2-damage mechanic must never be silently applied to another card.
+
+Visual, performance and safety characteristics are otherwise unchanged (tile containment, pixel B/C effects, Ash A, sprite density options, 7 hits/3 deaths, no saved progress). Roll back by reverting the scoped naming/metadata PR.
