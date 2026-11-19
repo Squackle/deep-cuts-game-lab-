@@ -51,3 +51,27 @@ test('the revised Cinderstorm draws a transported gas field, not fullscreen smok
   assert.match(html,/id="smoke"/);
   assert.doesNotMatch(source,/const veil|const clouds|Math\.sqrt\(\(i\+\.5\)\//);
 });
+
+test('Animation Lab health bars use the main GRAFTBOUND HP-only labels (not creature nameplates)', () => {
+  const studio=read('../dev/animation-studio/studio.js');
+  const css=read('../dev/animation-studio/studio.css');
+  const gameCss=read('../styles.css');
+  const gameUi=read('../src/ui/battle-ui.js');
+  assert.match(gameUi,/className = 'ulabel '/);
+  assert.match(gameUi,/class="hpbar"><i style="width:/);
+  assert.match(studio,/el\.className = 'ulabel '/);
+  assert.match(studio,/hp\.className = 'hpbar'/);
+  assert.match(studio,/hp\.append\(fill, value\)/);
+  assert.match(studio,/m\.value\.textContent = String\(u\.hp\)/);
+  assert.ok(studio.includes('m.el.style.transform = `translate('));
+  assert.ok(!studio.includes('m.el.style.top ='));
+  assert.doesNotMatch(studio,/name\.textContent = u\.name|className = 'unit-label'/);
+  for(const value of ['#80d3ff','#2375d4','#ff9a7b','#b32b22']) {
+    assert.ok(gameCss.includes(value), 'Game CSS color '+value);
+    assert.ok(css.includes(value), 'Preview mirrors game color '+value);
+  }
+  assert.match(css,/\.ulabel\{[^}]*margin-left:-30px;width:60px;margin-top:-40px/);
+  assert.match(css,/\.hpbar\{[^}]*width:46px;height:9px/);
+  assert.match(css,/\.hpbar span\{[^}]*left:-16px;top:-4px/);
+  assert.doesNotMatch(css,/\.unit-label|\.foe \.hp i/);
+});
