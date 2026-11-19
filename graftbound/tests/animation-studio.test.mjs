@@ -33,8 +33,21 @@ test('Studio reuses real GRAFTBOUND scene, not save data or score APIs', () => {
 });
 
 test('Studio browser module and pure fixture are syntactically valid JavaScript', () => {
-  for (const file of ['../dev/animation-studio/studio.js','../dev/animation-studio/scenario.js']) {
+  for (const file of ['../dev/animation-studio/studio.js','../dev/animation-studio/scenario.js','../dev/animation-studio/smoke-fluid.js']) {
     const result = spawnSync(process.execPath, ['--check', new URL(file, import.meta.url).pathname], { encoding: 'utf8' });
     assert.equal(result.status, 0, file + ': ' + result.stderr);
   }
+});
+
+test('the revised Cinderstorm draws a transported gas field, not fullscreen smoke blobs', () => {
+  const source=read('../dev/animation-studio/studio.js');
+  const fluid=read('../dev/animation-studio/smoke-fluid.js');
+  const html=read('../dev/animation-studio/index.html');
+  assert.match(source,/smoke\.advanceTo\(/);
+  assert.match(source,/smoke\.render\(/);
+  assert.match(fluid,/semi-Lagrangian/i);
+  assert.match(fluid,/this\._project\(\)/);
+  assert.match(fluid,/this\._inject\(/);
+  assert.match(html,/id="smoke"/);
+  assert.doesNotMatch(source,/const veil|const clouds|Math\.sqrt\(\(i\+\.5\)\//);
 });
