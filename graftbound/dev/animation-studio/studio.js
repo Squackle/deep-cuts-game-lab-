@@ -4,7 +4,7 @@ import { CanvasBattleScene } from './canvas-scene.js';
 import { buildEncounter } from '../../src/engine/encounters.js';
 import { ACTS } from '../../src/data/encounters.js';
 import { SCENARIO, DURATION, IMPACT_TIME, resolveBoardFire, FIRE_BOARD_WIPE_EFFECT, isFireBoardWipeEligible } from './scenario.js';
-import { SmokeField } from './smoke-fluid.js';
+import { SmokeField, spreadImpactDelay } from './smoke-fluid.js';
 import { drawSmokeOnArena, clipToArena, arenaPoint } from './arena-projection.js';
 import { createPixelAtlas } from './pixel-art.js';
 import { ashSmokePuffs } from './ash-smoke.js';
@@ -12,7 +12,7 @@ import { ashSmokePuffs } from './ash-smoke.js';
 const $ = id => document.getElementById(id);
 const canvas = $('scene'), effects = $('effects'), ctx = effects.getContext('2d');
 const replayBtn = $('replay'), resetBtn = $('reset'), labels = $('labels');
-const speedSel = $('speed'), particlesSel = $('particles'), motionSel = $('motion'), smokeSel = $('smoke'), fireSel = $('fire'), spriteDensitySel = $('sprite-density');
+const speedSel = $('speed'), particlesSel = $('particles'), motionSel = $('motion'), smokeSel = $('smoke'), fireSel = $('fire'), spriteDensitySel = $('sprite-density'), spreadSel = $('spread-speed');
 const clamp = (n, a = 0, b = 1) => Math.max(a, Math.min(b, n));
 const smooth = n => { const t = clamp(n); return t*t*(3-2*t); };
 const frac = n => n - Math.floor(n);
@@ -80,7 +80,7 @@ function showSpriteCounts() {
   const embers=smoke.embers.length, flames=smoke.flames.length;
   peakEmbers=Math.max(peakEmbers,embers);
   peakFlames=Math.max(peakFlames,flames);
-  $('sprite-counts').textContent=!playing&&elapsed>=DURATION
+  $('sprite-counts').textContent=!playing&&elapsed>=DURATION+smoke.spreadDelay
     ? `Peak B: ${peakEmbers} embers · C: ${peakFlames} flames`
     : `Active B: ${embers} embers · C: ${flames} flames`;
 }
@@ -105,7 +105,7 @@ function resetBattle() {
   const cells = sc.mode==='canvas-2d'
     ? (particlesSel.value==='high'?64:particlesSel.value==='low'?44:56)
     : (particlesSel.value === 'high' ? 112 : particlesSel.value === 'low' ? 56 : 80);
-  smoke = new SmokeField(cells,cells,{spriteDensity:Number(spriteDensitySel.value)});
+  smoke = new SmokeField(cells,cells,{spriteDensity:Number(spriteDensitySel.value),spreadSpeed:Number(spreadSel.value)});
   smokeTexture = document.createElement('canvas');
   smokeTexture.width = smokeTexture.height = cells*4;
   smokeCtx = smokeTexture.getContext('2d');
@@ -240,7 +240,7 @@ function drawContainedBillows(field,reduced) {
     const age=puff.age/puff.life;
     const birth=smooth(puff.age/.24);
     const fade=1-smooth((age-.54)/.46);
-    const sootReveal=smooth((field.time-3.00)/.70);
+    const sootReveal=smooth((field.time-(3.00+field.spreadDelay))/.70);
     const alpha=birth*fade*(.09+.26*sootReveal)*Number(smokeSel.value)*(reduced?.55:1);
     if(alpha<=.005)continue;
     const [wx,,wz]=sc.world(puff.x/(field.w-1)*sc.w-.5,puff.y/(field.h-1)*sc.h-.5);
@@ -268,7 +268,7 @@ function drawPixelFire(field,reduced) {
   ctx.imageSmoothingEnabled=false;
   ctx.globalCompositeOperation='source-over';
   const intensity=Number(fireSel.value);
-  const flameFade=1-smooth((field.time-3.40)/.62);
+  const flameFade=1-smooth((field.time-(3.40+field.spreadDelay))/.62);
   const renderPos=(p,height)=>{
     const [x,,z]=sc.world(p.x/(field.w-1)*sc.w-.5,p.y/(field.h-1)*sc.h-.5);
     return sc.project([x,height,z]);
@@ -317,6 +317,8 @@ function drawPyroclasm(t) {
   const actor=sc.units.get(1);
   if(!actor)return;
   const reduced=motionSel.value==='reduced';
+  const spreadDelay=smoke.spreadDelay;
+  const impactTime=IMPACT_TIME+spreadDelay;
   // Coordinates are on the actual 8x8 tile plane. A plume cannot enter the
   // surrounding scenery because velocity and density obey reflective walls.
   const origin={
@@ -339,8 +341,8 @@ function drawPyroclasm(t) {
   ctx.save();
   clipToArena(ctx,sc,0.04);
   const caster=arenaPoint(sc,origin.x,origin.y,0.28);
-  if(t>0&&t<3.35&&!reduced){
-    const glow=Math.min(1,t/.78)*(1-smooth((t-2.95)/.43));
+  if(t>0&&t<3.35+spreadDelay&&!reduced){
+    const glow=Math.min(1,t/.78)*(1-smooth((t-(2.95+spreadDelay))/.43));
     const radius=22+44*smooth(t/1.4);
     const g=ctx.createRadialGradient(caster.x,caster.y,2,caster.x,caster.y,radius);
     g.addColorStop(0,'rgba(255,198,82,'+(glow*.34)+')');
@@ -349,26 +351,26 @@ function drawPyroclasm(t) {
     ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=g;
     ctx.beginPath();ctx.arc(caster.x,caster.y,radius,0,Math.PI*2);ctx.fill();ctx.restore();
   }
-  if(t>IMPACT_TIME-.13&&t<IMPACT_TIME+.22){
-    const flash=(1-Math.abs(t-IMPACT_TIME)/.22)*(reduced?.05:.14);
+  if(t>impactTime-.13&&t<impactTime+.22){
+    const flash=(1-Math.abs(t-impactTime)/.22)*(reduced?.05:.14);
     ctx.fillStyle='rgba(255,124,53,'+Math.max(0,flash)+')';
     ctx.fillRect(0,0,w,h);
   }
   ctx.restore();
-  if(resolved&&t>=3.57) for(const u of resolved){
+  if(resolved&&t>=3.57+spreadDelay) for(const u of resolved){
     if(u.dead){
-      ashPile(u,t);
+      ashPile(u,t-spreadDelay);
       if(removed)drawAshSmoke(u,levelClock-ashSmokeBornAt,reduced);
     }
   }
-  if(resolved&&t>=3.83&&t<4.55) for(const u of resolved){
+  if(resolved&&t>=3.83+spreadDelay&&t<4.55+spreadDelay) for(const u of resolved){
     if(u.dead)continue;
     const p=sc.project(sc.headPos(u.uid));
-    const strength=1-smooth((t-3.87)/.7);
+    const strength=1-smooth((t-(3.87+spreadDelay))/.7);
     ctx.save();ctx.globalAlpha=Math.max(0,strength);
     ctx.fillStyle='#ffc782';ctx.font='bold 20px Georgia';ctx.textAlign='center';
     ctx.shadowColor='#7a2700';ctx.shadowBlur=7;
-    ctx.fillText('−2',p.x,p.y-38-(t-3.83)*17);
+    ctx.fillText('−2',p.x,p.y-38-(t-(3.83+spreadDelay))*17);
     ctx.restore();
   }
   ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
@@ -379,7 +381,8 @@ function tick(now) {
   const dt=Math.min(.05,Math.max(0,(now-prev)/1000));prev=now;
   if (!sc || document.hidden) return;
   if (playing) {
-    elapsed=Math.min(DURATION,(now-started)/1000*Number(speedSel.value));
+    const delay=smoke.spreadDelay;
+    elapsed=Math.min(DURATION+delay,(now-started)/1000*Number(speedSel.value));
     const actor=sc.units.get(1);
     if (actor && !damaged) {
       if (motionSel.value==='full') {
@@ -389,9 +392,9 @@ function tick(now) {
         if(elapsed-lastCast>.28){sc.play(1,'cast');lastCast=elapsed;}
       } else if (elapsed-lastCast>.52){sc.play(1,'cast');lastCast=elapsed;}
     }
-    if (elapsed>=IMPACT_TIME) impact();
-    if (elapsed>=3.60) removeFallen();
-    if (elapsed>=DURATION) {playing=false;replayBtn.textContent='↻ REPLAY PYROCLASM';}
+    if (elapsed>=IMPACT_TIME+delay) impact();
+    if (elapsed>=3.60+delay) removeFallen();
+    if (elapsed>=DURATION+delay) {playing=false;replayBtn.textContent='↻ REPLAY PYROCLASM';}
   }
   levelClock+=dt; // Not capped at the spell's 5.2-second duration.
   sc.frame(dt);
@@ -425,6 +428,9 @@ resetBtn.addEventListener('click', resetBattle);
 spriteDensitySel.addEventListener('change',()=>{
   if(sc)begin();
 });
+// Compare outgoing flame-front velocity against the approved 1.5× sprite
+// density and Inferno fire without changing charge swirl or combustion rules.
+spreadSel.addEventListener('change',()=>{if(sc)begin();});
 particlesSel.addEventListener('change',()=>{if(sc)sc.setQuality(particlesSel.value==='high'?'high':particlesSel.value==='low'?'performance':'balanced');if(sc&&!playing)resetBattle();});
 motionSel.addEventListener('change',()=>{if(sc)sc.reduced=motionSel.value==='reduced';if(sc&&!playing)resetBattle();});
 window.addEventListener('resize',resize);
