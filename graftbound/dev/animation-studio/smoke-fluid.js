@@ -7,6 +7,15 @@ const DT = 1 / 30;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const smooth = v => { const t = clamp(v, 0, 1); return t*t*(3-2*t); };
 const hash = n => { const s = Math.sin(n*127.1+78.233)*43758.5453; return s-Math.floor(s); };
+// Artist-directed approximation of blackbody-like incandescent color. This is
+// a compact real-time game ramp, not a physically calibrated spectral integral.
+export function flameColor(temperature) {
+  const t=clamp(temperature,0,1);
+  const stops=[[185,31,5],[252,69,7],[255,147,20],[255,207,71],[255,248,194]];
+  const u=t*4,i=Math.min(3,Math.floor(u)),f=u-i;
+  return stops[i].map((c,j)=>Math.round(c+(stops[i+1][j]-c)*f));
+}
+const FIRE_PALETTE=Array.from({length:256},(_,i)=>flameColor(i/255));
 
 export class SmokeField {
   constructor(w = 98, h = 62) {
@@ -338,6 +347,10 @@ export class SmokeField {
       this.surface.width=this.w;this.surface.height=this.h;
       this.sctx=this.surface.getContext('2d',{willReadFrequently:false});
       this.pixels=this.sctx.createImageData(this.w,this.h);
+      this.fireSurface=document.createElement('canvas');
+      this.fireSurface.width=this.w;this.fireSurface.height=this.h;
+      this.fireCtx=this.fireSurface.getContext('2d');
+      this.firePixels=this.fireCtx.createImageData(this.w,this.h);
       // One reusable lumpy smoke brush: every moving billow originates at the
       // player and follows the same velocity field as the density texture.
       this.brush=document.createElement('canvas');
@@ -353,31 +366,54 @@ export class SmokeField {
         bctx.fillStyle=g;bctx.beginPath();bctx.arc(px,py,r,0,Math.PI*2);bctx.fill();
       }
     }
-    const im=this.pixels.data,w=this.w,h=this.h,den=this.density,heat=this.heat;
-    const fade=1-smooth((this.time-3.46)/.88);
+    const im=this.pixels.data,glowPixels=this.firePixels.data;
+    const w=this.w,h=this.h,den=this.density,heat=this.heat,flame=this.flame;
+    const flameFade=1-smooth((this.time-3.42)/.56);
+    const smokeFade=1-smooth((this.time-4.22)/.78);
+    const sootLate=smooth((this.time-3.12)/.75);
+    let fireOpacity=0,sootOpacity=0;
     for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-      const k=y*w+x,o=k*4,d=den[k],hot=heat[k];
-      if(d<.006||fade<=0){im[o+3]=0;continue;}
-      // Density = opacity, heat = emission/color. Neighbor gradients produce
-      // subtle pale back-lit edges on the smoke plumes instead of flat dark fog.
-      const xl=k-1>=y*w?k-1:k,xr=x<w-1?k+1:k;
+      const k=y*w+x,o=k*4,d=den[k],hot=heat[k],reaction=flame[k];
+      if((d<.005&&reaction<.008)||smokeFade<=0) {
+        im[o+3]=0;glowPixels[o+3]=0;continue;
+      }
+      // The flame is an emissive combustion field; soot density is NOT the
+      // source of orange light. Spatial gradients create rolling flame edges.
+      const xl=x>0?k-1:k,xr=x<w-1?k+1:k;
       const yl=y>0?k-w:k,yr=y<h-1?k+w:k;
-      const rim=Math.min(1,Math.abs(den[xr]-den[xl])*.22+Math.abs(den[yr]-den[yl])*.24);
-      const eddy=.78+.22*Math.sin(x*.43+y*.25-this.time*3)*Math.cos(y*.31-x*.1+this.time*2);
-      const ember=clamp(hot*.18,0,.64);
-      const shade=clamp(8+rim*48+d*2,0,75);
-      // Charcoal body, silver-gray curling edges and isolated red hot pockets.
-      // Fire appears INSIDE the cloud instead of uniformly tinting it yellow.
-      im[o]=clamp(26+shade+ember*62,0,255);
-      im[o+1]=clamp(30+shade+ember*23,0,255);
-      im[o+2]=clamp(35+shade*.92-ember*13,0,255);
-      im[o+3]=Math.round(255*clamp((1-Math.exp(-d*.70*smoke))*fade*eddy,0,.92));
+      const rim=clamp((Math.abs(flame[xr]-flame[xl])+Math.abs(flame[yr]-flame[yl]))*.10,0,1);
+      const breakup=.83+.17*Math.sin(x*.31+y*.23-this.time*3.8)*Math.cos(y*.46-x*.17+this.time*2.8);
+      const fireA=clamp((1-Math.exp(-reaction*.74))*flameFade*(.86+.14*rim)*breakup,0,.97);
+      const sootA=clamp((1-Math.exp(-d*.60))*(.095+.29*sootLate)*smoke*smokeFade,0,.52);
+      const coverage=clamp(fireA+sootA*(1-fireA),0,.98);
+      if(coverage<.002){im[o+3]=0;glowPixels[o+3]=0;continue;}
+      const color=FIRE_PALETTE[Math.round(clamp((hot-.13)/4.15,0,1)*255)];
+      const smoky=clamp(sootA*(1-fireA)/coverage,0,1);
+      const sootShade=37+Math.round(rim*12);
+      for(let j=0;j<3;j++)im[o+j]=Math.round(color[j]*(1-smoky)+sootShade*smoky);
+      im[o+3]=Math.round(255*coverage);
+      // Only the actual reaction field contributes to the fire's soft bloom.
+      glowPixels[o]=color[0];
+      glowPixels[o+1]=color[1];
+      glowPixels[o+2]=color[2];
+      glowPixels[o+3]=Math.round(255*fireA);
+      fireOpacity+=fireA;sootOpacity+=sootA*(1-fireA);
     }
+    this.lastRenderMetrics={fireOpacity,sootOpacity,
+      fireFraction:fireOpacity+sootOpacity>0?fireOpacity/(fireOpacity+sootOpacity):0};
     this.sctx.putImageData(this.pixels,0,0);
+    this.fireCtx.putImageData(this.firePixels,0,0);
     ctx.save();
     ctx.imageSmoothingEnabled=true;
-    // A small filter softens the low-resolution density grid into continuous curls.
-    ctx.filter=reduced?'blur(2px)':'blur(3px)';
+    // A separate emissive bloom; the gray soot receives no additive glow.
+    ctx.globalCompositeOperation='lighter';
+    ctx.globalAlpha=reduced?.10:.31;
+    ctx.filter=reduced?'blur(3px)':'blur(9px)';
+    ctx.drawImage(this.fireSurface,0,0,width,height);
+    ctx.filter='none';
+    ctx.globalAlpha=1;
+    ctx.globalCompositeOperation='source-over';
+    ctx.filter=reduced?'blur(1px)':'blur(1.8px)';
     ctx.drawImage(this.surface,0,0,width,height);
     ctx.filter='none';
     const sx=width/w,sy=height/h;
@@ -385,7 +421,9 @@ export class SmokeField {
     ctx.globalCompositeOperation='source-over';
     for(const p of this.puffs) {
       const life=smooth(Math.min(p.age/.2,1))*(1-smooth((p.age/p.life-.57)/.43));
-      const alpha=life*fade*(reduced?.18:.30);
+      // Smoke is secondary while fire burns; it becomes more visible after
+      // the flame front collapses into the ashfall.
+      const alpha=life*smokeFade*(.08+.27*sootLate)*smoke*(reduced?.55:1);
       if(alpha<=.005)continue;
       const r=p.size*(1+p.age*1.75)*sx;
       ctx.save();ctx.globalAlpha=alpha;
