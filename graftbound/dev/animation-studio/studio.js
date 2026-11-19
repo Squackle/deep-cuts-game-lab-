@@ -1,7 +1,6 @@
 // GRAFTBOUND Animation Studio: isolated visual scene using the actual WebGL battlefield renderer.
 // No save, combat-run, score, Scryfall, or server state. Gameplay values are a clearly labeled fixture.
-import { Scene } from '../../src/rendering/scene.js';
-import { loadAssets } from '../../src/rendering/sprites.js';
+import { CanvasBattleScene } from './canvas-scene.js';
 import { buildEncounter } from '../../src/engine/encounters.js';
 import { ACTS } from '../../src/data/encounters.js';
 import { SCENARIO, PHASES, DURATION, IMPACT_TIME, resolveBoardFire, FIRE_BOARD_WIPE_EFFECT, isFireBoardWipeEligible } from './scenario.js';
@@ -21,6 +20,26 @@ const mix = (a, b, t) => a + (b-a)*t;
 const defaultReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
 motionSel.value = defaultReduced ? 'reduced' : 'full';
 let sc, smoke, smokeTexture, smokeCtx, pixelAtlas, playing = false, started = 0, elapsed = 0, prev = 0;
+let compatCanvas=null;
+const touchMobile=window.matchMedia?.('(pointer: coarse)').matches &&
+  Math.min(window.innerWidth,window.innerHeight)<=820;
+const preferCompatible=touchMobile || new URLSearchParams(window.location.search).get('renderer')==='2d';
+function startCompatibleScene(reason='mobile'){
+  // Canvas already bound to WebGL cannot be reused as a 2D canvas after failure.
+  // Create a fresh, isolated canvas UNDER the existing Pyroclasm effect sheet.
+  if(!compatCanvas){
+    compatCanvas=document.createElement('canvas');
+    compatCanvas.id='scene-compat';
+    compatCanvas.setAttribute('aria-label','GRAFTBOUND mobile-compatible pixel-art battlefield');
+    canvas.parentNode.insertBefore(compatCanvas,effects);
+  }
+  canvas.style.display='none';
+  sc=new CanvasBattleScene(compatCanvas);
+  $('renderer-status').textContent='Mobile-safe 2D renderer';
+  document.body.dataset.previewRenderer='canvas2d';
+  if(reason!=='mobile')console.warn('Pyroclasm switched to Canvas 2D compatibility mode:',reason);
+}
+
 let peakEmbers=0, peakFlames=0;
 let resolved = null, damaged = false, removed = false, lastCast = -1;
 const marks = new Map();
@@ -77,7 +96,11 @@ function resetBattle() {
   }
   // The fluid's grid represents the 8x8 physical battlefield, not the
   // browser's rectangular viewport. Its boundaries are solid box walls.
-  const cells = particlesSel.value === 'high' ? 112 : particlesSel.value === 'low' ? 56 : 80;
+  // Mobile browsers have a much smaller canvas/GPU memory budget. Restrict
+  // only simulation resolution, not the user-selected B/C sprite density.
+  const cells = sc.mode==='canvas-2d'
+    ? (particlesSel.value==='high'?64:particlesSel.value==='low'?44:56)
+    : (particlesSel.value === 'high' ? 112 : particlesSel.value === 'low' ? 56 : 80);
   smoke = new SmokeField(cells,cells,{spriteDensity:Number(spriteDensitySel.value)});
   smokeTexture = document.createElement('canvas');
   smokeTexture.width = smokeTexture.height = cells*4;
@@ -310,6 +333,7 @@ function drawPyroclasm(t) {
 }
 function tick(now) {
   requestAnimationFrame(tick);
+  try {
   const dt=Math.min(.05,Math.max(0,(now-prev)/1000));prev=now;
   if (!sc || document.hidden) return;
   if (playing) {
@@ -333,6 +357,21 @@ function tick(now) {
   renderLabels();
   drawPyroclasm(elapsed);
   showSpriteCounts();
+  } catch(err) {
+    if(sc?.mode==='canvas-2d') {
+      // Errors in the CPU fallback should be explicit rather than hidden
+      // behind the old generic WebGL2 warning.
+      $('loading').textContent='The mobile preview encountered a rendering error. Please reload to retry.';
+      $('loading').hidden=false;
+      console.error('Pyroclasm Canvas 2D rendering error:',err);
+      playing=false;
+      sc=null;
+    } else {
+      startCompatibleScene(err?.message||'WebGL scene interrupted');
+      resetBattle();
+      begin();
+    }
+  }
 }
 replayBtn.addEventListener('click', begin);
 resetBtn.addEventListener('click', resetBattle);
@@ -347,8 +386,26 @@ window.addEventListener('resize',resize);
 window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r'&&!e.repeat&&!['SELECT','INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){e.preventDefault();begin();}});
 (async()=>{
   try {
-    const assets=await loadAssets();
-    sc=new Scene(canvas,assets);
+    // On touch phones, avoid the heavy WebGL program/shader/creature-asset
+    // initialization entirely. This prevents a blank field on mobile Safari.
+    if(preferCompatible){
+      startCompatibleScene('mobile');
+    }else{
+      try {
+        // Heavy WebGL scene and original 3D creature art are desktop-only
+        // dynamic imports. Mobile Safari loads no 3D renderer dependency tree.
+        const [{Scene},{loadAssets}]=await Promise.all([
+          import('../../src/rendering/scene.js'),
+          import('../../src/rendering/sprites.js')
+        ]);
+        const assets=await loadAssets();
+        sc=new Scene(canvas,assets);
+        $('renderer-status').textContent='Full 3D renderer';
+        document.body.dataset.previewRenderer='webgl2';
+      }catch(err){
+        startCompatibleScene(err?.message||'3D initialization failed');
+      }
+    }
     pixelAtlas=createPixelAtlas(document);
     resize();
     resetBattle();
@@ -358,7 +415,7 @@ window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r'&&!e.repeat&&!
     // Auto-preview once when ready, without writing progress or accessing a gameplay session.
     setTimeout(()=>{if(!playing&&elapsed===0&&!document.hidden)begin();},650);
   } catch (err) {
-    $('loading').textContent='Unable to prepare the GRAFTBOUND preview. This requires WebGL2 and current browser support.';
-    console.error('Animation Lab initialization failed',err);
+    $('loading').textContent='Unable to prepare the Pyroclasm preview. Please reload or try an updated browser.';
+    console.error('Animation Lab initialization failed even in compatibility mode',err);
   }
 })();

@@ -25,6 +25,7 @@ h1{font:700 clamp(34px,5.4vw,62px)/1.08 Georgia,serif;margin:0}h1 span{color:#f6
 .loading{position:absolute;z-index:6;inset:0;display:grid;place-items:center;background:#0d1816;color:#ead1a0;padding:20px;text-align:center}
 .under{min-height:45px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:9px 15px;font-size:11px;color:#e1dbc7;background:#182821}.under span:last-child{font-weight:800;color:#edc788;white-space:nowrap}
 #sprite-counts{font:700 11px ui-monospace,SFMono-Regular,Consolas,monospace;color:#f0b579;white-space:nowrap}
+#renderer-status{color:#b6c9be;font:700 10px ui-monospace,monospace;white-space:nowrap}#scene-compat{image-rendering:auto}
 .density-note{margin:0 0 13px;color:#b9cdbb;font-size:12px;line-height:1.5}
 .controls{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin:15px 0 18px}
 .controls button,.controls label{background:#223a2c;border:1px solid #637256;color:#f4e9d0;border-radius:5px;padding:10px 13px;min-height:44px}

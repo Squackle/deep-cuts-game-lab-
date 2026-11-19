@@ -15,7 +15,7 @@
 <div class="battle-stamp">PYROCLASM · RED FIRE BOARD WIPE · 8×8 ARENA</div>
 <div id="loading" class="loading" role="status">Preparing GRAFTBOUND battle renderer…</div>
 </div>
-<div class="under"><span id="outcome" aria-live="polite">2 fire damage to every creature — including allies and the caster.</span><span id="sprite-counts" aria-label="Pixel fire sprite counts">B: 0 embers · C: 0 flames</span><span id="count">0 / 7 HIT</span></div></section>
+<div class="under"><span id="outcome" aria-live="polite">2 fire damage to every creature — including allies and the caster.</span><span id="sprite-counts" aria-label="Pixel fire sprite counts">B: 0 embers · C: 0 flames</span><span id="renderer-status" aria-label="Preview renderer">Preparing scene…</span><span id="count">0 / 7 HIT</span></div></section>
 <section class="controls" aria-label="Animation controls">
 <button id="replay" type="button" class="primary" disabled>▶ CAST PYROCLASM</button>
 <button id="reset" type="button" disabled>↺ RESET BATTLE</button>
@@ -26,7 +26,7 @@
 <label>Aftermath smoke <select id="smoke"><option value="0.72">Light (default)</option><option value="1">Normal</option><option value="1.35">Thick</option></select></label>
 <label>Motion <select id="motion"><option value="full">Full</option><option value="reduced">Reduced</option></select></label>
 </section>
-<p class="density-note"><strong>Effect scope:</strong> Pyroclasm is the reference spell (2 damage to every creature). This firestorm may be reused for other red, fire-themed creature board wipes only when explicitly assigned; each card must retain its own game rules. Changing fire sprite density automatically replays the same test—Rising Embers (B) and Curling Flames (C) scale together, while smoke, ash and damage stay unchanged.</p>
+<p class="density-note"><strong>Mobile compatibility:</strong> Phones use a lightweight 2D isometric battlefield while retaining the same firestorm physics, Ash A, Rising Embers, Curling Flames, hit timing, and density settings. Desktop keeps the full 3D scene when supported; if WebGL2 fails, the preview automatically switches to 2D. <strong>Effect scope:</strong> Pyroclasm is the reference spell (2 damage to every creature). This firestorm may be reused for other red, fire-themed creature board wipes only when explicitly assigned; each card must retain its own game rules. Changing fire sprite density automatically replays the same test—Rising Embers (B) and Curling Flames (C) scale together, while smoke, ash and damage stay unchanged.</p>
 <section class="notes"><div><strong>BEFORE</strong><p>Pyroclasm's seven-creature test setup shows 2 damage affecting both sides, including the caster. This preview does not execute live gameplay.</p></div>
 <div><strong>DURING</strong><p>Caster-emitted fuel ignites into a spiral of fire that spreads along the tiles. Pixel-art Rising Embers and Curling Flames follow the airflow throughout the spell, with no orange wedge particles. Smoke trails the fire.</p></div>
 <div><strong>AFTER</strong><p>Defeated creatures leave the approved pale-gray Ash A pixel-art mounds; survivors retain reduced health. This is a lightweight 2D combustion preview, not full volumetric simulation or a live combat turn.</p></div></section>

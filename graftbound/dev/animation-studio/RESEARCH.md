@@ -97,3 +97,15 @@ Sprite population and reduced-motion caps scale together; the original 1× behav
 The former experimental effect name is retired. The Animation Lab preview and catalog should say **Pyroclasm / Red Fire Board Wipes**, not invent or imply another playable spell. This is a *presentation-only* update and does **not** assign any card triggers in actual GRAFTBOUND gameplay. Future integration must be reviewed against the real card's adaptation, real damage amount, and targeting rules; this demo's 2-damage mechanic must never be silently applied to another card.
 
 Visual, performance and safety characteristics are otherwise unchanged (tile containment, pixel B/C effects, Ash A, sprite density options, 7 hits/3 deaths, no saved progress). Roll back by reverting the scoped naming/metadata PR.
+
+## November 19 — mobile Safari startup and Canvas 2D compatibility
+
+A real iPhone Safari screenshot showed the generic "Unable to prepare the GRAFTBOUND preview. This requires WebGL2..." error and a blank battlefield, despite prior Cloudflare Chromium mobile simulations succeeding. The previous preview synchronously loaded the entire GRAFTBOUND HD-2D creature art catalog, WebGL shader programs and a full 3D scene before it could show even one frame. The generic message didn't establish which exact dependency failed on the user's device.
+
+**Mitigation:** On touch devices with a short viewport dimension at or under 820 CSS px, initialize a separate lightweight **Canvas 2D isometric battlefield** instead. This skips both the full 3D art loading and heavy WebGL Scene module imports. It reproduces the 8×8 tiles, seven lightweight original pixel silhouettes, projected head anchors for normal blue/red health bars, and screen projection used by the original gas/particle overlay. The identical isolated Pyroclasm damage/ash/sprite-density simulation remains on top. Responsive CPU grid limits are 44/56/64 depending on particle quality; normal 1× through 1.75× ember/flame density settings still operate.
+
+On desktops, load the original full WebGL Scene and creature art lazily. If it fails at asset loading or WebGL scene creation, or throws during frame rendering, mount the Canvas 2D scene on a **fresh canvas** (WebGL canvases cannot change context type) and replay the fixture. A manual `?renderer=2d` query enables the compatibility scene in desktop QA without depending on a particular GPU. The view explicitly reports the active renderer. Mobile uses a simple 2D scenic approximation, **not an identical copy of the full 3D battle environment**.
+
+Checkpoints: browser simulated mobile starts without any 3D asset requests, 2D board and labels appear; user can replay, change B/C density, reset, and see 7 units take 2 damage and 3 Ash A piles; projected smoke stays in the 8×8 polygon; desktop still uses WebGL when available; force-2D URL works on desktop. Actual hardware iOS Safari acceptance must be confirmed by the owner; browser emulation is not an iPhone hardware test.
+
+Rollback: revert this standalone GRAFTBOUND Animation Lab PR; no actual game engine, saved progress, public scores, card rules, or website code changed.
