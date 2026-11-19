@@ -3,7 +3,7 @@
 import { CanvasBattleScene } from './canvas-scene.js';
 import { buildEncounter } from '../../src/engine/encounters.js';
 import { ACTS } from '../../src/data/encounters.js';
-import { SCENARIO, PHASES, DURATION, IMPACT_TIME, resolveBoardFire, FIRE_BOARD_WIPE_EFFECT, isFireBoardWipeEligible } from './scenario.js';
+import { SCENARIO, DURATION, IMPACT_TIME, resolveBoardFire, FIRE_BOARD_WIPE_EFFECT, isFireBoardWipeEligible } from './scenario.js';
 import { SmokeField } from './smoke-fluid.js';
 import { drawSmokeOnArena, clipToArena, arenaPoint } from './arena-projection.js';
 import { createPixelAtlas } from './pixel-art.js';
@@ -49,8 +49,9 @@ const original = SCENARIO.map(u => ({ ...u }));
 if (!isFireBoardWipeEligible(FIRE_BOARD_WIPE_EFFECT))
   throw new Error('The Pyroclasm preview requires a red fire-based creature board wipe.');
 
-function note(message, state) {
-  $('phase').textContent = state || message;
+// Spell casts never display phase names or narrative text on the battlefield.
+// The below-the-arena test outcome remains available for QA and accessibility.
+function note(message) {
   $('outcome').textContent = message;
 }
 function prepareLabels() {
@@ -109,14 +110,14 @@ function resetBattle() {
   showSpriteCounts();
   replayBtn.disabled = false; resetBtn.disabled = false;
   replayBtn.textContent = '▶ CAST PYROCLASM';
-  note('2 fire damage to every creature — including allies and the caster.', 'READY TO CAST');
+  note('2 fire damage to every creature — including allies and the caster.');
 }
 function begin() {
   if (!sc) return;
   resetBattle();
   playing = true; started = performance.now();
   replayBtn.textContent = '↻ REPLAY PYROCLASM';
-  note('The caster begins to summon a ring of burning embers.', 'THE INVOCATION');
+  note('2 fire damage to every creature — including allies and the caster.');
 }
 function impact() {
   if (damaged) return;
@@ -142,7 +143,7 @@ function removeFallen() {
     marks.get(u.uid).el.classList.add('dead');
   }
   const lost = resolved.filter(u => u.dead).length;
-  note('The storm clears. ' + lost + ' creatures have fallen into ash; the others survived.', 'ASHFALL · ' + lost + ' FALLEN');
+  note('The storm clears. ' + lost + ' creatures have fallen into ash; the others survived.');
 }
 function renderLabels() {
   if (!sc?.cam) return;
@@ -338,8 +339,6 @@ function tick(now) {
   if (!sc || document.hidden) return;
   if (playing) {
     elapsed=Math.min(DURATION,(now-started)/1000*Number(speedSel.value));
-    const current=PHASES.filter(p=>elapsed>=p.time).at(-1);
-    if (!removed && current) $('phase').textContent=current.label;
     const actor=sc.units.get(1);
     if (actor && !damaged) {
       if (motionSel.value==='full') {
