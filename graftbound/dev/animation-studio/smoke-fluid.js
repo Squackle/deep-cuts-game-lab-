@@ -38,6 +38,51 @@ export class SmokeField {
     return a0*(1-fy)+a1*fy;
   }
   velocityAt(x,y) { return [this.sample(this.u,x,y),this.sample(this.v,x,y)]; }
+  // Impermeable walls: cancel normal airflow and preserve damped tangential
+  // flow so smoke slides, folds and recirculates against the invisible arena box.
+  // A little inboard restitution makes a plume rebound instead of disappearing.
+  _walls() {
+    const {w,h,u,v}=this, slip=.87, bounce=.42;
+    for(let y=1;y<h-1;y++){
+      const l=y*w,r=l+w-1;
+      if(u[l+1]<0)u[l+1]=-u[l+1]*bounce;
+      if(u[r-1]>0)u[r-1]=-u[r-1]*bounce;
+      u[l]=0;u[r]=0;
+      v[l]=v[l+1]*slip;v[r]=v[r-1]*slip;
+    }
+    for(let x=0;x<w;x++){
+      const top=x,bottom=(h-1)*w+x;
+      if(v[top+w]<0)v[top+w]=-v[top+w]*bounce;
+      if(v[bottom-w]>0)v[bottom-w]=-v[bottom-w]*bounce;
+      v[top]=0;v[bottom]=0;
+      u[top]=x===0||x===w-1?0:u[top+w]*slip;
+      u[bottom]=x===0||x===w-1?0:u[bottom-w]*slip;
+    }
+  }
+  _fieldEdges() {
+    // Reflective density/heat ghost cells preserve gas at the border instead of
+    // destroying it when the advancing smoke front impacts a wall.
+    const {w,h}=this;
+    for(const a of [this.density,this.heat]){
+      for(let y=1;y<h-1;y++){
+        const k=y*w;
+        a[k]=a[k+1];a[k+w-1]=a[k+w-2];
+      }
+      for(let x=0;x<w;x++){
+        a[x]=a[w+x];
+        a[(h-1)*w+x]=a[(h-2)*w+x];
+      }
+    }
+  }
+  _reflectParticle(p) {
+    // Mirror overshoot off walls; subsequent motion follows the deflected flow.
+    const min=.7, xmax=this.w-1.7,ymax=this.h-1.7;
+    if(p.x<min)p.x=min+(min-p.x)*.45;
+    if(p.x>xmax)p.x=xmax-(p.x-xmax)*.45;
+    if(p.y<min)p.y=min+(min-p.y)*.45;
+    if(p.y>ymax)p.y=ymax-(p.y-ymax)*.45;
+    p.x=clamp(p.x,min,xmax);p.y=clamp(p.y,min,ymax);
+  }
   _project() {
     const {w,h,u,v,div}=this;
     this.p.fill(0);
@@ -55,11 +100,17 @@ export class SmokeField {
       this.p=pn;this.pn=p;
     }
     const p=this.p;
+    // Zero-normal pressure gradient across the four solid boundaries.
+    for(let y=1;y<h-1;y++){
+      const k=y*w;p[k]=p[k+1];p[k+w-1]=p[k+w-2];
+    }
+    for(let x=0;x<w;x++){p[x]=p[w+x];p[(h-1)*w+x]=p[(h-2)*w+x];}
     for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
       const k=y*w+x;
       u[k]-=.5*(p[k+1]-p[k-1]);
       v[k]-=.5*(p[k+w]-p[k-w]);
     }
+    this._walls();
   }
   _inject(cx,cy,r,amount,fire) {
     const w=this.w,h=this.h,x0=Math.max(1,Math.floor(cx-r*2)),x1=Math.min(w-2,Math.ceil(cx+r*2));
@@ -144,13 +195,17 @@ export class SmokeField {
       u[k] += (dy/len)*curl[k]*dt*4.5;
       v[k] -= (dx/len)*curl[k]*dt*4.5;
     }
+    this._walls();
     const decay=Math.exp(-dt*(.39+dying*3.7)),cool=Math.exp(-dt*(1.8+dying*3.6));
     for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
       const k=y*w+x;
       const dx=x-cx,dy=y-cy,r=Math.max(1,Math.hypot(dx,dy));
       // The blow-out component spreads the cloud outward instead of letting it
       // swirl in one spot; only the caster emits new material.
-      const radiate=blast*strength*22/(1+r*.03);
+      // Outward force turns into recirculating wall flow rather than moving
+      // smoke through the container. Projected backtraces stay within the box.
+      const boundary=Math.min(x-1,y-1,w-2-x,h-2-y);
+      const radiate=blast*strength*22/(1+r*.03)*smooth(boundary/5);
       const vx=u[k]+(dx/r)*radiate,vy=v[k]+(dy/r)*radiate;
       const bx=x-vx*dt,by=y-vy*dt;
       this.nextDensity[k]=this.sample(this.density,bx,by)*decay;
@@ -158,6 +213,7 @@ export class SmokeField {
     }
     [this.density,this.nextDensity]=[this.nextDensity,this.density];
     [this.heat,this.nextHeat]=[this.nextHeat,this.heat];
+    this._fieldEdges();
     this.nextDensity.fill(0);this.nextHeat.fill(0);
     // Two hands releasing overlapping hot plumes; the rest of the battlefield
     // receives only advected density. Nothing is painted globally.
@@ -181,7 +237,7 @@ export class SmokeField {
       const [vx,vy]=this.velocityAt(p.x,p.y);
       p.x += vx*dt*.94+(hash(this.seed+p.age*19)-.5)*dt*2;
       p.y += vy*dt*.94-dt*2.4;
-      if(p.x<0||p.x>=w||p.y<0||p.y>=h)continue;
+      this._reflectParticle(p);
       rest.push(p);
     }
     this.embers=rest;
@@ -192,7 +248,7 @@ export class SmokeField {
       const [vx,vy]=this.velocityAt(puff.x,puff.y);
       puff.x+=vx*dt*.88;
       puff.y+=(vy-1.9)*dt;
-      if(puff.x<-8||puff.x>w+8||puff.y<-8||puff.y>h+8)continue;
+      this._reflectParticle(puff);
       puffs.push(puff);
     }
     this.puffs=puffs;
