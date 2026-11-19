@@ -75,3 +75,19 @@ test('Animation Lab health bars use the main GRAFTBOUND HP-only labels (not crea
   assert.match(css,/\.hpbar span\{[^}]*left:-16px;top:-4px/);
   assert.doesNotMatch(css,/\.unit-label|\.foe \.hp i/);
 });
+
+test('Pyroclasm animation plays without in-arena phase titles, banners or narrative overlays', () => {
+  const html=read('../dev/animation-studio/index.html');
+  const studio=read('../dev/animation-studio/studio.js');
+  const css=read('../dev/animation-studio/studio.css');
+  assert.doesNotMatch(html,/id="phase"|class="phase"|class="battle-stamp"/);
+  assert.doesNotMatch(studio,/\$\('phase'\)|PHASES\.filter|current\.label/);
+  assert.doesNotMatch(css,/\.phase\{|\.battle-stamp\{/);
+  // Preserve damage and HP feedback plus below-board QA status.
+  assert.match(html,/id="labels"/);
+  assert.match(html,/id="outcome"/);
+  assert.match(html,/id="count"/);
+  assert.match(studio,/note\('The storm clears\./);
+  assert.match(studio,/m\.value\.textContent = String\(u\.hp\)/);
+  assert.match(studio,/\$\('count'\)\.textContent = '7 \/ 7 HIT'/);
+});
