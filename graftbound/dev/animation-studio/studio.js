@@ -359,13 +359,17 @@ function tick(now) {
   showSpriteCounts();
   } catch(err) {
     if(sc?.mode==='canvas-2d') {
-      // Errors in the CPU fallback should be explicit rather than hidden
-      // behind the old generic WebGL2 warning.
-      $('loading').textContent='The mobile preview encountered a rendering error. Please reload to retry.';
-      $('loading').hidden=false;
+      // The initial loading overlay was removed after startup. Re-create it
+      // on a later CPU render failure instead of throwing from this handler.
+      let loading=$('loading');
+      if(!loading){
+        loading=document.createElement('div');
+        loading.id='loading';loading.className='loading';
+        effects.parentNode.appendChild(loading);
+      }
+      loading.textContent='The mobile preview encountered a rendering error. Please reload to retry.';
       console.error('Pyroclasm Canvas 2D rendering error:',err);
-      playing=false;
-      sc=null;
+      playing=false;sc=null;
     } else {
       startCompatibleScene(err?.message||'WebGL scene interrupted');
       resetBattle();
@@ -383,6 +387,12 @@ spriteDensitySel.addEventListener('change',()=>{
 particlesSel.addEventListener('change',()=>{if(sc)sc.setQuality(particlesSel.value==='high'?'high':particlesSel.value==='low'?'performance':'balanced');if(sc&&!playing)resetBattle();});
 motionSel.addEventListener('change',()=>{if(sc)sc.reduced=motionSel.value==='reduced';if(sc&&!playing)resetBattle();});
 window.addEventListener('resize',resize);
+canvas.addEventListener('webglcontextlost',event=>{
+  event.preventDefault();
+  if(!sc||sc.mode==='canvas-2d')return;
+  startCompatibleScene('WebGL context lost');
+  begin();
+});
 window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r'&&!e.repeat&&!['SELECT','INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){e.preventDefault();begin();}});
 (async()=>{
   try {
