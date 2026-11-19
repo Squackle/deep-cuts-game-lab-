@@ -1,8 +1,6 @@
 // GRAFTBOUND Animation Studio: isolated visual scene using the actual WebGL battlefield renderer.
 // No save, combat-run, score, Scryfall, or server state. Gameplay values are a clearly labeled fixture.
-import { Scene } from '../../src/rendering/scene.js';
 import { CanvasBattleScene } from './canvas-scene.js';
-import { loadAssets } from '../../src/rendering/sprites.js';
 import { buildEncounter } from '../../src/engine/encounters.js';
 import { ACTS } from '../../src/data/encounters.js';
 import { SCENARIO, PHASES, DURATION, IMPACT_TIME, resolveBoardFire, FIRE_BOARD_WIPE_EFFECT, isFireBoardWipeEligible } from './scenario.js';
@@ -394,6 +392,12 @@ window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r'&&!e.repeat&&!
       startCompatibleScene('mobile');
     }else{
       try {
+        // Heavy WebGL scene and original 3D creature art are desktop-only
+        // dynamic imports. Mobile Safari loads no 3D renderer dependency tree.
+        const [{Scene},{loadAssets}]=await Promise.all([
+          import('../../src/rendering/scene.js'),
+          import('../../src/rendering/sprites.js')
+        ]);
         const assets=await loadAssets();
         sc=new Scene(canvas,assets);
         $('renderer-status').textContent='Full 3D renderer';
