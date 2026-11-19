@@ -43,7 +43,9 @@ test('tile projection aligns arena corners to true 8 by 8 world coordinates',()=
     world:(x,y)=>[x-3.5,0,y-3.5],
     project:([x,y,z])=>({x:200+x*11+z*6,y:180+z*8-y*7})
   };
-  assert.deepEqual(arenaPoint(scene,0,0,.12),{x:132,y:147.16});
+  const corner=arenaPoint(scene,0,0,.12);
+  assert.equal(corner.x,132);
+  assert.ok(Math.abs(corner.y-147.16)<1e-6);
   const bounds=arenaPolygon(scene,.12);
   assert.equal(bounds.length,4);
   assert.deepEqual(bounds[2],arenaPoint(scene,1,1,.12));
