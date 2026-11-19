@@ -79,3 +79,11 @@ Owner-approved visual treatments:
 Implementation: `pixel-art.js` builds deterministic, original low-resolution 48×29 Ash A, 9×13 Ember B and 17×23 Flame C raster images (8 frames each). The browser uploads each image to a dedicated tiny offscreen Canvas only once; the actual battle overlay draws them nearest-neighbor (no blurred strokes, smoothed vector wedges or triangles). Sprites are positioned via `Scene.world()` + `Scene.project()`, follow live particle positions, and are clipped inside the 8×8 arena tile polygon. Sprites are deterministic for a fixed simulation state and have lower particle counts under reduced-motion settings.
 
 Important: This is **original procedural pixel art approximating the owner's chosen concepts**, not a conversion of the reference illustration or Magic card art. It must be visually reviewed on the deployed Animation Lab and can be tuned after user feedback. Physics remains the same 2D approximation; this PR does not claim true 3D fluid collision. Roll back by reverting this Animation Lab-only PR, restoring the previous test visuals without changing normal game saves or rules.
+
+## November 19 — comparing fire sprite quantities
+
+Added an independent **Fire sprite density** selector to the Cinderstorm preview with `Original 1×`, `Light 1.35×`, `Requested 1.5×`, and `Full 1.75×`. The three larger settings are intentionally compared against the previously approved 1× baseline.
+
+This control affects **only** the frequency and corresponding live cap of the original Rising Ember B and Curling Flame C particles. A deterministic fractional spawn accumulator preserves the requested average factor (including 1.35× and 1.75×, which cannot be represented by rounding each spawn tick independently). Actual advected smoke, heat, fuel, fire combustion field, Ash A graphics, 2-damage fixture, and creature health bars remain unchanged. Density changes replay the fixture from the beginning for a useful visual comparison; the HUD shows active B/C counts and their peak counts after completion.
+
+Sprite population and reduced-motion caps scale together; the original 1× behavior remains the default. QA must confirm both particle families are visibly more numerous at all three higher presets, the 8×8 board mask still clips them, and the preview works on desktop/mobile without changing live gameplay or saved runs.

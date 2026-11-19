@@ -12,7 +12,7 @@ import { createPixelAtlas } from './pixel-art.js';
 const $ = id => document.getElementById(id);
 const canvas = $('scene'), effects = $('effects'), ctx = effects.getContext('2d');
 const replayBtn = $('replay'), resetBtn = $('reset'), labels = $('labels');
-const speedSel = $('speed'), particlesSel = $('particles'), motionSel = $('motion'), smokeSel = $('smoke'), fireSel = $('fire');
+const speedSel = $('speed'), particlesSel = $('particles'), motionSel = $('motion'), smokeSel = $('smoke'), fireSel = $('fire'), spriteDensitySel = $('sprite-density');
 const clamp = (n, a = 0, b = 1) => Math.max(a, Math.min(b, n));
 const smooth = n => { const t = clamp(n); return t*t*(3-2*t); };
 const frac = n => n - Math.floor(n);
@@ -21,6 +21,7 @@ const mix = (a, b, t) => a + (b-a)*t;
 const defaultReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
 motionSel.value = defaultReduced ? 'reduced' : 'full';
 let sc, smoke, smokeTexture, smokeCtx, pixelAtlas, playing = false, started = 0, elapsed = 0, prev = 0;
+let peakEmbers=0, peakFlames=0;
 let resolved = null, damaged = false, removed = false, lastCast = -1;
 const marks = new Map();
 const original = SCENARIO.map(u => ({ ...u }));
@@ -48,9 +49,19 @@ function prepareLabels() {
     marks.set(u.uid, { el, fill, value });
   }
 }
+function showSpriteCounts() {
+  if (!smoke) return;
+  const embers=smoke.embers.length, flames=smoke.flames.length;
+  peakEmbers=Math.max(peakEmbers,embers);
+  peakFlames=Math.max(peakFlames,flames);
+  $('sprite-counts').textContent=!playing&&elapsed>=DURATION
+    ? `Peak B: ${peakEmbers} embers · C: ${peakFlames} flames`
+    : `Active B: ${embers} embers · C: ${flames} flames`;
+}
 function resetBattle() {
   if (!sc) return;
   playing = false; elapsed = 0; damaged = false; removed = false; resolved = null; lastCast = -1;
+  peakEmbers=0; peakFlames=0;
   sc.loadArena(buildEncounter(ACTS[1].mid[0], 11, 'battle'), 11, 'warrens');
   sc.zoom = 1.17;
   sc.reduced = motionSel.value === 'reduced';
@@ -63,11 +74,12 @@ function resetBattle() {
   // The fluid's grid represents the 8x8 physical battlefield, not the
   // browser's rectangular viewport. Its boundaries are solid box walls.
   const cells = particlesSel.value === 'high' ? 112 : particlesSel.value === 'low' ? 56 : 80;
-  smoke = new SmokeField(cells,cells);
+  smoke = new SmokeField(cells,cells,{spriteDensity:Number(spriteDensitySel.value)});
   smokeTexture = document.createElement('canvas');
   smokeTexture.width = smokeTexture.height = cells*4;
   smokeCtx = smokeTexture.getContext('2d');
   prepareLabels(); $('count').textContent = '0 / 7 HIT';
+  showSpriteCounts();
   replayBtn.disabled = false; resetBtn.disabled = false;
   replayBtn.textContent = '▶ CAST CINDERSTORM';
   note('2 fire damage to every creature — including allies and the caster.', 'READY TO CAST');
@@ -314,9 +326,15 @@ function tick(now) {
   sc.frame(dt);
   renderLabels();
   drawCinderstorm(elapsed);
+  showSpriteCounts();
 }
 replayBtn.addEventListener('click', begin);
 resetBtn.addEventListener('click', resetBattle);
+// Every preset starts a fresh deterministic cast for immediate A/B/C comparison.
+// Only the two pixel sprite streams change; core fire, smoke, ash and damage do not.
+spriteDensitySel.addEventListener('change',()=>{
+  if(sc)begin();
+});
 particlesSel.addEventListener('change',()=>{if(sc)sc.setQuality(particlesSel.value==='high'?'high':particlesSel.value==='low'?'performance':'balanced');if(sc&&!playing)resetBattle();});
 motionSel.addEventListener('change',()=>{if(sc)sc.reduced=motionSel.value==='reduced';if(sc&&!playing)resetBattle();});
 window.addEventListener('resize',resize);

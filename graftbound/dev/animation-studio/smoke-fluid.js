@@ -16,9 +16,23 @@ export function flameColor(temperature) {
   return stops[i].map((c,j)=>Math.round(c+(stops[i+1][j]-c)*f));
 }
 const FIRE_PALETTE=Array.from({length:256},(_,i)=>flameColor(i/255));
+// Sprite-only comparison presets. These never scale fuel, heat, smoke or ash.
+export const FIRE_SPRITE_DENSITIES=Object.freeze([1,1.35,1.5,1.75]);
+export function normalizedSpriteDensity(value) {
+  const number=Number(value);
+  return FIRE_SPRITE_DENSITIES.includes(number)?number:1;
+}
+// Carry fractional spawns between simulation frames. Compared with rounding
+// every frame, this accurately targets 1.35x, 1.5x and 1.75x over a full cast.
+export function scaledSpriteSpawn(base,scale,remainder=0) {
+  const exact=base*normalizedSpriteDensity(scale)+remainder;
+  const count=Math.floor(exact+1e-9);
+  return {count,remainder:Math.max(0,exact-count)};
+}
 
 export class SmokeField {
-  constructor(w = 98, h = 62) {
+  constructor(w = 98, h = 62, {spriteDensity=1}={}) {
+    this.spriteDensity=normalizedSpriteDensity(spriteDensity);
     this.w = Math.max(18, Math.floor(w));
     this.h = Math.max(18, Math.floor(h));
     this.n = this.w*this.h;
@@ -37,6 +51,8 @@ export class SmokeField {
     this.puffs.length = 0;
     this.flames.length = 0;
     this.seed = 0;
+    this._emberCarry=0;
+    this._flameCarry=0;
     this.origin = {x:this.w*.5,y:this.h*.5};
     this.frame = null;
   }
@@ -140,9 +156,11 @@ export class SmokeField {
   }
   _spawnEmbers(cx,cy,t,charge,blast,reduced) {
     if(t>3.42)return;
-    const count=reduced?2:Math.round(2+5*charge+7*blast);
-    const max=reduced?48:170;
-    for(let i=0;i<count && this.embers.length<max;i++){
+    const spawn=scaledSpriteSpawn(reduced?2:Math.round(2+5*charge+7*blast),
+      this.spriteDensity,this._emberCarry);
+    this._emberCarry=spawn.remainder;
+    const max=Math.round((reduced?48:170)*this.spriteDensity);
+    for(let i=0;i<spawn.count && this.embers.length<max;i++){
       const a=t*11.5+i*2.399+hash(++this.seed)*.8;
       const r=1+hash(this.seed+47)*2.5;
       this.embers.push({
@@ -170,9 +188,11 @@ export class SmokeField {
   }
   _spawnFlames(cx,cy,t,charge,blast,reduced) {
     if(t>3.31)return;
-    const count=reduced?1:Math.round(2+2*charge+2*blast);
-    const max=reduced?30:96;
-    for(let i=0;i<count&&this.flames.length<max;i++) {
+    const spawn=scaledSpriteSpawn(reduced?1:Math.round(2+2*charge+2*blast),
+      this.spriteDensity,this._flameCarry);
+    this._flameCarry=spawn.remainder;
+    const max=Math.round((reduced?30:96)*this.spriteDensity);
+    for(let i=0;i<spawn.count&&this.flames.length<max;i++) {
       const a=t*(5.4+6.5*charge)+i*2.39996+(hash(++this.seed)-.5)*.7;
       const r=.6+hash(this.seed+19)*2.6;
       const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r*.82;
