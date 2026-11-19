@@ -18,10 +18,10 @@ export function resolveBoardFire(units, amount = DAMAGE) {
 }
 export const PHASES = Object.freeze([
   { time: 0, label: 'THE INVOCATION' },
-  { time: 0.58, label: 'THE ASCENT' },
-  { time: 1.35, label: 'THE VORTEX' },
-  { time: 2.12, label: 'THE DEVASTATION' },
-  { time: 2.82, label: 'ASHFALL' }
+  { time: 0.62, label: 'THE ASCENT' },
+  { time: 1.37, label: 'THE VORTEX' },
+  { time: 2.56, label: 'THE DEVASTATION' },
+  { time: 3.62, label: 'ASHFALL' }
 ]);
-export const IMPACT_TIME = 2.36;
-export const DURATION = 4.2;
+export const IMPACT_TIME = 3.16;
+export const DURATION = 5.2;
