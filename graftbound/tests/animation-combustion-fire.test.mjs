@@ -92,3 +92,14 @@ test('unheated fuel does not spontaneously ignite; temperature must exceed ignit
  assert.ok(hot.flame[i]>0,'hot fuel reacts');
  assert.ok(hot.fuel[i]<cold.fuel[i],'combustion consumes additional fuel');
 });
+
+test('fire polish caps heat and flame reaction rather than saturating to a white slab',()=>{
+ const f=new SmokeField(56,56);
+ evolve(f,3.03);
+ assert.ok(Math.max(...f.flame)<=6.5001,'flame field stays within its reaction range');
+ assert.ok(Math.max(...f.heat)<=6.2001,'heat remains within the artist-directed color range');
+ assert.ok(f.flames.length<=96,'peak flame tongues are bounded for browser performance');
+ const studio=readFileSync(new URL('../dev/animation-studio/studio.js',import.meta.url),'utf8');
+ assert.match(studio,/ctx\.bezierCurveTo\(/,'the flame body uses a curved, wind-bent silhouette');
+ assert.doesNotMatch(studio,/#fff7cb/,'the previous additive white spike core was removed');
+});
