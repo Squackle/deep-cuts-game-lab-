@@ -1,4 +1,27 @@
 // Animation studio fixture only. The live GRAFTBOUND combat engine and saves are untouched.
+// Pyroclasm is the reference card for this visual-only fire sweeper. The FX is
+// reusable for OTHER red, fire-themed creature board wipes, not generic red
+// spells or a separate invented spell called "Cinderstorm". This predicate is
+// an explicit future-integration contract; it is NOT connected to live combat.
+export const FIRE_BOARD_WIPE_EFFECT = Object.freeze({
+  id: 'red-fire-board-wipe',
+  previewCard: 'Pyroclasm',
+  colors: Object.freeze(['R']),
+  visualTheme: 'fire',
+  action: 'board-wipe',
+  targets: 'all-creatures',
+  previewDamage: 2,
+  studioOnly: true
+});
+export function isFireBoardWipeEligible(spell) {
+  if (!spell || typeof spell !== 'object') return false;
+  const colors=spell.colors;
+  return Array.isArray(colors)
+    && colors.includes('R')
+    && spell.visualTheme==='fire'
+    && spell.action==='board-wipe'
+    && spell.targets==='all-creatures';
+}
 export const DAMAGE = 2;
 export const SCENARIO = Object.freeze([
   { uid: 1, name: 'The Blank · caster', side: 'player', x: 2, y: 5, hp: 5, maxHp: 5, sprite: 'blank' },

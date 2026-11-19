@@ -1,4 +1,4 @@
-// GRAFTBOUND Cinderstorm Animation Lab: 2D fluid + fuel-limited combustion solver.
+// GRAFTBOUND Pyroclasm / red fire board-wipe Animation Lab: 2D fluid + fuel-limited combustion solver.
 // Semi-Lagrangian transport, pressure projection, vorticity, fuel reaction and heat buoyancy.
 // The camera-facing smoke sheet is an illusion of volume, NOT a full 3D fluid solver.
 // Reference principles: NVIDIA GPU Gems chapter 38; Unreal Niagara 2D Gas; Unity Curl Noise.
