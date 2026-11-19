@@ -15,16 +15,18 @@
 <div class="battle-stamp">THE ASHEN WARRENS · 8×8 CONTAINMENT · 7 CREATURES</div>
 <div id="loading" class="loading" role="status">Preparing GRAFTBOUND battle renderer…</div>
 </div>
-<div class="under"><span id="outcome" aria-live="polite">2 fire damage to every creature — including allies and the caster.</span><span id="count">0 / 7 HIT</span></div></section>
+<div class="under"><span id="outcome" aria-live="polite">2 fire damage to every creature — including allies and the caster.</span><span id="sprite-counts" aria-label="Pixel fire sprite counts">B: 0 embers · C: 0 flames</span><span id="count">0 / 7 HIT</span></div></section>
 <section class="controls" aria-label="Animation controls">
 <button id="replay" type="button" class="primary" disabled>▶ CAST CINDERSTORM</button>
 <button id="reset" type="button" disabled>↺ RESET BATTLE</button>
 <label>Playback <select id="speed"><option value="1">Cinematic · 1×</option><option value="0.75">Slow · 0.75×</option><option value="1.4">Fast · 1.4×</option></select></label>
+<label>Fire sprite density <select id="sprite-density" aria-label="Pixel fire sprite density"><option value="1">Original · 1×</option><option value="1.35">Light · 1.35×</option><option value="1.5">Requested · 1.5×</option><option value="1.75">Full · 1.75×</option></select></label>
 <label>Particles <select id="particles"><option value="balanced">Balanced</option><option value="high">High detail</option><option value="low">Low power</option></select></label>
 <label>Fire intensity <select id="fire"><option value="1.2">Card-art bright</option><option value="1.5">Inferno</option><option value="0.82">Subtle</option></select></label>
 <label>Aftermath smoke <select id="smoke"><option value="0.72">Light (default)</option><option value="1">Normal</option><option value="1.35">Thick</option></select></label>
 <label>Motion <select id="motion"><option value="full">Full</option><option value="reduced">Reduced</option></select></label>
 </section>
+<p class="density-note">Changing fire sprite density automatically replays the same scenario. Both Rising Embers (B) and Curling Flames (C) scale together; smoke, ash and damage stay the same. The counter shows active sprites during casting and peak counts afterward.</p>
 <section class="notes"><div><strong>BEFORE</strong><p>Seven creatures are positioned so the wipe visibly kills weaker creatures on both sides while tougher units survive.</p></div>
 <div><strong>DURING</strong><p>Caster-emitted fuel ignites into a spiral of fire that spreads along the tiles. Pixel-art Rising Embers and Curling Flames follow the airflow throughout the spell, with no orange wedge particles. Smoke trails the fire.</p></div>
 <div><strong>AFTER</strong><p>Defeated creatures leave the approved pale-gray Ash A pixel-art mounds; survivors retain reduced health. This is a lightweight 2D combustion preview, not full volumetric simulation or a live combat turn.</p></div></section>
