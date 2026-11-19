@@ -77,3 +77,16 @@ test('Animation Lab only: flame tongues and reaction rendering respect the physi
  assert.match(html,/id="fire"/);
  assert.doesNotMatch(code,/localStorage|sessionStorage|\/api\//);
 });
+
+test('unheated fuel does not spontaneously ignite; temperature must exceed ignition threshold',()=>{
+ const cold=new SmokeField(40,40),hot=new SmokeField(40,40);
+ const i=20*40+20;
+ for(const f of [cold,hot]) {f.fuel[i]=3;f.time=3.44;}
+ cold.heat[i]=.01;
+ hot.heat[i]=4;
+ cold.step({x:.5,y:.5});
+ hot.step({x:.5,y:.5});
+ assert.equal(cold.flame[i],0,'fuel with no heat has zero reaction');
+ assert.ok(hot.flame[i]>0,'hot fuel reacts');
+ assert.ok(hot.fuel[i]<cold.fuel[i],'combustion consumes additional fuel');
+});
