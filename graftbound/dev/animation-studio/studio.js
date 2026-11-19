@@ -4,7 +4,7 @@ import { CanvasBattleScene } from './canvas-scene.js';
 import { buildEncounter } from '../../src/engine/encounters.js';
 import { ACTS } from '../../src/data/encounters.js';
 import { SCENARIO, DURATION, IMPACT_TIME, resolveBoardFire, FIRE_BOARD_WIPE_EFFECT, isFireBoardWipeEligible } from './scenario.js';
-import { SmokeField, spreadImpactDelay } from './smoke-fluid.js';
+import { SmokeField } from './smoke-fluid.js';
 import { drawSmokeOnArena, clipToArena, arenaPoint } from './arena-projection.js';
 import { createPixelAtlas } from './pixel-art.js';
 import { ashSmokePuffs } from './ash-smoke.js';
