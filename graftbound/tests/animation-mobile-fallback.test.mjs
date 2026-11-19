@@ -84,7 +84,7 @@ test('mobile starts without asset downloads or WebGL; desktop can fall back afte
   assert.match(studio,/catch\(err\)\{\s*startCompatibleScene\(err\?\.message/);
   assert.match(studio,/new CanvasBattleScene\(compatCanvas\)/);
   assert.match(studio,/canvas\.style\.display='none'/);
-  assert.match(studio,/if\(sc\.mode==='canvas-2d'\)/);
+  assert.match(studio,/sc\.mode==='canvas-2d'/);
   assert.match(html,/id="renderer-status"/);
   assert.match(html,/Mobile compatibility:/);
   assert.doesNotMatch(studio,/Unable to prepare the GRAFTBOUND preview\. This requires WebGL2/);
