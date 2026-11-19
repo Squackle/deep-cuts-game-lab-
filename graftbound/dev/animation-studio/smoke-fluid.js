@@ -1,5 +1,5 @@
-// GRAFTBOUND Cinderstorm Animation Lab: small, independently-authored 2D smoke simulator.
-// Grid-based semi-Lagrangian transport + pressure projection + curl turbulence + buoyancy.
+// GRAFTBOUND Cinderstorm Animation Lab: 2D fluid + fuel-limited combustion solver.
+// Semi-Lagrangian transport, pressure projection, vorticity, fuel reaction and heat buoyancy.
 // The camera-facing smoke sheet is an illusion of volume, NOT a full 3D fluid solver.
 // Reference principles: NVIDIA GPU Gems chapter 38; Unreal Niagara 2D Gas; Unity Curl Noise.
 // Pure math until render() is called; it never reads game state, save data or gameplay RNG.
@@ -13,18 +13,20 @@ export class SmokeField {
     this.w = Math.max(18, Math.floor(w));
     this.h = Math.max(18, Math.floor(h));
     this.n = this.w*this.h;
-    for(const k of ['u','v','nu','nv','density','heat','nextDensity','nextHeat','div','p','pn','curl']) {
+    for(const k of ['u','v','nu','nv','density','heat','fuel','flame','nextDensity','nextHeat','nextFuel','nextFlame','div','p','pn','curl']) {
       this[k] = new Float32Array(this.n);
     }
     this.embers = [];
     this.puffs = [];
+    this.flames = [];
     this.reset();
   }
   reset() {
-    for(const k of ['u','v','nu','nv','density','heat','nextDensity','nextHeat','div','p','pn','curl']) this[k].fill(0);
+    for(const k of ['u','v','nu','nv','density','heat','fuel','flame','nextDensity','nextHeat','nextFuel','nextFlame','div','p','pn','curl']) this[k].fill(0);
     this.time = 0;
     this.embers.length = 0;
     this.puffs.length = 0;
+    this.flames.length = 0;
     this.seed = 0;
     this.origin = {x:this.w*.5,y:this.h*.5};
     this.frame = null;
@@ -63,7 +65,7 @@ export class SmokeField {
     // Reflective density/heat ghost cells preserve gas at the border instead of
     // destroying it when the advancing smoke front impacts a wall.
     const {w,h}=this;
-    for(const a of [this.density,this.heat]){
+    for(const a of [this.density,this.heat,this.fuel,this.flame]){
       for(let y=1;y<h-1;y++){
         const k=y*w;
         a[k]=a[k+1];a[k+w-1]=a[k+w-2];
@@ -120,8 +122,11 @@ export class SmokeField {
       const k=y*w+x, q=((x-cx)**2+(y-cy)**2)*rr;
       if(q>=4)continue;
       const falloff=Math.exp(-q*1.3);
-      this.density[k]=Math.min(8,this.density[k]+amount*falloff);
-      this.heat[k]=Math.min(5,this.heat[k]+fire*falloff);
+      // Fuel and heat are emitted locally; smoke is mostly a combustion
+      // by-product rather than a cloud painted directly at the caster.
+      this.density[k]=Math.min(8,this.density[k]+amount*.07*falloff);
+      this.fuel[k]=Math.min(9,this.fuel[k]+amount*1.15*falloff);
+      this.heat[k]=Math.min(7,this.heat[k]+fire*1.15*falloff);
     }
   }
   _spawnEmbers(cx,cy,t,charge,blast,reduced) {
@@ -152,6 +157,18 @@ export class SmokeField {
         size:2.4+hash(this.seed+9)*2.9,
         rotate:hash(this.seed+11)*Math.PI*2
       });
+    }
+  }
+  _spawnFlames(cx,cy,t,charge,blast,reduced) {
+    if(t>3.31)return;
+    const count=reduced?1:Math.round(3+4*charge+3*blast);
+    const max=reduced?45:210;
+    for(let i=0;i<count&&this.flames.length<max;i++) {
+      const a=t*(5.4+6.5*charge)+i*2.39996+(hash(++this.seed)-.5)*.7;
+      const r=.6+hash(this.seed+19)*2.6;
+      const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r*.82;
+      this.flames.push({x,y,px:x,py:y,age:0,life:.38+hash(this.seed+71)*.87,
+        size:.58+hash(this.seed+13)*.9,seed:hash(this.seed+97),heat:1});
     }
   }
   step(origin = {x:.5,y:.5},reduced=false) {
@@ -196,7 +213,11 @@ export class SmokeField {
       v[k] -= (dx/len)*curl[k]*dt*4.5;
     }
     this._walls();
-    const decay=Math.exp(-dt*(.28+dying*3.7)),cool=Math.exp(-dt*(1.8+dying*3.6));
+    // Four separately advected scalar fields: fuel, hot gas, emitted flame and
+    // the smaller soot residue. Combustion happens after transport.
+    const decay=Math.exp(-dt*(.94+dying*1.8)),cool=Math.exp(-dt*(.88+dying*2.8));
+    const fuelDecay=Math.exp(-dt*(.30+dying*3.2));
+    const flameDecay=Math.exp(-dt*(2.25+dying*5.1));
     for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
       const k=y*w+x;
       const dx=x-cx,dy=y-cy,r=Math.max(1,Math.hypot(dx,dy));
@@ -210,11 +231,16 @@ export class SmokeField {
       const bx=x-vx*dt,by=y-vy*dt;
       this.nextDensity[k]=this.sample(this.density,bx,by)*decay;
       this.nextHeat[k]=this.sample(this.heat,bx,by)*cool;
+      this.nextFuel[k]=this.sample(this.fuel,bx,by)*fuelDecay;
+      this.nextFlame[k]=this.sample(this.flame,bx,by)*flameDecay;
     }
     [this.density,this.nextDensity]=[this.nextDensity,this.density];
     [this.heat,this.nextHeat]=[this.nextHeat,this.heat];
+    [this.fuel,this.nextFuel]=[this.nextFuel,this.fuel];
+    [this.flame,this.nextFlame]=[this.nextFlame,this.flame];
     this._fieldEdges();
     this.nextDensity.fill(0);this.nextHeat.fill(0);
+    this.nextFuel.fill(0);this.nextFlame.fill(0);
     // Two hands releasing overlapping hot plumes; the rest of the battlefield
     // receives only advected density. Nothing is painted globally.
     if(t<3.28){
@@ -227,8 +253,23 @@ export class SmokeField {
       }
       this._inject(cx,cy,3.1,8*strength*dt,3*strength*dt);
       this._spawnPuffs(cx,cy,t,charge,blast,reduced);
+      this._spawnFlames(cx,cy,t,charge,blast,reduced);
       this._spawnEmbers(cx,cy,t,charge,blast,reduced);
     }
+    // A fuel-limited, finite ignition reaction: burning consumes fuel,
+    // deposits temperature and luminous reaction products, and makes a
+    // small amount of smoke. The hot core ignites incoming fuel.
+    for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
+      const k=y*w+x;
+      const ignition=smooth((this.heat[k]-.23)/.87);
+      if(ignition<=0||this.fuel[k]<=0)continue;
+      const burn=Math.min(this.fuel[k],this.fuel[k]*ignition*dt*(3.8+1.8*charge));
+      this.fuel[k]-=burn;
+      this.heat[k]=Math.min(8,this.heat[k]+burn*.65);
+      this.flame[k]=Math.min(10,this.flame[k]+burn*6.2);
+      this.density[k]=Math.min(8,this.density[k]+burn*.075);
+    }
+    this._fieldEdges();
     const rest=[];
     for(const p of this.embers){
       p.age+=dt;
@@ -252,6 +293,19 @@ export class SmokeField {
       puffs.push(puff);
     }
     this.puffs=puffs;
+    const tongues=[];
+    for(const f of this.flames) {
+      f.age+=dt;
+      if(f.age>=f.life)continue;
+      f.px=f.x;f.py=f.y;
+      const [vx,vy]=this.velocityAt(f.x,f.y);
+      f.x+=vx*dt*.96;
+      f.y+=(vy-2.1)*dt*.96;
+      this._reflectParticle(f);
+      f.heat=clamp(this.sample(this.flame,f.x,f.y)/2.8,0,1);
+      tongues.push(f);
+    }
+    this.flames=tongues;
     this.time=t;
   }
   advanceTo(time,origin,reduced=false) {
@@ -267,13 +321,16 @@ export class SmokeField {
   }
   stats(origin={x:.5,y:.5}) {
     const cx=origin.x*(this.w-1),cy=origin.y*(this.h-1);
-    let mass=0,radialMass=0,remote=0;
+    let mass=0,radialMass=0,remote=0,fuelMass=0,flameMass=0,heatMass=0;
     for(let y=0;y<this.h;y++)for(let x=0;x<this.w;x++){
       const d=this.density[y*this.w+x],r=Math.hypot(x-cx,y-cy);
       mass+=d;radialMass+=d*r;
+      fuelMass+=this.fuel[y*this.w+x];
+      flameMass+=this.flame[y*this.w+x];
+      heatMass+=this.heat[y*this.w+x];
       if(r>Math.min(this.w,this.h)*.31)remote+=d;
     }
-    return {mass,radius:mass>0?radialMass/mass:0,remote};
+    return {mass,radius:mass>0?radialMass/mass:0,remote,fuel:fuelMass,flame:flameMass,heat:heatMass};
   }
   render(ctx,width,height,{smoke=1,reduced=false}={}) {
     if(!this.surface){
