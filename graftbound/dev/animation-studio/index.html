@@ -7,7 +7,7 @@
 <body><div class="shell">
 <header class="bar"><a href="/animation-lab/" aria-label="Back to Animation Lab">← ANIMATION LAB</a><strong>GRAFT<span>BOUND</span> / EFFECT STUDIES</strong><a href="/lab/" aria-label="Back to Game Lab">ALL GAMES ↗</a></header>
 <main><section class="intro"><p class="eyebrow">BOARD WIPE STUDY 001 · PYROCLASM</p><h1>CINDER<span>STORM</span></h1>
-<p>The caster spins with arms raised, pulling embers into an accelerating vortex. Fire-laced smoke sweeps across both teams. When it clears, survivors are scarred and the fallen leave only ash.</p>
+<p>The caster spins with arms raised, pulling embers into a growing, turbulent fire vortex. Smoke emerges from the caster, rolls outward through shifting airflow and sweeps across both teams. When it clears, survivors are scarred and the fallen leave only ash.</p>
 </section>
 <section class="battle" aria-label="Scripted preview scenario">
 <div class="frame"><canvas id="scene" aria-label="GRAFTBOUND animation preview battlefield"></canvas><canvas id="effects" aria-hidden="true"></canvas>
@@ -21,10 +21,11 @@
 <button id="reset" type="button" disabled>↺ RESET BATTLE</button>
 <label>Playback <select id="speed"><option value="1">Cinematic · 1×</option><option value="0.75">Slow · 0.75×</option><option value="1.4">Fast · 1.4×</option></select></label>
 <label>Particles <select id="particles"><option value="balanced">Balanced</option><option value="high">High detail</option><option value="low">Low power</option></select></label>
+<label>Smoke volume <select id="smoke"><option value="1">Natural</option><option value="1.35">Thick</option><option value="0.72">Light</option></select></label>
 <label>Motion <select id="motion"><option value="full">Full</option><option value="reduced">Reduced</option></select></label>
 </section>
 <section class="notes"><div><strong>BEFORE</strong><p>Seven creatures are positioned so the wipe visibly kills weaker creatures on both sides while tougher units survive.</p></div>
-<div><strong>DURING</strong><p>Arm-waving casting poses and a spinning creature build a fire vortex. Smoke masks the exact moment all units take 2 damage.</p></div>
-<div><strong>AFTER</strong><p>Ash marks casualties; the others retain reduced health. This is an isolated presentation preview, not a live combat turn.</p></div></section>
+<div><strong>DURING</strong><p>Caster-sourced smoke is transported by a small fluid velocity field with turbulence and rising heat. Nothing fades in across the entire screen; the cloud must travel.</p></div>
+<div><strong>AFTER</strong><p>Ash marks casualties; survivors retain reduced health. The smoke is a fast 2D gas approximation, not a full volumetric 3D fluid or a live combat turn.</p></div></section>
 </main><footer>DEEP CUTS GAME LAB · VISUAL-ONLY SANDBOX · NO SAVES / SCORES / PUBLIC GAME CHANGES</footer></div>
 <script type="module" src="studio.js"></script></body></html>
