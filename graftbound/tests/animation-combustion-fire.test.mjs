@@ -44,7 +44,12 @@ test('rolling flame expands inside bounded arena without non-finite fields',()=>
  const f=new SmokeField(64,64);
  evolve(f,3.16);
  const z=f.stats(origin);
- assert.ok(z.flame>z.mass,'peak simulated reaction dominates soot');
+ // Fire/soot scalar masses have different physical meanings. Compare their
+ // opacity contributions using the same peak renderer terms instead.
+ const fireOpacity=f.flame.reduce((sum,v)=>sum+(1-Math.exp(-v*.50*1.2))*.86,0);
+ const sootOpacity=f.density.reduce((sum,v)=>sum+(1-Math.exp(-v*.60))*.095*.72,0);
+ assert.ok(fireOpacity/(fireOpacity+sootOpacity)>.76,
+   'visible flame contribution must dominate dark soot at peak');
  assert.ok(z.radius>2,'transport moves material away from caster');
  assert.ok(f.flames.length>0,'visible flame tongues are carried by velocity field');
  for(const p of f.flames){
@@ -91,4 +96,15 @@ test('unheated fuel does not spontaneously ignite; temperature must exceed ignit
  assert.equal(cold.flame[i],0,'fuel with no heat has zero reaction');
  assert.ok(hot.flame[i]>0,'hot fuel reacts');
  assert.ok(hot.fuel[i]<cold.fuel[i],'combustion consumes additional fuel');
+});
+
+test('fire polish caps heat and flame reaction rather than saturating to a white slab',()=>{
+ const f=new SmokeField(56,56);
+ evolve(f,3.03);
+ assert.ok(Math.max(...f.flame)<=6.5001,'flame field stays within its reaction range');
+ assert.ok(Math.max(...f.heat)<=6.2001,'heat remains within the artist-directed color range');
+ assert.ok(f.flames.length<=96,'peak flame tongues are bounded for browser performance');
+ const studio=readFileSync(new URL('../dev/animation-studio/studio.js',import.meta.url),'utf8');
+ assert.match(studio,/ctx\.bezierCurveTo\(/,'the flame body uses a curved, wind-bent silhouette');
+ assert.doesNotMatch(studio,/#fff7cb/,'the previous additive white spike core was removed');
 });

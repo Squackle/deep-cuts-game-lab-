@@ -61,3 +61,9 @@ November 19, 2026. Visual test only: `/graftbound/dev/animation-studio/`.
 **Honesty and limits:** These are established *techniques adapted to a CPU 2D visual simulator*, not a scientific combustion solver, 3D collision field, or genuinely photorealistic volumetric fire. The blackbody-*inspired* ramp is artist-directed rather than an integration of a calibrated blackbody spectrum. No imported Unreal/Houdini/NVIDIA code or copyrighted MTG art. The system changes neither actual game combat, card rules, ranked replays, accounts nor public Arcade. Any user-subjective visual quality still needs owner feedback after deployment.
 
 **Acceptance checks:** node syntax, stand-alone GRAFTBOUND and shared Game Lab CI, flame generated only near the caster, fuel consumed over time, all fields finite, flame reaction stronger than soot during attack, no particle leaves the invisible box, all screen-canvas corners outside the tiles transparent, desktop/mobile browser scene functioning, responsive controls, seven hits, three deaths, replay/reset unchanged. Rollback by reverting the Animation Lab PR.
+
+### Browser visual acceptance refinement (same day)
+
+A desktop browser capture of PR #212 at the **THE DEVASTATION** phase showed oversaturated yellow-white particles shaped like sharp upward spikes, even though the flame/soot simulation was fire-dominant and board clipping worked. Numerical simulation checks alone were not sufficient for visual acceptance.
+
+This follow-up keeps the same physics and repairs presentation: (1) reduce heat and reaction saturation caps, (2) lower the hottest-color ramp's effective temperature, (3) render 96 or fewer moving flame tongues rather than 210, (4) replace hard additive white cores with smaller translucent Bézier-curved ribbons that bend with the measured airflow. The aim is a readable, moving firestorm rather than white shards. Performance and real-device appearance still require end-user review.

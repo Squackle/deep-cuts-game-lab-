@@ -196,42 +196,33 @@ function drawContainedFlames(field,reduced) {
   const intensity=Number(fireSel.value);
   ctx.save();
   clipToArena(ctx,sc,0.04);
-  ctx.globalCompositeOperation='lighter';
+  ctx.globalCompositeOperation='source-over';
   for(const f of field.flames){
     const life=1-f.age/f.life;
-    const opacity=clamp(life*fade*(.34+.66*f.heat)*intensity*(reduced?.44:1),0,.93);
+    const opacity=clamp(life*fade*(.20+.55*f.heat)*intensity*(reduced?.48:1),0,.67);
     if(opacity<.045)continue;
     const [wx,,wz]=sc.world(f.x/(field.w-1)*sc.w-.5,f.y/(field.h-1)*sc.h-.5);
     const p=sc.project([wx,.22,wz]), tile=sc.project([wx+1,.22,wz]);
     const tilePx=Math.max(12,Math.hypot(tile.x-p.x,tile.y-p.y));
     const v=field.velocityAt(f.x,f.y);
-    const lean=clamp(v[0]*.19,-19,19)+Math.sin(f.age*12+f.seed*7)*3.3;
-    const height=tilePx*(.72+f.size*.75)*(1-f.age/f.life*.45);
-    const half=Math.max(2.1,tilePx*(.15+f.size*.08)*life);
+    const lean=clamp(v[0]*.16,-16,16)+Math.sin(f.age*9+f.seed*8)*3.2;
+    const height=tilePx*(.38+f.size*.53)*(1-f.age/f.life*.35);
+    const half=Math.max(2,tilePx*(.12+f.size*.075)*life);
     const tipX=p.x+lean,tipY=p.y-height;
     ctx.globalAlpha=opacity;
     const g=ctx.createLinearGradient(p.x,p.y,tipX,tipY);
-    g.addColorStop(0,'rgba(255,248,187,.98)');
-    g.addColorStop(.30,'rgba(255,189,54,.98)');
-    g.addColorStop(.73,'rgba(255,92,17,.77)');
-    g.addColorStop(1,'rgba(220,30,5,0)');
+    g.addColorStop(0,'rgba(255,224,105,.91)');
+    g.addColorStop(.36,'rgba(255,145,24,.85)');
+    g.addColorStop(.75,'rgba(255,65,11,.57)');
+    g.addColorStop(1,'rgba(209,29,4,0)');
     ctx.fillStyle=g;
+    // Unequal curved shoulders and a wind-bent tip read as flowing flame
+    // instead of the previous screenful of hard white triangular spikes.
     ctx.beginPath();
-    ctx.moveTo(p.x-half*1.18,p.y);
-    ctx.quadraticCurveTo(p.x-1.35*half+lean*.18,p.y-height*.48,tipX,tipY);
-    ctx.quadraticCurveTo(p.x+half*.95+lean*.32,p.y-height*.52,p.x+half*1.17,p.y);
-    ctx.closePath();
-    ctx.fill();
-    // Thin, brighter core near the burning ground plane.
-    if(f.heat>.19 && !reduced){
-      ctx.globalAlpha=opacity*.5;
-      ctx.fillStyle='#fff7cb';
-      ctx.beginPath();
-      ctx.moveTo(p.x-half*.44,p.y);
-      ctx.quadraticCurveTo(p.x+lean*.16,p.y-height*.35,tipX*.17+p.x*.83,p.y-height*.69);
-      ctx.quadraticCurveTo(p.x+half*.41,p.y-height*.20,p.x+half*.44,p.y);
-      ctx.closePath();ctx.fill();
-    }
+    ctx.moveTo(p.x-half*1.14,p.y);
+    ctx.bezierCurveTo(p.x-half*1.24,p.y-height*.24,tipX-half*.65,p.y-height*.62,tipX,tipY);
+    ctx.bezierCurveTo(tipX+half*.23,p.y-height*.73,p.x+half*1.16,p.y-height*.33,p.x+half*1.14,p.y);
+    ctx.closePath();ctx.fill();
   }
   ctx.restore();
 }
