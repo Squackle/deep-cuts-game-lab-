@@ -37,3 +37,27 @@ November 19, 2026. Visual test only: `/graftbound/dev/animation-studio/`.
 - A second lightweight elevated smoke sheet gives a subtle illusion of height while preserving the same battlefield outline. This **is not full 3D collision or true volumetric CFD**—walls are simulated in the 2D horizontal velocity field and projected in screen space.
 - Smoke density and pressure now respond to walls. No visible boundary geometry is drawn. The illusion is an invisible arena-sized enclosure.
 - Tests enforce zero outward velocity on all walls, trapped particle centers, retained edge density, and correctly projected/masked tile geometry. Check rotations and mobile camera after each release.
+
+## November 19 — Pyroclasm fire-dominant combustion pass
+
+**Visual goal:** Use the John Avon / Duskmourn Pyroclasm visual direction: an incandescent yellow-white and orange fireblast should be the primary effect; dark gas should trail, then linger as the flame extinguishes. The 80:20 fire/smoke description is an **art-direction target**, not a measured physical percentage or promise that every frame has exact pixel coverage.
+
+**Additional research:**
+- NVIDIA GPU Gems 3, *Real-Time Simulation and Rendering of 3D Fluids*: https://developer.nvidia.com/gpugems/gpugems3/part-v-physics-simulation/chapter-30-real-time-simulation-and-rendering-3d-fluids . Reference for advection, temperature and simplified combustion/reaction in bounded fluid grids.
+- SideFX Houdini, *Understanding How Pyro Works*: https://www.sidefx.com/docs/houdini/pyro/background.html . Reference for separate velocity, temperature, fuel/combustion and density fields, and density dissipation.
+- SideFX Houdini, *Flames*: https://www.sidefx.com/docs/houdini/pyro/flames.html . Reference for reaction/fuel-driven emission and smoke/heat byproducts.
+- SideFX Houdini, *Shading and Rendering*: https://www.sidefx.com/docs/houdini/pyro/shading.html . Reference for independently shading emissive fire versus absorbing soot.
+- Epic Unreal Niagara, *Fluid Simulation Overview*: https://dev.epicgames.com/documentation/en-us/unreal-engine/fluid-simulation-in-unreal-engine---overview . Reference for velocity/temperature/density grids and boundary conditions.
+- Original Magic card information/art reference: https://mtg.ink/card/pyroclasm ; the card art is a visual reference **only** and is never copied or embedded as game art.
+
+**Engineering implementation (isolated to Animation Lab):**
+1. Existing semi-Lagrangian 2D vortex with reflective/tangential wall behavior and 8×8 tile perspective projection remains. The sim now advects distinct **fuel**, **flame reaction**, **temperature**, and **soot density** fields.
+2. Caster hands are the only fuel/heat source. Every 30 Hz tick consumes fuel where the gas is hot enough, generates a transient reaction/flame channel, adds heat and only a small soot byproduct. Fuel and flame fade when not replenished.
+3. Heat and the reaction field control an **incandescent fire-color ramp**, not the amount of smoke. Soot retains its own translucency and becomes more visible during the ashfall; light bloom is sourced *only* from the flame image.
+4. Short-lived flame tongues originate near the caster, advect along the same velocity field, bend in its wind, rise above the tiles and clip at the invisible battlefield outline. Existing embers are similarly carried by the flow.
+5. Two projective flame layers and a few rising tongues provide a *pseudo-volume* illusion. Particle-density and reduced-motion settings remain for mobile accessibility/performance.
+6. Existing main-game HP bars, game-state-independent 2-damage fixture (to **all seven** creatures), three deaths and temporary ash piles are preserved.
+
+**Honesty and limits:** These are established *techniques adapted to a CPU 2D visual simulator*, not a scientific combustion solver, 3D collision field, or genuinely photorealistic volumetric fire. The blackbody-*inspired* ramp is artist-directed rather than an integration of a calibrated blackbody spectrum. No imported Unreal/Houdini/NVIDIA code or copyrighted MTG art. The system changes neither actual game combat, card rules, ranked replays, accounts nor public Arcade. Any user-subjective visual quality still needs owner feedback after deployment.
+
+**Acceptance checks:** node syntax, stand-alone GRAFTBOUND and shared Game Lab CI, flame generated only near the caster, fuel consumed over time, all fields finite, flame reaction stronger than soot during attack, no particle leaves the invisible box, all screen-canvas corners outside the tiles transparent, desktop/mobile browser scene functioning, responsive controls, seven hits, three deaths, replay/reset unchanged. Rollback by reverting the Animation Lab PR.
