@@ -18,7 +18,7 @@ test('Fire Sprite Density exposes original and all three comparison presets',()=
   const html=file('../dev/animation-studio/index.html');
   assert.match(html,/<select id="sprite-density"/);
   for (const value of FIRE_SPRITE_DENSITIES)
-    assert.ok(html.includes('<option value="'+value+'">'),
+    assert.match(html,new RegExp('<option value="'+value+'"(?: selected)?>'),
       'selector has '+value+'x as a user-selectable option');
 });
 
@@ -92,4 +92,28 @@ test('changing selector replays and shows both sprite counts without affecting A
   const html=file('../dev/animation-studio/index.html');
   assert.match(html,/id="sprite-counts"/);
   assert.match(html,/Changing fire sprite density automatically replays/);
+});
+
+test('approved Cinematic Inferno preset is the actual default, preserving user overrides',()=>{
+  const html=file('../dev/animation-studio/index.html');
+  const selects=[
+    ['speed','1'],
+    ['sprite-density','1.5'],
+    ['particles','high'],
+    ['fire','1.5'],
+    ['smoke','1.35'],
+    ['motion','full']
+  ];
+  for(const [id,value] of selects){
+    const select=html.match(new RegExp('<select id="'+id+'"[^>]*>([\\s\\S]*?)<\\/select>'));
+    assert.ok(select,'missing preset control '+id);
+    const selected=[...select[1].matchAll(/<option value="([^"]+)" selected>/g)].map(m=>m[1]);
+    assert.deepEqual(selected,[value],'approved selection for '+id);
+  }
+  assert.match(html,/Approved preset — Cinematic Inferno:/);
+  const studio=file('../dev/animation-studio/studio.js');
+  assert.match(studio,/const defaultReduced = window.matchMedia/);
+  assert.match(studio,/motionSel.value = defaultReduced \? 'reduced' : 'full'/,
+    'explicit accessibility preference still overrides full motion');
+  assert.doesNotMatch(studio,/localStorage|sessionStorage|\/api\//);
 });
