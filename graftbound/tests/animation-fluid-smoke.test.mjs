@@ -23,12 +23,14 @@ test('advected smoke forms a moving outward plume and is resettable', () => {
   assert.ok(late.radius>early.radius+1, 'plume must visibly spread out from player');
   assert.ok(late.remote>early.remote, 'density must reach more distant battlefield cells');
   assert.ok(field.embers.length>0, 'fire embers should be carried in the same flow');
+  assert.ok(field.puffs.length>0,'billows should be carried in the same airflow');
   for (const a of [field.u,field.v,field.density,field.heat]) {
     assert.ok(a.every(Number.isFinite),'simulation must remain finite');
   }
   field.reset();
   assert.equal(field.stats(origin).mass,0);
   assert.equal(field.embers.length,0);
+  assert.equal(field.puffs.length,0);
   assert.equal(field.time,0);
 });
 test('reduced motion still shows emanating localized gas without high-density sparks',()=>{
@@ -40,4 +42,12 @@ test('reduced motion still shows emanating localized gas without high-density sp
 test('simulated fluid is presentation only, without cookies, APIs or saving', () => {
   const s = String(SmokeField);
   assert.doesNotMatch(s,/localStorage|sessionStorage|\/api\/|fetch\(|saveRun|Math\.random/);
+});
+
+test('all moving smoke lobes emerge from the caster before traveling through the arena',()=>{
+ const f=new SmokeField(90,60),start={x:.31,y:.68};
+ f.advanceTo(.16,start);
+ assert.ok(f.puffs.length>0);
+ for(const puff of f.puffs) assert.ok(Math.hypot(puff.x-start.x*89,puff.y-start.y*59)<9,
+   'an early billow must not spawn away from caster');
 });
