@@ -4,7 +4,7 @@ import { Scene } from '../../src/rendering/scene.js';
 import { loadAssets } from '../../src/rendering/sprites.js';
 import { buildEncounter } from '../../src/engine/encounters.js';
 import { ACTS } from '../../src/data/encounters.js';
-import { SCENARIO, PHASES, DURATION, IMPACT_TIME, resolveBoardFire } from './scenario.js';
+import { SCENARIO, PHASES, DURATION, IMPACT_TIME, resolveBoardFire, FIRE_BOARD_WIPE_EFFECT, isFireBoardWipeEligible } from './scenario.js';
 import { SmokeField } from './smoke-fluid.js';
 import { drawSmokeOnArena, clipToArena, arenaPoint } from './arena-projection.js';
 import { createPixelAtlas } from './pixel-art.js';
@@ -25,6 +25,10 @@ let peakEmbers=0, peakFlames=0;
 let resolved = null, damaged = false, removed = false, lastCast = -1;
 const marks = new Map();
 const original = SCENARIO.map(u => ({ ...u }));
+// A visual-study eligibility guard, not a live-game spell dispatcher.
+// This spell effect is ONLY for red, fire-themed creature board wipes.
+if (!isFireBoardWipeEligible(FIRE_BOARD_WIPE_EFFECT))
+  throw new Error('The Pyroclasm preview requires a red fire-based creature board wipe.');
 
 function note(message, state) {
   $('phase').textContent = state || message;
@@ -81,14 +85,14 @@ function resetBattle() {
   prepareLabels(); $('count').textContent = '0 / 7 HIT';
   showSpriteCounts();
   replayBtn.disabled = false; resetBtn.disabled = false;
-  replayBtn.textContent = '▶ CAST CINDERSTORM';
+  replayBtn.textContent = '▶ CAST PYROCLASM';
   note('2 fire damage to every creature — including allies and the caster.', 'READY TO CAST');
 }
 function begin() {
   if (!sc) return;
   resetBattle();
   playing = true; started = performance.now();
-  replayBtn.textContent = '↻ REPLAY CINDERSTORM';
+  replayBtn.textContent = '↻ REPLAY PYROCLASM';
   note('The caster begins to summon a ring of burning embers.', 'THE INVOCATION');
 }
 function impact() {
@@ -242,7 +246,9 @@ function drawPixelFire(field,reduced) {
   }
   ctx.restore();
 }
-function drawCinderstorm(t) {
+// Shared visual for Pyroclasm and future eligible red fire-based board wipes.
+// The live combat engine must independently resolve each card's actual rules.
+function drawPyroclasm(t) {
   const w = effects.clientWidth, h = effects.clientHeight;
   ctx.clearRect(0,0,w,h);
   if(!sc?.cam||!smoke)return;
@@ -321,11 +327,11 @@ function tick(now) {
     }
     if (elapsed>=IMPACT_TIME) impact();
     if (elapsed>=3.60) removeFallen();
-    if (elapsed>=DURATION) {playing=false;replayBtn.textContent='↻ REPLAY CINDERSTORM';}
+    if (elapsed>=DURATION) {playing=false;replayBtn.textContent='↻ REPLAY PYROCLASM';}
   }
   sc.frame(dt);
   renderLabels();
-  drawCinderstorm(elapsed);
+  drawPyroclasm(elapsed);
   showSpriteCounts();
 }
 replayBtn.addEventListener('click', begin);
