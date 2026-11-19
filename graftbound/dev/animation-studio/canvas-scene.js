@@ -45,7 +45,7 @@ export class CanvasBattleScene {
   addUnit(u,spriteKey){
     const unit={uid:u.uid,side:u.side,key:spriteKey,pos:this.world(u.x,u.y),
       dir:u.side==='enemy'?[0,1]:[0,-1],anim:'idle',animT:0,castLift:0,
-      flash:0,hover:0,dead:false};
+      flash:0,hover:0,dead:false,fireLight:0,fireTint:[255,117,30]};
     this.units.set(u.uid,unit);
     return unit;
   }
@@ -129,7 +129,9 @@ export class CanvasBattleScene {
     const primary=foe?'#a45a48':'#557c8f';
     const highlight=foe?'#e6a18a':'#aed6da';
     const dark='#1b2021';
+    const lit=[];
     const r=(x,y,w,h,color)=>{
+      lit.push([x,y,w,h]);
       c.fillStyle=color;
       c.fillRect(Math.round(p.x+x*scale),Math.round(p.y+y*scale),Math.ceil(w*scale),Math.ceil(h*scale));
     };
@@ -162,6 +164,20 @@ export class CanvasBattleScene {
         r(-5,-25,11,3,cape);
       }
     }
+    if(v.fireLight>0.008){
+      const tint=v.fireTint||[255,125,40];
+      c.globalCompositeOperation='lighter';
+      c.globalAlpha=Math.min(.45,.43*v.fireLight);
+      c.fillStyle=`rgb(${tint[0]},${tint[1]},${tint[2]})`;
+      for(const [x,y,w,h] of lit){
+        c.fillRect(Math.round(p.x+x*scale),Math.round(p.y+y*scale),Math.ceil(w*scale),Math.ceil(h*scale));
+      }
+      c.globalAlpha=Math.min(.75,.64*v.fireLight);
+      // One-pixel rim on the caster-facing side, still crisp pixel geometry.
+      c.fillRect(Math.round(p.x-6*scale),Math.round(p.y-15*scale),Math.max(1,Math.round(scale)),Math.ceil(9*scale));
+      c.globalCompositeOperation='source-over';
+      c.globalAlpha=1;
+    }
     if(v.flash>0){
       c.globalAlpha=Math.min(.6,v.flash*1.5);
       c.fillStyle='#ffbc67';
@@ -173,6 +189,7 @@ export class CanvasBattleScene {
     this.time+=Math.max(0,dt);
     this._resize();
     this._board();
+    if(this.groundOverlay)this.groundOverlay(this.ctx);
     const units=[...this.units.values()].sort((a,b)=>(a.pos[0]+a.pos[2])-(b.pos[0]+b.pos[2]));
     for(const u of units){
       u.animT+=dt;
@@ -181,3 +198,4 @@ export class CanvasBattleScene {
     }
   }
 }
+

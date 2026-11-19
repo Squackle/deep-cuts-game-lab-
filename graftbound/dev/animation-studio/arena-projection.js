@@ -46,6 +46,20 @@ export function drawSmokeOnArena(ctx, image, scene, {elevation=0.12, steps=5, op
   // The footprint clip prevents blurred edges, billows, glows and ember trails
   // from ever painting the water/lava/environment outside the battlefield tiles.
   clipToArena(ctx,scene,0.04);
+  // CanvasBattleScene.project is affine: one image draw matches all clipped
+  // triangles, saving 50 canvas operations per frame in the mobile path.
+  if(scene.cam.mode==='canvas-2d' || scene.isAffine){
+    const A=arenaPoint(scene,0,0,elevation),B=arenaPoint(scene,1,0,elevation);
+    const C=arenaPoint(scene,0,1,elevation);
+    const matrix=[(B.x-A.x)/sw,(B.y-A.y)/sw,
+      (C.x-A.x)/sh,(C.y-A.y)/sh,A.x,A.y];
+    if(matrix.every(Number.isFinite)){
+      ctx.transform(...matrix);
+      ctx.drawImage(image,0,0);
+    }
+    ctx.restore();
+    return;
+  }
   const points=[];
   for(let row=0;row<=n;row++) {
     const line=[];
@@ -61,3 +75,4 @@ export function drawSmokeOnArena(ctx, image, scene, {elevation=0.12, steps=5, op
   }
   ctx.restore();
 }
+
