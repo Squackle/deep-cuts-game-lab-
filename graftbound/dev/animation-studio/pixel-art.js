@@ -36,7 +36,7 @@ export function makeAshA(seed=1) {
   }
   for(let x=9;x<=39;x++){
     const q=Math.abs(x-cx)/16;
-    const peak=Math.max(0,Math.round(9*(1-Math.pow(q,1.5))+1.6*(hash(x,6,seed)-.5)));
+    const peak=Math.max(0,Math.round(12*(1-Math.pow(q,1.4))+1.6*(hash(x,6,seed)-.5)));
     const top=base-peak;
     for(let y=top;y<=base;y++){
       const edge=y-top;
@@ -48,7 +48,7 @@ export function makeAshA(seed=1) {
   }
   // A broken pale central ridge is the visual hallmark of Ash A.
   for(let x=17;x<=31;x++){
-    const rise=Math.round(8*(1-Math.pow(Math.abs(x-cx)/16,1.5)));
+    const rise=Math.round(11*(1-Math.pow(Math.abs(x-cx)/16,1.4)));
     const y=base-rise;
     if(hash(x,y,seed+23)>.30)img.put(x,y,ASH[5]);
   }
