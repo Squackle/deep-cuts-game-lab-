@@ -7,6 +7,7 @@ import { SCENARIO, DURATION, IMPACT_TIME, resolveBoardFire, FIRE_BOARD_WIPE_EFFE
 import { SmokeField } from './smoke-fluid.js';
 import { drawSmokeOnArena, clipToArena, arenaPoint } from './arena-projection.js';
 import { createPixelAtlas } from './pixel-art.js';
+import { ashSmokePuffs } from './ash-smoke.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('scene'), effects = $('effects'), ctx = effects.getContext('2d');
@@ -42,6 +43,7 @@ function startCompatibleScene(reason='mobile'){
 
 let peakEmbers=0, peakFlames=0;
 let resolved = null, damaged = false, removed = false, lastCast = -1;
+let levelClock=0, ashSmokeBornAt=null;
 const marks = new Map();
 const original = SCENARIO.map(u => ({ ...u }));
 // A visual-study eligibility guard, not a live-game spell dispatcher.
@@ -85,6 +87,7 @@ function showSpriteCounts() {
 function resetBattle() {
   if (!sc) return;
   playing = false; elapsed = 0; damaged = false; removed = false; resolved = null; lastCast = -1;
+  levelClock=0; ashSmokeBornAt=null;
   peakEmbers=0; peakFlames=0;
   sc.loadArena(buildEncounter(ACTS[1].mid[0], 11, 'battle'), 11, 'warrens');
   sc.zoom = 1.17;
@@ -138,6 +141,9 @@ function impact() {
 function removeFallen() {
   if (!resolved || removed) return;
   removed = true;
+  // The mound and its faint smoke persist for the current battlefield until
+  // resetBattle(), regardless of the cinematic reaching DURATION.
+  ashSmokeBornAt=levelClock;
   for (const u of resolved) if (u.dead) {
     sc.removeUnit(u.uid);
     marks.get(u.uid).el.classList.add('dead');
@@ -188,6 +194,38 @@ function ashPile(unit,age) {
   ctx.drawImage(pixelAtlas.ash,
     Math.round(point.x-drawW*.5),Math.round(point.y-drawH*.58),
     drawW,drawH);
+  ctx.restore();
+}
+// Subtle perpetual smoke from a defeated creature's Ash A powder mound.
+// These are small staggered cool-gray pixel clusters, not more red fire.
+// Use a separate level clock: the spell's timeline freezes at DURATION,
+// but the remaining ash continues smoldering until this battle resets.
+function drawAshSmoke(unit,timeSinceDeath,reduced) {
+  if(ashSmokeBornAt==null||!Number.isFinite(timeSinceDeath)||timeSinceDeath<0)return;
+  const wisps=ashSmokePuffs(timeSinceDeath,unit.uid,reduced);
+  if(!wisps.length)return;
+  const point=sc.project(sc.world(unit.x,unit.y));
+  const across=sc.project(sc.world(unit.x+1,unit.y));
+  const tilePx=Math.hypot(across.x-point.x,across.y-point.y);
+  const compact=effects.clientWidth<620;
+  const drawW=Math.round(clamp(tilePx*1.35,compact?27:41,compact?46:70));
+  const drawH=drawW*29/48;
+  const smokeUnit=Math.max(1.5,Math.min(3.5,drawW*.065));
+  const originY=point.y-drawH*.29;
+  ctx.save();
+  clipToArena(ctx,sc,0.04);
+  ctx.imageSmoothingEnabled=false;
+  ctx.fillStyle='#aab0ae';
+  for(const puff of wisps){
+    const x=Math.round(point.x+puff.x*drawW),y=Math.round(originY-puff.rise*drawH);
+    const px=Math.max(1,Math.round(smokeUnit*(puff.size/.05)));
+    ctx.globalAlpha=puff.alpha;
+    ctx.fillRect(x,y,px+1,px);
+    ctx.globalAlpha=puff.alpha*.55;
+    ctx.fillRect(x-px,y+px,px,px);
+    ctx.globalAlpha=puff.alpha*.32;
+    ctx.fillRect(x+px,y-px,Math.max(1,px-1),px);
+  }
   ctx.restore();
 }
 // Individual billows rise in world height while their x/z travel through the
@@ -318,7 +356,10 @@ function drawPyroclasm(t) {
   }
   ctx.restore();
   if(resolved&&t>=3.57) for(const u of resolved){
-    if(u.dead) ashPile(u,t);
+    if(u.dead){
+      ashPile(u,t);
+      if(removed)drawAshSmoke(u,levelClock-ashSmokeBornAt,reduced);
+    }
   }
   if(resolved&&t>=3.83&&t<4.55) for(const u of resolved){
     if(u.dead)continue;
@@ -352,6 +393,7 @@ function tick(now) {
     if (elapsed>=3.60) removeFallen();
     if (elapsed>=DURATION) {playing=false;replayBtn.textContent='↻ REPLAY PYROCLASM';}
   }
+  levelClock+=dt; // Not capped at the spell's 5.2-second duration.
   sc.frame(dt);
   renderLabels();
   drawPyroclasm(elapsed);
