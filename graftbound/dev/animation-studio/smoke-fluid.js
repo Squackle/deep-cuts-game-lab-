@@ -55,7 +55,8 @@ export class SmokeField {
       if(v[top+w]<0)v[top+w]=-v[top+w]*bounce;
       if(v[bottom-w]>0)v[bottom-w]=-v[bottom-w]*bounce;
       v[top]=0;v[bottom]=0;
-      u[top]=u[top+w]*slip;u[bottom]=u[bottom-w]*slip;
+      u[top]=x===0||x===w-1?0:u[top+w]*slip;
+      u[bottom]=x===0||x===w-1?0:u[bottom-w]*slip;
     }
   }
   _fieldEdges() {
