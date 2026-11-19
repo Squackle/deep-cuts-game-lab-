@@ -431,20 +431,8 @@ export class SmokeField {
       ctx.drawImage(this.brush,-r,-r,r*2,r*2);
       ctx.restore();
     }
-    ctx.globalCompositeOperation='lighter';
-    for(const p of this.embers){
-      const life=1-p.age/p.life;
-      if(life<=0)continue;
-      ctx.strokeStyle=p.bright>.75?'rgba(255,237,143,'+(life*.86)+')':'rgba(255,107,38,'+(life*.78)+')';
-      ctx.lineWidth=(.7+p.size*1.2)*life;
-      ctx.lineCap='round';
-      ctx.shadowColor='#ff6a23';
-      ctx.shadowBlur=5+life*6;
-      ctx.beginPath();
-      ctx.moveTo(p.px*sx,p.py*sy);
-      ctx.lineTo(p.x*sx,p.y*sy);
-      ctx.stroke();
-    }
+    // Ember particle motion remains in the gas solver; rendering lives in
+    // studio.js via the nearest-neighbor Rising Ember atlas. No canvas strokes.
     ctx.globalCompositeOperation='source-over';
     ctx.restore();
   }

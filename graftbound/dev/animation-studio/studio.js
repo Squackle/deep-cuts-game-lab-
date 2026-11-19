@@ -7,6 +7,7 @@ import { ACTS } from '../../src/data/encounters.js';
 import { SCENARIO, PHASES, DURATION, IMPACT_TIME, resolveBoardFire } from './scenario.js';
 import { SmokeField } from './smoke-fluid.js';
 import { drawSmokeOnArena, clipToArena, arenaPoint } from './arena-projection.js';
+import { createPixelAtlas } from './pixel-art.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('scene'), effects = $('effects'), ctx = effects.getContext('2d');
@@ -19,7 +20,7 @@ const rnd = n => frac(Math.sin(n * 127.1 + 18.73) * 43758.5453);
 const mix = (a, b, t) => a + (b-a)*t;
 const defaultReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
 motionSel.value = defaultReduced ? 'reduced' : 'full';
-let sc, smoke, smokeTexture, smokeCtx, playing = false, started = 0, elapsed = 0, prev = 0;
+let sc, smoke, smokeTexture, smokeCtx, pixelAtlas, playing = false, started = 0, elapsed = 0, prev = 0;
 let resolved = null, damaged = false, removed = false, lastCast = -1;
 const marks = new Map();
 const original = SCENARIO.map(u => ({ ...u }));
@@ -127,34 +128,24 @@ function resize() {
   // The projected box follows Scene's camera whenever the window resizes;
   // the world-space fluid does not lose or rescale its density on resize.
 }
-function blob(x, y, radius, center, edge, opacity = 1) {
-  if (radius <= 0 || opacity <= 0) return;
-  const g = ctx.createRadialGradient(x, y, 1, x, y, radius);
-  g.addColorStop(0, center); g.addColorStop(1, edge);
-  ctx.globalAlpha = opacity;
-  ctx.fillStyle = g;
-  ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI*2); ctx.fill();
-}
-function ashPile(point, age, uid) {
-  const a = clamp((age - 3.59) / 0.38);
-  if (!a) return;
-  const {x,y} = point;
-  ctx.globalAlpha = a;
-  ctx.fillStyle = '#161613';
-  ctx.beginPath();ctx.ellipse(x,y+5,20,6,0,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle = '#4e4a40';
-  ctx.beginPath();ctx.ellipse(x,y+1,16,5,0,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle = '#888070';
-  ctx.beginPath();ctx.ellipse(x-3,y-1,11,3,0,Math.PI*2,Math.PI*4);ctx.fill();
-  for(let i=0;i<6;i++){
-    const px=x+(rnd(uid*25+i)-.5)*30, py=y-2+(rnd(uid*39+i)-.5)*8;
-    ctx.fillStyle = i%3===0?'#ec803f':'#a59a7b';
-    ctx.fillRect(px,py,i%3===0?2:3,2);
-  }
-  if (age<4.95) for (let i=0;i<3;i++){
-    const xx=x+(rnd(uid*77+i)-.5)*21+Math.sin(age*2+i)*5;
-    blob(xx,y-12-(age-3.55)*12-i*9,12,'#73716b99','#4a493500',0.22*(4.95-age)*a);
-  }
+// Approved Ash A: a dusty pale-gray pixel mound, rather than the previous
+// smooth ellipses, blobs or random orange wedges. One mound per defeated unit.
+function ashPile(unit,age) {
+  if(!pixelAtlas || age<3.59)return;
+  const opacity=smooth((age-3.59)/.37);
+  const point=sc.project(sc.world(unit.x,unit.y));
+  const across=sc.project(sc.world(unit.x+1,unit.y));
+  const tilePx=Math.hypot(across.x-point.x,across.y-point.y);
+  const drawW=Math.round(clamp(tilePx*.96,27,58));
+  const drawH=Math.round(drawW*29/48);
+  ctx.save();
+  clipToArena(ctx,sc,0.04);
+  ctx.imageSmoothingEnabled=false;
+  ctx.globalAlpha=opacity;
+  ctx.drawImage(pixelAtlas.ash,
+    Math.round(point.x-drawW*.5),Math.round(point.y-drawH*.58),
+    drawW,drawH);
+  ctx.restore();
 }
 // Individual billows rise in world height while their x/z travel through the
 // same reflected 8×8 velocity field. The clip is the actual tile footprint:
@@ -186,43 +177,53 @@ function drawContainedBillows(field,reduced) {
   }
   ctx.restore();
 }
-// Advected tongues of flame: moving particles use the gas velocity grid,
-// react to its heat, and rise above the tile plane. All light is clipped to
-// the same invisible 8×8 walls. No off-board spawners or overlay fog.
-function drawContainedFlames(field,reduced) {
-  if(!field.flames.length)return;
-  const fade=1-smooth((field.time-3.40)/.50);
-  if(fade<=0)return;
-  const intensity=Number(fireSel.value);
+// Options B+C: nearest-neighbor pixel ember pops and small S-curved flames.
+// Both are emitted by the caster, advected by the fluid, and masked to the 8×8
+// battlefield. These replace (not augment) the old vector triangles and strokes.
+function drawPixelFire(field,reduced) {
+  if(!pixelAtlas)return;
   ctx.save();
   clipToArena(ctx,sc,0.04);
+  ctx.imageSmoothingEnabled=false;
   ctx.globalCompositeOperation='source-over';
+  const intensity=Number(fireSel.value);
+  const flameFade=1-smooth((field.time-3.40)/.62);
+  const renderPos=(p,height)=>{
+    const [x,,z]=sc.world(p.x/(field.w-1)*sc.w-.5,p.y/(field.h-1)*sc.h-.5);
+    return sc.project([x,height,z]);
+  };
   for(const f of field.flames){
-    const life=1-f.age/f.life;
-    const opacity=clamp(life*fade*(.20+.55*f.heat)*intensity*(reduced?.48:1),0,.67);
-    if(opacity<.045)continue;
-    const [wx,,wz]=sc.world(f.x/(field.w-1)*sc.w-.5,f.y/(field.h-1)*sc.h-.5);
-    const p=sc.project([wx,.22,wz]), tile=sc.project([wx+1,.22,wz]);
-    const tilePx=Math.max(12,Math.hypot(tile.x-p.x,tile.y-p.y));
-    const v=field.velocityAt(f.x,f.y);
-    const lean=clamp(v[0]*.16,-16,16)+Math.sin(f.age*9+f.seed*8)*3.2;
-    const height=tilePx*(.38+f.size*.53)*(1-f.age/f.life*.35);
-    const half=Math.max(2,tilePx*(.12+f.size*.075)*life);
-    const tipX=p.x+lean,tipY=p.y-height;
-    ctx.globalAlpha=opacity;
-    const g=ctx.createLinearGradient(p.x,p.y,tipX,tipY);
-    g.addColorStop(0,'rgba(255,224,105,.91)');
-    g.addColorStop(.36,'rgba(255,145,24,.85)');
-    g.addColorStop(.75,'rgba(255,65,11,.57)');
-    g.addColorStop(1,'rgba(209,29,4,0)');
-    ctx.fillStyle=g;
-    // Unequal curved shoulders and a wind-bent tip read as flowing flame
-    // instead of the previous screenful of hard white triangular spikes.
-    ctx.beginPath();
-    ctx.moveTo(p.x-half*1.14,p.y);
-    ctx.bezierCurveTo(p.x-half*1.24,p.y-height*.24,tipX-half*.65,p.y-height*.62,tipX,tipY);
-    ctx.bezierCurveTo(tipX+half*.23,p.y-height*.73,p.x+half*1.16,p.y-height*.33,p.x+half*1.14,p.y);
-    ctx.closePath();ctx.fill();
+    const life=clamp(1-f.age/f.life);
+    const opacity=life*flameFade*(.27+.56*f.heat)*intensity*(reduced?.58:1);
+    if(opacity<.04)continue;
+    const p=renderPos(f,.18+f.age*.17);
+    const r=renderPos({...f,x:f.x+(field.w-1)/sc.w},.18+f.age*.17);
+    const tilePx=Math.hypot(r.x-p.x,r.y-p.y);
+    const height=Math.round(clamp(tilePx*(.53+f.size*.17),13,35));
+    const width=Math.round(height*17/23);
+    const frame=Math.min(7,Math.floor(f.age/f.life*8));
+    const sprite=pixelAtlas.flames[frame];
+    const wind=field.velocityAt(f.x,f.y)[0];
+    ctx.save();
+    ctx.globalAlpha=clamp(opacity,0,.81);
+    ctx.translate(Math.round(p.x),Math.round(p.y));
+    if(wind<-.8)ctx.scale(-1,1);
+    ctx.drawImage(sprite,-Math.round(width/2),-height,width,height);
+    ctx.restore();
+  }
+  // The little scattered Rising Embers remain visible during ignition,
+  // expansion, impact and the brief cooling aftermath.
+  for(const e of field.embers){
+    const progress=clamp(e.age/e.life);
+    const p=renderPos(e,.28+e.age*.85);
+    const r=renderPos({...e,x:e.x+(field.w-1)/sc.w},.28+e.age*.85);
+    const tilePx=Math.hypot(r.x-p.x,r.y-p.y);
+    const width=Math.round(clamp(tilePx*(.18+e.size*.023),7,13));
+    const height=Math.round(width*13/9);
+    const frame=Math.min(7,Math.floor(progress*8));
+    ctx.globalAlpha=clamp((1-progress*.65)*(reduced?.58:1),0,.94);
+    ctx.drawImage(pixelAtlas.embers[frame],
+      Math.round(p.x-width*.5),Math.round(p.y-height*.55),width,height);
   }
   ctx.restore();
 }
@@ -249,8 +250,8 @@ function drawCinderstorm(t) {
   const mobile=w<620;
   drawSmokeOnArena(ctx,smokeTexture,sc,{elevation:0.15,steps:mobile?4:6,opacity:.94});
   if(!reduced)drawSmokeOnArena(ctx,smokeTexture,sc,{elevation:0.65,steps:mobile?3:5,opacity:.35});
-  drawContainedFlames(smoke,reduced);
   drawContainedBillows(smoke,reduced);
+  drawPixelFire(smoke,reduced);
   // Emission glow and impact flash respect the same invisible arena footprint.
   ctx.save();
   clipToArena(ctx,sc,0.04);
@@ -272,7 +273,7 @@ function drawCinderstorm(t) {
   }
   ctx.restore();
   if(resolved&&t>=3.57) for(const u of resolved){
-    if(u.dead) ashPile(sc.project(sc.world(u.x,u.y)),t,u.uid);
+    if(u.dead) ashPile(u,t);
   }
   if(resolved&&t>=3.83&&t<4.55) for(const u of resolved){
     if(u.dead)continue;
@@ -321,6 +322,7 @@ window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r'&&!e.repeat&&!
   try {
     const assets=await loadAssets();
     sc=new Scene(canvas,assets);
+    pixelAtlas=createPixelAtlas(document);
     resize();
     resetBattle();
     $('loading').remove();

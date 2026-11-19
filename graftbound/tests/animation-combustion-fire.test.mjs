@@ -72,9 +72,9 @@ test('Animation Lab only: flame tongues and reaction rendering respect the physi
  const code=readFileSync(new URL('../dev/animation-studio/studio.js',import.meta.url),'utf8');
  const flame=readFileSync(new URL('../dev/animation-studio/smoke-fluid.js',import.meta.url),'utf8');
  const html=readFileSync(new URL('../dev/animation-studio/index.html',import.meta.url),'utf8');
- assert.match(code,/function drawContainedFlames\(/);
+ assert.match(code,/function drawPixelFire\(/);
  assert.match(code,/clipToArena\(ctx,sc,0\.04\)/);
- assert.match(code,/drawContainedFlames\(smoke,reduced\)/);
+ assert.match(code,/drawPixelFire\(smoke,reduced\)/);
  assert.match(code,/fire:Number\(fireSel\.value\)/);
  assert.match(flame,/nextFuel/);
  assert.match(flame,/nextFlame/);
@@ -105,6 +105,7 @@ test('fire polish caps heat and flame reaction rather than saturating to a white
  assert.ok(Math.max(...f.heat)<=6.2001,'heat remains within the artist-directed color range');
  assert.ok(f.flames.length<=96,'peak flame tongues are bounded for browser performance');
  const studio=readFileSync(new URL('../dev/animation-studio/studio.js',import.meta.url),'utf8');
- assert.match(studio,/ctx\.bezierCurveTo\(/,'the flame body uses a curved, wind-bent silhouette');
+ assert.match(studio,/pixelAtlas\.flames\[frame\]/,'animated curled pixel sprite replaces the old vector shape');
+ assert.doesNotMatch(studio,/ctx\.bezierCurveTo\(/,'no hard vector flame wedges remain');
  assert.doesNotMatch(studio,/#fff7cb/,'the previous additive white spike core was removed');
 });
