@@ -53,7 +53,7 @@ test('smoke remains independent of the capped spell clock until battlefield rese
   assert.match(code,/ashSmokeBornAt=levelClock/);
   assert.match(code,/drawAshSmoke\(u,levelClock-ashSmokeBornAt,reduced\)/);
   assert.match(code,/levelClock=0; ashSmokeBornAt=null/);
-  assert.match(code,/if\(elapsed>=DURATION\) \{playing=false/);
+  assert.match(code,/if\s*\(elapsed>=DURATION\)\s*\{playing=false/);
   assert.match(code,/if\(removed\)drawAshSmoke/);
   assert.match(code,/clipToArena\(ctx,sc,0\.04\)/,'persistent flecks stay within the board');
   assert.doesNotMatch(code,/drawAshSmoke\(u,t/,'ash residue cannot reuse the frozen cinematic time');
