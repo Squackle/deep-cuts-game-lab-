@@ -32,16 +32,17 @@ function prepareLabels() {
   labels.replaceChildren();
   marks.clear();
   for (const u of original) {
+    // Match the actual GRAFTBOUND BattleUI.renderLabel() structure exactly:
+    // no nameplates, a 46×9 allegiance-colored bar and HP number on the left.
     const el = document.createElement('div');
-    el.className = 'unit-label ' + (u.side === 'enemy' ? 'foe' : 'friend') + (u.uid === 1 ? ' caster' : '');
-    const name = document.createElement('span');
-    name.textContent = u.name;
+    el.className = 'ulabel ' + (u.side === 'enemy' ? 'enemy' : 'player');
+    el.dataset.unitId = String(u.uid);
     const hp = document.createElement('div');
-    hp.className = 'hp';
+    hp.className = 'hpbar';
     const fill = document.createElement('i');
-    hp.append(fill);
     const value = document.createElement('span');
-    el.append(name, hp, value);
+    hp.append(fill, value);
+    el.append(hp);
     labels.append(el);
     marks.set(u.uid, { el, fill, value });
   }
@@ -87,8 +88,8 @@ function impact() {
     sc.hit(u.uid, [1, 0.4, 0.12], false);
     const m = marks.get(u.uid);
     m.fill.style.width = (100 * u.hp / u.maxHp) + '%';
-    m.value.textContent = u.hp + ' / ' + u.maxHp + ' HP';
-    m.el.classList.add('hit');
+    m.value.textContent = String(u.hp);
+    // The main game uses the sprite's hit flash rather than shaking labels.
   }
   sc.light(sc.centerPos(1), [1, 0.41, 0.1], 7, 0.6, 3);
   if (!sc.reduced) sc.shake(0.12);
@@ -107,12 +108,12 @@ function renderLabels() {
   if (!sc?.cam) return;
   for (const u of original) {
     const m = marks.get(u.uid); if (!m) continue;
-    if (!m.value.textContent) { m.value.textContent = u.hp + ' / ' + u.maxHp + ' HP'; m.fill.style.width = '100%'; }
+    if (!m.value.textContent) { m.value.textContent = String(u.hp); m.fill.style.width = '100%'; }
     const v = sc.units.get(u.uid);
     if (!v || (resolved && resolved.find(n => n.uid === u.uid)?.dead && removed)) continue;
     const p = sc.project(sc.headPos(u.uid));
-    m.el.style.left = p.x + 'px';
-    m.el.style.top = (p.y - 8) + 'px';
+    // Same projected head-position anchoring as the main game's BattleUI.frame().
+    m.el.style.transform = `translate(${p.x | 0}px, ${p.y | 0}px)`;
     m.el.style.opacity = elapsed > 2.43 && elapsed < 3.82 ? '.15' : '1';
   }
 }
