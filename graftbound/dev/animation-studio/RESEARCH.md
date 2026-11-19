@@ -67,3 +67,15 @@ November 19, 2026. Visual test only: `/graftbound/dev/animation-studio/`.
 A desktop browser capture of PR #212 at the **THE DEVASTATION** phase showed oversaturated yellow-white particles shaped like sharp upward spikes, even though the flame/soot simulation was fire-dominant and board clipping worked. Numerical simulation checks alone were not sufficient for visual acceptance.
 
 This follow-up keeps the same physics and repairs presentation: (1) reduce heat and reaction saturation caps, (2) lower the hottest-color ramp's effective temperature, (3) render 96 or fewer moving flame tongues rather than 210, (4) replace hard additive white cores with smaller translucent Bézier-curved ribbons that bend with the measured airflow. The aim is a readable, moving firestorm rather than white shards. Performance and real-device appearance still require end-user review.
+
+## November 19 — approved original pixel-art asset pass
+
+Owner-approved visual treatments:
+- **Ash A** is a compact, low, pale gray and charcoal powder heap with loose ash grains, NOT the previous smooth ellipse/shadow or fiery rock mound. It stays on dead creature tiles and must NOT emit flames itself.
+- **B — Rising Ember** is an eight-frame discrete hot-pixel cluster carried by the actual simulated airflow, drifting upward and fading, visible through invocation, charge, vortex, impact and initial cool-down.
+- **C — Curling Flame** is an eight-frame, irregular S-curved fire tongue (red rim / orange / yellow-hot core), following the same fluid velocity and the board clip. It replaces canvas-gradient Bézier wedge shapes — no vector fire triangles.
+- The overall larger effect retains the agreed spiral fire-ribbons + ground-hugging inferno (the existing contained fuel/reaction field). Existing blue/red HP bars, exactly 2 damage to both sides, 3 ash casualties, scene controls and test-only isolation are unchanged.
+
+Implementation: `pixel-art.js` builds deterministic, original low-resolution 48×29 Ash A, 9×13 Ember B and 17×23 Flame C raster images (8 frames each). The browser uploads each image to a dedicated tiny offscreen Canvas only once; the actual battle overlay draws them nearest-neighbor (no blurred strokes, smoothed vector wedges or triangles). Sprites are positioned via `Scene.world()` + `Scene.project()`, follow live particle positions, and are clipped inside the 8×8 arena tile polygon. Sprites are deterministic for a fixed simulation state and have lower particle counts under reduced-motion settings.
+
+Important: This is **original procedural pixel art approximating the owner's chosen concepts**, not a conversion of the reference illustration or Magic card art. It must be visually reviewed on the deployed Animation Lab and can be tuned after user feedback. Physics remains the same 2D approximation; this PR does not claim true 3D fluid collision. Roll back by reverting this Animation Lab-only PR, restoring the previous test visuals without changing normal game saves or rules.
