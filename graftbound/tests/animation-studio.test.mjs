@@ -4,7 +4,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { DAMAGE, SCENARIO, PHASES, IMPACT_TIME, DURATION, resolveBoardFire } from '../dev/animation-studio/scenario.js';
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
-test('Cinderstorm deals two to every allied and opposing creature, including the caster', () => {
+test('Pyroclasm deals two to every allied and opposing creature, including the caster', () => {
   const after = resolveBoardFire(SCENARIO);
   assert.equal(DAMAGE, 2);
   assert.equal(after.length, SCENARIO.length);
@@ -39,7 +39,7 @@ test('Studio browser module and pure fixture are syntactically valid JavaScript'
   }
 });
 
-test('the revised Cinderstorm draws a transported gas field, not fullscreen smoke blobs', () => {
+test('the revised Pyroclasm draws a transported gas field, not fullscreen smoke blobs', () => {
   const source=read('../dev/animation-studio/studio.js');
   const fluid=read('../dev/animation-studio/smoke-fluid.js');
   const html=read('../dev/animation-studio/index.html');
