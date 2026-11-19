@@ -109,3 +109,7 @@ On desktops, load the original full WebGL Scene and creature art lazily. If it f
 Checkpoints: browser simulated mobile starts without any 3D asset requests, 2D board and labels appear; user can replay, change B/C density, reset, and see 7 units take 2 damage and 3 Ash A piles; projected smoke stays in the 8×8 polygon; desktop still uses WebGL when available; force-2D URL works on desktop. Actual hardware iOS Safari acceptance must be confirmed by the owner; browser emulation is not an iPhone hardware test.
 
 Rollback: revert this standalone GRAFTBOUND Animation Lab PR; no actual game engine, saved progress, public scores, card rules, or website code changed.
+
+### Context-loss resilience follow-up
+
+Mobile and desktop preview QA after the first mobile-safe release found no gameplay regressions. The renderer now also handles a future `webglcontextlost` event by restoring the Canvas 2D scene and restarting the visual fixture. If a Canvas 2D rendering error happens after the initial loading overlay was removed, the error path re-creates the overlay instead of throwing a secondary null-reference exception. This follow-up does not change Pyroclasm effect visuals, damage, sprite counts, game engine, or asset loading behavior.
