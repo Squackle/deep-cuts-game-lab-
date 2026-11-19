@@ -11,7 +11,7 @@ import { drawSmokeOnArena, clipToArena, arenaPoint } from './arena-projection.js
 const $ = id => document.getElementById(id);
 const canvas = $('scene'), effects = $('effects'), ctx = effects.getContext('2d');
 const replayBtn = $('replay'), resetBtn = $('reset'), labels = $('labels');
-const speedSel = $('speed'), particlesSel = $('particles'), motionSel = $('motion'), smokeSel = $('smoke');
+const speedSel = $('speed'), particlesSel = $('particles'), motionSel = $('motion'), smokeSel = $('smoke'), fireSel = $('fire');
 const clamp = (n, a = 0, b = 1) => Math.max(a, Math.min(b, n));
 const smooth = n => { const t = clamp(n); return t*t*(3-2*t); };
 const frac = n => n - Math.floor(n);
@@ -114,7 +114,8 @@ function renderLabels() {
     const p = sc.project(sc.headPos(u.uid));
     // Same projected head-position anchoring as the main game's BattleUI.frame().
     m.el.style.transform = `translate(${p.x | 0}px, ${p.y | 0}px)`;
-    m.el.style.opacity = elapsed > 2.43 && elapsed < 3.82 ? '.15' : '1';
+    // Keep the main-game HP bars readable during the wipe's hottest moment.
+    m.el.style.opacity = elapsed > 3.05 && elapsed < 3.48 ? '.55' : '1';
   }
 }
 function resize() {
@@ -167,7 +168,8 @@ function drawContainedBillows(field,reduced) {
     const age=puff.age/puff.life;
     const birth=smooth(puff.age/.24);
     const fade=1-smooth((age-.54)/.46);
-    const alpha=birth*fade*(reduced?.12:.34);
+    const sootReveal=smooth((field.time-3.00)/.70);
+    const alpha=birth*fade*(.09+.26*sootReveal)*Number(smokeSel.value)*(reduced?.55:1);
     if(alpha<=.005)continue;
     const [wx,,wz]=sc.world(puff.x/(field.w-1)*sc.w-.5,puff.y/(field.h-1)*sc.h-.5);
     const height=.30+Math.min(1.25,puff.age*.75);
@@ -181,6 +183,55 @@ function drawContainedBillows(field,reduced) {
     ctx.rotate(puff.rotate+puff.age*.21);
     ctx.drawImage(src,-radius,-radius,radius*2,radius*2);
     ctx.restore();
+  }
+  ctx.restore();
+}
+// Advected tongues of flame: moving particles use the gas velocity grid,
+// react to its heat, and rise above the tile plane. All light is clipped to
+// the same invisible 8×8 walls. No off-board spawners or overlay fog.
+function drawContainedFlames(field,reduced) {
+  if(!field.flames.length)return;
+  const fade=1-smooth((field.time-3.40)/.50);
+  if(fade<=0)return;
+  const intensity=Number(fireSel.value);
+  ctx.save();
+  clipToArena(ctx,sc,0.04);
+  ctx.globalCompositeOperation='lighter';
+  for(const f of field.flames){
+    const life=1-f.age/f.life;
+    const opacity=clamp(life*fade*(.34+.66*f.heat)*intensity*(reduced?.44:1),0,.93);
+    if(opacity<.045)continue;
+    const [wx,,wz]=sc.world(f.x/(field.w-1)*sc.w-.5,f.y/(field.h-1)*sc.h-.5);
+    const p=sc.project([wx,.22,wz]), tile=sc.project([wx+1,.22,wz]);
+    const tilePx=Math.max(12,Math.hypot(tile.x-p.x,tile.y-p.y));
+    const v=field.velocityAt(f.x,f.y);
+    const lean=clamp(v[0]*.19,-19,19)+Math.sin(f.age*12+f.seed*7)*3.3;
+    const height=tilePx*(.72+f.size*.75)*(1-f.age/f.life*.45);
+    const half=Math.max(2.1,tilePx*(.15+f.size*.08)*life);
+    const tipX=p.x+lean,tipY=p.y-height;
+    ctx.globalAlpha=opacity;
+    const g=ctx.createLinearGradient(p.x,p.y,tipX,tipY);
+    g.addColorStop(0,'rgba(255,248,187,.98)');
+    g.addColorStop(.30,'rgba(255,189,54,.98)');
+    g.addColorStop(.73,'rgba(255,92,17,.77)');
+    g.addColorStop(1,'rgba(220,30,5,0)');
+    ctx.fillStyle=g;
+    ctx.beginPath();
+    ctx.moveTo(p.x-half*1.18,p.y);
+    ctx.quadraticCurveTo(p.x-1.35*half+lean*.18,p.y-height*.48,tipX,tipY);
+    ctx.quadraticCurveTo(p.x+half*.95+lean*.32,p.y-height*.52,p.x+half*1.17,p.y);
+    ctx.closePath();
+    ctx.fill();
+    // Thin, brighter core near the burning ground plane.
+    if(f.heat>.19 && !reduced){
+      ctx.globalAlpha=opacity*.5;
+      ctx.fillStyle='#fff7cb';
+      ctx.beginPath();
+      ctx.moveTo(p.x-half*.44,p.y);
+      ctx.quadraticCurveTo(p.x+lean*.16,p.y-height*.35,tipX*.17+p.x*.83,p.y-height*.69);
+      ctx.quadraticCurveTo(p.x+half*.41,p.y-height*.20,p.x+half*.44,p.y);
+      ctx.closePath();ctx.fill();
+    }
   }
   ctx.restore();
 }
@@ -199,12 +250,15 @@ function drawCinderstorm(t) {
   };
   smoke.advanceTo(t,origin,reduced);
   smokeCtx.clearRect(0,0,smokeTexture.width,smokeTexture.height);
-  smoke.render(smokeCtx,smokeTexture.width,smokeTexture.height,{smoke:Number(smokeSel.value),reduced});
+  smoke.render(smokeCtx,smokeTexture.width,smokeTexture.height,{
+    smoke:Number(smokeSel.value),fire:Number(fireSel.value),reduced
+  });
   // Perspective-warp the 2D density sheet onto the real battlefield tiles,
   // and clip every projected layer to their outline. No rectangular fog overlay.
   const mobile=w<620;
   drawSmokeOnArena(ctx,smokeTexture,sc,{elevation:0.15,steps:mobile?4:6,opacity:.94});
   if(!reduced)drawSmokeOnArena(ctx,smokeTexture,sc,{elevation:0.65,steps:mobile?3:5,opacity:.35});
+  drawContainedFlames(smoke,reduced);
   drawContainedBillows(smoke,reduced);
   // Emission glow and impact flash respect the same invisible arena footprint.
   ctx.save();
