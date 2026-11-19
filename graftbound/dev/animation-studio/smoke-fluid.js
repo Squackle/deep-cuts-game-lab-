@@ -341,7 +341,7 @@ export class SmokeField {
     }
     return {mass,radius:mass>0?radialMass/mass:0,remote,fuel:fuelMass,flame:flameMass,heat:heatMass};
   }
-  render(ctx,width,height,{smoke=1,reduced=false}={}) {
+  render(ctx,width,height,{smoke=1,fire=1,reduced=false}={}) {
     if(!this.surface){
       this.surface=document.createElement('canvas');
       this.surface.width=this.w;this.surface.height=this.h;
@@ -383,7 +383,7 @@ export class SmokeField {
       const yl=y>0?k-w:k,yr=y<h-1?k+w:k;
       const rim=clamp((Math.abs(flame[xr]-flame[xl])+Math.abs(flame[yr]-flame[yl]))*.10,0,1);
       const breakup=.83+.17*Math.sin(x*.31+y*.23-this.time*3.8)*Math.cos(y*.46-x*.17+this.time*2.8);
-      const fireA=clamp((1-Math.exp(-reaction*.74))*flameFade*(.86+.14*rim)*breakup,0,.97);
+      const fireA=clamp((1-Math.exp(-reaction*.74*fire))*flameFade*(.86+.14*rim)*breakup,0,.97);
       const sootA=clamp((1-Math.exp(-d*.60))*(.095+.29*sootLate)*smoke*smokeFade,0,.52);
       const coverage=clamp(fireA+sootA*(1-fireA),0,.98);
       if(coverage<.002){im[o+3]=0;glowPixels[o+3]=0;continue;}
