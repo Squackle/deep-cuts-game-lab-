@@ -154,6 +154,35 @@ function ashPile(point, age, uid) {
     blob(xx,y-12-(age-3.55)*12-i*9,12,'#73716b99','#4a493500',0.22*(4.95-age)*a);
   }
 }
+// Individual billows rise in world height while their x/z travel through the
+// same reflected 8×8 velocity field. The clip is the actual tile footprint:
+// smoke volume never paints the surrounding scenery, even near a wall.
+function drawContainedBillows(field,reduced) {
+  if(!field.brush||!field.puffs.length)return;
+  ctx.save();
+  clipToArena(ctx,sc,0.04);
+  const src=field.brush;
+  for(const puff of field.puffs){
+    const age=puff.age/puff.life;
+    const birth=smooth(puff.age/.24);
+    const fade=1-smooth((age-.54)/.46);
+    const alpha=birth*fade*(reduced?.12:.34);
+    if(alpha<=.005)continue;
+    const [wx,,wz]=sc.world(puff.x/(field.w-1)*sc.w-.5,puff.y/(field.h-1)*sc.h-.5);
+    const height=.30+Math.min(1.25,puff.age*.75);
+    const p=sc.project([wx,height,wz]);
+    const q=sc.project([wx+1,height,wz]);
+    const pixelTile=Math.max(14,Math.hypot(q.x-p.x,q.y-p.y));
+    const radius=Math.min(83,Math.max(9,pixelTile*(puff.size/10)*(1+puff.age*.9)*1.16));
+    ctx.save();
+    ctx.globalAlpha=alpha;
+    ctx.translate(p.x,p.y);
+    ctx.rotate(puff.rotate+puff.age*.21);
+    ctx.drawImage(src,-radius,-radius,radius*2,radius*2);
+    ctx.restore();
+  }
+  ctx.restore();
+}
 function drawCinderstorm(t) {
   const w = effects.clientWidth, h = effects.clientHeight;
   ctx.clearRect(0,0,w,h);
@@ -174,7 +203,8 @@ function drawCinderstorm(t) {
   // and clip every projected layer to their outline. No rectangular fog overlay.
   const mobile=w<620;
   drawSmokeOnArena(ctx,smokeTexture,sc,{elevation:0.15,steps:mobile?4:6,opacity:.94});
-  if(!reduced)drawSmokeOnArena(ctx,smokeTexture,sc,{elevation:0.65,steps:mobile?3:5,opacity:.30});
+  if(!reduced)drawSmokeOnArena(ctx,smokeTexture,sc,{elevation:0.65,steps:mobile?3:5,opacity:.35});
+  drawContainedBillows(smoke,reduced);
   // Emission glow and impact flash respect the same invisible arena footprint.
   ctx.save();
   clipToArena(ctx,sc,0.04);

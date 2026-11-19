@@ -169,7 +169,7 @@ export class SmokeField {
       const swirl=(7+27*charge)*fall*strength*(1-dying*.85);
       const angle=Math.atan2(dy,dx);
       const lobes=Math.max(.55,1+.28*Math.sin(angle*4.3-t*2.7)+.18*Math.cos(angle*7.1+t*1.4));
-      const outward=(1+92*blast)*fall*strength*lobes*(1-dying*.75);
+      const outward=(1+165*blast)*fall*strength*lobes*(1-dying*.75);
       const psiX=x*.19+t*1.1,psiY=y*.23-t*1.5;
       const curlX=(7+18*charge)*Math.sin(psiX)*Math.cos(psiY)*.23;
       const curlY=-(7+18*charge)*Math.cos(psiX)*Math.sin(psiY)*.19;
@@ -196,7 +196,7 @@ export class SmokeField {
       v[k] -= (dx/len)*curl[k]*dt*4.5;
     }
     this._walls();
-    const decay=Math.exp(-dt*(.39+dying*3.7)),cool=Math.exp(-dt*(1.8+dying*3.6));
+    const decay=Math.exp(-dt*(.28+dying*3.7)),cool=Math.exp(-dt*(1.8+dying*3.6));
     for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
       const k=y*w+x;
       const dx=x-cx,dy=y-cy,r=Math.max(1,Math.hypot(dx,dy));
@@ -205,7 +205,7 @@ export class SmokeField {
       // Outward force turns into recirculating wall flow rather than moving
       // smoke through the container. Projected backtraces stay within the box.
       const boundary=Math.min(x-1,y-1,w-2-x,h-2-y);
-      const radiate=blast*strength*22/(1+r*.03)*smooth(boundary/5);
+      const radiate=blast*strength*36/(1+r*.03)*smooth(boundary/5);
       const vx=u[k]+(dx/r)*radiate,vy=v[k]+(dy/r)*radiate;
       const bx=x-vx*dt,by=y-vy*dt;
       this.nextDensity[k]=this.sample(this.density,bx,by)*decay;

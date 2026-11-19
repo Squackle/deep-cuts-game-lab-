@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SmokeField } from '../dev/animation-studio/smoke-fluid.js';
+import { readFileSync } from 'node:fs';
 import { arenaPoint, arenaPolygon, drawSmokeOnArena } from '../dev/animation-studio/arena-projection.js';
 
 const origin={x:.33,y:.66};
@@ -63,4 +64,12 @@ test('a single board-shaped clip contains a perspective-warped field even in a r
   drawSmokeOnArena(ctx,{width:80,height:80},scene,{steps:5});
   assert.equal(actions.filter(a=>a==='draw').length,5*5*2,'mesh has two warped triangles per tile patch');
   assert.equal(actions.filter(a=>a==='clip').length,1+5*5*2,'board mask and each affine texture triangle are clipped');
+});
+
+test('rising volumetric billows remain clipped to the actual tile footprint',()=>{
+  const studio=readFileSync(new URL('../dev/animation-studio/studio.js',import.meta.url),'utf8');
+  assert.match(studio,/function drawContainedBillows\(/);
+  assert.match(studio,/clipToArena\(ctx,sc,0\.04\)/);
+  assert.match(studio,/const height=\.30\+Math\.min\(1\.25,puff\.age\*\.75\)/);
+  assert.match(studio,/drawContainedBillows\(smoke,reduced\)/);
 });
