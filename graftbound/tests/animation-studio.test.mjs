@@ -63,6 +63,8 @@ test('Animation Lab health bars use the main GRAFTBOUND HP-only labels (not crea
   assert.match(studio,/hp\.className = 'hpbar'/);
   assert.match(studio,/hp\.append\(fill, value\)/);
   assert.match(studio,/m\.value\.textContent = String\(u\.hp\)/);
+  assert.match(studio,/m\\.el\\.style\\.transform = `translate\\(\\$\\{p\\.x \\| 0\\}px, \\$\\{p\\.y \\| 0\\}px\\)`/);
+  assert.doesNotMatch(studio,/m\\.el\\.style\\.top =/);
   assert.doesNotMatch(studio,/name\.textContent = u\.name|className = 'unit-label'/);
   for(const value of ['#80d3ff','#2375d4','#ff9a7b','#b32b22']) {
     assert.ok(gameCss.includes(value), 'Game CSS color '+value);
