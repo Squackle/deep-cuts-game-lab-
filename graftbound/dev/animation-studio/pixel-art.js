@@ -5,7 +5,6 @@ const rgba = hex => [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),par
 const ASH = ['#27262a','#48474d','#68666a','#8a888b','#aca9ab','#d0cdcb'].map(rgba);
 const RED = rgba('#a8290b'), ORANGE = rgba('#ee5811');
 const AMBER = rgba('#ff9826'), GOLD = rgba('#ffd15b'), HOT = rgba('#ffedaa');
-const TRANSPARENT = [0,0,0];
 const hash = (a,b,s=0) => {
   let n=Math.imul(a+41,374761393)+Math.imul(b+73,668265263)+Math.imul(s+97,2246822519);
   n=Math.imul(n^(n>>>13),1274126177);
@@ -68,13 +67,12 @@ export function makeRisingEmber(frame=0) {
   const x=4+Math.round(Math.sin(f*.9)*1),y=10-f;
   const alpha=Math.round(255*(1-.77*Math.pow(f/7,2)));
   const put=(dx,dy,col,a=1)=>img.put(x+dx,y+dy,col,alpha*a);
-  put(0,0,GOLD);
+  put(0,0,HOT);
   put(-1,0,ORANGE,.95);put(1,0,AMBER,.95);
   put(0,-1,AMBER);put(0,1,RED,.8);
   if(f<5){put(-1,1,RED,.5);put(1,1,ORANGE,.45);}
   if(f<3)put(0,2,RED,.45);
   if(f>1&&f<7)img.put(x+(f%2?2:-2),y+2,RED,alpha*.35);
-  if(f<4)put(0,0,HOT,.72);
   return img;
 }
 // Option C: short S-curved yellow/orange tongue built from deliberate pixel
