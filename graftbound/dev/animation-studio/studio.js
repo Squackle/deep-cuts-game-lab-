@@ -136,7 +136,10 @@ function ashPile(unit,age) {
   const point=sc.project(sc.world(unit.x,unit.y));
   const across=sc.project(sc.world(unit.x+1,unit.y));
   const tilePx=Math.hypot(across.x-point.x,across.y-point.y);
-  const drawW=Math.round(clamp(tilePx*.96,27,58));
+  // Keep pale powder mounds legible on both wide desktop boards and small
+  // phones without letting a corpse's ash cover multiple full tiles.
+  const compact=effects.clientWidth<620;
+  const drawW=Math.round(clamp(tilePx*1.35,compact?27:41,compact?46:70));
   const drawH=Math.round(drawW*29/48);
   ctx.save();
   clipToArena(ctx,sc,0.04);

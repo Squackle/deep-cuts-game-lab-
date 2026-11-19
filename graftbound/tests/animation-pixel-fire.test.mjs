@@ -17,6 +17,8 @@ test('Ash A is a pure grayscale, low powder mound with no attached orange flame'
  assert.ok(p.some(([r])=>r>=180),'ash has pale dust highlights');
  assert.ok(p.some(([r])=>r<80),'ash has dark powdered depth');
  assert.ok(p.some(pixel=>Math.floor(pixel[4]/a.width)>15),'the dust pile occupies the lower area of its sprite');
+ assert.ok(Math.min(...p.map(pixel=>Math.floor(pixel[4]/a.width)))<=11,
+   'approved Ash A mound has a readable pale ridge, not just a ground-level dust line');
 });
 test('Rising Ember B animates an ascending, fading pixel cluster',()=>{
  const frames=Array.from({length:8},(_,i)=>makeRisingEmber(i));
@@ -55,6 +57,7 @@ test('no vector flame triangles, smooth ember line strokes or old ash ellipses i
  const solver=read('../dev/animation-studio/smoke-fluid.js');
  assert.match(studio,/createPixelAtlas\(document\)/);
  assert.match(studio,/pixelAtlas\.ash/);
+ assert.match(studio,/tilePx\*1\.35/,'Ash A uses a tile-relative readable scale');
  assert.match(studio,/pixelAtlas\.flames\[frame\]/);
  assert.match(studio,/pixelAtlas\.embers\[frame\]/);
  assert.match(studio,/ctx\.imageSmoothingEnabled=false/);
