@@ -6,6 +6,7 @@ import { buildEncounter } from '../../src/engine/encounters.js';
 import { ACTS } from '../../src/data/encounters.js';
 import { SCENARIO, PHASES, DURATION, IMPACT_TIME, resolveBoardFire } from './scenario.js';
 import { SmokeField } from './smoke-fluid.js';
+import { drawSmokeOnArena, clipToArena, arenaPoint } from './arena-projection.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('scene'), effects = $('effects'), ctx = effects.getContext('2d');
@@ -18,7 +19,7 @@ const rnd = n => frac(Math.sin(n * 127.1 + 18.73) * 43758.5453);
 const mix = (a, b, t) => a + (b-a)*t;
 const defaultReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
 motionSel.value = defaultReduced ? 'reduced' : 'full';
-let sc, smoke, playing = false, started = 0, elapsed = 0, prev = 0;
+let sc, smoke, smokeTexture, smokeCtx, playing = false, started = 0, elapsed = 0, prev = 0;
 let resolved = null, damaged = false, removed = false, lastCast = -1;
 const marks = new Map();
 const original = SCENARIO.map(u => ({ ...u }));
@@ -57,8 +58,13 @@ function resetBattle() {
     unit.dir = u.side === 'enemy' ? [0, 1] : [0, -1];
     if (u.uid === 1) unit.castAt = 'hands';
   }
-  const div = particlesSel.value === 'high' ? 7 : particlesSel.value === 'low' ? 14 : 10;
-  smoke = new SmokeField(Math.ceil(effects.clientWidth/div),Math.ceil(effects.clientHeight/div));
+  // The fluid's grid represents the 8x8 physical battlefield, not the
+  // browser's rectangular viewport. Its boundaries are solid box walls.
+  const cells = particlesSel.value === 'high' ? 112 : particlesSel.value === 'low' ? 56 : 80;
+  smoke = new SmokeField(cells,cells);
+  smokeTexture = document.createElement('canvas');
+  smokeTexture.width = smokeTexture.height = cells*4;
+  smokeCtx = smokeTexture.getContext('2d');
   prepareLabels(); $('count').textContent = '0 / 7 HIT';
   replayBtn.disabled = false; resetBtn.disabled = false;
   replayBtn.textContent = '▶ CAST CINDERSTORM';
@@ -116,7 +122,8 @@ function resize() {
   effects.width = Math.max(1, Math.round(rect.width * dpr));
   effects.height = Math.max(1, Math.round(rect.height * dpr));
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  if (smoke && !playing) smoke = new SmokeField(Math.ceil(rect.width/10),Math.ceil(rect.height/10));
+  // The projected box follows Scene's camera whenever the window resizes;
+  // the world-space fluid does not lose or rescale its density on resize.
 }
 function blob(x, y, radius, center, edge, opacity = 1) {
   if (radius <= 0 || opacity <= 0) return;
@@ -151,16 +158,28 @@ function drawCinderstorm(t) {
   const w = effects.clientWidth, h = effects.clientHeight;
   ctx.clearRect(0,0,w,h);
   if(!sc?.cam||!smoke)return;
-  const caster=sc.project(sc.centerPos(1));
+  const actor=sc.units.get(1);
+  if(!actor)return;
   const reduced=motionSel.value==='reduced';
-  // Every particle of smoke is injected at the caster. Semi-Lagrangian advection
-  // transports a connected density cloud outward through an evolving vortex.
-  // There is deliberately NO whole-screen darkening veil and NO pre-positioned clouds.
-  smoke.advanceTo(t,{x:caster.x/Math.max(1,w),y:caster.y/Math.max(1,h)},reduced);
-  smoke.render(ctx,w,h,{smoke:Number(smokeSel.value),reduced});
-  // Small localized hearth glow only while the player's hands channel the fire.
-  // The smoke field determines where the rest of the warm light is carried.
-  if(t>0 && t<3.35&&!reduced) {
+  // Coordinates are on the actual 8x8 tile plane. A plume cannot enter the
+  // surrounding scenery because velocity and density obey reflective walls.
+  const origin={
+    x:(actor.pos[0]+sc.w/2)/sc.w,
+    y:(actor.pos[2]+sc.h/2)/sc.h
+  };
+  smoke.advanceTo(t,origin,reduced);
+  smokeCtx.clearRect(0,0,smokeTexture.width,smokeTexture.height);
+  smoke.render(smokeCtx,smokeTexture.width,smokeTexture.height,{smoke:Number(smokeSel.value),reduced});
+  // Perspective-warp the 2D density sheet onto the real battlefield tiles,
+  // and clip every projected layer to their outline. No rectangular fog overlay.
+  const mobile=w<620;
+  drawSmokeOnArena(ctx,smokeTexture,sc,{elevation:0.15,steps:mobile?4:6,opacity:.94});
+  if(!reduced)drawSmokeOnArena(ctx,smokeTexture,sc,{elevation:0.65,steps:mobile?3:5,opacity:.30});
+  // Emission glow and impact flash respect the same invisible arena footprint.
+  ctx.save();
+  clipToArena(ctx,sc,0.04);
+  const caster=arenaPoint(sc,origin.x,origin.y,0.28);
+  if(t>0&&t<3.35&&!reduced){
     const glow=Math.min(1,t/.78)*(1-smooth((t-2.95)/.43));
     const radius=22+44*smooth(t/1.4);
     const g=ctx.createRadialGradient(caster.x,caster.y,2,caster.x,caster.y,radius);
@@ -170,11 +189,12 @@ function drawCinderstorm(t) {
     ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=g;
     ctx.beginPath();ctx.arc(caster.x,caster.y,radius,0,Math.PI*2);ctx.fill();ctx.restore();
   }
-  if(t>IMPACT_TIME-.13&&t<IMPACT_TIME+.22) {
+  if(t>IMPACT_TIME-.13&&t<IMPACT_TIME+.22){
     const flash=(1-Math.abs(t-IMPACT_TIME)/.22)*(reduced?.05:.14);
     ctx.fillStyle='rgba(255,124,53,'+Math.max(0,flash)+')';
     ctx.fillRect(0,0,w,h);
   }
+  ctx.restore();
   if(resolved&&t>=3.57) for(const u of resolved){
     if(u.dead) ashPile(sc.project(sc.world(u.x,u.y)),t,u.uid);
   }
