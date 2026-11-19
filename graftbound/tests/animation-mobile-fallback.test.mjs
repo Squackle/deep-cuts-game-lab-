@@ -93,3 +93,12 @@ test('mobile starts without asset downloads or WebGL; desktop can fall back afte
   assert.match(html,/Mobile compatibility:/);
   assert.doesNotMatch(studio,/Unable to prepare the GRAFTBOUND preview\. This requires WebGL2/);
 });
+
+test('runtime GPU context loss recovers using mobile-safe scene; failure UI can be re-mounted',()=>{
+  const studio=source('../dev/animation-studio/studio.js');
+  assert.match(studio,/canvas\.addEventListener\('webglcontextlost'/);
+  assert.match(studio,/event\.preventDefault\(\)/);
+  assert.match(studio,/startCompatibleScene\('WebGL context lost'\)/);
+  assert.match(studio,/if\(!loading\)\{\s*loading=document\.createElement\('div'\)/);
+  assert.match(studio,/effects\.parentNode\.appendChild\(loading\)/);
+});
