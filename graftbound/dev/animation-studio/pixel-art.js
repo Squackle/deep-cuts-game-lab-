@@ -1,4 +1,4 @@
-// Cinderstorm Animation Lab original pixel art. No copyrighted Magic artwork.
+// Pyroclasm / red fire board-wipe Animation Lab original pixel art. No copyrighted Magic artwork.
 // Rasterized once into small nearest-neighbor sprites, never vector flame triangles.
 // Pure pixel generation is Node-testable; DOM canvas is only used in createPixelAtlas().
 const rgba = hex => [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];
