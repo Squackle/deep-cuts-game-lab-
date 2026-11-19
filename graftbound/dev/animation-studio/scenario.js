@@ -6,7 +6,7 @@
 export const FIRE_BOARD_WIPE_EFFECT = Object.freeze({
   id: 'red-fire-board-wipe',
   previewCard: 'Pyroclasm',
-  color: 'R',
+  colors: Object.freeze(['R']),
   visualTheme: 'fire',
   action: 'board-wipe',
   targets: 'all-creatures',
