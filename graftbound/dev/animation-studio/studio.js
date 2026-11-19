@@ -5,11 +5,12 @@ import { loadAssets } from '../../src/rendering/sprites.js';
 import { buildEncounter } from '../../src/engine/encounters.js';
 import { ACTS } from '../../src/data/encounters.js';
 import { SCENARIO, PHASES, DURATION, IMPACT_TIME, resolveBoardFire } from './scenario.js';
+import { SmokeField } from './smoke-fluid.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('scene'), effects = $('effects'), ctx = effects.getContext('2d');
 const replayBtn = $('replay'), resetBtn = $('reset'), labels = $('labels');
-const speedSel = $('speed'), particlesSel = $('particles'), motionSel = $('motion');
+const speedSel = $('speed'), particlesSel = $('particles'), motionSel = $('motion'), smokeSel = $('smoke');
 const clamp = (n, a = 0, b = 1) => Math.max(a, Math.min(b, n));
 const smooth = n => { const t = clamp(n); return t*t*(3-2*t); };
 const frac = n => n - Math.floor(n);
@@ -17,7 +18,7 @@ const rnd = n => frac(Math.sin(n * 127.1 + 18.73) * 43758.5453);
 const mix = (a, b, t) => a + (b-a)*t;
 const defaultReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
 motionSel.value = defaultReduced ? 'reduced' : 'full';
-let sc, playing = false, started = 0, elapsed = 0, prev = 0;
+let sc, smoke, playing = false, started = 0, elapsed = 0, prev = 0;
 let resolved = null, damaged = false, removed = false, lastCast = -1;
 const marks = new Map();
 const original = SCENARIO.map(u => ({ ...u }));
@@ -56,6 +57,8 @@ function resetBattle() {
     unit.dir = u.side === 'enemy' ? [0, 1] : [0, -1];
     if (u.uid === 1) unit.castAt = 'hands';
   }
+  const div = particlesSel.value === 'high' ? 7 : particlesSel.value === 'low' ? 14 : 10;
+  smoke = new SmokeField(Math.ceil(effects.clientWidth/div),Math.ceil(effects.clientHeight/div));
   prepareLabels(); $('count').textContent = '0 / 7 HIT';
   replayBtn.disabled = false; resetBtn.disabled = false;
   replayBtn.textContent = '▶ CAST CINDERSTORM';
@@ -104,7 +107,7 @@ function renderLabels() {
     const p = sc.project(sc.headPos(u.uid));
     m.el.style.left = p.x + 'px';
     m.el.style.top = (p.y - 8) + 'px';
-    m.el.style.opacity = elapsed > 2.13 && elapsed < 2.82 ? '.10' : '1';
+    m.el.style.opacity = elapsed > 2.43 && elapsed < 3.82 ? '.15' : '1';
   }
 }
 function resize() {
@@ -113,6 +116,7 @@ function resize() {
   effects.width = Math.max(1, Math.round(rect.width * dpr));
   effects.height = Math.max(1, Math.round(rect.height * dpr));
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (smoke && !playing) smoke = new SmokeField(Math.ceil(rect.width/10),Math.ceil(rect.height/10));
 }
 function blob(x, y, radius, center, edge, opacity = 1) {
   if (radius <= 0 || opacity <= 0) return;
@@ -123,7 +127,7 @@ function blob(x, y, radius, center, edge, opacity = 1) {
   ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI*2); ctx.fill();
 }
 function ashPile(point, age, uid) {
-  const a = clamp((age - 2.69) / 0.34);
+  const a = clamp((age - 3.59) / 0.38);
   if (!a) return;
   const {x,y} = point;
   ctx.globalAlpha = a;
@@ -138,93 +142,50 @@ function ashPile(point, age, uid) {
     ctx.fillStyle = i%3===0?'#ec803f':'#a59a7b';
     ctx.fillRect(px,py,i%3===0?2:3,2);
   }
-  if (age<4) for (let i=0;i<3;i++){
+  if (age<4.95) for (let i=0;i<3;i++){
     const xx=x+(rnd(uid*77+i)-.5)*21+Math.sin(age*2+i)*5;
-    blob(xx,y-12-(age-2.6)*12-i*9,12,'#73716b99','#4a493500',0.22*(4-age)*a);
+    blob(xx,y-12-(age-3.55)*12-i*9,12,'#73716b99','#4a493500',0.22*(4.95-age)*a);
   }
 }
 function drawCinderstorm(t) {
   const w = effects.clientWidth, h = effects.clientHeight;
-  ctx.clearRect(0, 0, w, h);
-  if (!sc?.cam || t <= 0) return;
-  const pos = sc.project(sc.centerPos(1));
-  const center = sc.project([0,0,0]);
-  const grow = smooth(t / 1.48);
-  const storm = smooth((t-1.18)/0.85);
-  const decay = 1-smooth((t-2.70)/0.85);
-  const intensity = storm*decay;
-  const reduced = motionSel.value === 'reduced';
-  const count = particlesSel.value === 'low' ? 72 : particlesSel.value === 'high' ? 275 : 160;
-  const xscale = Math.max(130,w*0.40), yscale = Math.max(90,h*0.34);
-  if (t<3.62) {
-    // Molten spiral bands connect the caster's rotation to the eventual arena-wide cyclone.
-    ctx.save();
-    if (!reduced) {
-      ctx.globalCompositeOperation = 'screen';
-      for (let ring=0; ring<5; ring++) {
-        const k = clamp((t-.18-ring*.12)/1.5);
-        if (!k) continue;
-        const rr = mix(14, Math.min(w,h)*.46, smooth(k));
-        ctx.strokeStyle = ring%2 ? 'rgba(248,100,27,.27)' : 'rgba(255,200,84,.23)';
-        ctx.lineWidth = 3 + ring * 2;
-        ctx.beginPath();
-        ctx.ellipse(mix(pos.x,center.x,storm), mix(pos.y,center.y,storm), rr*1.3,rr*.62, -0.20, t*2.5+ring, t*2.5+ring+Math.PI*1.65);
-        ctx.stroke();
-      }
-    }
-    ctx.globalCompositeOperation = 'source-over';
-    // Fire-laced smoke, increasingly dense until the entire battlefield is obscured.
-    const veil = storm * (1-smooth((t-2.72)/.65));
-    if (veil) {
-      ctx.fillStyle = 'rgba(18,16,15,'+(veil*(reduced?.46:.76))+')';
-      ctx.fillRect(0,0,w,h);
-    }
-    const clouds = reduced ? 18 : Math.floor((particlesSel.value==='high'?92:particlesSel.value==='low'?34:58)*intensity);
-    for (let i=0;i<clouds;i++){
-      const seed=i*2.39996, angle=seed-t*(3.1+storm*7.5);
-      const spiral=0.1+Math.sqrt((i+.5)/Math.max(1,clouds))*.95;
-      const cx=center.x + Math.cos(angle)*xscale*spiral;
-      const cy=center.y + Math.sin(angle)*yscale*spiral;
-      const rad=(particlesSel.value==='low'?25:40)*(0.72+rnd(i+10))*(.55+intensity);
-      blob(cx,cy,rad,i%4===0?'#9b422aab':'#3a3330e8','#1b1e1a00',Math.min(0.9,intensity*.86));
-    }
-    // Embers revolve tightly around the raised hands first and widen into a wildfire.
-    ctx.globalCompositeOperation='lighter';
-    for(let i=0;i<count;i++){
-      const fraction=i/count, phase=i*2.39996;
-      const wake=clamp(t*1.6-fraction*.7);
-      if(wake<=0) continue;
-      const orbit=phase+t*(1.8+grow*8.6)+Math.sin(i)*.4;
-      const rad=(10+(9+fraction*65)*grow)+(storm* Math.min(w,h)*.29*fraction);
-      const anchorX=mix(pos.x,center.x,storm*.72), anchorY=mix(pos.y,center.y,storm*.65);
-      const x=anchorX+Math.cos(orbit)*rad*(1+storm*.45);
-      const y=anchorY+Math.sin(orbit)*rad*(.55+storm*.13);
-      const life=1-smooth((t-2.88)/.66), alpha=clamp(wake*life)*(reduced?.32:1);
-      const size=1.1+rnd(i*13)*2.5+storm*2;
-      ctx.fillStyle=i%4===0?'rgba(255,224,115,'+alpha+')':'rgba(255,97,28,'+alpha+')';
-      ctx.fillRect(x,y,size,size*1.55);
-    }
-    ctx.restore();
-    // A brief warm veil at the exact simultaneous impact. The HP updates happen underneath.
-    if(t>IMPACT_TIME-.11&&t<IMPACT_TIME+.27){
-      const flash=(1-Math.abs(t-IMPACT_TIME)/.27)*(reduced?.09:.27);
-      ctx.fillStyle='rgba(255,119,37,'+Math.max(0,flash)+')';
-      ctx.fillRect(0,0,w,h);
-    }
+  ctx.clearRect(0,0,w,h);
+  if(!sc?.cam||!smoke)return;
+  const caster=sc.project(sc.centerPos(1));
+  const reduced=motionSel.value==='reduced';
+  // Every particle of smoke is injected at the caster. Semi-Lagrangian advection
+  // transports a connected density cloud outward through an evolving vortex.
+  // There is deliberately NO whole-screen darkening veil and NO pre-positioned clouds.
+  smoke.advanceTo(t,{x:caster.x/Math.max(1,w),y:caster.y/Math.max(1,h)},reduced);
+  smoke.render(ctx,w,h,{smoke:Number(smokeSel.value),reduced});
+  // Small localized hearth glow only while the player's hands channel the fire.
+  // The smoke field determines where the rest of the warm light is carried.
+  if(t>0 && t<3.35&&!reduced) {
+    const glow=Math.min(1,t/.78)*(1-smooth((t-2.95)/.43));
+    const radius=22+44*smooth(t/1.4);
+    const g=ctx.createRadialGradient(caster.x,caster.y,2,caster.x,caster.y,radius);
+    g.addColorStop(0,'rgba(255,198,82,'+(glow*.34)+')');
+    g.addColorStop(.38,'rgba(252,95,23,'+(glow*.18)+')');
+    g.addColorStop(1,'rgba(240,66,10,0)');
+    ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=g;
+    ctx.beginPath();ctx.arc(caster.x,caster.y,radius,0,Math.PI*2);ctx.fill();ctx.restore();
   }
-  if (resolved && t>=2.69) for (const u of resolved) {
-    if (!u.dead) continue;
-    const p=sc.project(sc.world(u.x,u.y));
-    ashPile(p,t,u.uid);
+  if(t>IMPACT_TIME-.13&&t<IMPACT_TIME+.22) {
+    const flash=(1-Math.abs(t-IMPACT_TIME)/.22)*(reduced?.05:.14);
+    ctx.fillStyle='rgba(255,124,53,'+Math.max(0,flash)+')';
+    ctx.fillRect(0,0,w,h);
   }
-  if (resolved && t>=2.78 && t<3.75) for(const u of resolved) {
-    if (u.dead) continue;
+  if(resolved&&t>=3.57) for(const u of resolved){
+    if(u.dead) ashPile(sc.project(sc.world(u.x,u.y)),t,u.uid);
+  }
+  if(resolved&&t>=3.83&&t<4.55) for(const u of resolved){
+    if(u.dead)continue;
     const p=sc.project(sc.headPos(u.uid));
-    const strength=1-smooth((t-3)/.75);
+    const strength=1-smooth((t-3.87)/.7);
     ctx.save();ctx.globalAlpha=Math.max(0,strength);
-    ctx.fillStyle='#ffbd6b';ctx.font='bold 20px Georgia';ctx.textAlign='center';
+    ctx.fillStyle='#ffc782';ctx.font='bold 20px Georgia';ctx.textAlign='center';
     ctx.shadowColor='#7a2700';ctx.shadowBlur=7;
-    ctx.fillText('−2',p.x,p.y-38-(t-2.78)*17);
+    ctx.fillText('−2',p.x,p.y-38-(t-3.83)*17);
     ctx.restore();
   }
   ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
@@ -247,7 +208,7 @@ function tick(now) {
       } else if (elapsed-lastCast>.52){sc.play(1,'cast');lastCast=elapsed;}
     }
     if (elapsed>=IMPACT_TIME) impact();
-    if (elapsed>=2.70) removeFallen();
+    if (elapsed>=3.60) removeFallen();
     if (elapsed>=DURATION) {playing=false;replayBtn.textContent='↻ REPLAY CINDERSTORM';}
   }
   sc.frame(dt);
@@ -256,8 +217,8 @@ function tick(now) {
 }
 replayBtn.addEventListener('click', begin);
 resetBtn.addEventListener('click', resetBattle);
-particlesSel.addEventListener('change',()=>{if(sc)sc.setQuality(particlesSel.value==='high'?'high':particlesSel.value==='low'?'performance':'balanced');});
-motionSel.addEventListener('change',()=>{if(sc)sc.reduced=motionSel.value==='reduced';});
+particlesSel.addEventListener('change',()=>{if(sc)sc.setQuality(particlesSel.value==='high'?'high':particlesSel.value==='low'?'performance':'balanced');if(sc&&!playing)resetBattle();});
+motionSel.addEventListener('change',()=>{if(sc)sc.reduced=motionSel.value==='reduced';if(sc&&!playing)resetBattle();});
 window.addEventListener('resize',resize);
 window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r'&&!e.repeat&&!['SELECT','INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){e.preventDefault();begin();}});
 (async()=>{
