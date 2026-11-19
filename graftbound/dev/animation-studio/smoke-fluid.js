@@ -135,7 +135,7 @@ export class SmokeField {
       // by-product rather than a cloud painted directly at the caster.
       this.density[k]=Math.min(8,this.density[k]+amount*.07*falloff);
       this.fuel[k]=Math.min(9,this.fuel[k]+amount*1.15*falloff);
-      this.heat[k]=Math.min(7,this.heat[k]+fire*1.15*falloff);
+      this.heat[k]=Math.min(6.2,this.heat[k]+fire*.95*falloff);
     }
   }
   _spawnEmbers(cx,cy,t,charge,blast,reduced) {
@@ -170,13 +170,13 @@ export class SmokeField {
   }
   _spawnFlames(cx,cy,t,charge,blast,reduced) {
     if(t>3.31)return;
-    const count=reduced?1:Math.round(3+4*charge+3*blast);
-    const max=reduced?45:210;
+    const count=reduced?1:Math.round(2+2*charge+2*blast);
+    const max=reduced?30:96;
     for(let i=0;i<count&&this.flames.length<max;i++) {
       const a=t*(5.4+6.5*charge)+i*2.39996+(hash(++this.seed)-.5)*.7;
       const r=.6+hash(this.seed+19)*2.6;
       const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r*.82;
-      this.flames.push({x,y,px:x,py:y,age:0,life:.38+hash(this.seed+71)*.87,
+      this.flames.push({x,y,px:x,py:y,age:0,life:.68+hash(this.seed+71)*1.02,
         size:.58+hash(this.seed+13)*.9,seed:hash(this.seed+97),heat:1});
     }
   }
@@ -274,8 +274,8 @@ export class SmokeField {
       if(ignition<=0||this.fuel[k]<=0)continue;
       const burn=Math.min(this.fuel[k],this.fuel[k]*ignition*dt*(3.8+1.8*charge));
       this.fuel[k]-=burn;
-      this.heat[k]=Math.min(8,this.heat[k]+burn*.65);
-      this.flame[k]=Math.min(10,this.flame[k]+burn*6.2);
+      this.heat[k]=Math.min(6.2,this.heat[k]+burn*.42);
+      this.flame[k]=Math.min(6.5,this.flame[k]+burn*3.8);
       this.density[k]=Math.min(8,this.density[k]+burn*.075);
     }
     this._fieldEdges();
@@ -382,12 +382,12 @@ export class SmokeField {
       const xl=x>0?k-1:k,xr=x<w-1?k+1:k;
       const yl=y>0?k-w:k,yr=y<h-1?k+w:k;
       const rim=clamp((Math.abs(flame[xr]-flame[xl])+Math.abs(flame[yr]-flame[yl]))*.10,0,1);
-      const breakup=.83+.17*Math.sin(x*.31+y*.23-this.time*3.8)*Math.cos(y*.46-x*.17+this.time*2.8);
-      const fireA=clamp((1-Math.exp(-reaction*.74*fire))*flameFade*(.86+.14*rim)*breakup,0,.97);
+      const breakup=.69+.31*Math.sin(x*.31+y*.23-this.time*3.8)*Math.cos(y*.46-x*.17+this.time*2.8);
+      const fireA=clamp((1-Math.exp(-reaction*.50*fire))*flameFade*(.86+.14*rim)*breakup,0,.97);
       const sootA=clamp((1-Math.exp(-d*.60))*(.095+.29*sootLate)*smoke*smokeFade,0,.52);
       const coverage=clamp(fireA+sootA*(1-fireA),0,.98);
       if(coverage<.002){im[o+3]=0;glowPixels[o+3]=0;continue;}
-      const color=FIRE_PALETTE[Math.round(clamp((hot-.13)/4.15,0,1)*255)];
+      const color=FIRE_PALETTE[Math.round(clamp((hot-.13)/7.0,0,1)*255)];
       const smoky=clamp(sootA*(1-fireA)/coverage,0,1);
       const sootShade=37+Math.round(rim*12);
       for(let j=0;j<3;j++)im[o+j]=Math.round(color[j]*(1-smoky)+sootShade*smoky);
