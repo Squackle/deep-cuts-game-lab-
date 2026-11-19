@@ -87,11 +87,11 @@ test('changing selector replays and shows both sprite counts without affecting A
   assert.match(studio,/if\(sc\)begin\(\)/);
   assert.match(studio,/peakEmbers=Math\.max\(/);
   assert.match(studio,/peakFlames=Math\.max\(/);
-  assert.match(studio,/ashPile\(u,t\)/);
+  assert.match(studio,/ashPile\(u,t-spreadDelay\)/);
   assert.doesNotMatch(studio,/localStorage|sessionStorage|\/api\//);
   const html=file('../dev/animation-studio/index.html');
   assert.match(html,/id="sprite-counts"/);
-  assert.match(html,/Changing fire sprite density automatically replays/);
+  assert.match(html,/Changing fire sprite density or fire spread speed automatically replays/);
 });
 
 test('approved Cinematic Inferno preset is the actual default, preserving user overrides',()=>{

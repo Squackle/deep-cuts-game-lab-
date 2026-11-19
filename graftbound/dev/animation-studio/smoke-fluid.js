@@ -18,6 +18,18 @@ export function flameColor(temperature) {
 const FIRE_PALETTE=Array.from({length:256},(_,i)=>flameColor(i/255));
 // Sprite-only comparison presets. These never scale fuel, heat, smoke or ash.
 export const FIRE_SPRITE_DENSITIES=Object.freeze([1,1.35,1.5,1.75]);
+// Outward transport only. 1× preserves the original approved physics;
+// 0.65× is the new Animation Lab default. Rotating airflow stays intact.
+export const FIRE_SPREAD_SPEEDS=Object.freeze([1,.8,.65,.5]);
+export function normalizedSpreadSpeed(value) {
+  const speed=Number(value);
+  return FIRE_SPREAD_SPEEDS.includes(speed)?speed:1;
+}
+// Let the visual impact and cooling tail follow the slower traveling fire.
+// Max delay .30 s; not an attempt to calculate real-world gas-flame velocity.
+export function spreadImpactDelay(value) {
+  return Math.round((1-normalizedSpreadSpeed(value))*.6*100)/100;
+}
 export function normalizedSpriteDensity(value) {
   const number=Number(value);
   return FIRE_SPRITE_DENSITIES.includes(number)?number:1;
@@ -31,8 +43,10 @@ export function scaledSpriteSpawn(base,scale,remainder=0) {
 }
 
 export class SmokeField {
-  constructor(w = 98, h = 62, {spriteDensity=1}={}) {
+  constructor(w = 98, h = 62, {spriteDensity=1,spreadSpeed=1}={}) {
     this.spriteDensity=normalizedSpriteDensity(spriteDensity);
+    this.spreadSpeed=normalizedSpreadSpeed(spreadSpeed);
+    this.spreadDelay=spreadImpactDelay(this.spreadSpeed);
     this.w = Math.max(18, Math.floor(w));
     this.h = Math.max(18, Math.floor(h));
     this.n = this.w*this.h;
@@ -155,7 +169,7 @@ export class SmokeField {
     }
   }
   _spawnEmbers(cx,cy,t,charge,blast,reduced) {
-    if(t>3.42)return;
+    if(t>3.42+this.spreadDelay)return;
     const spawn=scaledSpriteSpawn(reduced?2:Math.round(2+5*charge+7*blast),
       this.spriteDensity,this._emberCarry);
     this._emberCarry=spawn.remainder;
@@ -173,7 +187,7 @@ export class SmokeField {
     }
   }
   _spawnPuffs(cx,cy,t,charge,blast,reduced) {
-    if(t>3.34)return;
+    if(t>3.34+this.spreadDelay)return;
     const n=reduced?1:3;
     for(let i=0;i<n && this.puffs.length<(reduced?34:115);i++) {
       const hand=i%2,angle=t*(5.4+5.8*charge)+hand*Math.PI+(hash(++this.seed)-.5)*.85;
@@ -187,7 +201,7 @@ export class SmokeField {
     }
   }
   _spawnFlames(cx,cy,t,charge,blast,reduced) {
-    if(t>3.31)return;
+    if(t>3.31+this.spreadDelay)return;
     const spawn=scaledSpriteSpawn(reduced?1:Math.round(2+2*charge+2*blast),
       this.spriteDensity,this._flameCarry);
     this._flameCarry=spawn.remainder;
@@ -206,7 +220,7 @@ export class SmokeField {
     this.origin={x:cx,y:cy};
     const charge=smooth((t-.13)/1.35),blast=smooth((t-1.18)/1.52);
     const strength=reduced?.48:1;
-    const dying=smooth((t-3.28)/.6);
+    const dying=smooth((t-(3.28+this.spreadDelay))/.6);
     // Advect air velocity by its own previous field, then apply caster-driven vortex
     // and low-frequency divergence-free (stream-function) turbulence.
     for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
@@ -215,7 +229,7 @@ export class SmokeField {
       const swirl=(7+27*charge)*fall*strength*(1-dying*.85);
       const angle=Math.atan2(dy,dx);
       const lobes=Math.max(.55,1+.28*Math.sin(angle*4.3-t*2.7)+.18*Math.cos(angle*7.1+t*1.4));
-      const outward=(1+165*blast)*fall*strength*lobes*(1-dying*.75);
+      const outward=(1+165*blast*this.spreadSpeed)*fall*strength*lobes*(1-dying*.75);
       const psiX=x*.19+t*1.1,psiY=y*.23-t*1.5;
       const curlX=(7+18*charge)*Math.sin(psiX)*Math.cos(psiY)*.23;
       const curlY=-(7+18*charge)*Math.cos(psiX)*Math.sin(psiY)*.19;
@@ -255,7 +269,7 @@ export class SmokeField {
       // Outward force turns into recirculating wall flow rather than moving
       // smoke through the container. Projected backtraces stay within the box.
       const boundary=Math.min(x-1,y-1,w-2-x,h-2-y);
-      const radiate=blast*strength*36/(1+r*.03)*smooth(boundary/5);
+      const radiate=blast*strength*36*this.spreadSpeed/(1+r*.03)*smooth(boundary/5);
       const vx=u[k]+(dx/r)*radiate,vy=v[k]+(dy/r)*radiate;
       const bx=x-vx*dt,by=y-vy*dt;
       this.nextDensity[k]=this.sample(this.density,bx,by)*decay;
@@ -272,7 +286,7 @@ export class SmokeField {
     this.nextFuel.fill(0);this.nextFlame.fill(0);
     // Two hands releasing overlapping hot plumes; the rest of the battlefield
     // receives only advected density. Nothing is painted globally.
-    if(t<3.28){
+    if(t<3.28+this.spreadDelay){
       for(let hand=0;hand<2;hand++){
         const angle=t*(5.4+5.8*charge)+hand*Math.PI;
         const radius=2.2+1.4*charge;
@@ -388,9 +402,9 @@ export class SmokeField {
     }
     const im=this.pixels.data,glowPixels=this.firePixels.data;
     const w=this.w,h=this.h,den=this.density,heat=this.heat,flame=this.flame;
-    const flameFade=1-smooth((this.time-3.42)/.56);
-    const smokeFade=1-smooth((this.time-4.22)/.78);
-    const sootLate=smooth((this.time-3.12)/.75);
+    const flameFade=1-smooth((this.time-(3.42+this.spreadDelay))/.56);
+    const smokeFade=1-smooth((this.time-(4.22+this.spreadDelay))/.78);
+    const sootLate=smooth((this.time-(3.12+this.spreadDelay))/.75);
     let fireOpacity=0,sootOpacity=0;
     for(let y=0;y<h;y++)for(let x=0;x<w;x++){
       const k=y*w+x,o=k*4,d=den[k],hot=heat[k],reaction=flame[k];
