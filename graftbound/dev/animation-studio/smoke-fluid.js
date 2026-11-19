@@ -42,6 +42,7 @@ export function scaledSpriteSpawn(base,scale,remainder=0) {
   return {count,remainder:Math.max(0,exact-count)};
 }
 
+
 export class SmokeField {
   constructor(w = 98, h = 62, {spriteDensity=1,spreadSpeed=1}={}) {
     this.spriteDensity=normalizedSpriteDensity(spriteDensity);
@@ -50,12 +51,18 @@ export class SmokeField {
     this.w = Math.max(18, Math.floor(w));
     this.h = Math.max(18, Math.floor(h));
     this.n = this.w*this.h;
+    // Velocities and injection radii were authored for a 64-cell reference grid.
+    // Scaling cell-space quantities retains the same physical tile-space motion.
+    this.scale=(Math.max(this.w,this.h)-1)/63;
     for(const k of ['u','v','nu','nv','density','heat','fuel','flame','nextDensity','nextHeat','nextFuel','nextFlame','div','p','pn','curl']) {
       this[k] = new Float32Array(this.n);
     }
     this.embers = [];
     this.puffs = [];
     this.flames = [];
+    this.licks=[];
+    this.scorch=new Float32Array(16*16);
+    this.scorchDirty=true;
     this.reset();
   }
   reset() {
@@ -64,11 +71,17 @@ export class SmokeField {
     this.embers.length = 0;
     this.puffs.length = 0;
     this.flames.length = 0;
+    this.licks.length=0;
+    this.scorch.fill(0);this.scorchDirty=true;
     this.seed = 0;
     this._emberCarry=0;
     this._flameCarry=0;
     this.origin = {x:this.w*.5,y:this.h*.5};
     this.frame = null;
+    this.skipped=false;
+    this.targets=[];
+    this.arrivals=[];
+    this.presentationDelay=null;
   }
   // Bilinear fetch, identical for velocity, temperature and smoke-density advection.
   sample(a,x,y) {
@@ -78,7 +91,24 @@ export class SmokeField {
     const a0=a[k]*(1-fx)+a[k+1]*fx, a1=a[k+w]*(1-fx)+a[k+w+1]*fx;
     return a0*(1-fy)+a1*fy;
   }
-  velocityAt(x,y) { return [this.sample(this.u,x,y),this.sample(this.v,x,y)]; }
+  velocityAt(x,y,out) {
+    if(!out)out=[0,0];
+    out[0]=this.sample(this.u,x,y);out[1]=this.sample(this.v,x,y);
+    return out;
+  }
+  trackTargets(points){
+    this.targets=points.map(p=>({x:p.x,y:p.y}));
+    this.arrivals=points.map(()=>null);
+  }
+  get visualDelay(){return this.presentationDelay??this.spreadDelay;}
+  recordArrivals(time){
+    for(let i=0;i<this.targets.length;i++){
+      if(this.arrivals[i]!=null)continue;
+      const p=this.targets[i];
+      if(this.sample(this.flame,p.x,p.y)>.35 && this.sample(this.heat,p.x,p.y)>.26)
+        this.arrivals[i]=time;
+    }
+  }
   // Impermeable walls: cancel normal airflow and preserve damped tangential
   // flow so smoke slides, folds and recirculates against the invisible arena box.
   // A little inboard restitution makes a plume rebound instead of disappearing.
@@ -99,6 +129,25 @@ export class SmokeField {
       u[top]=x===0||x===w-1?0:u[top+w]*slip;
       u[bottom]=x===0||x===w-1?0:u[bottom-w]*slip;
     }
+    // Invisible wall roller: inward normal gusts feed a tangential curl.
+    // The actual edge values remain zero-normal for collision correctness.
+    const band=4*this.scale;
+    for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
+      const k=y*w+x,bl=x-1,br=w-2-x,bt=y-1,bb=h-2-y;
+      const b=Math.min(bl,br,bt,bb);
+      if(b>=band)continue;
+      const strength=.55*(1-b/band);
+      if(Math.min(bl,br)===b){
+        const incoming=(bl<br?-u[k]:u[k]);
+        if(incoming>0){v[k]+=incoming*strength*(v[k]===0?(y%2?1:-1):Math.sign(v[k]));u[k]*=.88;}
+      }else{
+        const incoming=(bt<bb?-v[k]:v[k]);
+        if(incoming>0){u[k]+=incoming*strength*(u[k]===0?(x%2?1:-1):Math.sign(u[k]));v[k]*=.88;}
+      }
+    }
+    // Re-assert strict zero normal on the four physical edges.
+    for(let y=0;y<h;y++){u[y*w]=0;u[y*w+w-1]=0;}
+    for(let x=0;x<w;x++){v[x]=0;v[(h-1)*w+x]=0;}
   }
   _fieldEdges() {
     // Reflective density/heat ghost cells preserve gas at the border instead of
@@ -118,10 +167,11 @@ export class SmokeField {
   _reflectParticle(p) {
     // Mirror overshoot off walls; subsequent motion follows the deflected flow.
     const min=.7, xmax=this.w-1.7,ymax=this.h-1.7;
-    if(p.x<min)p.x=min+(min-p.x)*.45;
-    if(p.x>xmax)p.x=xmax-(p.x-xmax)*.45;
-    if(p.y<min)p.y=min+(min-p.y)*.45;
-    if(p.y>ymax)p.y=ymax-(p.y-ymax)*.45;
+    // When an ember bounces off a wall it skims along the boundary.
+    if(p.x<min){p.x=min+(min-p.x)*.45;if('bright' in p)p.y+=.18*this.scale;}
+    if(p.x>xmax){p.x=xmax-(p.x-xmax)*.45;if('bright' in p)p.y-=.18*this.scale;}
+    if(p.y<min){p.y=min+(min-p.y)*.45;if('bright' in p)p.x-=.18*this.scale;}
+    if(p.y>ymax){p.y=ymax-(p.y-ymax)*.45;if('bright' in p)p.x+=.18*this.scale;}
     p.x=clamp(p.x,min,xmax);p.y=clamp(p.y,min,ymax);
   }
   _project() {
@@ -154,6 +204,7 @@ export class SmokeField {
     this._walls();
   }
   _inject(cx,cy,r,amount,fire) {
+    r*=this.scale;
     const w=this.w,h=this.h,x0=Math.max(1,Math.floor(cx-r*2)),x1=Math.min(w-2,Math.ceil(cx+r*2));
     const y0=Math.max(1,Math.floor(cy-r*2)),y1=Math.min(h-2,Math.ceil(cy+r*2));
     const rr=1/(r*r);
@@ -169,14 +220,14 @@ export class SmokeField {
     }
   }
   _spawnEmbers(cx,cy,t,charge,blast,reduced) {
-    if(t>3.42+this.spreadDelay)return;
+    if(t>3.42+this.visualDelay)return;
     const spawn=scaledSpriteSpawn(reduced?2:Math.round(2+5*charge+7*blast),
       this.spriteDensity,this._emberCarry);
     this._emberCarry=spawn.remainder;
     const max=Math.round((reduced?48:170)*this.spriteDensity);
     for(let i=0;i<spawn.count && this.embers.length<max;i++){
       const a=t*11.5+i*2.399+hash(++this.seed)*.8;
-      const r=1+hash(this.seed+47)*2.5;
+      const r=(1+hash(this.seed+47)*2.5)*this.scale;
       this.embers.push({
         x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r,
         px:cx+Math.cos(a)*r,py:cy+Math.sin(a)*r,
@@ -187,11 +238,11 @@ export class SmokeField {
     }
   }
   _spawnPuffs(cx,cy,t,charge,blast,reduced) {
-    if(t>3.34+this.spreadDelay)return;
+    if(t>3.34+this.visualDelay)return;
     const n=reduced?1:3;
     for(let i=0;i<n && this.puffs.length<(reduced?34:115);i++) {
       const hand=i%2,angle=t*(5.4+5.8*charge)+hand*Math.PI+(hash(++this.seed)-.5)*.85;
-      const r=1.3+hash(this.seed+67)*2;
+      const r=(1.3+hash(this.seed+67)*2)*this.scale;
       this.puffs.push({
         x:cx+Math.cos(angle)*r,y:cy+Math.sin(angle)*r,
         age:0,life:1.0+hash(this.seed+22)*1.25,
@@ -201,26 +252,45 @@ export class SmokeField {
     }
   }
   _spawnFlames(cx,cy,t,charge,blast,reduced) {
-    if(t>3.31+this.spreadDelay)return;
+    if(t>3.31+this.visualDelay)return;
     const spawn=scaledSpriteSpawn(reduced?1:Math.round(2+2*charge+2*blast),
       this.spriteDensity,this._flameCarry);
     this._flameCarry=spawn.remainder;
     const max=Math.round((reduced?30:96)*this.spriteDensity);
     for(let i=0;i<spawn.count&&this.flames.length<max;i++) {
       const a=t*(5.4+6.5*charge)+i*2.39996+(hash(++this.seed)-.5)*.7;
-      const r=.6+hash(this.seed+19)*2.6;
+      const r=(.6+hash(this.seed+19)*2.6)*this.scale;
       const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r*.82;
       this.flames.push({x,y,px:x,py:y,age:0,life:.68+hash(this.seed+71)*1.02,
         size:.58+hash(this.seed+13)*.9,seed:hash(this.seed+97),heat:1});
     }
   }
+  _spawnWallLicks(t,reduced){
+    if(t>3.31+this.visualDelay)return;
+    const cap=reduced?6:24;
+    if(this.licks.length>=cap)return;
+    const band=Math.max(2,Math.round(2.1*this.scale));
+    // Deterministic scan, one small lick per wall per tick at most.
+    for(let side=0;side<4 && this.licks.length<cap;side++){
+      const slot=(Math.floor(t*29)+side*17)%Math.max(1,this.w-4);
+      const x=side===0?1+band:side===1?this.w-2-band:2+slot;
+      const y=side===2?1+band:side===3?this.h-2-band:2+slot%(this.h-4);
+      const k=y*this.w+x;
+      const incoming=side===0?-this.u[k]:side===1?this.u[k]:side===2?-this.v[k]:this.v[k];
+      if(this.flame[k]<=2.4 || incoming<1.2*this.scale)continue;
+      const flip=side===0||side===3?-1:1;
+      this.licks.push({x:clamp(x,.7,this.w-1.7),y:clamp(y,.7,this.h-1.7),
+        age:0,life:.52+hash(++this.seed+61)*.28,flip,size:1.15});
+    }
+  }
   step(origin = {x:.5,y:.5},reduced=false) {
     const w=this.w,h=this.h,n=this.n,dt=DT,t=this.time+dt;
+    const gridScale=this.scale;
     const cx=clamp(origin.x,0.05,.95)*(w-1),cy=clamp(origin.y,.05,.95)*(h-1);
     this.origin={x:cx,y:cy};
     const charge=smooth((t-.13)/1.35),blast=smooth((t-1.18)/1.52);
     const strength=reduced?.48:1;
-    const dying=smooth((t-(3.28+this.spreadDelay))/.6);
+    const dying=smooth((t-(3.28+this.visualDelay))/.6);
     // Advect air velocity by its own previous field, then apply caster-driven vortex
     // and low-frequency divergence-free (stream-function) turbulence.
     for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
@@ -230,11 +300,11 @@ export class SmokeField {
       const angle=Math.atan2(dy,dx);
       const lobes=Math.max(.55,1+.28*Math.sin(angle*4.3-t*2.7)+.18*Math.cos(angle*7.1+t*1.4));
       const outward=(1+165*blast*this.spreadSpeed)*fall*strength*lobes*(1-dying*.75);
-      const psiX=x*.19+t*1.1,psiY=y*.23-t*1.5;
+      const psiX=x*.19/gridScale+t*1.1,psiY=y*.23/gridScale-t*1.5;
       const curlX=(7+18*charge)*Math.sin(psiX)*Math.cos(psiY)*.23;
       const curlY=-(7+18*charge)*Math.cos(psiX)*Math.sin(psiY)*.19;
-      const tu=(dx/r)*outward-(dy/r)*swirl+curlX;
-      const tv=(dy/r)*outward+(dx/r)*swirl+curlY-this.heat[k]*.23;
+      const tu=((dx/r)*outward*.68-(dy/r)*swirl+curlX)*gridScale;
+      const tv=((dy/r)*outward*.68+(dx/r)*swirl+curlY-this.heat[k]*.23)*gridScale;
       this.nu[k]=this.sample(this.u,px,py)*.62+tu*.38;
       this.nv[k]=this.sample(this.v,px,py)*.62+tv*.38;
     }
@@ -252,8 +322,10 @@ export class SmokeField {
     for(let y=2;y<h-2;y++)for(let x=2;x<w-2;x++){
       const k=y*w+x,dx=Math.abs(curl[k+1])-Math.abs(curl[k-1]),dy=Math.abs(curl[k+w])-Math.abs(curl[k-w]);
       const len=Math.hypot(dx,dy)+1e-4;
-      u[k] += (dy/len)*curl[k]*dt*4.5;
-      v[k] -= (dx/len)*curl[k]*dt*4.5;
+      const edge=Math.min(x-1,y-1,w-2-x,h-2-y);
+      const wallCurl=edge<4*this.scale?1.6:1;
+      u[k] += (dy/len)*curl[k]*dt*4.5*wallCurl;
+      v[k] -= (dx/len)*curl[k]*dt*4.5*wallCurl;
     }
     this._walls();
     // Four separately advected scalar fields: fuel, hot gas, emitted flame and
@@ -261,6 +333,7 @@ export class SmokeField {
     const decay=Math.exp(-dt*(.94+dying*1.8)),cool=Math.exp(-dt*(.88+dying*2.8));
     const fuelDecay=Math.exp(-dt*(.30+dying*3.2));
     const flameDecay=Math.exp(-dt*(2.25+dying*5.1));
+    const wallFlameDecay=Math.exp(-dt*(2.25+dying*5.1)*.85);
     for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
       const k=y*w+x;
       const dx=x-cx,dy=y-cy,r=Math.max(1,Math.hypot(dx,dy));
@@ -269,13 +342,14 @@ export class SmokeField {
       // Outward force turns into recirculating wall flow rather than moving
       // smoke through the container. Projected backtraces stay within the box.
       const boundary=Math.min(x-1,y-1,w-2-x,h-2-y);
-      const radiate=blast*strength*36*this.spreadSpeed/(1+r*.03)*smooth(boundary/5);
+      const radiate=blast*strength*36*this.spreadSpeed/(1+r*.03/gridScale)*smooth(boundary/(5*gridScale))*gridScale*.68;
       const vx=u[k]+(dx/r)*radiate,vy=v[k]+(dy/r)*radiate;
       const bx=x-vx*dt,by=y-vy*dt;
       this.nextDensity[k]=this.sample(this.density,bx,by)*decay;
       this.nextHeat[k]=this.sample(this.heat,bx,by)*cool;
       this.nextFuel[k]=this.sample(this.fuel,bx,by)*fuelDecay;
-      this.nextFlame[k]=this.sample(this.flame,bx,by)*flameDecay;
+      this.nextFlame[k]=this.sample(this.flame,bx,by)*
+        (boundary<4*this.scale?wallFlameDecay:flameDecay);
     }
     [this.density,this.nextDensity]=[this.nextDensity,this.density];
     [this.heat,this.nextHeat]=[this.nextHeat,this.heat];
@@ -286,10 +360,10 @@ export class SmokeField {
     this.nextFuel.fill(0);this.nextFlame.fill(0);
     // Two hands releasing overlapping hot plumes; the rest of the battlefield
     // receives only advected density. Nothing is painted globally.
-    if(t<3.28+this.spreadDelay){
+    if(t<3.28+this.visualDelay){
       for(let hand=0;hand<2;hand++){
         const angle=t*(5.4+5.8*charge)+hand*Math.PI;
-        const radius=2.2+1.4*charge;
+        const radius=(2.2+1.4*charge)*gridScale;
         const x=cx+Math.cos(angle)*radius,y=cy+Math.sin(angle)*radius*.65;
         const rate=(21+39*charge)*(1-.32*blast)*strength*dt;
         this._inject(x,y,4.1+charge*1.1,rate,rate*(.74+.12*charge));
@@ -313,14 +387,37 @@ export class SmokeField {
       this.density[k]=Math.min(8,this.density[k]+burn*.075);
     }
     this._fieldEdges();
+    // Permanent 16x16 scorch map; fuel cannot scorch a cell unless burning.
+    // Stop accumulating before the aftermath so its shade does not creep.
+    if(t<4.7+this.visualDelay){
+      for(let cy=0;cy<16;cy++)for(let cx=0;cx<16;cx++){
+        const k=cy*16+cx,gx=(cx+.5)/16*(this.w-1),gy=(cy+.5)/16*(this.h-1);
+        const fire=this.sample(this.flame,gx,gy),hot=this.sample(this.heat,gx,gy);
+        const addition=Math.max(0,fire-1.2)*hot*dt*.012;
+        if(addition>0){
+          const previous=this.scorch[k];
+          this.scorch[k]=clamp(previous+addition,0,1);
+          if(this.scorch[k]-previous>.0005)this.scorchDirty=true;
+        }
+      }
+    }
+    this._spawnWallLicks(t,reduced);
+    const activeLicks=[];
+    for(const lick of this.licks){
+      lick.age+=dt;
+      if(lick.age<lick.life)activeLicks.push(lick);
+    }
+    this.licks=activeLicks;
+    const velocity=[0,0];
     const rest=[];
     for(const p of this.embers){
       p.age+=dt;
       if(p.age>=p.life)continue;
       p.px=p.x;p.py=p.y;
-      const [vx,vy]=this.velocityAt(p.x,p.y);
-      p.x += vx*dt*.94+(hash(this.seed+p.age*19)-.5)*dt*2;
-      p.y += vy*dt*.94-dt*2.4;
+      this.velocityAt(p.x,p.y,velocity);
+      const vx=velocity[0],vy=velocity[1];
+      p.x += vx*dt*.94+(hash(this.seed+p.age*19)-.5)*dt*2*this.scale;
+      p.y += vy*dt*.94-dt*2.4*this.scale;
       this._reflectParticle(p);
       rest.push(p);
     }
@@ -329,9 +426,10 @@ export class SmokeField {
     for(const puff of this.puffs){
       puff.age+=dt;
       if(puff.age>puff.life)continue;
-      const [vx,vy]=this.velocityAt(puff.x,puff.y);
+      this.velocityAt(puff.x,puff.y,velocity);
+      const vx=velocity[0],vy=velocity[1];
       puff.x+=vx*dt*.88;
-      puff.y+=(vy-1.9)*dt;
+      puff.y+=(vy-1.9*this.scale)*dt;
       this._reflectParticle(puff);
       puffs.push(puff);
     }
@@ -341,26 +439,32 @@ export class SmokeField {
       f.age+=dt;
       if(f.age>=f.life)continue;
       f.px=f.x;f.py=f.y;
-      const [vx,vy]=this.velocityAt(f.x,f.y);
+      this.velocityAt(f.x,f.y,velocity);
+      const vx=velocity[0],vy=velocity[1];
       f.x+=vx*dt*.96;
-      f.y+=(vy-2.1)*dt*.96;
+      f.y+=(vy-2.1*this.scale)*dt*.96;
       this._reflectParticle(f);
       f.heat=clamp(this.sample(this.flame,f.x,f.y)/2.8,0,1);
       tongues.push(f);
     }
     this.flames=tongues;
     this.time=t;
+    this.recordArrivals(t);
   }
   advanceTo(time,origin,reduced=false) {
     if(!Number.isFinite(time)||time<=this.time)return;
     const target=clamp(time,0,6);
-    // Bounded catch-up keeps tab suspension and fast playback from freezing UI.
+    // Small frame stalls accumulate and are repaid over subsequent frames.
+    // Never silently move the flame front forward without simulating its steps.
     let steps=0;
-    while(this.time+DT*.5<target && steps<8){
+    while(this.time+DT*.5<target && steps<4){
       this.step(origin,reduced);
       steps++;
     }
-    if(target-this.time>DT*8)this.time=target-DT*8;
+    if(target-this.time>1){
+      this.time=target;
+      this.skipped=true; // tab resume: explicit QA-visible discontinuity
+    }
   }
   stats(origin={x:.5,y:.5}) {
     const cx=origin.x*(this.w-1),cy=origin.y*(this.h-1);
@@ -375,7 +479,7 @@ export class SmokeField {
     }
     return {mass,radius:mass>0?radialMass/mass:0,remote,fuel:fuelMass,flame:flameMass,heat:heatMass};
   }
-  render(ctx,width,height,{smoke=1,fire=1,reduced=false}={}) {
+  render(ctx,width,height,{smoke=1,fire=1,reduced=false,cheapBloom=false,skipBloom=false}={}) {
     if(!this.surface){
       this.surface=document.createElement('canvas');
       this.surface.width=this.w;this.surface.height=this.h;
@@ -402,9 +506,9 @@ export class SmokeField {
     }
     const im=this.pixels.data,glowPixels=this.firePixels.data;
     const w=this.w,h=this.h,den=this.density,heat=this.heat,flame=this.flame;
-    const flameFade=1-smooth((this.time-(3.42+this.spreadDelay))/.56);
-    const smokeFade=1-smooth((this.time-(4.22+this.spreadDelay))/.78);
-    const sootLate=smooth((this.time-(3.12+this.spreadDelay))/.75);
+    const flameFade=1-smooth((this.time-(3.42+this.visualDelay))/.56);
+    const smokeFade=1-smooth((this.time-(4.22+this.visualDelay))/.78);
+    const sootLate=smooth((this.time-(3.00+this.visualDelay))/.75);
     let fireOpacity=0,sootOpacity=0;
     for(let y=0;y<h;y++)for(let x=0;x<w;x++){
       const k=y*w+x,o=k*4,d=den[k],hot=heat[k],reaction=flame[k];
@@ -441,15 +545,24 @@ export class SmokeField {
     ctx.imageSmoothingEnabled=true;
     // A separate emissive bloom; the gray soot receives no additive glow.
     ctx.globalCompositeOperation='lighter';
-    ctx.globalAlpha=reduced?.10:.31;
-    ctx.filter=reduced?'blur(3px)':'blur(9px)';
-    ctx.drawImage(this.fireSurface,0,0,width,height);
-    ctx.filter='none';
+    if(!skipBloom){
+      ctx.globalAlpha=reduced?.10:.31;
+      if(cheapBloom || !('filter' in ctx)){
+        // No Safari blur pipeline: two low-alpha offset lights instead.
+        ctx.globalAlpha=reduced?.04:.12;
+        ctx.drawImage(this.fireSurface,-2,-2,width,height);
+        ctx.drawImage(this.fireSurface,2,2,width,height);
+      }else{
+        ctx.filter=reduced?'blur(3px)':'blur(9px)';
+        ctx.drawImage(this.fireSurface,0,0,width,height);
+        ctx.filter='none';
+      }
+    }
     ctx.globalAlpha=1;
     ctx.globalCompositeOperation='source-over';
-    ctx.filter=reduced?'blur(1px)':'blur(1.8px)';
+    if(!cheapBloom && 'filter' in ctx)ctx.filter=reduced?'blur(1px)':'blur(1.8px)';
     ctx.drawImage(this.surface,0,0,width,height);
-    ctx.filter='none';
+    if('filter' in ctx)ctx.filter='none';
     const sx=width/w,sy=height/h;
     // Advected billows give the gas irregular volume without 3D ray marching.
     ctx.globalCompositeOperation='source-over';
@@ -470,4 +583,14 @@ export class SmokeField {
     ctx.globalCompositeOperation='source-over';
     ctx.restore();
   }
+}
+
+
+// Measured front synchronization. Never changes the fixture's damage amount.
+// If arrivals are not ready, retain the original selected-speed timing.
+export function computeImpactTime(arrivals,spreadSpeed=1,base=3.16){
+  const fallback=base+spreadImpactDelay(spreadSpeed);
+  if(!arrivals?.length || arrivals.some(t=>t==null||!Number.isFinite(t)))return fallback;
+  const latest=Math.max(...arrivals);
+  return clamp(latest+.32,fallback-.15,base+.75);
 }

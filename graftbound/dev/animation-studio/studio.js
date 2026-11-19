@@ -4,10 +4,11 @@ import { CanvasBattleScene } from './canvas-scene.js';
 import { buildEncounter } from '../../src/engine/encounters.js';
 import { ACTS } from '../../src/data/encounters.js';
 import { SCENARIO, DURATION, IMPACT_TIME, resolveBoardFire, FIRE_BOARD_WIPE_EFFECT, isFireBoardWipeEligible } from './scenario.js';
-import { SmokeField } from './smoke-fluid.js';
+import { SmokeField, computeImpactTime, flameColor } from './smoke-fluid.js';
 import { drawSmokeOnArena, clipToArena, arenaPoint } from './arena-projection.js';
 import { createPixelAtlas } from './pixel-art.js';
 import { ashSmokePuffs } from './ash-smoke.js';
+
 
 const $ = id => document.getElementById(id);
 const canvas = $('scene'), effects = $('effects'), ctx = effects.getContext('2d');
@@ -41,15 +42,25 @@ function startCompatibleScene(reason='mobile'){
   if(reason!=='mobile')console.warn('Pyroclasm switched to Canvas 2D compatibility mode:',reason);
 }
 
+
 let peakEmbers=0, peakFlames=0;
 let resolved = null, damaged = false, removed = false, lastCast = -1;
 let levelClock=0, ashSmokeBornAt=null;
+let lastCountsAt=0, lastCountsText='';
+const velocityScratch=[0,0];
+const frameIntervals=[],frameRenderMs=[];
+let adaptiveStage=0, frameNo=0, lastLightingPulse=0;
+let scorchSurface=null,scorchContext=null,lastScorchPaint=-1;
+const litTargets=[];
+// Ephemeral in-memory metrics for QA only; no browser storage or APIs.
+window.__pyroPerf={intervals:frameIntervals,renderMs:frameRenderMs};
 const marks = new Map();
 const original = SCENARIO.map(u => ({ ...u }));
 // A visual-study eligibility guard, not a live-game spell dispatcher.
 // This spell effect is ONLY for red, fire-themed creature board wipes.
 if (!isFireBoardWipeEligible(FIRE_BOARD_WIPE_EFFECT))
   throw new Error('The Pyroclasm preview requires a red fire-based creature board wipe.');
+
 
 // Spell casts never display phase names or narrative text on the battlefield.
 // The below-the-arena test outcome remains available for QA and accessibility.
@@ -75,19 +86,27 @@ function prepareLabels() {
     marks.set(u.uid, { el, fill, value });
   }
 }
-function showSpriteCounts() {
+function showSpriteCounts(force=false) {
   if (!smoke) return;
+  const now=performance.now();
+  if(!force && now-lastCountsAt<200)return;
+  lastCountsAt=now;
   const embers=smoke.embers.length, flames=smoke.flames.length;
   peakEmbers=Math.max(peakEmbers,embers);
   peakFlames=Math.max(peakFlames,flames);
-  $('sprite-counts').textContent=!playing&&elapsed>=DURATION+smoke.spreadDelay
+  const value=!playing&&elapsed>=DURATION+smoke.visualDelay
     ? `Peak B: ${peakEmbers} embers · C: ${peakFlames} flames`
     : `Active B: ${embers} embers · C: ${flames} flames`;
+  if(value!==lastCountsText){$('sprite-counts').textContent=value;lastCountsText=value;}
 }
 function resetBattle() {
   if (!sc) return;
   playing = false; elapsed = 0; damaged = false; removed = false; resolved = null; lastCast = -1;
   levelClock=0; ashSmokeBornAt=null;
+  adaptiveStage=0;frameNo=0;lastCountsAt=0;lastCountsText='';
+  frameIntervals.length=0;frameRenderMs.length=0;
+  lastLightingPulse=0;scorchSurface=null;scorchContext=null;lastScorchPaint=-1;litTargets.length=0;
+  $('renderer-status').textContent=sc.mode==='canvas-2d'?'Mobile-safe 2D renderer':'Full 3D renderer';
   peakEmbers=0; peakFlames=0;
   sc.loadArena(buildEncounter(ACTS[1].mid[0], 11, 'battle'), 11, 'warrens');
   sc.zoom = 1.17;
@@ -106,11 +125,13 @@ function resetBattle() {
     ? (particlesSel.value==='high'?64:particlesSel.value==='low'?44:56)
     : (particlesSel.value === 'high' ? 112 : particlesSel.value === 'low' ? 56 : 80);
   smoke = new SmokeField(cells,cells,{spriteDensity:Number(spriteDensitySel.value),spreadSpeed:Number(spreadSel.value)});
+  smoke.trackTargets(original.map(u=>({x:(u.x+.5)/8*(cells-1),y:(u.y+.5)/8*(cells-1)})));
+  sc.groundOverlay=sc.mode==='canvas-2d'?drawMobileGround:null;
   smokeTexture = document.createElement('canvas');
   smokeTexture.width = smokeTexture.height = cells*4;
   smokeCtx = smokeTexture.getContext('2d');
   prepareLabels(); $('count').textContent = '0 / 7 HIT';
-  showSpriteCounts();
+  showSpriteCounts(true);
   replayBtn.disabled = false; resetBtn.disabled = false;
   replayBtn.textContent = '▶ CAST PYROCLASM';
   note('2 fire damage to every creature — including allies and the caster.');
@@ -162,12 +183,12 @@ function renderLabels() {
     // Same projected head-position anchoring as the main game's BattleUI.frame().
     m.el.style.transform = `translate(${p.x | 0}px, ${p.y | 0}px)`;
     // Keep the main-game HP bars readable during the wipe's hottest moment.
-    m.el.style.opacity = elapsed > 3.05 && elapsed < 3.48 ? '.55' : '1';
+    m.el.style.opacity = elapsed > 3.05+smoke.visualDelay && elapsed < 3.48+smoke.visualDelay ? '.55' : '1';
   }
 }
 function resize() {
   const rect = effects.getBoundingClientRect();
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = Math.min(window.devicePixelRatio || 1, sc?.mode==='canvas-2d'?1.5:2);
   effects.width = Math.max(1, Math.round(rect.width * dpr));
   effects.height = Math.max(1, Math.round(rect.height * dpr));
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -228,6 +249,90 @@ function drawAshSmoke(unit,timeSinceDeath,reduced) {
   }
   ctx.restore();
 }
+// Scorch lives on a 16×16 sub-cell map that is updated only by burning fuel.
+// The offscreen ground texture is cached and stable after the fire is gone.
+function scorchCanvas(){
+  if(!scorchSurface){
+    scorchSurface=document.createElement('canvas');scorchSurface.width=scorchSurface.height=128;
+    scorchContext=scorchSurface.getContext('2d');
+  }
+  if(smoke.scorchDirty && smoke.time-lastScorchPaint>.18){
+    scorchContext.clearRect(0,0,128,128);
+    for(let y=0;y<16;y++)for(let x=0;x<16;x++){
+      const amount=smoke.scorch[y*16+x];if(amount<.08)continue;
+      const px=x*8,py=y*8;
+      for(let i=0;i<8;i++){
+        const seed=(x*91+y*37+i*157)>>>0;
+        const k=rnd(seed);
+        scorchContext.fillStyle=(i%2?'#1a1512':'#2a211b');
+        scorchContext.globalAlpha=Math.min(.38,amount*.38)*(.45+.55*k);
+        scorchContext.fillRect(px+Math.floor(rnd(seed+17)*8),py+Math.floor(rnd(seed+31)*8),1+(i%3===0?1:0),1);
+      }
+    }
+    scorchContext.globalAlpha=1;
+    smoke.scorchDirty=false;
+    lastScorchPaint=smoke.time;
+  }
+  return scorchSurface;
+}
+function drawScorch(target){
+  if(!smoke?.scorch?.some(v=>v>.08))return;
+  const surface=scorchCanvas();
+  drawSmokeOnArena(target,surface,sc,{elevation:.055,steps:4,opacity:1});
+}
+function drawTileFirelight(target){
+  if(!smoke)return;
+  const reduced=motionSel.value==='reduced',low=particlesSel.value==='low';
+  if(low&&frameNo%2!==0)return;
+  target.save();clipToArena(target,sc,0.04);
+  target.globalCompositeOperation='lighter';
+  for(let y=0;y<8;y++)for(let x=0;x<8;x++){
+    const fx=(x+.5)/8*(smoke.w-1),fy=(y+.5)/8*(smoke.h-1);
+    const reaction=smoke.sample(smoke.flame,fx,fy);
+    const flicker=reduced?1:.94+.06*rnd(x*31+y*17+Math.floor(smoke.time*12));
+    const alpha=clamp(reaction/3)*.22*flicker*(reduced?.5:1);
+    if(alpha<.008)continue;
+    const corners=[sc.world(x-.5,y-.5),sc.world(x+.5,y-.5),
+      sc.world(x+.5,y+.5),sc.world(x-.5,y+.5)];
+    target.beginPath();
+    corners.forEach((w,i)=>{const p=sc.project(w);if(i===0)target.moveTo(p.x,p.y);else target.lineTo(p.x,p.y);});
+    target.closePath();target.fillStyle=`rgba(255,142,56,${alpha})`;target.fill();
+  }
+  target.restore();
+}
+function drawMobileGround(target){
+  if(!smoke)return;
+  drawScorch(target);
+  drawTileFirelight(target);
+  // The ground fire sheet and behind-unit sprites are painted under 2D actors.
+  if(smokeTexture)drawSmokeOnArena(target,smokeTexture,sc,{elevation:0.15,steps:4,opacity:.94});
+  drawPixelFire(smoke,motionSel.value==='reduced',target,'ground');
+}
+function updateFireLighting(dt){
+  if(!smoke||!sc)return;
+  const reduced=motionSel.value==='reduced';
+  litTargets.length=0;
+  for(const unit of original){
+    const v=sc.units.get(unit.uid);if(!v)continue;
+    const gx=(unit.x+.5)/8*(smoke.w-1),gy=(unit.y+.5)/8*(smoke.h-1);
+    const a=smoke.sample(smoke.flame,gx,gy),
+      b=smoke.sample(smoke.flame,gx-.8,gy),c=smoke.sample(smoke.flame,gx+.8,gy);
+    const level=clamp((a*.6+b*.2+c*.2)/2.8)*Number(fireSel.value);
+    const arriving=smoke.arrivals[unit.uid-1]!=null;
+    const target=arriving?level*(reduced?.5:1):0;
+    v.fireLight=(v.fireLight||0)+(target-(v.fireLight||0))*(1-Math.exp(-dt*10));
+    v.fireTint=flameColor(clamp(smoke.sample(smoke.heat,gx,gy)/5));
+    if(sc.mode!=='canvas-2d'&&v.fireLight>.12)litTargets.push(v);
+  }
+  if(sc.mode!=='canvas-2d' && levelClock-lastLightingPulse>.1){
+    lastLightingPulse=levelClock;
+    litTargets.sort((a,b)=>b.fireLight-a.fireLight);
+    for(const v of litTargets.slice(0,3)){
+      const c=v.fireTint.map(n=>n/255);
+      sc.light(sc.centerPos(v.uid),c,Math.min(3.5,v.fireLight*2.2),.12,1.2);
+    }
+  }
+}
 // Individual billows rise in world height while their x/z travel through the
 // same reflected 8×8 velocity field. The clip is the actual tile footprint:
 // smoke volume never paints the surrounding scenery, even near a wall.
@@ -240,7 +345,7 @@ function drawContainedBillows(field,reduced) {
     const age=puff.age/puff.life;
     const birth=smooth(puff.age/.24);
     const fade=1-smooth((age-.54)/.46);
-    const sootReveal=smooth((field.time-(3.00+field.spreadDelay))/.70);
+    const sootReveal=smooth((field.time-(3.00+field.visualDelay))/.70);
     const alpha=birth*fade*(.09+.26*sootReveal)*Number(smokeSel.value)*(reduced?.55:1);
     if(alpha<=.005)continue;
     const [wx,,wz]=sc.world(puff.x/(field.w-1)*sc.w-.5,puff.y/(field.h-1)*sc.h-.5);
@@ -261,30 +366,33 @@ function drawContainedBillows(field,reduced) {
 // Options B+C: nearest-neighbor pixel ember pops and small S-curved flames.
 // Both are emitted by the caster, advected by the fluid, and masked to the 8×8
 // battlefield. These replace (not augment) the old vector triangles and strokes.
-function drawPixelFire(field,reduced) {
+function drawPixelFire(field,reduced,targetCtx=ctx,pass='top') {
+  const ctx=targetCtx;
   if(!pixelAtlas)return;
   ctx.save();
   clipToArena(ctx,sc,0.04);
   ctx.imageSmoothingEnabled=false;
   ctx.globalCompositeOperation='source-over';
   const intensity=Number(fireSel.value);
-  const flameFade=1-smooth((field.time-(3.40+field.spreadDelay))/.62);
-  const renderPos=(p,height)=>{
-    const [x,,z]=sc.world(p.x/(field.w-1)*sc.w-.5,p.y/(field.h-1)*sc.h-.5);
-    return sc.project([x,height,z]);
+  const flameFade=1-smooth((field.time-(3.40+field.visualDelay))/.62);
+  const renderPos=(x,y,height)=>{
+    const [wx,,z]=sc.world(x/(field.w-1)*sc.w-.5,y/(field.h-1)*sc.h-.5);
+    return sc.project([wx,height,z]);
   };
   for(const f of field.flames){
+    const behind=sc.mode==='canvas-2d' && (f.x/(field.w-1)*8+f.y/(field.h-1)*8)<6.3;
+    if(sc.mode==='canvas-2d' && (pass==='ground')!==behind)continue;
     const life=clamp(1-f.age/f.life);
     const opacity=life*flameFade*(.27+.56*f.heat)*intensity*(reduced?.58:1);
     if(opacity<.04)continue;
-    const p=renderPos(f,.18+f.age*.17);
-    const r=renderPos({...f,x:f.x+(field.w-1)/sc.w},.18+f.age*.17);
+    const p=renderPos(f.x,f.y,.18+f.age*.17);
+    const r=renderPos(f.x+(field.w-1)/sc.w,f.y,.18+f.age*.17);
     const tilePx=Math.hypot(r.x-p.x,r.y-p.y);
     const height=Math.round(clamp(tilePx*(.53+f.size*.17),13,35));
     const width=Math.round(height*17/23);
     const frame=Math.min(7,Math.floor(f.age/f.life*8));
     const sprite=pixelAtlas.flames[frame];
-    const wind=field.velocityAt(f.x,f.y)[0];
+    const wind=field.velocityAt(f.x,f.y,velocityScratch)[0];
     ctx.save();
     ctx.globalAlpha=clamp(opacity,0,.81);
     ctx.translate(Math.round(p.x),Math.round(p.y));
@@ -295,9 +403,11 @@ function drawPixelFire(field,reduced) {
   // The little scattered Rising Embers remain visible during ignition,
   // expansion, impact and the brief cooling aftermath.
   for(const e of field.embers){
+    const behind=sc.mode==='canvas-2d' && (e.x/(field.w-1)*8+e.y/(field.h-1)*8)<6.3;
+    if(sc.mode==='canvas-2d' && (pass==='ground')!==behind)continue;
     const progress=clamp(e.age/e.life);
-    const p=renderPos(e,.28+e.age*.85);
-    const r=renderPos({...e,x:e.x+(field.w-1)/sc.w},.28+e.age*.85);
+    const p=renderPos(e.x,e.y,.28+e.age*.85);
+    const r=renderPos(e.x+(field.w-1)/sc.w,e.y,.28+e.age*.85);
     const tilePx=Math.hypot(r.x-p.x,r.y-p.y);
     const width=Math.round(clamp(tilePx*(.18+e.size*.023),7,13));
     const height=Math.round(width*13/9);
@@ -305,6 +415,23 @@ function drawPixelFire(field,reduced) {
     ctx.globalAlpha=clamp((1-progress*.65)*(reduced?.58:1),0,.94);
     ctx.drawImage(pixelAtlas.embers[frame],
       Math.round(p.x-width*.5),Math.round(p.y-height*.55),width,height);
+  }
+  // Additional boundary licks reuse existing Curling Flame C frames;
+  // they never consume the owner-approved B/C sprite density allowance.
+  for(const lick of field.licks){
+    const behind=sc.mode==='canvas-2d' && (lick.x/(field.w-1)*8+lick.y/(field.h-1)*8)<6.3;
+    if(sc.mode==='canvas-2d' && (pass==='ground')!==behind)continue;
+    const life=1-lick.age/lick.life;
+    const p=renderPos(lick.x,lick.y,.22+lick.age*.4);
+    const tile=sc.project(sc.world(0,0)),next=sc.project(sc.world(1,0));
+    const base=Math.max(14,Math.hypot(tile.x-next.x,tile.y-next.y)*.63);
+    const height=Math.round(Math.min(43,base*1.35)),width=Math.round(height*17/23);
+    const frame=Math.min(7,Math.floor(lick.age/lick.life*8));
+    ctx.save();ctx.globalAlpha=clamp(life*.72*(reduced?.55:1));
+    ctx.translate(Math.round(p.x),Math.round(p.y));
+    if(lick.flip<0)ctx.scale(-1,1);
+    ctx.drawImage(pixelAtlas.flames[frame],-width/2,-height,width,height);
+    ctx.restore();
   }
   ctx.restore();
 }
@@ -317,7 +444,7 @@ function drawPyroclasm(t) {
   const actor=sc.units.get(1);
   if(!actor)return;
   const reduced=motionSel.value==='reduced';
-  const spreadDelay=smoke.spreadDelay;
+  const spreadDelay=smoke.visualDelay;
   const impactTime=IMPACT_TIME+spreadDelay;
   // Coordinates are on the actual 8x8 tile plane. A plume cannot enter the
   // surrounding scenery because velocity and density obey reflective walls.
@@ -328,13 +455,17 @@ function drawPyroclasm(t) {
   smoke.advanceTo(t,origin,reduced);
   smokeCtx.clearRect(0,0,smokeTexture.width,smokeTexture.height);
   smoke.render(smokeCtx,smokeTexture.width,smokeTexture.height,{
-    smoke:Number(smokeSel.value),fire:Number(fireSel.value),reduced
+    smoke:Number(smokeSel.value),fire:Number(fireSel.value),reduced,
+    cheapBloom:sc.mode==='canvas-2d',skipBloom:adaptiveStage>=2
   });
   // Perspective-warp the 2D density sheet onto the real battlefield tiles,
   // and clip every projected layer to their outline. No rectangular fog overlay.
   const mobile=w<620;
-  drawSmokeOnArena(ctx,smokeTexture,sc,{elevation:0.15,steps:mobile?4:6,opacity:.94});
-  if(!reduced)drawSmokeOnArena(ctx,smokeTexture,sc,{elevation:0.65,steps:mobile?3:5,opacity:.35});
+  if(sc.mode!=='canvas-2d'){
+    drawScorch(ctx);drawTileFirelight(ctx);
+    drawSmokeOnArena(ctx,smokeTexture,sc,{elevation:0.15,steps:mobile?4:6,opacity:.94});
+  }
+  if(!reduced && adaptiveStage<1)drawSmokeOnArena(ctx,smokeTexture,sc,{elevation:0.65,steps:mobile?3:5,opacity:.35});
   drawContainedBillows(smoke,reduced);
   drawPixelFire(smoke,reduced);
   // Emission glow and impact flash respect the same invisible arena footprint.
@@ -378,12 +509,31 @@ function drawPyroclasm(t) {
 function tick(now) {
   requestAnimationFrame(tick);
   try {
-  const dt=Math.min(.05,Math.max(0,(now-prev)/1000));prev=now;
+  const wallStart=performance.now();
+  const rawDelta=Math.max(0,now-prev);const dt=Math.min(.05,rawDelta/1000);prev=now;
+  if(rawDelta>0&&rawDelta<500){
+    frameIntervals.push(rawDelta);if(frameIntervals.length>30)frameIntervals.shift();
+  }
+  frameNo++;
+  if(sc?.mode==='canvas-2d' && frameIntervals.length===30 && frameNo%30===0){
+    const sorted=[...frameIntervals].sort((a,b)=>a-b),median=(sorted[14]+sorted[15])/2;
+    if(median>28 && adaptiveStage<2){
+      adaptiveStage++;
+      $('renderer-status').textContent='Mobile-safe 2D renderer · adaptive';
+    }
+  }
   if (!sc || document.hidden) return;
   if (playing) {
-    const delay=smoke.spreadDelay;
-    elapsed=Math.min(DURATION+delay,(now-started)/1000*Number(speedSel.value));
+    elapsed=Math.min(DURATION+.75,(now-started)/1000*Number(speedSel.value));
     const actor=sc.units.get(1);
+    if(actor){
+      const origin={x:(actor.pos[0]+sc.w/2)/sc.w,y:(actor.pos[2]+sc.h/2)/sc.h};
+      smoke.advanceTo(elapsed,origin,motionSel.value==='reduced');
+    }
+    // Same global impact for all seven creatures, but only once the measured
+    // advancing flame has reached every tile. No creature-specific damage.
+    if(!smoke.skipped)smoke.presentationDelay=computeImpactTime(smoke.arrivals,smoke.spreadSpeed,IMPACT_TIME)-IMPACT_TIME;
+    const delay=smoke.visualDelay;
     if (actor && !damaged) {
       if (motionSel.value==='full') {
         const radians=(elapsed*1.3+elapsed*elapsed*.48)*Math.PI*2;
@@ -397,10 +547,13 @@ function tick(now) {
     if (elapsed>=DURATION+delay) {playing=false;replayBtn.textContent='↻ REPLAY PYROCLASM';}
   }
   levelClock+=dt; // Not capped at the spell's 5.2-second duration.
+  drawPyroclasm(elapsed);
+  updateFireLighting(dt);
   sc.frame(dt);
   renderLabels();
-  drawPyroclasm(elapsed);
   showSpriteCounts();
+  frameRenderMs.push(performance.now()-wallStart);
+  if(frameRenderMs.length>120)frameRenderMs.shift();
   } catch(err) {
     if(sc?.mode==='canvas-2d') {
       // The initial loading overlay was removed after startup. Re-create it
@@ -434,6 +587,8 @@ spreadSel.addEventListener('change',()=>{if(sc)begin();});
 particlesSel.addEventListener('change',()=>{if(sc)sc.setQuality(particlesSel.value==='high'?'high':particlesSel.value==='low'?'performance':'balanced');if(sc&&!playing)resetBattle();});
 motionSel.addEventListener('change',()=>{if(sc)sc.reduced=motionSel.value==='reduced';if(sc&&!playing)resetBattle();});
 window.addEventListener('resize',resize);
+window.addEventListener('orientationchange',resize);
+window.visualViewport?.addEventListener('resize',resize);
 canvas.addEventListener('webglcontextlost',event=>{
   event.preventDefault();
   if(!sc||sc.mode==='canvas-2d')return;
@@ -476,3 +631,4 @@ window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r'&&!e.repeat&&!
     console.error('Animation Lab initialization failed even in compatibility mode',err);
   }
 })();
+

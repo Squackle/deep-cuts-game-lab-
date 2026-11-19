@@ -1,6 +1,8 @@
 # Pyroclasm / red fire-board-wipe effect study — research and engineering notes
 
+
 November 19, 2026. Visual test only: `/graftbound/dev/animation-studio/`.
+
 
 ## Source research
 - **NVIDIA GPU Gems, Chapter 38: Fast Fluid Dynamics Simulation on the GPU:** https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-38-fast-fluid-dynamics-simulation-gpu . Explains smoke density advection through a velocity grid, pressure projection, semi-Lagrangian backtracing and buoyancy. The studio implements an independently written, reduced-resolution CPU/grid adaptation. It does **not** copy the chapter's source code or depend on CUDA.
@@ -8,9 +10,12 @@ November 19, 2026. Visual test only: `/graftbound/dev/animation-studio/`.
 - **Unity: Particle Movement Patterns / Curl Noise:** https://docs.unity.com/en-us/engine/7000.0/manual/particle-movement-patterns . Recommends lower-frequency curl noise for billowing smoke and more energetic turbulence for hot embers. GRAFTBOUND doesn't import Unity.
 - **Valve: Counter-Strike 2 Responsive Smokes:** https://www.counter-strike.net/cs2 . Demonstrates the design direction of a physically responsive smoke volume. Valve does not publish its full implementation; no claim that the studio duplicates CS2 smoke or its engine.
 
+
 ## What changed from the earlier prototype
 
+
 **Previous:** A nearly full-screen dark rectangle plus smoke circles seeded across the entire arena. Smoke often appeared on a location without ever leaving the caster.
+
 
 **Now:** Only the player's two raised-hand emission points inject density and heat. At a fixed 30 Hz, a small 2D grid:
 1. Advects air velocity via semi-Lagrangian backtracing.
@@ -21,6 +26,7 @@ November 19, 2026. Visual test only: `/graftbound/dev/animation-studio/`.
 6. Composites smoke with density-based transparency and temperature-based warm lighting. No global screen-darkening veil or distant smoke spawners.
 7. Leaves battlefield damage purely in the isolated 2-damage fixture; casualties become ash after the blast.
 
+
 ## Limits and QA
 - This is a **2D camera-facing approximation**, not a photorealistic 3D GPU volumetric ray-march. The game still uses WebGL2 to render the arena; the dense smoke plane is composited on a small 2D canvas above it.
 - Field resolution is selectable via existing High/Balanced/Low controls, with a separate visual smoke-opacity setting. A reduced-motion setting limits spin and embers.
@@ -28,7 +34,9 @@ November 19, 2026. Visual test only: `/graftbound/dev/animation-studio/`.
 - Hardware iPhone/Android acceptance and subjective smoke look require human review after deployment. Test spatially progressive emission (first second), outward traveling clouds (middle), all-entity damage (impact), and ashes (aftermath).
 - Rollback: revert the isolated smoke module and its studio imports/tests; no gameplay version migration needed.
 
+
 ## November 19 — invisible battlefield box
+
 
 - The gas grid is now **square in GRAFTBOUND world coordinates**, exactly matching the actual 8×8 tile bounds. It is no longer a rectangular screen-space field.
 - All four walls have **zero-normal velocity**; tangential airflow is damped but free to slide. Inward restitution produces a visible rebound where gusts strike the boundary. Density/heat ghost cells reflect back into the chamber rather than disappearing off the edges.
@@ -38,9 +46,12 @@ November 19, 2026. Visual test only: `/graftbound/dev/animation-studio/`.
 - Smoke density and pressure now respond to walls. No visible boundary geometry is drawn. The illusion is an invisible arena-sized enclosure.
 - Tests enforce zero outward velocity on all walls, trapped particle centers, retained edge density, and correctly projected/masked tile geometry. Check rotations and mobile camera after each release.
 
+
 ## November 19 — Pyroclasm fire-dominant combustion pass
 
+
 **Visual goal:** Use the John Avon / Duskmourn Pyroclasm visual direction: an incandescent yellow-white and orange fireblast should be the primary effect; dark gas should trail, then linger as the flame extinguishes. The 80:20 fire/smoke description is an **art-direction target**, not a measured physical percentage or promise that every frame has exact pixel coverage.
+
 
 **Additional research:**
 - NVIDIA GPU Gems 3, *Real-Time Simulation and Rendering of 3D Fluids*: https://developer.nvidia.com/gpugems/gpugems3/part-v-physics-simulation/chapter-30-real-time-simulation-and-rendering-3d-fluids . Reference for advection, temperature and simplified combustion/reaction in bounded fluid grids.
@@ -50,6 +61,7 @@ November 19, 2026. Visual test only: `/graftbound/dev/animation-studio/`.
 - Epic Unreal Niagara, *Fluid Simulation Overview*: https://dev.epicgames.com/documentation/en-us/unreal-engine/fluid-simulation-in-unreal-engine---overview . Reference for velocity/temperature/density grids and boundary conditions.
 - Original Magic card information/art reference: https://mtg.ink/card/pyroclasm ; the card art is a visual reference **only** and is never copied or embedded as game art.
 
+
 **Engineering implementation (isolated to Animation Lab):**
 1. Existing semi-Lagrangian 2D vortex with reflective/tangential wall behavior and 8×8 tile perspective projection remains. The sim now advects distinct **fuel**, **flame reaction**, **temperature**, and **soot density** fields.
 2. Caster hands are the only fuel/heat source. Every 30 Hz tick consumes fuel where the gas is hot enough, generates a transient reaction/flame channel, adds heat and only a small soot byproduct. Fuel and flame fade when not replenished.
@@ -58,17 +70,24 @@ November 19, 2026. Visual test only: `/graftbound/dev/animation-studio/`.
 5. Two projective flame layers and a few rising tongues provide a *pseudo-volume* illusion. Particle-density and reduced-motion settings remain for mobile accessibility/performance.
 6. Existing main-game HP bars, game-state-independent 2-damage fixture (to **all seven** creatures), three deaths and temporary ash piles are preserved.
 
+
 **Honesty and limits:** These are established *techniques adapted to a CPU 2D visual simulator*, not a scientific combustion solver, 3D collision field, or genuinely photorealistic volumetric fire. The blackbody-*inspired* ramp is artist-directed rather than an integration of a calibrated blackbody spectrum. No imported Unreal/Houdini/NVIDIA code or copyrighted MTG art. The system changes neither actual game combat, card rules, ranked replays, accounts nor public Arcade. Any user-subjective visual quality still needs owner feedback after deployment.
+
 
 **Acceptance checks:** node syntax, stand-alone GRAFTBOUND and shared Game Lab CI, flame generated only near the caster, fuel consumed over time, all fields finite, flame reaction stronger than soot during attack, no particle leaves the invisible box, all screen-canvas corners outside the tiles transparent, desktop/mobile browser scene functioning, responsive controls, seven hits, three deaths, replay/reset unchanged. Rollback by reverting the Animation Lab PR.
 
+
 ### Browser visual acceptance refinement (same day)
+
 
 A desktop browser capture of PR #212 at the **THE DEVASTATION** phase showed oversaturated yellow-white particles shaped like sharp upward spikes, even though the flame/soot simulation was fire-dominant and board clipping worked. Numerical simulation checks alone were not sufficient for visual acceptance.
 
+
 This follow-up keeps the same physics and repairs presentation: (1) reduce heat and reaction saturation caps, (2) lower the hottest-color ramp's effective temperature, (3) render 96 or fewer moving flame tongues rather than 210, (4) replace hard additive white cores with smaller translucent Bézier-curved ribbons that bend with the measured airflow. The aim is a readable, moving firestorm rather than white shards. Performance and real-device appearance still require end-user review.
 
+
 ## November 19 — approved original pixel-art asset pass
+
 
 Owner-approved visual treatments:
 - **Ash A** is a compact, low, pale gray and charcoal powder heap with loose ash grains, NOT the previous smooth ellipse/shadow or fiery rock mound. It stays on dead creature tiles and must NOT emit flames itself.
@@ -76,66 +95,137 @@ Owner-approved visual treatments:
 - **C — Curling Flame** is an eight-frame, irregular S-curved fire tongue (red rim / orange / yellow-hot core), following the same fluid velocity and the board clip. It replaces canvas-gradient Bézier wedge shapes — no vector fire triangles.
 - The overall larger effect retains the agreed spiral fire-ribbons + ground-hugging inferno (the existing contained fuel/reaction field). Existing blue/red HP bars, exactly 2 damage to both sides, 3 ash casualties, scene controls and test-only isolation are unchanged.
 
+
 Implementation: `pixel-art.js` builds deterministic, original low-resolution 48×29 Ash A, 9×13 Ember B and 17×23 Flame C raster images (8 frames each). The browser uploads each image to a dedicated tiny offscreen Canvas only once; the actual battle overlay draws them nearest-neighbor (no blurred strokes, smoothed vector wedges or triangles). Sprites are positioned via `Scene.world()` + `Scene.project()`, follow live particle positions, and are clipped inside the 8×8 arena tile polygon. Sprites are deterministic for a fixed simulation state and have lower particle counts under reduced-motion settings.
+
 
 Important: This is **original procedural pixel art approximating the owner's chosen concepts**, not a conversion of the reference illustration or Magic card art. It must be visually reviewed on the deployed Animation Lab and can be tuned after user feedback. Physics remains the same 2D approximation; this PR does not claim true 3D fluid collision. Roll back by reverting this Animation Lab-only PR, restoring the previous test visuals without changing normal game saves or rules.
 
+
 ## November 19 — comparing fire sprite quantities
+
 
 Added an independent **Fire sprite density** selector to the Pyroclasm / red fire-board-wipe preview with `Original 1×`, `Light 1.35×`, `Requested 1.5×`, and `Full 1.75×`. The three larger settings are intentionally compared against the previously approved 1× baseline.
 
+
 This control affects **only** the frequency and corresponding live cap of the original Rising Ember B and Curling Flame C particles. A deterministic fractional spawn accumulator preserves the requested average factor (including 1.35× and 1.75×, which cannot be represented by rounding each spawn tick independently). Actual advected smoke, heat, fuel, fire combustion field, Ash A graphics, 2-damage fixture, and creature health bars remain unchanged. Density changes replay the fixture from the beginning for a useful visual comparison; the HUD shows active B/C counts and their peak counts after completion.
+
 
 Sprite population and reduced-motion caps scale together; the original 1× behavior remains the default. QA must confirm both particle families are visibly more numerous at all three higher presets, the 8×8 board mask still clips them, and the preview works on desktop/mobile without changing live gameplay or saved runs.
 
+
 ## November 19 — effect scope and card association
+
 
 **Primary reference spell:** **Pyroclasm**, a red sorcery that deals 2 damage to each creature. The seven-unit fixture remains the demonstration of exactly that effect.
 
+
 **Effect family:** `red-fire-board-wipe`. Reuse is allowed only for creature board wipes whose approved card adaptation explicitly identifies red mana/color identity, a fire-based visual theme, an all-creature target scope, and a board-wipe action. A helper `isFireBoardWipeEligible` provides this narrow metadata contract (it is *not* a live-engine dispatcher). A generic red spell, non-fire sweeper, creature-targeted burn spell, or unrelated animation is not eligible.
+
 
 The former experimental effect name is retired. The Animation Lab preview and catalog should say **Pyroclasm / Red Fire Board Wipes**, not invent or imply another playable spell. This is a *presentation-only* update and does **not** assign any card triggers in actual GRAFTBOUND gameplay. Future integration must be reviewed against the real card's adaptation, real damage amount, and targeting rules; this demo's 2-damage mechanic must never be silently applied to another card.
 
+
 Visual, performance and safety characteristics are otherwise unchanged (tile containment, pixel B/C effects, Ash A, sprite density options, 7 hits/3 deaths, no saved progress). Roll back by reverting the scoped naming/metadata PR.
+
 
 ## November 19 — mobile Safari startup and Canvas 2D compatibility
 
+
 A real iPhone Safari screenshot showed the generic "Unable to prepare the GRAFTBOUND preview. This requires WebGL2..." error and a blank battlefield, despite prior Cloudflare Chromium mobile simulations succeeding. The previous preview synchronously loaded the entire GRAFTBOUND HD-2D creature art catalog, WebGL shader programs and a full 3D scene before it could show even one frame. The generic message didn't establish which exact dependency failed on the user's device.
+
 
 **Mitigation:** On touch devices with a short viewport dimension at or under 820 CSS px, initialize a separate lightweight **Canvas 2D isometric battlefield** instead. This skips both the full 3D art loading and heavy WebGL Scene module imports. It reproduces the 8×8 tiles, seven lightweight original pixel silhouettes, projected head anchors for normal blue/red health bars, and screen projection used by the original gas/particle overlay. The identical isolated Pyroclasm damage/ash/sprite-density simulation remains on top. Responsive CPU grid limits are 44/56/64 depending on particle quality; normal 1× through 1.75× ember/flame density settings still operate.
 
+
 On desktops, load the original full WebGL Scene and creature art lazily. If it fails at asset loading or WebGL scene creation, or throws during frame rendering, mount the Canvas 2D scene on a **fresh canvas** (WebGL canvases cannot change context type) and replay the fixture. A manual `?renderer=2d` query enables the compatibility scene in desktop QA without depending on a particular GPU. The view explicitly reports the active renderer. Mobile uses a simple 2D scenic approximation, **not an identical copy of the full 3D battle environment**.
+
 
 Checkpoints: browser simulated mobile starts without any 3D asset requests, 2D board and labels appear; user can replay, change B/C density, reset, and see 7 units take 2 damage and 3 Ash A piles; projected smoke stays in the 8×8 polygon; desktop still uses WebGL when available; force-2D URL works on desktop. Actual hardware iOS Safari acceptance must be confirmed by the owner; browser emulation is not an iPhone hardware test.
 
+
 Rollback: revert this standalone GRAFTBOUND Animation Lab PR; no actual game engine, saved progress, public scores, card rules, or website code changed.
+
 
 ### Context-loss resilience follow-up
 
+
 Mobile and desktop preview QA after the first mobile-safe release found no gameplay regressions. The renderer now also handles a future `webglcontextlost` event by restoring the Canvas 2D scene and restarting the visual fixture. If a Canvas 2D rendering error happens after the initial loading overlay was removed, the error path re-creates the overlay instead of throwing a secondary null-reference exception. This follow-up does not change Pyroclasm effect visuals, damage, sprite counts, game engine, or asset loading behavior.
+
 
 ## November 19 — owner-approved Pyroclasm “Cinematic Inferno” defaults
 
+
 The owner approved the complete Pyroclasm fire-board-wipe animation and selected these as the preferred **default Animation Lab settings** after reviewing the working iPhone Canvas 2D preview: Playback Cinematic 1×; fire sprite density Requested 1.5×; Particles High detail; Fire intensity Inferno (1.5); Aftermath smoke Thick (1.35); Motion Full. The HTML selects now encode these values as their native defaults, and tests assert exactly one selected value per control. OS reduced-motion preferences remain respected; all selectors stay manually adjustable. This does NOT integrate the visual into the actual game or change card rules.
+
 
 Integration assessment after source review: Pyroclasm already has an explicit reviewed adaptation in `src/cards/compatibility.js` (effect `firestorm`, vfx `pyroclasm`); `src/engine/spells.js` already damages every creature via `damageBatch`. Existing `src/rendering/vfx.js` supplies an abbreviated shockwave and `src/rendering/casting.js` handles charge and impact sequencing. In a future, **separately authorized** gameplay integration, extract a reusable visual-only Pyroclasm runner from this Lab, attach it to the actual combat scene and canvas, synchronize its impact with the engine-provided damage events without calculating or applying damage, position ash at actual death events rather than static fixture units, and retain a performance/reduced-motion fallback. Do not apply these effects to unrelated red spells; any additional fire board wipe must have its own reviewed card adaptation and chosen VFX identity. No live-game files change in the preset-default PR.
 
+
 ## November 19 — owner-approved clean casting presentation
+
 
 The owner requested no floating spell-related captions in the Animation Lab, consistent with other GRAFTBOUND spells. Removed the entire in-arena stage heading (`THE INVOCATION`, `THE ASCENT`, `THE VORTEX`, `THE DEVASTATION`, `ASHFALL`) and the permanently overlaid arena identification stamp, together with their CSS styles. None of this alters animation timing or the internal script timeline, fire physics, particle and smoke defaults, 2-damage fixture, Ash A, caster, HP bars or damage numbers. Test status/renderer diagnostics stay **below** the battlefield and buttons remain clearly labeled. This is Animation Lab-only; live game is unchanged.
 
+
 ## November 19 — persistent Ash A smoking residue (owner request #1)
+
 
 **Goal:** every creature defeated by the Pyroclasm test leaves its approved pale-gray Ash A powder mound with a faint, continuously looping trail of **cool gray smoke**, which survives after the active firestorm animation stops. The smoke is not fire, a large soot cloud, or a new spell name. The entire battlefield/encounter reset is the only end-of-level cleanup in this isolated Animation Lab.
 
+
 Implementation: `ash-smoke.js` is an original, deterministic low-power 3.2-second smoke loop returning no more than six tiny drifting gray clusters per mound (two on reduced-motion). `studio.js` renders them as semitransparent 2D pixel clusters clipped to the same 8×8 board as the fire, anchored above the ash heap at each defeated creature's actual tile in the test fixture. The clock `levelClock` advances every rendered frame even after `elapsed` is capped at `DURATION=5.2`; ash animation birth is the real `removeFallen()` moment. No repeated timer, field solver injection, RNG, browser storage, heat, damage, or new enemy entity is used. Reset and replay clear `levelClock`, `ashSmokeBornAt`, and the fixture bodies.
+
 
 **Scope and limits:** This change affects **Animation Lab only**. Its terminal battlefield is effectively a stand-in for "the duration of the level" until the user selects reset/replay. Real gameplay has not yet been connected to the Animation Lab effect; genuine between-turn, multi-spell, and encounter-end persistence must be implemented during the separate approved Pyroclasm-to-live-game integration and must use real death/level events. Never claim this preview demonstrates persistence across real GRAFTBOUND turns.
 
+
 ## November 19 — fire spread speed comparison and slower approved-test default
+
 
 Owner requested that Pyroclasm's flames not shoot outward from the caster as rapidly and explicitly approved applying a slower default plus a dropdown to compare four settings. The Animation Lab now exposes **Fire spread speed** `Original 1.00×`, `Cinematic 0.80×`, `Slower 0.65×` **(selected)** and `Very slow 0.50×`. **Playback** (cinematic speed of all animation) remains a separate control; the previously approved **1.5× fire sprite density, Inferno intensity, High detail, Thick smoke, Full motion, Cinematic 1× playback** stay intact.
 
+
 Technical change: scale only the 2D solver's two radial outward transport terms (`outward` and `radiate`) by the selected speed. Retain caster fuel injection, flame reaction, vortex swirl, wall confinement, plume emission rate, ember/flame sprite density and ash appearance. Slow presets shift the presentation's impact, casualty removal, glowing fire fade and final cooling by `Math.round((1-speed)*0.6*100)/100` seconds (original 0, 0.8× +0.12, 0.65× +0.21, 0.5× +0.30) rather than adding a new damage mechanic. Ash smoking residue continues to run on a separate level clock after the spell concludes. Changing spread speed replays the identical scripted test fixture for side-by-side evaluation.
 
+
 **No real-world speed claim**: game tiles have no established meter scale, and magical combustion is not a real fuel bed or deflagrating gas cloud. Relative speed is a motion-design adjustment, not a physically calibrated prediction. This change is limited to Animation Lab, not actual GRAFTBOUND gameplay or any other spell.
+
+
+## November 19 — polish pass (animation test only)
+
+Owner-provided handoff, scoped to `graftbound/dev/animation-studio/**` and `graftbound/tests/animation-*.test.mjs` only. **No normal GRAFTBOUND gameplay, other games, save/ranked logic, accounts, leaderboard, D1, card catalog, or production spell renderer was touched.** Defaults stay Cinematic 1×, B/C sprite density 1.5×, outward spread 0.65×, High detail, Inferno 1.5, Thick aftermath smoke 1.35, Full motion (respecting OS reduced-motion). The 2-damage seven-creature scripted fixture, three Ash A casualties (uids 2/4/5), persistent gray ash wisps and clean battlefield without spell-stage text remain unchanged.
+
+Priority-ordered implementation:
+
+1. **Grid-independent fire solver / catch-up:** Reference cells at 64, scale cell-space transport/injection/rise and swirl frequency with `(max(w,h)-1)/63`. The transport envelope has a deliberate, grid-independent 0.68 cinematic response gain to reconcile the handoff's minimum impact-time clamp with its stricter 0.2–0.5 s arrival-to-impact acceptance (the original 64-grid flame front arrived too early to satisfy both). The 0.65× user-selected spread preset remains unchanged; this factor does not redefine its options. Velocity field sampling reuses scratch arrays. At most four 30 Hz physics steps per render, carrying sub-second debt without skipping; genuine >1 second tab resumes are recorded with `skipped=true` and explicit discontinuity. This is still stylized 2D combustion, not real-world calibrated fire propagation.
+2. **Single measured global impact:** Track flame/heat threshold arrival at every fixture creature tile. The impact presentation uses `clamp(lastArrival+0.32, IMPACT_TIME+spreadImpactDelay−0.15, IMPACT_TIME+0.75)`, or the original speed-specific delay if tracking is incomplete. Shift casualty removal, Ash A fade, damage number display, HP-bar dimming, smoke/fire fade and final duration by the same presentation offset. No asynchronous or individual damage changes—`resolveBoardFire` remains the only damage resolver. `7 / 7 HIT` retained exactly.
+3. **Mobile rendering:** Affine Canvas 2D gas sheets use one finite `ctx.transform` and `drawImage` under the original arena polygon clip; desktop WebGL keeps the perspective mesh. Both scene/effects DPR capped at 1.5 in mobile mode; orientation and visualViewport resize supported. Canvas 2D avoids expensive blur filters with restrained two-offset pseudo-bloom. Removed sprite object spreads and per-particle velocity arrays; sprite count DOM update throttled to 5 Hz. Only after median 30-frame interval exceeds 28 ms, adaptive mode skips the elevated smoke sheet first and bloom next, **never** reducing chosen sprite density, grid, smoke opacity or controls. The renderer indicator shows `· adaptive` when active.
+4. **Firelight:** Every living unit samples local fire/heat (three-point weighted sample), eases toward warm light, and fades as fire collapses. Canvas 2D pixel silhouettes are re-lit with pixel-crisp additive rectangular highlights and a caster-facing rim; desktop draws at most three short-lived local lights each 100 ms. 8×8 tile ground quads receive bounded `lighter` orange lighting. Reduced-motion halves lighting and disables flicker; Low power limits tile-ground updates to every other frame. HTML HP bars render above all effects.
+5. **Invisible boundary rolls:** Incoming wall-normal gusts redirect tangentially; vorticity confinement is stronger in a four-cell-world-space border band. Flame decay near the wall is slightly reduced. Up to 24 additional short-lived wall licks (6 under reduced motion) are driven by hot wall cells, reuse the same eight-frame Curling Flame C atlas, climb and lean along the tangent, and remain inside the same 8×8 clip. These particles are **separate** from the user-approved B/C quantity control; all boundary normals remain zero at physical wall cells.
+6. **Persistent scorch:** A fixed 16×16 sub-tile map accumulates local burning flame/heat in [0,1], does not fade, and resets only on Reset/Replay. Cache an original deterministic dark pixel stipple onto a 128×128 offscreen canvas, update at most five times/sec while changing; draw only within the arena. Ash A remains visibly above the char. No added animated ember flecks (skipped for performance/reduced-motion clarity).
+7. **Layering:** Mobile `CanvasBattleScene.groundOverlay()` draws scorch, tile lighting, the low fire/gas sheet and behind-unit B/C/licks after board tiles but before pixel actors. Remaining sprites, elevated sheet, damage numbers and ash remain on the effects canvas. For real WebGL scenes the single clipped effects layer is retained because altering shared `Scene` would violate scope. The simplified mobile depth threshold is an approximation, not true per-pixel Z-buffer depth.
+8. **Heat shimmer:** deliberately omitted; it is optional and adds nontrivial pixel processing without clear mobile benefit.
+
+Timing re-run (30 Hz, caster tile 2,5, threshold `flame>0.35` and `heat>0.26`, initial 1.5× B/C density):
+
+| Grid | Speed | Last arrival | Measured impact | Delta |
+|---|---:|---:|---:|---:|
+| 44 | 1.00× | 2.57 s | 3.01 s | 0.44 s |
+| 44 | 0.80× | 2.67 s | 3.13 s | 0.46 s |
+| 44 | 0.65× | 2.77 s | 3.22 s | 0.45 s |
+| 44 | 0.50× | 2.97 s | 3.31 s | 0.34 s |
+| 64 | 1.00× | 2.57 s | 3.01 s | 0.44 s |
+| 64 | 0.80× | 2.67 s | 3.13 s | 0.46 s |
+| 64 | 0.65× | 2.80 s | 3.22 s | 0.42 s |
+| 64 | 0.50× | 2.97 s | 3.31 s | 0.34 s |
+| 112 | 1.00× | 2.57 s | 3.01 s | 0.44 s |
+| 112 | 0.80× | 2.67 s | 3.13 s | 0.46 s |
+| 112 | 0.65× | 2.80 s | 3.22 s | 0.42 s |
+| 112 | 0.50× | 3.00 s | 3.32 s | 0.32 s |
+
+All seven arrivals present; inter-grid variation max 0.03 s and all measured gaps within 0.2–0.5 s. No `Math.random`, save/storage/API calls, new dependencies, or changes outside the isolated test. Local `node --test graftbound/tests/animation-*.test.mjs` passes all 67 tests; whole-repository CI after committing on main must establish the full test count. Note: Node 22 does not expand the bare folder argument `node --test graftbound/tests/` in an extracted partial source directory; use explicit glob or full repository's test scripts.
+
+**Visual verification limits:** WebGL rendering and the Canvas 2D mobile stage are not exact twins. Browser-rendering mobile emulation does **not** prove real iPhone Safari stability or native GPU frame times. Frame timing should be collected via the ephemeral `window.__pyroPerf` numbers (both RAF intervals and JavaScript render durations) in the deployed browser; no persistent telemetry is stored. The ring-band `flame` values are capped at 6.5 by an existing hard guardrail: when inner-band fire is already saturated, the outer band cannot mathematically be 1.5× brighter while keeping that cap. Wall licks, boundary recirculation and warmer edge opacity deliver the intended lip instead; no unrealistic new intensity range is introduced.
+
+Rollback: revert the one `main` commit for this test-only polish pass. No database or game migration required.
