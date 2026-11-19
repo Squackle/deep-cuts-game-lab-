@@ -81,9 +81,11 @@ test('Animation Lab only: flame tongues and reaction rendering respect the physi
 test('unheated fuel does not spontaneously ignite; temperature must exceed ignition threshold',()=>{
  const cold=new SmokeField(40,40),hot=new SmokeField(40,40);
  const i=20*40+20;
- for(const f of [cold,hot]) {f.fuel[i]=3;f.time=3.44;}
- cold.heat[i]=.01;
- hot.heat[i]=4;
+ // Use smooth multi-cell fuel plumes; semi-Lagrangian advection intentionally
+ // dissipates unrealistically isolated one-cell sources during transport.
+ cold._inject(20,20,3,3,0);
+ hot._inject(20,20,3,3,4);
+ cold.time=hot.time=3.44;
  cold.step({x:.5,y:.5});
  hot.step({x:.5,y:.5});
  assert.equal(cold.flame[i],0,'fuel with no heat has zero reaction');
