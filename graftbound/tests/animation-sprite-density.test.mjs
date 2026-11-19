@@ -87,7 +87,7 @@ test('changing selector replays and shows both sprite counts without affecting A
   assert.match(studio,/if\(sc\)begin\(\)/);
   assert.match(studio,/peakEmbers=Math\.max\(/);
   assert.match(studio,/peakFlames=Math\.max\(/);
-  assert.match(studio,/ashPile\(u,t\)/);
+  assert.match(studio,/ashPile\(u,t-spreadDelay\)/);
   assert.doesNotMatch(studio,/localStorage|sessionStorage|\/api\//);
   const html=file('../dev/animation-studio/index.html');
   assert.match(html,/id="sprite-counts"/);
