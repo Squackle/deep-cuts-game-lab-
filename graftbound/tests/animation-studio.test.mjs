@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { DAMAGE, SCENARIO, PHASES, IMPACT_TIME, DURATION, resolveBoardFire } from '../dev/animation-studio/scenario.js';
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
 test('Cinderstorm deals two to every allied and opposing creature, including the caster', () => {
@@ -29,4 +30,11 @@ test('Studio reuses real GRAFTBOUND scene, not save data or score APIs', () => {
   assert.match(js, /resolveBoardFire\(/);
   assert.doesNotMatch(js, /localStorage|sessionStorage|leaderboard|\/api\//);
   assert.ok(existsSync(new URL('../../animation-lab/index.html', import.meta.url)));
+});
+
+test('Studio browser module and pure fixture are syntactically valid JavaScript', () => {
+  for (const file of ['../dev/animation-studio/studio.js','../dev/animation-studio/scenario.js']) {
+    const result = spawnSync(process.execPath, ['--check', new URL(file, import.meta.url).pathname], { encoding: 'utf8' });
+    assert.equal(result.status, 0, file + ': ' + result.stderr);
+  }
 });
