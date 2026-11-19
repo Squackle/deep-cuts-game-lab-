@@ -79,6 +79,10 @@ test('mobile starts without asset downloads or WebGL; desktop can fall back afte
   const studio=source('../dev/animation-studio/studio.js');
   const html=source('../dev/animation-studio/index.html');
   assert.match(studio,/touchMobile/);
+  assert.match(studio,/import\('\.\.\/\.\.\/src\/rendering\/scene\.js'\)/);
+  assert.match(studio,/import\('\.\.\/\.\.\/src\/rendering\/sprites\.js'\)/);
+  assert.doesNotMatch(studio,/^import \{ Scene \} from/m,
+    'mobile must not statically import the full WebGL scene');
   assert.match(studio,/if\(preferCompatible\)\{\s*startCompatibleScene\('mobile'\)/);
   assert.match(studio,/const assets=await loadAssets\(\);\s*sc=new Scene\(canvas,assets\)/);
   assert.match(studio,/catch\(err\)\{\s*startCompatibleScene\(err\?\.message/);
