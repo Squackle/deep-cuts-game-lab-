@@ -14,9 +14,11 @@ test('smoke begins at the spellcaster, not as a full-screen overlay', () => {
 });
 test('advected smoke forms a moving outward plume and is resettable', () => {
   const field=new SmokeField(90,60),origin={x:.31,y:.68};
-  field.advanceTo(.75,origin);
+  // Evolve at the simulator's 30 Hz tick rather than leaping past its bounded
+  // frame catch-up budget, as a browser's requestAnimationFrame loop does.
+  for(let frame=1;frame<=23;frame++) field.advanceTo(frame/30,origin);
   const early=field.stats(origin);
-  field.advanceTo(3.05,origin);
+  for(let frame=24;frame<=92;frame++) field.advanceTo(frame/30,origin);
   const late=field.stats(origin);
   assert.ok(late.radius>early.radius+1, 'plume must visibly spread out from player');
   assert.ok(late.remote>early.remote, 'density must reach more distant battlefield cells');
