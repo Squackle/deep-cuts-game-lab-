@@ -16,7 +16,13 @@ test('Root and legacy Game Lab both include the same Animation Lab tab', () => {
 test('Animation Lab selector opens an isolated GRAFTBOUND cinematic scenario', () => {
   const page=read('animation-lab/index.html'), demo=read('graftbound/dev/animation-studio/index.html');
   assert.match(page,/href="\/graftbound\/dev\/animation-studio\/"/);
-  assert.match(page,/Cinderstorm \/ Pyroclasm/);
+  assert.match(page,/Pyroclasm \/ Red Fire Board Wipes/);
+  assert.match(page,/eligible|approved red, fire-based creature board wipes/);
+  assert.match(page,/aria-label="Open GRAFTBOUND Pyroclasm fire board-wipe animation test"/);
+  assert.doesNotMatch(page,/Cinderstorm/i);
+  assert.match(demo,/<h1>PYRO<span>CLASM<\/span><\/h1>/);
+  assert.match(demo,/CAST PYROCLASM/);
+  assert.doesNotMatch(demo,/Cinderstorm/i);
   assert.match(page,/No sign-in needed|no saved progress|do not alter adventures/);
   assert.match(demo,/id="scene"/);
   assert.match(demo,/id="effects"/);
