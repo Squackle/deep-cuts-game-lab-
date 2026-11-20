@@ -259,7 +259,9 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
     <div class="reward tier-${esc(tier)}" data-pack-kind="${identity.emblem}">
       <h2 class="rw-title">${titles[tier] || titles.battle}</h2>
       ${firstVictoryPacks ? `<p class="rw-pack-count" aria-label="First level booster ${firstVictoryPacks.index} of ${firstVictoryPacks.total}">Pack ${firstVictoryPacks.index} of ${firstVictoryPacks.total}</p>` : ''}
-      <p class="rw-sub" id="rw-sub" aria-live="polite">${severed ? `You severed <b>${esc(severed)}</b>. ` : ''}${esc(identity.cue)}</p><p class="rw-omen">${esc(identity.omen)}</p>
+      <p class="rw-sub" id="rw-sub" aria-live="polite">${severed ? `You severed <b>${esc(severed)}</b>. ` : ''}${esc(identity.cue)}</p>
+      ${graftsFull(run) ? `<p class="rw-sub" id="rw-graft-capacity"><b>Graft slots full (${run.evo.absorbed.length}/${graftCapacity(run)}).</b> To claim another creature, select one of your existing grafts to release in the detail panel below.</p>` : ''}
+      <p class="rw-omen">${esc(identity.omen)}</p>
       <div class="rw-reveal-actions"><button type="button" class="btn primary" aria-label="Reveal all cards in this pack" id="rw-reveal">Reveal All</button></div>
       <div class="pack-stage" id="pstage">
         <button type="button" class="pack ${tier}" id="pack" aria-label="Break the seal and open the booster"><span class="pack-rank">${esc(identity.rank)}</span>
@@ -394,7 +396,13 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
       if (mobileStack && mobileStack.handleTap(e)) return;
       if (!opened) { await open(); return; }
       if (reveal(slot)) return;
-      fan.querySelectorAll('.slot').forEach(s => s.classList.toggle('sel', s === slot)); centerSlot(slot); showDetail(slot.dataset.id);
+      fan.querySelectorAll('.slot').forEach(s => s.classList.toggle('sel', s === slot)); centerSlot(slot);
+      if ($('rw-detail').dataset.cardId !== slot.dataset.id) {
+        showDetail(slot.dataset.id);
+        if (getCard(slot.dataset.id).kind === 'creature' && graftsFull(run)) {
+          app.toast('<b>Graft slots full</b><small>Choose an existing graft to release below before claiming this creature.</small>');
+        }
+      }
       if (matchMedia('(max-width: 760px)').matches) $('rw-detail').scrollIntoView({ behavior: instant ? 'auto' : 'smooth', block: 'nearest' });
     });
     fan.addEventListener('dblclick', e => {
@@ -402,8 +410,16 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
       const slot = e.target.closest('.slot'); if (!slot || !slot.classList.contains('revealed')) return;
       const id = slot.dataset.id;
       fan.querySelectorAll('.slot').forEach(s => s.classList.toggle('sel', s === slot));
-      showDetail(id);
-      const take = $('rw-detail')?.querySelector('[data-take]'); if (take && !take.disabled) take.click();
+      const detail = $('rw-detail');
+      if (detail.dataset.cardId !== id) showDetail(id);
+      const take = detail.querySelector('[data-take]');
+      if (take && !take.disabled) take.click();
+      else if (take?.disabled) {
+        app.toast('<b>Graft slots full</b><small>Choose an existing graft to release below, then double-click again or use the Graft button.</small>');
+        const release = detail.querySelector('.release');
+        release?.scrollIntoView({ behavior: instant || matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+        release?.querySelector('input[name="rel"]')?.focus({ preventScroll: true });
+      }
     });
     fan.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('slot')) {
       e.preventDefault(); if (e.key === 'Enter' && e.target.classList.contains('revealed') && e.target.classList.contains('sel')) {
@@ -438,8 +454,14 @@ export function rewardScreen(app, cards, { tier, severed, firstVictoryPacks }) {
         body = `<div class="becomes"><span class="lbl">${e ? `Empower to level ${e.level + 1}` : 'New spell'}</span>${e ? `<div class="upgrade-comparison"><span><b>Now · Lv ${e.level}</b>${esc(formatSpellText(id, e.level, arcane))}</span><span><b>After · Lv ${e.level + 1}</b>${esc(formatSpellText(id, e.level + 1, arcane))}</span></div>` : ''}<p class="sptext">${esc(formatSpellText(id, e ? e.level + 1 : 1, arcane))}</p><span class="hp">${ICON.gem} ${c.cost} mana · ${TARGET[c.target]} · ${rangeLabel(id, e ? e.level + 1 : 1)} · once per turn</span></div>
           ${sourcePanelHTML(id)}<button type="button" class="btn primary big" data-take>${e ? 'Empower' : 'Inscribe'} ${esc(c.name)}</button>`;
       }
-      const det = $('rw-detail'); det.innerHTML = body; det.classList.add('show');
+      const det = $('rw-detail');
+      const previousRelease = det.dataset.cardId === id ? det.querySelector('input[name="rel"]:checked')?.value : null;
+      det.innerHTML = body; det.dataset.cardId = id; det.classList.add('show');
       const take = det.querySelector('[data-take]');
+      if (previousRelease != null) {
+        const kept = [...det.querySelectorAll('input[name="rel"]')].find(input => input.value === previousRelease);
+        if (kept) { kept.checked = true; take.disabled = false; }
+      }
       det.addEventListener('change', ev => { if (ev.target.name === 'rel') take.disabled = false; });
       take.addEventListener('click', async () => {
         if (claimed || take.disabled) return; claimed = true; take.disabled = true;
