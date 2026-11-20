@@ -15,9 +15,9 @@ export const SIZE_CLASS = Object.freeze({
   mtg_friendlySnake: 'low', mtg_grub: 'low',
   mtg_friendlySproutling: 'medium', mtg_saproling: 'medium', mtg_slug: 'medium', mtg_friendlyElemental: 'medium', mtg_friendlyGoblin: 'medium', mtg_goblin: 'medium', mtg_cinderling: 'medium', mtg_harpooner: 'medium', mtg_friendlyDrake: 'medium',
   mtg_hound: 'quad', mtg_wolf: 'quad', mtg_tortoise: 'quad',
-  mtg_alpha: 'leader', mtg_champion: 'leader',
+  mtg_alpha: 'leader', mtg_champion: 'leader', mtg_nullwarden: 'leader',
   mtg_friendlyCatSoldier: 'humanoid', mtg_friendlySoldier: 'humanoid', mtg_archer: 'humanoid', mtg_hexer: 'humanoid', mtg_emberseer: 'humanoid', mtg_riftstalker: 'humanoid', mtg_zombie: 'humanoid', mtg_friendlySkeleton: 'humanoid', blank: 'humanoid',
-  mtg_ashbrute: 'big', mtg_angel: 'big', mtg_nullwarden: 'big', mtg_golemFly: 'big', mtg_golemVigilance: 'big', mtg_golemTrample: 'big',
+  mtg_ashbrute: 'big', mtg_angel: 'big', mtg_golemFly: 'big', mtg_golemVigilance: 'big', mtg_golemTrample: 'big',
   mtg_sentinel: 'huge',
 });
 /** Side-view studies drawn facing screen-RIGHT (the legacy convention was left). Verified in dev/facing-qa.html. */
