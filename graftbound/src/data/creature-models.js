@@ -28,7 +28,7 @@ export const REAL_CREATURE_MODELS = Object.freeze({
   emberseer: C('emberseer','#492b27','#a44e32','#ffde91','alchemist'),
   champion: C('champion','#3e4036','#8e7a55','#d8c98e','wurm'),
   riftstalker: C('riftstalker','#141d33','#425a89','#a4b7df','shinobi'),
-  nullwarden: C('nullwarden','#26333b','#687d83','#c7dbe0','golem'),
+  nullwarden: C('nullwarden','#1f2830','#506773','#9ed7df','golem'),
   shardling: C('shardling','#26365b','#666ab6','#d0c3f2','duelist'),
   sentinel: C('sentinel','#343842','#888ca0','#e5d2ad','titan'),
   nemata: C('thornmother','#203824','#547741','#bdd67a','nemata'),
