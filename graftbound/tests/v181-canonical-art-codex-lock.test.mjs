@@ -9,12 +9,14 @@ import { validateCreatureIndex } from '../src/rendering/raster-benchmarks.js';
 
 const src = p => readFileSync(new URL('../' + p, import.meta.url), 'utf8');
 
-test('the original 40 approved PNGs cover all 43 painted creature mappings', () => {
+test('39 active painted PNGs cover 42 creature mappings; Lodestone uses a distinct generated model', () => {
   const manifest = JSON.parse(src('assets/hd2d/creatures/index.json'));
   const creatures = validateCreatureIndex(manifest);
-  assert.equal(creatures.length, 43);
+  assert.equal(creatures.length, 42);
   const unique = new Set(creatures.map(c => c.file));
-  assert.equal(unique.size, 40, '40 original source sheets with 3 token aliases');
+  assert.equal(unique.size, 39, '39 active source sheets with 3 token aliases');
+  assert.ok(!creatures.some(c => c.key === 'nullwarden'), 'Lodestone art is retired from runtime overrides');
+  assert.ok(existsSync(new URL('../assets/hd2d/creatures/nullwarden-poses.png', import.meta.url)), 'original PNG is retained for rollback');
   for (const c of creatures) {
     const path = new URL('../assets/hd2d/' + c.file, import.meta.url);
     assert.ok(existsSync(path), c.file + ' is present');
