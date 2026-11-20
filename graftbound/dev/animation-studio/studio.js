@@ -1,6 +1,7 @@
 // GRAFTBOUND Animation Studio: isolated visual scene using the actual WebGL battlefield renderer.
 // No save, combat-run, score, Scryfall, or server state. Gameplay values are a clearly labeled fixture.
 import { CanvasBattleScene } from './canvas-scene.js';
+import { ActivePlaybackClock } from './animation-clock.js';
 import { buildEncounter } from '../../src/engine/encounters.js';
 import { ACTS } from '../../src/data/encounters.js';
 import { SCENARIO, DURATION, IMPACT_TIME, resolveBoardFire, FIRE_BOARD_WIPE_EFFECT, isFireBoardWipeEligible } from './scenario.js';
@@ -21,7 +22,8 @@ const rnd = n => frac(Math.sin(n * 127.1 + 18.73) * 43758.5453);
 const mix = (a, b, t) => a + (b-a)*t;
 const defaultReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
 motionSel.value = defaultReduced ? 'reduced' : 'full';
-let sc, smoke, smokeTexture, smokeCtx, pixelAtlas, playing = false, started = 0, elapsed = 0, prev = 0;
+let sc, smoke, smokeTexture, smokeCtx, pixelAtlas, playing = false, elapsed = 0, prev = 0;
+const playbackClock=new ActivePlaybackClock();
 let compatCanvas=null;
 const touchMobile=window.matchMedia?.('(pointer: coarse)').matches &&
   Math.min(window.innerWidth,window.innerHeight)<=820;
@@ -139,7 +141,7 @@ function resetBattle() {
 function begin() {
   if (!sc) return;
   resetBattle();
-  playing = true; started = performance.now();
+  playing = true; playbackClock.start(performance.now(),Number(speedSel.value));
   replayBtn.textContent = '↻ REPLAY PYROCLASM';
   note('2 fire damage to every creature — including allies and the caster.');
 }
@@ -524,7 +526,7 @@ function tick(now) {
   }
   if (!sc || document.hidden) return;
   if (playing) {
-    elapsed=Math.min(DURATION+.75,(now-started)/1000*Number(speedSel.value));
+    elapsed=Math.min(DURATION+.75,playbackClock.elapsed(now));
     const actor=sc.units.get(1);
     if(actor){
       const origin={x:(actor.pos[0]+sc.w/2)/sc.w,y:(actor.pos[2]+sc.h/2)/sc.h};
@@ -576,6 +578,8 @@ function tick(now) {
 }
 replayBtn.addEventListener('click', begin);
 resetBtn.addEventListener('click', resetBattle);
+// Playback speed changes affect future frames only; never jump the current cast.
+speedSel.addEventListener('change',()=>playbackClock.setRate(Number(speedSel.value),performance.now()));
 // Every preset starts a fresh deterministic cast for immediate A/B/C comparison.
 // Only the two pixel sprite streams change; core fire, smoke, ash and damage do not.
 spriteDensitySel.addEventListener('change',()=>{
@@ -589,6 +593,21 @@ motionSel.addEventListener('change',()=>{if(sc)sc.reduced=motionSel.value==='red
 window.addEventListener('resize',resize);
 window.addEventListener('orientationchange',resize);
 window.visualViewport?.addEventListener('resize',resize);
+// Browsers may suspend RAF while hidden. Freeze only the studio's visual time;
+// do not fast-forward combustion, damage/ash beats, or count hidden frames in QA.
+function resumeVisibleClock(){
+  const now=performance.now();
+  playbackClock.resume(now);
+  prev=now;
+  frameIntervals.length=0;
+  frameNo=0;
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)playbackClock.pause(performance.now());
+  else resumeVisibleClock();
+});
+window.addEventListener('pagehide',()=>playbackClock.pause(performance.now()));
+window.addEventListener('pageshow',resumeVisibleClock);
 canvas.addEventListener('webglcontextlost',event=>{
   event.preventDefault();
   if(!sc||sc.mode==='canvas-2d')return;
