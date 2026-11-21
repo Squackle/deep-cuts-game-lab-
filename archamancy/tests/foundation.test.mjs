@@ -1,33 +1,26 @@
 import { test } from 'node:test';
 import { createEngine } from '../engine.mjs';
-function runFoundationChecks(make,register=null){
- const results=[];function check(name,f){if(register)register(name,f);else f();results.push(name);}function assert(a,msg="assertion failed"){if(!a)throw Error(msg);}
- const finish=(e)=>{for(let i=0;i<3000&&e.state.phase==="active";i++)e.step();assert(e.state.phase!=="active","wave failed to resolve");};
- check("24 distinct pads & route endpoints",()=>{const e=make();assert(e.map.pads.length===24);assert(new Set(e.map.pads.map(p=>p.x+":"+p.y)).size===24);assert(e.pointAt(0).x===0);assert(e.pointAt(e.map.distance).x===1000);});
- check("invalid commands do not spend mana",()=>{const e=make();for(const c of [{type:"build",pad:-1,kind:"grove"},{type:"build",pad:0,kind:"__proto__"},{type:"build",pad:0.5,kind:"grove"},{type:"upgrade",pad:0}])assert(!e.command(c));assert(e.state.mana===350);});
- check("build, upgrade, sell and accounting",()=>{const e=make();assert(e.command({type:"build",pad:0,kind:"grove"}));assert(!e.command({type:"build",pad:0,kind:"grove"}));assert(e.command({type:"upgrade",pad:0}));const paid=e.state.towers[0].paid;assert(e.command({type:"sell",pad:0}));assert(e.state.mana===350-paid+Math.floor(paid*.7));assert(!e.state.towers[0]);});
- check("no passive farm while idle; income during battle",()=>{const e=make();e.command({type:"build",pad:20,kind:"grove"});const cash=e.state.mana;for(let i=0;i<50;i++)e.step();assert(e.state.mana===cash&&e.state.tick===0);e.command({type:"wave"});for(let i=0;i<21;i++)e.step();assert(e.state.stats.farmMana===20);});
- check("wave rejects overlapping duplicate start",()=>{const e=make();assert(e.command({type:"wave"}));assert(!e.command({type:"wave"}));finish(e);assert(e.state.wave===1&&e.state.stats.leaks===10&&e.state.health===10);});
- check("defeat is terminal",()=>{const e=make();e.command({type:"wave"});finish(e);e.command({type:"wave"});finish(e);assert(e.state.phase==="lost");assert(!e.command({type:"build",pad:0,kind:"grove"}));});
- check("rally snapping enforces range",()=>{const e=make();e.command({type:"build",pad:0,kind:"legion"});assert(e.command({type:"rally",pad:0,x:280,y:110}));assert(!e.command({type:"rally",pad:0,x:1000,y:490}));});
- check("tower combat, summons and event order",()=>{const e=make();e.command({type:"build",pad:4,kind:"legion"});e.command({type:"build",pad:0,kind:"arcanum"});e.command({type:"wave"});finish(e);assert(e.state.stats.summoned>0);assert(e.state.stats.kills>0);assert(e.state.stats.damage>0);assert(e.state.events.every((v,i,a)=>i===0||v.seq>a[i-1].seq));});
- check("flyers bypass ground-only splash",()=>{const e=make();e.command({type:"build",pad:0,kind:"pyre"});e.state.phase="active";e.state.enemies.push({id:1,kind:"wing",...e.types.wing,progress:220,slowUntil:0,nextAttack:0,maxHp:42});e.step();assert(e.state.enemies[0].hp===42);});
- check("same seed and commands reproduce full simulation",()=>{const a=make(42),b=make(42);for(const e of [a,b]){e.command({type:"build",pad:0,kind:"arcanum"});e.command({type:"build",pad:4,kind:"legion"});e.command({type:"build",pad:20,kind:"grove"});e.command({type:"wave"});finish(e);}assert(JSON.stringify(a.state)===JSON.stringify(b.state));});
- check("mana ledger reconciles",()=>{const e=make();e.command({type:"build",pad:20,kind:"grove"});e.command({type:"build",pad:0,kind:"arcanum"});e.command({type:"wave"});finish(e);const s=e.state.stats;assert(e.state.mana===350+s.manaEarned-s.spent+s.refunds);assert(s.manaEarned===s.farmMana+s.killMana+s.waveMana);});
- return results;
+function betaChecks(make,test){
+ const ok=(v,msg="assertion failed")=>{if(!v)throw Error(msg)};
+ const finish=g=>{for(let i=0;i<7000&&g.state.phase==="active";i++)g.step();ok(g.state.phase!=="active","wave timeout")};
+ const give=(g,id)=>{while(g.state.hand.length>=5)ok(g.command({type:"discard",index:0}));ok(g.command({type:"sandboxCard",card:id}));return g.state.hand.length-1};
+ const cast=(g,id,target={})=>g.command({type:"cast",index:give(g,id),...target});
+ const ledger=g=>{const s=g.state.stats;ok(g.state.mana===350+s.manaEarned-s.spent+s.refunds,"mana balance");ok(s.manaEarned===s.farmMana+s.killMana+s.waveMana+s.soulMana+s.spellMana+s.sandboxMana,"sources")};
+ test("24 distinct pads, 15 towers, 21 cards, seven enemy types",()=>{const g=make();ok(g.map.pads.length===24);ok(new Set(g.map.pads.map(p=>p.x+":"+p.y)).size===24);ok(g.pointAt(0).x===0&&g.pointAt(g.map.distance).x===1000);ok(Object.keys(g.roster).length===15&&Object.keys(g.cards).length===21&&Object.keys(g.types).length===7)});
+ test("invalid build commands, no mana loss",()=>{const g=make();for(const c of [{type:"build",pad:-1,kind:"grove"},{type:"build",pad:0,kind:"__proto__"},{type:"build",pad:0.5,kind:"grove"},{type:"upgrade",pad:0}])ok(!g.command(c));ok(g.state.mana===350)});
+ test("four tiers, resale, ledger",()=>{const g=make(1,"sandbox");ok(g.command({type:"sandboxMana",amount:10000}));ok(g.command({type:"build",pad:0,kind:"grove"}));for(let i=0;i<3;i++)ok(g.command({type:"upgrade",pad:0}));ok(g.state.towers[0].tier===4);ok(!g.command({type:"upgrade",pad:0}));ok(g.command({type:"sell",pad:0}));ledger(g)});
+ test("mana farms only in combat",()=>{const g=make();g.command({type:"build",pad:20,kind:"grove"});const m=g.state.mana;for(let i=0;i<50;i++)g.step();ok(g.state.mana===m&&g.state.tick===0);g.command({type:"wave"});for(let i=0;i<21;i++)g.step();ok(g.state.stats.farmMana===20);ledger(g)});
+ test("wave start and terminal defeat",()=>{const g=make();ok(g.command({type:"wave"}));ok(!g.command({type:"wave"}));finish(g);ok(g.state.health===10);g.command({type:"wave"});finish(g);ok(g.state.phase==="lost");ok(!g.command({type:"build",pad:0,kind:"grove"}))});
+ test("early call awards once for both waves",()=>{const g=make(1,"sandbox");g.command({type:"sandboxMana",amount:10000});for(let i=0;i<5;i++)g.command({type:"build",pad:i,kind:"arcanum"});g.command({type:"wave"});for(let i=0;i<100&&g.state.queue.length;i++)g.step();ok(g.command({type:"early"}));ok(!g.command({type:"early"}));finish(g);ok(g.state.waveHistory.length===2);ok(g.state.stats.waveMana===25+45+55);ledger(g)});
+ test("rally range",()=>{const g=make();g.command({type:"build",pad:0,kind:"legion"});ok(g.command({type:"rally",pad:0,x:280,y:110}));ok(!g.command({type:"rally",pad:0,x:1000,y:490}))});
+ test("every tower builds and simulation finishes",()=>{const g=make(1,"sandbox");g.command({type:"sandboxMana",amount:100000});Object.keys(g.roster).forEach((kind,pad)=>ok(g.command({type:"build",pad,kind})));g.command({type:"wave"});finish(g);ok(g.state.stats.kills>0&&g.state.stats.summoned>0&&g.state.stats.farmMana>0);ledger(g)});
+ test("ground splash cannot hit flying targets",()=>{const g=make(1,"sandbox");g.command({type:"build",pad:0,kind:"pyre"});g.command({type:"sandboxEnemy",enemy:"wing",count:1});g.state.enemies[0].progress=220;g.step();ok(g.state.enemies[0].hp===42)});
+ test("sandbox commands unavailable in normal play",()=>{const g=make();for(const c of [{type:"sandboxMana",amount:10000},{type:"sandboxCard",card:"meteor"},{type:"sandboxEnemy",enemy:"titan",count:10},{type:"sandboxHeal"},{type:"sandboxClear"}])ok(!g.command(c));ok(g.state.mana===350)});
+ test("deck validation, max copies and hand size",()=>{const g=make();ok(!g.command({type:"deck",deck:Array(30).fill("meteor")}));ok(g.command({type:"deck",deck:g.state.deck.slice()}));ok(g.state.hand.length===4&&g.state.library.length===26);g.command({type:"wave"});ok(g.state.hand.length===5);ok(!g.command({type:"deck",deck:g.state.deck.slice()}))});
+ test("invalid spell target does not spend or discard",()=>{const g=make(1,"sandbox");const i=give(g,"meteor"),m=g.state.mana;ok(!g.command({type:"cast",index:i,x:220,y:110}));ok(g.state.mana===m&&g.state.hand[i]==="meteor");g.command({type:"wave"});ok(!g.command({type:"cast",index:i,x:-1,y:110}));ok(g.state.mana===m)});
+ test("death explosion plus resonance plus nearby soul foundry",()=>{const g=make(1,"sandbox");g.command({type:"sandboxMana",amount:10000});g.command({type:"build",pad:0,kind:"necropolis"});g.command({type:"build",pad:4,kind:"foundry"});ok(cast(g,"funeral",{pad:0}));ok(cast(g,"resonance",{pad:0}));g.command({type:"wave"});g.step();ok(g.state.troops.length===1);ok(cast(g,"offering",{pad:0}));ok(g.state.stats.triggers===4);ok(g.state.stats.soulMana===26&&g.state.stats.spellMana===28);ok(cast(g,"raise",{pad:0}));ok(g.state.troops.some(u=>u.revived&&u.hp>0));ok(cast(g,"offering",{pad:0}));ok(!cast(g,"raise",{pad:0}));ledger(g)});
+ test("spell copying triggers exactly once",()=>{const g=make(1,"sandbox");g.command({type:"sandboxMana",amount:10000});g.command({type:"build",pad:0,kind:"legion"});ok(cast(g,"echo"));ok(cast(g,"legion",{pad:0}));ok(g.state.troops.length===4&&g.state.stats.triggers===1&&!g.state.echo);ok(cast(g,"legion",{pad:0}));ok(g.state.troops.length===6&&g.state.stats.triggers===1)});
+ test("deterministic same seed and commands",()=>{const a=make(42),b=make(42);for(const g of [a,b]){g.command({type:"build",pad:0,kind:"arcanum"});g.command({type:"build",pad:4,kind:"legion"});g.command({type:"build",pad:20,kind:"grove"});g.command({type:"wave"});finish(g)}ok(JSON.stringify(a.state)===JSON.stringify(b.state));ledger(a)});
+ test("campaign victory and endless continuation",()=>{const g=make(1),b=(pad,kind)=>g.command({type:"build",pad,kind}),u=pad=>g.command({type:"upgrade",pad});b(0,"arcanum");b(4,"legion");b(20,"grove");for(let w=1;w<=26;w++){if(w===2){b(5,"pyre");b(6,"arcanum")}if(w===3){b(10,"grove");b(15,"arcanum")}if(w>=4){for(const p of [20,10])if(g.state.mana>150)u(p);for(const p of [1,11,16,19,7,8,9,12,13,14,17,18,21,22,23,2,3])if(g.state.mana>160&&!g.state.towers[p])b(p,p%3===0?"storm":p%3===1?"arcanum":"pyre");for(const t of Object.values(g.state.towers))if(t.kind!=="grove"&&g.state.mana>400)u(t.id)}if(w===26){ok(g.state.phase==="won"&&g.state.health===18);ok(g.command({type:"continue"}))}ok(g.command({type:"wave"}));finish(g);ok(g.state.phase!=="lost")}ok(g.state.wave===26&&g.state.mode==="endless"&&g.state.phase==="ready"&&g.state.health===18);ledger(g)});
 }
-runFoundationChecks(createEngine,test);
-
-test('full five-wave victory using a reproducible economic build',()=>{
- const g=createEngine(1),build=(pad,kind)=>g.command({type:"build",pad,kind});
- build(0,"arcanum");build(4,"legion");build(20,"grove");
- for(let w=1;w<=5;w++){
-  if(w===2){build(5,"pyre");build(6,"arcanum");}
-  if(w===3){build(10,"grove");build(15,"arcanum");}
-  if(w>=4){for(const p of [0,5,6,15,20])g.command({type:"upgrade",pad:p});for(const p of [1,11,16,19])build(p,"arcanum");}
-  if(!g.command({type:"wave"}))throw Error("wave start rejected");
-  for(let i=0;i<5000&&g.state.phase==="active";i++)g.step();
-  if(g.state.phase==="active"||g.state.phase==="lost")throw Error("unexpected wave outcome");
- }
- if(g.state.phase!=="won"||g.state.health!==17||g.state.stats.kills!==99||g.state.stats.leaks!==3||g.state.mana!==1015)throw Error("reference playthrough changed");
-});
+betaChecks(createEngine,test);
