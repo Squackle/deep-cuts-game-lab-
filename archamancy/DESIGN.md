@@ -75,3 +75,7 @@ Verify all eight owner requirements; complete 25-wave battle; endless continuati
 
 ## Repository boundary
 Game Lab repository Squackle/deep-cuts-game-lab-, work branch game/archamancy-v001; intended route /archamancy/. Shared catalog and coordination changes belong to central integrator; register via separate coordinated change including both root and legacy catalogs, CI and ownership docs. No edits to other game paths or production repository. Do not promote to production without separate owner authorization.
+
+## Owner deployment clarification
+
+2026-11-21: deploy playable development updates to the canonical Game Lab menu and `/archamancy/`. Do not generate or send standalone preview URLs. Catalog integration is explicitly authorized for this game; no public Arcade changes.
