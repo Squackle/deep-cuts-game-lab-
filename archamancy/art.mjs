@@ -64,7 +64,7 @@ export function createArt(ctx){
    case "titan":humanoid(a,"#927b72","#a68a79",{bulk:true,helmet:true,shield:"#bc9878"});poly(a,[[-8,-34],[-14,-46],[-2,-36],[2,-36],[14,-46],[8,-34]],"#c5b79e");crystal(a,0,-13,6,fire);break;
   }
  }
- function tower(t,p){const s=makeSprite("tower:"+t.kind+":"+t.tier,a=>towerModel(a,t.kind,t.tier));ctx.drawImage(s,p.x-42,p.y-63,84,84);}
+ function tower(t,p){const s=makeSprite("tower:"+t.kind+":"+t.tier,a=>towerModel(a,t.kind,t.tier),96,120);ctx.drawImage(s,p.x-38,p.y-71.25,76,95);}
  function unit(k,x,y,opt={}){const s=makeSprite("unit:"+k,a=>creature(a,k),68,68),size=k==="titan"?61:k==="bloom"?52:k==="wing"?46:40;ctx.save();oval(ctx,x,y+3,size*.28,4,"#10231d88");ctx.translate(x,y+(opt.flying?-14:0));ctx.scale(opt.dir<0?-1:1,1);const bob=opt.animate?Math.sin(opt.time*.4+(opt.id||0))*(opt.flying?2:1):0;ctx.drawImage(s,-size/2,-size*.75+bob,size,size);ctx.restore();const yy=y+(opt.flying?-14:0)-size*.65;const ww=size*.60;rect(ctx,x-ww/2,yy,ww,3,"#26332d",null);rect(ctx,x-ww/2,yy,ww*Math.max(0,Math.min(1,opt.hp||0)),3,opt.ally?"#94db93":"#e9a181",null);if(opt.ward) {ctx.strokeStyle="#f1d991aa";ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y-9,15,19,0,0,Math.PI*2);ctx.stroke();}}
  const projectileColors={strike:gold,arcane:ice,mirror:"#c1edff",hex:violet,splash:fire,chain:"#ffdf83",root:leaf,melee:"#f6e0bd",heal:"#b0efad"};
  function projectile(f,clock){
