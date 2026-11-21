@@ -1,8 +1,8 @@
-# Shared Game Test Lab — four games, independent agents
+# Shared Game Test Lab — five games, independent agents
 
 **Playtest catalog:** https://deep-cuts-game-lab.pages.dev/ (canonical homepage). The previous /lab/ address remains functional.
 
-The **one Lab website** now contains four independent playtests:
+The **one Lab website** now contains five independent playtests:
 
 | Game | Preview | Owned paths | Primary developer |
 |---|---|---|---|
@@ -10,7 +10,8 @@ The **one Lab website** now contains four independent playtests:
 | Stackbreaker | [Play Stackbreaker](https://deep-cuts-game-lab.pages.dev/stackbreaker/) | `stackbreaker/**` | Stackbreaker developer |
 | Mana Heist | [Play Mana Heist](https://deep-cuts-game-lab.pages.dev/mana-heist/) | `mana-heist/**` | Mana Heist developer |
 | GRAFTBOUND | [Play GRAFTBOUND](https://deep-cuts-game-lab.pages.dev/graftbound/) | `graftbound/**` | GRAFTBOUND developer |
-| Shared playtest catalog | [All four games](https://deep-cuts-game-lab.pages.dev/) | Root `index.html`, `lab/index.html`, `lab/**`, shared catalog test/CI and docs | Central coordination / website integrator |
+| ARCHAMANCY | [Play ARCHAMANCY](https://deep-cuts-game-lab.pages.dev/archamancy/) | `archamancy/**` | ARCHAMANCY developer |
+| Shared playtest catalog | [All five games](https://deep-cuts-game-lab.pages.dev/) | Root `index.html`, `lab/index.html`, `lab/**`, shared catalog test/CI and docs | Central coordination / website integrator |
 
 **Homepage routing, November 16, 2026:** The four-game catalog now occupies the real root `/`. The Hive Run entry HTML was moved to `/hive-run/` without moving its runtime modules, sprites, backgrounds or saved local progress. Its entry page includes a root `<base>` so existing paths still resolve and its in-page skip link explicitly targets `/hive-run/#game`. Both root and legacy `/lab/` catalogs are kept in sync by a regression test.
 
@@ -27,11 +28,15 @@ The Lab is separate from the production Deep Cuts EDH Arcade. No identity, D1, r
 
 ## Unified testing
 
-- **Full shared smoke/engine suite:** `node --test tests/*.test.mjs stackbreaker/tests/*.test.mjs mana-heist/tests/*.test.mjs`
+- **Full shared smoke/engine suite:** `node --test tests/*.test.mjs stackbreaker/tests/*.test.mjs mana-heist/tests/*.test.mjs archamancy/tests/*.test.mjs`
 - **Shared catalog contract:** `node --test tests/lab-catalog.test.mjs`
 - **Syntax checking:** `node --check` for each game's main engine/UI (configured in `.github/workflows/lab-catalog.yml`).
-- **Cloudflare Pages:** Project `deep-cuts-game-lab` publishes Lab `main` to `deep-cuts-game-lab.pages.dev`. Verify the root homepage and all four game routes, direct deep links, responsive layout and successful exact SHA after every shared-catalog release.
+- **Cloudflare Pages:** Project `deep-cuts-game-lab` publishes Lab `main` to `deep-cuts-game-lab.pages.dev`. Verify the root homepage and all five game routes, direct deep links, responsive layout and successful exact SHA after every shared-catalog release.
 - The Hive-specific `verify` workflow and Mana Heist's scoped workflow remain in place. This adds cross-game regression coverage but doesn't replace each agent's richer browser/manual checks, particularly Stackbreaker's Python Chromium smoke suite. One green catalog check is not a blanket claim that every game was manually playtested.
+
+## ARCHAMANCY playtest release instruction
+
+Owner instruction: develop and deploy ARCHAMANCY to the canonical Game Lab at `/archamancy/`, with a tile in the main and legacy catalogs. Do not generate or provide separate branch-preview URLs; use the normal Lab release and verify the canonical site. This is not authorization for public Arcade promotion. Shared-menu changes require central coordination (explicitly authorized for the ARCHAMANCY addition).
 
 ## Promotion boundary
 

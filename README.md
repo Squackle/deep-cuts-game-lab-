@@ -1,6 +1,6 @@
 # Deep Cuts Game Lab
 
-**Four independent playtests, one Game Lab homepage:** [Open the catalog](https://deep-cuts-game-lab.pages.dev/) at `/` (legacy `/lab/` still works). Games: [Hive Run](/hive-run/), [Stackbreaker](/stackbreaker/), [Mana Heist](/mana-heist/), and [GRAFTBOUND](/graftbound/). Hive Run moved from the root **entry page only**; its original `src/**`, `assets/**`, `styles.css`, local-storage keys and other resources remain in place. See [shared agent ownership and unified testing](docs/SHARED-GAME-LAB.md). This is the separate test Lab, not the public Arcade.
+**Five independent playtests, one Game Lab homepage:** [Open the catalog](https://deep-cuts-game-lab.pages.dev/) at `/` (legacy `/lab/` still works). Games: [Hive Run](/hive-run/), [Stackbreaker](/stackbreaker/), [Mana Heist](/mana-heist/), [GRAFTBOUND](/graftbound/), and [ARCHAMANCY](/archamancy/). Hive Run moved from the root **entry page only**; its original `src/**`, `assets/**`, `styles.css`, local-storage keys and other resources remain in place. See [shared agent ownership and unified testing](docs/SHARED-GAME-LAB.md). This is the separate test Lab, not the public Arcade.
 
 **Current release candidate: 1.0 — Paths of the Hive.** Two modes (Predator Hunt / Brood Trail), four encounter types, biome progression, daily seeded challenges and independently ranked replays. See the latest DEVLOG entry for deployment verification. Earlier sections below are retained as release history.
 

@@ -7,7 +7,7 @@ const hub=read("lab/index.html");
 const root=read("index.html");
 const hive=read("hive-run/index.html");
 
-test("Game Lab preserves four playable games and a redirect for GRAFTBOUNDs former route",()=>{
+test("Game Lab preserves five playable games and a redirect for GRAFTBOUNDs former route",()=>{
  for(const [name,route,file] of [
   ["Hive Run","/hive-run/","hive-run/index.html"],
   ["Stackbreaker","/stackbreaker/","stackbreaker/index.html"],
@@ -17,14 +17,17 @@ test("Game Lab preserves four playable games and a redirect for GRAFTBOUNDs form
   assert.ok(hub.includes('href="'+route+'"'),name+" route missing");
   assert.ok(hub.includes(name.split(" ")[0]),name+" title not shown");
  }
- assert.equal((hub.match(/class="game-card game-/g)||[]).length,4,"Three existing games plus GRAFTBOUND");
+ assert.equal((hub.match(/class="game-card game-/g)||[]).length,5,"Four existing games plus ARCHAMANCY");
  assert.ok(fs.existsSync("graftbound/index.html"),"GRAFTBOUND playable entry must exist");
  assert.match(hub,/href="\/graftbound\/"/);
  assert.match(hub,/PLAYTEST GRAFTBOUND/);
  assert.ok(fs.existsSync("living-card/index.html"),"Old GRAFTBOUND redirect route must exist");
  assert.match(read("living-card/index.html"),/location\.replace\(\x27\/graftbound\/\x27/);
  assert.doesNotMatch(read("living-card/index.html"),/src="\.\/src\/main\.js"/);
- assert.match(hub,/FOUR PROJECTS/);
+ assert.match(hub,/FIVE PROJECTS/);
+ assert.ok(fs.existsSync("archamancy/index.html"));
+ assert.match(hub,/href="\/archamancy\/"/);
+ assert.match(hub,/PLAYTEST ARCHAMANCY/);
  assert.match(hub,/ONE TEST LAB/);
  assert.match(hub,/No sign-in needed/);
  assert.match(hub,/TEST BUILDS, NOT PUBLIC RELEASES/);
@@ -32,9 +35,10 @@ test("Game Lab preserves four playable games and a redirect for GRAFTBOUNDs form
 
 test("Game Lab is the actual root homepage, while Hive Run remains playable without relocating its engine",()=>{
  assert.match(root,/<title>Game Lab \| Deep Cuts EDH<\/title>/);
- assert.match(root,/FOUR PROJECTS/);
+ assert.match(root,/FIVE PROJECTS/);
+ assert.match(root,/href="\/archamancy\/"/);
  assert.match(root,/href="\/hive-run\/"/);
- assert.equal((root.match(/class="game-card game-/g)||[]).length,4);
+ assert.equal((root.match(/class="game-card game-/g)||[]).length,5);
  assert.doesNotMatch(root,/id="gameCanvas"/);
  assert.doesNotMatch(root,/src="\.\/src\/main\.js"/);
  assert.match(hive,/id="gameCanvas"/);
@@ -46,6 +50,7 @@ test("Game Lab is the actual root homepage, while Hive Run remains playable with
  assert.match(hive,/class="brand" href="\/"/);
  assert.match(hive,/Back to Test Lab, choose another game/);
  assert.ok(fs.existsSync("src/main.js"));
+ for(const file of ["archamancy/engine.mjs","archamancy/main.mjs","archamancy/styles.css","archamancy/tests/foundation.test.mjs"])assert.ok(fs.existsSync(file),file);
 });
 
 test("Original game folders and their independent engines remain intact",()=>{
@@ -98,15 +103,16 @@ test("Unified catalog paths are local, existing and free from traversal",()=>{
  }
 });
 
-test("four playable game covers remain first-party, meaningful, and without external images",()=>{
+test("five playable game covers remain first-party, meaningful, and without external images",()=>{
  const cards=[
   ["hive-run","alien","game-hive"],
   ["stackbreaker","spellcaster","game-stack"],
   ["mana-heist","Stone vault","game-mana"],
-  ["graftbound","grafted creature facing a horned enemy","game-graftbound"]
+  ["graftbound","grafted creature facing a horned enemy","game-graftbound"],
+  ["archamancy","Five magical towers","game-archamancy"]
  ];
  const css=read("lab/lab.css");
- assert.equal((hub.match(/class="game-cover"/g)||[]).length,4);
+ assert.equal((hub.match(/class="game-cover"/g)||[]).length,5);
  for(const [name,subject,card] of cards){
   assert.match(hub,new RegExp('class="game-card '+card+'"'));
   assert.ok(hub.includes('src="./covers/'+name+'.svg"'),name+" image path");
