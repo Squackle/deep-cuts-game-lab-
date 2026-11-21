@@ -1,6 +1,6 @@
-# ARCHAMANCY — master design and delivery contract
+# ARCHEMANCY — master design and delivery contract
 
-Design baseline v2.0, 2026-11-21. Previously called WARDFORGE. ARCHAMANCY is the owner-approved name (not a trademark clearance). A fifth, independent Deep Cuts Game Lab game; not a GRAFTBOUND expansion or a production Arcade release.
+Design baseline v2.0, 2026-11-21. Previously called WARDFORGE, then ARCHAMANCY. ARCHEMANCY is the owner-approved name (not a trademark clearance). A fifth, independent Deep Cuts Game Lab game; not a GRAFTBOUND expansion or a production Arcade release.
 
 ## Vision
 Handcrafted illustrated fantasy tower defense with freely buildable WUBRG-themed towers, investment-driven mana economy, autonomous armies, real-time card play and emergent combos. Influences: Kingdom Rush tactical positions and troops, Bloons-style investment and branching upgrades, Commander-style deckbuilding. Original names/art/rules/lore; no assumption of licensed MTG assets. No mandatory merging. Design pillars: strategic freedom, earned absurdity, constant tension, replayable experimentation, readable combat. Predetermined threats rather than hidden adaptive enemy scaling. Extraordinary earned combinations may exceed expectations; no unbounded same-tick execution.
@@ -74,8 +74,10 @@ Subsequent roadmap: full branches and multi-lane maps, commanders/partners, expa
 Verify all eight owner requirements; complete 25-wave battle; endless continuation; tower/card interactions, safe deterministic trigger handling; functioning sandbox; reconciled metrics; responsive desktop/touch; no critical errors/broken assets; tests for each rule and cross-game regression checks. Record test counts and preview commit SHA only after actual verification. No deployment claimed before verification.
 
 ## Repository boundary
-Game Lab repository Squackle/deep-cuts-game-lab-, work branch game/archamancy-v001; intended route /archamancy/. Shared catalog and coordination changes belong to central integrator; register via separate coordinated change including both root and legacy catalogs, CI and ownership docs. No edits to other game paths or production repository. Do not promote to production without separate owner authorization.
+Game Lab repository Squackle/deep-cuts-game-lab-, work branch game/archamancy-v001; canonical route /archemancy/. Shared catalog and coordination changes belong to central integrator; register via separate coordinated change including both root and legacy catalogs, CI and ownership docs. No edits to other game paths or production repository. Do not promote to production without separate owner authorization.
 
 ## Owner deployment clarification
 
-2026-11-21: deploy playable development updates to the canonical Game Lab menu and `/archamancy/`. Do not generate or send standalone preview URLs. Catalog integration is explicitly authorized for this game; no public Arcade changes.
+2026-11-21: deploy playable development updates to the canonical Game Lab menu and `/archemancy/`. Do not generate or send standalone preview URLs. Catalog integration is explicitly authorized for this game; no public Arcade changes.
+
+The former `/archamancy/` entry redirects to `/archemancy/`; existing engine and asset paths remain stable. No game rules changed.
