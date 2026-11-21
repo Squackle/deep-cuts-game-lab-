@@ -21,9 +21,9 @@ jobs:
         run: |
           node --test tests/lab-catalog.test.mjs
           node --test tests/release-coordination.test.mjs
-      - name: Check all three independent game rule engines
+      - name: Check shared game rule engines including ARCHAMANCY
         run: |
-          node --test tests/*.test.mjs stackbreaker/tests/*.test.mjs mana-heist/tests/*.test.mjs
+          node --test tests/*.test.mjs stackbreaker/tests/*.test.mjs mana-heist/tests/*.test.mjs archamancy/tests/*.test.mjs
       - name: Validate isolated game module syntax
         run: |
           node --check src/main.js
@@ -35,3 +35,5 @@ jobs:
           node --check mana-heist/src/solver.js
           node --check mana-heist/src/levels.js
           node --check mana-heist/src/main.js
+          node --check archamancy/engine.mjs
+          node --check archamancy/main.mjs
