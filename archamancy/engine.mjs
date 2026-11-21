@@ -55,7 +55,7 @@ export function createEngine(seed=1,mode="campaign"){
  function pointAt(n){let p=Math.max(0,Math.min(distance,n));for(let i=0;i<lengths.length;i++){if(p<=lengths[i]){const [x,y]=path[i],[a,b]=path[i+1];return {x:x+Math.sign(a-x)*p,y:y+Math.sign(b-y)*p};}p-=lengths[i];}return {x:1000,y:490};}
  function nearestPath(x,y){let best=Infinity,result=0,travel=0;for(let i=0;i<lengths.length;i++){const [a,b]=path[i],[c,d]=path[i+1],l=lengths[i],t=Math.max(0,Math.min(l,(x-a)*Math.sign(c-a)+(y-b)*Math.sign(d-b))),dd=d2(pointAt(travel+t),{x,y});if(dd<best){best=dd;result=travel+t;}travel+=l;}return result;}
  function emit(type,data={}){state.events.push({seq:++state.sequence,tick:state.tick,type,...data});if(state.events.length>200)state.events.shift();}
- function shot(kind,a,b){state.projectiles.push({kind,x:a.x,y:a.y,tx:b.x,ty:b.y,start:state.tick,duration:kind==="chain"||kind==="melee"?3:5});if(state.projectiles.length>240)state.projectiles.shift();}
+ function shot(kind,a,b,target=null){state.projectiles.push({kind,x:a.x,y:a.y,tx:b.x,ty:b.y,targetId:target?.id??null,targetFlying:!!target?.flying,start:state.tick,duration:kind==="chain"||kind==="melee"?3:5});if(state.projectiles.length>240)state.projectiles.shift();}
  function effect(x,y,color,r=28){state.effects.push({x,y,color,r,until:state.tick+7});if(state.effects.length>100)state.effects.shift();}
  function earn(amount,why,t){state.mana+=amount;stats.manaEarned+=amount;stats[why+"Mana"]+=amount;if(t)t.mana+=amount;emit("mana",{amount,why,tower:t?.id??null});}
  function spend(amount){if(state.mana<amount)return false;state.mana-=amount;stats.spent+=amount;return true;}
@@ -67,6 +67,9 @@ export function createEngine(seed=1,mode="campaign"){
  function farmBudget(t){return farmLimit(t)*Math.max(1,state.pendingWaves?.length||1);}
  function upgradeCost(t){return t.tier>=4?null:Math.floor(roster[t.kind].cost*[1.4,3.6,12][t.tier-1]);}
  function enemyPos(e){return pointAt(e.progress);}
+ // First priority is distance travelled along the road, not x/y position or distance to the tower.
+ const firstOrder=(a,b)=>b.progress-a.progress||a.id-b.id;
+ function firstEnemy(origin,range,groundOnly=false){let best=null;for(const e of state.enemies){if(e.hp<=0||e.escaped||(groundOnly&&e.flying)||d2(enemyPos(e),origin)>range*range)continue;if(!best||firstOrder(e,best)<0)best=e;}return best;}
  function scale(w){return Math.min(1e8,Math.round((1+Math.max(0,w-5)*.24)*Math.pow(1.12,Math.max(0,Math.min(w,25)-10))*Math.pow(1.18,Math.max(0,w-25))*100)/100);}
  function spawnEnemy(kind,w){const def=types[kind],hp=Math.ceil(def.hp*scale(w));state.enemies.push({id:state.nextId++,kind,...def,hp,maxHp:hp,attack:Math.ceil(def.attack*Math.sqrt(scale(w))),progress:0,slowUntil:0,rootUntil:0,curseUntil:0,burnUntil:0,nextAttack:0});}
  function canCallEarly(){return state.phase==="active"&&(state.mode!=="campaign"||state.wave<25)&&state.queue.length+state.enemies.length<3000;}
@@ -149,20 +152,20 @@ export function createEngine(seed=1,mode="campaign"){
  else if(k==="heal"){for(const u of state.troops)if(u.hp>0&&d2(pointAt(u.progress),p)<=range**2){const h=Math.min(power,u.maxHp-u.hp);u.hp+=h;u.ward=Math.max(u.ward,tier*4);stats.healing+=h;t.healing+=h;if(h>0)shot("heal",{x:p.x,y:p.y-21},pointAt(u.progress));}}
  else if(k==="soul"){const u=state.troops.filter(u=>u.hp>0&&d2(pointAt(u.progress),p)<=range**2&&u.hp<=u.maxHp*.55).sort((a,b)=>a.hp-b.hp||a.id-b.id)[0];if(u)die(u,true);}
  else {
- const targets=state.enemies.filter(e=>e.hp>0&&((k!=="splash"&&k!=="root")||!e.flying)&&d2(enemyPos(e),p)<=range**2).sort((a,b)=>b.progress-a.progress||a.id-b.id),e=targets[0];if(!e)continue;const q=enemyPos(e);
+ const e=firstEnemy(p,range,k==="splash"||k==="root");if(!e)continue;const q=enemyPos(e);
  if(k==="arcane"){hurt(e,power,true,t);e.slowUntil=state.tick+12;t.control++;stats.control++;}
  if(k==="strike")hurt(e,power,false,t,true);
  if(k==="splash")for(const x of area(q,60+8*tier))if(!x.flying)hurt(x,power,false,t);
- if(k==="chain"){let n=0,from={x:p.x,y:p.y-28};for(const x of [e,...area(q,110).filter(x=>x.id!==e.id)]){if(n>=tier+2)break;const pos=enemyPos(x),to={x:pos.x,y:pos.y-(x.flying?21:8)};shot("chain",from,to);from=to;hurt(x,Math.max(1,Math.round(power*Math.pow(.78,n++))),true,t);}}
+ if(k==="chain"){let n=0,from={x:p.x,y:p.y-28};for(const x of [e,...area(q,110).filter(x=>x.id!==e.id).sort(firstOrder)]){if(n>=tier+2)break;const pos=enemyPos(x),to={x:pos.x,y:pos.y-(x.flying?21:8)};shot("chain",from,to,x);from=to;hurt(x,Math.max(1,Math.round(power*Math.pow(.78,n++))),true,t);}}
  if(k==="hex"){e.curseUntil=state.tick+35;hurt(e,power,true,t);}
  if(k==="root"){e.rootUntil=state.tick+7+tier*2;hurt(e,power,false,t);stats.control++;t.control++;}
  if(k==="mirror"){const other=Object.values(state.towers).filter(o=>["arcane","strike","splash","chain","hex","root"].includes(roster[o.kind].kind)&&d2(pads[o.id],p)<=200**2).sort((a,b)=>roster[b.kind].damage*b.tier-roster[a.kind].damage*a.tier||a.id-b.id)[0];hurt(e,other?Math.round(roster[other.kind].damage*other.tier*(.8+.35*tier)):power,true,t);if(other)stats.triggers++;}
- if(k!=="chain")shot(k,{x:p.x,y:p.y-28},{x:q.x,y:q.y-(e.flying?21:8)});effect(q.x,q.y,({W:"#f5df9e",U:"#76bdf1",B:"#ba8ad8",R:"#f7a564",G:"#8ed28e"})[d.color],k==="splash"?60:18);emit("towerAttack",{source:t.id,target:e.id});
+ if(k!=="chain")shot(k,{x:p.x,y:p.y-28},{x:q.x,y:q.y-(e.flying?21:8)},e);effect(q.x,q.y,({W:"#f5df9e",U:"#76bdf1",B:"#ba8ad8",R:"#f7a564",G:"#8ed28e"})[d.color],k==="splash"?60:18);emit("towerAttack",{source:t.id,target:e.id,progress:e.progress});
  }
  t.next=state.tick+(k==="farm"?d.interval:Math.max(3,d.interval-(tier-1)*2));
  }
  const blocked=new Set();
- for(const u of state.troops){if(u.hp<=0)continue;const t=state.towers[u.source];if(!t)continue;const diff=t.rally-u.progress;u.progress+=Math.sign(diff)*Math.min(10,Math.abs(diff));const e=state.enemies.filter(e=>e.hp>0&&!e.flying&&!blocked.has(e.id)&&Math.abs(e.progress-u.progress)<=28).sort((a,b)=>b.progress-a.progress||a.id-b.id)[0];if(!e)continue;blocked.add(e.id);if(state.tick>=u.next){shot("melee",pointAt(u.progress),enemyPos(e));hurt(e,u.damage,false,t);u.next=state.tick+8;}if(e.hp>0&&state.tick>=e.nextAttack){const absorbed=Math.min(u.ward,e.attack);u.ward-=absorbed;u.hp=Math.max(0,u.hp-e.attack+absorbed);e.nextAttack=state.tick+10;if(!u.hp)die(u);}}
+ for(const u of state.troops){if(u.hp<=0)continue;const t=state.towers[u.source];if(!t)continue;const diff=t.rally-u.progress;u.progress+=Math.sign(diff)*Math.min(10,Math.abs(diff));const e=state.enemies.filter(e=>e.hp>0&&!e.flying&&!blocked.has(e.id)&&Math.abs(e.progress-u.progress)<=28).sort(firstOrder)[0];if(!e)continue;blocked.add(e.id);if(state.tick>=u.next){shot("melee",pointAt(u.progress),enemyPos(e));hurt(e,u.damage,false,t);u.next=state.tick+8;}if(e.hp>0&&state.tick>=e.nextAttack){const absorbed=Math.min(u.ward,e.attack);u.ward-=absorbed;u.hp=Math.max(0,u.hp-e.attack+absorbed);e.nextAttack=state.tick+10;if(!u.hp)die(u);}}
  for(const e of state.enemies){if(e.hp<=0)continue;if((!blocked.has(e.id)||e.boss)&&(e.rootUntil<=state.tick||e.boss)){const move=e.slowUntil>state.tick?Math.max(1,Math.floor(e.speed*(e.boss?.75:.5))):e.speed;e.progress+=e.boss&&blocked.has(e.id)?Math.max(1,Math.floor(move*.6)):move;}if(e.progress>=distance){state.health=Math.max(0,state.health-(e.boss?3:1));stats.leaks++;state.enemyLeaks[e.kind]=(state.enemyLeaks[e.kind]||0)+1;e.escaped=true;emit("leak",{id:e.id});}}
  state.troops=state.troops.filter(u=>u.hp>0);state.enemies=state.enemies.filter(e=>e.hp>0&&!e.escaped);
  if(state.health<=0){if(state.mode==="sandbox"){state.health=20;}else{state.phase="lost";emit("gameOver",{won:false});return;}}
@@ -172,7 +175,7 @@ export function createEngine(seed=1,mode="campaign"){
  const s=state;
  const counts=arr=>arr.reduce((acc,k)=>(acc[k]=(acc[k]||0)+1,acc),{});
  const tower=t=>({pad:t.id+1,kind:roster[t.kind].name,tier:t.tier,sold:!!t.sold,invested:t.paid,damage:t.damage,mana:t.mana,summons:t.summons,healing:t.healing,control:t.control,draws:t.draws,growth:t.growth,enchantments:["twins","funeral","resonance","construct"].filter(k=>t[k]),rally:roster[t.kind].kind==="troops"?Math.round(t.rally):undefined});
- return {game:"ARCHEMANCY",version:"0.1.0-beta.4",schema:1,seed:s.seed,initialMode:s.initialMode,mode:s.mode,wave:s.wave,phase:s.phase,simulationSeconds:s.tick/10,health:s.health,mana:s.mana,enemyHealthScale:scale(Math.max(1,s.wave)),stats:{...s.stats},enemyKills:{...s.enemyKills},enemyLeaks:{...s.enemyLeaks},remainingEnemies:counts(s.enemies.filter(e=>e.hp>0&&!e.escaped).map(e=>e.kind)),queuedEnemies:counts(s.queue.map(e=>e.kind)),cardCasts:{...s.cardCasts},spellbook:counts(s.deck),hand:s.hand.slice(),library:s.library.length,graveyard:counts(s.discard),echoArmed:s.echo,towers:Object.values(s.towers).map(tower),soldTowers:s.towerHistory.slice(-30).map(tower),soldTowerCount:s.towerHistory.length,waveHistory:s.waveHistory.slice(-60).map(w=>({...w})),completedWaveCount:s.waveHistory.length,waveCalls:s.waveCalls.map(w=>({...w})),pendingWaves:s.pendingWaves.slice()};
+ return {game:"ARCHEMANCY",version:"0.1.0-beta.5",schema:1,seed:s.seed,initialMode:s.initialMode,mode:s.mode,wave:s.wave,phase:s.phase,simulationSeconds:s.tick/10,health:s.health,mana:s.mana,enemyHealthScale:scale(Math.max(1,s.wave)),stats:{...s.stats},enemyKills:{...s.enemyKills},enemyLeaks:{...s.enemyLeaks},remainingEnemies:counts(s.enemies.filter(e=>e.hp>0&&!e.escaped).map(e=>e.kind)),queuedEnemies:counts(s.queue.map(e=>e.kind)),cardCasts:{...s.cardCasts},spellbook:counts(s.deck),hand:s.hand.slice(),library:s.library.length,graveyard:counts(s.discard),echoArmed:s.echo,towers:Object.values(s.towers).map(tower),soldTowers:s.towerHistory.slice(-30).map(tower),soldTowerCount:s.towerHistory.length,waveHistory:s.waveHistory.slice(-60).map(w=>({...w})),completedWaveCount:s.waveHistory.length,waveCalls:s.waveCalls.map(w=>({...w})),pendingWaves:s.pendingWaves.slice()};
  }
  return {playtestReport,canCallEarly,earlyBonus,earlySeconds,farmLimit,farmBudget,scale,state,map:{width:W,height:H,path,pads,distance},roster,types,waves,waveSpec,cards,pointAt,nearestPath,upgradeCost,command,step,tickMs};
 }
