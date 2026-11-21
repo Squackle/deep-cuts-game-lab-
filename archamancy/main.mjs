@@ -4,14 +4,15 @@ function boot(createEngine){
  const colors={W:"#e5d4a2",U:"#77b9e6",B:"#ac8ac3",R:"#ed8b65",G:"#9bc889",C:"#c5c9cc"};
  let game=createEngine(1), selected=null, speed=1, rallying=false, accumulator=0,last=null,lastEvent=-1, selectedCard=null, handKey="", deckCountKey="", contributionKey="";
  const buttons=[], choices={}, statEls={};
- const labels={damage:"Damage dealt",manaEarned:"Mana earned",farmMana:"Farm income",killMana:"Kill income",waveMana:"Wave rewards",spent:"Mana spent",refunds:"Resale refunds",kills:"Enemies defeated",leaks:"Enemies escaped",summoned:"Troops summoned",fallen:"Troops fallen",casts:"Spells cast",draws:"Cards drawn",triggers:"Combo triggers",healing:"Healing restored",control:"Control applications",soulMana:"Soul income",spellMana:"Spell income",sandboxMana:"Sandbox grants"};
+ const labels={damage:"Damage dealt",manaEarned:"Mana earned",farmMana:"Farm income",killMana:"Kill income",waveMana:"Wave rewards",earlyMana:"Early-call mana",earlyCalls:"Early calls",spent:"Mana spent",refunds:"Resale refunds",kills:"Enemies defeated",leaks:"Enemies escaped",summoned:"Troops summoned",fallen:"Troops fallen",casts:"Spells cast",draws:"Cards drawn",triggers:"Combo triggers",healing:"Healing restored",control:"Control applications",soulMana:"Soul income",spellMana:"Spell income",sandboxMana:"Sandbox grants"};
  const text=(el,value)=>{const s=String(value);if(el.textContent!==s)el.textContent=s;};
  const notice=s=>{text($("notice"),s);$("notice").title=s;};
  function showDialog(id){for(const d of document.querySelectorAll("dialog[open]"))d.close();$(id).showModal();accumulator=0;}
  function closeDialogs(){for(const d of document.querySelectorAll("dialog[open]"))d.close();accumulator=0;}
  $("menuOpen").addEventListener("click",()=>showDialog("menuDialog"));
  $("waveInfo").addEventListener("click",()=>showDialog("waveDialog"));
- $("statsOpen").addEventListener("click",()=>showDialog("statsDialog"));
+ $("statsOpen").addEventListener("click",()=>{ $("statsReport").hidden=true;text($("copyStatus"),"Copy a playtest report to paste into feedback.");showDialog("statsDialog");});
+ $("copyStats").addEventListener("click",async()=>{const field=$("statsReport");const report=JSON.stringify(game.playtestReport());field.value=report;const button=$("copyStats");button.disabled=true;try{if(!navigator.clipboard?.writeText)throw Error("Clipboard unavailable");await navigator.clipboard.writeText(report);field.hidden=true;text($("copyStatus"),"Stats copied. Paste the report into ChatGPT.");}catch{field.hidden=false;field.focus();field.select();try{field.setSelectionRange(0,report.length);}catch{}text($("copyStatus"),"Automatic copying unavailable. Select and copy the report below.");}finally{button.disabled=false;}});
  $("sandboxOpen").addEventListener("click",()=>showDialog("sandboxDialog"));
  for(const b of document.querySelectorAll("[data-close]"))b.addEventListener("click",closeDialogs);
  $("clearSelection").addEventListener("click",()=>selectPad(null));
@@ -44,7 +45,7 @@ function boot(createEngine){
  function updateDeckCount(){const n=configuredDeck().length;text($("deckCount"),n+" / 30 cards");$("applyDeck").disabled=n!==30||game.state.wave!==0;}
  $("deckToggle").addEventListener("click",()=>{makeDeckEditor();showDialog("deckDialog");});
  $("applyDeck").addEventListener("click",()=>{if(game.command({type:"deck",deck:configuredDeck()})){selectedCard=null;closeDialogs();notice("Spellbook applied.");renderHud();}});
- $("start").addEventListener("click",()=>{if(game.command({type:game.state.phase==="won"?"continue":game.state.phase==="active"?"early":"wave"})){notice(game.state.phase==="ready"?"Endless continuation unlocked. Start the next wave.":"Wave "+game.state.wave+" begins.");if(speed===0)setSpeed(1);renderHud();}});
+ $("start").addEventListener("click",()=>{if(game.command({type:game.state.phase==="won"?"continue":game.state.phase==="active"?"early":"wave"})){notice(game.state.phase==="ready"?"Endless continuation unlocked. Start the next wave.":"Wave "+game.state.wave+" begins."+(game.state.waveCalls.at(-1)?.early?" Early bonus +"+game.state.waveCalls.at(-1).bonus+" mana.":""));if(speed===0)setSpeed(1);renderHud();}});
  $("upgrade").addEventListener("click",()=>{if(game.command({type:"upgrade",pad:selected}))notice("Tower upgraded.");renderHud();});
  $("sell").addEventListener("click",()=>{if(game.command({type:"sell",pad:selected})){rallying=false;notice("Tower sold. Pad freed.");}renderHud();});
  $("rally").addEventListener("click",()=>{selectedCard=null;rallying=!rallying;notice(rallying?"Tap a road location within this tower’s rally range.":"Rally selection cancelled.");renderHud();});
@@ -60,9 +61,9 @@ function boot(createEngine){
  function renderHud(){
   const s=game.state,terminal=s.phase==="won"||s.phase==="lost";
   text($("health"),s.health);text($("mana"),s.mana.toLocaleString("en-US"));text($("wave"),s.wave+(s.mode==="campaign"?" / 25":" / ∞"));text($("enemies"),s.enemies.length+s.queue.length);text($("time"),Math.floor(s.tick/10)+"s");text($("phase"),s.phase==="won"?"VICTORY":s.phase==="lost"?"DEFEAT":s.phase==="ready"?"PREPARE":"IN COMBAT");
-  const early=s.phase==="active"&&!s.early&&!s.queue.length&&s.enemies.length>0&&(s.mode!=="campaign"||s.wave<25);
-  text($("preview"),terminal?(s.phase==="won"?"The passage is secure. Continue to Endless Siege.":"The fortress has fallen."):s.phase==="active"?"Remaining: "+(s.enemies.length+s.queue.length):game.waveSpec(s.wave+1).map(x=>x.replace(":", " × ")).join(" · "));
-  $("start").disabled=s.phase==="lost"||(s.phase==="active"&&!early);text($("start"),s.phase==="won"?"Continue to endless":s.phase==="lost"?"Run finished":s.phase==="active"?(early?"Call early · +25 mana":"Wave in progress"):"Start wave "+(s.wave+1));
+  const early=game.canCallEarly(),bonus=game.earlyBonus();
+  text($("preview"),terminal?(s.phase==="won"?"The passage is secure. Continue to Endless Siege.":"The fortress has fallen."):s.phase==="active"?"Remaining: "+(s.enemies.length+s.queue.length)+(early?" | Next wave "+(s.wave+1)+" · "+game.waveSpec(s.wave+1).map(x=>x.replace(":"," × ")).join(" · ")+" | Early bonus +"+bonus+" mana ("+game.earlySeconds()+"s remaining)":""):game.waveSpec(s.wave+1).map(x=>x.replace(":", " × ")).join(" · ")+" | Enemy health ×"+game.scale(s.wave+1).toFixed(2));
+  $("start").disabled=s.phase==="lost"||(s.phase==="active"&&!early);text($("start"),s.phase==="won"?"Continue to endless":s.phase==="lost"?"Run finished":s.phase==="active"?(early?"Call wave "+(s.wave+1)+" · +"+bonus+" mana":s.mode==="campaign"&&s.wave>=25?"Final wave in progress":"Battlefield at capacity"):"Start wave "+(s.wave+1));
   $("sandbox").hidden=s.mode!=="sandbox";$("sandboxOpen").hidden=s.mode!=="sandbox";$("deckToggle").disabled=s.wave!==0||s.phase!=="ready";
   text($("zones"),"Library "+s.library.length+" · Graveyard "+s.discard.length+(s.echo?" · Echo armed":""));
   const activeCard=selectedCard===null?null:game.cards[s.hand[selectedCard]];
