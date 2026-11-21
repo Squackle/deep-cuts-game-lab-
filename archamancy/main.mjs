@@ -6,7 +6,17 @@ function boot(createEngine){
  const buttons=[], choices={}, statEls={};
  const labels={damage:"Damage dealt",manaEarned:"Mana earned",farmMana:"Farm income",killMana:"Kill income",waveMana:"Wave rewards",spent:"Mana spent",refunds:"Resale refunds",kills:"Enemies defeated",leaks:"Enemies escaped",summoned:"Troops summoned",fallen:"Troops fallen",casts:"Spells cast",draws:"Cards drawn",triggers:"Combo triggers",healing:"Healing restored",control:"Control applications",soulMana:"Soul income",spellMana:"Spell income",sandboxMana:"Sandbox grants"};
  const text=(el,value)=>{const s=String(value);if(el.textContent!==s)el.textContent=s;};
- const notice=s=>text($("notice"),s);
+ const notice=s=>{text($("notice"),s);$("notice").title=s;};
+ function showDialog(id){for(const d of document.querySelectorAll("dialog[open]"))d.close();$(id).showModal();accumulator=0;}
+ function closeDialogs(){for(const d of document.querySelectorAll("dialog[open]"))d.close();accumulator=0;}
+ $("menuOpen").addEventListener("click",()=>showDialog("menuDialog"));
+ $("waveInfo").addEventListener("click",()=>showDialog("waveDialog"));
+ $("statsOpen").addEventListener("click",()=>showDialog("statsDialog"));
+ $("sandboxOpen").addEventListener("click",()=>showDialog("sandboxDialog"));
+ for(const b of document.querySelectorAll("[data-close]"))b.addEventListener("click",closeDialogs);
+ $("clearSelection").addEventListener("click",()=>selectPad(null));
+ for(const b of document.querySelectorAll("[data-school]"))b.addEventListener("click",()=>{$("colorFilter").value=b.dataset.school;renderHud();});
+ $("castInstant").addEventListener("click",()=>{if(selectedCard!==null)cast(selectedCard);});
  function cast(index,target={}){const id=game.state.hand[index];if(!id)return false;if(game.command({type:"cast",index,...target})){selectedCard=null;notice(game.cards[id].name+" resolved.");renderHud();return true;}notice("Invalid spell target or insufficient mana. No mana spent.");return false;}
  function selectPad(id){if(selectedCard!==null&&id!==null&&game.cards[game.state.hand[selectedCard]]?.target==="tower"){cast(selectedCard,{pad:id});return;}selected=id;rallying=false;$("padSelect").value=id===null?"":String(id);renderHud();}
  for(const p of game.map.pads){
@@ -15,7 +25,7 @@ function boot(createEngine){
  }
  $("padSelect").addEventListener("change",e=>selectPad(e.target.value===""?null:Number(e.target.value)));
  for(const [key,def] of Object.entries(game.roster)){
-  const b=document.createElement("button");b.type="button";b.className="tower-choice";
+  const b=document.createElement("button");b.type="button";b.className="tower-choice";b.style.setProperty("--school",colors[def.color]);b.title=def.role;b.setAttribute("aria-label",def.name+", "+def.cost+" mana. "+def.role);
   const stripe=document.createElement("span");stripe.className="stripe";stripe.style.background=colors[def.color];
   const body=document.createElement("span"),name=document.createElement("strong"),desc=document.createElement("small"),price=document.createElement("span");
   name.textContent=def.name;desc.textContent=def.role;body.append(name,desc);price.className="price";price.textContent=def.cost;b.append(stripe,body,price);
@@ -32,8 +42,8 @@ function boot(createEngine){
  function makeDeckEditor(){const list=$("deckList");list.replaceChildren();for(const [id,d] of Object.entries(game.cards)){const l=document.createElement("label"),s=document.createElement("select");l.textContent=d.name;s.dataset.card=id;for(let i=0;i<=3;i++){const o=document.createElement("option");o.value=i;o.textContent=i;s.append(o);}s.value=game.state.deck.filter(k=>k===id).length;s.addEventListener("change",updateDeckCount);l.append(s);list.append(l);}updateDeckCount();}
  function configuredDeck(){return [...$("deckList").querySelectorAll("select")].flatMap(s=>Array(Number(s.value)).fill(s.dataset.card));}
  function updateDeckCount(){const n=configuredDeck().length;text($("deckCount"),n+" / 30 cards");$("applyDeck").disabled=n!==30||game.state.wave!==0;}
- $("deckToggle").addEventListener("click",()=>{if(!$("deckEditor").hidden){$("deckEditor").hidden=true;return;}makeDeckEditor();$("deckEditor").hidden=false;});
- $("applyDeck").addEventListener("click",()=>{if(game.command({type:"deck",deck:configuredDeck()})){selectedCard=null;$("deckEditor").hidden=true;notice("Spellbook applied.");renderHud();}});
+ $("deckToggle").addEventListener("click",()=>{makeDeckEditor();showDialog("deckDialog");});
+ $("applyDeck").addEventListener("click",()=>{if(game.command({type:"deck",deck:configuredDeck()})){selectedCard=null;closeDialogs();notice("Spellbook applied.");renderHud();}});
  $("start").addEventListener("click",()=>{if(game.command({type:game.state.phase==="won"?"continue":game.state.phase==="active"?"early":"wave"})){notice(game.state.phase==="ready"?"Endless continuation unlocked. Start the next wave.":"Wave "+game.state.wave+" begins.");if(speed===0)setSpeed(1);renderHud();}});
  $("upgrade").addEventListener("click",()=>{if(game.command({type:"upgrade",pad:selected}))notice("Tower upgraded.");renderHud();});
  $("sell").addEventListener("click",()=>{if(game.command({type:"sell",pad:selected})){rallying=false;notice("Tower sold. Pad freed.");}renderHud();});
@@ -44,30 +54,32 @@ function boot(createEngine){
  canvas.addEventListener("click",e=>{const {x,y}=coords(e);if(selectedCard!==null&&game.cards[game.state.hand[selectedCard]]?.target==="ground"){cast(selectedCard,{x,y});return;}if(!rallying)return;if(game.command({type:"rally",pad:selected,x,y})){rallying=false;notice("Rally point moved.");}else notice("Choose a road position within the tower’s range.");renderHud();});
  function setSpeed(n){speed=n;accumulator=0;for(const b of document.querySelectorAll("[data-speed]"))b.setAttribute("aria-pressed",String(Number(b.dataset.speed)===n));}
  for(const b of document.querySelectorAll("[data-speed]"))b.addEventListener("click",()=>setSpeed(Number(b.dataset.speed)));
- function restart(mode){game=createEngine(1,mode);selected=null;selectedCard=null;rallying=false;lastEvent=-1;handKey="";contributionKey="";setSpeed(1);$("padSelect").value="";$("mode").value=mode;$("deckEditor").hidden=true;notice("New "+mode+" run. Select a build pad.");renderHud();}
+ function restart(mode){game=createEngine(1,mode);selected=null;selectedCard=null;rallying=false;lastEvent=-1;handKey="";contributionKey="";setSpeed(1);$("padSelect").value="";$("mode").value=mode;closeDialogs();notice("New "+mode+" run. Select a build pad.");renderHud();}
  $("restart").addEventListener("click",()=>restart(game.state.mode));
  $("newMode").addEventListener("click",()=>restart($("mode").value));
  function renderHud(){
   const s=game.state,terminal=s.phase==="won"||s.phase==="lost";
-  text($("health"),s.health);text($("mana"),s.mana);text($("wave"),s.wave+(s.mode==="campaign"?" / 25":" / ∞"));text($("enemies"),s.enemies.length+s.queue.length);text($("time"),Math.floor(s.tick/10)+"s");text($("phase"),s.phase==="won"?"VICTORY":s.phase==="lost"?"DEFEAT":s.phase==="ready"?"PREPARE":"IN COMBAT");
+  text($("health"),s.health);text($("mana"),s.mana.toLocaleString("en-US"));text($("wave"),s.wave+(s.mode==="campaign"?" / 25":" / ∞"));text($("enemies"),s.enemies.length+s.queue.length);text($("time"),Math.floor(s.tick/10)+"s");text($("phase"),s.phase==="won"?"VICTORY":s.phase==="lost"?"DEFEAT":s.phase==="ready"?"PREPARE":"IN COMBAT");
   const early=s.phase==="active"&&!s.early&&!s.queue.length&&s.enemies.length>0&&(s.mode!=="campaign"||s.wave<25);
   text($("preview"),terminal?(s.phase==="won"?"The passage is secure. Continue to Endless Siege.":"The fortress has fallen."):s.phase==="active"?"Remaining: "+(s.enemies.length+s.queue.length):game.waveSpec(s.wave+1).map(x=>x.replace(":", " × ")).join(" · "));
   $("start").disabled=s.phase==="lost"||(s.phase==="active"&&!early);text($("start"),s.phase==="won"?"Continue to endless":s.phase==="lost"?"Run finished":s.phase==="active"?(early?"Call early · +25 mana":"Wave in progress"):"Start wave "+(s.wave+1));
-  $("sandbox").hidden=s.mode!=="sandbox";$("deckToggle").disabled=s.wave!==0||s.phase!=="ready";
+  $("sandbox").hidden=s.mode!=="sandbox";$("sandboxOpen").hidden=s.mode!=="sandbox";$("deckToggle").disabled=s.wave!==0||s.phase!=="ready";
   text($("zones"),"Library "+s.library.length+" · Graveyard "+s.discard.length+(s.echo?" · Echo armed":""));
   const activeCard=selectedCard===null?null:game.cards[s.hand[selectedCard]];
-  text($("castHint"),activeCard?(activeCard.target==="tower"?"Select a compatible tower on the map.":activeCard.target==="ground"?"Tap the battlefield during combat.":"Select the spell again to cast."):"Choose a card. Instant spells resolve on selection; targeted spells require a battlefield target.");
+  text($("castHint"),activeCard?activeCard.desc+" "+(activeCard.target==="tower"?"Tap a tower.":activeCard.target==="ground"?"Tap the battlefield in combat.":"Tap Cast to resolve."):"Select a card to inspect and cast.");
+  $("castInstant").hidden=!activeCard||activeCard.target!=="none";$("castInstant").disabled=terminal||!activeCard||s.mana<activeCard.cost;
   $("discard").disabled=selectedCard===null||terminal;$("cancelCard").disabled=selectedCard===null;
-  const hk=JSON.stringify([s.hand,selectedCard]);if(handKey!==hk){handKey=hk;const hand=$("hand");hand.replaceChildren();for(const [i,id] of s.hand.entries()){const d=game.cards[id],b=document.createElement("button");b.type="button";b.className="spell";b.style.setProperty("--school",colors[d.color]);b.draggable=true;b.dataset.index=i;b.setAttribute("aria-pressed",String(i===selectedCard));const n=document.createElement("strong"),price=document.createElement("em"),desc=document.createElement("small");n.textContent=d.name;price.textContent=d.cost+" mana";desc.textContent=d.desc;b.append(n,price,desc);b.addEventListener("click",()=>{rallying=false;selectedCard=i;if(d.target==="none")cast(i);renderHud();});b.addEventListener("dragstart",e=>{e.dataTransfer.setData("application/x-archamancy-card",String(i));});hand.append(b);}}for(const b of $("hand").children)b.disabled=terminal||s.mana<game.cards[s.hand[Number(b.dataset.index)]].cost;
+  const hk=JSON.stringify([s.hand,selectedCard]);if(handKey!==hk){handKey=hk;const hand=$("hand");hand.replaceChildren();for(const [i,id] of s.hand.entries()){const d=game.cards[id],b=document.createElement("button");b.type="button";b.className="spell";b.style.setProperty("--school",colors[d.color]);b.draggable=true;b.title=d.desc;b.setAttribute("aria-label",d.name+", "+d.cost+" mana. "+d.desc);b.dataset.index=i;b.setAttribute("aria-pressed",String(i===selectedCard));const n=document.createElement("strong"),price=document.createElement("em"),desc=document.createElement("small");n.textContent=d.name;price.textContent=d.cost+" ◈";desc.textContent=d.desc;b.append(n,price,desc);b.addEventListener("click",()=>{rallying=false;selectedCard=i;renderHud();});b.addEventListener("dragstart",e=>{e.dataTransfer.setData("application/x-archamancy-card",String(i));});hand.append(b);}}for(const b of $("hand").children){b.disabled=terminal;b.classList.toggle("unaffordable",s.mana<game.cards[s.hand[Number(b.dataset.index)]].cost);}
   for(const p of game.map.pads){const b=buttons[p.id],t=s.towers[p.id],def=t?game.roster[t.kind]:null;b.classList.toggle("built",!!t);b.style.backgroundColor=t?colors[def.color]:"";b.setAttribute("aria-pressed",String(selected===p.id));b.setAttribute("aria-label","Pad "+(p.id+1)+(t?", "+def.name+", tier "+t.tier:p.bonus?", "+p.bonus:", empty"));text(b,t?({legion:"♜",chapel:"✚",judgment:"⚔",arcanum:"✦",library:"▤",mirror:"◇",necropolis:"☠",foundry:"◈",hex:"☾",pyre:"✹",goblin:"⚑",storm:"ϟ",grove:"♣",beast:"♞",thorn:"✿"})[t.kind]+t.tier:p.bonus==="spring"?"◆":p.bonus==="height"?"▲":"＋");}
   const pad=selected===null?null:game.map.pads[selected],t=pad?s.towers[selected]:null;
   text($("selection"),t?game.roster[t.kind].name:pad?"Build on pad "+(pad.id+1):"Select a build pad");
-  text($("details"),t?"Tier "+t.tier+" · Invested "+t.paid+" mana · "+game.roster[t.kind].role:pad?(pad.bonus==="spring"?"Mana spring: doubles farm output.":pad.bonus==="height"?"High ground: +30 attack range.":"Ordinary building location."):"Select a pad on the field or in the menu.");
+  text($("details"),t?"T"+t.tier+" · "+(t.kind==="grove"?"Harvest "+(s.farmPaid[t.id]||0)+"/"+game.farmBudget(t)+" mana this wave group ("+game.farmLimit(t)+"/wave).":game.roster[t.kind].role):pad?(pad.bonus==="spring"?"Mana spring: +35% farm yield.":pad.bonus==="height"?"High ground: +30 attack range.":"Choose a school, then a tower."):"Tap an empty pad to build or a tower to upgrade.");
+  $("clearSelection").hidden=!pad;$("schools").hidden=!!t;for(const b of document.querySelectorAll("[data-school]"))b.setAttribute("aria-pressed",String(b.dataset.school===$("colorFilter").value));
   $("buildMenu").hidden=!!t;$("towerActions").hidden=!t;
   if(t){const price=game.upgradeCost(t);text($("upgrade"),price===null?"Max tier":"Upgrade · "+price);$("upgrade").disabled=terminal||price===null||s.mana<price;text($("sell"),"Sell · +"+Math.floor(t.paid*.7));$("sell").disabled=terminal;$("rally").hidden=game.roster[t.kind].kind!=="troops";$("rally").disabled=terminal;$("rally").setAttribute("aria-pressed",String(rallying));text($("rally"),rallying?"Cancel rally":"Set rally point");}
   for(const [k,b] of Object.entries(choices)){b.disabled=terminal||!pad||!!t||s.mana<game.roster[k].cost;b.hidden=$("colorFilter").value!=="all"&&$("colorFilter").value!==game.roster[k].color;}
   const contributions=[...s.towerHistory,...Object.values(s.towers)];const ck=JSON.stringify(contributions.map(t=>[t.uid,t.tier,t.damage,t.mana,t.summons,t.healing,t.control,t.draws,t.sold]));if(ck!==contributionKey){contributionKey=ck;const list=$("contributions");list.replaceChildren();for(const t of contributions){const el=document.createElement("div");el.textContent=game.roster[t.kind].name+" · Pad "+(t.id+1)+" · T"+t.tier+(t.sold?" (sold)":"")+" — Damage "+t.damage+" | Mana "+t.mana+" | Summons "+t.summons+" | Healing "+t.healing+" | Control "+t.control+" | Draws "+t.draws;list.append(el);}}
-  for(const [k,el] of Object.entries(statEls))text(el,s.stats[k]);
+  for(const [k,el] of Object.entries(statEls))text(el,s.stats[k].toLocaleString("en-US"));
   if(lastEvent!==s.sequence){lastEvent=s.sequence;const ol=$("eventLog");ol.replaceChildren();for(const e of s.events.slice(-12).reverse()){const li=document.createElement("li");li.textContent=(e.tick/10).toFixed(1)+"s · "+e.type+(e.amount!==undefined?" · "+e.amount+" mana":e.wave?" · wave "+e.wave:"");ol.append(li);}}
  }
  const terrain=document.createElement("canvas");terrain.width=1000;terrain.height=600;
@@ -99,7 +111,7 @@ function boot(createEngine){
  }
  function frame(now){
   const elapsed=last===null?0:Math.min(250,Math.max(0,now-last));last=now;
-  if(speed&&game.state.phase==="active"){accumulator+=elapsed*speed;while(accumulator>=game.tickMs&&game.state.phase==="active"){game.step();accumulator-=game.tickMs;}if(game.state.phase!=="active"){accumulator=0;notice(game.state.phase==="won"?"Victory! All 25 Gauntlet waves completed. Continue into endless survival.":game.state.phase==="lost"?"Defeat. Restart to try a new strategy.":"Wave complete. Prepare your next defense.");}}
+  if(speed&&game.state.phase==="active"&&!document.querySelector("dialog[open]")){accumulator+=elapsed*speed;while(accumulator>=game.tickMs&&game.state.phase==="active"){game.step();accumulator-=game.tickMs;}if(game.state.phase!=="active"){accumulator=0;notice(game.state.phase==="won"?"Victory! All 25 Gauntlet waves completed. Continue into endless survival.":game.state.phase==="lost"?"Defeat. Restart to try a new strategy.":"Wave complete. Prepare your next defense.");}}
   else accumulator=0;
   renderField();renderHud();requestAnimationFrame(frame);
  }
