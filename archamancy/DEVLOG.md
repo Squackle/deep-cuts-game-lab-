@@ -26,3 +26,6 @@ Next: strengthen troop combat and rendering, add remaining ten tower definitions
 - Sixteen deterministic engine regression scenarios executed successfully in isolated JavaScript, including seed-1 wave-25 victory and wave-26 completion (18 fortress health). Engine source tested with overlapping wave reward correction. Browser playtest and shared CI remain separately reportable verification steps.
 - Balance is deliberately provisional: late farms and tier-four towers can snowball. No ranked scoring, commanders, campaign branching, full upgrade branches, or complete advanced combo catalog yet. Early beta is not final acceptance of all eight non-negotiables.
 - Only archamancy/ changed; no main production website or other games modified. Catalog integration remains issue #230.
+
+## 2026-11-21 — ARCHEMANCY spelling update
+Owner approved the revised spelling. Canonical game entry `/archemancy/`, legacy `/archamancy/` redirects; same gameplay engine, version and asset paths. Catalogs and ownership documentation updated. No separate preview URL or Arcade promotion.
