@@ -17,3 +17,12 @@ Verification in this session: executed the 12 engine scenarios against fetched/g
 Known limitations: temporary map art, only five towers, only five waves, no drag-based rally yet (tap target supported), no cards or general trigger dispatch, no endless mode or sandbox, no full attribution breakdown, no commander system, no production save/ranked features. No balance or performance claim. All eight owner non-negotiables still required for v0.1.0.
 
 Next: strengthen troop combat and rendering, add remaining ten tower definitions with distinct behaviors and economy/upgrade tests; lay out the card state and explicit effect dispatcher against shared events, then continue DESIGN.md milestones. Keep rules deterministic and original.
+
+## 2026-11-21 — v0.1.0-beta.1 early playtest
+
+- All fifteen planned tower families, four linear tiers, 24 pads, seven enemy types, 25-wave provisional Gauntlet, endless continuation and isolated Proving Grounds sandbox.
+- 21 original cards, configurable 30-card spellbook, draw/discard, targeted spells, copying, sacrifice, resurrection, death explosions, token doubling, growth, wards, cooldown resets and bounded trigger processing.
+- Cached original vector battlefield, color-coded towers, combat effects, responsive controls and tower contribution metrics. Not final hand-painted art.
+- Sixteen deterministic engine regression scenarios executed successfully in isolated JavaScript, including seed-1 wave-25 victory and wave-26 completion (18 fortress health). Engine source tested with overlapping wave reward correction. Browser playtest and shared CI remain separately reportable verification steps.
+- Balance is deliberately provisional: late farms and tier-four towers can snowball. No ranked scoring, commanders, campaign branching, full upgrade branches, or complete advanced combo catalog yet. Early beta is not final acceptance of all eight non-negotiables.
+- Only archamancy/ changed; no main production website or other games modified. Catalog integration remains issue #230.
