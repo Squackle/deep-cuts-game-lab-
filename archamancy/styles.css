@@ -14,3 +14,6 @@ dialog{width:min(94vw,620px);max-height:calc(100dvh - 24px);overflow:auto;oversc
 @media(max-height:640px) and (orientation:portrait){.game-shell{gap:3px}.tower-panel{max-height:120px}.tower-panel p{max-height:1.35em;overflow:hidden}.tower-choice{min-height:32px}.school-tabs button{min-height:23px}.hand-panel{padding:4px}.spell{min-height:34px}.card-actions button{min-height:24px}.map-head h2{font-size:.8rem}}
 
 .stats-export{padding:10px 0;border-bottom:1px solid var(--line)}.stats-export button{width:100%}.stats-export textarea{box-sizing:border-box;width:100%;max-width:100%;background:#13271e;color:var(--ink);font:12px/1.4 monospace;border:1px solid var(--line);border-radius:6px;padding:8px;resize:vertical}
+
+/* The canvas draws models; DOM buttons remain accessible hit targets and tier tags. */
+.pad.built{background:transparent!important;border-color:transparent;color:var(--tier-color);text-shadow:0 1px 2px #101b16,0 -1px 2px #101b16;box-shadow:none;display:flex;align-items:flex-end;justify-content:flex-end;font-size:clamp(.48rem,1.1cqw,.74rem);padding:0 1px 0 0}.pad.built[aria-pressed=true]{outline:2px solid #fff2be;outline-offset:2px}.pad.built:hover{border-color:#eee1b877}
