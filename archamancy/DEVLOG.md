@@ -29,3 +29,11 @@ Next: strengthen troop combat and rendering, add remaining ten tower definitions
 
 ## 2026-11-21 — ARCHEMANCY spelling update
 Owner approved the revised spelling. Canonical game entry `/archemancy/`, legacy `/archamancy/` redirects; same gameplay engine, version and asset paths. Catalogs and ownership documentation updated. No separate preview URL or Arcade promotion.
+
+## 2026-11-21 — v0.1.0-beta.2, battlefield-first UI and farm economy
+
+Owner playtest at wave 20: 205,520 available mana, 216,390 farm income, no leaks. Scrolling the mobile page to access combat controls disrupted play. Inspiration: Kingdom Rush's contextual pad/tower actions and compact HUD; Bloons TD 6's persistent battlefield and compact tower/upgrade panels. New viewport-contained layout, school-filtered tower dock (three choices per school), five-card hand, wave button and forecast, contextual upgrade/sell/rally, modal menu/stats/deck/sandbox; active simulation pauses while a dialog is open. No separate preview links. Original engine and art retained.
+
+Mana Groves pay 3/7/16/34 per 2 seconds of active simulation (before bonuses), limited to 22/65/165/400 mana per owned pad per wave. Mana Spring multiplier 1.35 (formerly 2); Wild Growth +10% per cast capped at +30% on farms. Upgrading may raise a pad's remaining harvest budget but selling/rebuilding cannot reset it. Early calls allow the next wave's budget while the current wave group remains in combat. Standard kill and completion rewards, starting mana and tower costs unchanged.
+
+Reproducible seed-1 comparison, same automated build policy (not the user's actual run): wave 20 farm income 125,895 → 12,737; unspent mana 90,144 → 2,352. Updated policy completes wave 25 with 18/20 health, 2,783 mana left and continues into wave 26. Twenty engine scenarios pass including four new budget/growth/reset tests. This is a first balance pass rather than final tuning. Portrait browser smoke at 390×740 passed, no page overflow. Canonical deployment and shared suite verified separately.
