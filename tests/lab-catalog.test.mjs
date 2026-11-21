@@ -17,7 +17,7 @@ test("Game Lab preserves five playable games and a redirect for GRAFTBOUNDs form
   assert.ok(hub.includes('href="'+route+'"'),name+" route missing");
   assert.ok(hub.includes(name.split(" ")[0]),name+" title not shown");
  }
- assert.equal((hub.match(/class="game-card game-/g)||[]).length,5,"Four existing games plus ARCHAMANCY");
+ assert.equal((hub.match(/class="game-card game-/g)||[]).length,5,"Four existing games plus ARCHEMANCY");
  assert.ok(fs.existsSync("graftbound/index.html"),"GRAFTBOUND playable entry must exist");
  assert.match(hub,/href="\/graftbound\/"/);
  assert.match(hub,/PLAYTEST GRAFTBOUND/);
@@ -25,9 +25,12 @@ test("Game Lab preserves five playable games and a redirect for GRAFTBOUNDs form
  assert.match(read("living-card/index.html"),/location\.replace\(\x27\/graftbound\/\x27/);
  assert.doesNotMatch(read("living-card/index.html"),/src="\.\/src\/main\.js"/);
  assert.match(hub,/FIVE PROJECTS/);
- assert.ok(fs.existsSync("archamancy/index.html"));
- assert.match(hub,/href="\/archamancy\/"/);
- assert.match(hub,/PLAYTEST ARCHAMANCY/);
+ assert.ok(fs.existsSync("archemancy/index.html"));
+ assert.match(read("archemancy/index.html"),/<h1>ARCHEMANCY<\/h1>/);
+ assert.match(read("archemancy/index.html"),/src="\/archamancy\/main\.mjs"/);
+ assert.match(read("archamancy/index.html"),/url=\/archemancy\//);
+ assert.match(hub,/href="\/archemancy\/"/);
+ assert.match(hub,/PLAYTEST ARCHEMANCY/);
  assert.match(hub,/ONE TEST LAB/);
  assert.match(hub,/No sign-in needed/);
  assert.match(hub,/TEST BUILDS, NOT PUBLIC RELEASES/);
@@ -36,7 +39,7 @@ test("Game Lab preserves five playable games and a redirect for GRAFTBOUNDs form
 test("Game Lab is the actual root homepage, while Hive Run remains playable without relocating its engine",()=>{
  assert.match(root,/<title>Game Lab \| Deep Cuts EDH<\/title>/);
  assert.match(root,/FIVE PROJECTS/);
- assert.match(root,/href="\/archamancy\/"/);
+ assert.match(root,/href="\/archemancy\/"/);
  assert.match(root,/href="\/hive-run\/"/);
  assert.equal((root.match(/class="game-card game-/g)||[]).length,5);
  assert.doesNotMatch(root,/id="gameCanvas"/);
