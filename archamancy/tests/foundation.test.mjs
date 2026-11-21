@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { createEngine } from '../engine.mjs';
-function runFoundationChecks(make){
- const results=[];function check(name,f){f();results.push(name);}function assert(a,msg="assertion failed"){if(!a)throw Error(msg);}
+function runFoundationChecks(make,register=null){
+ const results=[];function check(name,f){if(register)register(name,f);else f();results.push(name);}function assert(a,msg="assertion failed"){if(!a)throw Error(msg);}
  const finish=(e)=>{for(let i=0;i<3000&&e.state.phase==="active";i++)e.step();assert(e.state.phase!=="active","wave failed to resolve");};
  check("24 distinct pads & route endpoints",()=>{const e=make();assert(e.map.pads.length===24);assert(new Set(e.map.pads.map(p=>p.x+":"+p.y)).size===24);assert(e.pointAt(0).x===0);assert(e.pointAt(e.map.distance).x===1000);});
  check("invalid commands do not spend mana",()=>{const e=make();for(const c of [{type:"build",pad:-1,kind:"grove"},{type:"build",pad:0,kind:"__proto__"},{type:"build",pad:0.5,kind:"grove"},{type:"upgrade",pad:0}])assert(!e.command(c));assert(e.state.mana===350);});
@@ -16,4 +16,18 @@ function runFoundationChecks(make){
  check("mana ledger reconciles",()=>{const e=make();e.command({type:"build",pad:20,kind:"grove"});e.command({type:"build",pad:0,kind:"arcanum"});e.command({type:"wave"});finish(e);const s=e.state.stats;assert(e.state.mana===350+s.manaEarned-s.spent+s.refunds);assert(s.manaEarned===s.farmMana+s.killMana+s.waveMana);});
  return results;
 }
-test('foundation invariants (11 scenarios)',()=>{runFoundationChecks(createEngine);});
+runFoundationChecks(createEngine,test);
+
+test('full five-wave victory using a reproducible economic build',()=>{
+ const g=createEngine(1),build=(pad,kind)=>g.command({type:"build",pad,kind});
+ build(0,"arcanum");build(4,"legion");build(20,"grove");
+ for(let w=1;w<=5;w++){
+  if(w===2){build(5,"pyre");build(6,"arcanum");}
+  if(w===3){build(10,"grove");build(15,"arcanum");}
+  if(w>=4){for(const p of [0,5,6,15,20])g.command({type:"upgrade",pad:p});for(const p of [1,11,16,19])build(p,"arcanum");}
+  if(!g.command({type:"wave"}))throw Error("wave start rejected");
+  for(let i=0;i<5000&&g.state.phase==="active";i++)g.step();
+  if(g.state.phase==="active"||g.state.phase==="lost")throw Error("unexpected wave outcome");
+ }
+ if(g.state.phase!=="won"||g.state.health!==17||g.state.stats.kills!==99||g.state.stats.leaks!==3||g.state.mana!==1015)throw Error("reference playthrough changed");
+});
