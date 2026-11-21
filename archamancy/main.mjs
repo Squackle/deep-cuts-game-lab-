@@ -11,7 +11,8 @@ function boot(createEngine){
  function closeDialogs(){for(const d of document.querySelectorAll("dialog[open]"))d.close();accumulator=0;}
  $("menuOpen").addEventListener("click",()=>showDialog("menuDialog"));
  $("waveInfo").addEventListener("click",()=>showDialog("waveDialog"));
- $("statsOpen").addEventListener("click",()=>showDialog("statsDialog"));
+ $("statsOpen").addEventListener("click",()=>{ $("statsReport").hidden=true;text($("copyStatus"),"Copy a playtest report to paste into feedback.");showDialog("statsDialog");});
+ $("copyStats").addEventListener("click",async()=>{const field=$("statsReport");const report=JSON.stringify(game.playtestReport());field.value=report;const button=$("copyStats");button.disabled=true;try{if(!navigator.clipboard?.writeText)throw Error("Clipboard unavailable");await navigator.clipboard.writeText(report);field.hidden=true;text($("copyStatus"),"Stats copied. Paste the report into ChatGPT.");}catch{field.hidden=false;field.focus();field.select();try{field.setSelectionRange(0,report.length);}catch{}text($("copyStatus"),"Automatic copying unavailable. Select and copy the report below.");}finally{button.disabled=false;}});
  $("sandboxOpen").addEventListener("click",()=>showDialog("sandboxDialog"));
  for(const b of document.querySelectorAll("[data-close]"))b.addEventListener("click",closeDialogs);
  $("clearSelection").addEventListener("click",()=>selectPad(null));
@@ -61,7 +62,7 @@ function boot(createEngine){
   const s=game.state,terminal=s.phase==="won"||s.phase==="lost";
   text($("health"),s.health);text($("mana"),s.mana.toLocaleString("en-US"));text($("wave"),s.wave+(s.mode==="campaign"?" / 25":" / ∞"));text($("enemies"),s.enemies.length+s.queue.length);text($("time"),Math.floor(s.tick/10)+"s");text($("phase"),s.phase==="won"?"VICTORY":s.phase==="lost"?"DEFEAT":s.phase==="ready"?"PREPARE":"IN COMBAT");
   const early=s.phase==="active"&&!s.early&&!s.queue.length&&s.enemies.length>0&&(s.mode!=="campaign"||s.wave<25);
-  text($("preview"),terminal?(s.phase==="won"?"The passage is secure. Continue to Endless Siege.":"The fortress has fallen."):s.phase==="active"?"Remaining: "+(s.enemies.length+s.queue.length):game.waveSpec(s.wave+1).map(x=>x.replace(":", " × ")).join(" · "));
+  text($("preview"),terminal?(s.phase==="won"?"The passage is secure. Continue to Endless Siege.":"The fortress has fallen."):s.phase==="active"?"Remaining: "+(s.enemies.length+s.queue.length):game.waveSpec(s.wave+1).map(x=>x.replace(":", " × ")).join(" · ")+" | Enemy health ×"+game.scale(s.wave+1).toFixed(2));
   $("start").disabled=s.phase==="lost"||(s.phase==="active"&&!early);text($("start"),s.phase==="won"?"Continue to endless":s.phase==="lost"?"Run finished":s.phase==="active"?(early?"Call early · +25 mana":"Wave in progress"):"Start wave "+(s.wave+1));
   $("sandbox").hidden=s.mode!=="sandbox";$("sandboxOpen").hidden=s.mode!=="sandbox";$("deckToggle").disabled=s.wave!==0||s.phase!=="ready";
   text($("zones"),"Library "+s.library.length+" · Graveyard "+s.discard.length+(s.echo?" · Echo armed":""));
