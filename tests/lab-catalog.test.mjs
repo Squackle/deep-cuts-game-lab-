@@ -112,7 +112,7 @@ test("five playable game covers remain first-party, meaningful, and without exte
   ["archamancy","Five magical towers","game-archamancy"]
  ];
  const css=read("lab/lab.css");
- assert.equal((hub.match(/class="game-cover"/g)||[]).length,4);
+ assert.equal((hub.match(/class="game-cover"/g)||[]).length,5);
  for(const [name,subject,card] of cards){
   assert.match(hub,new RegExp('class="game-card '+card+'"'));
   assert.ok(hub.includes('src="./covers/'+name+'.svg"'),name+" image path");
