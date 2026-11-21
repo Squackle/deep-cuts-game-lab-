@@ -48,7 +48,7 @@ export function createEngine(seed=1,mode="campaign"){
  card("forge","Construct Forge","C",55,"tower","Enchant a troop tower to raise tougher constructs.");
  const defaultDeck=["meteor","wild","legion","inquiry","funeral","offering","twins","echo","freeze","raise","resonance","reset","cascade","ward","root","recall","matrix","forge","valor","bloom","flame","meteor","wild","legion","inquiry","funeral","offering","twins","echo","freeze"];
  const stats={damage:0,manaEarned:0,farmMana:0,killMana:0,waveMana:0,soulMana:0,spellMana:0,sandboxMana:0,spent:0,refunds:0,kills:0,leaks:0,summoned:0,fallen:0,casts:0,draws:0,triggers:0,healing:0,control:0};
- const state={seed:seed>>>0,rng:seed>>>0||1,mode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",tick:0,wave:0,phase:"ready",mana:350,health:20,towers:{},enemies:[],troops:[],queue:[],nextSpawn:0,nextId:1,stats,events:[],sequence:0,commands:[],library:[],hand:[],discard:[],deck:defaultDeck.slice(),echo:false,storm:0,fallen:[],waveHistory:[],towerHistory:[], farmPaid:{}, enemyKills:{}, enemyLeaks:{}, cardCasts:{}, effects:[]};
+ const state={initialMode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",seed:seed>>>0,rng:seed>>>0||1,mode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",tick:0,wave:0,phase:"ready",mana:350,health:20,towers:{},enemies:[],troops:[],queue:[],nextSpawn:0,nextId:1,stats,events:[],sequence:0,commands:[],library:[],hand:[],discard:[],deck:defaultDeck.slice(),echo:false,storm:0,fallen:[],waveHistory:[],towerHistory:[], farmPaid:{}, enemyKills:{}, enemyLeaks:{}, cardCasts:{}, effects:[]};
  const d2=(a,b)=>(a.x-b.x)**2+(a.y-b.y)**2;
  function rand(){let x=state.rng;x^=x<<13;x^=x>>>17;x^=x<<5;return state.rng=x>>>0;}
  function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rand()%(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
@@ -153,5 +153,11 @@ export function createEngine(seed=1,mode="campaign"){
  if(state.health<=0){if(state.mode==="sandbox"){state.health=20;}else{state.phase="lost";emit("gameOver",{won:false});return;}}
  if(!state.queue.length&&!state.enemies.length){for(const wave of state.pendingWaves||[]){earn(35+wave*10,"wave");state.waveHistory.push({wave,tick:state.tick,mana:state.mana,health:state.health,damage:stats.damage,farmMana:stats.farmMana,spent:stats.spent,kills:stats.kills,leaks:stats.leaks,casts:stats.casts,overlap:state.pendingWaves.length>1});emit("waveComplete",{wave});}state.pendingWaves=[];state.phase=state.mode==="campaign"&&state.wave>=25?"won":"ready";}
  }
- return {farmLimit,farmBudget,scale,state,map:{width:W,height:H,path,pads,distance},roster,types,waves,waveSpec,cards,pointAt,nearestPath,upgradeCost,command,step,tickMs};
+ function playtestReport(){
+ const s=state;
+ const counts=arr=>arr.reduce((acc,k)=>(acc[k]=(acc[k]||0)+1,acc),{});
+ const tower=t=>({pad:t.id+1,kind:roster[t.kind].name,tier:t.tier,sold:!!t.sold,invested:t.paid,damage:t.damage,mana:t.mana,summons:t.summons,healing:t.healing,control:t.control,draws:t.draws,growth:t.growth,enchantments:["twins","funeral","resonance","construct"].filter(k=>t[k]),rally:roster[t.kind].kind==="troops"?Math.round(t.rally):undefined});
+ return {game:"ARCHEMANCY",version:"0.1.0-beta.3",schema:1,seed:s.seed,initialMode:s.initialMode,mode:s.mode,wave:s.wave,phase:s.phase,simulationSeconds:s.tick/10,health:s.health,mana:s.mana,enemyHealthScale:scale(Math.max(1,s.wave)),stats:{...s.stats},enemyKills:{...s.enemyKills},enemyLeaks:{...s.enemyLeaks},remainingEnemies:counts(s.enemies.filter(e=>e.hp>0&&!e.escaped).map(e=>e.kind)),queuedEnemies:counts(s.queue.map(e=>e.kind)),cardCasts:{...s.cardCasts},spellbook:counts(s.deck),hand:s.hand.slice(),library:s.library.length,graveyard:counts(s.discard),echoArmed:s.echo,towers:Object.values(s.towers).map(tower),soldTowers:s.towerHistory.slice(-30).map(tower),soldTowerCount:s.towerHistory.length,waveHistory:s.waveHistory.slice(-60).map(w=>({...w})),completedWaveCount:s.waveHistory.length};
+ }
+ return {playtestReport,farmLimit,farmBudget,scale,state,map:{width:W,height:H,path,pads,distance},roster,types,waves,waveSpec,cards,pointAt,nearestPath,upgradeCost,command,step,tickMs};
 }
