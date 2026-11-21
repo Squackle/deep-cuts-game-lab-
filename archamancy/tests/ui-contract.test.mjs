@@ -19,3 +19,5 @@ test("settings, statistics, deck editor and sandbox are modal rather than scroll
  assert.match(js,/!document\.querySelector\("dialog\[open\]"\)/);
  assert.match(js,/\.showModal\(\)/);
 });
+
+test("wave calling and playtest report are exposed through accessible gameplay controls",()=>{assert.match(html,/id="copyStats"/);assert.match(html,/id="statsReport"[^>]*readonly/);assert.match(js,/game\.playtestReport\(\)/);assert.match(js,/navigator\.clipboard\.writeText\(report\)/);assert.match(js,/game\.canCallEarly\(\)/);assert.match(js,/game\.earlyBonus\(\)/);});
