@@ -2,33 +2,42 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#18251e">
 <title>ARCHEMANCY | Deep Cuts Game Lab</title>
-<meta name="description" content="ARCHEMANCY beta playtest: build magical defenses, invest in mana, and hold Verdant Passage.">
+<meta name="description" content="Real-time magical tower defense in the Deep Cuts Game Lab.">
 <link rel="stylesheet" href="/archamancy/styles.css">
 </head>
 <body>
-<main>
-<header class="header"><div><a href="/">← Game Lab</a><p class="eyebrow">GAME LAB · EARLY BETA v0.1.0-beta.1</p><h1>ARCHEMANCY</h1><p class="subtitle">Where architecture becomes magic.</p></div><span class="tag">UNRANKED PLAYTEST</span></header>
-<p class="intro">Defend Verdant Passage. Choose a fixed build pad, construct a tower, and call the next wave when ready. Invest in mana groves to finance more defenses. Try all 15 towers, play cards on the battlefield, and combine spells with mana investments. Choose a mode before starting.</p>
-<div class="modebar"><label>Play mode <select id="mode"><option value="campaign">Gauntlet · 25 waves</option><option value="endless">Endless Siege</option><option value="sandbox">Proving Grounds · sandbox</option></select></label><button id="newMode">Start new mode</button><button id="deckToggle">Edit spellbook</button></div><div id="deckEditor" class="panel" hidden><h2>Build a 30-card spellbook</h2><p>Enter card quantities (up to three each), then apply before wave one. Applying reshuffles and draws a new opening hand.</p><div id="deckList" class="deck-grid"></div><p id="deckCount"></p><button id="applyDeck">Apply spellbook</button></div><div class="hud" aria-label="Battle status"><div><small>Fortress</small><strong id="health">20</strong></div><div><small>Mana</small><strong id="mana">350</strong></div><div><small>Wave</small><strong id="wave">0 / 25</strong></div><div><small>Enemies</small><strong id="enemies">0</strong></div><div><small>Time</small><strong id="time">0s</strong></div></div>
+<main class="game-shell">
+<header class="game-head"><a href="/" aria-label="Return to Game Lab">‹ Lab</a><h1>ARCHEMANCY <small>β2</small></h1><button id="menuOpen" aria-label="Open game menu">☰ Menu</button></header>
+<div class="hud" aria-label="Battle status"><div><small>Fortress</small><strong id="health">20</strong></div><div><small>Mana</small><strong id="mana">350</strong></div><div><small>Wave</small><strong id="wave">0 / 25</strong></div><div><small>Enemies</small><strong id="enemies">0</strong></div></div>
 <div class="battle-layout">
 <section class="battle-panel" aria-label="Battlefield">
-<div class="map-head"><div><small>GAUNTLET 01</small><h2>Verdant Passage</h2></div><div class="speeds" aria-label="Simulation speed"><button data-speed="0" aria-pressed="false">Pause</button><button data-speed="1" aria-pressed="true">1×</button><button data-speed="2" aria-pressed="false">2×</button><button data-speed="3" aria-pressed="false">3×</button></div></div>
-<div class="map" id="map"><canvas id="field" width="1000" height="600" aria-label="Verdant Passage winding battlefield"></canvas><div id="pads" class="pads"></div></div>
-<div class="legend"><span>○ Build pad</span><span>◆ Mana spring (2× farm)</span><span>▲ High ground (+range)</span><span>△ Flying enemy</span></div>
-<div class="wave-bar"><div><small id="phase">READY</small><p id="preview"></p></div><button id="start" class="primary">Start wave 1</button></div>
-<div class="hand-panel"><div class="stats-head"><h2>Spellbook</h2><small id="zones"></small></div><p id="castHint">Select a spell, then its target.</p><div id="hand" class="hand"></div><div class="actions"><button id="discard" disabled>Discard selected</button><button id="cancelCard" disabled>Cancel selection</button></div></div><div id="sandbox" class="sandbox panel" hidden><h2>Proving Grounds</h2><div class="actions"><button id="addMana">+10,000 mana</button><button id="healBase">Restore fortress</button><button id="clearEnemies">Clear enemies</button></div><label>Add card <select id="sandboxCard"></select></label><button id="addCard">Put in hand</button><label>Spawn enemy <select id="sandboxEnemy"></select></label><button id="spawn">Spawn 10</button></div><p id="notice" role="status" aria-live="polite">Select any build pad to begin.</p>
+<div class="map-head"><div><small id="phase">PREPARE</small><h2>Verdant Passage</h2></div><div class="speeds" aria-label="Simulation speed"><button data-speed="0" aria-pressed="false" aria-label="Pause">Ⅱ</button><button data-speed="1" aria-pressed="true">1×</button><button data-speed="2" aria-pressed="false">2×</button><button data-speed="3" aria-pressed="false">3×</button></div></div>
+<div class="map-stage"><div class="map" id="map"><canvas id="field" width="1000" height="600" aria-label="Verdant Passage winding battlefield"></canvas><div id="pads" class="pads"></div></div></div>
+<div class="wave-bar"><button id="waveInfo" aria-label="Wave preview">ⓘ Wave</button><button id="start" class="primary">Start wave 1</button></div>
+<p id="notice" role="status" aria-live="polite">Tap a pad to build. Tap a tower to upgrade.</p>
 </section>
-<aside class="panel" aria-label="Tower controls"><small>CONSTRUCTION</small><h2 id="selection">Select a build pad</h2><p id="details">All fifteen towers are available. Select a pad on the battlefield or use the pad menu.</p><label class="padlabel" for="padSelect">Build pad</label><select id="padSelect"><option value="">Choose a pad</option></select>
-<label class="padlabel" for="colorFilter">Tower school</label><select id="colorFilter"><option value="all">All five schools</option><option value="W">White · order</option><option value="U">Blue · knowledge</option><option value="B">Black · death</option><option value="R">Red · destruction</option><option value="G">Green · growth</option></select><div id="buildMenu" class="tower-menu"></div>
+<div class="command-dock">
+<aside class="panel tower-panel" aria-label="Tower controls">
+<div class="dock-heading"><h2 id="selection">Select a build pad</h2><button id="clearSelection" aria-label="Clear tower selection" hidden>×</button></div>
+<p id="details">Tap a build pad on the battlefield.</p>
+<select id="padSelect" aria-label="Choose build pad" class="sr-only"><option value="">Choose a pad</option></select>
+<div id="schools" class="school-tabs" aria-label="Tower school"><button data-school="W" aria-pressed="true" style="--school:#e5d4a2">White</button><button data-school="U" aria-pressed="false" style="--school:#77b9e6">Blue</button><button data-school="B" aria-pressed="false" style="--school:#ac8ac3">Black</button><button data-school="R" aria-pressed="false" style="--school:#ed8b65">Red</button><button data-school="G" aria-pressed="false" style="--school:#9bc889">Green</button></div>
+<select id="colorFilter" aria-label="Tower school" class="sr-only"><option value="W">White</option><option value="U">Blue</option><option value="B">Black</option><option value="R">Red</option><option value="G">Green</option></select>
+<div id="buildMenu" class="tower-menu"></div>
 <div id="towerActions" hidden><div class="actions"><button id="upgrade">Upgrade</button><button id="sell">Sell</button><button id="rally">Set rally point</button></div></div>
 </aside>
+<div class="hand-panel"><div class="dock-heading"><h2>Spellbook</h2><small id="zones"></small></div><div id="hand" class="hand"></div><p id="castHint">Choose a card to see its effect.</p><div class="card-actions"><button id="castInstant" hidden>Cast</button><button id="discard" disabled>Discard</button><button id="cancelCard" disabled>Cancel</button></div></div>
 </div>
-<section class="panel stats"><div class="stats-head"><div><small>RUN TELEMETRY</small><h2>Battle statistics</h2></div><button id="restart">Restart run</button></div><div class="stats-grid" id="statistics"></div><details><summary>Tower contributions</summary><div id="contributions" class="contributions"></div></details><details><summary>Recent battle events</summary><ol id="eventLog"></ol></details></section>
-<footer><p>Early beta · 15 towers · 21 cards · 25-wave Gauntlet · Endless · Sandbox. Provisional balance and original vector map; advanced commander, branch and campaign systems remain in development.</p><a href="https://github.com/Squackle/deep-cuts-game-lab-/blob/main/archamancy/DESIGN.md">Design and release requirements</a></footer>
+</div>
+<dialog id="menuDialog" aria-labelledby="menuTitle"><div class="dialog-head"><h2 id="menuTitle">Game menu</h2><button data-close>Close</button></div><p>Combat is paused while a menu is open.</p><div class="modebar"><label>Play mode<select id="mode"><option value="campaign">Gauntlet · 25 waves</option><option value="endless">Endless Siege</option><option value="sandbox">Proving Grounds · sandbox</option></select></label><button id="newMode">Start new mode</button><button id="restart">Restart run</button><button id="deckToggle">Edit spellbook</button><button id="statsOpen">Battle statistics</button><button id="sandboxOpen" hidden>Sandbox tools</button></div><p>Time: <span id="time">0s</span> · Beta 2 · Unranked</p><a href="https://github.com/Squackle/deep-cuts-game-lab-/blob/main/archamancy/DESIGN.md">Design and release requirements</a></dialog>
+<dialog id="waveDialog" aria-labelledby="waveTitle"><div class="dialog-head"><h2 id="waveTitle">Wave forecast</h2><button data-close>Close</button></div><p id="preview"></p><p>★ Mana Spring: +35% farm output. ▲ High Ground: +30 range. Enemy fliers bypass ground troops.</p></dialog>
+<dialog id="deckDialog" aria-labelledby="deckTitle"><div class="dialog-head"><h2 id="deckTitle">Build a 30-card spellbook</h2><button data-close>Close</button></div><div id="deckEditor"><p>Choose up to three copies of each card. Apply before wave one.</p><div id="deckList" class="deck-grid"></div><p id="deckCount"></p><button id="applyDeck">Apply spellbook</button></div></dialog>
+<dialog id="sandboxDialog" aria-labelledby="sandboxTitle"><div class="dialog-head"><h2 id="sandboxTitle">Proving Grounds</h2><button data-close>Close</button></div><div id="sandbox" hidden><div class="actions"><button id="addMana">+10,000 mana</button><button id="healBase">Restore fortress</button><button id="clearEnemies">Clear enemies</button></div><label>Add card<select id="sandboxCard"></select></label><button id="addCard">Put in hand</button><label>Spawn enemy<select id="sandboxEnemy"></select></label><button id="spawn">Spawn 10</button></div></dialog>
+<dialog id="statsDialog" aria-labelledby="statsTitle"><div class="dialog-head"><h2 id="statsTitle">Battle statistics</h2><button data-close>Close</button></div><div class="stats-grid" id="statistics"></div><details><summary>Tower contributions</summary><div id="contributions" class="contributions"></div></details><details><summary>Recent battle events</summary><ol id="eventLog"></ol></details></dialog>
 </main>
 <script type="module" src="/archamancy/main.mjs"></script>
 </body>
