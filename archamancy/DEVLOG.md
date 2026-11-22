@@ -87,3 +87,9 @@ Owner direction: continue toward first playable with commanders after the card c
 Commanders stand on the road, block one ground enemy, fight automatically and can be moved anywhere on the road (Commander → Move, then tap). A fallen commander returns at full health after 20 seconds of combat. Passives only apply while the commander is alive. New ledger categories: commander mana and commander damage, both reconciled in tests and shown in Battle statistics and Copy Stats. Original procedural models; no external assets.
 
 Deferred: partners, paid instant resummoning, commander-specific cards and abilities with cooldowns, and balance tuning from owner playtests. Three new engine scenarios cover selection rules, every passive, Kragg growth, death and return, damage reconciliation and the mana ledger.
+
+## v0.1.0-beta.9 — Starter commanders and unlocks
+
+Owner direction: players pick a first commander like a game's starter choice, then unlock more as they progress. On first visit a "Choose your first commander" dialog offers three starters: Ysolde (W tokens), Quill (U spellslinger) and Bramblemother (G ramp). Mother Vesk unlocks at wave 10 and Kragg Emberjaw at wave 15; the two starters you did not pick unlock at wave 25. Unlocks count the best wave reached in Gauntlet or Endless; Proving Grounds shows every commander and never unlocks anything. Your last chosen commander is preselected for new runs. Locked commanders show their requirement.
+
+Progress is saved only in this browser (`archemancy.progress.v1` in localStorage) and is sanitized on load, so tampered or broken data falls back to a fresh profile. Nothing is sent anywhere. New `archamancy/progress.mjs` and three tests cover starter rules, unlock thresholds, sandbox exclusion, save/load and tamper handling. Engine rules unchanged apart from the report version. Further original commanders are being designed with the owner and will slot into the same unlock list.

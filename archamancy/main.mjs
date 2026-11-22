@@ -1,5 +1,6 @@
 import {createEngine} from './engine.mjs';
 import {createArt} from './art.mjs';
+import * as progress from './progress.mjs';
 function boot(createEngine){
  const $=id=>document.getElementById(id), canvas=$("field"), ctx=canvas.getContext("2d"),art=createArt(ctx);
  const colors={W:"#e5d4a2",U:"#77b9e6",B:"#ac8ac3",R:"#ed8b65",G:"#9bc889",C:"#c5c9cc"};
@@ -15,9 +16,15 @@ function boot(createEngine){
  $("statsOpen").addEventListener("click",()=>{ $("statsReport").hidden=true;text($("copyStatus"),"Copy a playtest report to paste into feedback.");showDialog("statsDialog");});
  $("copyStats").addEventListener("click",async()=>{const field=$("statsReport");const report=JSON.stringify(game.playtestReport());field.value=report;const button=$("copyStats");button.disabled=true;try{if(!navigator.clipboard?.writeText)throw Error("Clipboard unavailable");await navigator.clipboard.writeText(report);field.hidden=true;text($("copyStatus"),"Stats copied. Paste the report into ChatGPT.");}catch{field.hidden=false;field.focus();field.select();try{field.setSelectionRange(0,report.length);}catch{}text($("copyStatus"),"Automatic copying unavailable. Select and copy the report below.");}finally{button.disabled=false;}});
  $("sandboxOpen").addEventListener("click",()=>showDialog("sandboxDialog"));
- function renderCommanders(){const s=game.state,c=s.commander,pane=$("commanderChoices"),pick=s.wave===0&&s.phase==="ready";pane.replaceChildren();pane.hidden=!pick;$("commanderMove").hidden=!c;
-  text($("commanderStatus"),pick?"Choose one commander before wave 1. Commanders fight on the road, block one ground enemy and return 20 seconds after falling. Passives work only while your commander is alive.":c?game.commanders[c.id].name+" · "+(c.dead?"Fallen, returns in "+Math.max(0,Math.ceil((c.respawnAt-s.tick)/10))+"s":"Health "+c.hp+"/"+c.maxHp)+" · Attack "+(c.attack+c.growth)+" · Kills "+c.kills+". "+game.commanders[c.id].desc:"No commander this run. Commanders are chosen before wave 1.");
-  if(!pick)return;for(const [id,d] of [...Object.entries(game.commanders),[null,{name:"No commander",archetype:"",desc:"Fight without a hero.",color:"C",hp:0,damage:0}]]){const b=document.createElement("button"),name=document.createElement("strong"),desc=document.createElement("span"),tag=document.createElement("small");b.type="button";b.style.borderColor=colors[d.color];b.setAttribute("aria-pressed",String((c?.id??null)===id));name.textContent=d.name;desc.textContent=d.desc;tag.textContent=id?d.archetype+" · "+d.hp+" health · "+d.damage+" attack":"";b.append(name,desc,tag);b.addEventListener("click",()=>{if(game.command({type:"commander",id})){notice(id?d.name+" leads your defense.":"No commander selected.");renderCommanders();renderHud();}});pane.append(b);}}
+ const allCommanders=Object.keys(game.commanders);let storage=null;try{storage=window.localStorage;}catch{}
+ let profile=progress.load(storage,allCommanders),seenWaves=0;
+ function applyDefaultCommander(){if(game.state.mode==="sandbox"||!profile.last)return;game.command({type:"commander",id:profile.last});}
+ function renderCommanders(){const s=game.state,c=s.commander,pane=$("commanderChoices"),starter=!profile.starter&&s.mode!=="sandbox",pick=starter||(s.wave===0&&s.phase==="ready"),open=progress.available(profile,s.mode,allCommanders);pane.replaceChildren();pane.hidden=!pick;$("commanderMove").hidden=!c||starter;
+  text($("commanderTitle"),starter?"Choose your first commander":"Commander");
+  text($("commanderStatus"),starter?"Pick a starter. It leads every run from now on, and you unlock more commanders by reaching new waves in Gauntlet or Endless.":pick?"Choose a commander before wave 1. Commanders fight on the road, block one ground enemy and return 20 seconds after falling. Passives work only while your commander is alive. Best wave: "+profile.bestWave+".":c?game.commanders[c.id].name+" · "+(c.dead?"Fallen, returns in "+Math.max(0,Math.ceil((c.respawnAt-s.tick)/10))+"s":"Health "+c.hp+"/"+c.maxHp)+" · Attack "+(c.attack+c.growth)+" · Kills "+c.kills+". "+game.commanders[c.id].desc:"No commander this run. Commanders are chosen before wave 1.");
+  if(!pick)return;const ids=starter?progress.STARTERS:allCommanders;for(const id of [...ids,...(starter?[]:[null])]){const d=id?game.commanders[id]:{name:"No commander",archetype:"",desc:"Fight without a hero.",color:"C",hp:0,damage:0},locked=!!id&&!starter&&!open.includes(id),b=document.createElement("button"),name=document.createElement("strong"),desc=document.createElement("span"),tag=document.createElement("small");b.type="button";b.style.borderColor=colors[d.color];b.disabled=locked;b.setAttribute("aria-pressed",String(!starter&&(c?.id??null)===id));name.textContent=(locked?"🔒 ":"")+d.name;desc.textContent=d.desc;tag.textContent=locked?progress.requirement(profile,id):id?d.archetype+" · "+d.hp+" health · "+d.damage+" attack":"";b.append(name,desc,tag);
+   b.addEventListener("click",()=>{if(starter){if(!progress.chooseStarter(profile,id))return;progress.save(storage,profile);if(s.wave===0&&s.phase==="ready")game.command({type:"commander",id});closeDialogs();notice(d.name+" is your first commander. Reach new waves to unlock more.");renderHud();return;}if(game.command({type:"commander",id})){if(s.mode!=="sandbox"){profile.last=id;progress.save(storage,profile);}notice(id?d.name+" leads your defense.":"No commander selected.");renderCommanders();renderHud();}});pane.append(b);}}
+ function checkUnlocks(){const s=game.state;if(s.waveHistory.length===seenWaves)return;seenWaves=s.waveHistory.length;const fresh=progress.recordWave(profile,s.waveHistory.at(-1).wave,s.mode);progress.save(storage,profile);if(fresh.length)notice("New commander unlocked: "+fresh.map(id=>game.commanders[id].name).join(", ")+". Choose them before wave 1 of your next run.");}
  $("commanderOpen").addEventListener("click",()=>{renderCommanders();showDialog("commanderDialog");});
  $("commanderMove").addEventListener("click",()=>{closeDialogs();selectedCard=null;rallying=false;moving=true;notice("Tap a road location to move your commander.");renderHud();});
  for(const b of document.querySelectorAll("[data-close]"))b.addEventListener("click",closeDialogs);
@@ -61,7 +68,7 @@ function boot(createEngine){
  canvas.addEventListener("click",e=>{const {x,y}=coords(e);if(selectedCard!==null&&game.cards[game.state.hand[selectedCard]]?.target==="ground"){cast(selectedCard,{x,y});return;}if(moving){moving=false;notice(game.command({type:"commanderMove",x,y})?"Commander on the move.":"Commander unavailable.");renderHud();return;}if(!rallying)return;if(game.command({type:"rally",pad:selected,x,y})){rallying=false;notice("Rally point moved.");}else notice("Choose a road position within the tower’s range.");renderHud();});
  function setSpeed(n){speed=n;accumulator=0;for(const b of document.querySelectorAll("[data-speed]"))b.setAttribute("aria-pressed",String(Number(b.dataset.speed)===n));}
  for(const b of document.querySelectorAll("[data-speed]"))b.addEventListener("click",()=>setSpeed(Number(b.dataset.speed)));
- function restart(mode){game=createEngine(1,mode);selected=null;selectedCard=null;rallying=false;moving=false;lastEvent=-1;handKey="";contributionKey="";setSpeed(1);$("padSelect").value="";$("mode").value=mode;closeDialogs();notice("New "+mode+" run. Select a build pad.");renderHud();}
+ function restart(mode){game=createEngine(1,mode);seenWaves=0;applyDefaultCommander();selected=null;selectedCard=null;rallying=false;moving=false;lastEvent=-1;handKey="";contributionKey="";setSpeed(1);$("padSelect").value="";$("mode").value=mode;closeDialogs();notice("New "+mode+" run. Select a build pad.");renderHud();}
  $("restart").addEventListener("click",()=>restart(game.state.mode));
  $("newMode").addEventListener("click",()=>restart($("mode").value));
  function renderHud(){
@@ -128,9 +135,10 @@ function boot(createEngine){
   const elapsed=last===null?0:Math.min(250,Math.max(0,now-last));last=now;
   if(speed&&game.state.phase==="active"&&!document.querySelector("dialog[open]")){accumulator+=elapsed*speed;while(accumulator>=game.tickMs&&game.state.phase==="active"){game.step();accumulator-=game.tickMs;}if(game.state.phase!=="active"){accumulator=0;notice(game.state.phase==="won"?"Victory! All 25 Gauntlet waves completed. Continue into endless survival.":game.state.phase==="lost"?"Defeat. Restart to try a new strategy.":"Wave complete. Prepare your next defense.");}}
   else accumulator=0;
-  renderField();renderHud();requestAnimationFrame(frame);
+  checkUnlocks();renderField();renderHud();requestAnimationFrame(frame);
  }
  document.addEventListener("visibilitychange",()=>{last=null;accumulator=0;});
+ applyDefaultCommander();if(!profile.starter){renderCommanders();showDialog("commanderDialog");}
  renderHud();requestAnimationFrame(frame);
 }
 boot(createEngine);
