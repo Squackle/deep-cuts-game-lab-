@@ -144,3 +144,13 @@ Benchmark after both changes: wins wave 25 at 4/20 health and loses on wave 30.
 - Bug: Krenko's goblin tokens stood on his spot and claimed every enemy first, so Krenko never swung (58 damage in the owner's run, 0 in the benchmark). Commanders now fight beside their tokens and troops: they hit a free enemy if one is in reach, otherwise they help on one already held (without taking its hits).
 - Token damage is now credited to the commander: `stats.commanderArmyDamage` and `commander.armyDamage` in the report, and "Commander token damage" in Battle statistics.
 - Titan leaks: bosses cost 3 fortress per leak, so 6 titans ended the run. Beta 11 already replaced wave 25 (3 Titans plus the Hollow Tyrant) and scaled spells, troops and commanders late; no further wave change in this patch.
+
+## 2026-11-22 — v0.1.0-beta.12 Polish Update, drop 1: clean layout
+Owner direction: a big polish update, with a UI as clean and simple as the best mobile tower-defense games (layout principles only; all art stays original).
+- The battlefield fills the screen. Side panels are gone.
+- Small corner HUD: lives, mana and wave at top left; pause, speed (1×/2×/3× in one button) and menu at top right. Notices are short toasts that fade.
+- Ring menu on the pad you tap: five school icons, then that school's three towers drawn with their real models and prices. Tap once to see what it does, tap again to build. Built towers get Upgrade (top), Sell (bottom) and Rally (troop towers). Near the top or bottom of the screen the ring opens as an arc away from the edge. Tapping empty ground closes it.
+- The wave button sits at the road entrance and pulses; during combat it shows the early-call bonus.
+- Commander portrait (card art, health bar) at bottom left with wave info; spell cards as a small hand at bottom right with a pop-up card tip for Cast, Discard and Cancel.
+- Portrait phones get a one-time "turn sideways" hint. The Game Lab link moved into the menu.
+- No rules changes.
