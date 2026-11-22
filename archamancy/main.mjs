@@ -6,6 +6,7 @@ import {createCardArt} from './cardart.mjs';
 import {createFx} from './fx.mjs';
 import {createSfx} from './sfx.mjs';
 import {hubFor} from './hub.mjs';
+import {advance,clockRunning} from './clock.mjs';
 function boot(createEngine){
  const $=id=>document.getElementById(id), canvas=$("field"), ctx=canvas.getContext("2d"),art=createArt(ctx),fx=createFx(ctx);let bannerTimer=0;
  const colors={W:"#e5d4a2",U:"#77b9e6",B:"#ac8ac3",R:"#ed8b65",G:"#9bc889",C:"#c5c9cc"};
@@ -253,7 +254,8 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  function frame(now){
   const elapsed=last===null?0:Math.min(250,Math.max(0,now-last));last=now;
   if(game.state.phase==="active"&&$("titleScreen").hidden){const k=document.querySelector("dialog[open]")?"menu":speed?"x"+speed:"paused";session.time[k]=(session.time[k]||0)+elapsed;}
-  if(speed&&game.state.phase==="active"&&!document.querySelector("dialog[open]")){accumulator+=elapsed*speed;while(accumulator>=game.tickMs&&(game.state.phase==="active"||game.onslaughtLeft()!==null)){game.step();accumulator-=game.tickMs;}if(game.state.phase!=="active"&&game.onslaughtLeft()===null){accumulator=0;notice(game.state.phase==="won"?"Victory! All 25 Gauntlet waves completed. Continue into endless survival.":game.state.phase==="lost"?"Defeat. Open the menu to restart.":"Wave complete. Prepare your next defense.",game.state.phase!=="ready");}}
+  // Between Onslaught waves the clock keeps running too (clock.mjs), so the next wave arrives on time.
+  if(speed&&clockRunning(game)&&!document.querySelector("dialog[open]")){accumulator=advance(game,accumulator+elapsed*speed);if(!clockRunning(game)){notice(game.state.phase==="won"?"Victory! All 25 Gauntlet waves completed. Continue into endless survival.":game.state.phase==="lost"?"Defeat. Open the menu to restart.":"Wave complete. Prepare your next defense.",game.state.phase!=="ready");}}
   else accumulator=0;
   handleCues(fx.update(game,now));const sh=fx.offset(now);$("map").style.transform=sh.x||sh.y?"translate("+sh.x.toFixed(1)+"px,"+sh.y.toFixed(1)+"px)":"";
   checkUnlocks();renderField();renderHud();renderTutorial();if(now-lastSave>4000&&$("titleScreen").hidden)saveRun();requestAnimationFrame(frame);
