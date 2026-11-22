@@ -1,7 +1,7 @@
 // ARCHAMANCY beta simulation: fixed ticks, original data-driven rules, DOM independent.
 // Bump only when the saved run format changes, so saves survive ordinary updates.
 export const SAVE_FORMAT=1;
-export const VERSION="0.1.0-beta.13.4";
+export const VERSION="0.1.0-beta.13.5";
 // Status effects from towers (ticks are 100 ms): Pyre blasts burn, Thornheart poisons (stacking), Arcanum freezes (slow), Hex curses (+35% damage taken).
 export const BURN=10,POISON=30,POISON_STACKS=3;
 // Enemy health multiplier per difficulty. Gauntlet stars: 3 at 18+ fortress left, 2 at 10+, otherwise 1.
@@ -13,7 +13,7 @@ export const DIFFICULTY={easy:.85,normal:1.1,hard:1.45};
 const hollowPads=[];for(const y of [47,175,235,365,425,553])for(const x of [220,400,580,760])hollowPads.push([x,y,hollowPads.length===20?"spring":hollowPads.length===7?"height":null]);
 export const MAPS={
  hollow:{name:"The Hollow Road",blurb:"One long winding road.",segments:[{pts:[[0,110],[875,110],[875,300],[125,300],[125,490],[1000,490]],next:null}],entrances:[0],commander:[0,.42],pads:hollowPads,rubble:{7:120,13:70,18:70},labels:[["THE HOLLOW ROAD",12,82],["VERDANT KEEP",885,548]]},
- confluence:{name:"The Confluence",blurb:"Two roads enter and merge into one before the keep.",segments:[{pts:[[0,80],[740,80],[740,200],[210,200],[210,300]],next:2},{pts:[[0,520],[740,520],[740,400],[210,400],[210,300]],next:2},{pts:[[210,300],[1000,300]],next:null}],entrances:[0,1],commander:[2,.3],rubble:{1:120,10:80,13:80},
+ confluence:{name:"The Confluence",blurb:"Two roads enter and merge into one before the keep. Shorter roads, so fliers here are a little lighter.",airScale:.85,segments:[{pts:[[0,80],[740,80],[740,200],[210,200],[210,300]],next:2},{pts:[[0,520],[740,520],[740,400],[210,400],[210,300]],next:2},{pts:[[210,300],[1000,300]],next:null}],entrances:[0,1],commander:[2,.3],rubble:{1:120,10:80,13:80},
   pads:[[300,140],[440,140,"height"],[580,140],[320,250],[460,250],[600,250],[860,150],[860,235],[955,140],[300,460],[440,460],[580,460],[320,350],[460,350],[600,350],[860,450],[860,365],[955,460],[105,190],[105,300,"spring"],[105,410]],
   labels:[["NORTH FORD",110,45],["SOUTH FORD",110,570],["THE CONFLUENCE",226,288],["VERDANT KEEP",890,402]]}
 };
@@ -21,6 +21,8 @@ export const MAPS={
 export const PERK_COSTS=[1,2,3];
 // Onslaught: in a Gauntlet with this on, the next wave arrives this many ticks after the last one started, cleared road or not.
 export const ONSLAUGHT_GAP=300;
+// Onslaught holds its next wave while this many waves are still on the road (same cap as calling early).
+export const ONSLAUGHT_MAX=3;
 // Commander abilities: one tap power per commander, during waves, then a cooldown (seconds). Themes follow each card's Scryfall text (checked 2026-11-22).
 export const ABILITIES={
  krenko:{name:"Mob Rally",cooldown:40,text:"Create Goblin tokens equal to the goblins you control (at least 3)."},
@@ -206,7 +208,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  const TARGET_ORDERS={first:()=>firstOrder,last:()=>(a,b)=>remaining(b.progress)-remaining(a.progress)||a.id-b.id,strong:()=>(a,b)=>b.hp-a.hp||firstOrder(a,b),close:o=>(a,b)=>d2(enemyPos(a),o)-d2(enemyPos(b),o)||firstOrder(a,b)};
  function firstEnemy(origin,range,groundOnly=false,damage=null,mode="first"){let best=null;const order=Object.hasOwn(TARGET_ORDERS,mode)?TARGET_ORDERS[mode](origin):firstOrder;for(const e of state.enemies){if(e.hp<=0||e.escaped||!e.revealed||(groundOnly&&e.flying)||(damage==="magic"&&e.resist>=100)||(damage==="physical"&&e.armor>=100)||d2(enemyPos(e),origin)>range*range)continue;if(!best||order(e,best)<0)best=e;}return best;}
  function scale(w){return Math.min(1e8,Math.round((1+Math.max(0,w-5)*.24)*Math.pow(1.12,Math.max(0,Math.min(w,25)-10))*Math.pow(1.18,Math.max(0,w-25))*100)/100);}
- function spawnEnemy(kind,w){const def=types[kind],hp=Math.ceil(def.hp*scale(w)*(DIFFICULTY[state.difficulty]||1));state.enemies.push({id:state.nextId++,wave:w,kind,...def,hp,maxHp:hp,attack:Math.ceil(def.attack*Math.sqrt(scale(w))),progress:segs[M.entrances[(state.spawned=(state.spawned||0)+1)%M.entrances.length]].off,slowUntil:0,rootUntil:0,curseUntil:0,markUntil:0,hasteUntil:0,revealed:!def.shroud,abilityAt:0,phase:def.ability==="phase"?"iron":null,phaseAt:0,baseArmor:def.armor,baseResist:def.resist,burnUntil:0,burnSource:null,poisonUntil:0,poisonStacks:0,poisonSource:null,nextAttack:0});}
+ function spawnEnemy(kind,w){const def=types[kind],hp=Math.ceil(def.hp*scale(w)*(DIFFICULTY[state.difficulty]||1)*(def.flying?M.airScale||1:1));state.enemies.push({id:state.nextId++,wave:w,kind,...def,hp,maxHp:hp,attack:Math.ceil(def.attack*Math.sqrt(scale(w))),progress:segs[M.entrances[(state.spawned=(state.spawned||0)+1)%M.entrances.length]].off,slowUntil:0,rootUntil:0,curseUntil:0,markUntil:0,hasteUntil:0,revealed:!def.shroud,abilityAt:0,phase:def.ability==="phase"?"iron":null,phaseAt:0,baseArmor:def.armor,baseResist:def.resist,burnUntil:0,burnSource:null,poisonUntil:0,poisonStacks:0,poisonSource:null,nextAttack:0});}
  // At most three waves can be on the road at once, so early calls cannot stack a whole campaign into one fight.
  function canCallEarly(){return state.phase==="active"&&(state.pendingWaves?.length||0)<3&&(state.mode!=="campaign"||state.wave<25)&&state.queue.length+state.enemies.length<3000;}
  function earlyBonus(){return canCallEarly()&&state.lastWaveSpawned?Math.max(0,Math.min(40,Math.ceil(40*(state.bonusDeadline-state.tick)/Math.max(1,state.bonusDeadline-state.lastWaveTick)))):0;}
@@ -310,7 +312,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  function step(){
  // Onslaught keeps the clock running between waves and sends the next wave on time.
  if(state.phase==="ready"&&onslaughtLeft()!==null){state.tick++;if(onslaughtLeft()===0)startWave();return;}
- if(state.phase!=="active")return;if(onslaughtLeft()===0&&state.pendingWaves.length<6)startWave(true,true);state.tick++;state.effects=state.effects.filter(e=>e.until>state.tick);state.projectiles=state.projectiles.filter(e=>e.start+e.duration>state.tick);
+ if(state.phase!=="active")return;if(onslaughtLeft()===0&&state.pendingWaves.length<ONSLAUGHT_MAX)startWave(true,true);state.tick++;state.effects=state.effects.filter(e=>e.until>state.tick);state.projectiles=state.projectiles.filter(e=>e.start+e.duration>state.tick);
  for(let n=0;n<8&&state.queue.length&&state.queue[0].due<=state.tick;n++){const v=state.queue.shift();spawnEnemy(v.kind,v.wave);if(v.wave===state.wave)state.lastWaveSpawned=true;}
  for(const e of state.enemies){if(e.hp<=0)continue;if(e.regen&&state.tick%10===0)e.hp=Math.min(e.maxHp,e.hp+e.regen);if(e.burnUntil>state.tick&&state.tick%5===0){const source=e.burnSource,owner=source===null?null:Object.values(state.towers).find(t=>t.uid===source)||state.towerHistory.find(t=>t.uid===source);hurt(e,Math.round(12*late()),true,owner||null,false,source===null?"spell":"tower");}
   // Poison stacks, ignores armor, and wears off all at once.

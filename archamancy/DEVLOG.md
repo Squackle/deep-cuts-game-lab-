@@ -250,3 +250,10 @@ From Logan's picks in the Kingdom Rush feature thread.
 The last two of Logan's picks from the Kingdom Rush feature thread.
 - Player level: every wave cleared outside the Proving Grounds gives 10 + wave XP. Level n to n + 1 takes 60 × n XP, so a full Gauntlet is about three levels early on. One basic tower per color is open from the start (Legion Hall, Arcanum, Necropolis, Pyre Battery, Mana Grove). Level 2 opens Judgment Spire and Storm Engine; 3 Hex Sanctum, Beast Den and The Confluence; 4 Dawn Chapel, Goblin Warcamp and Endless Siege; 5 Arcane Library, Thornheart and Onslaught; 6 Soul Foundry and Mirrorworks. Towers unlocked mid-run can be built right away. Players from before levels keep what they had: a best wave of 25 or any stars means max level, a best wave of 10 or more means at least level 4. Locks never apply in the Proving Grounds.
 - Codex: a book of all 15 enemies, 15 towers and 30 spells on the title screen. Entries fill in the first time you meet an enemy, build a tower or draw a spell in a run, with stats, traits and a counter tip for each enemy.
+
+## 2026-11-22 — Beta 13.5 Onslaught and Confluence flier balance
+
+From Logan's Hard + Onslaught win on The Confluence (4 of 20 health, 14 leaks, 11 of them Carrion Wings in waves 20 to 24):
+- Onslaught now holds its next wave while 3 waves are still on the road, the same cap as calling early. Before, it stacked up to 6, so waves 20 to 24 (boss wave included) all shared the road. The button reads "Wave N waits: 3 on the road" while held.
+- The Confluence route is about 2,280 road units against 2,880 on The Hollow Road, and fliers ignore troop blocks, so they spent about 20% less time under towers. Fliers on The Confluence now have 85% health. Ground enemies are unchanged. The map blurb says so.
+- Tests: Onslaught cap, and flier versus ground health across maps.
