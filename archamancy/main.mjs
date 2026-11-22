@@ -266,8 +266,8 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  // Title screen, end screen, sound and first-run tips (Beta 12 drop 3).
  const sfx=createSfx(storage);const levelName={easy:"Easy",normal:"Normal",hard:"Hard"};
  const mapPick=()=>MAP_LOOKS.includes(profile.map)&&progress.isOpen(profile,"maps",profile.map)?profile.map:"hollow";
- // Maps the art can draw. Frostfen Crossing stays off the title screen until its frozen-lake terrain lands.
- const MAP_LOOKS=["hollow","confluence"];
+ // Maps the art can draw (terrain.mjs). A new map stays off the title screen until its terrain lands.
+ const MAP_LOOKS=["hollow","confluence","frostfen"];
  for(const [id,m] of Object.entries(MAPS)){if(!MAP_LOOKS.includes(id))continue;const b=document.createElement("button");b.type="button";b.dataset.map=id;b.innerHTML="<strong></strong><small></small>";b.firstChild.textContent=m.name;b.lastChild.textContent=m.blurb;b.addEventListener("click",()=>{profile.map=id;progress.save(storage,profile);sfx.unlock();sfx.play("click");previewMap();renderTitle();});$("mapChoices").append(b);}
  // Behind the title, show the chosen battlefield unless a run is still on the field.
  function previewMap(){if(runLive()||game.map.id===mapPick())return;game=createEngine(1,"campaign",mapPick());useMap();fx.reset();fx.sync(game);}
