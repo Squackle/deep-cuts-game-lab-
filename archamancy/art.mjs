@@ -105,7 +105,25 @@ export function createArt(ctx,{res:startRes=1}={}){
   }
  }
  // Towers draw about 10% larger than before so they sit proud of their pads; a soft contact shadow grounds them.
- function tower(t,p){const s=makeSprite("tower:"+t.kind+":"+t.tier+":"+(t.branch||"-"),a=>towerModel(a,t.kind,t.tier,t.branch),96,120);const scale=Math.max(.82,Math.min(1,p.y/78.75));softShadow(p.x+3,p.y+9,32*scale,12*scale,.55);ctx.drawImage(s,p.x-42*scale,p.y-78.75*scale,84*scale,105*scale);}
+ function tower(t,p){const s=makeSprite("tower:"+t.kind+":"+t.tier+":"+(t.branch||"-"),a=>towerModel(a,t.kind,t.tier,t.branch),96,120);const scale=Math.max(.82,Math.min(1,p.y/78.75));softShadow(p.x+3,p.y+9,32*scale,12*scale,.55);ctx.drawImage(s,p.x-42*scale,p.y-78.75*scale,84*scale,105*scale);idle(t,p,scale);}
+ // Idle life on built towers: glowing crystals and eyes, forge smoke, flame flicker, crackling storm coils.
+ // Anchors are model coordinates from towerModel(); the sprite maps them at 0.875 × scale (plus tier growth).
+ const IDLE={legion:[["glint",-10,-10,gold]],chapel:[["glow",0,-52,gold]],judgment:[["glow",0,-56,gold]],arcanum:[["glow",0,-39,ice],["orbit",0,-39,ice]],library:[["rune",0,-46,ice]],mirror:[["glow",0,-59,ice],["glint",6,-34,"#e6fbff"]],
+  necropolis:[["glow",0,-44,violet],["eyes",0,-19,"#c9a6ff"]],foundry:[["smoke",15,-50,"#d9d4e6"],["glow",0,-5,violet]],hex:[["glow",0,-28,violet]],pyre:[["flame",-6,-44,fire],["smoke",-6,-52,"#d8d0c8"]],goblin:[["smoke",-3,-42,"#e0d8cc"]],
+  storm:[["glow",0,-49,"#f8db83"],["zap",0,-49,"#fff5c9"]],grove:[["glow",-14,-28,leaf],["glow",5,-42,leaf],["glow",15,-19,leaf]],beast:[["eyes",0,-6,"#ffd86b"]],thorn:[["glow",0,-49,"#c5ef9b"]]};
+ function idle(t,p,scale){const list=IDLE[t.kind];if(!list)return;const now=(typeof performance!=="undefined"?performance.now():0)/1000,sx=.875*scale*(1+(t.tier-1)*.065),sy=.875*scale*(1+(t.tier-1)*.09),seed=(p.x*7+p.y*3)%10;
+  ctx.save();
+  list.forEach(([kind,mx,my,c],i)=>{const x=p.x+mx*sx,y=p.y+my*sy,ph=now*2+seed+i*1.7,k=Math.sin(ph)*.5+.5;
+   if(kind==="glow")glow(x,y,10+k*6,c,.35+k*.45);
+   else if(kind==="orbit"){const a=now*2.4+seed;oval(ctx,x+Math.cos(a)*14,y+Math.sin(a)*5,1.8,1.8,"#f2fdff");glow(x+Math.cos(a)*14,y+Math.sin(a)*5,6,c,.6);}
+   else if(kind==="rune"){const yy=y-Math.sin(now*1.6+seed)*4;glow(x,yy,10,c,.5);ctx.globalAlpha=.9;ctx.fillStyle="#f1e7c4";ctx.strokeStyle=ink;ctx.lineWidth=1;ctx.fillRect(x-5,yy-4,10,7);ctx.strokeRect(x-5,yy-4,10,7);ctx.globalAlpha=1;}
+   else if(kind==="glint"){const g=(now*.5+seed*.1)%1;if(g<.12){const v=g/.12,r=6*Math.sin(v*Math.PI);ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=c;ctx.globalAlpha=.9;ctx.beginPath();for(let j=0;j<8;j++){const an=j*Math.PI/4,rr=j%2?r*.25:r;j?ctx.lineTo(x+Math.cos(an)*rr,y+Math.sin(an)*rr):ctx.moveTo(x+rr,y);}ctx.closePath();ctx.fill();ctx.restore();}}
+   else if(kind==="eyes"){const blink=(now*.4+seed*.13)%1>.96;if(!blink)for(const sd of [-1,1]){glow(x+sd*3.5*sx,y,5,c,.6);oval(ctx,x+sd*3.5*sx,y,1.3,1.3,c);}}
+   else if(kind==="smoke"){for(let j=0;j<3;j++){const u=(now*.45+j/3+seed*.07)%1;ctx.globalAlpha=.45*(1-u);oval(ctx,x+Math.sin(now+j*2)*3*u+u*6,y-u*26,2.5+u*5,2.5+u*5,c);}ctx.globalAlpha=1;}
+   else if(kind==="flame"){glow(x,y,12+k*5,c,.5+k*.3);for(let j=0;j<2;j++){const u=(now*.9+j*.5+seed*.1)%1;ctx.globalAlpha=1-u;oval(ctx,x+Math.sin(now*3+j)*4,y-u*18,1.4,1.4,"#ffd36b");}ctx.globalAlpha=1;}
+   else if(kind==="zap"){const z=(now*1.3+seed*.1)%1;if(z<.18){const dir=Math.floor(now*7)%2?1:-1,pts=[[x,y]];for(let j=1;j<=4;j++)pts.push([x+dir*j*4+(Math.sin(now*40+j)*3),y-j*4-(j%2)*2]);ctx.save();ctx.globalCompositeOperation="lighter";ctx.globalAlpha=.9;line(ctx,pts,c,1.6);ctx.restore();}}
+  });
+  ctx.restore();}
  function softShadow(x,y,rx,ry,alpha){ctx.save();ctx.translate(x,y);ctx.scale(1,ry/rx);const g=ctx.createRadialGradient(0,0,rx*.2,0,0,rx);g.addColorStop(0,"rgba(8,18,14,"+alpha+")");g.addColorStop(1,"rgba(8,18,14,0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,rx,0,Math.PI*2);ctx.fill();ctx.restore();}
  // Wooden scaffolding for a tower under construction; k (0 to 1) is how far it has gone up.
  function scaffold(x,y,k){const h=62*Math.min(1,k),w=24;ctx.save();ctx.lineCap="round";ctx.strokeStyle="#4a3324";ctx.lineWidth=5;
