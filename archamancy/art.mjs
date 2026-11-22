@@ -3,7 +3,8 @@ export function createArt(ctx){
  const ink="#172722",metal="#7d8e85",stone="#aab0a0",gold="#ead49a",ice="#8ee5fb",violet="#ca9be9",fire="#ffb267",leaf="#a0d481";
  const school={W:gold,U:ice,B:violet,R:fire,G:leaf};
  const towerSchools={legion:"W",chapel:"W",judgment:"W",arcanum:"U",library:"U",mirror:"U",necropolis:"B",foundry:"B",hex:"B",pyre:"R",goblin:"R",storm:"R",grove:"G",beast:"G",thorn:"G"};
- const enemyKeys=["raider","runner","armored","wing","mage","regen","titan"],allyKeys=["legion","necropolis","goblin","beast","construct","bloom"];
+ const enemyKeys=["raider","runner","armored","wing","mage","regen","titan"],allyKeys=["legion","necropolis","goblin","beast","construct","bloom","marshal","quill","vesk","kragg","bramble"];
+ function crown(a,y,c){poly(a,[[-7,y],[-7,y-7],[-3,y-3],[0,y-9],[3,y-3],[7,y-7],[7,y]],c);}
  function poly(a,points,fill,stroke=ink){a.beginPath();points.forEach(([x,y],i)=>i?a.lineTo(x,y):a.moveTo(x,y));a.closePath();a.fillStyle=fill;a.fill();if(stroke){a.strokeStyle=stroke;a.lineWidth=1.8;a.stroke();}}
  function oval(a,x,y,rx,ry,fill,stroke=null){a.beginPath();a.ellipse(x,y,rx,ry,0,0,Math.PI*2);a.fillStyle=fill;a.fill();if(stroke){a.strokeStyle=stroke;a.lineWidth=1.6;a.stroke();}}
  function rect(a,x,y,w,h,fill,stroke=ink){a.fillStyle=fill;a.fillRect(x,y,w,h);if(stroke){a.strokeStyle=stroke;a.lineWidth=1.5;a.strokeRect(x,y,w,h);}}
@@ -56,6 +57,11 @@ export function createArt(ctx){
    case "beast":beast(a,"#827e61","#b9bc86");break;
    case "bloom":beast(a,"#668f54","#b1da79");crystal(a,-8,-25,9,"#b6f28a");break;
    case "construct":humanoid(a,"#788e8d","#acbbc0",{bulk:true,helmet:true});crystal(a,0,-13,6,ice);break;
+   case "marshal":humanoid(a,"#f0dcaa","#e5bd93",{helmet:true,shield:gold});crown(a,-35,gold);flag(a,-14,-2,gold);break;
+   case "quill":poly(a,[[-13,4],[-8,-22],[8,-22],[13,4]],"#3f6f9a");oval(a,0,-25,7,8,"#e2c3a0",ink);crown(a,-32,ice);line(a,[[14,-40],[14,4]],"#c2b07c",3);oval(a,14,-42,5,5,"#fff2b0","#a88f4f");break;
+   case "vesk":poly(a,[[-14,4],[-8,-22],[8,-22],[14,4]],"#3a2f45");oval(a,0,-25,7,8,"#e4e0dc",ink);poly(a,[[-9,-24],[0,-38],[9,-24],[6,-19],[-6,-19]],"#d9d3e3");crown(a,-37,violet);line(a,[[13,-36],[13,4]],"#8d7aa3",3);crystal(a,13,-38,6,violet);break;
+   case "kragg":humanoid(a,"#9b4a35","#c48766",{bulk:true});poly(a,[[-8,-31],[-12,-40],[-3,-33],[3,-33],[12,-40],[8,-31]],fire);line(a,[[9,-12],[22,-34]],"#d7d9d0",5);poly(a,[[16,-36],[28,-42],[24,-26]],"#e9ebe2");break;
+   case "bramble":poly(a,[[-14,4],[-9,-22],[9,-22],[14,4]],"#4d7a41");oval(a,0,-25,7,8,"#b99a74",ink);for(const [x,y] of [[-9,-31],[0,-36],[9,-31]])oval(a,x,y,6,5,"#6c9c4f",ink);crystal(a,0,-40,5,leaf);line(a,[[13,-34],[13,4]],"#7e6544",4);break;
    case "runner":humanoid(a,"#b48b60","#d9ad89",{});poly(a,[[-8,-31],[0,-38],[8,-31]],"#9e5746");break;
    case "raider":humanoid(a,"#ae574a","#b8886f",{shield:"#9c5f4c"});break;
    case "armored":humanoid(a,"#7d8886","#9daba5",{helmet:true,shield:"#9ca6a0",bulk:true});break;
@@ -66,7 +72,7 @@ export function createArt(ctx){
   }
  }
  function tower(t,p){const s=makeSprite("tower:"+t.kind+":"+t.tier+":"+(t.branch||"-"),a=>towerModel(a,t.kind,t.tier,t.branch),96,120);const scale=Math.min(1,p.y/71.25);ctx.drawImage(s,p.x-38*scale,p.y-71.25*scale,76*scale,95*scale);}
- function unit(k,x,y,opt={}){const s=makeSprite("unit:"+k,a=>creature(a,k),68,68),size=k==="titan"?61:k==="bloom"?52:k==="wing"?46:40;ctx.save();oval(ctx,x,y+3,size*.28,4,"#10231d88");ctx.translate(x,y+(opt.flying?-14:0));ctx.scale(opt.dir<0?-1:1,1);const bob=opt.animate?Math.sin(opt.time*.4+(opt.id||0))*(opt.flying?2:1):0;ctx.drawImage(s,-size/2,-size*.75+bob,size,size);ctx.restore();const yy=y+(opt.flying?-14:0)-size*.65;const ww=size*.60;rect(ctx,x-ww/2,yy,ww,3,"#26332d",null);rect(ctx,x-ww/2,yy,ww*Math.max(0,Math.min(1,opt.hp||0)),3,opt.ally?"#94db93":"#e9a181",null);if(opt.ward) {ctx.strokeStyle="#f1d991aa";ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y-9,15,19,0,0,Math.PI*2);ctx.stroke();}}
+ function unit(k,x,y,opt={}){const s=makeSprite("unit:"+k,a=>creature(a,k),68,68),size=k==="titan"?61:["marshal","quill","vesk","kragg","bramble"].includes(k)?50:k==="bloom"?52:k==="wing"?46:40;ctx.save();oval(ctx,x,y+3,size*.28,4,"#10231d88");ctx.translate(x,y+(opt.flying?-14:0));ctx.scale(opt.dir<0?-1:1,1);const bob=opt.animate?Math.sin(opt.time*.4+(opt.id||0))*(opt.flying?2:1):0;ctx.drawImage(s,-size/2,-size*.75+bob,size,size);ctx.restore();const yy=y+(opt.flying?-14:0)-size*.65;const ww=size*.60;rect(ctx,x-ww/2,yy,ww,3,"#26332d",null);rect(ctx,x-ww/2,yy,ww*Math.max(0,Math.min(1,opt.hp||0)),3,opt.ally?"#94db93":"#e9a181",null);if(opt.ward) {ctx.strokeStyle="#f1d991aa";ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y-9,15,19,0,0,Math.PI*2);ctx.stroke();}}
  const projectileColors={strike:gold,arcane:ice,mirror:"#c1edff",hex:violet,splash:fire,chain:"#ffdf83",root:leaf,melee:"#f6e0bd",heal:"#b0efad"};
  function projectile(f,clock){
   const p=Math.max(0,Math.min(1,(clock-f.start)/f.duration)),c=projectileColors[f.kind]||gold;
