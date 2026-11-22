@@ -243,8 +243,11 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  function farmMultiplier(t){return (pads[t.id].bonus==="spring"?1.35:1)*(1+Math.min(3,t.growth)*.1);}
  function farmLimit(t){return Math.floor([22,65,165,400][t.tier-1]*farmMultiplier(t)*(1+bonus(t,"farmCap")));}
  // Soul Foundry income is capped per wave, like Mana Groves, so troop death loops cannot snowball mana.
- function soulBudget(t){return Math.floor([40,80,140,220][t.tier-1]*(1+bonus(t,"soul"))*Math.max(1,state.pendingWaves?.length||1));}
- function farmBudget(t){return farmLimit(t)*Math.max(1,state.pendingWaves?.length||1);}
+ // Waves called while others are still on the road share one budget: one wave's worth for every wave started since the road was last clear.
+ // (Older saves have no groupWaves; the waves still on the road stand in.)
+ const groupWaves=()=>Math.max(1,state.groupWaves??state.pendingWaves?.length??1);
+ function soulBudget(t){return Math.floor([40,80,140,220][t.tier-1]*(1+bonus(t,"soul"))*groupWaves());}
+ function farmBudget(t){return farmLimit(t)*groupWaves();}
  function upgradeCost(t){return t.tier>=4?null:Math.floor(roster[t.kind].cost*[1.4,4.2,17][t.tier-1]);}
  function branchOptions(t){return branches[t.kind].map((b,i)=>({id:i===0?"A":"B",name:b[0],ultimate:b[1],description:b[2]}));}
  function enemyPos(e){return pointAt(e.progress);}
@@ -264,6 +267,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  const spacing=Math.max(2,7-Math.floor(state.wave/9));
  const next=shuffle(waveSpec(state.wave).flatMap(s=>{const [k,n]=s.split(":");return Array(Number(n)).fill(k).map(kind=>({kind,wave:state.wave}));}));
  next.forEach((v,i)=>v.due=state.tick+1+i*spacing);
+ state.groupWaves=early?(state.groupWaves??state.pendingWaves.length)+1:1;
  if(early){state.queue.push(...next);state.queue.sort((a,b)=>a.due-b.due||a.wave-b.wave);if(!auto)stats.earlyCalls++;if(bonus){earn(bonus,"early");}}
  else{state.queue=next;state.storm=0;state.farmPaid={};state.soulPaid={};}
  state.pendingWaves=early?[...state.pendingWaves,state.wave]:[state.wave];
