@@ -1,5 +1,6 @@
 import {createEngine,VERSION,MAPS,PERKS,PERK_COSTS,TARGET_MODES,AIMED,ABILITIES} from './engine.mjs';
 import {createArt} from './art.mjs';
+import {paintTerrain as paintMapArt} from './terrain.mjs';
 import * as progress from './progress.mjs';
 import {createCardArt} from './cardart.mjs';
 import {createFx} from './fx.mjs';
@@ -192,33 +193,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  // Sold towers shake and sink into the ground.
  function drawSold(a,p){const k=Math.min(1,(performance.now()-a.at)/ANIM.sell),shake=Math.sin(performance.now()/22)*2.5*(1-k);ctx.save();ctx.beginPath();ctx.rect(p.x-70,p.y-150,140,156);ctx.clip();ctx.globalAlpha=1-k*.5;ctx.translate(shake,k*k*100);around(p,1+k*.08,1-k*.1);art.tower(a.from,p);ctx.restore();}
  const terrain=document.createElement("canvas");terrain.width=1000;terrain.height=600;let viewScale=1;
- function paintTerrain(){
-  const a=terrain.getContext("2d"),{segments,spans,pads,keep,labels,entrances}=game.map;a.setTransform(viewScale,0,0,viewScale,0,0);
-  const g=a.createLinearGradient(0,0,1000,600);g.addColorStop(0,"#152e2a");g.addColorStop(.5,"#39533c");g.addColorStop(1,"#1b302b");a.fillStyle=g;a.fillRect(0,0,1000,600);
-  let seed=23921;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
-  const near=(x,y)=>{const q=game.pointAt(game.nearestPath(x,y));return (q.x-x)**2+(q.y-y)**2<42**2||pads.some(p=>(p.x-x)**2+(p.y-y)**2<34**2);};
-  for(let i=0;i<3400;i++){const x=random()*1000,y=random()*600;a.fillStyle=["#3e583f","#456145","#233f32","#527052","#6b7650"][i%5];a.globalAlpha=.24;a.beginPath();a.ellipse(x,y,2+random()*10,1+random()*4,random()*3,0,Math.PI*2);a.fill();}a.globalAlpha=1;
-  // Facelift: warm light pools, grass tufts, flowers and rocks off the road.
-  for(const [lx,ly,lr,c] of [[180,120,420,"#f6dc9a"],[760,420,380,"#bfe6a0"],[520,40,300,"#f6dc9a"]]){const l=a.createRadialGradient(lx,ly,0,lx,ly,lr);l.addColorStop(0,c+"22");l.addColorStop(1,c+"00");a.fillStyle=l;a.fillRect(0,0,1000,600);}
-  for(let i=0;i<900;i++){const x=random()*1000,y=random()*600;if(near(x,y))continue;a.strokeStyle=["#5f8a52","#4d7445","#76a062"][i%3];a.globalAlpha=.55;a.lineWidth=1.2;for(let k=-1;k<=1;k++){a.beginPath();a.moveTo(x+k*2,y);a.quadraticCurveTo(x+k*3,y-4,x+k*4+(random()-.5)*2,y-6-random()*3);a.stroke();}}
-  for(let i=0;i<160;i++){const x=random()*1000,y=random()*600;if(near(x,y))continue;a.globalAlpha=.85;a.fillStyle=["#f1e3a6","#e9a6c0","#b8d4f2","#f6f2e4"][i%4];a.beginPath();a.arc(x,y,1.6,0,Math.PI*2);a.fill();}
-  for(let i=0;i<45;i++){const x=random()*1000,y=random()*600;if(near(x,y))continue;const r=3+random()*6;a.globalAlpha=1;a.fillStyle="#1a2a22";a.beginPath();a.ellipse(x+2,y+2,r*1.2,r*.7,0,0,Math.PI*2);a.fill();a.fillStyle="#7d8578";a.beginPath();a.ellipse(x,y,r*1.2,r*.75,0,0,Math.PI*2);a.fill();a.fillStyle="#a3a99a";a.beginPath();a.ellipse(x-r*.3,y-r*.25,r*.55,r*.3,0,0,Math.PI*2);a.fill();}
-  a.globalAlpha=1;
-  // Layered stone-edged road, moss and engraved cobbles.
-  a.lineJoin="round";a.lineCap="round";a.beginPath();for(const path of segments)path.forEach(([x,y],i)=>i?a.lineTo(x,y):a.moveTo(x,y));a.strokeStyle="#162822";a.lineWidth=61;a.stroke();a.strokeStyle="#766b52";a.lineWidth=52;a.stroke();a.strokeStyle="#b7a17b";a.lineWidth=39;a.stroke();a.strokeStyle="#a58e68";a.lineWidth=2;a.setLineDash([3,15]);a.stroke();a.setLineDash([]);
-  for(const [s0,s1] of spans)for(let n=s0+15;n<s1;n+=28){const p=game.pointAt(n);a.fillStyle="#e3cba0";a.globalAlpha=.25;a.beginPath();a.ellipse(p.x+(random()-.5)*20,p.y+(random()-.5)*20,2+random()*4,2,0,0,Math.PI*2);a.fill();}a.globalAlpha=1;
-  for(const [s0,s1] of spans)for(let n=s0+6;n<s1;n+=11){const p=game.pointAt(n),q=game.pointAt(n+1),dx=q.x-p.x,dy=q.y-p.y,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;for(const side of [-1,1]){const x=p.x+nx*23*side+(random()-.5)*2,y=p.y+ny*23*side+(random()-.5)*2;a.fillStyle="#5d5644";a.beginPath();a.ellipse(x,y+1,4.2,3,0,0,Math.PI*2);a.fill();a.fillStyle=random()<.5?"#9a8e70":"#8b8166";a.beginPath();a.ellipse(x,y,3.6,2.5,0,0,Math.PI*2);a.fill();}}
-  for(let i=0;i<500;i++){const [s0,s1]=spans[i%spans.length],p=game.pointAt(s0+random()*(s1-s0)),x=p.x+(random()-.5)*34,y=p.y+(random()-.5)*34;a.globalAlpha=.18;a.strokeStyle="#6e5f45";a.lineWidth=1;a.beginPath();a.ellipse(x,y,3+random()*3,2+random()*1.5,0,0,Math.PI*2);a.stroke();}
-  a.globalAlpha=1;
-  for(let i=0;i<220;i++){const x=random()*1000,y=random()*600;if(near(x,y))continue;const h=12+random()*31;a.fillStyle="#142820";a.beginPath();a.ellipse(x+5,y+5,h*.54,h*.25,0,0,Math.PI*2);a.fill();a.fillStyle="#705945";a.fillRect(x-2,y-h*.35,4,h*.4);for(let k=0;k<3;k++){a.fillStyle=["#1c392c","#31543a","#52734a"][k];a.beginPath();a.moveTo(x,y-h*(1.25-k*.16));a.lineTo(x-h*(.38-k*.06),y-h*(.1+k*.12));a.lineTo(x+h*(.38-k*.06),y-h*(.1+k*.12));a.closePath();a.fill();}}
-  for(const p of pads){a.fillStyle="#1b2d25";a.beginPath();a.ellipse(p.x,p.y+5,30,19,0,0,Math.PI*2);a.fill();a.fillStyle=p.bonus==="spring"?"#467c81":p.bonus==="height"?"#958155":"#77765a";a.beginPath();a.ellipse(p.x,p.y,28,17,0,0,Math.PI*2);a.fill();a.strokeStyle="#bdb692";a.lineWidth=2;a.stroke();if(p.bonus){a.strokeStyle=p.bonus==="spring"?"#a1e5df":"#edce80";a.beginPath();a.ellipse(p.x,p.y,35,23,0,0,Math.PI*2);a.stroke();}}
-  a.save();a.translate(keep.x-1000,keep.y-490);a.fillStyle="#353f37";a.fillRect(947,434,53,96);a.fillStyle="#b1a58b";a.fillRect(950,442,50,72);a.fillStyle="#4c5e52";for(let y=445;y<515;y+=14){a.fillRect(949,y,51,2);}a.fillStyle="#252e2b";a.beginPath();a.arc(979,483,13,Math.PI,0);a.lineTo(992,513);a.lineTo(966,513);a.fill();for(let i=0;i<3;i++){a.fillStyle="#d4c2a1";a.fillRect(947+i*19,434,12,14);}
-  a.restore();
-  // Entrance arrows show where each road comes in.
-  for(const [ex,ey] of entrances){a.fillStyle="#f4e6c1";a.globalAlpha=.7;for(const dx of [14,30]){a.beginPath();a.moveTo(ex+dx,ey-9);a.lineTo(ex+dx+9,ey);a.lineTo(ex+dx,ey+9);a.closePath();a.fill();}a.globalAlpha=1;}
-  a.fillStyle="#f4e6c1";a.font="bold 12px Georgia";for(const [t,x,y] of labels)a.fillText(t,x,y);
-  const vignette=a.createRadialGradient(500,300,160,500,300,590);vignette.addColorStop(0,"#101b1600");vignette.addColorStop(1,"#07110f99");a.fillStyle=vignette;a.fillRect(0,0,1000,600);
- }
+ function paintTerrain(){const a=terrain.getContext("2d");a.setTransform(viewScale,0,0,viewScale,0,0);paintMapArt(a,game);}
  paintTerrain();
  // Render at the real screen resolution: the battlefield keeps 1000×600 logical units but the canvas backing store
  // matches its on-screen size × devicePixelRatio, so terrain, sprites and text stay crisp at any size.

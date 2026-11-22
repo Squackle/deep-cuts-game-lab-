@@ -269,3 +269,11 @@ From Logan's phone screenshots (The Hollow Road, wave 9):
 
 - Level chip in the battle top bar: your level inside a ring that fills toward the next level. Tap it for XP to go and what the next level opens. "+N XP" floats up from it when a wave clears; a level-up shows a big banner with the unlocks and makes the chip glow. The end screen shows XP earned this run, a bar and the next unlock. On narrow upright phones the chip sits under the health pill.
 - Bosses immune to one damage type now say what hurts them under the boss bar (Ironclad Colossus: only magic, so Arcanum, Mirrorworks, Hex Sanctum, Storm Engine). Physical towers ignoring it is by design. On landscape phones the boss bar moved into the top row so it no longer covers the first stretch of road (it hid the boss in Logan's screenshot).
+
+## 2026-11-22 — Beta 13.8 Art upgrade
+
+Logan asked for higher-quality art, closer to Kingdom Rush. Art rules taken from research: one warm light from the top-left, soft shadows to the lower right, thick ink outlines so every piece reads at small size, a quiet mid-tone ground, and the road as the brightest large shape.
+
+- Towers, enemies, troops and commanders: ink outline, key light and darker base on every sprite, soft ground shadows, towers about 10% larger, units about 12% larger, a small walk squash (#262).
+- Effects: shaped glowing projectiles with trails, impact flashes, hit sparks, death flash and smoke, dust on build, upgrade and boss smash (#263).
+- Map: a bright painted meadow (Logan picked it over a darker forest). Sandy road with ruts and edging stones, bevelled stone build pads, clumps of round and pine trees, bushes, rocks and flowers, warm light and a softer vignette. Painted in archamancy/terrain.mjs for every map.
