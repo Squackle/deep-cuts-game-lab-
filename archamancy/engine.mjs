@@ -1,7 +1,7 @@
 // ARCHAMANCY beta simulation: fixed ticks, original data-driven rules, DOM independent.
 // Bump only when the saved run format changes, so saves survive ordinary updates.
 export const SAVE_FORMAT=1;
-export const VERSION="0.1.0-beta.12.6";
+export const VERSION="0.1.0-beta.12.7";
 // Status effects from towers (ticks are 100 ms): Pyre blasts burn, Thornheart poisons (stacking), Arcanum freezes (slow), Hex curses (+35% damage taken).
 export const BURN=10,POISON=30,POISON_STACKS=3;
 // Enemy health multiplier per difficulty. Gauntlet stars: 3 at 18+ fortress left, 2 at 10+, otherwise 1.
@@ -131,7 +131,7 @@ export function createEngine(seed=1,mode="campaign"){
  function farmMultiplier(t){return (pads[t.id].bonus==="spring"?1.35:1)*(1+Math.min(3,t.growth)*.1);}
  function farmLimit(t){return Math.floor([22,65,165,400][t.tier-1]*farmMultiplier(t)*(1+bonus(t,"farmCap")));}
  // Soul Foundry income is capped per wave, like Mana Groves, so troop death loops cannot snowball mana.
- function soulBudget(t){return Math.floor([50,110,200,320][t.tier-1]*(1+bonus(t,"soul"))*Math.max(1,state.pendingWaves?.length||1));}
+ function soulBudget(t){return Math.floor([40,80,140,220][t.tier-1]*(1+bonus(t,"soul"))*Math.max(1,state.pendingWaves?.length||1));}
  function farmBudget(t){return farmLimit(t)*Math.max(1,state.pendingWaves?.length||1);}
  function upgradeCost(t){return t.tier>=4?null:Math.floor(roster[t.kind].cost*[1.4,4.2,17][t.tier-1]);}
  function branchOptions(t){return branches[t.kind].map((b,i)=>({id:i===0?"A":"B",name:b[0],ultimate:b[1],description:b[2]}));}
