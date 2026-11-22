@@ -2,6 +2,9 @@
 
 Design baseline v2.0, 2026-11-21. Previously called WARDFORGE, then ARCHAMANCY. ARCHEMANCY is the owner-approved name (not a trademark clearance). A fifth, independent Deep Cuts Game Lab game; not a GRAFTBOUND expansion or a production Arcade release.
 
+## Owner update 2026-11-22: real Magic cards
+Owner decision: commanders, spells and tokens use real Magic: The Gathering cards, as free unofficial fan content under the Wizards Fan Content Policy (disclaimer shown in the game menu; card art shown via Scryfall with artist credit). Towers, map, enemies and models stay original. Where this conflicts with the "original names/art" lines below, this update wins.
+
 ## Vision
 Handcrafted illustrated fantasy tower defense with freely buildable WUBRG-themed towers, investment-driven mana economy, autonomous armies, real-time card play and emergent combos. Influences: Kingdom Rush tactical positions and troops, Bloons-style investment and branching upgrades, Commander-style deckbuilding. Original names/art/rules/lore; no assumption of licensed MTG assets. No mandatory merging. Design pillars: strategic freedom, earned absurdity, constant tension, replayable experimentation, readable combat. Predetermined threats rather than hidden adaptive enemy scaling. Extraordinary earned combinations may exceed expectations; no unbounded same-tick execution.
 
