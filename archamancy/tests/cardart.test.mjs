@@ -11,3 +11,14 @@ test("looks up each card once, credits the artist and caches it",async()=>{const
 test("double-faced cards, failures and unexpected hosts leave no art",async()=>{let n=0;const art=createCardArt({delay:0,fetchFn:async url=>(n++,url.includes("Bad")?{ok:false}:url.includes("Evil")?card("e",{image_uris:{art_crop:"https://evil.example/x.jpg"}}):url.includes("Throw")?Promise.reject(Error("x")):card("d",{image_uris:undefined,artist:undefined,card_faces:[{artist:"Face Artist",image_uris:{art_crop:"https://cards.scryfall.io/art_crop/front/d.jpg"}}]}))});
  for(const n of ["Bad","Evil","Throw","Double"])art.get(n);await settle();assert.equal(art.get("Bad"),null);assert.equal(art.get("Evil"),null);assert.equal(art.get("Throw"),null);assert.equal(art.get("Double").artist,"Face Artist");await settle();assert.equal(n,4,"failures are not retried");});
 test("works with no fetch and blocked storage",()=>{const art=createCardArt({fetchFn:null,storage:{getItem(){throw Error("blocked")},setItem(){throw Error("blocked")}}});assert.equal(art.get("Sleep"),null);});
+// Regression: cached art URLs were only checked for the Scryfall prefix before going into CSS url("..."), so an
+// edited cache entry could close the url() early and load an image from another host.
+test("cached art that could break out of CSS url() is ignored and looked up again",async()=>{
+ const s=store(),good="https://cards.scryfall.io/art_crop/front/6/d/6d.jpg?1562781";
+ const bad=['https://cards.scryfall.io/x.jpg"),url("https://evil.example/t.png','https://cards.scryfall.io/x.jpg) ','https://cards.scryfall.io/x\\.jpg',"https://cards.scryfall.io/x'.jpg","https://cards.scryfall.io.evil.example/x.jpg"];
+ s.setItem("archemancy.cardart.v1",JSON.stringify({Good:{art:good,artist:"A"},...Object.fromEntries(bad.map((art,i)=>["Bad"+i,{art,artist:"A"}]))}));
+ const calls=[];const art=createCardArt({storage:s,delay:0,fetchFn:async url=>{calls.push(url);return {ok:false};}});
+ assert.equal(art.get("Good").art,good,"real Scryfall URLs with query strings still work");
+ for(let i=0;i<bad.length;i++)assert.equal(art.get("Bad"+i),null,bad[i]);
+ await settle();assert.equal(calls.length,bad.length,"each bad entry is fetched fresh instead");
+});

@@ -7,7 +7,9 @@ export function createCardArt({ fetchFn = globalThis.fetch?.bind(globalThis), st
  try { cache = JSON.parse(storage?.getItem(KEY) || "{}") || {}; } catch { cache = {}; }
  const queue = [], pending = new Set(), failed = new Set();
  let running = false;
- function valid(v) { return v && typeof v.art === "string" && v.art.startsWith("https://cards.scryfall.io/") && typeof v.artist === "string"; }
+ // The art URL goes into CSS url("..."), and the cache lives in localStorage, so accept only a plain Scryfall image URL:
+ // https on cards.scryfall.io, with no quotes, brackets, backslashes or spaces that could end the url() early.
+ function valid(v) { return !!v && typeof v.art === "string" && /^https:\/\/cards\.scryfall\.io\/[A-Za-z0-9\/._~%?=&-]+$/.test(v.art) && v.art.length < 400 && typeof v.artist === "string" && v.artist.length < 200; }
  function persist() { try { storage?.setItem(KEY, JSON.stringify(cache)); } catch {} }
  async function pump() {
   if (running) return; running = true;
