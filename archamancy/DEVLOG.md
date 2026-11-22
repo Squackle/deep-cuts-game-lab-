@@ -285,3 +285,15 @@ From Logan's Hard Hollow Road win (17 health, 2 stars):
 - Commanders kept their wave 1 health all run while enemy hits grow with the wave, so Omnath fell 18 times. Commander health now grows each wave (about 4x by wave 25).
 - The copied report now lists the wave each tower was built (builtWave). The Storm Engine that showed 0 damage hits normally in tests on that pad, so it was most likely built during the last wave after the road there had cleared.
 - The pinned benchmark run now ends with 6 health instead of 9 (its wave 25 boss now leaks), since the troop change shifts that bot run.
+
+## 2026-11-22 — Beta 13.10 Fuller battle stats
+
+Logan asked for the copied battle stats to track everything useful for balancing and fixing. Still one copy-paste (about 17 KB for a full 25-wave run). New fields:
+- Towers: builtWave, upgrades (wave of each upgrade), soldWave, shots, idleChecks (ready to fire with nothing it can hit in range), immuneHits and resisted damage.
+- stats: immuneHits, immuneDamage, resistedDamage.
+- leakLog: wave, enemy, tick, health left and whether it was slowed.
+- bossLog: each boss with spawn and end tick, seconds alive, killed or leaked, health left, stallTicks and stuckAt (road position where it sat still).
+- commanderDeaths: wave, tick, what killed it, where, and its max health.
+- castLog: card, wave, tick, cost, mana and enemy count at cast, total damage before the cast (so the next entries show its value).
+- waveTop: top three towers by damage for each finished wave.
+- client: screen size, pixel ratio, orientation, touch, browser, real seconds at each game speed, paused and in menus, session length, and any page errors.

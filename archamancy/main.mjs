@@ -22,10 +22,11 @@ function boot(createEngine){
  $("menuOpen").addEventListener("click",()=>showDialog("menuDialog"));
  $("waveInfo").addEventListener("click",()=>showDialog("waveDialog"));
  $("statsOpen").addEventListener("click",()=>{ $("statsReport").hidden=true;text($("copyStatus"),"Copy a playtest report to paste into feedback.");showDialog("statsDialog");});
- $("copyStats").addEventListener("click",async()=>{const field=$("statsReport");const report=JSON.stringify(game.playtestReport());field.value=report;const button=$("copyStats");button.disabled=true;try{if(!navigator.clipboard?.writeText)throw Error("Clipboard unavailable");await navigator.clipboard.writeText(report);field.hidden=true;text($("copyStatus"),"Stats copied. Paste the report into ChatGPT.");}catch{field.hidden=false;field.focus();field.select();try{field.setSelectionRange(0,report.length);}catch{}text($("copyStatus"),"Automatic copying unavailable. Select and copy the report below.");}finally{button.disabled=false;}});
+ $("copyStats").addEventListener("click",async()=>{const field=$("statsReport");const report=JSON.stringify(fullReport());field.value=report;const button=$("copyStats");button.disabled=true;try{if(!navigator.clipboard?.writeText)throw Error("Clipboard unavailable");await navigator.clipboard.writeText(report);field.hidden=true;text($("copyStatus"),"Stats copied. Paste the report into ChatGPT.");}catch{field.hidden=false;field.focus();field.select();try{field.setSelectionRange(0,report.length);}catch{}text($("copyStatus"),"Automatic copying unavailable. Select and copy the report below.");}finally{button.disabled=false;}});
  $("sandboxOpen").addEventListener("click",()=>showDialog("sandboxDialog"));
  const allCommanders=Object.keys(game.commanders);let storage=null;try{storage=window.localStorage;}catch{}
  let profile=progress.load(storage,allCommanders),seenWaves=0,runXp=0;
+ const session={time:{},errors:[],started:Date.now()};
  // Player level chip in the battle HUD: ring shows progress to the next level; tap for details; "+XP" floats up when a wave clears.
  function levelInfo(){const lv=progress.level(profile),max=lv>=progress.MAX_LEVEL,from=progress.xpToReach(lv),to=progress.xpToReach(lv+1),next=max?null:progress.LEVEL_UNLOCKS[lv+1]||{};
   const names=next?[...(next.towers||[]).map(k=>game.roster[k]?.name||k),...(next.maps||[]).map(m=>MAPS[m]?.name||m),...(next.modes||[]).map(m=>({endless:"Endless Siege",onslaught:"Onslaught"})[m]||m)]:[];
@@ -102,7 +103,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  for(const b of document.querySelectorAll("[data-speed]"))b.addEventListener("click",()=>setSpeed(speed===0?lastSpeed:0));
  let mapKey=game.map.id;
  function useMap(){if(game.map.id===mapKey)return;mapKey=game.map.id;buildPads();paintTerrain();placeStart();}
- function restart(mode){clearRun();game=createEngine(1,mode,mapPick());useMap();fx.reset();$("waveBanner").hidden=true;$("endScreen").hidden=true;seenWaves=0;runXp=0;renderHudLevel();if(mode!=="sandbox"){game.command({type:"difficulty",level:profile.difficulty});game.command({type:"perks",perks:profile.perks});if(mode==="campaign"&&profile.onslaught&&progress.isOpen(profile,"modes","onslaught"))game.command({type:"onslaught",on:true});game.command({type:"locks",towers:progress.lockedTowers(profile)});}applyDefaultCommander();selected=null;selectedCard=null;rallying=false;moving=false;schoolOpen=false;preview=null;heroKey="";lastEvent=-1;handKey="";contributionKey="";setSpeed(1);$("padSelect").value="";$("mode").value=mode;closeDialogs();notice("New "+mode+" run. Select a build pad.");renderHud();}
+ function restart(mode){clearRun();game=createEngine(1,mode,mapPick());useMap();fx.reset();$("waveBanner").hidden=true;$("endScreen").hidden=true;seenWaves=0;runXp=0;renderHudLevel();session.time={};if(mode!=="sandbox"){game.command({type:"difficulty",level:profile.difficulty});game.command({type:"perks",perks:profile.perks});if(mode==="campaign"&&profile.onslaught&&progress.isOpen(profile,"modes","onslaught"))game.command({type:"onslaught",on:true});game.command({type:"locks",towers:progress.lockedTowers(profile)});}applyDefaultCommander();selected=null;selectedCard=null;rallying=false;moving=false;schoolOpen=false;preview=null;heroKey="";lastEvent=-1;handKey="";contributionKey="";setSpeed(1);$("padSelect").value="";$("mode").value=mode;closeDialogs();notice("New "+mode+" run. Select a build pad.");renderHud();}
  $("restart").addEventListener("click",()=>restart(game.state.mode));
  $("newMode").addEventListener("click",()=>restart($("mode").value));
  function waveText(n){return game.waveSpec(n).map(x=>{const [k,c]=x.split(":"),d=game.types[k];return (d.boss&&k!=="titan"?"BOSS ":"")+d.name+" × "+c;}).join(" · ");}
@@ -227,8 +228,15 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  }
  function banner(title,sub,tone){text($("bannerTitle"),title);text($("bannerSub"),sub||"");$("bannerSub").hidden=!sub;const b=$("waveBanner");b.dataset.tone=tone||"wave";b.hidden=false;b.classList.remove("play");void b.offsetWidth;b.classList.add("play");clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>{b.hidden=true;},2300);}
  function handleCues(cues){for(const c of cues){if(c.type==="sound")sfx.play(c.name);else if(c.type==="gameOver"){clearRun();}if(c.type==="gameOver")setTimeout(()=>showEnd(c.won,c.stars),c.won?900:600);else if(c.type==="banner")banner(c.title,c.sub,c.tone);else if(c.type==="toast")notice(c.text);else if(c.type==="leak"){const el=$("health").parentElement;el.classList.remove("hit");void el.offsetWidth;el.classList.add("hit");}}}
+ // Copied battle stats: the engine report plus the device, game speed and pause time, and any errors this session.
+ const noteError=m=>{if(session.errors.length<12)session.errors.push(String(m).slice(0,240));};
+ addEventListener("error",e=>noteError((e.message||"error")+" @"+(e.filename||"").split("/").pop()+":"+(e.lineno||0)));
+ addEventListener("unhandledrejection",e=>noteError("promise: "+(e.reason?.message||e.reason)));
+ function fullReport(){const r=game.playtestReport();const secs=o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k,Math.round(v/1000)]));
+  r.client={screen:innerWidth+"x"+innerHeight,dpr:Math.round((devicePixelRatio||1)*100)/100,orientation:innerWidth>innerHeight?"landscape":"portrait",touch:"ontouchstart" in window||navigator.maxTouchPoints>0,ua:navigator.userAgent.slice(0,160),realSecondsInBattle:secs(session.time),sessionMinutes:Math.round((Date.now()-session.started)/60000),errors:session.errors.slice()};return r;}
  function frame(now){
   const elapsed=last===null?0:Math.min(250,Math.max(0,now-last));last=now;
+  if(game.state.phase==="active"&&$("titleScreen").hidden){const k=document.querySelector("dialog[open]")?"menu":speed?"x"+speed:"paused";session.time[k]=(session.time[k]||0)+elapsed;}
   if(speed&&game.state.phase==="active"&&!document.querySelector("dialog[open]")){accumulator+=elapsed*speed;while(accumulator>=game.tickMs&&(game.state.phase==="active"||game.onslaughtLeft()!==null)){game.step();accumulator-=game.tickMs;}if(game.state.phase!=="active"&&game.onslaughtLeft()===null){accumulator=0;notice(game.state.phase==="won"?"Victory! All 25 Gauntlet waves completed. Continue into endless survival.":game.state.phase==="lost"?"Defeat. Open the menu to restart.":"Wave complete. Prepare your next defense.",game.state.phase!=="ready");}}
   else accumulator=0;
   handleCues(fx.update(game,now));const sh=fx.offset(now);$("map").style.transform=sh.x||sh.y?"translate("+sh.x.toFixed(1)+"px,"+sh.y.toFixed(1)+"px)":"";
@@ -297,7 +305,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  $("mainMenu").addEventListener("click",showTitle);$("endMenu").addEventListener("click",showTitle);
  $("endRetry").addEventListener("click",()=>startRun(game.state.mode));
  $("endContinue").addEventListener("click",()=>{if(game.command({type:"continue"})){$("endScreen").hidden=true;notice("Endless continues. Start the next wave when ready.");renderHud();}});
- $("endCopy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(JSON.stringify(game.playtestReport()));text($("endCopy"),"Copied ✓");sfx.play("coin");}catch{$("endScreen").hidden=true;$("statsOpen").click();$("copyStats").click();}});
+ $("endCopy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(JSON.stringify(fullReport()));text($("endCopy"),"Copied ✓");sfx.play("coin");}catch{$("endScreen").hidden=true;$("statsOpen").click();$("copyStats").click();}});
  const toggleSound=()=>{sfx.setSound(!sfx.prefs.sound);if(sfx.prefs.sound){sfx.play("click");if(!$("titleScreen").hidden||game.state.wave>0)sfx.music(true);}renderSound();};
  $("soundToggle").addEventListener("click",toggleSound);$("titleSound").addEventListener("click",toggleSound);
  $("musicToggle").addEventListener("click",()=>{sfx.setMusic(!sfx.prefs.music);sfx.music(sfx.prefs.music);renderSound();});
