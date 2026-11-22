@@ -1,7 +1,7 @@
 // ARCHAMANCY beta simulation: fixed ticks, original data-driven rules, DOM independent.
 // Bump only when the saved run format changes, so saves survive ordinary updates.
 export const SAVE_FORMAT=1;
-export const VERSION="0.1.0-beta.13.17";
+export const VERSION="0.1.0-beta.13.18";
 // Status effects from towers (ticks are 100 ms): Pyre blasts burn, Thornheart poisons (stacking), Arcanum freezes (slow), Hex curses (+35% damage taken).
 export const BURN=10,POISON=30,POISON_STACKS=3;
 // Enemy health multiplier per difficulty. Gauntlet stars: 3 at 18+ fortress left, 2 at 10+, otherwise 1.
@@ -32,6 +32,9 @@ export const MAPS={
 };
 // Ground enemies on ice move at this share of their speed.
 export const ICE_SLOW=.6;
+// Ticks from a tower firing to its shot landing; matches how long the projectile is drawn.
+export const FLIGHT=5,CHAIN_FLIGHT=3;
+const SPARE=new Set(["arcane","strike","mirror","hex"]);
 // Star upgrades: permanent perks bought with Gauntlet stars, three ranks each. Rank n costs PERK_COSTS[n-1] stars.
 export const PERK_COSTS=[1,2,3];
 // Onslaught: in a Gauntlet with this on, the next wave arrives this many ticks after the last one started, cleared road or not.
@@ -176,7 +179,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  const commanderReach=220,commanderRespawn=200;
  const defaultDeck=["meteor","wild","legion","inquiry","funeral","offering","twins","echo","freeze","raise","resonance","reset","cascade","ward","root","recall","matrix","forge","valor","bloom","flame","rally","reflection","deathmark","bloodrush","lightning","verdant","awaken","prism","blade"];
  const stats={damage:0,towerDamage:0,troopDamage:0,deathDamage:0,spellDamage:0,manaEarned:0,farmMana:0,killMana:0,waveMana:0,earlyMana:0,earlyCalls:0,soulMana:0,spellMana:0,sandboxMana:0,commanderMana:0,commanderDamage:0,commanderArmyDamage:0,returns:0,sacrifices:0,spent:0,refunds:0,kills:0,leaks:0,summoned:0,fallen:0,casts:0,draws:0,triggers:0,healing:0,control:0};
- const state={locked:[],rubble:mode==="sandbox"?{}:{...(M.rubble||{})},onslaught:false,perks:null,mapId,initialMode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",seed:seed>>>0,rng:seed>>>0||1,mode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",tick:0,wave:0,phase:"ready",mana:350,health:20,towers:{},enemies:[],troops:[],queue:[],nextSpawn:0,nextId:1,stats,events:[],sequence:0,commands:[],library:[],hand:[],discard:[],deck:defaultDeck.slice(),echo:false,prism:0,storm:0,fallen:[],waveHistory:[],towerHistory:[], farmPaid:{}, soulPaid:{}, pendingWaves:[], lastWaveTick:0, bonusDeadline:0, lastWaveSpawned:false, waveCalls:[], commander:null, difficulty:"normal", season:M.seasons?.[0]||"summer", stars:0, cmdOwner:{id:"cmd",uid:0,damage:0,troopDamage:0,summons:0}, cmdSummons:0, enemyKills:{}, enemyLeaks:{}, cardCasts:{}, effects:[], projectiles:[]};
+ const state={locked:[],rubble:mode==="sandbox"?{}:{...(M.rubble||{})},onslaught:false,perks:null,mapId,initialMode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",seed:seed>>>0,rng:seed>>>0||1,mode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",tick:0,wave:0,phase:"ready",mana:350,health:20,towers:{},enemies:[],troops:[],queue:[],nextSpawn:0,nextId:1,stats,events:[],sequence:0,commands:[],library:[],hand:[],discard:[],deck:defaultDeck.slice(),echo:false,prism:0,storm:0,fallen:[],waveHistory:[],towerHistory:[], farmPaid:{}, soulPaid:{}, pendingWaves:[], lastWaveTick:0, bonusDeadline:0, lastWaveSpawned:false, waveCalls:[], commander:null, difficulty:"normal", season:M.seasons?.[0]||"summer", stars:0, cmdOwner:{id:"cmd",uid:0,damage:0,troopDamage:0,summons:0}, cmdSummons:0, enemyKills:{}, enemyLeaks:{}, cardCasts:{}, effects:[], projectiles:[],inFlight:[]};
  const d2=(a,b)=>(a.x-b.x)**2+(a.y-b.y)**2;
  const perk=k=>state.perks?.[k]||0;
  function rand(){let x=state.rng;x^=x<<13;x^=x>>>17;x^=x<<5;return state.rng=x>>>0;}
@@ -185,7 +188,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  function pointAt(n){const s=segOf(n),{pts,lengths}=s;let p=Math.max(0,Math.min(s.len,n-s.off));for(let i=0;i<lengths.length;i++){if(p<=lengths[i]){const [x,y]=pts[i],[a,b]=pts[i+1];return {x:x+Math.sign(a-x)*p,y:y+Math.sign(b-y)*p};}p-=lengths[i];}const [x,y]=pts.at(-1);return {x,y};}
  function nearestPath(x,y){let best=Infinity,result=0;for(const s of segs){let travel=s.off;for(let i=0;i<s.lengths.length;i++){const [a,b]=s.pts[i],[c,d]=s.pts[i+1],l=s.lengths[i],t=Math.max(0,Math.min(l,(x-a)*Math.sign(c-a)+(y-b)*Math.sign(d-b))),dd=d2(pointAt(travel+t),{x,y});if(dd<best){best=dd;result=travel+t;}travel+=l;}}return result;}
  function emit(type,data={}){state.events.push({seq:++state.sequence,tick:state.tick,type,...data});if(state.events.length>200)state.events.shift();}
- function shot(kind,a,b,target=null){state.projectiles.push({kind,x:a.x,y:a.y,tx:b.x,ty:b.y,targetId:target?.id??null,targetFlying:!!target?.flying,start:state.tick,duration:kind==="chain"||kind==="melee"?3:5});if(state.projectiles.length>240)state.projectiles.shift();}
+ function shot(kind,a,b,target=null){state.projectiles.push({kind,x:a.x,y:a.y,tx:b.x,ty:b.y,targetId:target?.id??null,targetFlying:!!target?.flying,start:state.tick,duration:kind==="chain"||kind==="melee"?CHAIN_FLIGHT:FLIGHT});if(state.projectiles.length>240)state.projectiles.shift();}
  function effect(x,y,color,r=28){state.effects.push({x,y,color,r,until:state.tick+7});if(state.effects.length>100)state.effects.shift();}
  function earn(amount,why,t){state.mana+=amount;stats.manaEarned+=amount;stats[why+"Mana"]+=amount;if(t)t.mana+=amount;emit("mana",{amount,why,tower:t?.id??null});}
  function spend(amount){if(state.mana<amount)return false;state.mana-=amount;stats.spent+=amount;return true;}
@@ -195,6 +198,24 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  // Late-game power: spells, burns, troops, death blasts and commanders grow with enemy health so they stay relevant in Endless.
  // Troops can't hurt physical-immune enemies, so they only hold one for 6 seconds before it shoves past for 3.
  const logPush=(k,v,cap=80)=>{const a=state[k]||(state[k]=[]);a.push(v);if(a.length>cap)a.shift();};
+ // Tower shots land when their projectile arrives (FLIGHT ticks, the projectile's draw time). Splash and spreads hit where the target is then,
+ // or where it was if it already died; single-target shots at a dead enemy fizzle. Each record is plain data so saves and replays keep it.
+ function alive(id){return state.enemies.find(x=>x.id===id&&x.hp>0&&!x.escaped)||null;}
+ function land(rec){const t=state.towers[rec.tower],target=alive(rec.target);if(target&&rec.inc)target.incoming=Math.max(0,(target.incoming||0)-rec.inc);if(!t||t.uid!==rec.uid)return;
+ const d=roster[t.kind],p=pads[t.id];
+ const k=d.kind,tier=t.tier,range=d.range+(p.bonus==="height"?30:0)+bonus(t,"range"),power=Math.round((d.damage+t.growth*6)*[1,1.8,3.3,8][tier-1]*(1+bonus(t,"power"))*(1+.08*perk(d.color)))*(t.matrixUntil>state.tick?2:1),hitPower=e=>power*(1+(e.boss?bonus(t,"boss"):0)+(e.armor>0?bonus(t,"armor"):0));
+ const e=target,q=e?enemyPos(e):{x:rec.x,y:rec.y};
+ if(k==="arcane"&&e){hurt(e,power,true,t);e.slowUntil=state.tick+12+Math.floor(bonus(t,"slow"));if(bonus(t,"root"))e.rootUntil=Math.max(e.rootUntil,state.tick+Math.floor(bonus(t,"root")));t.control++;stats.control++;}
+ if(k==="strike"&&e)hurt(e,hitPower(e),false,t,bonus(t,"pierce")?2:true);
+ if(k==="splash")for(const x of area(q,60+8*tier+bonus(t,"radius")))if(!x.flying){hurt(x,hitPower(x),false,t);const burn=BURN+Math.floor(bonus(t,"burn"));if(state.tick+burn>=x.burnUntil){x.burnUntil=state.tick+burn;x.burnSource=t.uid;}}
+ if(k==="chain")for(const [n,id] of (rec.chain||[]).entries()){const x=alive(id);if(x)hurt(x,Math.max(1,Math.round(hitPower(x)*Math.pow(.78,n))),true,t);}
+ if(k==="hex"){for(const x of bonus(t,"spread")?area(q,bonus(t,"spread")):e?[e]:[]){x.curseUntil=state.tick+35+Math.floor(bonus(t,"curse"));hurt(x,hitPower(x),true,t);}}
+ if(k==="root"){for(const x of bonus(t,"spread")?area(q,bonus(t,"spread")).filter(x=>!x.flying):e?[e]:[]){x.rootUntil=state.tick+7+tier*2+Math.floor(bonus(t,"root"));hurt(x,power,false,t);const venom=bonus(t,"burn")?1:0;x.poisonStacks=Math.min(POISON_STACKS+3*venom,(x.poisonUntil>state.tick?x.poisonStacks:0)+1);x.poisonUntil=state.tick+POISON+20*venom;x.poisonSource=t.uid;stats.control++;t.control++;}}
+ if(k==="mirror"&&e){const other=Object.values(state.towers).filter(o=>["arcane","strike","splash","chain","hex","root"].includes(roster[o.kind].kind)&&d2(pads[o.id],p)<=200**2).sort((a,b)=>roster[b.kind].damage*b.tier-roster[a.kind].damage*a.tier||a.id-b.id)[0];hurt(e,other?Math.round(roster[other.kind].damage*other.tier*(.8+.35*tier)*(1+bonus(t,"power"))):power,true,t);if(other)stats.triggers++;}
+ if(rec.extra){const nx=Math.floor(bonus(t,"extra"));for(const [j,id] of rec.extra.entries()){const x=alive(id);if(x)hurt(x,power*(j<nx?bonus(t,"extraPower"):.6),k==="mirror",t);}}
+ effect(q.x,q.y,({W:"#f5df9e",U:"#76bdf1",B:"#ba8ad8",R:"#f7a564",G:"#8ed28e"})[d.color],k==="splash"?60:18);
+ }
+ function expectHit(e,raw,magic,pierce){const r=magic?e.resist:e.armor*(pierce===2?0:pierce?.5:1);return r>=100?0:Math.floor(raw*(100-r)/100*(e.curseUntil>state.tick||e.markUntil>state.tick?1.35:1));}
  function holdable(e){if(e.baseArmor<100)return true;if(e.pushUntil>state.tick)return false;if(e.heldAt!==state.tick){e.heldAt=state.tick;e.held=(e.held||0)+1;if(e.held>=60){e.held=0;e.pushUntil=state.tick+30;return false;}}return true;}
  // Commander health keeps pace with later waves (enemy hits grow with the square root of the wave scale).
  function scaleCommander(){const cm=state.commander;if(!cm)return;const base=commanders[cm.id].hp*(1+.1*perk("command")),want=Math.round(base*late(.4)),had=cm.baseHp||Math.round(base);if(want>had){cm.maxHp+=want-had;if(!cm.dead)cm.hp+=want-had;cm.baseHp=want;}}
@@ -227,7 +248,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  const firstOrder=(a,b)=>remaining(a.progress)-remaining(b.progress)||a.id-b.id;
  // Targeting modes a player can pick per tower. Ties fall back to First.
  const TARGET_ORDERS={first:()=>firstOrder,last:()=>(a,b)=>remaining(b.progress)-remaining(a.progress)||a.id-b.id,strong:()=>(a,b)=>b.hp-a.hp||firstOrder(a,b),close:o=>(a,b)=>d2(enemyPos(a),o)-d2(enemyPos(b),o)||firstOrder(a,b)};
- function firstEnemy(origin,range,groundOnly=false,damage=null,mode="first"){let best=null;const order=Object.hasOwn(TARGET_ORDERS,mode)?TARGET_ORDERS[mode](origin):firstOrder;for(const e of state.enemies){if(e.hp<=0||e.escaped||!e.revealed||(groundOnly&&e.flying)||(damage==="magic"&&e.resist>=100)||(damage==="physical"&&e.armor>=100)||d2(enemyPos(e),origin)>range*range)continue;if(!best||order(e,best)<0)best=e;}return best;}
+ function firstEnemy(origin,range,groundOnly=false,damage=null,mode="first",spare=false){let best=null;const order=Object.hasOwn(TARGET_ORDERS,mode)?TARGET_ORDERS[mode](origin):firstOrder;for(const e of state.enemies){if(e.hp<=0||e.escaped||!e.revealed||(groundOnly&&e.flying)||(damage==="magic"&&e.resist>=100)||(damage==="physical"&&e.armor>=100)||d2(enemyPos(e),origin)>range*range||(spare&&(e.incoming||0)>=e.hp))continue;if(!best||order(e,best)<0)best=e;}return best;}
  function scale(w){return Math.min(1e8,Math.round((1+Math.max(0,w-5)*.24)*Math.pow(1.12,Math.max(0,Math.min(w,25)-10))*Math.pow(1.18,Math.max(0,w-25))*100)/100);}
  function spawnEnemy(kind,w){if(types[kind].boss)state.bossSpawns=(state.bossSpawns||0)+1;const def=types[kind],hp=Math.ceil(def.hp*scale(w)*(DIFFICULTY[state.difficulty]||1)*(def.flying?M.airScale||1:1));state.enemies.push({id:state.nextId++,wave:w,kind,...def,hp,maxHp:hp,attack:Math.ceil(def.attack*Math.sqrt(scale(w))),progress:segs[M.entrances[(state.spawned=(state.spawned||0)+1)%M.entrances.length]].off,slowUntil:0,rootUntil:0,curseUntil:0,markUntil:0,hasteUntil:0,revealed:!def.shroud,abilityAt:0,phase:def.ability==="phase"?"iron":null,phaseAt:0,baseArmor:def.armor,baseResist:def.resist,burnUntil:0,burnSource:null,poisonUntil:0,poisonStacks:0,poisonSource:null,nextAttack:0});}
  // At most three waves can be on the road at once, so early calls cannot stack a whole campaign into one fight.
@@ -348,6 +369,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
    if(e.silenceAt&&state.tick>=e.silenceAt){for(const t of Object.values(state.towers))if(e.silenceTargets.includes(t.uid)){t.silencedUntil=state.tick+40;stats.silenced=(stats.silenced||0)+1;}e.silenceAt=0;e.abilityAt=state.tick+100;emit("bossAbility",{boss:e.kind,ability:"silence"});}}
   if(e.ability==="phase"){if(!e.phaseAt)e.phaseAt=state.tick+80;if(state.tick===e.phaseAt-15){effect(q.x,q.y,e.phase==="iron"?"#76bdf1":"#d9d3c3",70);emit("bossAbility",{boss:e.kind,ability:"phaseWarning"});}if(state.tick>=e.phaseAt){e.phase=e.phase==="iron"?"spell":"iron";e.phaseAt=state.tick+80;emit("bossAbility",{boss:e.kind,ability:"phase",phase:e.phase});}e.armor=e.phase==="iron"?100:e.baseArmor;e.resist=e.phase==="spell"?100:e.baseResist;if(e.cracked){e.armor=Math.min(e.armor,CRACKED_RESIST);e.resist=Math.min(e.resist,CRACKED_RESIST);}}
  }
+ if(state.inFlight.length){const due=state.inFlight.filter(r=>r.at<=state.tick);state.inFlight=state.inFlight.filter(r=>r.at>state.tick);for(const r of due)land(r);}
  for(const t of Object.values(state.towers)){
  const d=roster[t.kind],p=pads[t.id];if(state.tick<t.next)continue;if(t.silencedUntil>state.tick){t.next=t.silencedUntil;continue;}
  const k=d.kind,tier=t.tier,range=d.range+(p.bonus==="height"?30:0)+bonus(t,"range"),power=Math.round((d.damage+t.growth*6)*[1,1.8,3.3,8][tier-1]*(1+bonus(t,"power"))*(1+.08*perk(d.color)))*(t.matrixUntil>state.tick?2:1),hitPower=e=>power*(1+(e.boss?bonus(t,"boss"):0)+(e.armor>0?bonus(t,"armor"):0));
@@ -357,16 +379,13 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  else if(k==="heal"){for(const u of state.troops)if(u.hp>0&&d2(pointAt(u.progress),p)<=range**2){const h=Math.min(Math.round(power*(1+bonus(t,"heal"))),u.maxHp-u.hp);u.hp+=h;u.ward=Math.max(u.ward,tier*4+Math.floor(bonus(t,"ward")));stats.healing+=h;t.healing+=h;if(h>0)shot("heal",{x:p.x,y:p.y-21},pointAt(u.progress));}if(bonus(t,"smite")){const e=firstEnemy(p,range);if(e){hurt(e,bonus(t,"smite"),true,t);shot("strike",{x:p.x,y:p.y-20},enemyPos(e),e);}}}
  else if(k==="soul"){const u=state.troops.filter(u=>u.hp>0&&d2(pointAt(u.progress),p)<=range**2&&u.hp<=u.maxHp*.55).sort((a,b)=>a.hp-b.hp||a.id-b.id)[0];if(u){const q=pointAt(u.progress);die(u,true);if(bonus(t,"altar")){for(const e of area(q,100))hurt(e,bonus(t,"altar"),true,t,false,"death");effect(q.x,q.y,"#ba8ad8",100);}}}
  else {
- const e=firstEnemy(p,range,k==="splash"||k==="root",["arcane","chain","hex","mirror"].includes(k)?"magic":k==="strike"&&bonus(t,"pierce")?null:["strike","splash","root"].includes(k)?"physical":null,t.target);if(!e){t.idle=(t.idle||0)+1;continue;}t.shots=(t.shots||0)+1;const q=enemyPos(e);
- if(k==="arcane"){hurt(e,power,true,t);e.slowUntil=state.tick+12+Math.floor(bonus(t,"slow"));if(bonus(t,"root"))e.rootUntil=Math.max(e.rootUntil,state.tick+Math.floor(bonus(t,"root")));t.control++;stats.control++;}
- if(k==="strike")hurt(e,hitPower(e),false,t,bonus(t,"pierce")?2:true);
- if(k==="splash")for(const x of area(q,60+8*tier+bonus(t,"radius")))if(!x.flying){hurt(x,hitPower(x),false,t);const burn=BURN+Math.floor(bonus(t,"burn"));if(state.tick+burn>=x.burnUntil){x.burnUntil=state.tick+burn;x.burnSource=t.uid;}}
- if(k==="chain"){let n=0,from={x:p.x,y:p.y-28};for(const x of [e,...area(q,110+bonus(t,"radius")).filter(x=>x.id!==e.id).sort(firstOrder)]){if(n>=tier+2+Math.floor(bonus(t,"chains")))break;const pos=enemyPos(x),to={x:pos.x,y:pos.y-(x.flying?21:8)};shot("chain",from,to,x);from=to;hurt(x,Math.max(1,Math.round(hitPower(x)*Math.pow(.78,n++))),true,t);}}
- if(k==="hex"){for(const x of bonus(t,"spread")?area(q,bonus(t,"spread")):[e]){x.curseUntil=state.tick+35+Math.floor(bonus(t,"curse"));hurt(x,hitPower(x),true,t);}}
- if(k==="root"){for(const x of bonus(t,"spread")?area(q,bonus(t,"spread")).filter(x=>!x.flying):[e]){x.rootUntil=state.tick+7+tier*2+Math.floor(bonus(t,"root"));hurt(x,power,false,t);const venom=bonus(t,"burn")?1:0;x.poisonStacks=Math.min(POISON_STACKS+3*venom,(x.poisonUntil>state.tick?x.poisonStacks:0)+1);x.poisonUntil=state.tick+POISON+20*venom;x.poisonSource=t.uid;stats.control++;t.control++;}}
- if(k==="mirror"){const other=Object.values(state.towers).filter(o=>["arcane","strike","splash","chain","hex","root"].includes(roster[o.kind].kind)&&d2(pads[o.id],p)<=200**2).sort((a,b)=>roster[b.kind].damage*b.tier-roster[a.kind].damage*a.tier||a.id-b.id)[0];hurt(e,other?Math.round(roster[other.kind].damage*other.tier*(.8+.35*tier)*(1+bonus(t,"power"))):power,true,t);if(other)stats.triggers++;}
- const reflect=t.reflectUntil>state.tick?1:0;if(bonus(t,"extra")||reflect){const more=state.enemies.filter(x=>x.hp>0&&x.id!==e.id&&!x.escaped&&d2(enemyPos(x),p)<=range**2).sort(firstOrder).slice(0,Math.floor(bonus(t,"extra"))+reflect);for(const [j,x] of more.entries()){hurt(x,power*(j<Math.floor(bonus(t,"extra"))?bonus(t,"extraPower"):.6),k==="mirror",t);shot(k,{x:p.x,y:p.y-28},enemyPos(x),x);}}
- if(k!=="chain")shot(k,{x:p.x,y:p.y-28},{x:q.x,y:q.y-(e.flying?21:8)},e);effect(q.x,q.y,({W:"#f5df9e",U:"#76bdf1",B:"#ba8ad8",R:"#f7a564",G:"#8ed28e"})[d.color],k==="splash"?60:18);emit("towerAttack",{source:t.id,target:e.id,progress:e.progress});
+ const e=firstEnemy(p,range,k==="splash"||k==="root",["arcane","chain","hex","mirror"].includes(k)?"magic":k==="strike"&&bonus(t,"pierce")?null:["strike","splash","root"].includes(k)?"physical":null,t.target,SPARE.has(k));if(!e){t.idle=(t.idle||0)+1;continue;}t.shots=(t.shots||0)+1;const q=enemyPos(e);
+ const rec={at:state.tick+(k==="chain"?CHAIN_FLIGHT:FLIGHT),tower:t.id,uid:t.uid,target:e.id,x:q.x,y:q.y};
+ if(k==="chain"){let n=0,from={x:p.x,y:p.y-28};rec.chain=[];for(const x of [e,...area(q,110+bonus(t,"radius")).filter(x=>x.id!==e.id).sort(firstOrder)]){if(n++>=tier+2+Math.floor(bonus(t,"chains")))break;const pos=enemyPos(x),to={x:pos.x,y:pos.y-(x.flying?21:8)};shot("chain",from,to,x);from=to;rec.chain.push(x.id);}}
+ const reflect=t.reflectUntil>state.tick?1:0;if(bonus(t,"extra")||reflect){const more=state.enemies.filter(x=>x.hp>0&&x.id!==e.id&&!x.escaped&&d2(enemyPos(x),p)<=range**2).sort(firstOrder).slice(0,Math.floor(bonus(t,"extra"))+reflect);rec.extra=more.map(x=>x.id);for(const x of more)shot(k,{x:p.x,y:p.y-28},enemyPos(x),x);}
+ if(SPARE.has(k)){rec.inc=expectHit(e,hitPower(e),k!=="strike",k==="strike"?(bonus(t,"pierce")?2:true):false);e.incoming=(e.incoming||0)+rec.inc;}
+ state.inFlight.push(rec);
+ if(k!=="chain")shot(k,{x:p.x,y:p.y-28},{x:q.x,y:q.y-(e.flying?21:8)},e);emit("towerAttack",{source:t.id,target:e.id,progress:e.progress});
  }
  t.next=state.tick+(k==="farm"?d.interval:Math.max(t.awakenUntil>state.tick?2:3,Math.round((d.interval-(tier-1)*2)*(1-Math.min(.65,bonus(t,"haste")))*(t.awakenUntil>state.tick?.5:1))));
  }
