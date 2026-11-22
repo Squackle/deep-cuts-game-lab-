@@ -110,7 +110,12 @@ details{margin:10px 0;color:var(--muted);font-size:.8rem}
 .hero-face{position:absolute;inset:3px;border-radius:50%;display:grid;place-items:center;font:800 1.3rem Georgia,serif;color:var(--gold);background-size:cover;background-position:center 25%}
 .hero-face.has-art{background-image:var(--art)!important}
 .hero-hp{position:absolute;left:8%;right:8%;bottom:-6px;height:6px;background:#2a1612;border:1px solid #000;border-radius:3px;overflow:hidden}.hero-hp span{display:block;height:100%;width:0;background:#7bd36b;transition:width .2s}
-.hero-btn.fallen .hero-face{filter:grayscale(1) brightness(.6)}
+.hero-btn.fallen .hero-face{filter:grayscale(1) brightness(.45)}
+/* Respawn countdown: the ring fills clockwise until the commander returns. */
+.hero-btn.fallen{border-color:#3a3f3a}
+.hero-btn.fallen::after{content:"";position:absolute;inset:-3px;border-radius:50%;pointer-events:none;background:conic-gradient(var(--school,#f2cf6b) calc(var(--respawn,0) * 1turn),#0000 0);-webkit-mask:radial-gradient(farthest-side,#0000 calc(100% - 4px),#000 calc(100% - 3.5px));mask:radial-gradient(farthest-side,#0000 calc(100% - 4px),#000 calc(100% - 3.5px));filter:drop-shadow(0 0 4px var(--school,#f2cf6b))}
+.hero-timer{position:absolute;inset:0;display:grid;place-items:center;font:800 1.15rem system-ui,sans-serif;color:#fff;text-shadow:0 1px 3px #000,0 0 6px #000;pointer-events:none}.hero-timer[hidden]{display:none}
+.hero-btn.selected{border-color:#ffe9a8;box-shadow:0 0 0 3px #ffe9a888,0 0 16px #ffe9a8aa,0 3px 8px #000b;transform:scale(1.08)}
 /* Spellbook tray, bottom right */
 .spell-tray{position:absolute;right:max(8px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:flex-end;gap:4px;z-index:6;max-width:calc(100% - 90px)}
 .hand{display:flex;gap:5px;align-items:flex-end}
@@ -200,3 +205,7 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .end-actions button{min-height:40px}.end-actions .primary{font-size:1.05rem;min-height:46px}
 .end-hub{font-size:.85rem;color:var(--gold)}
 @media(max-height:480px){.end-rays{display:none}.end-actions button{min-height:32px}.end-actions .primary{min-height:36px}}
+
+/* Continue the saved run */
+.continue-run{display:flex;flex-direction:column;align-items:center;gap:2px}.continue-run small{font-size:.72rem;font-weight:700;color:#2b4a2f;letter-spacing:.02em}
+.hero-btn.fallen .hero-face{color:transparent}
