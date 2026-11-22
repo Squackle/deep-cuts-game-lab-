@@ -12,7 +12,7 @@ test("viewport shell and contextual combat controls have unique matching element
  assert.match(css,/html,body\{[^}]*overflow:hidden/);
  assert.match(html,/class="map-stage"/);
  assert.equal([...html.matchAll(/data-school="/g)].length,5);
- assert.match(css,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+ assert.match(html,/id="ring"/);assert.match(js,/function placeRing\(pad\)/);assert.match(css,/\.ring-items>button\{/);
 });
 test("settings, statistics, deck editor and sandbox are modal rather than scrolling combat sections",()=>{
  for(const id of ["menuDialog","waveDialog","deckDialog","sandboxDialog","statsDialog"])assert.match(html,new RegExp('<dialog id="'+id+'"'));
