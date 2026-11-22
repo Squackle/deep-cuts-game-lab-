@@ -25,3 +25,15 @@ test("bosses crack below 40% health and cheap leaks cost less",async()=>{
  e.hp=Math.floor(e.maxHp*.39);const before=e.hp;for(let i=0;i<40&&e.hp===before;i++)g.step();assert.ok(e.hp<before&&e.cracked,"a cracked colossus takes physical damage");
  assert.equal(bossLeakCost({hp:90,maxHp:100}),3);assert.equal(bossLeakCost({hp:50,maxHp:100}),2);assert.equal(bossLeakCost({hp:10,maxHp:100}),1);
 });
+
+test("a hurt commander steps back behind nearby troops, or stands and fights alone",()=>{
+ const run=withTroops=>{const g=createEngine(1,"sandbox","hollow");g.state.mana=99999;assert.ok(g.command({type:"commander",id:"omnath"}));
+  if(withTroops)assert.ok(g.command({type:"build",pad:4,kind:"legion"}));
+  for(let i=0;i<60;i++)g.step();const cm=g.state.commander,line=withTroops?Math.max(...g.state.troops.map(u=>u.progress)):500;
+  cm.target=cm.progress=line-40;assert.ok(g.command({type:"sandboxEnemy",enemy:"titan",count:1}));
+  const e=g.state.enemies.find(x=>x.kind==="titan");e.hp=e.maxHp=1e9;e.attack=0;e.speed=0;e.progress=cm.progress-10;cm.hp=Math.floor(cm.maxHp*.2);
+  for(let i=0;i<40;i++)g.step();return {cm,line};};
+ const back=run(true);assert.ok(back.cm.retreat&&back.cm.progress>back.line,"steps behind the troop line ("+back.cm.progress+" vs "+back.line+")");
+ assert.ok(back.cm.hp>back.cm.maxHp*.2,"heals while behind the line");
+ const alone=run(false);assert.equal(alone.cm.retreat||0,0);assert.equal(alone.cm.progress,alone.line-40,"holds its spot with no troops around");
+});
