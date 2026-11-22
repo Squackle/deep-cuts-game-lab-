@@ -112,7 +112,7 @@ export const LEVEL_UNLOCKS = {
  3: { towers: ["hex", "beast"], maps: ["confluence"] },
  4: { towers: ["chapel", "goblin"], modes: ["endless"] },
  5: { towers: ["library", "thorn"], modes: ["onslaught"] },
- 6: { towers: ["foundry", "mirror"] }
+ 6: { towers: ["foundry", "mirror"], maps: ["frostfen"] }
 };
 export const MAX_LEVEL = 6;
 export const xpToReach = n => 30 * n * (n - 1);
