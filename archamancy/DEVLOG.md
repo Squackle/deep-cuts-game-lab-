@@ -112,3 +112,7 @@ Commanders (owner-approved list) replace the Beta 8 originals:
 - The Ur-Dragon (WUBRG), win the Gauntlet with a tower of every color: flying fire breath on 3 leading enemies, triple vs bosses.
 
 Card and commander art is looked up from Scryfall in the browser (art crops, one request at a time, cached locally) and every tile credits its artist; failures just show the card without art. Beta 9 saves with the old original starters reset to a fresh starter pick. New stats: troops returned and sacrificed. 51 Archemancy tests pass, including commander passives, token caps and all unlock rules.
+
+## v0.1.0-beta.10.1 — Card accuracy pass
+
+Checked all 10 commanders and 30 spells against Scryfall (2026-11-22, via the owner's browser). Every color and color identity matched, Edgar Markov included (R/W/B). Two commanders now follow their real text more closely: Talrand makes Drakes only for instants and sorceries, and Light-Paws grows only from Auras and Equipment (Animate Dead, Wild Growth, Fireshrieker and Loxodon Warhammer). Each card now carries its real type line, which is shown when you select it.
