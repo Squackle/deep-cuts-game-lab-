@@ -191,3 +191,12 @@ Owner direction: a big polish update, with a UI as clean and simple as the best 
 - While the commander is down, the portrait ring fills clockwise as a respawn countdown with the seconds left, and the portrait is dimmed.
 - Barracks (Goblin Warcamp, Legion Hall, Necropolis and the rest) are fully manned the moment they are built or upgraded between waves, and refill after each wave. Before, a new barracks stood empty until the next wave started, so its goblins seemed to be missing.
 - Continue: the current Gauntlet or Endless run is saved in this browser every few seconds, when the tab is hidden or closed, and when leaving to the menu. The title screen shows Continue with the mode, wave and difficulty. A run restored mid-wave starts paused. Saves are cleared on victory, defeat or a new run. `engine.snapshot()` and `engine.restore()` use `SAVE_FORMAT`, which changes only when the save shape changes; unknown or corrupt saves are refused and removed. Tested: a restored run matches the original state and stays identical for 900 more ticks.
+
+## 2026-11-22 — Beta 12.5 status effects
+
+- Every effect now stays visible on the enemy for its full length, with small icons above the health bar.
+- Burn: every Pyre Battery blast sets enemies on fire for 1 second (Inferno Cannon adds 2.5 seconds). Flames on the body.
+- Poison (new): Thornheart hits add a poison stack, up to 3 (Venom Thicket: up to 6, and it lasts longer). Each stack deals damage over time that ignores armor; the stack count shows in the icon. Green drips. Venom Thicket used to apply burn and now applies poison.
+- Freeze: the Arcanum slow is now shown as frost, with a pale tint and ice crystals.
+- Curse: Hex Sanctum curses (and Deathmark) show a purple sigil under the enemy; cursed enemies take 35% more damage.
+- Balance: benchmark Gauntlet run now ends with 8 health instead of 9.
