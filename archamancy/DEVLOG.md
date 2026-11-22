@@ -297,3 +297,10 @@ Logan asked for the copied battle stats to track everything useful for balancing
 - castLog: card, wave, tick, cost, mana and enemy count at cast, total damage before the cast (so the next entries show its value).
 - waveTop: top three towers by damage for each finished wave.
 - client: screen size, pixel ratio, orientation, touch, browser, real seconds at each game speed, paused and in menus, session length, and any page errors.
+
+## 2026-11-22 — Beta 13.11 Readable battlefield
+
+Logan: the battlefield was covered by text on a landscape phone (boss name, bar and a two-line hint over the top road, a toast over the towers, the spell hand over the bottom-right pads). Kingdom Rush keeps play readable by keeping status in the screen corners, showing only icons and numbers during play, keeping boss bars compact, and showing details only when you tap.
+- Boss counters are now a short tag ("Magic only" or "Physical only"); tap it for the full list of towers that hurt the boss.
+- Wide landscape phones (21:10 and wider, the usual case): everything moves into the dark side margins. Left: health, mana, wave and level stacked, then the boss bar, then messages, then the commander buttons at the bottom. Right: sound, pause, speed and menu in a 2 by 2 grid, the next-wave pill, and the spell hand as a two-column stack (card art and cost; tap for details). Nothing sits over the road or the pads.
+- Desktop: messages sit below the boss tag instead of on it.
