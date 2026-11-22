@@ -74,3 +74,16 @@ Owner asked to continue toward first playable, starting with the cards from the 
 - Titan's Blade (colorless): equipment; current and future troops of the tower gain +60% attack and +40 health.
 
 Copies resolve once and never re-arm copying, so copy chains stay finite. Farms and the Arcane Library are excluded from Primal Awakening to protect the economy and draw rate. Deathmark mana counts as spell mana in the ledger. The default spellbook is now one copy of each of the 30 cards; the deck editor still allows up to three copies. Three new engine scenarios cover targeting rules, copy limits, damage reconciliation and the mana ledger. No balance changes to towers or waves.
+
+## v0.1.0-beta.8 — First commanders
+
+Owner direction: continue toward first playable with commanders after the card collection. Five original physical commanders, one per color, each built on an EDH-style archetype from DESIGN.md. Choose one (or none) from the new Commander button before wave 1:
+- Ysolde, Banner Marshal (W, Tokens): each wave start, every troop tower calls one extra soldier; troops near her gain a 6-point ward every 3 seconds.
+- Quill, Lantern Archivist (U, Spellslinger): spells cost 15% less; every spell cast fires an arcane bolt from Quill at the leading enemy within reach.
+- Mother Vesk, Pale Abbess (B, Sacrifice): each friendly troop death or sacrifice gives 3 mana and heals her 15.
+- Kragg Emberjaw (R, Voltron): +3 attack per kill up to +150; blows cleave nearby ground enemies for half damage.
+- Bramblemother (G, Ramp): +100 mana once when wave 1 begins; Mana Groves harvest 25% faster, with per-wave harvest budgets unchanged.
+
+Commanders stand on the road, block one ground enemy, fight automatically and can be moved anywhere on the road (Commander → Move, then tap). A fallen commander returns at full health after 20 seconds of combat. Passives only apply while the commander is alive. New ledger categories: commander mana and commander damage, both reconciled in tests and shown in Battle statistics and Copy Stats. Original procedural models; no external assets.
+
+Deferred: partners, paid instant resummoning, commander-specific cards and abilities with cooldowns, and balance tuning from owner playtests. Three new engine scenarios cover selection rules, every passive, Kragg growth, death and return, damage reconciliation and the mana ledger.
