@@ -184,3 +184,10 @@ Owner direction: a big polish update, with a UI as clean and simple as the best 
 
 - New victory and defeat screens: rotating light rays, gold title on a win and a red shake on a loss, the 1–3 stars, a mode/difficulty kicker, and actions for New run, Copy battle stats, Main menu and the hub link.
 - `hub.mjs` decides where "back" goes. On deep-cuts-game-lab.pages.dev and local hosts it reads "Back to Game Lab" (`/`). On any other host, such as the main Deep Cuts site, it becomes "Back to Arcade" (`/games`). A page can force a target with `<meta name="archemancy-hub" content="/path|Label">`. Tested in `tests/hub.test.mjs`.
+
+## 2026-11-22 — Beta 12.4 commander controls, manned barracks, Continue
+
+- Commander moves Kingdom Rush style: tap the commander or the portrait to select (pulsing ring, glowing portrait), then tap the road. A marker shows the destination. Tap the commander again, tap off the road, or press Esc to cancel. Tapping the portrait while selected opens commander details. The old menu step is gone. Between waves the commander arrives at once; on screen they walk there smoothly.
+- While the commander is down, the portrait ring fills clockwise as a respawn countdown with the seconds left, and the portrait is dimmed.
+- Barracks (Goblin Warcamp, Legion Hall, Necropolis and the rest) are fully manned the moment they are built or upgraded between waves, and refill after each wave. Before, a new barracks stood empty until the next wave started, so its goblins seemed to be missing.
+- Continue: the current Gauntlet or Endless run is saved in this browser every few seconds, when the tab is hidden or closed, and when leaving to the menu. The title screen shows Continue with the mode, wave and difficulty. A run restored mid-wave starts paused. Saves are cleared on victory, defeat or a new run. `engine.snapshot()` and `engine.restore()` use `SAVE_FORMAT`, which changes only when the save shape changes; unknown or corrupt saves are refused and removed. Tested: a restored run matches the original state and stays identical for 900 more ticks.
