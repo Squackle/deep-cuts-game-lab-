@@ -57,3 +57,28 @@ test("star upgrades apply once at the start of a run and never in the Proving Gr
  const s=createEngine(1,"sandbox");assert.ok(!s.command({type:"perks",perks:{treasury:3}}));
  const save=JSON.parse(JSON.stringify(g.snapshot()));const r=createEngine(1);assert.ok(r.restore(save));assert.deepEqual(r.state.perks,g.state.perks);
 });
+
+test("targeting modes pick First, Last, Strongest or Closest, and only on aiming towers",()=>{
+ const pick=mode=>{const g=createEngine(1,"sandbox");g.command({type:"sandboxMana",amount:5000});g.command({type:"sandboxEnemy",enemy:"raider",count:3});const [a,b,c]=g.state.enemies;
+  // a: furthest along, weak; b: middle, strongest; c: furthest back but right beside the tower.
+  const pad=g.map.pads[5];a.progress=g.nearestPath(pad.x+150,pad.y)+0;b.progress=a.progress-60;c.progress=g.nearestPath(pad.x,pad.y);for(const e of [a,b,c])e.speed=0;
+  b.hp=b.maxHp=500;a.hp=a.maxHp=c.hp=c.maxHp=200;
+  if(g.map.pads.length)assert.ok(g.command({type:"build",pad:5,kind:"judgment"}));if(mode)assert.ok(g.command({type:"target",pad:5,mode}));
+  for(let i=0;i<40;i++){g.step();const hit=[a,b,c].find(e=>e.hp<e.maxHp);if(hit)return [a,b,c].indexOf(hit);}return -1;};
+ const g=createEngine(1);g.command({type:"build",pad:0,kind:"legion"});assert.ok(!g.command({type:"target",pad:0,mode:"last"}),"troop towers keep rally only");
+ g.command({type:"build",pad:1,kind:"arcanum"});assert.ok(!g.command({type:"target",pad:1,mode:"constructor"}));
+ const r={first:pick(null),last:pick("last"),strong:pick("strong"),close:pick("close")};
+ assert.deepEqual(r,{first:0,last:2,strong:1,close:2});
+});
+
+test("every commander has a tap ability that works during waves and then cools down",async()=>{
+ const {ABILITIES}=await import("../engine.mjs");const ids=Object.keys(createEngine(1).commanders);assert.deepEqual(Object.keys(ABILITIES).sort(),ids.slice().sort());
+ for(const id of ids){const g=createEngine(1,"sandbox");g.command({type:"sandboxMana",amount:5000});g.command({type:"commander",id});assert.ok(!g.command({type:"ability"}),id+" not between waves");
+  g.command({type:"build",pad:5,kind:"legion"});g.command({type:"build",pad:6,kind:"necropolis"});g.command({type:"sandboxEnemy",enemy:"raider",count:4});
+  const cm=g.state.commander;for(const e of g.state.enemies){e.progress=cm.progress+20;e.speed=0;e.attack=0;e.hp=e.maxHp=1e5;}
+  // Meren needs a fallen troop.
+  if(id==="meren")g.state.fallen.push({source:5,sourceUid:g.state.towers[5].uid,hp:50,damage:5,model:"legion",revived:false});
+  g.state.health=15;const before=JSON.stringify([g.state.troops.length,g.state.mana,g.state.health,cm.growth,cm.voltron,g.state.stats.commanderDamage,g.state.hand.length,g.state.fallen.length]);
+  assert.ok(g.command({type:"ability"}),id+" fires");assert.notEqual(JSON.stringify([g.state.troops.length,g.state.mana,g.state.health,cm.growth,cm.voltron,g.state.stats.commanderDamage,g.state.hand.length,g.state.fallen.length]),before,id+" changes something");
+  assert.ok(!g.command({type:"ability"}),id+" cools down");for(let i=0;i<ABILITIES[id].cooldown*10;i++)g.step();assert.ok(g.abilityReady(),id+" ready again");}
+});

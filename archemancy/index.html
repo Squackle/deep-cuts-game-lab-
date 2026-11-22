@@ -19,7 +19,7 @@
 <div class="ring-info" id="ringInfo"><strong id="selection">Build</strong><span id="details"></span></div>
 <div id="schools" class="ring-items" aria-label="Tower school"><button data-school="W" aria-pressed="true" style="--school:#e5d4a2" aria-label="White towers">☀</button><button data-school="U" aria-pressed="false" style="--school:#77b9e6" aria-label="Blue towers">💧</button><button data-school="B" aria-pressed="false" style="--school:#ac8ac3" aria-label="Black towers">☠</button><button data-school="R" aria-pressed="false" style="--school:#ed8b65" aria-label="Red towers">🔥</button><button data-school="G" aria-pressed="false" style="--school:#9bc889" aria-label="Green towers">🌲</button></div>
 <div id="buildMenu" class="ring-items"></div>
-<div id="towerActions" class="ring-items" hidden><button id="upgrade" class="ring-btn" type="button">Upgrade</button><button id="sell" class="ring-btn" type="button">Sell</button><button id="rally" class="ring-btn" type="button">Rally</button></div>
+<div id="towerActions" class="ring-items" hidden><button id="upgrade" class="ring-btn" type="button">Upgrade</button><button id="sell" class="ring-btn" type="button">Sell</button><button id="rally" class="ring-btn" type="button">Rally</button><button id="targetMode" class="ring-btn" type="button">Target</button></div>
 <button id="clearSelection" class="ring-close" type="button" aria-label="Close tower menu">×</button>
 </div>
 </div></div>
@@ -29,7 +29,7 @@
 <div id="waveBanner" class="wave-banner" hidden><strong id="bannerTitle"></strong><span id="bannerSub"></span></div>
 <p id="notice" class="toast" role="status" aria-live="polite">Tap a stone pad to build a tower.</p>
 <div id="updateBanner" class="update-banner" role="status" hidden><span id="updateText">A new version is out.</span> <button id="updateReload" type="button">Reload</button></div>
-<div class="bottom-left"><button id="commanderOpen" class="hero-btn" type="button" aria-label="Commander"><span id="heroFace" class="hero-face"></span><span class="hero-hp"><span id="heroHp"></span></span><span id="heroTimer" class="hero-timer" hidden></span></button><button id="waveInfo" class="round small" aria-label="Wave preview">i</button></div>
+<div class="bottom-left"><button id="commanderOpen" class="hero-btn" type="button" aria-label="Commander"><span id="heroFace" class="hero-face"></span><span class="hero-hp"><span id="heroHp"></span></span><span id="heroTimer" class="hero-timer" hidden></span></button><button id="abilityBtn" class="ability-btn" type="button" hidden><span class="ability-icon" aria-hidden="true">✦</span><span id="abilityName" class="ability-name"></span><span id="abilityTimer" class="ability-timer"></span></button><button id="waveInfo" class="round small" aria-label="Wave preview">i</button></div>
 <div class="spell-tray" aria-label="Spellbook">
 <div id="cardTip" class="card-tip" hidden><strong id="cardName"></strong><p id="castHint">Choose a card to see its effect.</p><div class="card-actions"><button id="castInstant" class="primary" hidden>Cast</button><button id="discard" disabled>Discard</button><button id="cancelCard" disabled>Cancel</button></div></div>
 <div id="hand" class="hand"></div><small id="zones"></small>
