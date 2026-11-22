@@ -351,3 +351,11 @@ Logan's first Frostfen run (Hard, winter, 3 stars, 18 health, 2 flier leaks). On
 - Death bursts (Funeral enchantment, Powderkeg Legion): base 45 + 8 per tier → 30 + 6 per tier, and late-wave scaling `late(.6)` → `late(.5)`. Roughly half the damage by wave 25.
 - A tower's death bursts fire at most once every 0.6 s (`DEATH_BURST_GAP`), so a horde dying together can't chain-detonate a wave. Resonance and Teysa still double each burst.
 - Frostfen ice: ground enemies move at 70% speed on the lake (was 60%).
+
+## 2026-11-22 — Beta 13.20 Summoner combo balance
+
+Logan's Normal Hollow Road run (3 stars, 19 health): a Necropolis (Lich Citadel with Twins, Funeral and Blade) dealt 593k of 1.45M damage, half of it from death bursts — the same Twins + Funeral + Blade stack that carried the goblin run, on a different tower. The 13.19 burst limit applied to every tower, but Twins doubled the troops and so the deaths.
+- Twins: a tower with Anointed Procession fields twice the troops, each at 70% health and damage (`TWIN_SCALE`), and its death bursts deal 70% damage.
+- Blade troop damage bonus 1.6× → 1.4×.
+- Funeral death burst 30 + 6 per tier → 24 + 5 per tier; burst limit once per 0.6 s → once per second per tower.
+- Sandbox test of the full stack at wave 20: Necropolis −26% total damage, Goblin Warcamp −24%. Builds without these cards are unchanged.
