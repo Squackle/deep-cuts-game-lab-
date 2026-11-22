@@ -16,7 +16,7 @@ export const UNLOCKS = [
 const KEY = "archemancy.progress.v1";
 
 export const LEVELS = ["easy", "normal", "hard"];
-export function newProfile() { return { version: 1, starter: null, unlocked: [], last: null, bestWave: 0, stars: {}, difficulty: "normal", map: "hollow", perks: {}, badges: {}, onslaught: false }; }
+export function newProfile() { return { version: 1, starter: null, unlocked: [], last: null, bestWave: 0, stars: {}, difficulty: "normal", map: "hollow", perks: {}, badges: {}, onslaught: false, xp: 0, seen: { e: [], t: [], c: [] } }; }
 
 export function sanitize(raw, all) {
  const p = newProfile();
@@ -27,6 +27,8 @@ export function sanitize(raw, all) {
  if (spentStars(p) > totalStars(p)) p.perks = {};
  if (raw.badges && typeof raw.badges === "object") for (const k of Object.keys(raw.badges)) if (BADGE.test(k) && raw.badges[k] === true) p.badges[k] = true;
  p.onslaught = raw.onslaught === true;
+ if (Number.isInteger(raw.xp) && raw.xp > 0) p.xp = Math.min(raw.xp, 1e7);
+ for (const k of ["e", "t", "c"]) if (Array.isArray(raw.seen?.[k])) p.seen[k] = [...new Set(raw.seen[k].filter(x => typeof x === "string" && /^[a-z]{2,20}$/.test(x)))].slice(0, 200);
  if (typeof raw.map === "string" && /^[a-z]+$/.test(raw.map)) p.map = raw.map;
  if (STARTERS.includes(raw.starter) && all.includes(raw.starter)) p.starter = raw.starter;
  if (!p.starter) return p;
@@ -34,6 +36,8 @@ export function sanitize(raw, all) {
  if (!p.unlocked.includes(p.starter)) p.unlocked.unshift(p.starter);
  if (p.unlocked.includes(raw.last)) p.last = raw.last;
  if (Number.isInteger(raw.bestWave) && raw.bestWave > 0) p.bestWave = raw.bestWave;
+ // Players from before levels keep what they had: earlier best waves count toward their level.
+ if (!Number.isInteger(raw.xp) && p.bestWave > 0) p.xp = p.bestWave >= 25 || totalStars(p) > 0 ? xpToReach(MAX_LEVEL) : Math.max(xpForWaves(p.bestWave), p.bestWave >= 10 ? xpToReach(4) : 0);
  return p;
 }
 
@@ -99,3 +103,24 @@ const BADGE = /^(mono:[WUBRG]|onslaught:[a-z]+)$/;
 export function awardBadge(p, key) { if (!BADGE.test(key) || p.badges[key]) return false; p.badges[key] = true; return true; }
 // Which badges a won Gauntlet earns. run = {won, mode, onslaught, map, colors: color of every tower built}.
 export function trialBadges(run) { if (!run?.won || run.mode !== "campaign") return []; const out = []; const set = new Set(run.colors || []); if (set.size === 1) out.push("mono:" + [...set][0]); if (run.onslaught) out.push("onslaught:" + (run.map || "hollow")); return out; }
+
+// Player level. Every wave cleared outside the Proving Grounds gives 10 + wave XP; level n to n + 1 takes 60 × n XP.
+// Basic towers (one per color) are open from the start; the rest open over the first levels.
+export const LEVEL_UNLOCKS = {
+ 2: { towers: ["judgment", "storm"] },
+ 3: { towers: ["hex", "beast"], maps: ["confluence"] },
+ 4: { towers: ["chapel", "goblin"], modes: ["endless"] },
+ 5: { towers: ["library", "thorn"], modes: ["onslaught"] },
+ 6: { towers: ["foundry", "mirror"] }
+};
+export const MAX_LEVEL = 6;
+export const xpToReach = n => 30 * n * (n - 1);
+export const xpForWaves = w => { let x = 0; for (let i = 1; i <= w; i++) x += 10 + i; return x; };
+export function level(p) { let n = 1; while (n < MAX_LEVEL && p.xp >= xpToReach(n + 1)) n++; return n; }
+export function unlockLevel(kind, id) { for (const [n, u] of Object.entries(LEVEL_UNLOCKS)) if (u[kind]?.includes(id)) return Number(n); return 1; }
+export const isOpen = (p, kind, id) => level(p) >= unlockLevel(kind, id);
+export function lockedTowers(p) { return Object.values(LEVEL_UNLOCKS).flatMap(u => u.towers || []).filter(id => !isOpen(p, "towers", id)); }
+// Adds XP for cleared waves; returns the levels gained, each with what it opens.
+export function gainXp(p, waves, mode) { if (mode === "sandbox" || !Array.isArray(waves)) return []; const before = level(p); for (const w of waves) if (Number.isInteger(w) && w > 0) p.xp += 10 + w; const after = level(p), out = []; for (let n = before + 1; n <= after; n++) out.push({ level: n, ...(LEVEL_UNLOCKS[n] || {}) }); return out; }
+// Codex: first sightings of enemies (e), towers (t) and cards (c). Returns true when something new was added.
+export function see(p, kind, ids) { const list = p.seen[kind]; if (!list) return false; let added = false; for (const id of ids) if (!list.includes(id) && list.length < 200) { list.push(id); added = true; } return added; }
