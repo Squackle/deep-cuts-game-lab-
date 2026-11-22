@@ -97,7 +97,11 @@ test("Onslaught sends the next wave on a timer, cleared road or not",async()=>{
  for(let i=0;i<=ONSLAUGHT_GAP;i++)g.step();assert.equal(g.state.wave,2,"wave 2 arrives on time while wave 1 may still be on the road");assert.equal(g.state.stats.earlyCalls,0);
  // Clear the road: the clock keeps running between waves.
  g.state.enemies=[];g.state.queue=[];g.step();assert.equal(g.state.phase,"ready");for(let i=0;i<ONSLAUGHT_GAP+5&&g.state.wave===2;i++)g.step();assert.equal(g.state.wave,3);
- const n=createEngine(1);n.command({type:"wave"});for(let i=0;i<ONSLAUGHT_GAP+10;i++)n.step();assert.equal(n.state.wave,1,"normal Gauntlet waits");
+ {const {ONSLAUGHT_MAX}=await import("../engine.mjs");const h=createEngine(1);h.command({type:"onslaught",on:true});h.command({type:"wave"});h.state.enemies.forEach(e=>e.speed=0);h.state.queue.forEach(e=>e.speed=0);
+for(let i=0;i<ONSLAUGHT_GAP*(ONSLAUGHT_MAX+2)&&h.state.phase==="active";i++){h.step();h.state.enemies.forEach(e=>{e.speed=0;e.attack=0;});}assert.equal(h.state.pendingWaves.length,ONSLAUGHT_MAX,"Onslaught holds while 3 waves are on the road");}
+{const run=m=>{const g=createEngine(1,"campaign",m);g.state.wave=3;g.command({type:"wave"});for(let i=0;i<600&&!(g.state.enemies.some(e=>e.flying)&&g.state.enemies.some(e=>!e.flying));i++)g.step();const f=k=>g.state.enemies.find(e=>k(e))?.maxHp;return [f(e=>e.flying),f(e=>!e.flying)];};
+ const [hf,hg]=run("hollow"),[cf,cg]=run("confluence");assert.equal(hg,cg,"ground hp matches across maps");assert.equal(cf,Math.ceil(hf*.85),"fliers are lighter on the shorter Confluence roads");}
+const n=createEngine(1);n.command({type:"wave"});for(let i=0;i<ONSLAUGHT_GAP+10;i++)n.step();assert.equal(n.state.wave,1,"normal Gauntlet waits");
  const s=createEngine(1);s.command({type:"wave"});assert.ok(!s.command({type:"onslaught",on:true}),"only before wave 1");
 });
 
