@@ -233,7 +233,17 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
   for(const fx of s.effects){if(fx.until<=s.tick)continue;const alpha=(fx.until-s.tick)/7;ctx.globalAlpha=Math.min(1,alpha*.6);ctx.strokeStyle=fx.color;ctx.lineWidth=4;ctx.beginPath();ctx.arc(fx.x,fx.y,fx.r*(1.2-alpha*.4),0,Math.PI*2);ctx.stroke();ctx.globalAlpha=alpha*.14;ctx.fillStyle=fx.color;ctx.fill();ctx.globalAlpha=1;}
  }
  function banner(title,sub,tone){text($("bannerTitle"),title);text($("bannerSub"),sub||"");$("bannerSub").hidden=!sub;const b=$("waveBanner");b.dataset.tone=tone||"wave";b.hidden=false;b.classList.remove("play");void b.offsetWidth;b.classList.add("play");clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>{b.hidden=true;},2300);}
- function handleCues(cues){for(const c of cues){if(c.type==="sound")sfx.play(c.name);else if(c.type==="gameOver"){clearRun();}if(c.type==="gameOver")setTimeout(()=>showEnd(c.won,c.stars),c.won?900:600);else if(c.type==="banner")banner(c.title,c.sub,c.tone);else if(c.type==="toast")notice(c.text);else if(c.type==="leak"){const el=$("health").parentElement;el.classList.remove("hit");void el.offsetWidth;el.classList.add("hit");}}}
+ // Mana Grove payouts: a green gem rises from the grove and flies into the mana counter, which pops and chimes on arrival.
+ let gemsInFlight=0;const calmMotion=matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("gain","gain-big");void el.offsetWidth;el.classList.add(tier>=3?"gain-big":"gain");sfx.play(tier>=3?"harvestBig":"harvest");}
+ function flyGem(c){if(!$("titleScreen").hidden)return;if(calmMotion||gemsInFlight>=8||!document.body.animate){manaBump(c.tier);return;}
+  const cv=$("field").getBoundingClientRect(),to=$("mana").parentElement.getBoundingClientRect();if(!cv.width||!to.width){manaBump(c.tier);return;}
+  const x=cv.left+c.x*cv.width/game.map.width,y=cv.top+c.y*cv.height/game.map.height,tx=to.left+16,ty=to.top+to.height/2,dx=tx-x,dy=ty-y;
+  const g=document.createElement("span");g.className="mana-gem"+(c.tier>=3?" big":"");g.style.left=x+"px";g.style.top=y+"px";document.body.append(g);gemsInFlight++;
+  const lift=-26-c.tier*4,side=(Math.random()-.5)*30;
+  const a=g.animate([{transform:"translate(-50%,-50%) translate(0,0) scale(.3) rotate(45deg)",opacity:0},{offset:.22,transform:"translate(-50%,-50%) translate("+side+"px,"+lift+"px) scale(1.15) rotate(45deg)",opacity:1},{offset:.38,transform:"translate(-50%,-50%) translate("+side*1.2+"px,"+(lift-6)+"px) scale(1) rotate(45deg)",opacity:1},{transform:"translate(-50%,-50%) translate("+dx+"px,"+dy+"px) scale(.45) rotate(45deg)",opacity:.9}],{duration:900+Math.min(400,Math.hypot(dx,dy)*.25),easing:"cubic-bezier(.45,0,.4,1)"});
+  a.onfinish=a.oncancel=()=>{g.remove();gemsInFlight--;manaBump(c.tier);};}
+ function handleCues(cues){for(const c of cues){if(c.type==="sound")sfx.play(c.name);else if(c.type==="harvest")flyGem(c);else if(c.type==="gameOver"){clearRun();}if(c.type==="gameOver")setTimeout(()=>showEnd(c.won,c.stars),c.won?900:600);else if(c.type==="banner")banner(c.title,c.sub,c.tone);else if(c.type==="toast")notice(c.text);else if(c.type==="leak"){const el=$("health").parentElement;el.classList.remove("hit");void el.offsetWidth;el.classList.add("hit");}}}
  // Copied battle stats: the engine report plus the device, game speed and pause time, and any errors this session.
  const noteError=m=>{if(session.errors.length<12)session.errors.push(String(m).slice(0,240));};
  addEventListener("error",e=>noteError((e.message||"error")+" @"+(e.filename||"").split("/").pop()+":"+(e.lineno||0)));

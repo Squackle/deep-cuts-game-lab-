@@ -30,6 +30,12 @@ export function createFx(ctx,{maxParticles=260}={}){
    else if(ev.type==="towerAttack"){const t=s.towers[ev.source],k=t&&game.roster[t.kind]?.kind;if(k)cues.push({type:"sound",name:"shot_"+k});}
    else if(ev.type==="clear"){const p=game.map.pads[ev.pad];if(p){burst(p.x,p.y-6,"#958b76",18,2.4,700,3.6);burst(p.x,p.y,"#c9b58e",12,1.5,900,5);ring(p.x,p.y,"#f2db9e",34,450);}}
    else if(ev.type==="sell"){const p=game.map.pads[ev.pad];if(p){burst(p.x,p.y-10,"#8b8166",16,2.2,650,3.4);burst(p.x,p.y+2,"#c9b58e",10,1.4,800,4.5);ring(p.x,p.y,"#b7a17b",34,500);shake(2,180);}cues.push({type:"sound",name:"sell"});}
+   // Mana Grove payout: the grove pulses green, leaves and sparkles lift off, "+N" rises, and main.mjs flies a gem to the mana counter.
+   else if(ev.type==="mana"&&ev.why==="farm"&&ev.tower!==null){const p=game.map.pads[ev.tower],tier=s.towers[ev.tower]?.tier||1;if(p){const top=p.y-34-tier*3,big=tier>=3;
+    ring(p.x,p.y+2,big?"#f2db6b":"#8ee07a",22+tier*6,520);flash(p.x,top,big?"#d8ff9a":"#9cf08a",18+tier*6,320);
+    if(parts.length<maxParticles*.6){burst(p.x,top,"#7fd06a",3+tier*2,1.1+tier*.15,700,2.4);for(let i=0;i<tier;i++)spark(p.x+(rnd()-.5)*24,top-6-rnd()*14,big?"#fff2a8":"#e6ffd0",big?9:6,260+i*60);}
+    float(p.x,top-14,"+"+ev.amount,big?"#f6e27a":"#a6f08c",10+tier,big?1100:900);
+    cues.push({type:"harvest",x:p.x,y:top,amount:ev.amount,tier});}}
    else if(ev.type==="spellCast")cues.push({type:"sound",name:"cast"});
    else if(ev.type==="gameOver")cues.push({type:"gameOver",won:!!ev.won,stars:ev.stars||0},{type:"sound",name:ev.won?"victory":"defeat"});
    else if(ev.type==="deathExplosion"){/* drawn by engine effects already */}
