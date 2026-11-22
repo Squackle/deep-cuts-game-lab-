@@ -209,10 +209,6 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 /* Continue the saved run */
 .continue-run{display:flex;flex-direction:column;align-items:center;gap:2px}.continue-run small{font-size:.72rem;font-weight:700;color:#2b4a2f;letter-spacing:.02em}
 .hero-btn.fallen .hero-face{color:transparent}
-.map-choices{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.map-choices button{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:150px;max-width:200px;padding:8px 12px;border:2px solid var(--rim);border-radius:12px;background:#13231bf2;text-align:center}
-.map-choices button small{font-size:.68rem;font-weight:400;color:#c9cdbd;line-height:1.25}
-.map-choices button[aria-pressed=true]{background:var(--gold);color:#1a2b20}.map-choices button[aria-pressed=true] small{color:#3a3a24}
 .wave-peek{position:absolute;z-index:4;transform:translate(calc(clamp(38px,6cqw,60px)*.5 + 10px),-22%);min-width:180px;max-width:min(300px,42cqw);background:var(--hud);border:1px solid #c9b07a88;border-radius:12px;box-shadow:0 6px 18px #0008;color:#f4ecd6;font:600 clamp(.62rem,1.25cqw,.76rem)/1.25 system-ui;overflow:hidden}
 .wave-peek.below{transform:translate(calc(clamp(38px,6cqw,60px)*.5 + 10px),-78%)}
 .wave-peek-head{display:flex;width:100%;justify-content:space-between;align-items:center;gap:8px;min-height:0;padding:5px 10px;border:0;border-radius:0;background:#0000;color:var(--gold);font:800 clamp(.64rem,1.3cqw,.8rem) system-ui;letter-spacing:.04em;text-transform:uppercase}
@@ -246,7 +242,7 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .player-level{display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:10px;width:min(320px,86vw);font-size:.8rem}.player-level strong{color:var(--gold);font:800 .9rem system-ui}
 .xp-bar{height:8px;border-radius:999px;background:#0b1712;border:1px solid #c9b07a66;overflow:hidden}.xp-bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,#c99b3c,#f2cf6b)}
 .player-level small{grid-column:1/3;text-align:center;color:#c9cdbd;font-size:.68rem;margin-top:2px}
-.map-choices button:disabled,.onslaught-toggle:disabled,#playEndless:disabled{opacity:.55;filter:grayscale(.6);cursor:not-allowed}
+.onslaught-toggle:disabled,#playEndless:disabled{opacity:.55;filter:grayscale(.6);cursor:not-allowed}
 .ring-items>button.locked{filter:grayscale(1) brightness(.6)}.ring-items>button.locked::after{content:"🔒";position:absolute;top:-4px;right:-4px;font-size:.8rem}
 .codex-tabs{display:flex;gap:0;border:2px solid var(--rim);border-radius:999px;overflow:hidden;margin:10px 0 0}.codex-tabs button{flex:1;border:0;border-radius:0;background:#13231bf2;font-weight:700}.codex-tabs button[aria-pressed=true]{background:var(--gold);color:#1a2b20}
 .codex-list{display:grid;gap:6px}
@@ -326,3 +322,89 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .boss-track{position:relative}.boss-bar.crackable .boss-track::after{content:"";position:absolute;left:40%;top:-2px;bottom:-2px;width:2px;border-radius:1px;background:#fff9;box-shadow:0 0 3px #000}
 /* Beta 13.13: season picker on the title screen (shown once a season beyond summer has art). */
 .difficulty[hidden],.difficulty button[hidden]{display:none}
+/* Beta 13.17: main menu overhaul. The live battlefield stays visible behind a painted frame: a crest-and-gold logo,
+   tactile buttons on the left and a level-select of painted map cards on the right (stacked on upright phones). */
+.title-screen{display:block;padding:max(14px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));backdrop-filter:none;
+ background:radial-gradient(ellipse at 50% 45%,#0a120e00 30%,#0a120ea8 100%),linear-gradient(90deg,#08110cd9 0%,#08110c8c 38%,#08110c40 62%,#08110c99 100%)}
+.title-motes{position:absolute;inset:0;pointer-events:none;opacity:.55;background-image:radial-gradient(circle,#fff3c4 0 1.2px,transparent 2px),radial-gradient(circle,#ffe39a 0 1px,transparent 1.8px),radial-gradient(circle,#c8f2ff 0 1px,transparent 1.8px);background-size:190px 210px,260px 240px,330px 300px;background-position:0 0,40px 90px,120px 30px;animation:title-motes 26s linear infinite}
+@keyframes title-motes{to{background-position:60px -420px,-80px -390px,170px -600px}}
+.title-card{position:relative;width:min(1160px,100%);min-height:100%;margin:0 auto;display:grid;grid-template-columns:minmax(290px,420px) minmax(0,1fr);grid-template-areas:"brand maps" "foot foot";gap:14px 28px;align-items:center;text-align:center}
+.title-brand{grid-area:brand;display:flex;flex-direction:column;align-items:center;gap:12px}
+.title-maps{grid-area:maps;display:flex;flex-direction:column;gap:12px;padding:14px 16px 16px;border:2px solid #e9c66f66;border-radius:20px;background:linear-gradient(#1b2c22e8,#0e1813ee);box-shadow:inset 0 1px 0 #fff2,0 14px 36px #000b}
+.title-foot{grid-area:foot;justify-content:center}
+.title-logo{display:flex;flex-direction:column;align-items:center;animation:logo-in .6s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes logo-in{from{opacity:0;transform:translateY(-14px) scale(.92)}}
+.title-crest{width:118px;height:auto;margin-bottom:-8px;filter:drop-shadow(0 3px 0 #0a0703) drop-shadow(0 0 14px #f2cf6b55)}
+#titleName{font:900 clamp(2.2rem,3.9vw,3.5rem)/1 Georgia,"Times New Roman",serif;letter-spacing:.06em;color:transparent;text-shadow:none;background:linear-gradient(180deg,#fff8de 8%,#f6d77e 42%,#c48a2c 58%,#f5d98c 86%);-webkit-background-clip:text;background-clip:text;-webkit-text-stroke:1.6px #2e1d06;filter:drop-shadow(0 4px 0 #160d03) drop-shadow(0 10px 16px #000c)}
+.title-ribbon{margin-top:6px}.title-ribbon span{position:relative;display:inline-block;padding:5px 26px;font:800 .78rem/1.2 system-ui;letter-spacing:.32em;text-transform:uppercase;color:#fff1cf;background:linear-gradient(#cf4a3b,#8a261e);border-block:2px solid #f0c968;box-shadow:0 4px 0 #3d0f0b,0 8px 14px #0009;clip-path:polygon(0 0,100% 0,96% 50%,100% 100%,0 100%,4% 50%)}
+.title-tag{font-size:.88rem;color:#e3e3d2;text-shadow:0 1px 3px #000}
+.title-actions{width:min(340px,100%);gap:10px}
+.title-actions button.big{min-height:60px;border-radius:16px;font:900 1.3rem/1.1 Georgia,serif;letter-spacing:.02em;transition:transform .08s,box-shadow .08s}
+.title-actions .play-btn{background:linear-gradient(#c8eea8,#82c86c 55%,#5ea84f);color:#10240f;border:2px solid #effbd8;box-shadow:0 6px 0 #2c5626,0 12px 20px #000a,inset 0 2px 0 #fff9;text-shadow:0 1px 0 #fff7}
+.title-actions .continue-run{background:linear-gradient(#ffe7a6,#f0c45a 55%,#d19a33);color:#2a1804;border:2px solid #fff3cf;box-shadow:0 6px 0 #6b4512,0 12px 20px #000a,inset 0 2px 0 #fffa}
+.title-actions .continue-run small{display:block;font:700 .72rem system-ui;margin-top:3px;color:#4a3210}
+.title-actions .play-btn:not(.primary){min-height:52px;font-size:1.1rem}
+.title-actions button.big:active,.stone-btn:active,.icon-tile:active,.map-card:active{transform:translateY(4px)}
+.title-actions button.big:active{box-shadow:0 2px 0 #0008,0 4px 10px #0008}
+.title-actions .stone-btn{min-height:44px;border-radius:12px;font-weight:800;background:linear-gradient(#4b5d51,#2e3b33);border:2px solid #9fb29c55;box-shadow:0 4px 0 #141d18,0 8px 14px #0008;color:#f3ecd8}
+.title-icons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;width:min(340px,100%)}
+.icon-tile{display:flex;flex-direction:column;align-items:center;gap:1px;min-height:64px;padding:7px 2px 6px;border-radius:14px;background:linear-gradient(#20342af2,#13211af2);border:2px solid #e9c66f59;box-shadow:0 4px 0 #0b130f,0 8px 14px #0008;font:800 .74rem system-ui;color:#fff1cf}
+.icon-tile .tile-ico{font-size:1.35rem;line-height:1.1;color:#f2cf6b;filter:drop-shadow(0 2px 0 #0008)}
+.icon-tile small{font-size:.62rem;font-weight:700;color:#c9cdbd}.icon-tile small:empty{display:none}
+.title-head{margin:0;display:flex;align-items:center;gap:10px;font:700 1.05rem Georgia,serif;color:#fff1cf;letter-spacing:.04em}
+.title-head::before,.title-head::after{content:"";flex:1;height:2px;background:linear-gradient(90deg,transparent,#e9c66f99,transparent)}
+.map-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.map-card{position:relative;display:flex;flex-direction:column;align-items:stretch;padding:0;overflow:hidden;text-align:left;border:3px solid #6f5c37;border-radius:14px;background:#122019;box-shadow:0 6px 0 #0a110d,0 12px 22px #000a;transition:transform .15s,border-color .15s,box-shadow .15s}
+.map-card[aria-pressed=true]{background:#1d2e23;color:var(--ink);border-color:#f6d77e;transform:translateY(-3px);box-shadow:0 0 0 3px #f6d77e44,0 9px 0 #0a110d,0 16px 28px #000c}
+.map-card:hover:not(.locked){border-color:#c9a85c}
+.map-thumb{position:relative;display:block;aspect-ratio:5/3;background:#2a3b2e}
+.map-thumb canvas{display:block;width:100%;height:100%}
+.map-card.locked canvas{filter:grayscale(.75) brightness(.55)}
+.map-lock{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#fff1cf;font:800 .9rem system-ui;text-shadow:0 2px 4px #000}
+.map-lock[hidden]{display:none}.lock-ico{font-size:1.7rem;filter:drop-shadow(0 2px 0 #000)}
+.map-season{position:absolute;top:6px;left:6px;padding:2px 8px;border-radius:999px;background:#0b130fcc;border:1px solid #ffffff40;font:700 .66rem system-ui;color:#fff}
+.map-season[hidden]{display:none}
+.map-info{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:2px 8px;padding:8px 10px 10px}
+.map-name{font:800 .98rem/1.15 Georgia,serif;color:#fff1cf}
+.map-stars{color:#f2cf6b;font-size:.95rem;letter-spacing:.04em;text-shadow:0 1px 0 #000;white-space:nowrap}
+.map-card.locked .map-stars{visibility:hidden}
+.map-sub{grid-column:1/-1;font-size:.7rem;line-height:1.3;color:#c9cdbd;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.title-stars{font-size:.74rem}
+.title-toggles{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center}
+.title-toggles .difficulty{background:#0c1611d9;border-color:#e9c66f88;box-shadow:0 3px 0 #0008}
+.title-toggles .difficulty button{min-height:40px;padding:6px 14px;font-weight:800;border:0;border-radius:0;background:transparent}
+.title-toggles .difficulty button[aria-pressed=true]{background:linear-gradient(#ffe7a6,#e9be5a);color:#2a1804}
+.title-toggles .onslaught-toggle{min-height:40px}
+@media (prefers-reduced-motion:reduce){.title-motes,.title-logo{animation:none}}
+/* Upright phones and narrow windows: one column, cards in a swipeable row. */
+@media (max-width:760px) and (orientation:portrait),(max-width:560px){
+ .title-card{display:flex;flex-direction:column;gap:12px;min-height:0}
+ .title-brand{display:contents}
+ .title-logo{order:1}.title-tag{order:2;font-size:.8rem}#playerLevel{order:3}.title-maps{order:4;width:100%;padding:12px 0 14px}.title-actions{order:5}.title-icons{order:6}.title-foot{order:7}
+ .title-head{padding:0 12px}
+ .map-choices{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;padding:4px 14% 10px;scrollbar-width:none}
+ .map-choices::-webkit-scrollbar{display:none}
+ .map-card{flex:0 0 72%;scroll-snap-align:center}
+ .title-stars{padding:0 12px}
+ .title-toggles{padding:0 10px}
+ .title-crest{width:96px}
+}
+/* Sideways phones: keep two columns, trim the extras so everything fits without much scrolling. */
+@media (max-height:520px) and (orientation:landscape){
+ .title-card{grid-template-columns:minmax(230px,290px) minmax(0,1fr);gap:8px 16px}
+ .title-brand{gap:7px}.title-crest{width:78px;margin-bottom:-6px}#titleName{font-size:2.1rem}.title-ribbon{margin-top:3px}.title-ribbon span{font-size:.62rem;padding:3px 18px}
+ .title-tag,.title-stars{display:none}.player-level{width:100%}
+ .title-actions{gap:7px}.title-actions button.big{min-height:46px;font-size:1.05rem}.title-actions .stone-btn{min-height:36px;font-size:.85rem}
+ .title-icons{gap:6px}.icon-tile{min-height:50px;padding:4px 2px;font-size:.66rem}.icon-tile .tile-ico{font-size:1.05rem}
+ .title-maps{padding:8px 10px 10px;gap:8px}.title-head{font-size:.9rem}
+ .map-choices{gap:8px}.map-info{padding:5px 7px 6px}.map-name{font-size:.8rem}.map-stars{font-size:.75rem}.map-sub{display:none}
+ .title-toggles{gap:6px}.title-toggles .difficulty button{min-height:32px;padding:3px 10px;font-size:.8rem}.title-toggles .onslaught-toggle{min-height:32px;padding:2px 10px}.title-toggles .onslaught-toggle small{display:none}
+}
+/* While the menu is open, the battle HUD steps aside so the painted map reads as the backdrop. */
+.game-shell:has(#titleScreen:not([hidden])) :is(.hud,.top-right,.bottom-left,.spell-tray,#start,#wavePeek,#ring,#pads,#bossBar,#tutorial,.rotate-hint){visibility:hidden}
+.game-shell:has(#titleScreen:not([hidden])) .toast{z-index:12}
+@media (max-width:760px) and (orientation:portrait),(max-width:560px){#titleName{font-size:clamp(2rem,11vw,3rem)}}
+@media (max-width:760px) and (orientation:portrait),(max-width:560px){
+ .title-tag,.title-stars{display:none}
+ .title-actions{position:sticky;bottom:0;z-index:2;width:calc(100% + 32px);margin:0 -16px;padding:12px 16px max(10px,env(safe-area-inset-bottom));background:linear-gradient(#08110c00,#08110cee 26%)}
+}
