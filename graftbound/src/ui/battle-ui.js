@@ -28,6 +28,8 @@ import { exileZone, discardRequirement } from '../engine/zones.js';
 import { exilePortalCanvas } from './exile-portal.js';
 import { visualScale } from '../rendering/creature-scale.js';
 import { wolfCoatFor, recoatSheet, WOLF_KEYS, LEADER_KEYS, LEADER_COAT, THEME_BIOME } from '../rendering/creature-variants.js';
+/** Strip markup down to plain text for a tooltip; repeats until stable so no partial tag can survive (escaped again on output). */
+const plainText = html => { let prev, out = String(html); do { prev = out; out = out.replace(/<[^>]*>?/g, ''); } while (out !== prev); return out.replace(/[<>]/g, ''); };
 
 const $ = id => document.getElementById(id);
 const SPELL_COL = { ember: [1, 0.55, 0.2], verdant: [0.5, 1, 0.4], tide: [0.4, 0.8, 1], umbral: [0.75, 0.45, 1], radiant: [1, 0.9, 0.5] };
@@ -218,7 +220,7 @@ export class BattleUI {
     const armor = u && u.keywords && u.keywords.armor ? `<span class="st ar">▣${u.keywords.armor}</span>` : '';
     const stList = [armor, u?.slime ? `<span class="st gb-slime" title="Toxrill: ${u.slime} slime counter(s), -${u.slime}/-${u.slime}">☣${u.slime}</span>` : '', d.grounded ? `<span class="st gr">${ICON.hook}</span>` : '', d.weakened ? `<span class="st wk">−${d.weakened}⚔</span>` : '', d.shield ? `<span class="st sh">${ICON.shield}${d.shield}</span>` : '', u?.statuses?.guardShield > 0 ? `<span class="st sh gb-guard" title="Guard: ${u.statuses.guardShield} temporary shield remains until next turn">${ICON.guard}${u.statuses.guardShield}</span>` : '', d.poison ? `<span class="st ps">${ICON.poison}${d.poison}</span>` : '', d.stunned ? `<span class="st sn">${ICON.stun}</span>` : '', d.empowered ? `<span class="st em">+${d.empowered}</span>` : ''];
     // v1.7.0: at most 3 status chips; the rest fold into a '+n' chip (full list in its tooltip)
-    const stShown = stList.filter(Boolean), st = (stShown.length > 3 ? [...stShown.slice(0, 2), `<span class="st more" title="${esc(stShown.slice(2).map(x => x.replace(/<[^>]+>/g, '')).join(' · '))}">+${stShown.length - 2}</span>`] : stShown).join('');
+    const stShown = stList.filter(Boolean), st = (stShown.length > 3 ? [...stShown.slice(0, 2), `<span class="st more" title="${esc(stShown.slice(2).map(plainText).join(' · '))}">+${stShown.length - 2}</span>`] : stShown).join('');
     el.innerHTML = `${intent}<div class="hpbar"><i style="width:${pct}%"></i><span>${d.hp}</span></div><div class="sts">${st}</div>`;
     el._h = el.offsetHeight || 24;
     { const view = this.scene.units.get(uid); if (view) view.statusFx = statusVisuals(d, view.statusFx); }
