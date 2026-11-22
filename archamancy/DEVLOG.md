@@ -257,3 +257,10 @@ From Logan's Hard + Onslaught win on The Confluence (4 of 20 health, 14 leaks, 1
 - Onslaught now holds its next wave while 3 waves are still on the road, the same cap as calling early. Before, it stacked up to 6, so waves 20 to 24 (boss wave included) all shared the road. The button reads "Wave N waits: 3 on the road" while held.
 - The Confluence route is about 2,280 road units against 2,880 on The Hollow Road, and fliers ignore troop blocks, so they spent about 20% less time under towers. Fliers on The Confluence now have 85% health. Ground enemies are unchanged. The map blurb says so.
 - Tests: Onslaught cap, and flier versus ground health across maps.
+
+## 2026-11-22 — Beta 13.6 Phone layout
+
+From Logan's phone screenshots (The Hollow Road, wave 9):
+- The next-wave preview starts collapsed on phones and small windows (until you open it; your choice is remembered). On phones it sits under the top bar, on the right in landscape, so it no longer covers the road, the wave button or the HUD. Long lists scroll.
+- Phones held upright: the battlefield is drawn about 65% larger and slides sideways, instead of a thin strip between empty bands. The turn-sideways tip is unchanged.
+- Ruins pads (and any empty pad) now take taps before the taller tap area of a built tower just below them. Before, on phones, tapping the ruins above a Legion Hall opened the Legion Hall.

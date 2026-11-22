@@ -255,3 +255,21 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .codex-pic{width:44px;height:44px;display:grid;place-items:center;border-radius:8px;background:#0b1712;color:var(--school);font-size:1.3rem;overflow:hidden}.codex-pic img{max-width:44px;max-height:44px}
 .codex-entry.unseen{opacity:.55}.codex-entry.unseen .codex-pic::before{content:"?";color:#8e9e83;font-weight:800}
 .perks-btn{min-width:0}
+
+/* Beta 13.6 phone layout: the wave preview starts collapsed on small screens and sits under the top bar instead of over the road. */
+@media(max-width:900px),(max-height:500px){
+.wave-peek{position:fixed;left:calc(env(safe-area-inset-left) + 8px)!important;top:calc(env(safe-area-inset-top) + 52px)!important;transform:none!important;min-width:0;width:max-content;max-width:min(260px,calc(100vw - 16px));max-height:calc(100dvh - 170px);overflow-y:auto;font-size:.82rem}
+.wave-peek.below{transform:none!important}
+.wave-peek li img{width:20px;height:20px}.wave-peek li{grid-template-columns:20px 1fr auto}
+}
+@media(max-width:900px),(max-height:500px){.wave-peek{pointer-events:auto}}
+@media(max-height:500px){.wave-peek{top:calc(env(safe-area-inset-top) + 46px)!important;left:auto!important;right:calc(env(safe-area-inset-right) + 8px);max-height:calc(100dvh - 120px)}}
+@media(orientation:portrait) and (max-width:700px){.wave-peek{max-height:max(90px,calc(50dvh - 50vw - 56px))}}
+/* Empty and ruined pads take taps before a built tower's taller tap area that reaches up over them. */
+.pads{isolation:isolate}.pad{z-index:2}.pad.built{z-index:1}
+/* Phones held upright: the battlefield is drawn taller than the screen is wide, and you slide it sideways. */
+@media(orientation:portrait) and (max-width:700px){
+.map-stage{overflow-x:auto;overflow-y:hidden;justify-items:start;overscroll-behavior-x:contain;scrollbar-width:none}
+.map-stage::-webkit-scrollbar{display:none}
+.map{width:min(165cqw,calc(100cqh * 5 / 3));flex:none}
+}
