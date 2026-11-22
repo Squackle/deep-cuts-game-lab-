@@ -100,3 +100,8 @@ test("Onslaught sends the next wave on a timer, cleared road or not",async()=>{
  const n=createEngine(1);n.command({type:"wave"});for(let i=0;i<ONSLAUGHT_GAP+10;i++)n.step();assert.equal(n.state.wave,1,"normal Gauntlet waits");
  const s=createEngine(1);s.command({type:"wave"});assert.ok(!s.command({type:"onslaught",on:true}),"only before wave 1");
 });
+
+test("locked towers cannot be built until unlocked, outside the Proving Grounds",()=>{
+ const g=createEngine(1);assert.ok(g.command({type:"locks",towers:["storm","nope"]}));assert.deepEqual(g.state.locked,["storm"]);assert.ok(!g.command({type:"build",pad:0,kind:"storm"}));assert.ok(g.command({type:"build",pad:0,kind:"pyre"}));
+ assert.ok(!g.command({type:"locks",towers:[]}),"only before building");const s=createEngine(1,"sandbox");assert.ok(!s.command({type:"locks",towers:["storm"]}));
+});

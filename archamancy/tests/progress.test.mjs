@@ -46,3 +46,11 @@ test("trial badges: one-color wins and Onslaught wins, saved and sanitized",()=>
  assert.deepEqual(progress.trialBadges({won:true,mode:"campaign",colors:["R","G"]}),[]);assert.deepEqual(progress.trialBadges({won:false,mode:"campaign",colors:["R"]}),[]);assert.deepEqual(progress.trialBadges({won:true,mode:"endless",colors:["R"]}),[]);
  assert.ok(progress.awardBadge(p,"mono:R"));assert.ok(!progress.awardBadge(p,"mono:R"));assert.ok(!progress.awardBadge(p,"mono:X"));
  const back=progress.sanitize({...JSON.parse(JSON.stringify(p)),badges:{"mono:R":true,"evil":true,"onslaught:hollow":"yes"},onslaught:true},all);assert.deepEqual(back.badges,{"mono:R":true});assert.equal(back.onslaught,true);});
+test("player level: XP per wave, unlocks in order, older players keep everything",()=>{const p=progress.newProfile();progress.chooseStarter(p,"krenko");
+ assert.equal(progress.level(p),1);assert.ok(progress.isOpen(p,"towers","legion"));assert.ok(!progress.isOpen(p,"towers","storm"));assert.ok(!progress.isOpen(p,"maps","confluence"));
+ assert.deepEqual(progress.gainXp(p,[1,2,3,4,5],"sandbox"),[]);const up=progress.gainXp(p,[1,2,3,4,5],"campaign");assert.equal(up.length,1);assert.deepEqual(up[0].towers,["judgment","storm"]);assert.equal(progress.level(p),2);
+ assert.ok(progress.lockedTowers(p).includes("mirror")&&!progress.lockedTowers(p).includes("storm"));
+ const vet=progress.sanitize({starter:"krenko",bestWave:25},all);assert.equal(progress.level(vet),progress.MAX_LEVEL);assert.deepEqual(progress.lockedTowers(vet),[]);
+ const mid=progress.sanitize({starter:"krenko",bestWave:12},all);assert.equal(progress.level(mid),4);
+ assert.equal(progress.sanitize({starter:"krenko",bestWave:25,xp:70},all).xp,70,"saved XP wins");
+ assert.ok(progress.see(p,"e",["raider","runner"]));assert.ok(!progress.see(p,"e",["raider"]));const back=progress.sanitize(JSON.parse(JSON.stringify({...p,seen:{e:["raider","<x>"],t:"no"}})),all);assert.deepEqual(back.seen,{e:["raider"],t:[],c:[]});});

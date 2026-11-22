@@ -1,7 +1,7 @@
 // ARCHAMANCY beta simulation: fixed ticks, original data-driven rules, DOM independent.
 // Bump only when the saved run format changes, so saves survive ordinary updates.
 export const SAVE_FORMAT=1;
-export const VERSION="0.1.0-beta.13.3";
+export const VERSION="0.1.0-beta.13.4";
 // Status effects from towers (ticks are 100 ms): Pyre blasts burn, Thornheart poisons (stacking), Arcanum freezes (slow), Hex curses (+35% damage taken).
 export const BURN=10,POISON=30,POISON_STACKS=3;
 // Enemy health multiplier per difficulty. Gauntlet stars: 3 at 18+ fortress left, 2 at 10+, otherwise 1.
@@ -159,7 +159,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  const commanderReach=220,commanderRespawn=200;
  const defaultDeck=["meteor","wild","legion","inquiry","funeral","offering","twins","echo","freeze","raise","resonance","reset","cascade","ward","root","recall","matrix","forge","valor","bloom","flame","rally","reflection","deathmark","bloodrush","lightning","verdant","awaken","prism","blade"];
  const stats={damage:0,towerDamage:0,troopDamage:0,deathDamage:0,spellDamage:0,manaEarned:0,farmMana:0,killMana:0,waveMana:0,earlyMana:0,earlyCalls:0,soulMana:0,spellMana:0,sandboxMana:0,commanderMana:0,commanderDamage:0,commanderArmyDamage:0,returns:0,sacrifices:0,spent:0,refunds:0,kills:0,leaks:0,summoned:0,fallen:0,casts:0,draws:0,triggers:0,healing:0,control:0};
- const state={rubble:mode==="sandbox"?{}:{...(M.rubble||{})},onslaught:false,perks:null,mapId,initialMode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",seed:seed>>>0,rng:seed>>>0||1,mode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",tick:0,wave:0,phase:"ready",mana:350,health:20,towers:{},enemies:[],troops:[],queue:[],nextSpawn:0,nextId:1,stats,events:[],sequence:0,commands:[],library:[],hand:[],discard:[],deck:defaultDeck.slice(),echo:false,prism:0,storm:0,fallen:[],waveHistory:[],towerHistory:[], farmPaid:{}, soulPaid:{}, pendingWaves:[], lastWaveTick:0, bonusDeadline:0, lastWaveSpawned:false, waveCalls:[], commander:null, difficulty:"normal", stars:0, cmdOwner:{id:"cmd",uid:0,damage:0,troopDamage:0,summons:0}, cmdSummons:0, enemyKills:{}, enemyLeaks:{}, cardCasts:{}, effects:[], projectiles:[]};
+ const state={locked:[],rubble:mode==="sandbox"?{}:{...(M.rubble||{})},onslaught:false,perks:null,mapId,initialMode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",seed:seed>>>0,rng:seed>>>0||1,mode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",tick:0,wave:0,phase:"ready",mana:350,health:20,towers:{},enemies:[],troops:[],queue:[],nextSpawn:0,nextId:1,stats,events:[],sequence:0,commands:[],library:[],hand:[],discard:[],deck:defaultDeck.slice(),echo:false,prism:0,storm:0,fallen:[],waveHistory:[],towerHistory:[], farmPaid:{}, soulPaid:{}, pendingWaves:[], lastWaveTick:0, bonusDeadline:0, lastWaveSpawned:false, waveCalls:[], commander:null, difficulty:"normal", stars:0, cmdOwner:{id:"cmd",uid:0,damage:0,troopDamage:0,summons:0}, cmdSummons:0, enemyKills:{}, enemyLeaks:{}, cardCasts:{}, effects:[], projectiles:[]};
  const d2=(a,b)=>(a.x-b.x)**2+(a.y-b.y)**2;
  const perk=k=>state.perks?.[k]||0;
  function rand(){let x=state.rng;x^=x<<13;x^=x>>>17;x^=x<<5;return state.rng=x>>>0;}
@@ -276,6 +276,9 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  const p=Number.isInteger(c.pad)?pads[c.pad]:null,t=p?state.towers[p.id]:null;
  let ok=false;
  if(c.type==="ability"&&state.phase==="active"&&commanderAlive()&&state.tick>=(state.commander.abilityAt||0)&&useAbility()){state.commander.abilityAt=state.tick+ABILITIES[state.commander.id].cooldown*10;state.commander.abilities=(state.commander.abilities||0)+1;emit("commanderAbility",{id:state.commander.id});ok=true;}
+ // Towers the player has not reached the level for yet. Set once, before wave 1; never in the Proving Grounds.
+ if(c.type==="locks"&&state.mode!=="sandbox"&&state.wave===0&&state.phase==="ready"&&!Object.keys(state.towers).length&&Array.isArray(c.towers)){state.locked=[...new Set(c.towers.filter(k=>typeof k==="string"&&Object.hasOwn(roster,k)))];ok=true;}
+ if(c.type==="unlock"&&state.locked?.includes(c.kind)){state.locked=state.locked.filter(k=>k!==c.kind);ok=true;}
  if(c.type==="onslaught"&&state.mode==="campaign"&&state.wave===0&&state.phase==="ready"){state.onslaught=!!c.on;ok=true;}
  if(c.type==="perks"&&state.wave===0&&state.phase==="ready"&&state.mode!=="sandbox"&&!state.perks&&!Object.keys(state.towers).length&&c.perks&&typeof c.perks==="object"){const p={};for(const k of Object.keys(PERKS)){const n=c.perks[k];if(Number.isInteger(n)&&n>=1&&n<=3)p[k]=n;}state.perks=p;state.mana+=30*perk("treasury");const cm=state.commander;if(cm){cm.maxHp=cm.hp=Math.round(commanders[cm.id].hp*(1+.1*perk("command")));}emit("perks",{perks:p});ok=true;}
  if(c.type==="difficulty"&&state.wave===0&&state.phase==="ready"&&state.mode!=="sandbox"&&Object.hasOwn(DIFFICULTY,c.level)){state.difficulty=c.level;emit("difficulty",{level:c.level});ok=true;}
@@ -284,7 +287,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  if(c.type==="wave"&&state.phase==="ready"){startWave();ok=true;}
  if(c.type==="early"&&canCallEarly()){startWave(true);ok=true;}
  if(c.type==="clear"&&p&&state.rubble?.[p.id]&&state.phase!=="won"&&state.phase!=="lost"&&spend(state.rubble[p.id])){const cost=state.rubble[p.id];delete state.rubble[p.id];emit("clear",{pad:p.id,cost});ok=true;}
- if(c.type==="build"&&p&&!t&&!state.rubble?.[p.id]&&Object.hasOwn(roster,c.kind)&&spend(roster[c.kind].cost)){const d=roster[c.kind];state.towers[p.id]={id:p.id,uid:state.nextId++,kind:c.kind,tier:1,branch:null,paid:d.cost,next:state.tick+1,rally:nearestPath(p.x,p.y),mana:0,damage:0,summons:0,healing:0,control:0,draws:0,growth:0,matrixUntil:0};emit("build",{pad:p.id,kind:c.kind});muster(state.towers[p.id]);ok=true;}
+ if(c.type==="build"&&p&&!t&&!state.rubble?.[p.id]&&!state.locked?.includes(c.kind)&&Object.hasOwn(roster,c.kind)&&spend(roster[c.kind].cost)){const d=roster[c.kind];state.towers[p.id]={id:p.id,uid:state.nextId++,kind:c.kind,tier:1,branch:null,paid:d.cost,next:state.tick+1,rally:nearestPath(p.x,p.y),mana:0,damage:0,summons:0,healing:0,control:0,draws:0,growth:0,matrixUntil:0};emit("build",{pad:p.id,kind:c.kind});muster(state.towers[p.id]);ok=true;}
  if(c.type==="upgrade"&&t){const n=upgradeCost(t),choice=t.tier===2; if(n!==null&&(!choice||["A","B"].includes(c.branch))&&(!c.branch||choice)&&spend(n)){if(choice)t.branch=c.branch;t.paid+=n;t.tier++;emit("upgrade",{pad:t.id,tier:t.tier,branch:t.branch});muster(t);ok=true;}}
  if(c.type==="sell"&&t){const amount=Math.floor(t.paid*.7);state.mana+=amount;stats.refunds+=amount;state.towerHistory.push({...t,sold:true});delete state.towers[p.id];state.troops=state.troops.filter(u=>u.source!==p.id);emit("sell",{pad:p.id,amount});ok=true;}
  if(c.type==="target"&&t&&AIMED.includes(roster[t.kind].kind)&&TARGET_MODES.includes(c.mode)){t.target=c.mode;ok=true;}
