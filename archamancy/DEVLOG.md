@@ -209,3 +209,9 @@ From Logan's Beta 12.4 Easy run (3 stars, 0 leaks, 7,328 mana left, waves 3–15
 - Difficulty: enemy health Easy 0.85× (was 0.7×), Normal 1.1× (was 1×), Hard 1.45× (was 1.35×).
 - Wave history: each wave is now recorded when its own enemies are gone. Stacked waves used to be recorded together at the end, so their entries were identical. Enemies now carry their wave number.
 - Benchmark (Normal) ends with 9 health.
+
+## 2026-11-22 — Beta 12.7 Hard run follow-up
+
+From Logan's Beta 12.5 Hard run (2 stars, 12 health, 27,429 mana unspent; Soul Foundry 24,473 mana; all 8 leaks were Wings).
+- Soul Foundry per-wave budget lowered to 40/80/140/220 by tier (12.6 had 50/110/200/320). A tier IV foundry now tops out near 5,500 mana over 25 waves instead of 24,000.
+- Air defense is unchanged: Arcanum, Judgment Spire, Storm Engine, Hex Sanctum and Mirrorworks all hit fliers, and Logan's damage came mostly from ground-only Pyre and Thornheart. Waves with flyers now say so in the wave banner.
