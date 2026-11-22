@@ -183,3 +183,4 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .pad.tip-glow{border-radius:50%}
 @keyframes tip-glow{0%,100%{box-shadow:0 0 0 0 #f6e8c4cc}50%{box-shadow:0 0 0 10px #f6e8c400}}
 @media(max-height:480px){.title-card{gap:7px}#titleName{font-size:2.2rem}.title-tag{display:none}button.big{min-height:42px}.end-card{padding:12px;gap:8px}.end-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.ico{width:58%;height:58%;fill:currentColor;display:block;margin:auto}.round .ico{width:20px;height:20px}.hud-item i .ico{width:16px;height:16px}.hud-item i{display:grid;place-items:center;color:inherit}.hud-item.lives i{color:#f06b5b}.hud-item.gold i{color:#f2cf6b}.hud-item:not(.lives):not(.gold) i{color:#d9dccd}.wave-call .wave-icon{display:grid;place-items:center;width:60%;height:60%}.wave-call .ico{width:100%;height:100%}
