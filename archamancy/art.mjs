@@ -120,15 +120,29 @@ export function createArt(ctx,{res:startRes=1}={}){
  function sizeOf(k){return ["titan","grimgut","matron","colossus","hierophant","tyrant"].includes(k)?(k==="tyrant"?78:70):commanderKeys.includes(k)?(k==="urdragon"?66:54):k==="bloom"?56:k==="wing"?50:45;}
  function unit(k,x,y,opt={}){const s=makeSprite("unit:"+k,a=>creature(a,k),68,68),size=sizeOf(k);ctx.save();softShadow(x+1,y+3,size*(opt.flying?.24:.32),size*.11,opt.flying?.3:.5);ctx.translate(x,y+(opt.flying?-14:0));const ph=opt.animate?Math.sin(opt.time*.4+(opt.id||0)):0,squash=opt.flying?0:Math.abs(ph)*.05;ctx.scale((opt.dir<0?-1:1)*(1+squash*.5),1-squash);const bob=opt.animate?ph*(opt.flying?2:1):0;ctx.drawImage(s,-size/2,-size*.75+bob,size,size);ctx.restore();const yy=y+(opt.flying?-14:0)-size*.65;const ww=size*.60;rect(ctx,x-ww/2,yy,ww,3,"#26332d",null);rect(ctx,x-ww/2,yy,ww*Math.max(0,Math.min(1,opt.hp||0)),3,opt.ally?"#94db93":"#e9a181",null);if(opt.ward) {ctx.strokeStyle="#f1d991aa";ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y-9,15,19,0,0,Math.PI*2);ctx.stroke();}}
  const projectileColors={strike:gold,arcane:ice,mirror:"#c1edff",hex:violet,splash:fire,chain:"#ffdf83",root:leaf,melee:"#f6e0bd",heal:"#b0efad"};
+ // Art pass: projectiles get a shaped core with an ink edge, an additive glow and a fading trail; impacts flash.
+ function glow(x,y,r,c,a=1){ctx.save();ctx.globalCompositeOperation="lighter";for(const [k,al] of [[1,.14],[.6,.24],[.32,.4]]){ctx.globalAlpha=al*a;ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r*k,0,Math.PI*2);ctx.fill();}ctx.restore();}
  function projectile(f,clock){
   const p=Math.max(0,Math.min(1,(clock-f.start)/f.duration)),c=projectileColors[f.kind]||gold;
-  const x=f.x+(f.tx-f.x)*p,y=f.y+(f.ty-f.y)*p-(f.kind==="splash"?Math.sin(p*Math.PI)*40:0);
-  ctx.save();ctx.globalAlpha=1-p*.25;
-  if(f.kind==="chain"){const dx=f.tx-f.x,dy=f.ty-f.y;line(ctx,[[f.x,f.y],[f.x+dx*.25+dy*.05,f.y+dy*.25-dx*.05],[f.x+dx*.49-dy*.05,f.y+dy*.49+dx*.05],[f.x+dx*.75+dy*.04,f.y+dy*.75-dx*.04],[f.tx,f.ty]],c,3.5);line(ctx,[[f.x,f.y],[f.tx,f.ty]],"#fff3c5",1);}
-  else if(f.kind==="melee"){ctx.strokeStyle=c;ctx.lineWidth=3;ctx.beginPath();ctx.arc(f.tx,f.ty-6,13,-1.8+p,0.9+p);ctx.stroke();}
-  else if(f.kind==="strike"||f.kind==="root"){const dx=f.tx-f.x,dy=f.ty-f.y,len=Math.hypot(dx,dy)||1;line(ctx,[[x-dx/len*16,y-dy/len*16],[x,y]],c,3);oval(ctx,x,y,2.8,2.8,"#fff2d0");}
-  else {const trail=Math.max(0,p-.18);line(ctx,[[f.x+(f.tx-f.x)*trail,f.y+(f.ty-f.y)*trail-(f.kind==="splash"?Math.sin(trail*Math.PI)*40:0)],[x,y]],c,f.kind==="splash"?5:3);oval(ctx,x,y,f.kind==="splash"?6:4,f.kind==="splash"?6:4,c);oval(ctx,x,y,2,2,"#fff7e1");}
-  if(p>.72){const v=(p-.72)/.28;ctx.globalAlpha=(1-v)*.8;for(let i=0;i<5;i++){const a=i*Math.PI*2/5;line(ctx,[[f.tx+Math.cos(a)*v*5,f.ty+Math.sin(a)*v*5],[f.tx+Math.cos(a)*(5+v*12),f.ty+Math.sin(a)*(5+v*12)]],c,2);}}
+  const arc=t=>f.kind==="splash"?Math.sin(t*Math.PI)*40:0,at=t=>[f.x+(f.tx-f.x)*t,f.y+(f.ty-f.y)*t-arc(t)];
+  const [x,y]=at(p),dx=f.tx-f.x,dy=f.ty-f.y,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
+  ctx.save();ctx.globalAlpha=1-p*.15;
+  if(f.kind==="chain"){const pts=[[f.x,f.y],[f.x+dx*.25+dy*.06,f.y+dy*.25-dx*.06],[f.x+dx*.5-dy*.07,f.y+dy*.5+dx*.07],[f.x+dx*.75+dy*.05,f.y+dy*.75-dx*.05],[f.tx,f.ty]];
+   ctx.save();ctx.globalCompositeOperation="lighter";ctx.globalAlpha=.35*(1-p);line(ctx,pts,c,9);ctx.restore();line(ctx,pts,c,3.5);line(ctx,pts,"#fffbe6",1.4);glow(f.tx,f.ty,16,c,1-p);}
+  else if(f.kind==="melee"){ctx.strokeStyle=ink;ctx.lineWidth=5;ctx.beginPath();ctx.arc(f.tx,f.ty-6,13,-1.8+p,0.9+p);ctx.stroke();ctx.strokeStyle=c;ctx.lineWidth=3;ctx.stroke();ctx.strokeStyle="#ffffff";ctx.lineWidth=1.2;ctx.stroke();}
+  else if(f.kind==="strike"){ // Glowing holy arrow with fletching.
+   const tx=x-ux*18,ty=y-uy*18;ctx.save();ctx.globalCompositeOperation="lighter";ctx.globalAlpha=.4;line(ctx,[[x-ux*34,y-uy*34],[x,y]],c,5);ctx.restore();
+   line(ctx,[[tx,ty],[x,y]],ink,4);line(ctx,[[tx,ty],[x,y]],"#f7e8bd",2);poly(ctx,[[x+ux*5,y+uy*5],[x-ux*2-uy*3.5,y-uy*2+ux*3.5],[x-ux*2+uy*3.5,y-uy*2-ux*3.5]],c);
+   for(const sd of [-1,1])line(ctx,[[tx,ty],[tx-ux*5+uy*4*sd,ty-uy*5-ux*4*sd]],"#fff6dc",1.6);}
+  else if(f.kind==="root"){ // A thorny seed trailing a vine.
+   const pts=[];for(let k=0;k<=6;k++){const t=Math.max(0,p-.3)+(p-Math.max(0,p-.3))*k/6,[px,py]=at(t),w=Math.sin(t*28)*3;pts.push([px-uy*w,py+ux*w]);}
+   line(ctx,pts,ink,4);line(ctx,pts,"#6fa64c",2.4);crystal(ctx,x,y,5,leaf);}
+  else { // Orbs: arcane, mirror, hex, heal, and the arcing splash fireball.
+   const fire=f.kind==="splash",r=fire?6.5:4.6;
+   for(let k=1;k<=5;k++){const t=Math.max(0,p-k*.045),[tx,ty]=at(t);ctx.globalAlpha=(1-k/6)*.55;oval(ctx,tx,ty,r*(1-k*.13),r*(1-k*.13),fire?(k<3?"#ffcf6b":"#8a7a6c"):c);}
+   ctx.globalAlpha=1;glow(x,y,r*3.4,c,.9);oval(ctx,x,y,r+1.4,r+1.4,ink);oval(ctx,x,y,r,r,c);oval(ctx,x-r*.3,y-r*.3,r*.45,r*.45,"#fffbe9");
+   if(f.kind==="hex"){ctx.strokeStyle="#2a1838";ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(x,y,r*.55,0,Math.PI*2);ctx.stroke();}}
+  if(p>.72){const v=(p-.72)/.28;glow(f.tx,f.ty,10+v*16,c,(1-v)*.9);ctx.globalAlpha=(1-v)*.8;for(let i=0;i<6;i++){const a=i*Math.PI/3+f.start;line(ctx,[[f.tx+Math.cos(a)*v*6,f.ty+Math.sin(a)*v*6],[f.tx+Math.cos(a)*(6+v*13),f.ty+Math.sin(a)*(6+v*13)]],c,2);}}
   ctx.restore();
  }
  // Status effects on enemies: a look that stays on the body for the whole duration, plus small icons over the health bar.
