@@ -264,3 +264,8 @@ From Logan's phone screenshots (The Hollow Road, wave 9):
 - The next-wave preview starts collapsed on phones and small windows (until you open it; your choice is remembered). On phones it sits under the top bar, on the right in landscape, so it no longer covers the road, the wave button or the HUD. Long lists scroll.
 - Phones held upright: the battlefield is drawn about 65% larger and slides sideways, instead of a thin strip between empty bands. The turn-sideways tip is unchanged.
 - Ruins pads (and any empty pad) now take taps before the taller tap area of a built tower just below them. Before, on phones, tapping the ruins above a Legion Hall opened the Legion Hall.
+
+## 2026-11-22 — Beta 13.7 Level chip and boss counters
+
+- Level chip in the battle top bar: your level inside a ring that fills toward the next level. Tap it for XP to go and what the next level opens. "+N XP" floats up from it when a wave clears; a level-up shows a big banner with the unlocks and makes the chip glow. The end screen shows XP earned this run, a bar and the next unlock. On narrow upright phones the chip sits under the health pill.
+- Bosses immune to one damage type now say what hurts them under the boss bar (Ironclad Colossus: only magic, so Arcanum, Mirrorworks, Hex Sanctum, Storm Engine). Physical towers ignoring it is by design. On landscape phones the boss bar moved into the top row so it no longer covers the first stretch of road (it hid the boss in Logan's screenshot).
