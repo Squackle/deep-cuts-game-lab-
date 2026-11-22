@@ -27,7 +27,9 @@ const PALETTES={
   road:["#5d5248","#8e8274","#a59a8c","#b8afa2","#7a7062"],cobble:["#c9c1b4","#a49a8b"],key:"#e8f2ff",shade:"#16243a",flowers:0,litter:null,snow:true}};
 export function seasonOf(game){let q=null;try{q=new URLSearchParams(globalThis.location?.search||"").get("season");}catch{}
  const s=game?.map?.season||q||"summer";return PALETTES[s]?s:"summer";}
-export function paintTerrain(a,game){
+// opts.still paints a thumbnail without touching the live map's animated props.
+export function paintTerrain(a,game,opts={}){
+ const keepLiving=living;
  living=[];
  const season=seasonOf(game),S=PALETTES[season];
  const {segments,spans,pads,keep,labels,entrances}=game.map,W=game.map.width||1000,H=game.map.height||600;
@@ -206,6 +208,7 @@ export function paintTerrain(a,game){
  const key=a.createRadialGradient(W*.18,H*.05,0,W*.18,H*.05,W*.85);key.addColorStop(0,S.key+"30");key.addColorStop(1,S.key+"00");a.fillStyle=key;a.fillRect(0,0,W,H);
  const shade=a.createLinearGradient(0,0,W,H);shade.addColorStop(.55,S.shade+"00");shade.addColorStop(1,S.shade+"40");a.fillStyle=shade;a.fillRect(0,0,W,H);
  const v=a.createRadialGradient(W/2,H/2,H*.45,W/2,H/2,W*.62);v.addColorStop(0,"#0a140f00");v.addColorStop(1,"#0a140f66");a.fillStyle=v;a.fillRect(0,0,W,H);
+ if(opts.still)living=keepLiving;
 
  function tuft(x,y,h){a.lineWidth=1.3;for(let k=-1;k<=1;k++){a.strokeStyle=k?S.tuft[0]:S.tuft[1];a.beginPath();a.moveTo(x+k*1.6,y);a.quadraticCurveTo(x+k*2.6,y-h*.6,x+k*3.6,y-h);a.stroke();}}
  function flower(x,y){tuft(x,y,5);const c=["#f4e7a8","#f0a9c4","#b9d6f5","#fbf6ea","#f3b46b"][Math.floor(random()*5)];for(const [dx,dy] of [[-2.5,-6],[2.5,-7],[0,-9]]){ell(x+dx,y+dy,1.9,1.9,c);}ell(x,y-7.3,.9,.9,"#fff6c8");}
