@@ -116,3 +116,24 @@ Card and commander art is looked up from Scryfall in the browser (art crops, one
 ## v0.1.0-beta.10.1 — Card accuracy pass
 
 Checked all 10 commanders and 30 spells against Scryfall (2026-11-22, via the owner's browser). Every color and color identity matched, Edgar Markov included (R/W/B). Two commanders now follow their real text more closely: Talrand makes Drakes only for instants and sorceries, and Light-Paws grows only from Auras and Equipment (Animate Dead, Wild Growth, Fireshrieker and Loxodon Warhammer). Each card now carries its real type line, which is shown when you select it.
+
+## v0.1.0-beta.11 — Enemy traits and boss waves
+
+Owner priority: enemy traits and boss waves before the painted map.
+
+New enemies:
+- Shade Stalker (shrouded): towers can only target it near a Judgment Spire or Hex Sanctum (within their range), within 70 of your troops or commander, or for 3 s after any damage reveals it. Area spells and burns still hit it. Shown faded until revealed.
+- Spellward Warden: immune to magic damage.
+- Ironhide Golem: immune to physical damage; Godpiercer (Judgment Spire T4 path A) still hurts it.
+Towers no longer waste shots on enemies their damage type cannot hurt.
+
+The 25-wave Gauntlet is now hand-designed: traits arrive from wave 6, and a named boss closes every fifth wave. Grimgut, Raider King (w5) hastes nearby enemies with a war cry every 8 s. The Veiled Matron (w10) is shrouded and births two Shade Stalkers every 8 s, up to 8. Ironclad Colossus (w15) is immune to physical damage. Spellbane Hierophant (w20) is immune to magic; every 10 s it marks its two nearest towers (dashed ring), then silences them for 4 s. The Hollow Tyrant (w25) swaps between physical and magic immunity every 8 s, with a flash warning. Endless keeps cycling the bosses every 5 waves. The wave forecast lists names, BOSS tags and trait rules, and bosses show their name over the battlefield.
+
+Benchmark (seed 1, same no-spell build policy): wins wave 25 with 6/20 health (was 17), loses on wave 30. That makes the Gauntlet harder, as the owner asked earlier. 56 Archemancy tests pass, including immunity, reveal rules, every boss ability and the wave plan.
+
+### Beta 11 balance from the owner's wave-32 Endless run
+
+Owner run (Beta 9 build, lost at Endless wave 32): towers dealt 97% of 1.5M damage, while spells did 1.8k, troops 6.7k and the commander 197, because those used fixed numbers while enemy health had grown about 130×. All 20 leaks were Carrion Wings, and the strongest towers (Pyre Battery, Thornheart) are ground-only. Changes:
+- Spell damage, burns (from spells and Inferno towers), troop health and attack, death blasts, commander attack and health, and commander tokens now scale with wave health. Spells and commanders use enemy scale^0.8; troops, tokens and death blasts use ^0.6. Wave 1 values are unchanged.
+- Tower cards and the selected-tower details now say "Ground only" or "Hits fliers".
+Benchmark after both changes: wins wave 25 at 4/20 health and loses on wave 30.
