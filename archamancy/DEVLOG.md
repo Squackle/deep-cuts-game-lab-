@@ -332,3 +332,7 @@ The map stays off the title screen (`MAP_LOOKS` in main.mjs) until the art threa
 ## 2026-11-22 — Beta 13.16 Frostfen Crossing opens
 
 Frostfen Crossing is on the title screen (level 6), with its frozen lake and packed-snow causeway painted by the art thread.
+
+## 2026-11-22 — Beta 13.17 Picks up new versions
+
+Logan didn't see Frostfen Crossing after 13.16 shipped. The map list is correct (all three maps show, locked ones with "Opens at level N"), so the page was an older build still open. Now the game checks for a newer version when the tab comes back into view and every 5 minutes: on the title screen it reloads at once; mid-run it says so and reloads when you next return to the title (the run is saved first).
