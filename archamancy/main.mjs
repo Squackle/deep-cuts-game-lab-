@@ -101,8 +101,8 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  function setSpeed(n){speed=n;accumulator=0;if(n)lastSpeed=n;const pb=document.querySelector("[data-speed='0']");if(pb){const want=n?"pause":"play";if(pb.dataset.icon!==want){pb.dataset.icon=want;pb.innerHTML=n?ICONS.pause:ICONS.play;pb.setAttribute("aria-label",n?"Pause":"Resume");}}for(const b of document.querySelectorAll("[data-speed]"))b.setAttribute("aria-pressed",String(Number(b.dataset.speed)===n));text($("speedCycle"),(n||lastSpeed)+"×");$("speedCycle").setAttribute("aria-pressed",String(n>1));}
  let lastSpeed=1;$("speedCycle").addEventListener("click",()=>setSpeed(speed===0?lastSpeed:speed>=3?1:speed+1));
  for(const b of document.querySelectorAll("[data-speed]"))b.addEventListener("click",()=>setSpeed(speed===0?lastSpeed:0));
- // Seasons the art can draw. The picker lists only these, and hides itself while summer is the only one.
- const SEASON_LOOKS=["summer"];
+ // Seasons the art can draw (terrain.mjs). The picker lists only these, and hides itself while summer is the only one.
+ const SEASON_LOOKS=["summer","autumn","winter"];
  const seasonPick=()=>SEASON_LOOKS.includes(profile.season)?profile.season:"summer";
  const mapLook=()=>game.map.id+":"+game.map.season;
  let mapKey=mapLook();

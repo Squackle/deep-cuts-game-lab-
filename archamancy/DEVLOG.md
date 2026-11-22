@@ -319,3 +319,7 @@ Logan's Hard Hollow Road run (2 stars, 14 health): the Ironclad Colossus leaked 
 Logan chose "More content first": autumn and winter versions of Hollow Road and Confluence, then a third map. This release lays the groundwork; the art thread builds the seasonal looks in terrain.mjs.
 - Runs carry a season (summer, autumn or winter), chosen before the first wave, kept in saves and in battle stats. The renderer reads `game.map.season`.
 - Title screen season picker, remembered in the profile. It stays hidden until a season beyond summer has art (`SEASON_LOOKS` in main.mjs).
+
+## 2026-11-22 — Beta 13.14 Autumn and winter
+
+The season picker is on: Summer, Autumn or Winter for The Hollow Road and The Confluence. Art: golden grass and falling leaves in autumn; snow, snowy trees and a frozen creek in winter (terrain.mjs, art thread). Seasons are cosmetic for now and share stars with the summer map.
