@@ -59,3 +59,18 @@ Owner requested priority on enemies nearest the fortress. Direct ranged targetin
 Inflection point at T2 → T3: choose one of two permanent specializations for each of all 15 tower types. T4 unlocks that path's stronger named ultimate. Base/T2 unchanged, branch costs 4.2× build cost and ultimate 17×. Changing paths requires selling/rebuilding (70% refund; paid in-place respec is deferred). Thirty paths with distinct tower behavior, including swarm/tank tradeoffs, ward/smite, boss/armor damage versus secondary strikes, crowd control versus damage, recurring spell recovery versus cooldown aura, death blasts, sacrifice income versus altar blast, spreading curses, burns, extended chains, farm speed versus cap, and giant beasts. Visual branch markers, modal comparisons, named tower details and report fields. Existing sacrifice and enchantment combos preserved. Damage source categories reconcile to the total; burn provenance is kept even after selling a source tower. Individual wave completion telemetry is deferred; existing grouped wave accounting remains unchanged.
 
 Test benchmark: seed 1, deterministic two-farm mixed attack strategy without spells, T3 branch choices selected by role, clears 25 waves with 17 health, 4,338 mana remaining; survives wave 26, loses wave 30. Final farm budget tuned down after provisional simulation. Thirty-two engine scenarios passed, including all thirty paths, finite farm budgets and damage provenance. Required shared checks and browser verification separately. Owner authorized direct canonical Game Lab releases after checks; no manual or sent preview URLs.
+
+## v0.1.0-beta.7 — The full 30-card collection
+
+Owner asked to continue toward first playable, starting with the cards from the original design list that were still missing. Added all nine, completing the proposed 30-card collection (five per color plus colorless):
+- Rally the Fallen (W): return the two most recent fallen troops from any tower to a chosen troop tower, with a 20-point ward.
+- Fractured Reflection (U): for 10 seconds an attacking tower also strikes a second leading enemy at 60% power.
+- Deathmark (B): enemies near a point take +35% damage for 10 seconds and pay 6 mana when they die.
+- Bloodrush (R): a troop tower's soldiers pay 15% of their health to attack twice as fast for 10 seconds.
+- Wild Lightning (R): lightning leaps from the leading enemy near a point through up to six foes, 90 magical damage fading 15% per jump.
+- Verdant Multiplication (G): copy up to six living troops of a tower as healthy tokens.
+- Primal Awakening (G): a non-farm, non-library tower acts twice as fast for 15 seconds.
+- Echo Prism (colorless): copies each of the next two eligible targeted spells; does not stack with Echo Spell.
+- Titan's Blade (colorless): equipment; current and future troops of the tower gain +60% attack and +40 health.
+
+Copies resolve once and never re-arm copying, so copy chains stay finite. Farms and the Arcane Library are excluded from Primal Awakening to protect the economy and draw rate. Deathmark mana counts as spell mana in the ledger. The default spellbook is now one copy of each of the 30 cards; the deck editor still allows up to three copies. Three new engine scenarios cover targeting rules, copy limits, damage reconciliation and the mana ledger. No balance changes to towers or waves.

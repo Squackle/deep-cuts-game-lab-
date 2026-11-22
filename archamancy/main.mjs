@@ -66,7 +66,7 @@ function boot(createEngine){
   text($("preview"),terminal?(s.phase==="won"?"The passage is secure. Continue to Endless Siege.":"The fortress has fallen."):s.phase==="active"?"Remaining: "+(s.enemies.length+s.queue.length)+(early?" | Next wave "+(s.wave+1)+" · "+game.waveSpec(s.wave+1).map(x=>x.replace(":"," × ")).join(" · ")+" | Early bonus +"+bonus+" mana ("+game.earlySeconds()+"s remaining)":""):game.waveSpec(s.wave+1).map(x=>x.replace(":", " × ")).join(" · ")+" | Enemy health ×"+game.scale(s.wave+1).toFixed(2));
   $("start").disabled=s.phase==="lost"||(s.phase==="active"&&!early);text($("start"),s.phase==="won"?"Continue to endless":s.phase==="lost"?"Run finished":s.phase==="active"?(early?"Call wave "+(s.wave+1)+" · +"+bonus+" mana":s.mode==="campaign"&&s.wave>=25?"Final wave in progress":"Battlefield at capacity"):"Start wave "+(s.wave+1));
   $("sandbox").hidden=s.mode!=="sandbox";$("sandboxOpen").hidden=s.mode!=="sandbox";$("deckToggle").disabled=s.wave!==0||s.phase!=="ready";
-  text($("zones"),"Library "+s.library.length+" · Graveyard "+s.discard.length+(s.echo?" · Echo armed":""));
+  text($("zones"),"Library "+s.library.length+" · Graveyard "+s.discard.length+(s.echo?" · Echo armed":"")+(s.prism?" · Prism "+s.prism:""));
   const activeCard=selectedCard===null?null:game.cards[s.hand[selectedCard]];
   text($("castHint"),activeCard?activeCard.desc+" "+(activeCard.target==="tower"?"Tap a tower.":activeCard.target==="ground"?"Tap the battlefield in combat.":"Tap Cast to resolve."):"Select a card to inspect and cast.");
   $("castInstant").hidden=!activeCard||activeCard.target!=="none";$("castInstant").disabled=terminal||!activeCard||s.mana<activeCard.cost;
