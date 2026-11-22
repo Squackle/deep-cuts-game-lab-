@@ -215,3 +215,12 @@ From Logan's Beta 12.4 Easy run (3 stars, 0 leaks, 7,328 mana left, waves 3–15
 From Logan's Beta 12.5 Hard run (2 stars, 12 health, 27,429 mana unspent; Soul Foundry 24,473 mana; all 8 leaks were Wings).
 - Soul Foundry per-wave budget lowered to 40/80/140/220 by tier (12.6 had 50/110/200/320). A tier IV foundry now tops out near 5,500 mana over 25 waves instead of 24,000.
 - Air defense is unchanged: Arcanum, Judgment Spire, Storm Engine, Hex Sanctum and Mirrorworks all hit fliers, and Logan's damage came mostly from ground-only Pyre and Thornheart. Waves with flyers now say so in the wave banner.
+
+## 2026-11-22 — Beta 13.0 The Confluence
+
+A second battlefield, picked on the title screen next to The Hollow Road.
+- The Confluence: two roads (North Ford and South Ford) enter on the left and merge into one road before the Verdant Keep. Enemies take turns entering at each ford. 21 pads, with high ground over the north road and a mana spring between the fords.
+- Engine: maps are data (`MAPS` in `engine.mjs`). A road is one or more segments; a segment can feed into another where it ends. Each segment has its own stretch of the progress number line, so the old one-road rules carry over. Towers target the enemy with the least road left, whichever lane it is on. Troops and the commander walk through the junction to reach the other lane.
+- Saves remember their map, and a save only loads on its own map. Saves from before 13.0 load on The Hollow Road. The save format is unchanged.
+- Best Gauntlet stars are kept per map. The Hollow Road keeps its old star keys, so earlier stars still count.
+- Bot benchmark (same bot, seeds 1–3): The Confluence plays a little harder than The Hollow Road on Normal (won all three with 1–5 health, against 2 of 3 won on the Hollow Road).

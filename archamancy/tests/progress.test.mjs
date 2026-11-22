@@ -30,3 +30,8 @@ test("profile saves, loads and rejects tampered or retired data",()=>{const s=me
 
 test("best stars per difficulty are kept and sanitized",()=>{const s=memory(),p=progress.newProfile();progress.chooseStarter(p,"krenko");assert.ok(progress.recordStars(p,"hard",2));assert.ok(!progress.recordStars(p,"hard",1));assert.ok(!progress.recordStars(p,"nightmare",3));assert.ok(!progress.recordStars(p,"easy",4));p.difficulty="hard";progress.save(s,p);const q=progress.load(s,all);assert.deepEqual(q.stars,{hard:2});assert.equal(q.difficulty,"hard");
  const bad=progress.sanitize({starter:"krenko",stars:{easy:9,normal:"3",hard:3},difficulty:"insane"},all);assert.deepEqual(bad.stars,{hard:3});assert.equal(bad.difficulty,"normal");});
+test("stars are kept per battlefield, and the Hollow Road keeps its old keys",()=>{const p=progress.newProfile();progress.chooseStarter(p,"krenko");
+ assert.ok(progress.recordStars(p,"normal",2));assert.ok(progress.recordStars(p,"normal",3,"confluence"));assert.equal(progress.bestStars(p,"normal"),2);assert.equal(progress.bestStars(p,"normal","confluence"),3);assert.equal(p.stars.normal,2);
+ assert.ok(!progress.recordStars(p,"normal",3,"Bad Map"));
+ const back=progress.sanitize(JSON.parse(JSON.stringify({...p,map:"confluence",stars:{...p.stars,"x:y":3,"__proto__:easy":3}})),all);assert.deepEqual(back.stars,{normal:2,"confluence:normal":3});assert.equal(back.map,"confluence");
+ assert.equal(progress.sanitize({starter:"krenko",map:"<b>"},all).map,"hollow");});

@@ -15,13 +15,14 @@ export const UNLOCKS = [
 const KEY = "archemancy.progress.v1";
 
 export const LEVELS = ["easy", "normal", "hard"];
-export function newProfile() { return { version: 1, starter: null, unlocked: [], last: null, bestWave: 0, stars: {}, difficulty: "normal" }; }
+export function newProfile() { return { version: 1, starter: null, unlocked: [], last: null, bestWave: 0, stars: {}, difficulty: "normal", map: "hollow" }; }
 
 export function sanitize(raw, all) {
  const p = newProfile();
  if (!raw || typeof raw !== "object") return p;
  if (LEVELS.includes(raw.difficulty)) p.difficulty = raw.difficulty;
- for (const l of LEVELS) { const n = raw.stars?.[l]; if (Number.isInteger(n) && n >= 1 && n <= 3) p.stars[l] = n; }
+ for (const [k, n] of Object.entries(raw.stars || {})) if (/^([a-z]+:)?(easy|normal|hard)$/.test(k) && !k.startsWith("hollow:") && Number.isInteger(n) && n >= 1 && n <= 3) p.stars[k] = n;
+ if (typeof raw.map === "string" && /^[a-z]+$/.test(raw.map)) p.map = raw.map;
  if (STARTERS.includes(raw.starter) && all.includes(raw.starter)) p.starter = raw.starter;
  if (!p.starter) return p;
  if (Array.isArray(raw.unlocked)) p.unlocked = [...new Set(raw.unlocked.filter(id => all.includes(id)))];
@@ -65,8 +66,11 @@ export function recordRun(p, run) {
  return fresh;
 }
 
-// Best Gauntlet stars per difficulty. Returns true when this beats the saved best.
-export function recordStars(p, level, stars) { if (!LEVELS.includes(level) || !Number.isInteger(stars) || stars < 1 || stars > 3 || (p.stars[level] || 0) >= stars) return false; p.stars[level] = stars; return true; }
+// Best Gauntlet stars per battlefield and difficulty. The Hollow Road keeps the original keys ("normal"); other maps use "map:normal".
+export const starKey = (level, map = "hollow") => map === "hollow" ? level : map + ":" + level;
+export function bestStars(p, level, map = "hollow") { return p.stars[starKey(level, map)] || 0; }
+// Returns true when this beats the saved best.
+export function recordStars(p, level, stars, map = "hollow") { const k = starKey(level, map); if (!LEVELS.includes(level) || !/^[a-z]+$/.test(map) || !Number.isInteger(stars) || stars < 1 || stars > 3 || (p.stars[k] || 0) >= stars) return false; p.stars[k] = stars; return true; }
 
 export function available(p, mode, all) { return mode === "sandbox" ? all.slice() : all.filter(id => p.unlocked.includes(id)); }
 
