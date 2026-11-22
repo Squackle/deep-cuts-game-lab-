@@ -2,8 +2,9 @@ import {createEngine,VERSION} from './engine.mjs';
 import {createArt} from './art.mjs';
 import * as progress from './progress.mjs';
 import {createCardArt} from './cardart.mjs';
+import {createFx} from './fx.mjs';
 function boot(createEngine){
- const $=id=>document.getElementById(id), canvas=$("field"), ctx=canvas.getContext("2d"),art=createArt(ctx);
+ const $=id=>document.getElementById(id), canvas=$("field"), ctx=canvas.getContext("2d"),art=createArt(ctx),fx=createFx(ctx);let bannerTimer=0;
  const colors={W:"#e5d4a2",U:"#77b9e6",B:"#ac8ac3",R:"#ed8b65",G:"#9bc889",C:"#c5c9cc"};
  let game=createEngine(1), selected=null, schoolOpen=false, preview=null, heroKey="", speed=1, rallying=false, moving=false, accumulator=0,last=null,lastEvent=-1, selectedCard=null, handKey="", deckCountKey="", contributionKey="";
  const buttons=[], choices={}, statEls={};
@@ -76,7 +77,7 @@ function boot(createEngine){
  function setSpeed(n){speed=n;accumulator=0;if(n)lastSpeed=n;for(const b of document.querySelectorAll("[data-speed]"))b.setAttribute("aria-pressed",String(Number(b.dataset.speed)===n));text($("speedCycle"),(n||lastSpeed)+"×");$("speedCycle").setAttribute("aria-pressed",String(n>1));}
  let lastSpeed=1;$("speedCycle").addEventListener("click",()=>setSpeed(speed===0?lastSpeed:speed>=3?1:speed+1));
  for(const b of document.querySelectorAll("[data-speed]"))b.addEventListener("click",()=>setSpeed(speed===0?lastSpeed:0));
- function restart(mode){game=createEngine(1,mode);seenWaves=0;applyDefaultCommander();selected=null;selectedCard=null;rallying=false;moving=false;schoolOpen=false;preview=null;heroKey="";lastEvent=-1;handKey="";contributionKey="";setSpeed(1);$("padSelect").value="";$("mode").value=mode;closeDialogs();notice("New "+mode+" run. Select a build pad.");renderHud();}
+ function restart(mode){game=createEngine(1,mode);fx.reset();$("waveBanner").hidden=true;seenWaves=0;applyDefaultCommander();selected=null;selectedCard=null;rallying=false;moving=false;schoolOpen=false;preview=null;heroKey="";lastEvent=-1;handKey="";contributionKey="";setSpeed(1);$("padSelect").value="";$("mode").value=mode;closeDialogs();notice("New "+mode+" run. Select a build pad.");renderHud();}
  $("restart").addEventListener("click",()=>restart(game.state.mode));
  $("newMode").addEventListener("click",()=>restart($("mode").value));
  function waveText(n){return game.waveSpec(n).map(x=>{const [k,c]=x.split(":"),d=game.types[k];return (d.boss&&k!=="titan"?"BOSS ":"")+d.name+" × "+c;}).join(" · ");}
@@ -96,6 +97,7 @@ function boot(createEngine){
  function renderHud(){
   const s=game.state,terminal=s.phase==="won"||s.phase==="lost";
   text($("health"),s.health);text($("traitInfo"),traitText(s.phase==="active"?s.wave:s.wave+1)||"No special traits in this wave.");text($("mana"),s.mana.toLocaleString("en-US"));text($("wave"),s.wave+(s.mode==="campaign"?" / 25":" / ∞"));text($("enemies"),s.enemies.length+s.queue.length);text($("time"),Math.floor(s.tick/10)+"s");text($("phase"),s.phase==="won"?"VICTORY":s.phase==="lost"?"DEFEAT":s.phase==="ready"?"PREPARE":"IN COMBAT");
+  const boss=s.enemies.find(e=>e.hp>0&&game.types[e.kind].boss&&e.kind!=="titan");$("bossBar").hidden=!boss;if(boss){text($("bossName"),game.types[boss.kind].name+(boss.phase?(boss.phase==="iron"?" · immune to physical":" · immune to magic"):""));$("bossFill").style.width=(100*boss.hp/boss.maxHp).toFixed(1)+"%";}
   const early=game.canCallEarly(),bonus=game.earlyBonus();
   text($("preview"),terminal?(s.phase==="won"?"The passage is secure. Continue to Endless Siege.":"The fortress has fallen."):s.phase==="active"?"Remaining: "+(s.enemies.length+s.queue.length)+(early?" | Next wave "+(s.wave+1)+" · "+waveText(s.wave+1)+" | Early bonus +"+bonus+" mana ("+game.earlySeconds()+"s remaining)":""):waveText(s.wave+1)+" | Enemy health ×"+game.scale(s.wave+1).toFixed(2));
   const startText=s.phase==="won"?"Continue to endless":s.phase==="lost"?"Run finished":s.phase==="active"?(early?"Call wave "+(s.wave+1)+" early · +"+bonus+" mana":s.mode==="campaign"&&s.wave>=25?"Final wave in progress":"Battlefield at capacity"):"Start wave "+(s.wave+1);
@@ -153,17 +155,21 @@ function boot(createEngine){
   const facing=(progress)=>{const here=game.pointAt(progress),ahead=game.pointAt(progress+12);return ahead.x<here.x?-1:1;};
   for(const t of Object.values(s.towers)){const p=pads[t.id];actors.push({y:p.y,draw:()=>{art.tower(t,p);const silenced=t.silencedUntil>s.tick,warn=t.silenceWarnUntil>s.tick;if(silenced||warn){ctx.strokeStyle=silenced?"#c48df0":"#c48df099";ctx.lineWidth=silenced?4:2;ctx.setLineDash(warn&&!silenced?[4,4]:[]);ctx.beginPath();ctx.ellipse(p.x,p.y,32,20,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}}});}
   for(const u of s.troops){const q=game.pointAt(u.progress),t=s.towers[u.source];if(!t&&u.source!=="cmd")continue;const x=q.x+(u.id%5-2)*5,y=q.y+((u.id%3)-1)*8;actors.push({y,draw:()=>art.unit(u.model||t.kind,x,y+(u.flier?-12:0),{ally:true,hp:u.hp/u.maxHp,ward:u.ward,dir:facing(u.progress),time:clock,id:u.id,animate})});}
-  for(const e of s.enemies){const q=game.pointAt(e.progress),x=q.x,y=q.y,def=game.types[e.kind];actors.push({y,draw:()=>{if(!e.revealed)ctx.globalAlpha=.35;if(def.boss&&e.kind!=="titan"){ctx.fillStyle="#f4e6c1";ctx.font="bold 11px Georgia";ctx.textAlign="center";ctx.fillText(def.name+(e.phase?(e.phase==="iron"?" · ironhide":" · spellward"):""),x,y-58);ctx.textAlign="start";}art.unit(e.kind,x,y,{hp:e.hp/e.maxHp,flying:e.flying,dir:facing(e.progress),time:clock,id:e.id,animate});ctx.globalAlpha=1;if(e.rootUntil>s.tick||e.slowUntil>s.tick){ctx.strokeStyle="#93d0f0aa";ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y+3,14,7,0,0,Math.PI*2);ctx.stroke();}}});}
+  for(const e of s.enemies){const q=game.pointAt(e.progress),x=q.x,y=q.y,def=game.types[e.kind];actors.push({y,draw:()=>{if(!e.revealed)ctx.globalAlpha=.35;if(def.boss&&e.kind!=="titan"){ctx.strokeStyle=e.phase==="iron"?"#c9ccd1":e.phase?"#b58df0":"#e0573f";ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y+4,20,9,0,0,Math.PI*2);ctx.stroke();}art.unit(e.kind,x,y,{hp:e.hp/e.maxHp,flying:e.flying,dir:facing(e.progress),time:clock,id:e.id,animate});ctx.globalAlpha=1;if(e.rootUntil>s.tick||e.slowUntil>s.tick){ctx.strokeStyle="#93d0f0aa";ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y+3,14,7,0,0,Math.PI*2);ctx.stroke();}}});}
   const cm=s.commander;if(cm&&!cm.dead){const q=game.pointAt(cm.progress);actors.push({y:q.y,draw:()=>{ctx.strokeStyle=colors[game.commanders[cm.id].color];ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(q.x,q.y+3,17,7,0,0,Math.PI*2);ctx.stroke();art.unit(cm.id,q.x,q.y,{ally:true,flying:cm.id==="urdragon",hp:cm.hp/cm.maxHp,dir:facing(cm.progress),time:clock,id:0,animate});}});if(cm.target!==cm.progress){const r=game.pointAt(cm.target);ctx.fillStyle=colors[game.commanders[cm.id].color];ctx.fillRect(r.x-1,r.y-14,3,14);}}
   actors.sort((a,b)=>a.y-b.y);for(const actor of actors)actor.draw();
   const liveTargets=new Map(s.enemies.map(e=>[e.id,e]));
   for(const fx of s.projectiles)if(clock<fx.start+fx.duration){const target=liveTargets.get(fx.targetId);if(target&&fx.kind!=="chain"&&fx.kind!=="splash"){const q=game.pointAt(target.progress);art.projectile({...fx,tx:q.x,ty:q.y-(target.flying?21:8)},clock);}else art.projectile(fx,clock);}
+  fx.draw(performance.now());
   for(const fx of s.effects){if(fx.until<=s.tick)continue;const alpha=(fx.until-s.tick)/7;ctx.globalAlpha=Math.min(1,alpha*.6);ctx.strokeStyle=fx.color;ctx.lineWidth=4;ctx.beginPath();ctx.arc(fx.x,fx.y,fx.r*(1.2-alpha*.4),0,Math.PI*2);ctx.stroke();ctx.globalAlpha=alpha*.14;ctx.fillStyle=fx.color;ctx.fill();ctx.globalAlpha=1;}
  }
+ function banner(title,sub,tone){text($("bannerTitle"),title);text($("bannerSub"),sub||"");$("bannerSub").hidden=!sub;const b=$("waveBanner");b.dataset.tone=tone||"wave";b.hidden=false;b.classList.remove("play");void b.offsetWidth;b.classList.add("play");clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>{b.hidden=true;},2300);}
+ function handleCues(cues){for(const c of cues){if(c.type==="banner")banner(c.title,c.sub,c.tone);else if(c.type==="toast")notice(c.text);else if(c.type==="leak"){const el=$("health").parentElement;el.classList.remove("hit");void el.offsetWidth;el.classList.add("hit");}}}
  function frame(now){
   const elapsed=last===null?0:Math.min(250,Math.max(0,now-last));last=now;
   if(speed&&game.state.phase==="active"&&!document.querySelector("dialog[open]")){accumulator+=elapsed*speed;while(accumulator>=game.tickMs&&game.state.phase==="active"){game.step();accumulator-=game.tickMs;}if(game.state.phase!=="active"){accumulator=0;notice(game.state.phase==="won"?"Victory! All 25 Gauntlet waves completed. Continue into endless survival.":game.state.phase==="lost"?"Defeat. Open the menu to restart.":"Wave complete. Prepare your next defense.",game.state.phase!=="ready");}}
   else accumulator=0;
+  handleCues(fx.update(game,now));const sh=fx.offset(now);$("map").style.transform=sh.x||sh.y?"translate("+sh.x.toFixed(1)+"px,"+sh.y.toFixed(1)+"px)":"";
   checkUnlocks();renderField();renderHud();requestAnimationFrame(frame);
  }
  document.addEventListener("visibilitychange",()=>{last=null;accumulator=0;});
@@ -172,6 +178,7 @@ function boot(createEngine){
  async function checkForUpdate(){try{const r=await fetch("/archamancy/engine.mjs",{cache:"no-store"});if(!r.ok)return;const live=(await r.text()).match(/export const VERSION="([^"]+)"/)?.[1];if(live&&live!==VERSION){text($("updateText"),label(live)+" is out. You are playing "+label(VERSION)+".");$("updateBanner").hidden=false;}}catch{}}
  $("updateReload").addEventListener("click",()=>location.reload());
  checkForUpdate();setInterval(()=>{if(document.visibilityState==="visible"&&$("updateBanner").hidden)checkForUpdate();},300000);
+ fx.sync(game);
  applyDefaultCommander();if(!profile.starter){renderCommanders();showDialog("commanderDialog");}
  renderHud();requestAnimationFrame(frame);
 }
