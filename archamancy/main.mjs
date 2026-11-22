@@ -4,6 +4,7 @@ import * as progress from './progress.mjs';
 import {createCardArt} from './cardart.mjs';
 import {createFx} from './fx.mjs';
 import {createSfx} from './sfx.mjs';
+import {hubFor} from './hub.mjs';
 function boot(createEngine){
  const $=id=>document.getElementById(id), canvas=$("field"), ctx=canvas.getContext("2d"),art=createArt(ctx),fx=createFx(ctx);let bannerTimer=0;
  const colors={W:"#e5d4a2",U:"#77b9e6",B:"#ac8ac3",R:"#ed8b65",G:"#9bc889",C:"#c5c9cc"};
@@ -207,7 +208,7 @@ function boot(createEngine){
  $("mainMenu").addEventListener("click",showTitle);$("endMenu").addEventListener("click",showTitle);
  $("endRetry").addEventListener("click",()=>startRun(game.state.mode));
  $("endContinue").addEventListener("click",()=>{if(game.command({type:"continue"})){$("endScreen").hidden=true;notice("Endless continues. Start the next wave when ready.");renderHud();}});
- $("endCopy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(JSON.stringify(game.playtestReport()));text($("endCopy"),"Copied");}catch{$("endScreen").hidden=true;$("statsOpen").click();}});
+ $("endCopy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(JSON.stringify(game.playtestReport()));text($("endCopy"),"Copied ✓");sfx.play("coin");}catch{$("endScreen").hidden=true;$("statsOpen").click();$("copyStats").click();}});
  const toggleSound=()=>{sfx.setSound(!sfx.prefs.sound);if(sfx.prefs.sound){sfx.play("click");if(!$("titleScreen").hidden||game.state.wave>0)sfx.music(true);}renderSound();};
  $("soundToggle").addEventListener("click",toggleSound);$("titleSound").addEventListener("click",toggleSound);
  $("musicToggle").addEventListener("click",()=>{sfx.setMusic(!sfx.prefs.music);sfx.music(sfx.prefs.music);renderSound();});
@@ -219,7 +220,7 @@ function boot(createEngine){
   const rows=[["Wave reached",s.wave],["Enemies defeated",s.stats.kills.toLocaleString("en-US")],["Damage",s.stats.damage.toLocaleString("en-US")],["Mana earned",s.stats.manaEarned.toLocaleString("en-US")],["Time",Math.floor(s.tick/600)+"m "+Math.floor(s.tick/10)%60+"s"],["Best tower",best?game.branchName(best):"—"]];
   if(s.commander)rows.push([game.commanders[s.commander.id].name.split(",")[0],(s.commander.damage+(s.stats.commanderArmyDamage||0)).toLocaleString("en-US")+" damage"]);
   $("endStats").replaceChildren(...rows.map(([k,v])=>{const d=document.createElement("div"),a=document.createElement("span"),b=document.createElement("strong");a.textContent=k;b.textContent=v;d.append(a,b);return d;}));
-  $("endContinue").hidden=!won;text($("endCopy"),"Copy stats");$("endScreen").hidden=false;}
+  $("endContinue").hidden=!won;text($("endCopy"),"Copy battle stats");text($("endKicker"),(campaign?"Gauntlet":"Endless Siege")+" · "+(levelName[s.difficulty]||"Normal"));$("endScreen").hidden=false;}
  // First-run tips, Gauntlet only, until the first wave is cleared or skipped.
  const TIPS="archemancy.tips.v1";let tipsOn=true;try{tipsOn=!storage?.getItem(TIPS);}catch{}
  function endTips(){tipsOn=false;$("tutorial").hidden=true;document.querySelectorAll(".tip-glow").forEach(e=>e.classList.remove("tip-glow"));try{storage?.setItem(TIPS,"1");}catch{}}
@@ -235,6 +236,7 @@ function boot(createEngine){
   else{msg="Some spells target a tower, some the road, some cast at once.";target=$("cardTip").hidden?$("hand"):$("cardTip");}
   text($("tutorialText"),msg);box.hidden=false;if(target&&target!==$("ring"))target.classList.add("tip-glow");
   const r=target.getBoundingClientRect(),bw=box.offsetWidth,bh=box.offsetHeight,near=target===$("ring")?90:12;let top=r.bottom+near;if(top+bh>innerHeight-8)top=r.top-near-bh;top=Math.max(54,Math.min(innerHeight-bh-8,top));const left=Math.max(8,Math.min(innerWidth-bw-8,r.left+r.width/2-bw/2));box.style.top=top+"px";box.style.left=left+"px";}
+ {const hub=hubFor(location.hostname,document.querySelector('meta[name="archemancy-hub"]')?.content);for(const a of document.querySelectorAll(".hub-link")){a.href=hub.href;a.textContent="‹ "+hub.label;}}
  renderTitle();
  document.addEventListener("pointerdown",()=>sfx.unlock(),{once:true});
  renderHud();requestAnimationFrame(frame);
