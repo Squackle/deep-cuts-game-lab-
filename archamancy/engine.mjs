@@ -1,12 +1,17 @@
 // ARCHAMANCY beta simulation: fixed ticks, original data-driven rules, DOM independent.
 // Bump only when the saved run format changes, so saves survive ordinary updates.
 export const SAVE_FORMAT=1;
-export const VERSION="0.1.0-beta.13.11";
+export const VERSION="0.1.0-beta.13.12";
 // Status effects from towers (ticks are 100 ms): Pyre blasts burn, Thornheart poisons (stacking), Arcanum freezes (slow), Hex curses (+35% damage taken).
 export const BURN=10,POISON=30,POISON_STACKS=3;
 // Enemy health multiplier per difficulty. Gauntlet stars: 3 at 18+ fortress left, 2 at 10+, otherwise 1.
 // Boss smash hits every ground troop in reach for 3× the boss attack.
 export const SMASH=3;
+// Below 40% health a boss cracks: any immunity drops to 50% resistance, so a one-sided defence can still finish it.
+export const CRACK_AT=.4,CRACKED_RESIST=50;
+// A boss that leaks costs 3 health, 2 if it is under two-thirds health, 1 if it is under a third.
+export const crackable=e=>e.baseArmor>=100||e.baseResist>=100||e.ability==="phase";
+export const bossLeakCost=e=>e.hp>e.maxHp*2/3?3:e.hp>e.maxHp/3?2:1;
 export const DIFFICULTY={easy:.85,normal:1.1,hard:1.45};
 // Battlefields. A road is one or more segments; a segment with `next` feeds into that segment where it ends.
 // Enemies take turns entering at each entrance. Pads are [x,y,bonus].
@@ -91,9 +96,9 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
   golem:{hp:150,speed:7,armor:100,resist:20,reward:20,attack:16,name:"Ironhide Golem",trait:"Immune to physical damage (Godpiercer still hurts it)."},
   grimgut:{hp:1300,speed:6,armor:25,resist:10,reward:150,attack:30,boss:true,ability:"warcry",name:"Grimgut, Raider King",trait:"Boss. Every 8 s, a war cry hastes nearby enemies for 3 s."},
   matron:{hp:1600,speed:6,armor:10,resist:35,reward:200,attack:30,boss:true,shroud:true,ability:"brood",name:"The Veiled Matron",trait:"Boss. Shrouded, and every 8 s she births two Shade Stalkers (up to 8)."},
-  colossus:{hp:2200,speed:4,armor:100,resist:30,reward:260,attack:60,boss:true,name:"Ironclad Colossus",trait:"Boss. Immune to physical damage. Troops can only hold it for a few seconds."},
-  hierophant:{hp:2400,speed:5,armor:30,resist:100,reward:320,attack:45,boss:true,ability:"silence",name:"Spellbane Hierophant",trait:"Boss. Immune to magic. Every 10 s marks the two nearest towers, then silences them for 4 s."},
-  tyrant:{hp:3200,speed:4,armor:40,resist:40,reward:500,attack:70,boss:true,ability:"phase",name:"The Hollow Tyrant",trait:"Final boss. Every 8 s, after a warning, swaps between physical immunity and magic immunity."}
+  colossus:{hp:1900,speed:4,armor:100,resist:30,reward:260,attack:60,boss:true,name:"Ironclad Colossus",trait:"Boss. Immune to physical damage. Troops can only hold it for a few seconds. Cracks below 40% health: immunity drops to 50% resistance."},
+  hierophant:{hp:2050,speed:5,armor:30,resist:100,reward:320,attack:45,boss:true,ability:"silence",name:"Spellbane Hierophant",trait:"Boss. Immune to magic. Every 10 s marks the two nearest towers, then silences them for 4 s. Cracks below 40% health: immunity drops to 50% resistance."},
+  tyrant:{hp:3200,speed:4,armor:40,resist:40,reward:500,attack:70,boss:true,ability:"phase",name:"The Hollow Tyrant",trait:"Final boss. Every 8 s, after a warning, swaps between physical immunity and magic immunity. Cracks below 40% health: immunity drops to 50% resistance."}
  };
  for(const [k,t] of Object.entries(types))t.name=t.name||({raider:"Raider",runner:"Runner",armored:"Armored Brute",wing:"Carrion Wing",mage:"Hex Mage",regen:"Mossback Troll",titan:"Titan"})[k];
  // Hand-designed Gauntlet: traits arrive gradually, a named boss closes every fifth wave.
@@ -329,7 +334,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
   if(e.ability==="brood"&&state.tick>=e.abilityAt&&(e.brood||0)<8){e.abilityAt=state.tick+80;e.brood=(e.brood||0)+2;if(state.queue.length+state.enemies.length<2998)for(let i=0;i<2;i++){spawnEnemy("stalker",state.wave);const s2=state.enemies.at(-1);s2.progress=Math.max(segOf(e.progress).off,e.progress-10-i*8);}emit("bossAbility",{boss:e.kind,ability:"brood"});}
   if(e.ability==="silence"){if(!e.silenceAt&&state.tick>=e.abilityAt){e.silenceTargets=Object.values(state.towers).filter(t=>d2(pads[t.id],q)<=260*260).sort((a,b)=>d2(pads[a.id],q)-d2(pads[b.id],q)||a.id-b.id).slice(0,2).map(t=>t.uid);for(const t of Object.values(state.towers))if(e.silenceTargets.includes(t.uid)){t.silenceWarnUntil=state.tick+20;effect(pads[t.id].x,pads[t.id].y,"#c48df0",34);}e.silenceAt=state.tick+20;emit("bossAbility",{boss:e.kind,ability:"silenceWarning"});}
    if(e.silenceAt&&state.tick>=e.silenceAt){for(const t of Object.values(state.towers))if(e.silenceTargets.includes(t.uid)){t.silencedUntil=state.tick+40;stats.silenced=(stats.silenced||0)+1;}e.silenceAt=0;e.abilityAt=state.tick+100;emit("bossAbility",{boss:e.kind,ability:"silence"});}}
-  if(e.ability==="phase"){if(!e.phaseAt)e.phaseAt=state.tick+80;if(state.tick===e.phaseAt-15){effect(q.x,q.y,e.phase==="iron"?"#76bdf1":"#d9d3c3",70);emit("bossAbility",{boss:e.kind,ability:"phaseWarning"});}if(state.tick>=e.phaseAt){e.phase=e.phase==="iron"?"spell":"iron";e.phaseAt=state.tick+80;emit("bossAbility",{boss:e.kind,ability:"phase",phase:e.phase});}e.armor=e.phase==="iron"?100:e.baseArmor;e.resist=e.phase==="spell"?100:e.baseResist;}
+  if(e.ability==="phase"){if(!e.phaseAt)e.phaseAt=state.tick+80;if(state.tick===e.phaseAt-15){effect(q.x,q.y,e.phase==="iron"?"#76bdf1":"#d9d3c3",70);emit("bossAbility",{boss:e.kind,ability:"phaseWarning"});}if(state.tick>=e.phaseAt){e.phase=e.phase==="iron"?"spell":"iron";e.phaseAt=state.tick+80;emit("bossAbility",{boss:e.kind,ability:"phase",phase:e.phase});}e.armor=e.phase==="iron"?100:e.baseArmor;e.resist=e.phase==="spell"?100:e.baseResist;if(e.cracked){e.armor=Math.min(e.armor,CRACKED_RESIST);e.resist=Math.min(e.resist,CRACKED_RESIST);}}
  }
  for(const t of Object.values(state.towers)){
  const d=roster[t.kind],p=pads[t.id];if(state.tick<t.next)continue;if(t.silencedUntil>state.tick){t.next=t.silencedUntil;continue;}
@@ -366,8 +371,8 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
   else{const near=state.enemies.filter(e=>e.hp>0&&!e.flying&&Math.abs(e.progress-cm.progress)<=30).sort(firstOrder),free=near.find(e=>!blocked.has(e.id)),e=free||near[0];
   if(e){if(free&&holdable(e))blocked.add(e.id);if(state.tick>=cm.next){const before=stats.commanderDamage;shot("melee",here,enemyPos(e));hurt(e,power,false,null,false,"commander");if(e.hp===0)cm.kills++;cm.damage+=stats.commanderDamage-before;cm.next=state.tick+8;}
    if(free&&e.hp>0&&state.tick>=e.nextAttack){if(e.boss)smash(e);else{cm.hp=Math.max(0,cm.hp-e.attack);e.nextAttack=state.tick+10;}if(!cm.hp&&!cm.dead){cm.dead=true;cm.deaths++;logPush("commanderDeaths",{wave:state.wave,tick:state.tick,by:e.kind,at:Math.round(cm.progress),maxHp:cm.maxHp},40);cm.respawnAt=state.tick+commanderRespawn;emit("commanderFall",{id:cm.id});}}}}}
- for(const e of state.enemies){if(e.hp<=0)continue;if(!blocked.has(e.id)&&(e.rootUntil<=state.tick||e.boss)){const base=e.hasteUntil>state.tick?Math.round(e.speed*1.3):e.speed,move=e.slowUntil>state.tick?Math.max(1,Math.floor(base*(e.boss?.75:.5))):base;e.progress+=move;const s=segOf(e.progress);if(s.next!=null&&e.progress>s.off+s.len)e.progress=segs[s.next].off+(e.progress-s.off-s.len);}if(e.progress>=distance){state.health=Math.max(0,state.health-(e.boss?3:1));stats.leaks++;logPush("leakLog",{wave:e.wave,kind:e.kind,tick:state.tick,hpLeft:Math.round(100*e.hp/e.maxHp),slowed:e.slowUntil>state.tick},60);state.enemyLeaks[e.kind]=(state.enemyLeaks[e.kind]||0)+1;e.escaped=true;emit("leak",{id:e.id});}}
- for(const e of state.enemies){if(!e.boss)continue;if(!e.bossRec){e.bossRec={kind:e.kind,wave:e.wave,spawnTick:state.tick,maxHp:e.maxHp,stallTicks:0,stuckAt:null};logPush("bossLog",e.bossRec,30);e.lastProg=e.progress;}const r=e.bossRec;if(e.hp<=0||e.escaped){if(!r.outcome){r.outcome=e.escaped?"leaked":"killed";r.endTick=state.tick;r.seconds=Math.round((state.tick-r.spawnTick)/10);r.hpLeft=Math.round(100*Math.max(0,e.hp)/e.maxHp);}continue;}if(e.progress===e.lastProg){r.stallTicks++;if(r.stallTicks%50===0)r.stuckAt=Math.round(e.progress);}e.lastProg=e.progress;}
+ for(const e of state.enemies){if(e.hp<=0)continue;if(!blocked.has(e.id)&&(e.rootUntil<=state.tick||e.boss)){const base=e.hasteUntil>state.tick?Math.round(e.speed*1.3):e.speed,move=e.slowUntil>state.tick?Math.max(1,Math.floor(base*(e.boss?.75:.5))):base;e.progress+=move;const s=segOf(e.progress);if(s.next!=null&&e.progress>s.off+s.len)e.progress=segs[s.next].off+(e.progress-s.off-s.len);}if(e.progress>=distance){state.health=Math.max(0,state.health-(e.boss?bossLeakCost(e):1));stats.leaks++;logPush("leakLog",{wave:e.wave,kind:e.kind,tick:state.tick,hpLeft:Math.round(100*e.hp/e.maxHp),slowed:e.slowUntil>state.tick},60);state.enemyLeaks[e.kind]=(state.enemyLeaks[e.kind]||0)+1;e.escaped=true;emit("leak",{id:e.id,cost:e.boss?bossLeakCost(e):1});}}
+ for(const e of state.enemies){if(!e.boss)continue;if(!e.bossRec){e.bossRec={kind:e.kind,wave:e.wave,spawnTick:state.tick,maxHp:e.maxHp,stallTicks:0,stuckAt:null};logPush("bossLog",e.bossRec,30);e.lastProg=e.progress;}const r=e.bossRec;if(!e.cracked&&crackable(e)&&e.hp>0&&e.hp<=e.maxHp*CRACK_AT){e.cracked=true;e.armor=Math.min(e.armor,CRACKED_RESIST);e.resist=Math.min(e.resist,CRACKED_RESIST);stats.bossCracks=(stats.bossCracks||0)+1;r.crackedTick=state.tick;emit("bossAbility",{boss:e.kind,ability:"cracked"});}if(e.hp<=0||e.escaped){if(!r.outcome){r.outcome=e.escaped?"leaked":"killed";r.endTick=state.tick;r.seconds=Math.round((state.tick-r.spawnTick)/10);r.hpLeft=Math.round(100*Math.max(0,e.hp)/e.maxHp);}continue;}if(e.progress===e.lastProg){r.stallTicks++;if(r.stallTicks%50===0)r.stuckAt=Math.round(e.progress);}e.lastProg=e.progress;}
  state.troops=state.troops.filter(u=>u.hp>0);state.enemies=state.enemies.filter(e=>e.hp>0&&!e.escaped);
  if(state.health<=0){if(state.mode==="sandbox"){state.health=20;}else{state.phase="lost";emit("gameOver",{won:false});return;}}
  // Each wave is recorded the moment its own enemies are gone, so stacked early calls keep separate results.
