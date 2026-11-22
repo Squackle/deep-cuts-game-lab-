@@ -13,6 +13,13 @@ export function createSfx(storage=null){
   build:()=>{noise(.18,{vol:.35,freq:300});tone(140,.22,{type:"triangle",vol:.3,slide:.6});},
   upgrade:()=>{[523,659,784].forEach((f,i)=>tone(f,.25,{type:"triangle",vol:.16,delay:i*.07}));},
   smash:()=>{noise(.22,{vol:.3,freq:160});tone(70,.25,{type:"sine",vol:.35,slide:.6});},
+  shot_arcane:()=>tone(880,.12,{type:"sine",vol:.05,slide:1.6}),
+  shot_strike:()=>{tone(520,.08,{type:"triangle",vol:.06,slide:.5});noise(.04,{vol:.05,freq:3000,q:3});},
+  shot_splash:()=>{noise(.25,{vol:.14,freq:220});tone(90,.2,{type:"sine",vol:.14,slide:.5});},
+  shot_chain:()=>{noise(.12,{vol:.08,freq:4000,q:.6});tone(1400,.08,{type:"square",vol:.025,slide:.6});},
+  shot_hex:()=>tone(180,.25,{type:"sawtooth",vol:.035,slide:1.4}),
+  shot_root:()=>{noise(.15,{vol:.07,freq:500,q:4});},
+  shot_mirror:()=>{tone(1320,.15,{type:"sine",vol:.04});tone(1760,.15,{type:"sine",vol:.03,delay:.04});},
   sell:()=>{tone(880,.12,{type:"square",vol:.06});tone(1175,.16,{type:"square",vol:.06,delay:.06});},
   hit:()=>noise(.05,{vol:.06,freq:2400,q:2}),
   kill:()=>{noise(.09,{vol:.12,freq:1200});tone(1320,.08,{type:"triangle",vol:.05});},
@@ -27,7 +34,7 @@ export function createSfx(storage=null){
   defeat:()=>{[392,349,311,262].forEach((f,i)=>tone(f,.55,{type:"sawtooth",vol:.1,delay:i*.22}));},
   star:()=>tone(1760,.25,{type:"triangle",vol:.12})
  };
- const gaps={smash:120,hit:45,kill:60,coin:70,leak:150,ability:300};
+ const gaps={shot_arcane:90,shot_strike:80,shot_splash:140,shot_chain:110,shot_hex:160,shot_root:160,shot_mirror:120,smash:120,hit:45,kill:60,coin:70,leak:150,ability:300};
  function play(name){if(!prefs.sound||!ensure())return;if(ac.state==="suspended")ac.resume();const now=performance.now();if(gaps[name]&&now-(last[name]||0)<gaps[name])return;last[name]=now;sounds[name]?.();}
  // A slow, quiet pentatonic loop over a low drone.
  const scale=[220,247,294,330,392,440,494,587];
