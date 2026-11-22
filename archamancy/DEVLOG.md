@@ -200,3 +200,12 @@ Owner direction: a big polish update, with a UI as clean and simple as the best 
 - Freeze: the Arcanum slow is now shown as frost, with a pale tint and ice crystals.
 - Curse: Hex Sanctum curses (and Deathmark) show a purple sigil under the enemy; cursed enemies take 35% more damage.
 - Balance: benchmark Gauntlet run now ends with 8 health instead of 9.
+
+## 2026-11-22 — Beta 12.6 balance and wave records
+
+From Logan's Beta 12.4 Easy run (3 stars, 0 leaks, 7,328 mana left, waves 3–15 and 16–25 called early and stacked).
+- Early calls: at most three waves can be on the road at once. Logan stacked 13 at once, which let the army fight one long combined wave.
+- Soul Foundry income now has a per-wave budget (50/110/200/320 by tier, more with Soul Harvester), like Mana Groves. Goblin and Legion death loops beside a foundry made 12,862 mana, a third of all income.
+- Difficulty: enemy health Easy 0.85× (was 0.7×), Normal 1.1× (was 1×), Hard 1.45× (was 1.35×).
+- Wave history: each wave is now recorded when its own enemies are gone. Stacked waves used to be recorded together at the end, so their entries were identical. Enemies now carry their wave number.
+- Benchmark (Normal) ends with 9 health.
