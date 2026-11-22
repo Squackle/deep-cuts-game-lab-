@@ -328,3 +328,7 @@ The season picker is on: Summer, Autumn or Winter for The Hollow Road and The Co
 
 Third map, built for winter. A serpentine road whose middle leg crosses a frozen lake. Ground enemies move at 60% speed on the ice (`ICE_SLOW`, `map.ice` rects); fliers ignore it and have 115% health here. Winter only (`map.seasons`), opens at level 6, 21 pads, three ruins. Benchmark bot (3 seeds, Normal): wins with 7–12 health, between The Hollow Road (9–16) and The Confluence (0–6).
 The map stays off the title screen (`MAP_LOOKS` in main.mjs) until the art thread paints its frozen lake.
+
+## 2026-11-22 — Beta 13.16 Frostfen Crossing opens
+
+Frostfen Crossing is on the title screen (level 6), with its frozen lake and packed-snow causeway painted by the art thread.
