@@ -141,7 +141,7 @@ export function paintTerrain(a,game){
 
  // 6. Entrance arrows and place names.
  for(const [ex,ey] of entrances){for(const dx of [14,30]){a.fillStyle=INK;a.globalAlpha=.5;a.beginPath();a.moveTo(ex+dx,ey-11);a.lineTo(ex+dx+11,ey);a.lineTo(ex+dx,ey+11);a.closePath();a.fill();a.fillStyle="#fff2cf";a.globalAlpha=.85;a.beginPath();a.moveTo(ex+dx+1,ey-8);a.lineTo(ex+dx+9,ey);a.lineTo(ex+dx+1,ey+8);a.closePath();a.fill();}a.globalAlpha=1;}
- a.font="bold 13px Georgia";a.lineJoin="round";for(const [t,x,y] of labels){a.strokeStyle="#1b2a1fcc";a.lineWidth=4;a.strokeText(t,x,y);a.fillStyle="#fbefcb";a.fillText(t,x,y);}
+ // Place names are no longer painted on the battlefield (owner request, 2026-11-22); map.labels stays as data.
 
  // 7. Light: warm key light from the top-left, cool shade bottom-right, gentle vignette.
  const key=a.createRadialGradient(W*.18,H*.05,0,W*.18,H*.05,W*.85);key.addColorStop(0,"#ffe9b030");key.addColorStop(1,"#ffe9b000");a.fillStyle=key;a.fillRect(0,0,W,H);
