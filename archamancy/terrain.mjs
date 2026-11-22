@@ -32,6 +32,35 @@ export function paintTerrain(a,game){
  // Bare earth patches.
  for(let i=0;i<14;i++){const x=random()*W,y=random()*H;if(clear(x,y,60,50))continue;const r=10+random()*18;ell(x,y,r*1.4,r*.6,"#7c7048aa",random()*.4);ell(x-2,y-1,r*1.1,r*.42,"#93865a88",random()*.4);}
 
+ // 1b. Creek: carved into the ground before the road is laid, entering and leaving off the map edges.
+ // The road and plank bridges are painted over it afterwards, so it reads as passing under the road.
+ const poly=(pts,fill,stroke=INK,lw=1.6)=>{a.beginPath();pts.forEach(([x,y],i)=>i?a.lineTo(x,y):a.moveTo(x,y));a.closePath();a.fillStyle=fill;a.fill();if(stroke){a.strokeStyle=stroke;a.lineWidth=lw;a.stroke();}};
+ const rect=(x,y,w,h,fill)=>{a.fillStyle=INK;a.fillRect(x-1,y-1,w+2,h+2);a.fillStyle=fill;a.fillRect(x,y,w,h);};
+ let creek=null;
+ {const keepAt=keep||{x:W,y:H*.8};
+  for(let cx=90;cx<=W-90;cx+=10){const pts=[];for(let y=-30;y<=H+30;y+=5){const w=Math.sin(y*.028+cx*.37)*13+Math.sin(y*.083+cx)*4;pts.push([cx+w,y]);}
+   let minPad=1e9,ok=true;for(const [x,y] of pts){minPad=Math.min(minPad,padDist(x,y));if(Math.hypot(x-keepAt.x,y-keepAt.y)<90)ok=false;}if(!ok||minPad<46)continue;
+   const runs=[];let run=[];pts.forEach(([x,y],k)=>{if(roadDist(x,y)<44)run.push(k);else if(run.length){runs.push(run);run=[];}});if(run.length)runs.push(run);
+   const bridges=[];for(const r of runs){let bk=r[0],bd=1e9;for(const k of r){const d=roadDist(pts[k][0],pts[k][1]);if(d<bd){bd=d;bk=k;}}if(bd>6){ok=false;break;}
+    const n=game.nearestPath(pts[bk][0],pts[bk][1]),c=game.pointAt(n),p1=game.pointAt(n-46),p2=game.pointAt(n+46);
+    if(Math.abs(p2.y-p1.y)>3||Math.abs(p2.x-p1.x)<80){ok=false;break;}bridges.push({x:c.x,y:c.y,ux:Math.sign(p2.x-p1.x)||1});}
+   if(!ok||bridges.length>3)continue;const score=bridges.length*100-Math.min(minPad,120)*.3;if(!creek||score<creek.score)creek={score,pts,bridges};}
+  // No clean crossing (too many roads in the way): a spring-fed brook instead, running from a pond off the nearest map edge.
+  if(!creek){let best=null;for(let cx=60;cx<=W-60;cx+=10)for(const dir of [1,-1]){const pts=[];let len=0;for(let k=0;k<70;k++){const y=dir>0?-30+k*5:H+30-k*5,x=cx+Math.sin(y*.028+cx*.37)*13+Math.sin(y*.083+cx)*4;if(roadDist(x,y)<46||padDist(x,y)<46||Math.hypot(x-keepAt.x,y-keepAt.y)<90)break;pts.push([x,y]);len=k;}
+    if(len>=11&&(!best||len>best.len)){const end=pts.at(-1);if(roadDist(end[0],end[1])>48&&padDist(end[0],end[1])>60)best={len,pts};}}
+   if(best){const pts=best.pts.slice(0,Math.min(best.pts.length,40)),[sx,sy]=pts.at(-1);creek={pts,bridges:[],spring:{x:sx,y:sy}};}}}
+ const creekDist=(x,y)=>creek?Math.min(...creek.pts.map(([px,py])=>Math.hypot(px-x,py-y))):1e9;
+ if(creek){const pts=creek.pts,line=(w,c,dx=0,dy=0,alpha=1)=>{a.globalAlpha=alpha;a.strokeStyle=c;a.lineWidth=w;a.lineJoin="round";a.lineCap="round";a.beginPath();pts.forEach(([x,y],k)=>k?a.lineTo(x+dx,y+dy):a.moveTo(x+dx,y+dy));a.stroke();a.globalAlpha=1;};
+  line(40,"#2f5a33",2,2,.55);line(33,"#4b6b3a");line(29,"#7a6a46");line(25,"#5a4c34");line(21,"#2c5f74");line(16,"#3b86a0");line(9,"#58a7c0");line(2,"#cdeef5",-3,-1,.55);
+  if(creek.spring){const {x,y}=creek.spring;ell(x+2,y+3,30,17,"#2f5a3388");ell(x,y,28,16,"#7a6a46");ell(x,y,25,14,"#2c5f74");ell(x,y,21,11,"#3b86a0");ell(x-4,y-3,13,6,"#58a7c0");occ.push({x,y,r:34});
+   for(let i=0;i<7;i++){const an=i/7*Math.PI*2,rx=x+Math.cos(an)*26,ry=y+Math.sin(an)*15,r=2.4+random()*2;ell(rx,ry,r+.6,r*.75+.4,INK);ell(rx,ry,r,r*.75,"#9a9a88");ell(rx-r*.3,ry-r*.3,r*.45,r*.3,"#cfd2c0");}
+   living.push({type:"duck",x,y,r:20});}
+  // Shore stones and reeds, lit from the top-left, so the banks look carved rather than pasted on.
+  pts.forEach(([x,y],k)=>{if(roadDist(x,y)<46)return;if(k%3===0)occ.push({x,y,r:20});
+   for(const sd of [-1,1]){if(random()<.42){const sx=x+sd*(12+random()*3),sy=y+(random()-.5)*4,r=1.8+random()*2.4;ell(sx+.8,sy+1,r+.6,r*.7,"#1d2a1e88");ell(sx,sy,r+.6,r*.75+.4,INK);ell(sx,sy,r,r*.75,random()<.5?"#9a9a88":"#8a8c7a");ell(sx-r*.3,sy-r*.3,r*.45,r*.3,"#cfd2c0");}
+    if(random()<.12){const rx=x+sd*15;a.strokeStyle="#3f6b33";a.lineWidth=1.5;for(let j=-1;j<=1;j++){a.beginPath();a.moveTo(rx+j*2,y+2);a.lineTo(rx+j*3,y-9-random()*5);a.stroke();}ell(rx,y-11,1.3,2.8,"#6b4a2c");}}
+   if(k%4===0)living.push({type:"glint",x:x+(random()-.5)*6,y,ph:random()*6});});}
+
  // 2. Road: ambient occlusion on the grass, a worn earth edge, sandy bed and a lighter worn centre.
  a.lineJoin="round";a.lineCap="round";roadPath();
  for(const [w,c] of [[78,"#1e3a2224"],[70,"#1e3a2230"],[62,"#2a3b2266"]]){a.strokeStyle=c;a.lineWidth=w;a.stroke();}
@@ -46,10 +75,18 @@ export function paintTerrain(a,game){
  for(let i=0;i<620;i++){const [s0,s1]=spans[i%spans.length],p=game.pointAt(s0+random()*(s1-s0)),x=p.x+(random()-.5)*36,y=p.y+(random()-.5)*36;if(roadDist(x,y)>19)continue;const r=1+random()*2.4;ell(x+.8,y+.8,r,r*.7,"#8a6f4888");ell(x,y,r,r*.7,random()<.5?"#e3cfa3":"#bfa57a");}
  // Edging stones along both sides with a lit top and a contact shadow.
  for(const [s0,s1] of spans)for(let n=s0+6;n<s1;n+=12){const p=game.pointAt(n),q=game.pointAt(n+1),dx=q.x-p.x,dy=q.y-p.y,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;
-  for(const side of [-1,1]){const x=p.x+nx*24*side+(random()-.5)*2,y=p.y+ny*24*side+(random()-.5)*2,r=3.4+random()*1.4;if(roadDist(x,y)<21)continue;ell(x+1.2,y+1.6,r+1,r*.75,"#2b2a1fbb");ell(x,y,r+.8,r*.72+.6,INK);ell(x,y,r,r*.72,random()<.5?"#a59a7c":"#968c6f");ell(x-r*.25,y-r*.25,r*.5,r*.3,"#cfc6a6");}}
+  for(const side of [-1,1]){const x=p.x+nx*24*side+(random()-.5)*2,y=p.y+ny*24*side+(random()-.5)*2,r=3.4+random()*1.4;if(roadDist(x,y)<21||creekDist(x,y)<20)continue;ell(x+1.2,y+1.6,r+1,r*.75,"#2b2a1fbb");ell(x,y,r+.8,r*.72+.6,INK);ell(x,y,r,r*.72,random()<.5?"#a59a7c":"#968c6f");ell(x-r*.25,y-r*.25,r*.5,r*.3,"#cfc6a6");}}
  // Grass tufts spilling over the road edge soften the hard line.
  for(let i=0;i<420;i++){const [s0,s1]=spans[i%spans.length],n=s0+random()*(s1-s0),p=game.pointAt(n),q=game.pointAt(n+1),dx=q.x-p.x,dy=q.y-p.y,l=Math.hypot(dx,dy)||1,side=random()<.5?-1:1,d=27+random()*5,x=p.x-dy/l*d*side,y=p.y+dx/l*d*side;
-  if(padDist(x,y)<30||roadDist(x,y)<25)continue;tuft(x,y,4+random()*3);}
+  if(padDist(x,y)<30||roadDist(x,y)<25||creekDist(x,y)<18)continue;tuft(x,y,4+random()*3);}
+
+ // Plank bridges where the creek passes under the road: stone piers at each bank, deck and rails on top.
+ if(creek)for(const b of creek.bridges){a.save();a.translate(b.x,b.y);
+  for(const sd of [-1,1]){a.fillStyle="#13241a66";a.fillRect(-27,sd*34-3,54,6);}
+  for(const ex of [-25,25]){rect(ex-4,-33,8,66,"#8f8a78");a.fillStyle="#00000030";for(let yy=-28;yy<30;yy+=9)a.fillRect(ex-4,yy,8,1.2);}
+  rect(-21,-31,42,62,"#8a6440");for(let x=-20;x<20;x+=7){a.fillStyle=(x+20)%14?"#a87c4f":"#9a7046";a.fillRect(x,-30,6,60);a.fillStyle="#00000030";a.fillRect(x+6,-30,1,60);}
+  for(const sd of [-1,1]){rect(-25,sd*31-2,50,4,"#6b4a2c");for(const x of [-25,-8,8,25])rect(x-2,sd*31-6,4,10,"#5a3e25");}
+  a.restore();}
 
  // 3. Build pads: a stone foundation with a bevel (lit top-left rim, shaded bottom-right).
  for(const p of pads){
@@ -62,23 +99,7 @@ export function paintTerrain(a,game){
   if(p.bonus){a.strokeStyle=p.bonus==="spring"?"#a8f0e8":"#f6d98a";a.lineWidth=2;a.setLineDash([6,5]);a.beginPath();a.ellipse(p.x,p.y+1,38,24,0,0,Math.PI*2);a.stroke();a.setLineDash([]);}
  }
 
- // 3b. Water: a creek that crosses the road under a plank bridge, and ponds with reeds and lily pads.
- const poly=(pts,fill,stroke=INK,lw=1.6)=>{a.beginPath();pts.forEach(([x,y],i)=>i?a.lineTo(x,y):a.moveTo(x,y));a.closePath();a.fillStyle=fill;a.fill();if(stroke){a.strokeStyle=stroke;a.lineWidth=lw;a.stroke();}};
- const rect=(x,y,w,h,fill)=>{a.fillStyle=INK;a.fillRect(x-1,y-1,w+2,h+2);a.fillStyle=fill;a.fillRect(x,y,w,h);};
- {let best=null;for(const [s0,s1] of spans)for(let n=s0+60;n<s1-60;n+=15){const p=game.pointAt(n),q=game.pointAt(n+2),dx=q.x-p.x,dy=q.y-p.y,l=Math.hypot(dx,dy)||1,nx=-dy/l,ny=dx/l;
-   let room=0;for(const side of [-1,1])for(let d=40;d<=150;d+=10){const x=p.x+nx*d*side,y=p.y+ny*d*side;if(x<0||x>W||y<0||y>H)break;if(padDist(x,y)<44||(d>50&&roadDist(x,y)<36))break;room++;}
-   if(!best||room>best.room)best={room,p,nx,ny,ux:dx/l,uy:dy/l};}
-  if(best&&best.room>=12){const {p,nx,ny,ux,uy}=best,pts=[];for(let d=-170;d<=170;d+=6){const w=Math.sin(d*.045)*9+Math.sin(d*.11)*3;pts.push([p.x+nx*d+ux*w,p.y+ny*d+uy*w]);}
-   const vis=pts.map(([x,y])=>roadDist(x,y)>27&&padDist(x,y)>38&&x>-20&&x<W+20&&y>-20&&y<H+20);
-   const stroke=(w,c)=>{a.strokeStyle=c;a.lineWidth=w;a.lineCap="round";a.beginPath();let on=false;pts.forEach(([x,y],k)=>{if(!vis[k]){on=false;return;}on?a.lineTo(x,y):a.moveTo(x,y);on=true;});a.stroke();};
-   stroke(26,"#3f5a3a");stroke(22,"#6e6247");stroke(17,"#3f86a0");stroke(10,"#5aa9c2");stroke(3,"#a9e0ee80");
-   pts.forEach(([x,y],k)=>{if(vis[k]&&k%3===0)living.push({type:"glint",x:x+(random()-.5)*6,y:y+(random()-.5)*4,ph:random()*6});if(vis[k]&&k%9===4)occ.push({x,y,r:14});});
-   // Plank bridge across the road where the creek passes under it.
-   a.save();a.translate(p.x,p.y);a.rotate(Math.atan2(uy,ux));
-   for(const sd of [-1,1]){a.fillStyle="#13241a55";a.fillRect(-24,sd*33+2,48,5);}
-   rect(-21,-31,42,62,"#8a6440");for(let x=-20;x<20;x+=7){a.fillStyle=(x+20)%14?"#a87c4f":"#9a7046";a.fillRect(x,-30,6,60);a.fillStyle="#00000030";a.fillRect(x+6,-30,1,60);}
-   for(const sd of [-1,1]){rect(-23,sd*31-2,46,4,"#6b4a2c");for(const x of [-21,-7,7,21])rect(x-2,sd*31-5,4,8,"#5a3e25");}
-   a.restore();}}
+ // 3b. Water: ponds with reeds and lily pads (the creek is carved in before the road, see 1b).
  for(let k=0;k<3;k++){const r=20+random()*12;let spot=null;for(let t=0;t<300&&!spot;t++){const x=40+random()*(W-80),y=40+random()*(H-80);if(roadDist(x,y)>r+40&&padDist(x,y)>r+36&&!taken(x,y,r+10))spot=[x,y];}if(!spot)continue;const [x,y]=spot;occ.push({x,y,r:r+6});
   ell(x,y+2,r*1.25+3,r*.7+3,"#3f5a3a");ell(x,y,r*1.25+2,r*.7+2,"#6e6247");ell(x,y,r*1.25,r*.7,"#3f86a0");ell(x-r*.15,y-r*.12,r*.95,r*.48,"#5aa9c2");
   for(let i=0;i<3;i++){const lx=x+(random()-.5)*r*1.4,ly=y+(random()-.3)*r*.5;ell(lx,ly,4,2.4,"#4f8f3f");ell(lx+1,ly,1.2,1.2,"#f3b6d0");}
@@ -142,7 +163,9 @@ export function paintTerrain(a,game){
   for(const [dx,dy,rr] of blobs)ell(x+dx-rr*.22,cy+dy-rr*.25,rr*.62,rr*.55,"#4f8c45");ell(x-r*.35,cy-r*.45,r*.32,r*.24,"#78b35b");}
  function shadow(x,y,rx,ry){ell(x+rx*.25,y+2,rx,ry,"#13241a5c");}
  function roofTri(x,y,w,h,c,dark){poly([[x-w/2-4,y],[x,y-h],[x+w/2+4,y]],c);poly([[x,y-h],[x+w/2+4,y],[x+3,y]],dark,null);}
- function landmark(L){const {kind,x,y,r}=L;
+ // Every landmark sits in a worn earth patch fringed with grass so it belongs to the ground.
+ function ground(x,y,r){ell(x,y+2,r*1.15,r*.36,"#6f6644aa");ell(x-r*.1,y+1,r*.8,r*.24,"#82784e88");for(let k=0;k<6;k++){const an=Math.PI*(k/5),gx=x+Math.cos(an)*r*1.15*(k%2?1:-1)*.95,gy=y+2+Math.sin(an)*r*.3;tuft(gx,gy,3+random()*3);}}
+ function landmark(L){const {kind,x,y,r}=L;if(!["banner","sign","fence","stump"].includes(kind))ground(x,y,r);
   if(kind==="cottage"){shadow(x,y+2,r*1.15,r*.36);rect(x-r*.75,y-r*.9,r*1.5,r*.9,"#d9c9a2");a.fillStyle="#00000026";a.fillRect(x+r*.15,y-r*.9,r*.6,r*.9);
    for(const bx of [-.6,0,.6]){a.fillStyle="#6b4a2c";a.fillRect(x+bx*r-1.5,y-r*.9,3,r*.9);}
    rect(x-r*.18,y-r*.48,r*.36,r*.48,"#5a3e25");rect(x+r*.32,y-r*.66,r*.26,r*.22,"#ffd77a");
