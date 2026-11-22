@@ -3,6 +3,8 @@ import {createArt} from './art.mjs';
 import * as progress from './progress.mjs';
 import {createCardArt} from './cardart.mjs';
 import {createFx} from './fx.mjs';
+import {createSfx} from './sfx.mjs';
+import {hubFor} from './hub.mjs';
 function boot(createEngine){
  const $=id=>document.getElementById(id), canvas=$("field"), ctx=canvas.getContext("2d"),art=createArt(ctx),fx=createFx(ctx);let bannerTimer=0;
  const colors={W:"#e5d4a2",U:"#77b9e6",B:"#ac8ac3",R:"#ed8b65",G:"#9bc889",C:"#c5c9cc"};
@@ -10,6 +12,8 @@ function boot(createEngine){
  const buttons=[], choices={}, statEls={};
  const labels={returns:"Troops returned",sacrifices:"Troops sacrificed",damage:"Damage dealt",towerDamage:"Direct tower damage",troopDamage:"Troop damage",deathDamage:"Death-trigger damage",spellDamage:"Spell damage",manaEarned:"Mana earned",farmMana:"Farm income",killMana:"Kill income",waveMana:"Wave rewards",earlyMana:"Early-call mana",earlyCalls:"Early calls",spent:"Mana spent",refunds:"Resale refunds",kills:"Enemies defeated",leaks:"Enemies escaped",summoned:"Troops summoned",fallen:"Troops fallen",casts:"Spells cast",draws:"Cards drawn",triggers:"Combo triggers",healing:"Healing restored",control:"Control applications",soulMana:"Soul income",spellMana:"Spell income",sandboxMana:"Sandbox grants",commanderMana:"Commander mana",commanderDamage:"Commander damage",commanderArmyDamage:"Commander token damage"};
  const text=(el,value)=>{const s=String(value);if(el.textContent!==s)el.textContent=s;};
+ // Drawn icons (SVG) so they look the same in every font.
+ const ICONS={pause:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg>',play:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10-6.5a1 1 0 0 0 0-1.7l-10-6.6A1 1 0 0 0 8 5.5z"/></svg>',sound:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M15 9a4.2 4.2 0 0 1 0 6M17.6 6.6a7.6 7.6 0 0 1 0 10.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',mute:'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M15.5 9.5l5 5M20.5 9.5l-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'};
  let toastTimer=0;
  const notice=(s,hold=false)=>{const el=$("notice");text(el,s);el.title=s;el.classList.add("show");clearTimeout(toastTimer);if(!hold)toastTimer=setTimeout(()=>el.classList.remove("show"),2600);};
  function showDialog(id){for(const d of document.querySelectorAll("dialog[open]"))d.close();$(id).showModal();accumulator=0;}
@@ -44,7 +48,7 @@ function boot(createEngine){
  }
  $("padSelect").addEventListener("change",e=>selectPad(e.target.value===""?null:Number(e.target.value)));
  // Small portraits of each tower, drawn once with the battlefield art, for the ring menu.
- const towerIcons={};try{for(const key of Object.keys(game.roster)){const c=document.createElement("canvas");c.width=76;c.height=95;createArt(c.getContext("2d")).tower({kind:key,tier:1},{x:38,y:88});towerIcons[key]=c.toDataURL();}}catch{}
+ const towerIcons={};try{const k=Math.min(3,Math.max(2,Math.ceil(devicePixelRatio||1)));for(const key of Object.keys(game.roster)){const c=document.createElement("canvas");c.width=76*k;c.height=95*k;const a=c.getContext("2d");a.scale(k,k);createArt(a,{res:k}).tower({kind:key,tier:1},{x:38,y:88});towerIcons[key]=c.toDataURL();}}catch{}
  for(const [key,def] of Object.entries(game.roster)){
   const b=document.createElement("button");b.type="button";b.className="tower-choice";b.style.setProperty("--school",colors[def.color]);b.title=def.role;b.setAttribute("aria-label",def.name+", "+def.cost+" mana. "+def.role);
   const stripe=document.createElement("span");stripe.className="stripe";stripe.style.background=colors[def.color];
@@ -70,14 +74,14 @@ function boot(createEngine){
  $("upgrade").addEventListener("click",()=>{const t=game.state.towers[selected];if(!t)return;if(preview!=="upgrade"&&t.tier!==2){preview="upgrade";renderHud();return;}preview=null;if(t.tier===2){const pane=$("branchChoices");pane.replaceChildren();text($("branchTitle"),game.roster[t.kind].name+" · Choose specialization");for(const option of game.branchOptions(t)){const b=document.createElement("button"),name=document.createElement("strong"),desc=document.createElement("span"),ultimate=document.createElement("small"),price=document.createElement("em");b.type="button";b.dataset.branch=option.id;name.textContent=option.name;desc.textContent=option.description;ultimate.textContent="T4 · "+option.ultimate;price.textContent=game.upgradeCost(t).toLocaleString()+" mana";b.disabled=game.state.mana<game.upgradeCost(t);b.append(name,desc,ultimate,price);b.addEventListener("click",()=>{if(game.command({type:"upgrade",pad:selected,branch:option.id})){closeDialogs();notice(game.branchName(game.state.towers[selected])+" unlocked.");renderHud();}});pane.append(b);}showDialog("branchDialog");return;}if(game.command({type:"upgrade",pad:selected}))notice(game.branchName(t)+" upgraded.");renderHud();});
  $("sell").addEventListener("click",()=>{if(preview!=="sell"){preview="sell";renderHud();return;}preview=null;if(game.command({type:"sell",pad:selected})){rallying=false;selected=null;notice("Tower sold.");}renderHud();});
  $("rally").addEventListener("click",()=>{selectedCard=null;preview=null;rallying=!rallying;notice(rallying?"Tap a road location within this tower’s rally range.":"Rally selection cancelled.");renderHud();});
- function coords(e){const rect=canvas.getBoundingClientRect();return {x:(e.clientX-rect.left)*canvas.width/rect.width,y:(e.clientY-rect.top)*canvas.height/rect.height};}
+ function coords(e){const rect=canvas.getBoundingClientRect();return {x:(e.clientX-rect.left)*game.map.width/rect.width,y:(e.clientY-rect.top)*game.map.height/rect.height};}
  canvas.addEventListener("dragover",e=>e.preventDefault());
  canvas.addEventListener("drop",e=>{e.preventDefault();if(e.dataTransfer.types.includes("application/x-archamancy-card"))cast(Number(e.dataTransfer.getData("application/x-archamancy-card")),coords(e));});
  canvas.addEventListener("click",e=>{const {x,y}=coords(e);if(selectedCard!==null&&game.cards[game.state.hand[selectedCard]]?.target==="ground"){cast(selectedCard,{x,y});return;}if(moving){moving=false;notice(game.command({type:"commanderMove",x,y})?"Commander on the move.":"Commander unavailable.");renderHud();return;}if(!rallying){if(selected!==null)selectPad(null);return;}if(game.command({type:"rally",pad:selected,x,y})){rallying=false;notice("Rally point moved.");}else notice("Choose a road position within the tower’s range.");renderHud();});
- function setSpeed(n){speed=n;accumulator=0;if(n)lastSpeed=n;for(const b of document.querySelectorAll("[data-speed]"))b.setAttribute("aria-pressed",String(Number(b.dataset.speed)===n));text($("speedCycle"),(n||lastSpeed)+"×");$("speedCycle").setAttribute("aria-pressed",String(n>1));}
+ function setSpeed(n){speed=n;accumulator=0;if(n)lastSpeed=n;const pb=document.querySelector("[data-speed='0']");if(pb){const want=n?"pause":"play";if(pb.dataset.icon!==want){pb.dataset.icon=want;pb.innerHTML=n?ICONS.pause:ICONS.play;pb.setAttribute("aria-label",n?"Pause":"Resume");}}for(const b of document.querySelectorAll("[data-speed]"))b.setAttribute("aria-pressed",String(Number(b.dataset.speed)===n));text($("speedCycle"),(n||lastSpeed)+"×");$("speedCycle").setAttribute("aria-pressed",String(n>1));}
  let lastSpeed=1;$("speedCycle").addEventListener("click",()=>setSpeed(speed===0?lastSpeed:speed>=3?1:speed+1));
  for(const b of document.querySelectorAll("[data-speed]"))b.addEventListener("click",()=>setSpeed(speed===0?lastSpeed:0));
- function restart(mode){game=createEngine(1,mode);fx.reset();$("waveBanner").hidden=true;seenWaves=0;applyDefaultCommander();selected=null;selectedCard=null;rallying=false;moving=false;schoolOpen=false;preview=null;heroKey="";lastEvent=-1;handKey="";contributionKey="";setSpeed(1);$("padSelect").value="";$("mode").value=mode;closeDialogs();notice("New "+mode+" run. Select a build pad.");renderHud();}
+ function restart(mode){game=createEngine(1,mode);fx.reset();$("waveBanner").hidden=true;$("endScreen").hidden=true;seenWaves=0;if(mode!=="sandbox")game.command({type:"difficulty",level:profile.difficulty});applyDefaultCommander();selected=null;selectedCard=null;rallying=false;moving=false;schoolOpen=false;preview=null;heroKey="";lastEvent=-1;handKey="";contributionKey="";setSpeed(1);$("padSelect").value="";$("mode").value=mode;closeDialogs();notice("New "+mode+" run. Select a build pad.");renderHud();}
  $("restart").addEventListener("click",()=>restart(game.state.mode));
  $("newMode").addEventListener("click",()=>restart($("mode").value));
  function waveText(n){return game.waveSpec(n).map(x=>{const [k,c]=x.split(":"),d=game.types[k];return (d.boss&&k!=="titan"?"BOSS ":"")+d.name+" × "+c;}).join(" · ");}
@@ -123,16 +127,25 @@ function boot(createEngine){
   for(const [k,el] of Object.entries(statEls))text(el,s.stats[k].toLocaleString("en-US"));
   if(lastEvent!==s.sequence){lastEvent=s.sequence;const ol=$("eventLog");ol.replaceChildren();for(const e of s.events.slice(-12).reverse()){const li=document.createElement("li");li.textContent=(e.tick/10).toFixed(1)+"s · "+e.type+(e.amount!==undefined?" · "+e.amount+" mana":e.wave?" · wave "+e.wave:"");ol.append(li);}}
  }
- const terrain=document.createElement("canvas");terrain.width=1000;terrain.height=600;
+ const terrain=document.createElement("canvas");terrain.width=1000;terrain.height=600;let viewScale=1;
  function paintTerrain(){
-  const a=terrain.getContext("2d"),{path,pads}=game.map;
+  const a=terrain.getContext("2d"),{path,pads}=game.map;a.setTransform(viewScale,0,0,viewScale,0,0);
   const g=a.createLinearGradient(0,0,1000,600);g.addColorStop(0,"#152e2a");g.addColorStop(.5,"#39533c");g.addColorStop(1,"#1b302b");a.fillStyle=g;a.fillRect(0,0,1000,600);
   let seed=23921;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   const near=(x,y)=>{const q=game.pointAt(game.nearestPath(x,y));return (q.x-x)**2+(q.y-y)**2<42**2||pads.some(p=>(p.x-x)**2+(p.y-y)**2<34**2);};
   for(let i=0;i<3400;i++){const x=random()*1000,y=random()*600;a.fillStyle=["#3e583f","#456145","#233f32","#527052","#6b7650"][i%5];a.globalAlpha=.24;a.beginPath();a.ellipse(x,y,2+random()*10,1+random()*4,random()*3,0,Math.PI*2);a.fill();}a.globalAlpha=1;
+  // Facelift: warm light pools, grass tufts, flowers and rocks off the road.
+  for(const [lx,ly,lr,c] of [[180,120,420,"#f6dc9a"],[760,420,380,"#bfe6a0"],[520,40,300,"#f6dc9a"]]){const l=a.createRadialGradient(lx,ly,0,lx,ly,lr);l.addColorStop(0,c+"22");l.addColorStop(1,c+"00");a.fillStyle=l;a.fillRect(0,0,1000,600);}
+  for(let i=0;i<900;i++){const x=random()*1000,y=random()*600;if(near(x,y))continue;a.strokeStyle=["#5f8a52","#4d7445","#76a062"][i%3];a.globalAlpha=.55;a.lineWidth=1.2;for(let k=-1;k<=1;k++){a.beginPath();a.moveTo(x+k*2,y);a.quadraticCurveTo(x+k*3,y-4,x+k*4+(random()-.5)*2,y-6-random()*3);a.stroke();}}
+  for(let i=0;i<160;i++){const x=random()*1000,y=random()*600;if(near(x,y))continue;a.globalAlpha=.85;a.fillStyle=["#f1e3a6","#e9a6c0","#b8d4f2","#f6f2e4"][i%4];a.beginPath();a.arc(x,y,1.6,0,Math.PI*2);a.fill();}
+  for(let i=0;i<45;i++){const x=random()*1000,y=random()*600;if(near(x,y))continue;const r=3+random()*6;a.globalAlpha=1;a.fillStyle="#1a2a22";a.beginPath();a.ellipse(x+2,y+2,r*1.2,r*.7,0,0,Math.PI*2);a.fill();a.fillStyle="#7d8578";a.beginPath();a.ellipse(x,y,r*1.2,r*.75,0,0,Math.PI*2);a.fill();a.fillStyle="#a3a99a";a.beginPath();a.ellipse(x-r*.3,y-r*.25,r*.55,r*.3,0,0,Math.PI*2);a.fill();}
+  a.globalAlpha=1;
   // Layered stone-edged road, moss and engraved cobbles.
   a.lineJoin="round";a.lineCap="round";a.beginPath();path.forEach(([x,y],i)=>i?a.lineTo(x,y):a.moveTo(x,y));a.strokeStyle="#162822";a.lineWidth=61;a.stroke();a.strokeStyle="#766b52";a.lineWidth=52;a.stroke();a.strokeStyle="#b7a17b";a.lineWidth=39;a.stroke();a.strokeStyle="#a58e68";a.lineWidth=2;a.setLineDash([3,15]);a.stroke();a.setLineDash([]);
   for(let n=15;n<game.map.distance;n+=28){const p=game.pointAt(n);a.fillStyle="#e3cba0";a.globalAlpha=.25;a.beginPath();a.ellipse(p.x+(random()-.5)*20,p.y+(random()-.5)*20,2+random()*4,2,0,0,Math.PI*2);a.fill();}a.globalAlpha=1;
+  for(let n=6;n<game.map.distance;n+=11){const p=game.pointAt(n),q=game.pointAt(n+1),dx=q.x-p.x,dy=q.y-p.y,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;for(const side of [-1,1]){const x=p.x+nx*23*side+(random()-.5)*2,y=p.y+ny*23*side+(random()-.5)*2;a.fillStyle="#5d5644";a.beginPath();a.ellipse(x,y+1,4.2,3,0,0,Math.PI*2);a.fill();a.fillStyle=random()<.5?"#9a8e70":"#8b8166";a.beginPath();a.ellipse(x,y,3.6,2.5,0,0,Math.PI*2);a.fill();}}
+  for(let i=0;i<500;i++){const p=game.pointAt(random()*game.map.distance),x=p.x+(random()-.5)*34,y=p.y+(random()-.5)*34;a.globalAlpha=.18;a.strokeStyle="#6e5f45";a.lineWidth=1;a.beginPath();a.ellipse(x,y,3+random()*3,2+random()*1.5,0,0,Math.PI*2);a.stroke();}
+  a.globalAlpha=1;
   for(let i=0;i<220;i++){const x=random()*1000,y=random()*600;if(near(x,y))continue;const h=12+random()*31;a.fillStyle="#142820";a.beginPath();a.ellipse(x+5,y+5,h*.54,h*.25,0,0,Math.PI*2);a.fill();a.fillStyle="#705945";a.fillRect(x-2,y-h*.35,4,h*.4);for(let k=0;k<3;k++){a.fillStyle=["#1c392c","#31543a","#52734a"][k];a.beginPath();a.moveTo(x,y-h*(1.25-k*.16));a.lineTo(x-h*(.38-k*.06),y-h*(.1+k*.12));a.lineTo(x+h*(.38-k*.06),y-h*(.1+k*.12));a.closePath();a.fill();}}
   for(const p of pads){a.fillStyle="#1b2d25";a.beginPath();a.ellipse(p.x,p.y+5,30,19,0,0,Math.PI*2);a.fill();a.fillStyle=p.bonus==="spring"?"#467c81":p.bonus==="height"?"#958155":"#77765a";a.beginPath();a.ellipse(p.x,p.y,28,17,0,0,Math.PI*2);a.fill();a.strokeStyle="#bdb692";a.lineWidth=2;a.stroke();if(p.bonus){a.strokeStyle=p.bonus==="spring"?"#a1e5df":"#edce80";a.beginPath();a.ellipse(p.x,p.y,35,23,0,0,Math.PI*2);a.stroke();}}
   a.fillStyle="#353f37";a.fillRect(947,434,53,96);a.fillStyle="#b1a58b";a.fillRect(950,442,50,72);a.fillStyle="#4c5e52";for(let y=445;y<515;y+=14){a.fillRect(949,y,51,2);}a.fillStyle="#252e2b";a.beginPath();a.arc(979,483,13,Math.PI,0);a.lineTo(992,513);a.lineTo(966,513);a.fill();for(let i=0;i<3;i++){a.fillStyle="#d4c2a1";a.fillRect(947+i*19,434,12,14);}
@@ -140,6 +153,11 @@ function boot(createEngine){
   const vignette=a.createRadialGradient(500,300,160,500,300,590);vignette.addColorStop(0,"#101b1600");vignette.addColorStop(1,"#07110f99");a.fillStyle=vignette;a.fillRect(0,0,1000,600);
  }
  paintTerrain();
+ // Render at the real screen resolution: the battlefield keeps 1000×600 logical units but the canvas backing store
+ // matches its on-screen size × devicePixelRatio, so terrain, sprites and text stay crisp at any size.
+ function fitCanvas(){const rect=canvas.getBoundingClientRect();if(!rect.width)return;const dpr=Math.min(3,window.devicePixelRatio||1),k=Math.max(.5,Math.min(4,rect.width*dpr/game.map.width));const w=Math.round(game.map.width*k),h=Math.round(game.map.height*k);if(canvas.width===w&&canvas.height===h)return;viewScale=k;canvas.width=w;canvas.height=h;ctx.setTransform(k,0,0,k,0,0);ctx.imageSmoothingQuality="high";terrain.width=w;terrain.height=h;paintTerrain();art.setRes(Math.ceil(k*.85*2)/2);}
+ fitCanvas();try{new ResizeObserver(()=>requestAnimationFrame(fitCanvas)).observe(canvas);}catch{addEventListener("resize",fitCanvas);}
+ matchMedia?.("(resolution: 1dppx)")?.addEventListener?.("change",fitCanvas);
  {const q=game.pointAt(60);$("start").style.left=q.x/game.map.width*100+"%";$("start").style.top=q.y/game.map.height*100+"%";}
  // Portrait phones get a one-time hint to turn sideways; the battlefield is wide.
  try{if(matchMedia("(orientation:portrait) and (max-width:700px)").matches&&!storage?.getItem("archemancy.rotateHint"))$("rotateHint").hidden=false;}catch{}
@@ -160,17 +178,17 @@ function boot(createEngine){
   actors.sort((a,b)=>a.y-b.y);for(const actor of actors)actor.draw();
   const liveTargets=new Map(s.enemies.map(e=>[e.id,e]));
   for(const fx of s.projectiles)if(clock<fx.start+fx.duration){const target=liveTargets.get(fx.targetId);if(target&&fx.kind!=="chain"&&fx.kind!=="splash"){const q=game.pointAt(target.progress);art.projectile({...fx,tx:q.x,ty:q.y-(target.flying?21:8)},clock);}else art.projectile(fx,clock);}
-  fx.draw(performance.now());
+  fx.draw(performance.now());fx.ambient(performance.now());
   for(const fx of s.effects){if(fx.until<=s.tick)continue;const alpha=(fx.until-s.tick)/7;ctx.globalAlpha=Math.min(1,alpha*.6);ctx.strokeStyle=fx.color;ctx.lineWidth=4;ctx.beginPath();ctx.arc(fx.x,fx.y,fx.r*(1.2-alpha*.4),0,Math.PI*2);ctx.stroke();ctx.globalAlpha=alpha*.14;ctx.fillStyle=fx.color;ctx.fill();ctx.globalAlpha=1;}
  }
  function banner(title,sub,tone){text($("bannerTitle"),title);text($("bannerSub"),sub||"");$("bannerSub").hidden=!sub;const b=$("waveBanner");b.dataset.tone=tone||"wave";b.hidden=false;b.classList.remove("play");void b.offsetWidth;b.classList.add("play");clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>{b.hidden=true;},2300);}
- function handleCues(cues){for(const c of cues){if(c.type==="banner")banner(c.title,c.sub,c.tone);else if(c.type==="toast")notice(c.text);else if(c.type==="leak"){const el=$("health").parentElement;el.classList.remove("hit");void el.offsetWidth;el.classList.add("hit");}}}
+ function handleCues(cues){for(const c of cues){if(c.type==="sound")sfx.play(c.name);else if(c.type==="gameOver")setTimeout(()=>showEnd(c.won,c.stars),c.won?900:600);else if(c.type==="banner")banner(c.title,c.sub,c.tone);else if(c.type==="toast")notice(c.text);else if(c.type==="leak"){const el=$("health").parentElement;el.classList.remove("hit");void el.offsetWidth;el.classList.add("hit");}}}
  function frame(now){
   const elapsed=last===null?0:Math.min(250,Math.max(0,now-last));last=now;
   if(speed&&game.state.phase==="active"&&!document.querySelector("dialog[open]")){accumulator+=elapsed*speed;while(accumulator>=game.tickMs&&game.state.phase==="active"){game.step();accumulator-=game.tickMs;}if(game.state.phase!=="active"){accumulator=0;notice(game.state.phase==="won"?"Victory! All 25 Gauntlet waves completed. Continue into endless survival.":game.state.phase==="lost"?"Defeat. Open the menu to restart.":"Wave complete. Prepare your next defense.",game.state.phase!=="ready");}}
   else accumulator=0;
   handleCues(fx.update(game,now));const sh=fx.offset(now);$("map").style.transform=sh.x||sh.y?"translate("+sh.x.toFixed(1)+"px,"+sh.y.toFixed(1)+"px)":"";
-  checkUnlocks();renderField();renderHud();requestAnimationFrame(frame);
+  checkUnlocks();renderField();renderHud();renderTutorial();requestAnimationFrame(frame);
  }
  document.addEventListener("visibilitychange",()=>{last=null;accumulator=0;});
  // Players can keep a tab open across releases. Check for a newer build and offer a reload.
@@ -179,7 +197,48 @@ function boot(createEngine){
  $("updateReload").addEventListener("click",()=>location.reload());
  checkForUpdate();setInterval(()=>{if(document.visibilityState==="visible"&&$("updateBanner").hidden)checkForUpdate();},300000);
  fx.sync(game);
- applyDefaultCommander();if(!profile.starter){renderCommanders();showDialog("commanderDialog");}
+ // Title screen, end screen, sound and first-run tips (Beta 12 drop 3).
+ const sfx=createSfx(storage);const levelName={easy:"Easy",normal:"Normal",hard:"Hard"};
+ function renderTitle(){for(const b of document.querySelectorAll("[data-difficulty]"))b.setAttribute("aria-pressed",String(b.dataset.difficulty===profile.difficulty));text($("titleStars"),"Best Gauntlet: "+["easy","normal","hard"].map(l=>levelName[l]+" "+(profile.stars[l]?"★".repeat(profile.stars[l])+"☆".repeat(3-profile.stars[l]):"—")).join(" · "));text($("titleVersion"),label(VERSION));renderSound();}
+ function renderSound(){const p=sfx.prefs;$("soundToggle").innerHTML=p.sound?ICONS.sound:ICONS.mute;$("soundToggle").setAttribute("aria-label",p.sound?"Sound on":"Sound off");text($("titleSound"),"Sound: "+(p.sound?"on":"off"));text($("musicToggle"),"Music: "+(p.music?"on":"off"));}
+ function showTitle(){closeDialogs();$("endScreen").hidden=true;$("titleScreen").hidden=false;setSpeed(0);renderTitle();}
+ function startRun(mode){sfx.unlock();restart(mode);$("titleScreen").hidden=true;sfx.music(true);if(!profile.starter&&mode!=="sandbox"){renderCommanders();showDialog("commanderDialog");}else notice(mode==="sandbox"?"Proving Grounds: open the menu for sandbox tools.":"Tap a stone to build your first tower.");}
+ for(const b of document.querySelectorAll("[data-difficulty]"))b.addEventListener("click",()=>{profile.difficulty=b.dataset.difficulty;progress.save(storage,profile);sfx.unlock();sfx.play("click");renderTitle();});
+ $("playGauntlet").addEventListener("click",()=>startRun("campaign"));$("playEndless").addEventListener("click",()=>startRun("endless"));$("playSandbox").addEventListener("click",()=>startRun("sandbox"));
+ $("mainMenu").addEventListener("click",showTitle);$("endMenu").addEventListener("click",showTitle);
+ $("endRetry").addEventListener("click",()=>startRun(game.state.mode));
+ $("endContinue").addEventListener("click",()=>{if(game.command({type:"continue"})){$("endScreen").hidden=true;notice("Endless continues. Start the next wave when ready.");renderHud();}});
+ $("endCopy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(JSON.stringify(game.playtestReport()));text($("endCopy"),"Copied ✓");sfx.play("coin");}catch{$("endScreen").hidden=true;$("statsOpen").click();$("copyStats").click();}});
+ const toggleSound=()=>{sfx.setSound(!sfx.prefs.sound);if(sfx.prefs.sound){sfx.play("click");if(!$("titleScreen").hidden||game.state.wave>0)sfx.music(true);}renderSound();};
+ $("soundToggle").addEventListener("click",toggleSound);$("titleSound").addEventListener("click",toggleSound);
+ $("musicToggle").addEventListener("click",()=>{sfx.setMusic(!sfx.prefs.music);sfx.music(sfx.prefs.music);renderSound();});
+ function showEnd(won,stars){const s=game.state;if(s.phase!=="won"&&s.phase!=="lost")return;const campaign=s.mode==="campaign";
+  text($("endTitle"),won?"Victory!":campaign?"Defeat":"The siege broke through");$("endScreen").dataset.result=won?"win":"loss";
+  text($("endSummary"),won?(levelName[s.difficulty]||"Normal")+" Gauntlet cleared with "+s.health+" fortress left.":campaign?"The fortress fell on wave "+s.wave+" of 25 ("+(levelName[s.difficulty]||"Normal")+").":"You held until wave "+s.wave+".");
+  const spans=[...$("endStars").children];$("endStars").hidden=!won;spans.forEach(sp=>sp.classList.remove("on"));if(won){spans.forEach((sp,i)=>{if(i<stars)setTimeout(()=>{sp.classList.add("on");sfx.play("star");},500+i*350);});if(progress.recordStars(profile,s.difficulty,stars)){progress.save(storage,profile);}}
+  const towers=[...s.towerHistory,...Object.values(s.towers)].sort((a,b)=>b.damage-a.damage),best=towers[0];
+  const rows=[["Wave reached",s.wave],["Enemies defeated",s.stats.kills.toLocaleString("en-US")],["Damage",s.stats.damage.toLocaleString("en-US")],["Mana earned",s.stats.manaEarned.toLocaleString("en-US")],["Time",Math.floor(s.tick/600)+"m "+Math.floor(s.tick/10)%60+"s"],["Best tower",best?game.branchName(best):"—"]];
+  if(s.commander)rows.push([game.commanders[s.commander.id].name.split(",")[0],(s.commander.damage+(s.stats.commanderArmyDamage||0)).toLocaleString("en-US")+" damage"]);
+  $("endStats").replaceChildren(...rows.map(([k,v])=>{const d=document.createElement("div"),a=document.createElement("span"),b=document.createElement("strong");a.textContent=k;b.textContent=v;d.append(a,b);return d;}));
+  $("endContinue").hidden=!won;text($("endCopy"),"Copy battle stats");text($("endKicker"),(campaign?"Gauntlet":"Endless Siege")+" · "+(levelName[s.difficulty]||"Normal"));$("endScreen").hidden=false;}
+ // First-run tips, Gauntlet only, until the first wave is cleared or skipped.
+ const TIPS="archemancy.tips.v1";let tipsOn=true;try{tipsOn=!storage?.getItem(TIPS);}catch{}
+ function endTips(){tipsOn=false;$("tutorial").hidden=true;document.querySelectorAll(".tip-glow").forEach(e=>e.classList.remove("tip-glow"));try{storage?.setItem(TIPS,"1");}catch{}}
+ $("tutorialSkip").addEventListener("click",endTips);
+ function renderTutorial(){const s=game.state,box=$("tutorial");document.querySelectorAll(".tip-glow").forEach(e=>e.classList.remove("tip-glow"));if(!tipsOn||s.mode!=="campaign"||!$("titleScreen").hidden||!$("endScreen").hidden||document.querySelector("dialog[open]")){box.hidden=true;return;}
+  if(s.waveHistory.length>=1){endTips();return;}
+  const built=Object.keys(s.towers).length>0;let msg,target;
+  if(!built&&selected===null){msg="Tap a glowing stone to build your first tower.";target=buttons[4];}
+  else if(!built&&!schoolOpen){msg="Pick a school of magic. Each color plays differently.";target=$("ring");}
+  else if(!built){msg="Tap a tower to read about it, then tap it again to build.";target=$("ring");}
+  else if(s.wave===0){msg="Send the first wave with the pulsing button on the road.";target=$("start");}
+  else if(selectedCard===null){msg="Your cards are spells. Tap one to read it, then cast it.";target=$("hand");}
+  else{msg="Some spells target a tower, some the road, some cast at once.";target=$("cardTip").hidden?$("hand"):$("cardTip");}
+  text($("tutorialText"),msg);box.hidden=false;if(target&&target!==$("ring"))target.classList.add("tip-glow");
+  const r=target.getBoundingClientRect(),bw=box.offsetWidth,bh=box.offsetHeight,near=target===$("ring")?90:12;let top=r.bottom+near;if(top+bh>innerHeight-8)top=r.top-near-bh;top=Math.max(54,Math.min(innerHeight-bh-8,top));const left=Math.max(8,Math.min(innerWidth-bw-8,r.left+r.width/2-bw/2));box.style.top=top+"px";box.style.left=left+"px";}
+ {const hub=hubFor(location.hostname,document.querySelector('meta[name="archemancy-hub"]')?.content);for(const a of document.querySelectorAll(".hub-link")){a.href=hub.href;a.textContent="‹ "+hub.label;}}
+ renderTitle();
+ document.addEventListener("pointerdown",()=>sfx.unlock(),{once:true});
  renderHud();requestAnimationFrame(frame);
 }
 boot(createEngine);

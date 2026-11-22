@@ -163,3 +163,24 @@ Owner direction: a big polish update, with a UI as clean and simple as the best 
 - Boss health bar across the top while a named boss is alive, with its current immunity. In-world boss labels replaced by a colored ring under the boss.
 - Screen shake on boss arrival, boss death and leaks; red flash and a pulse on the lives counter when an enemy gets through.
 - Boss abilities (war cry, brood, silence, phase) announced as short toasts.
+
+## 2026-11-22 — v0.1.0-beta.12.2 Polish Update, drop 3: title, stars, difficulty, sound, tips, map facelift
+- Title screen: Play Gauntlet, Endless Siege, Proving Grounds, a difficulty picker and best stars per difficulty. "Main menu" in the game menu returns to it.
+- Difficulty (Gauntlet and Endless, chosen before wave 1): Easy 0.7×, Normal 1×, Hard 1.35× enemy health. Saved with the commander profile. Reported in Copy Stats.
+- Stars: winning the Gauntlet gives 3 stars at 18+ fortress left, 2 at 10+, otherwise 1. Best stars per difficulty are saved.
+- End screen for victory or defeat with stars, wave, kills, damage, mana, time, best tower and commander damage; Play again, Continue to Endless, Main menu, Copy stats.
+- Sound (new `sfx.mjs`, synthesized with Web Audio, no files): build, upgrade, sell, hits, kills, leaks, wave horn, boss horn, boss defeat, spells, boss abilities, victory and defeat, stars. A quiet generated music loop. Sound button at top right; music toggle in the menu; both saved.
+- First-run tips in the Gauntlet walk through building a tower, sending the first wave and casting a card, with a Skip button. They end after wave 1.
+- Map facelift: warm light pools, grass tufts, flowers, rocks, stones lining the road, cobble texture and drifting fireflies.
+
+## 2026-11-22 — v0.1.0-beta.12.3 sharp rendering and boss melee
+- Sharpness: the battlefield canvas was a fixed 1000×600 image stretched to fill the screen, so it looked blurry on large and high-density screens. The canvas now renders at its on-screen size × devicePixelRatio (up to 3×), terrain is repainted at that resolution, and sprites are cached at a matching scale. Ring-menu tower icons are drawn at 2–3×. Taps map through logical map units.
+- Boss melee (owner question: "why don't bosses fight player troops"): bosses and Titans used to keep walking at 60% speed through blockers, so troops lost contact almost at once. Now they stop for whoever blocks them, like other enemies, and every 1.4 s smash all ground troops and the commander within reach for 3× their attack (SMASH constant). Still immune to roots; slows still reduced. Red shock ring, small shake and a thud on each smash.
+- Balance: the no-spell benchmark now finishes the Gauntlet at 9 fortress instead of 4 (bosses held by troops leak less). Hard difficulty covers players who want the old pressure.
+- Icons: pause, play, menu, sound, mute, lives, mana, wave and the wave-call button are now drawn SVG icons instead of font glyphs (the pause sign rendered like a Roman numeral II). The pause button turns into a play button while paused.
+- Tower attack sounds per tower family (arcane zap, strike twang, artillery boom, chain crackle, hex hum, root creak, mirror shimmer), rate-limited so big fights stay listenable.
+
+## 2026-11-22 — Beta 12.3 end screens and hub link
+
+- New victory and defeat screens: rotating light rays, gold title on a win and a red shake on a loss, the 1–3 stars, a mode/difficulty kicker, and actions for New run, Copy battle stats, Main menu and the hub link.
+- `hub.mjs` decides where "back" goes. On deep-cuts-game-lab.pages.dev and local hosts it reads "Back to Game Lab" (`/`). On any other host, such as the main Deep Cuts site, it becomes "Back to Arcade" (`/games`). A page can force a target with `<meta name="archemancy-hub" content="/path|Label">`. Tested in `tests/hub.test.mjs`.

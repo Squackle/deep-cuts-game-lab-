@@ -27,3 +27,6 @@ test("profile saves, loads and rejects tampered or retired data",()=>{const s=me
  s.setItem("archemancy.progress.v1",JSON.stringify({starter:"talrand",unlocked:["hacker","edgar"],last:"atraxa",bestWave:-4}));const q=progress.load(s,all);assert.deepEqual(q.unlocked,["talrand","edgar"]);assert.equal(q.last,null);assert.equal(q.bestWave,0);
  s.setItem("archemancy.progress.v1","{broken");assert.deepEqual(progress.load(s,all),progress.newProfile());
  assert.deepEqual(progress.load(null,all),progress.newProfile());assert.equal(progress.save({setItem(){throw Error("blocked")}},p),false);});
+
+test("best stars per difficulty are kept and sanitized",()=>{const s=memory(),p=progress.newProfile();progress.chooseStarter(p,"krenko");assert.ok(progress.recordStars(p,"hard",2));assert.ok(!progress.recordStars(p,"hard",1));assert.ok(!progress.recordStars(p,"nightmare",3));assert.ok(!progress.recordStars(p,"easy",4));p.difficulty="hard";progress.save(s,p);const q=progress.load(s,all);assert.deepEqual(q.stars,{hard:2});assert.equal(q.difficulty,"hard");
+ const bad=progress.sanitize({starter:"krenko",stars:{easy:9,normal:"3",hard:3},difficulty:"insane"},all);assert.deepEqual(bad.stars,{hard:3});assert.equal(bad.difficulty,"normal");});
