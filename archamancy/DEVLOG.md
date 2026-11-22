@@ -323,3 +323,8 @@ Logan chose "More content first": autumn and winter versions of Hollow Road and 
 ## 2026-11-22 — Beta 13.14 Autumn and winter
 
 The season picker is on: Summer, Autumn or Winter for The Hollow Road and The Confluence. Art: golden grass and falling leaves in autumn; snow, snowy trees and a frozen creek in winter (terrain.mjs, art thread). Seasons are cosmetic for now and share stars with the summer map.
+
+## 2026-11-22 — Beta 13.15 Frostfen Crossing (data, hidden)
+
+Third map, built for winter. A serpentine road whose middle leg crosses a frozen lake. Ground enemies move at 60% speed on the ice (`ICE_SLOW`, `map.ice` rects); fliers ignore it and have 115% health here. Winter only (`map.seasons`), opens at level 6, 21 pads, three ruins. Benchmark bot (3 seeds, Normal): wins with 7–12 health, between The Hollow Road (9–16) and The Confluence (0–6).
+The map stays off the title screen (`MAP_LOOKS` in main.mjs) until the art thread paints its frozen lake.
