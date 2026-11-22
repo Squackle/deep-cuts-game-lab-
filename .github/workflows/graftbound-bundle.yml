@@ -23,8 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
       - name: Unit tests (recorded, never blocks bundle)
@@ -138,7 +138,7 @@ jobs:
           (out / 'graftbound-manifest.txt').write_text(''.join(manifest), encoding='utf-8')
           print(f'{len(included)} text files in {len(chunks)} parts; {len(omitted)} binary/non-UTF8 and {len(private)} private-name paths excluded')
           PY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: graftbound-bundle-${{ github.ref_name == 'main' && 'main' || 'branch' }}-${{ github.sha }}
           path: bundle/
