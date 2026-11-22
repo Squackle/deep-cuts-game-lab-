@@ -172,3 +172,8 @@ Owner direction: a big polish update, with a UI as clean and simple as the best 
 - Sound (new `sfx.mjs`, synthesized with Web Audio, no files): build, upgrade, sell, hits, kills, leaks, wave horn, boss horn, boss defeat, spells, boss abilities, victory and defeat, stars. A quiet generated music loop. Sound button at top right; music toggle in the menu; both saved.
 - First-run tips in the Gauntlet walk through building a tower, sending the first wave and casting a card, with a Skip button. They end after wave 1.
 - Map facelift: warm light pools, grass tufts, flowers, rocks, stones lining the road, cobble texture and drifting fireflies.
+
+## 2026-11-22 — v0.1.0-beta.12.3 sharp rendering and boss melee
+- Sharpness: the battlefield canvas was a fixed 1000×600 image stretched to fill the screen, so it looked blurry on large and high-density screens. The canvas now renders at its on-screen size × devicePixelRatio (up to 3×), terrain is repainted at that resolution, and sprites are cached at a matching scale. Ring-menu tower icons are drawn at 2–3×. Taps map through logical map units.
+- Boss melee (owner question: "why don't bosses fight player troops"): bosses and Titans used to keep walking at 60% speed through blockers, so troops lost contact almost at once. Now they stop for whoever blocks them, like other enemies, and every 1.4 s smash all ground troops and the commander within reach for 3× their attack (SMASH constant). Still immune to roots; slows still reduced. Red shock ring, small shake and a thud on each smash.
+- Balance: the no-spell benchmark now finishes the Gauntlet at 9 fortress instead of 4 (bosses held by troops leak less). Hard difficulty covers players who want the old pressure.

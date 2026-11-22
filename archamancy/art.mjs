@@ -1,5 +1,5 @@
 // Original cached procedural sprites and purely cosmetic combat illustrations.
-export function createArt(ctx){
+export function createArt(ctx,{res:startRes=1}={}){
  const ink="#172722",metal="#7d8e85",stone="#aab0a0",gold="#ead49a",ice="#8ee5fb",violet="#ca9be9",fire="#ffb267",leaf="#a0d481";
  const school={W:gold,U:ice,B:violet,R:fire,G:leaf};
  const towerSchools={legion:"W",chapel:"W",judgment:"W",arcanum:"U",library:"U",mirror:"U",necropolis:"B",foundry:"B",hex:"B",pyre:"R",goblin:"R",storm:"R",grove:"G",beast:"G",thorn:"G"};
@@ -15,7 +15,10 @@ export function createArt(ctx){
  function keep(a,top=-34,body=stone){rect(a,-19,top,38,-top+7,body);poly(a,[[10,top],[19,top],[19,7],[10,7]],"#00000033",null);rect(a,-7,-9,14,16,ink,null);for(let i=0;i<3;i++)line(a,[[-17,top+7+i*9],[-10,top+7+i*9]],"#ffffff55",1.5);}
  function flag(a,x,y,c){line(a,[[x,y],[x,y-24]],"#b6a486",2);poly(a,[[x,y-24],[x+15,y-20],[x,y-14]],c);}
  const cache=new Map();
- function makeSprite(key,draw,w=96,h=96){if(cache.has(key))return cache.get(key);const c=document.createElement("canvas");c.width=w;c.height=h;const a=c.getContext("2d");a.translate(w/2,h*.75);draw(a);cache.set(key,c);return c;}
+ let res=startRes;
+ // Sprites are drawn at res× their layout size so they stay sharp on high-density and large screens.
+ function setRes(r){r=Math.max(1,Math.min(4,r));if(r!==res){res=r;cache.clear();}}
+ function makeSprite(key,draw,w=96,h=96){if(cache.has(key))return cache.get(key);const c=document.createElement("canvas");c.width=Math.round(w*res);c.height=Math.round(h*res);const a=c.getContext("2d");if(res!==1)a.scale(res,res);a.translate(w/2,h*.75);draw(a);cache.set(key,c);return c;}
  function towerModel(a,k,tier,branch){
   const c=school[towerSchools[k]];oval(a,0,10,28,11,"#10241eb0");poly(a,[[-27,1],[-18,-8],[18,-8],[27,1],[24,10],[-24,10]],"#637263");
   a.save();a.scale(1+(tier-1)*.065,1+(tier-1)*.09);
@@ -101,5 +104,5 @@ export function createArt(ctx){
   if(p>.72){const v=(p-.72)/.28;ctx.globalAlpha=(1-v)*.8;for(let i=0;i<5;i++){const a=i*Math.PI*2/5;line(ctx,[[f.tx+Math.cos(a)*v*5,f.ty+Math.sin(a)*v*5],[f.tx+Math.cos(a)*(5+v*12),f.ty+Math.sin(a)*(5+v*12)]],c,2);}}
   ctx.restore();
  }
- return {tower,unit,projectile,towerKeys:Object.keys(towerSchools),enemyKeys,allyKeys};
+ return {setRes,tower,unit,projectile,towerKeys:Object.keys(towerSchools),enemyKeys,allyKeys};
 }

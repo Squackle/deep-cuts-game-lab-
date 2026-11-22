@@ -21,6 +21,7 @@ export function createFx(ctx,{maxParticles=260}={}){
    else if(ev.type==="leak"){const p=lastPos.get(ev.id),boss=p&&game.types[p.kind].boss;shake(boss?9:4,boss?420:220);flashUntil=now+260;cues.push({type:"leak",amount:boss?3:1},{type:"sound",name:"leak"});if(p)ring(950,483,"#f06b5b",44,500);}
    else if(ev.type==="waveStart"){const spec=game.waveSpec(ev.wave),boss=spec.map(x=>x.split(":")[0]).find(k=>game.types[k].boss&&k!=="titan");cues.push({type:"banner",title:"Wave "+ev.wave,sub:boss?"Boss: "+game.types[boss].name:ev.early?"Called early · +"+ev.bonus+" mana":"",tone:boss?"boss":"wave"},{type:"sound",name:boss?"boss":"wave"});if(boss)shake(5,500);}
    else if(ev.type==="build"||ev.type==="upgrade"){const p=game.map.pads[ev.pad];if(p){ring(p.x,p.y,"#f2db9e",ev.type==="upgrade"?40:32,450);burst(p.x,p.y+4,"#b7a17b",12,1.8,500,3);if(ev.type==="upgrade")burst(p.x,p.y-30,"#fff1cf",10,1.4,600,2.4);}cues.push({type:"sound",name:ev.type});}
+   else if(ev.type==="bossSmash"){const p=lastPos.get(ev.id);if(p)ring(p.x,p.y+8,"#e0573f",36,320);shake(2.5,140);cues.push({type:"sound",name:"smash"});}
    else if(ev.type==="sell")cues.push({type:"sound",name:"sell"});
    else if(ev.type==="spellCast")cues.push({type:"sound",name:"cast"});
    else if(ev.type==="gameOver")cues.push({type:"gameOver",won:!!ev.won,stars:ev.stars||0},{type:"sound",name:ev.won?"victory":"defeat"});

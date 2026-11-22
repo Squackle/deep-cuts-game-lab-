@@ -12,6 +12,7 @@ export function createSfx(storage=null){
   click:()=>tone(660,.06,{type:"triangle",vol:.12}),
   build:()=>{noise(.18,{vol:.35,freq:300});tone(140,.22,{type:"triangle",vol:.3,slide:.6});},
   upgrade:()=>{[523,659,784].forEach((f,i)=>tone(f,.25,{type:"triangle",vol:.16,delay:i*.07}));},
+  smash:()=>{noise(.22,{vol:.3,freq:160});tone(70,.25,{type:"sine",vol:.35,slide:.6});},
   sell:()=>{tone(880,.12,{type:"square",vol:.06});tone(1175,.16,{type:"square",vol:.06,delay:.06});},
   hit:()=>noise(.05,{vol:.06,freq:2400,q:2}),
   kill:()=>{noise(.09,{vol:.12,freq:1200});tone(1320,.08,{type:"triangle",vol:.05});},
@@ -26,7 +27,7 @@ export function createSfx(storage=null){
   defeat:()=>{[392,349,311,262].forEach((f,i)=>tone(f,.55,{type:"sawtooth",vol:.1,delay:i*.22}));},
   star:()=>tone(1760,.25,{type:"triangle",vol:.12})
  };
- const gaps={hit:45,kill:60,coin:70,leak:150,ability:300};
+ const gaps={smash:120,hit:45,kill:60,coin:70,leak:150,ability:300};
  function play(name){if(!prefs.sound||!ensure())return;if(ac.state==="suspended")ac.resume();const now=performance.now();if(gaps[name]&&now-(last[name]||0)<gaps[name])return;last[name]=now;sounds[name]?.();}
  // A slow, quiet pentatonic loop over a low drone.
  const scale=[220,247,294,330,392,440,494,587];

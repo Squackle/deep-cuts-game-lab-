@@ -45,7 +45,7 @@ function boot(createEngine){
  }
  $("padSelect").addEventListener("change",e=>selectPad(e.target.value===""?null:Number(e.target.value)));
  // Small portraits of each tower, drawn once with the battlefield art, for the ring menu.
- const towerIcons={};try{for(const key of Object.keys(game.roster)){const c=document.createElement("canvas");c.width=76;c.height=95;createArt(c.getContext("2d")).tower({kind:key,tier:1},{x:38,y:88});towerIcons[key]=c.toDataURL();}}catch{}
+ const towerIcons={};try{const k=Math.min(3,Math.max(2,Math.ceil(devicePixelRatio||1)));for(const key of Object.keys(game.roster)){const c=document.createElement("canvas");c.width=76*k;c.height=95*k;const a=c.getContext("2d");a.scale(k,k);createArt(a,{res:k}).tower({kind:key,tier:1},{x:38,y:88});towerIcons[key]=c.toDataURL();}}catch{}
  for(const [key,def] of Object.entries(game.roster)){
   const b=document.createElement("button");b.type="button";b.className="tower-choice";b.style.setProperty("--school",colors[def.color]);b.title=def.role;b.setAttribute("aria-label",def.name+", "+def.cost+" mana. "+def.role);
   const stripe=document.createElement("span");stripe.className="stripe";stripe.style.background=colors[def.color];
@@ -71,7 +71,7 @@ function boot(createEngine){
  $("upgrade").addEventListener("click",()=>{const t=game.state.towers[selected];if(!t)return;if(preview!=="upgrade"&&t.tier!==2){preview="upgrade";renderHud();return;}preview=null;if(t.tier===2){const pane=$("branchChoices");pane.replaceChildren();text($("branchTitle"),game.roster[t.kind].name+" · Choose specialization");for(const option of game.branchOptions(t)){const b=document.createElement("button"),name=document.createElement("strong"),desc=document.createElement("span"),ultimate=document.createElement("small"),price=document.createElement("em");b.type="button";b.dataset.branch=option.id;name.textContent=option.name;desc.textContent=option.description;ultimate.textContent="T4 · "+option.ultimate;price.textContent=game.upgradeCost(t).toLocaleString()+" mana";b.disabled=game.state.mana<game.upgradeCost(t);b.append(name,desc,ultimate,price);b.addEventListener("click",()=>{if(game.command({type:"upgrade",pad:selected,branch:option.id})){closeDialogs();notice(game.branchName(game.state.towers[selected])+" unlocked.");renderHud();}});pane.append(b);}showDialog("branchDialog");return;}if(game.command({type:"upgrade",pad:selected}))notice(game.branchName(t)+" upgraded.");renderHud();});
  $("sell").addEventListener("click",()=>{if(preview!=="sell"){preview="sell";renderHud();return;}preview=null;if(game.command({type:"sell",pad:selected})){rallying=false;selected=null;notice("Tower sold.");}renderHud();});
  $("rally").addEventListener("click",()=>{selectedCard=null;preview=null;rallying=!rallying;notice(rallying?"Tap a road location within this tower’s rally range.":"Rally selection cancelled.");renderHud();});
- function coords(e){const rect=canvas.getBoundingClientRect();return {x:(e.clientX-rect.left)*canvas.width/rect.width,y:(e.clientY-rect.top)*canvas.height/rect.height};}
+ function coords(e){const rect=canvas.getBoundingClientRect();return {x:(e.clientX-rect.left)*game.map.width/rect.width,y:(e.clientY-rect.top)*game.map.height/rect.height};}
  canvas.addEventListener("dragover",e=>e.preventDefault());
  canvas.addEventListener("drop",e=>{e.preventDefault();if(e.dataTransfer.types.includes("application/x-archamancy-card"))cast(Number(e.dataTransfer.getData("application/x-archamancy-card")),coords(e));});
  canvas.addEventListener("click",e=>{const {x,y}=coords(e);if(selectedCard!==null&&game.cards[game.state.hand[selectedCard]]?.target==="ground"){cast(selectedCard,{x,y});return;}if(moving){moving=false;notice(game.command({type:"commanderMove",x,y})?"Commander on the move.":"Commander unavailable.");renderHud();return;}if(!rallying){if(selected!==null)selectPad(null);return;}if(game.command({type:"rally",pad:selected,x,y})){rallying=false;notice("Rally point moved.");}else notice("Choose a road position within the tower’s range.");renderHud();});
@@ -124,9 +124,9 @@ function boot(createEngine){
   for(const [k,el] of Object.entries(statEls))text(el,s.stats[k].toLocaleString("en-US"));
   if(lastEvent!==s.sequence){lastEvent=s.sequence;const ol=$("eventLog");ol.replaceChildren();for(const e of s.events.slice(-12).reverse()){const li=document.createElement("li");li.textContent=(e.tick/10).toFixed(1)+"s · "+e.type+(e.amount!==undefined?" · "+e.amount+" mana":e.wave?" · wave "+e.wave:"");ol.append(li);}}
  }
- const terrain=document.createElement("canvas");terrain.width=1000;terrain.height=600;
+ const terrain=document.createElement("canvas");terrain.width=1000;terrain.height=600;let viewScale=1;
  function paintTerrain(){
-  const a=terrain.getContext("2d"),{path,pads}=game.map;
+  const a=terrain.getContext("2d"),{path,pads}=game.map;a.setTransform(viewScale,0,0,viewScale,0,0);
   const g=a.createLinearGradient(0,0,1000,600);g.addColorStop(0,"#152e2a");g.addColorStop(.5,"#39533c");g.addColorStop(1,"#1b302b");a.fillStyle=g;a.fillRect(0,0,1000,600);
   let seed=23921;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   const near=(x,y)=>{const q=game.pointAt(game.nearestPath(x,y));return (q.x-x)**2+(q.y-y)**2<42**2||pads.some(p=>(p.x-x)**2+(p.y-y)**2<34**2);};
@@ -150,6 +150,11 @@ function boot(createEngine){
   const vignette=a.createRadialGradient(500,300,160,500,300,590);vignette.addColorStop(0,"#101b1600");vignette.addColorStop(1,"#07110f99");a.fillStyle=vignette;a.fillRect(0,0,1000,600);
  }
  paintTerrain();
+ // Render at the real screen resolution: the battlefield keeps 1000×600 logical units but the canvas backing store
+ // matches its on-screen size × devicePixelRatio, so terrain, sprites and text stay crisp at any size.
+ function fitCanvas(){const rect=canvas.getBoundingClientRect();if(!rect.width)return;const dpr=Math.min(3,window.devicePixelRatio||1),k=Math.max(.5,Math.min(4,rect.width*dpr/game.map.width));const w=Math.round(game.map.width*k),h=Math.round(game.map.height*k);if(canvas.width===w&&canvas.height===h)return;viewScale=k;canvas.width=w;canvas.height=h;ctx.setTransform(k,0,0,k,0,0);ctx.imageSmoothingQuality="high";terrain.width=w;terrain.height=h;paintTerrain();art.setRes(Math.ceil(k*.85*2)/2);}
+ fitCanvas();try{new ResizeObserver(()=>requestAnimationFrame(fitCanvas)).observe(canvas);}catch{addEventListener("resize",fitCanvas);}
+ matchMedia?.("(resolution: 1dppx)")?.addEventListener?.("change",fitCanvas);
  {const q=game.pointAt(60);$("start").style.left=q.x/game.map.width*100+"%";$("start").style.top=q.y/game.map.height*100+"%";}
  // Portrait phones get a one-time hint to turn sideways; the battlefield is wide.
  try{if(matchMedia("(orientation:portrait) and (max-width:700px)").matches&&!storage?.getItem("archemancy.rotateHint"))$("rotateHint").hidden=false;}catch{}
