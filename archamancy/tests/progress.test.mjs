@@ -41,3 +41,8 @@ test("star upgrades spend the star pool, refund, and sanitize",()=>{const p=prog
  assert.deepEqual(p.perks,{R:2,treasury:1});const back=progress.sanitize(JSON.parse(JSON.stringify(p)),all);assert.deepEqual(back.perks,{R:2,treasury:1});
  assert.deepEqual(progress.sanitize({...JSON.parse(JSON.stringify(p)),perks:{R:3,G:3}},all).perks,{},"more spent than earned resets");
  assert.ok(progress.resetPerks(p));assert.equal(progress.freeStars(p),5);});
+test("trial badges: one-color wins and Onslaught wins, saved and sanitized",()=>{const p=progress.newProfile();progress.chooseStarter(p,"krenko");
+ assert.deepEqual(progress.trialBadges({won:true,mode:"campaign",colors:["R","R"],onslaught:true,map:"confluence"}),["mono:R","onslaught:confluence"]);
+ assert.deepEqual(progress.trialBadges({won:true,mode:"campaign",colors:["R","G"]}),[]);assert.deepEqual(progress.trialBadges({won:false,mode:"campaign",colors:["R"]}),[]);assert.deepEqual(progress.trialBadges({won:true,mode:"endless",colors:["R"]}),[]);
+ assert.ok(progress.awardBadge(p,"mono:R"));assert.ok(!progress.awardBadge(p,"mono:R"));assert.ok(!progress.awardBadge(p,"mono:X"));
+ const back=progress.sanitize({...JSON.parse(JSON.stringify(p)),badges:{"mono:R":true,"evil":true,"onslaught:hollow":"yes"},onslaught:true},all);assert.deepEqual(back.badges,{"mono:R":true});assert.equal(back.onslaught,true);});

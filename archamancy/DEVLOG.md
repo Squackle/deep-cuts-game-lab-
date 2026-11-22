@@ -237,3 +237,10 @@ Logan picked three upgrades from the quality list.
 From Logan's picks in the Kingdom Rush feature thread.
 - Targeting modes: towers that aim (Arcanum, Judgment Spire, Pyre Battery, Storm Engine, Hex Sanctum, Thornheart, Mirrorworks) get a target button in their ring menu that cycles First, Last, Strongest and Closest. Ties fall back to First. Troop towers keep their rally button in that slot.
 - Commander abilities: a tap power beside the commander portrait (or press Q), usable during waves, with a cooldown sweep. Themes follow each card's Scryfall text (checked 2026-11-22): Krenko Mob Rally, Talrand Drake Squall, Omnath Mana Bloom, Edgar Blood Charge, Light-Paws Emperor's Aura, Meren Grave Return, Teysa Lifelink Vigil, Korvold Royal Feast, Atraxa Proliferate, Ur-Dragon Dragon Tempest. Cooldowns are 40 to 60 seconds.
+
+## 2026-11-22 — Beta 13.3 Onslaught, trials and rubble pads
+
+From Logan's picks in the Kingdom Rush feature thread.
+- Onslaught: a title-screen toggle for the Gauntlet. After you start wave 1, each next wave arrives 30 seconds after the last one started, cleared road or not (the clock keeps running between waves). You can still call waves early for the bonus. Auto-sent waves give no early bonus and are marked in the run report.
+- Trials: badges for winning the Gauntlet with towers of a single color (Mono-White, Blue, Black, Red, Green; sold towers count) and for winning an Onslaught Gauntlet on each map. A Trials button on the title screen shows them.
+- Rubble pads: some prime pads start under old ruins (Hollow Road: the high ground for 120 mana and two central pads for 70; Confluence: the high ground for 120 and two central pads for 80). Select one and tap the pick to clear it. None in the Proving Grounds, and runs saved before 13.3 load without rubble.

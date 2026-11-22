@@ -82,3 +82,21 @@ test("every commander has a tap ability that works during waves and then cools d
   assert.ok(g.command({type:"ability"}),id+" fires");assert.notEqual(JSON.stringify([g.state.troops.length,g.state.mana,g.state.health,cm.growth,cm.voltron,g.state.stats.commanderDamage,g.state.hand.length,g.state.fallen.length]),before,id+" changes something");
   assert.ok(!g.command({type:"ability"}),id+" cools down");for(let i=0;i<ABILITIES[id].cooldown*10;i++)g.step();assert.ok(g.abilityReady(),id+" ready again");}
 });
+
+test("rubble blocks prime pads until cleared with mana, and never in the Proving Grounds",()=>{
+ for(const id of Object.keys(MAPS)){const g=createEngine(1,"campaign",id),[pad,cost]=Object.entries(g.state.rubble)[0].map(Number);assert.ok(Object.keys(g.state.rubble).length>=3,id);
+  assert.ok(!g.command({type:"build",pad,kind:"arcanum"}),"blocked");const m=g.state.mana;assert.ok(g.command({type:"clear",pad}));assert.equal(g.state.mana,m-cost);assert.ok(!g.command({type:"clear",pad}),"once");assert.ok(g.command({type:"build",pad,kind:"arcanum"}));
+  g.state.mana=0;const [p2]=Object.keys(g.state.rubble).map(Number);assert.ok(!g.command({type:"clear",pad:p2}),"needs mana");}
+ assert.deepEqual(createEngine(1,"sandbox").state.rubble,{});
+ const old=JSON.parse(JSON.stringify(createEngine(1).snapshot()));delete old.state.rubble;const r=createEngine(1);assert.ok(r.restore(old));assert.deepEqual(r.state.rubble,{},"older saves had no rubble");
+});
+
+test("Onslaught sends the next wave on a timer, cleared road or not",async()=>{
+ const {ONSLAUGHT_GAP}=await import("../engine.mjs");const g=createEngine(1);assert.ok(g.command({type:"onslaught",on:true}));assert.equal(g.onslaughtLeft(),null,"wave 1 is yours to start");
+ g.command({type:"wave"});assert.equal(g.onslaughtLeft(),ONSLAUGHT_GAP);
+ for(let i=0;i<=ONSLAUGHT_GAP;i++)g.step();assert.equal(g.state.wave,2,"wave 2 arrives on time while wave 1 may still be on the road");assert.equal(g.state.stats.earlyCalls,0);
+ // Clear the road: the clock keeps running between waves.
+ g.state.enemies=[];g.state.queue=[];g.step();assert.equal(g.state.phase,"ready");for(let i=0;i<ONSLAUGHT_GAP+5&&g.state.wave===2;i++)g.step();assert.equal(g.state.wave,3);
+ const n=createEngine(1);n.command({type:"wave"});for(let i=0;i<ONSLAUGHT_GAP+10;i++)n.step();assert.equal(n.state.wave,1,"normal Gauntlet waits");
+ const s=createEngine(1);s.command({type:"wave"});assert.ok(!s.command({type:"onslaught",on:true}),"only before wave 1");
+});

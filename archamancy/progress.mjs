@@ -16,7 +16,7 @@ export const UNLOCKS = [
 const KEY = "archemancy.progress.v1";
 
 export const LEVELS = ["easy", "normal", "hard"];
-export function newProfile() { return { version: 1, starter: null, unlocked: [], last: null, bestWave: 0, stars: {}, difficulty: "normal", map: "hollow", perks: {} }; }
+export function newProfile() { return { version: 1, starter: null, unlocked: [], last: null, bestWave: 0, stars: {}, difficulty: "normal", map: "hollow", perks: {}, badges: {}, onslaught: false }; }
 
 export function sanitize(raw, all) {
  const p = newProfile();
@@ -25,6 +25,8 @@ export function sanitize(raw, all) {
  for (const [k, n] of Object.entries(raw.stars || {})) if (/^([a-z]+:)?(easy|normal|hard)$/.test(k) && !k.startsWith("hollow:") && Number.isInteger(n) && n >= 1 && n <= 3) p.stars[k] = n;
  if (raw.perks && typeof raw.perks === "object") for (const k of Object.keys(PERKS)) { const n = raw.perks[k]; if (Number.isInteger(n) && n >= 1 && n <= 3) p.perks[k] = n; }
  if (spentStars(p) > totalStars(p)) p.perks = {};
+ if (raw.badges && typeof raw.badges === "object") for (const k of Object.keys(raw.badges)) if (BADGE.test(k) && raw.badges[k] === true) p.badges[k] = true;
+ p.onslaught = raw.onslaught === true;
  if (typeof raw.map === "string" && /^[a-z]+$/.test(raw.map)) p.map = raw.map;
  if (STARTERS.includes(raw.starter) && all.includes(raw.starter)) p.starter = raw.starter;
  if (!p.starter) return p;
@@ -91,3 +93,9 @@ export const spentStars = p => Object.values(p.perks || {}).reduce((a, n) => a +
 export const freeStars = p => totalStars(p) - spentStars(p);
 export function buyPerk(p, k) { if (!Object.hasOwn(PERKS, k)) return false; const n = p.perks[k] || 0; if (n >= PERK_COSTS.length || freeStars(p) < PERK_COSTS[n]) return false; p.perks[k] = n + 1; return true; }
 export function resetPerks(p) { const had = spentStars(p) > 0; p.perks = {}; return had; }
+
+// Trial badges: "mono:R" for a Gauntlet won with towers of one color, "onslaught:hollow" for an Onslaught Gauntlet won on that map.
+const BADGE = /^(mono:[WUBRG]|onslaught:[a-z]+)$/;
+export function awardBadge(p, key) { if (!BADGE.test(key) || p.badges[key]) return false; p.badges[key] = true; return true; }
+// Which badges a won Gauntlet earns. run = {won, mode, onslaught, map, colors: color of every tower built}.
+export function trialBadges(run) { if (!run?.won || run.mode !== "campaign") return []; const out = []; const set = new Set(run.colors || []); if (set.size === 1) out.push("mono:" + [...set][0]); if (run.onslaught) out.push("onslaught:" + (run.map || "hollow")); return out; }
