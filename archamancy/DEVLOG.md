@@ -304,3 +304,12 @@ Logan: the battlefield was covered by text on a landscape phone (boss name, bar 
 - Boss counters are now a short tag ("Magic only" or "Physical only"); tap it for the full list of towers that hurt the boss.
 - Wide landscape phones (21:10 and wider, the usual case): everything moves into the dark side margins. Left: health, mana, wave and level stacked, then the boss bar, then messages, then the commander buttons at the bottom. Right: sound, pause, speed and menu in a 2 by 2 grid, the next-wave pill, and the spell hand as a two-column stack (card art and cost; tap for details). Nothing sits over the road or the pads.
 - Desktop: messages sit below the boss tag instead of on it.
+
+## 2026-11-22 — Beta 13.12 Boss leaks
+
+Logan's Hard Hollow Road run (2 stars, 14 health): the Ironclad Colossus leaked at 40% health and the Spellbane Hierophant at 65%. Physical splash towers dealt most of the run's damage, but 324k damage hit immune targets, so a physical-heavy defence had no way to finish a magic-only boss once it was hurt.
+- Bosses with an immunity (Colossus, Hierophant, Tyrant) crack below 40% health. Every immunity drops to 50% resistance, so the rest of the defence can finish them. A notch on the boss bar marks the point; the tag changes to "Cracked" with a toast.
+- A leaking boss costs 3 health above two-thirds health, 2 above a third, and 1 below that (was always 3).
+- Colossus health 2200 to 1900, Hierophant 2400 to 2050.
+- Battle stats: bossCracks, and crackedTick on each boss log entry.
+- Benchmark run: 6 to 9 health.

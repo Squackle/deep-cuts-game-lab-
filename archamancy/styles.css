@@ -322,3 +322,5 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 #zones{font-size:.52rem;text-align:center;padding:0 3px}
 .card-tip{position:fixed;right:calc(var(--side) + 14px);bottom:max(8px,env(safe-area-inset-bottom));width:min(260px,40vw)}
 }
+/* Beta 13.12: a notch at 40% on the boss bar marks where the boss cracks and loses its immunity. */
+.boss-track{position:relative}.boss-bar.crackable .boss-track::after{content:"";position:absolute;left:40%;top:-2px;bottom:-2px;width:2px;border-radius:1px;background:#fff9;box-shadow:0 0 3px #000}
