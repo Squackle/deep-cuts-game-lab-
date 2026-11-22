@@ -239,3 +239,7 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .ability-btn.ready{animation:abilityPulse 1.4s ease-in-out infinite}
 @keyframes abilityPulse{0%,100%{box-shadow:0 3px 8px #000b,0 0 0 0 #ffe9a800}50%{box-shadow:0 3px 8px #000b,0 0 0 6px #ffe9a855}}
 @media (prefers-reduced-motion:reduce){.ability-btn.ready{animation:none}}
+.onslaught-toggle{display:flex;flex-direction:column;align-items:center;min-height:0;padding:5px 14px;border:2px solid var(--rim);border-radius:999px;background:#13231bf2;font-weight:800}.onslaught-toggle small{font-size:.64rem;font-weight:500;color:#c9cdbd}
+.onslaught-toggle[aria-pressed=true]{background:#6b1f14;border-color:#ff9d84;color:#fff1cf}.onslaught-toggle[aria-pressed=true] small{color:#ffd9cf}
+.trial .trial-badge{flex:none;font:800 .72rem system-ui;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}.trial.earned .trial-badge{background:var(--school);color:#1a2b20;border-color:var(--school)}
+.pad.rubble{opacity:.85}

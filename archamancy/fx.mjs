@@ -23,6 +23,7 @@ export function createFx(ctx,{maxParticles=260}={}){
    else if(ev.type==="build"||ev.type==="upgrade"){const p=game.map.pads[ev.pad];if(p){ring(p.x,p.y,"#f2db9e",ev.type==="upgrade"?40:32,450);burst(p.x,p.y+4,"#b7a17b",12,1.8,500,3);if(ev.type==="upgrade")burst(p.x,p.y-30,"#fff1cf",10,1.4,600,2.4);}cues.push({type:"sound",name:ev.type});}
    else if(ev.type==="bossSmash"){const p=lastPos.get(ev.id);if(p)ring(p.x,p.y+8,"#e0573f",36,320);shake(2.5,140);cues.push({type:"sound",name:"smash"});}
    else if(ev.type==="towerAttack"){const t=s.towers[ev.source],k=t&&game.roster[t.kind]?.kind;if(k)cues.push({type:"sound",name:"shot_"+k});}
+   else if(ev.type==="clear"){const p=game.map.pads[ev.pad];if(p){burst(p.x,p.y-6,"#958b76",18,2.4,700,3.6);burst(p.x,p.y,"#c9b58e",12,1.5,900,5);ring(p.x,p.y,"#f2db9e",34,450);}}
    else if(ev.type==="sell"){const p=game.map.pads[ev.pad];if(p){burst(p.x,p.y-10,"#8b8166",16,2.2,650,3.4);burst(p.x,p.y+2,"#c9b58e",10,1.4,800,4.5);ring(p.x,p.y,"#b7a17b",34,500);shake(2,180);}cues.push({type:"sound",name:"sell"});}
    else if(ev.type==="spellCast")cues.push({type:"sound",name:"cast"});
    else if(ev.type==="gameOver")cues.push({type:"gameOver",won:!!ev.won,stars:ev.stars||0},{type:"sound",name:ev.won?"victory":"defeat"});
