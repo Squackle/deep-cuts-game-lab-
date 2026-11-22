@@ -20,25 +20,24 @@ test("Game Lab preserves five playable games and a redirect for GRAFTBOUNDs form
  assert.equal((hub.match(/class="game-card game-/g)||[]).length,5,"Four existing games plus ARCHEMANCY");
  assert.ok(fs.existsSync("graftbound/index.html"),"GRAFTBOUND playable entry must exist");
  assert.match(hub,/href="\/graftbound\/"/);
- assert.match(hub,/PLAYTEST GRAFTBOUND/);
+ assert.match(hub,/aria-label="Playtest GRAFTBOUND"/);
  assert.ok(fs.existsSync("living-card/index.html"),"Old GRAFTBOUND redirect route must exist");
  assert.match(read("living-card/index.html"),/location\.replace\(\x27\/graftbound\/\x27/);
  assert.doesNotMatch(read("living-card/index.html"),/src="\.\/src\/main\.js"/);
- assert.match(hub,/FIVE PROJECTS/);
+ assert.match(hub,/Choose a <em>game\.<\/em>/);
  assert.ok(fs.existsSync("archemancy/index.html"));
  assert.match(read("archemancy/index.html"),/<h1>ARCHEMANCY<\/h1>/);
  assert.match(read("archemancy/index.html"),/src="\/archamancy\/main\.mjs"/);
  assert.match(read("archamancy/index.html"),/url=\/archemancy\//);
  assert.match(hub,/href="\/archemancy\/"/);
- assert.match(hub,/PLAYTEST ARCHEMANCY/);
- assert.match(hub,/ONE TEST LAB/);
+ assert.match(hub,/aria-label="Playtest ARCHEMANCY"/);
  assert.match(hub,/No sign-in needed/);
  assert.match(hub,/TEST BUILDS, NOT PUBLIC RELEASES/);
 });
 
 test("Game Lab is the actual root homepage, while Hive Run remains playable without relocating its engine",()=>{
  assert.match(root,/<title>Game Lab \| Deep Cuts EDH<\/title>/);
- assert.match(root,/FIVE PROJECTS/);
+ assert.match(root,/Choose a <em>game\.<\/em>/);
  assert.match(root,/href="\/archemancy\/"/);
  assert.match(root,/href="\/hive-run\/"/);
  assert.equal((root.match(/class="game-card game-/g)||[]).length,5);
@@ -85,6 +84,15 @@ test("Shared Lab hub cannot silently create identities, scores, APIs or remote s
  assert.ok(!stylesheet.includes("url(http"));
 });
 
+test("Game Lab menu fits on one screen: a compact header, five game tiles and a one-line footer",()=>{
+ const css=read("lab/lab.css");
+ assert.match(css,/\.lab-shell\{[^}]*height:100dvh/);
+ assert.match(css,/\.game-grid\{[^}]*grid-template-columns:repeat\(6,/);
+ assert.equal((hub.match(/<a class="game-card game-/g)||[]).length,5,"Each whole tile is one link");
+ assert.equal((hub.match(/class="game-line"/g)||[]).length,5,"One short line per game");
+ assert.doesNotMatch(hub,/lab-footer-note|lab-note/,"No extra explainer panels");
+});
+
 test("Root homepage and legacy /lab/ catalog stay in sync without duplicating data dependencies",()=>{
  const normalizedRoot=root.replace('href="/lab/lab.css"','href="./lab.css"').replaceAll('src="/lab/covers/','src="./covers/');
  assert.equal(normalizedRoot,hub);
@@ -125,10 +133,8 @@ test("five playable game covers remain first-party, meaningful, and without exte
   assert.match(svg,/role="img" aria-label=/);
   assert.doesNotMatch(svg,/<script|<foreignObject|onload=|<image|href="https?:/i);
  }
- assert.match(hub,/GRAFT<em>BOUND\.<\/em>/);
- assert.match(hub,/v1\.8\.0-beta · 3 acts/);
- assert.match(root,/v1\.8\.0-beta · 3 acts/);
- assert.match(hub,/Global Threat/);
+ assert.match(hub,/GRAFT<em>BOUND<\/em>/);
+ assert.match(hub,/real Magic cards/);
  assert.doesNotMatch(hub,/v0\.6/);
  assert.match(read("lab/covers/graftbound.svg"),/id="tactical-arena"/);
  assert.match(read("lab/covers/graftbound.svg"),/id="enemy-threat"/);
