@@ -149,7 +149,7 @@ details{margin:10px 0;color:var(--muted);font-size:.8rem}
 .boss-bar #bossName{font:700 .82rem Georgia,serif;color:#ffd2c4;text-shadow:0 1px 2px #000;background:#0f1c16d9;border-radius:999px;padding:1px 12px}
 .boss-track{display:block;width:100%;height:10px;background:#2a1612;border:2px solid #e0573f;border-radius:6px;overflow:hidden;box-shadow:0 2px 6px #000a}
 #bossFill{display:block;height:100%;width:100%;background:linear-gradient(#ff7b5c,#b8321e);transition:width .15s}
-.boss-bar:not([hidden])~.toast{top:calc(max(8px,env(safe-area-inset-top)) + 88px)}
+.boss-bar:not([hidden])~.toast{top:calc(max(8px,env(safe-area-inset-top)) + 104px)}
 .hud-item.hit{animation:hud-hit .5s ease}
 @keyframes hud-hit{0%,100%{transform:none}20%{transform:scale(1.25);background:#7a1e14}60%{transform:scale(.95)}}
 .spell,.ring-items>button,.round,.wave-call,.hero-btn{transition:transform .12s,filter .12s}
@@ -294,3 +294,31 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .boss-bar #bossHint[hidden]{display:none}
 @media(max-height:500px){.boss-bar{top:max(6px,env(safe-area-inset-top));width:min(340px,30vw)}.boss-bar:not([hidden])~.toast{top:calc(max(8px,env(safe-area-inset-top)) + 72px)}}
 @media(orientation:portrait) and (max-width:480px){.boss-bar{top:calc(max(8px,env(safe-area-inset-top)) + 116px);width:min(420px,86vw)}.boss-bar:not([hidden])~.toast{top:calc(max(8px,env(safe-area-inset-top)) + 186px)}}
+
+/* Beta 13.11 readable battlefield (Kingdom Rush style): status lives at the screen edges, the boss bar is compact, boss counters are a tap-for-details tag. */
+.boss-bar .boss-tag{pointer-events:auto;min-height:0;padding:1px 9px;border-radius:999px;border:1px solid #ff9a7a88;background:#0f1c16e0;color:#ffd9c9;font:700 .66rem system-ui;cursor:pointer}
+.boss-bar .boss-tag[hidden]{display:none}
+.boss-bar #bossName{font-size:.74rem}
+/* Wide landscape phones: the map leaves dark side margins, so every panel moves into them and the road and pads stay clear. */
+@media(max-height:500px) and (min-aspect-ratio:21/10){
+:root{--side:calc((100vw - (100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * 5 / 3) / 2 - 10px)}
+.hud{flex-direction:column;align-items:stretch;gap:4px;width:var(--side);top:max(6px,env(safe-area-inset-top));left:max(6px,env(safe-area-inset-left))}
+.hud-item{padding:1px 6px 1px 4px;gap:3px;justify-content:flex-start}.hud-item strong{font-size:.8rem}
+.hud-level,.hud-level{position:static!important}.hud-level .lv-word{display:inline}
+.top-right{display:grid;grid-template-columns:repeat(2,auto);gap:4px;top:max(6px,env(safe-area-inset-top));right:max(6px,env(safe-area-inset-right))}
+.top-right .round{width:32px;height:32px}
+.wave-peek{top:calc(env(safe-area-inset-top) + 82px)!important;right:calc(env(safe-area-inset-right) + 6px)}
+.wave-peek.closed{max-width:var(--side)}.wave-peek.closed .wave-peek-head{font-size:.6rem;padding:4px 6px}
+.boss-bar{left:max(6px,env(safe-area-inset-left));top:calc(max(6px,env(safe-area-inset-top)) + 128px);transform:none;width:var(--side);align-items:stretch}
+.boss-bar #bossName{font-size:.62rem;white-space:normal;text-align:center;padding:1px 4px;border-radius:6px}
+.boss-bar .boss-tag{font-size:.58rem;padding:1px 4px}
+.toast,.boss-bar:not([hidden])~.toast{left:max(6px,env(safe-area-inset-left));top:auto;bottom:calc(max(6px,env(safe-area-inset-bottom)) + 132px);transform:none;width:var(--side);max-width:none;border-radius:8px;padding:3px 5px;font-size:.62rem;line-height:1.25;text-align:left;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.bottom-left{flex-direction:column-reverse;align-items:center;width:var(--side);gap:5px}
+.bottom-left .hero-btn{width:44px;height:44px}.ability-btn{width:42px;height:42px}.ability-btn .ability-name{display:none}
+.spell-tray{width:var(--side);max-width:none;align-items:stretch}
+.hand{display:grid;grid-template-columns:1fr 1fr;gap:4px;align-items:end;direction:rtl}
+.hand .spell{width:auto;direction:ltr}.hand .spell strong{display:none}
+.spell[aria-pressed=true]{transform:translateX(-6px)}
+#zones{font-size:.52rem;text-align:center;padding:0 3px}
+.card-tip{position:fixed;right:calc(var(--side) + 14px);bottom:max(8px,env(safe-area-inset-bottom));width:min(260px,40vw)}
+}
