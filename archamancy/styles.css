@@ -324,3 +324,5 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 }
 /* Beta 13.12: a notch at 40% on the boss bar marks where the boss cracks and loses its immunity. */
 .boss-track{position:relative}.boss-bar.crackable .boss-track::after{content:"";position:absolute;left:40%;top:-2px;bottom:-2px;width:2px;border-radius:1px;background:#fff9;box-shadow:0 0 3px #000}
+/* Beta 13.13: season picker on the title screen (shown once a season beyond summer has art). */
+.difficulty[hidden],.difficulty button[hidden]{display:none}

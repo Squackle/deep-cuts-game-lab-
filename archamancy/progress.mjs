@@ -16,12 +16,13 @@ export const UNLOCKS = [
 const KEY = "archemancy.progress.v1";
 
 export const LEVELS = ["easy", "normal", "hard"];
-export function newProfile() { return { version: 1, starter: null, unlocked: [], last: null, bestWave: 0, stars: {}, difficulty: "normal", map: "hollow", perks: {}, badges: {}, onslaught: false, xp: 0, seen: { e: [], t: [], c: [] } }; }
+export function newProfile() { return { version: 1, starter: null, unlocked: [], last: null, bestWave: 0, stars: {}, difficulty: "normal", season: "summer", map: "hollow", perks: {}, badges: {}, onslaught: false, xp: 0, seen: { e: [], t: [], c: [] } }; }
 
 export function sanitize(raw, all) {
  const p = newProfile();
  if (!raw || typeof raw !== "object") return p;
  if (LEVELS.includes(raw.difficulty)) p.difficulty = raw.difficulty;
+ if (["summer", "autumn", "winter"].includes(raw.season)) p.season = raw.season;
  for (const [k, n] of Object.entries(raw.stars || {})) if (/^([a-z]+:)?(easy|normal|hard)$/.test(k) && !k.startsWith("hollow:") && Number.isInteger(n) && n >= 1 && n <= 3) p.stars[k] = n;
  if (raw.perks && typeof raw.perks === "object") for (const k of Object.keys(PERKS)) { const n = raw.perks[k]; if (Number.isInteger(n) && n >= 1 && n <= 3) p.perks[k] = n; }
  if (spentStars(p) > totalStars(p)) p.perks = {};

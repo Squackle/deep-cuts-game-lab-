@@ -313,3 +313,9 @@ Logan's Hard Hollow Road run (2 stars, 14 health): the Ironclad Colossus leaked 
 - Colossus health 2200 to 1900, Hierophant 2400 to 2050.
 - Battle stats: bossCracks, and crackedTick on each boss log entry.
 - Benchmark run: 6 to 9 health.
+
+## 2026-11-22 — Beta 13.13 Season groundwork
+
+Logan chose "More content first": autumn and winter versions of Hollow Road and Confluence, then a third map. This release lays the groundwork; the art thread builds the seasonal looks in terrain.mjs.
+- Runs carry a season (summer, autumn or winter), chosen before the first wave, kept in saves and in battle stats. The renderer reads `game.map.season`.
+- Title screen season picker, remembered in the profile. It stays hidden until a season beyond summer has art (`SEASON_LOOKS` in main.mjs).
