@@ -137,3 +137,10 @@ Owner run (Beta 9 build, lost at Endless wave 32): towers dealt 97% of 1.5M dama
 - Spell damage, burns (from spells and Inferno towers), troop health and attack, death blasts, commander attack and health, and commander tokens now scale with wave health. Spells and commanders use enemy scale^0.8; troops, tokens and death blasts use ^0.6. Wave 1 values are unchanged.
 - Tower cards and the selected-tower details now say "Ground only" or "Hits fliers".
 Benchmark after both changes: wins wave 25 at 4/20 health and loses on wave 30.
+
+## 2026-11-22 — v0.1.0-beta.11.1 commander fix and update notice
+- Owner's run 2 report was from Beta 10.1: the run began before Beta 11 finished deploying. Cloudflare already serves the game files with `max-age=0, must-revalidate`, so a refresh gets the latest; an open tab keeps the old code until it reloads.
+- The page now checks for a newer build on load and every 5 minutes, and shows "Beta X is out" with a Reload button. The menu shows the running version from the engine.
+- Bug: Krenko's goblin tokens stood on his spot and claimed every enemy first, so Krenko never swung (58 damage in the owner's run, 0 in the benchmark). Commanders now fight beside their tokens and troops: they hit a free enemy if one is in reach, otherwise they help on one already held (without taking its hits).
+- Token damage is now credited to the commander: `stats.commanderArmyDamage` and `commander.armyDamage` in the report, and "Commander token damage" in Battle statistics.
+- Titan leaks: bosses cost 3 fortress per leak, so 6 titans ended the run. Beta 11 already replaced wave 25 (3 Titans plus the Hollow Tyrant) and scaled spells, troops and commanders late; no further wave change in this patch.
