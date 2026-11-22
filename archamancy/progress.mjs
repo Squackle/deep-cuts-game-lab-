@@ -14,11 +14,14 @@ export const UNLOCKS = [
 ];
 const KEY = "archemancy.progress.v1";
 
-export function newProfile() { return { version: 1, starter: null, unlocked: [], last: null, bestWave: 0 }; }
+export const LEVELS = ["easy", "normal", "hard"];
+export function newProfile() { return { version: 1, starter: null, unlocked: [], last: null, bestWave: 0, stars: {}, difficulty: "normal" }; }
 
 export function sanitize(raw, all) {
  const p = newProfile();
  if (!raw || typeof raw !== "object") return p;
+ if (LEVELS.includes(raw.difficulty)) p.difficulty = raw.difficulty;
+ for (const l of LEVELS) { const n = raw.stars?.[l]; if (Number.isInteger(n) && n >= 1 && n <= 3) p.stars[l] = n; }
  if (STARTERS.includes(raw.starter) && all.includes(raw.starter)) p.starter = raw.starter;
  if (!p.starter) return p;
  if (Array.isArray(raw.unlocked)) p.unlocked = [...new Set(raw.unlocked.filter(id => all.includes(id)))];
@@ -61,6 +64,9 @@ export function recordRun(p, run) {
  }
  return fresh;
 }
+
+// Best Gauntlet stars per difficulty. Returns true when this beats the saved best.
+export function recordStars(p, level, stars) { if (!LEVELS.includes(level) || !Number.isInteger(stars) || stars < 1 || stars > 3 || (p.stars[level] || 0) >= stars) return false; p.stars[level] = stars; return true; }
 
 export function available(p, mode, all) { return mode === "sandbox" ? all.slice() : all.filter(id => p.unlocked.includes(id)); }
 

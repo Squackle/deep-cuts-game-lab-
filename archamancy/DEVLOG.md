@@ -163,3 +163,12 @@ Owner direction: a big polish update, with a UI as clean and simple as the best 
 - Boss health bar across the top while a named boss is alive, with its current immunity. In-world boss labels replaced by a colored ring under the boss.
 - Screen shake on boss arrival, boss death and leaks; red flash and a pulse on the lives counter when an enemy gets through.
 - Boss abilities (war cry, brood, silence, phase) announced as short toasts.
+
+## 2026-11-22 — v0.1.0-beta.12.2 Polish Update, drop 3: title, stars, difficulty, sound, tips, map facelift
+- Title screen: Play Gauntlet, Endless Siege, Proving Grounds, a difficulty picker and best stars per difficulty. "Main menu" in the game menu returns to it.
+- Difficulty (Gauntlet and Endless, chosen before wave 1): Easy 0.7×, Normal 1×, Hard 1.35× enemy health. Saved with the commander profile. Reported in Copy Stats.
+- Stars: winning the Gauntlet gives 3 stars at 18+ fortress left, 2 at 10+, otherwise 1. Best stars per difficulty are saved.
+- End screen for victory or defeat with stars, wave, kills, damage, mana, time, best tower and commander damage; Play again, Continue to Endless, Main menu, Copy stats.
+- Sound (new `sfx.mjs`, synthesized with Web Audio, no files): build, upgrade, sell, hits, kills, leaks, wave horn, boss horn, boss defeat, spells, boss abilities, victory and defeat, stars. A quiet generated music loop. Sound button at top right; music toggle in the menu; both saved.
+- First-run tips in the Gauntlet walk through building a tower, sending the first wave and casting a card, with a Skip button. They end after wave 1.
+- Map facelift: warm light pools, grass tufts, flowers, rocks, stones lining the road, cobble texture and drifting fireflies.
