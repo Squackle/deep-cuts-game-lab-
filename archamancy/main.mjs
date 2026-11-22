@@ -7,6 +7,7 @@ import {createFx} from './fx.mjs';
 import {createSfx} from './sfx.mjs';
 import {hubFor} from './hub.mjs';
 import {advance,clockRunning} from './clock.mjs';
+import {animationLoop} from './loop.mjs';
 function boot(createEngine){
  const $=id=>document.getElementById(id), canvas=$("field"), ctx=canvas.getContext("2d"),art=createArt(ctx),fx=createFx(ctx);let bannerTimer=0;
  const colors={W:"#e5d4a2",U:"#77b9e6",B:"#ac8ac3",R:"#ed8b65",G:"#9bc889",C:"#c5c9cc"};
@@ -258,7 +259,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
   if(speed&&clockRunning(game)&&!document.querySelector("dialog[open]")){accumulator=advance(game,accumulator+elapsed*speed);if(!clockRunning(game)){notice(game.state.phase==="won"?"Victory! All 25 Gauntlet waves completed. Continue into endless survival.":game.state.phase==="lost"?"Defeat. Open the menu to restart.":"Wave complete. Prepare your next defense.",game.state.phase!=="ready");}}
   else accumulator=0;
   handleCues(fx.update(game,now));const sh=fx.offset(now);$("map").style.transform=sh.x||sh.y?"translate("+sh.x.toFixed(1)+"px,"+sh.y.toFixed(1)+"px)":"";
-  checkUnlocks();renderField();renderHud();renderTutorial();if(now-lastSave>4000&&$("titleScreen").hidden)saveRun();requestAnimationFrame(frame);
+  checkUnlocks();renderField();renderHud();renderTutorial();if(now-lastSave>4000&&$("titleScreen").hidden)saveRun();
  }
  document.addEventListener("visibilitychange",()=>{last=null;accumulator=0;if(document.hidden)saveRun();});
  // Continue: the current run is saved in this browser every few seconds, when the tab is hidden or closed, and when leaving to the menu.
@@ -271,9 +272,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  function continueRun(){const save=loadRun();if(!save){renderTitle();return;}sfx.unlock();game=createEngine(1,save.state.initialMode,save.state.mapId);game.restore(save);useMap();fx.reset();fx.sync(game);$("waveBanner").hidden=true;$("endScreen").hidden=true;seenWaves=game.state.waveHistory.length;runXp=0;renderHudLevel();selected=null;selectedCard=null;rallying=false;moving=false;schoolOpen=false;preview=null;heroKey="";lastEvent=-1;handKey="";contributionKey="";$("padSelect").value="";$("mode").value=game.state.mode;closeDialogs();$("titleScreen").hidden=true;sfx.music(true);const mid=game.state.phase==="active";setSpeed(mid?0:1);notice(mid?"Run restored, paused mid-wave. Press play to resume.":"Run restored. Send the next wave when ready.",true);renderHud();}
  // Players can keep a tab open across releases. Check for a newer build and offer a reload.
  const label=v=>"Beta "+String(v).replace(/^0\.1\.0-beta\./,"");text($("buildVersion"),label(VERSION));
- async function checkForUpdate(){try{const r=await fetch("/archamancy/engine.mjs",{cache:"no-store"});if(!r.ok)return;const live=(await r.text()).match(/export const VERSION="([^"]+)"/)?.[1];if(live&&live!==VERSION){text($("updateText"),label(live)+" is out. You are playing "+label(VERSION)+".");$("updateBanner").hidden=false;}}catch{}}
  $("updateReload").addEventListener("click",()=>location.reload());
- checkForUpdate();setInterval(()=>{if(document.visibilityState==="visible"&&$("updateBanner").hidden)checkForUpdate();},300000);
  fx.sync(game);
  // Title screen, end screen, sound and first-run tips (Beta 12 drop 3).
  const sfx=createSfx(storage);const levelName={easy:"Easy",normal:"Normal",hard:"Hard"};
@@ -372,10 +371,13 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  {const hub=hubFor(location.hostname,document.querySelector('meta[name="archemancy-hub"]')?.content);for(const a of document.querySelectorAll(".hub-link")){a.href=hub.href;a.textContent="‹ "+hub.label;}}
  renderTitle();
  document.addEventListener("pointerdown",()=>sfx.unlock(),{once:true});
- renderHud();requestAnimationFrame(frame);
- // A tab left open keeps the old build. When a newer version is live, reload on the title screen (runs are saved), or say so mid-run.
+ renderHud();
+ // Errors in a frame go into the copied battle stats; the game keeps running.
+ animationLoop(frame,{onError:e=>{noteError("frame: "+(e?.message||e));console.error(e);}})();
+ // A tab left open keeps the old build. One check (on load, every 5 minutes, and when the tab comes back) reads the live version:
+ // it shows the reload banner, and reloads on the title screen (runs are saved) or says so mid-run. On load it only shows the banner.
  let updateSeen=false;
- async function checkUpdate(){try{const r=await fetch("/archamancy/engine.mjs?check="+Date.now(),{cache:"no-store"});if(!r.ok)return;const live=/VERSION="([^"]+)"/.exec(await r.text())?.[1];if(!live||live===VERSION)return;let tried=null;try{tried=sessionStorage.getItem("archemancy.reloadedFor");}catch{}if(tried===live)return;try{sessionStorage.setItem("archemancy.reloadedFor",live);}catch{}if(!$("titleScreen").hidden){location.reload();return;}if(!updateSeen){updateSeen=true;notice("A new version of ARCHEMANCY is out. It loads next time you open the title screen.",true);}}catch{}}
- document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkUpdate();});setInterval(checkUpdate,5*60*1000);
+ async function checkUpdate(reload=true){try{const r=await fetch("/archamancy/engine.mjs?check="+Date.now(),{cache:"no-store"});if(!r.ok)return;const live=/export const VERSION="([^"]+)"/.exec(await r.text())?.[1];if(!live||live===VERSION)return;text($("updateText"),label(live)+" is out. You are playing "+label(VERSION)+".");$("updateBanner").hidden=false;if(!reload)return;let tried=null;try{tried=sessionStorage.getItem("archemancy.reloadedFor");}catch{}if(tried===live)return;try{sessionStorage.setItem("archemancy.reloadedFor",live);}catch{}if(!$("titleScreen").hidden){location.reload();return;}if(!updateSeen){updateSeen=true;notice("A new version of ARCHEMANCY is out. It loads next time you open the title screen.",true);}}catch{}}
+ checkUpdate(false);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkUpdate();});setInterval(()=>{if(document.visibilityState==="visible")checkUpdate();},5*60*1000);
 }
 boot(createEngine);
