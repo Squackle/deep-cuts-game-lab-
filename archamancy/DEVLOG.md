@@ -130,3 +130,10 @@ Towers no longer waste shots on enemies their damage type cannot hurt.
 The 25-wave Gauntlet is now hand-designed: traits arrive from wave 6, and a named boss closes every fifth wave. Grimgut, Raider King (w5) hastes nearby enemies with a war cry every 8 s. The Veiled Matron (w10) is shrouded and births two Shade Stalkers every 8 s, up to 8. Ironclad Colossus (w15) is immune to physical damage. Spellbane Hierophant (w20) is immune to magic; every 10 s it marks its two nearest towers (dashed ring), then silences them for 4 s. The Hollow Tyrant (w25) swaps between physical and magic immunity every 8 s, with a flash warning. Endless keeps cycling the bosses every 5 waves. The wave forecast lists names, BOSS tags and trait rules, and bosses show their name over the battlefield.
 
 Benchmark (seed 1, same no-spell build policy): wins wave 25 with 6/20 health (was 17), loses on wave 30. That makes the Gauntlet harder, as the owner asked earlier. 56 Archemancy tests pass, including immunity, reveal rules, every boss ability and the wave plan.
+
+### Beta 11 balance from the owner's wave-32 Endless run
+
+Owner run (Beta 9 build, lost at Endless wave 32): towers dealt 97% of 1.5M damage, while spells did 1.8k, troops 6.7k and the commander 197, because those used fixed numbers while enemy health had grown about 130×. All 20 leaks were Carrion Wings, and the strongest towers (Pyre Battery, Thornheart) are ground-only. Changes:
+- Spell damage, burns (from spells and Inferno towers), troop health and attack, death blasts, commander attack and health, and commander tokens now scale with wave health. Spells and commanders use enemy scale^0.8; troops, tokens and death blasts use ^0.6. Wave 1 values are unchanged.
+- Tower cards and the selected-tower details now say "Ground only" or "Hits fliers".
+Benchmark after both changes: wins wave 25 at 4/20 health and loses on wave 30.
