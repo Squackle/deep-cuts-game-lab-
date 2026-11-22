@@ -1,5 +1,5 @@
 // ARCHAMANCY beta simulation: fixed ticks, original data-driven rules, DOM independent.
-export const VERSION="0.1.0-beta.12";
+export const VERSION="0.1.0-beta.12.1";
 export function createEngine(seed=1,mode="campaign"){
  const W=1000,H=600,tickMs=100,path=[[0,110],[875,110],[875,300],[125,300],[125,490],[1000,490]],lengths=path.slice(1).map((p,i)=>Math.abs(p[0]-path[i][0])+Math.abs(p[1]-path[i][1])),distance=lengths.reduce((a,b)=>a+b,0);
  const pads=[];for(const y of [47,175,235,365,425,553])for(const x of [220,400,580,760])pads.push({id:pads.length,x,y,bonus:pads.length===20?"spring":pads.length===7?"height":null});

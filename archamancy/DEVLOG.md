@@ -154,3 +154,12 @@ Owner direction: a big polish update, with a UI as clean and simple as the best 
 - Commander portrait (card art, health bar) at bottom left with wave info; spell cards as a small hand at bottom right with a pop-up card tip for Cast, Discard and Cancel.
 - Portrait phones get a one-time "turn sideways" hint. The Game Lab link moved into the menu.
 - No rules changes.
+
+## 2026-11-22 — v0.1.0-beta.12.1 Polish Update, drop 2: game feel
+- New `fx.mjs` effects layer. It reads engine events and health changes and never touches the simulation (tested).
+- Hit sparks on every hit; damage numbers only on bosses so the field stays readable; death puffs and floating "+mana" on kills, bigger bursts for bosses.
+- Dust ring and sparkle when a tower is built or upgraded.
+- Wave banner ("Wave 10 · Boss: Ironclad Colossus"); boss falls get their own banner.
+- Boss health bar across the top while a named boss is alive, with its current immunity. In-world boss labels replaced by a colored ring under the boss.
+- Screen shake on boss arrival, boss death and leaks; red flash and a pulse on the lives counter when an enemy gets through.
+- Boss abilities (war cry, brood, silence, phase) announced as short toasts.

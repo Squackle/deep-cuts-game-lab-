@@ -24,6 +24,8 @@
 </div></div>
 <div class="hud" aria-label="Battle status"><span class="hud-item lives" title="Fortress health"><i aria-hidden="true">♥</i><strong id="health">20</strong></span><span class="hud-item gold" title="Mana"><i aria-hidden="true">◈</i><strong id="mana">350</strong></span><span class="hud-item" title="Wave"><i aria-hidden="true">⚑</i><strong id="wave">0 / 25</strong></span><span class="sr-only"><span id="phase">PREPARE</span> · Enemies <span id="enemies">0</span></span></div>
 <div class="top-right"><button data-speed="0" aria-pressed="false" aria-label="Pause" class="round">Ⅱ</button><button id="speedCycle" class="round" type="button" aria-label="Game speed">1×</button><button id="menuOpen" class="round" aria-label="Open game menu">☰</button></div>
+<div id="bossBar" class="boss-bar" hidden><span id="bossName"></span><span class="boss-track"><span id="bossFill"></span></span></div>
+<div id="waveBanner" class="wave-banner" hidden><strong id="bannerTitle"></strong><span id="bannerSub"></span></div>
 <p id="notice" class="toast" role="status" aria-live="polite">Tap a stone pad to build a tower.</p>
 <div id="updateBanner" class="update-banner" role="status" hidden><span id="updateText">A new version is out.</span> <button id="updateReload" type="button">Reload</button></div>
 <div class="bottom-left"><button id="commanderOpen" class="hero-btn" type="button" aria-label="Commander"><span id="heroFace" class="hero-face"></span><span class="hero-hp"><span id="heroHp"></span></span></button><button id="waveInfo" class="round small" aria-label="Wave preview">i</button></div>

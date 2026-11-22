@@ -131,3 +131,21 @@ details{margin:10px 0;color:var(--muted);font-size:.8rem}
 .lab-link{font-size:.85rem}
 @media(max-height:480px){.round{width:34px;height:34px}.hud-item{padding:2px 9px 2px 6px}.toast{top:44px}.hero-btn{width:46px;height:46px}.spell{width:clamp(42px,6vw,58px)}.card-tip{width:min(260px,50vw)}}
 @media(orientation:portrait) and (max-width:700px){.hud{gap:4px}.hud-item{padding:2px 8px 2px 6px}}
+/* Drop 2: game feel */
+.map{transition:transform .05s linear}
+.wave-banner{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);z-index:8;pointer-events:none;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 34px;background:linear-gradient(90deg,transparent,#0f1c16e8 18%,#0f1c16e8 82%,transparent);border-top:2px solid #c9b07a;border-bottom:2px solid #c9b07a;min-width:min(420px,80vw)}
+.wave-banner strong{font:700 clamp(1.5rem,5vw,2.6rem)/1.05 Georgia,serif;letter-spacing:.06em;color:#fff1cf;text-shadow:0 2px 0 #000,0 0 18px #f2cf6b66}
+.wave-banner span{font:700 clamp(.8rem,2.2vw,1rem) system-ui;color:var(--gold)}
+.wave-banner[data-tone=boss]{border-color:#e0573f}.wave-banner[data-tone=boss] strong{color:#ffd2c4;text-shadow:0 2px 0 #000,0 0 20px #e0573f88}.wave-banner[data-tone=boss] span{color:#ff9a7a}
+.wave-banner[data-tone=win] strong{color:#f6d77a}
+.wave-banner.play{animation:banner-in 2.3s ease both}
+@keyframes banner-in{0%{opacity:0;transform:translate(-50%,-50%) scale(1.25)}10%{opacity:1;transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-60%)}}
+.boss-bar{position:absolute;top:calc(max(8px,env(safe-area-inset-top)) + 46px);left:50%;transform:translateX(-50%);z-index:6;width:min(420px,60vw);display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none}
+.boss-bar #bossName{font:700 .82rem Georgia,serif;color:#ffd2c4;text-shadow:0 1px 2px #000;background:#0f1c16d9;border-radius:999px;padding:1px 12px}
+.boss-track{display:block;width:100%;height:10px;background:#2a1612;border:2px solid #e0573f;border-radius:6px;overflow:hidden;box-shadow:0 2px 6px #000a}
+#bossFill{display:block;height:100%;width:100%;background:linear-gradient(#ff7b5c,#b8321e);transition:width .15s}
+.boss-bar:not([hidden])~.toast{top:calc(max(8px,env(safe-area-inset-top)) + 88px)}
+.hud-item.hit{animation:hud-hit .5s ease}
+@keyframes hud-hit{0%,100%{transform:none}20%{transform:scale(1.25);background:#7a1e14}60%{transform:scale(.95)}}
+.spell,.ring-items>button,.round,.wave-call,.hero-btn{transition:transform .12s,filter .12s}
+.ring-items>button:active,.round:active,.wave-call:active,.spell:active{filter:brightness(1.25)}
