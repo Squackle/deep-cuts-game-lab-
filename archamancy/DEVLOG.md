@@ -277,3 +277,11 @@ Logan asked for higher-quality art, closer to Kingdom Rush. Art rules taken from
 - Towers, enemies, troops and commanders: ink outline, key light and darker base on every sprite, soft ground shadows, towers about 10% larger, units about 12% larger, a small walk squash (#262).
 - Effects: shaped glowing projectiles with trails, impact flashes, hit sparks, death flash and smoke, dust on build, upgrade and boss smash (#263).
 - Map: a bright painted meadow (Logan picked it over a darker forest). Sandy road with ruts and edging stones, bevelled stone build pads, clumps of round and pine trees, bushes, rocks and flowers, warm light and a softer vignette. Painted in archamancy/terrain.mjs for every map.
+
+## 2026-11-22 — Beta 13.9 Boss stalls and commander health
+
+From Logan's Hard Hollow Road win (17 health, 2 stars):
+- Wave 15's Ironclad Colossus spent about 9 minutes held at the entrance by Beast Den troops that cannot hurt it, out of reach of most magic towers, and the 3-wave cap then held wave 19 back for over 5 minutes. Troops now hold a physical-immune enemy for 6 seconds, then it shoves past for 3, so it walks into the magic towers. Its trait text says so. Phase bosses are unchanged.
+- Commanders kept their wave 1 health all run while enemy hits grow with the wave, so Omnath fell 18 times. Commander health now grows each wave (about 4x by wave 25).
+- The copied report now lists the wave each tower was built (builtWave). The Storm Engine that showed 0 damage hits normally in tests on that pad, so it was most likely built during the last wave after the road there had cleared.
+- The pinned benchmark run now ends with 6 health instead of 9 (its wave 25 boss now leaks), since the troop change shifts that bot run.
