@@ -1,3 +1,4 @@
+import {animateMap} from './terrain.mjs';
 // Visual feedback layer: reads engine events and health changes, draws short-lived effects.
 // Purely cosmetic. It never changes the simulation.
 export function createFx(ctx,{maxParticles=260}={}){
@@ -42,7 +43,7 @@ export function createFx(ctx,{maxParticles=260}={}){
  function offset(now){if(now>shakeUntil)return {x:0,y:0};const k=(shakeUntil-now)/300,p=shakePower*Math.min(1,k);return {x:(rnd()-.5)*p,y:(rnd()-.5)*p};}
  // Drifting fireflies over the forest, for a living map.
  const motes=Array.from({length:22},(_,i)=>({x:(i*397)%1000,y:(i*233)%600,p:i*1.7,s:.6+(i%5)*.15}));
- function ambient(now){const t=now/1000;for(const m of motes){const x=(m.x+Math.sin(t*.3*m.s+m.p)*40+t*6*m.s)%1000,y=m.y+Math.cos(t*.4*m.s+m.p)*25,a=.25+.35*Math.max(0,Math.sin(t*1.3+m.p));ctx.globalAlpha=a;ctx.fillStyle="#f6f0a8";ctx.beginPath();ctx.arc(x,y,1.8,0,Math.PI*2);ctx.fill();ctx.globalAlpha=a*.25;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;}
+ function ambient(now){animateMap(ctx,now);const t=now/1000;for(const m of motes){const x=(m.x+Math.sin(t*.3*m.s+m.p)*40+t*6*m.s)%1000,y=m.y+Math.cos(t*.4*m.s+m.p)*25,a=.25+.35*Math.max(0,Math.sin(t*1.3+m.p));ctx.globalAlpha=a;ctx.fillStyle="#f6f0a8";ctx.beginPath();ctx.arc(x,y,1.8,0,Math.PI*2);ctx.fill();ctx.globalAlpha=a*.25;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;}
  function draw(now){
   for(let i=parts.length-1;i>=0;i--){const p=parts[i],t=(now-p.born)/p.life;if(t>=1){parts.splice(i,1);continue;}
    if(p.flash){ctx.save();ctx.globalCompositeOperation="lighter";const r=p.flash*(.6+t*.6);for(const [k,al] of [[1,.18],[.62,.3],[.3,.5]]){ctx.globalAlpha=al*(1-t);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,r*k,0,Math.PI*2);ctx.fill();}ctx.restore();continue;}
