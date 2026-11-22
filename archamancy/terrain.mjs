@@ -56,7 +56,25 @@ export function paintTerrain(a,game){
  const poly=(pts,fill,stroke=INK,lw=1.6)=>{a.beginPath();pts.forEach(([x,y],i)=>i?a.lineTo(x,y):a.moveTo(x,y));a.closePath();a.fillStyle=fill;a.fill();if(stroke){a.strokeStyle=stroke;a.lineWidth=lw;a.stroke();}};
  const rect=(x,y,w,h,fill)=>{a.fillStyle=INK;a.fillRect(x-1,y-1,w+2,h+2);a.fillStyle=fill;a.fillRect(x,y,w,h);};
  let creek=null;
- {const keepAt=keep||{x:W,y:H*.8};
+ // Frozen lakes (map.ice, e.g. Frostfen): the lake is the map's water, so no generic creek is carved.
+ const ice=game.map.ice||[],inIce=(x,y,m=0)=>ice.some(r=>x>r.x-m&&x<r.x+r.w+m&&y>r.y-m&&y<r.y+r.h+m);
+ const lakePath=(r,grow=0)=>{const cx=r.x+r.w/2,cy=r.y+r.h/2,hx=r.w/2+16+grow,hy=r.h/2+16+grow;a.beginPath();for(let k=0;k<=96;k++){const th=k/96*Math.PI*2,c=Math.cos(th),sn=Math.sin(th),w=1+Math.sin(th*5+r.x)*.025+Math.sin(th*11+r.y)*.015,x=cx+hx*Math.sign(c)*Math.abs(c)**.55*w,y=cy+hy*Math.sign(sn)*Math.abs(sn)**.55*w;k?a.lineTo(x,y):a.moveTo(x,y);}a.closePath();};
+ for(const r of ice){for(let x=r.x-10;x<=r.x+r.w+10;x+=26)for(let y=r.y-10;y<=r.y+r.h+10;y+=26)occ.push({x,y,r:30});
+  lakePath(r,12);a.fillStyle="#8fa3b455";a.fill();lakePath(r,7);a.fillStyle="#b7c6d0";a.fill();lakePath(r,2);a.fillStyle="#5f7686";a.fill();
+  const g2=a.createLinearGradient(r.x,r.y,r.x+r.w,r.y+r.h);g2.addColorStop(0,"#e2f1f8");g2.addColorStop(.5,"#b9d7e8");g2.addColorStop(1,"#96bcd4");lakePath(r);a.fillStyle=g2;a.fill();
+  a.save();lakePath(r);a.clip();
+  // Deeper blue under the clear ice, sheen streaks from the key light, cracks and wind-blown snow.
+  for(let i=0;i<5;i++){const x=r.x+random()*r.w,y=r.y+random()*r.h;ell(x,y,30+random()*30,14+random()*10,"#7fa9c433",random()*.6);}
+  for(let i=0;i<7;i++){const x=r.x+random()*r.w,y=r.y+random()*r.h;ell(x,y,22+random()*26,2.2,"#ffffff88",-.6);}
+  a.strokeStyle="#ffffffcc";a.lineWidth=1.2;for(let i=0;i<9;i++){let x=r.x+random()*r.w,y=r.y+random()*r.h;a.beginPath();a.moveTo(x,y);for(let k=0;k<4;k++){x+=(random()-.5)*34;y+=(random()-.5)*26;a.lineTo(x,y);}a.stroke();}
+  a.strokeStyle="#5f86a066";a.lineWidth=1;for(let i=0;i<6;i++){let x=r.x+random()*r.w,y=r.y+random()*r.h;a.beginPath();a.moveTo(x,y);for(let k=0;k<3;k++){x+=(random()-.5)*28;y+=(random()-.5)*20;a.lineTo(x,y);}a.stroke();}
+  for(let i=0;i<10;i++){const sd=random()<.5,x=sd?r.x+random()*r.w:(random()<.5?r.x-8:r.x+r.w+8),y=sd?(random()<.5?r.y-8:r.y+r.h+8):r.y+random()*r.h;ell(x,y,18+random()*16,6+random()*4,"#f4f8fadd",random()*.4);}
+  a.restore();
+  lakePath(r,3);a.strokeStyle="#f4f8fa";a.lineWidth=3;a.stroke();
+  for(let i=0;i<9;i++)living.push({type:"glint",x:r.x+random()*r.w,y:r.y+random()*r.h,ph:random()*6});
+  // Frozen reeds poking through the snow on the shore.
+  for(let k=0;k<14;k++){const th=random()*Math.PI*2,c=Math.cos(th),sn=Math.sin(th),x=r.x+r.w/2+(r.w/2+30)*Math.sign(c)*Math.abs(c)**.55,y=r.y+r.h/2+(r.h/2+30)*Math.sign(sn)*Math.abs(sn)**.55;if(roadDist(x,y)<34)continue;a.strokeStyle=S.reed;a.lineWidth=1.5;for(let j=-1;j<=1;j++){a.beginPath();a.moveTo(x+j*2,y);a.lineTo(x+j*3,y-9-random()*5);a.stroke();}ell(x,y-11,1.3,2.8,"#6b4a2c");}}
+ if(!ice.length){const keepAt=keep||{x:W,y:H*.8};
   for(let cx=90;cx<=W-90;cx+=10){const pts=[];for(let y=-30;y<=H+30;y+=5){const w=Math.sin(y*.028+cx*.37)*13+Math.sin(y*.083+cx)*4;pts.push([cx+w,y]);}
    let minPad=1e9,ok=true;for(const [x,y] of pts){minPad=Math.min(minPad,padDist(x,y));if(Math.hypot(x-keepAt.x,y-keepAt.y)<90)ok=false;}if(!ok||minPad<46)continue;
    const runs=[];let run=[];pts.forEach(([x,y],k)=>{if(roadDist(x,y)<44)run.push(k);else if(run.length){runs.push(run);run=[];}});if(run.length)runs.push(run);
@@ -98,12 +116,24 @@ export function paintTerrain(a,game){
   for(const side of [-1,1]){const x=p.x+nx*24*side+(random()-.5)*2,y=p.y+ny*24*side+(random()-.5)*2,r=3.4+random()*1.4;if(roadDist(x,y)<21||creekDist(x,y)<20)continue;ell(x+1.2,y+1.6,r+1,r*.75,"#2b2a1fbb");ell(x,y,r+.8,r*.72+.6,INK);ell(x,y,r,r*.72,random()<.5?"#a59a7c":"#968c6f");ell(x-r*.25,y-r*.25,r*.5,r*.3,"#cfc6a6");}}
  // Grass tufts spilling over the road edge soften the hard line.
  for(let i=0;i<420;i++){const [s0,s1]=spans[i%spans.length],n=s0+random()*(s1-s0),p=game.pointAt(n),q=game.pointAt(n+1),dx=q.x-p.x,dy=q.y-p.y,l=Math.hypot(dx,dy)||1,side=random()<.5?-1:1,d=27+random()*5,x=p.x-dy/l*d*side,y=p.y+dx/l*d*side;
-  if(padDist(x,y)<30||roadDist(x,y)<25||creekDist(x,y)<18)continue;tuft(x,y,4+random()*3);}
+  if(padDist(x,y)<30||roadDist(x,y)<25||creekDist(x,y)<18||inIce(x,y,10))continue;tuft(x,y,4+random()*3);}
  // Autumn: fallen leaves drift across the grass and the road verge.
  if(S.litter)for(let i=0;i<900;i++){const x=random()*W,y=random()*H;if(padDist(x,y)<30||creekDist(x,y)<16||(roadDist(x,y)<20&&random()<.8))continue;const c=S.litter[i%S.litter.length],rot=random()*Math.PI;ell(x+.6,y+.8,2.6,1.3,"#3a2a1840",rot);ell(x,y,2.6,1.3,c,rot);}
  // Winter: soft snowbanks along the road edges, lit on top.
  if(S.snow)for(let i=0;i<520;i++){const [s0,s1]=spans[i%spans.length],n=s0+random()*(s1-s0),p=game.pointAt(n),q=game.pointAt(n+1),dx=q.x-p.x,dy=q.y-p.y,l=Math.hypot(dx,dy)||1,side=random()<.5?-1:1,d=24+random()*6,x=p.x-dy/l*d*side,y=p.y+dx/l*d*side;
-  if(padDist(x,y)<30||roadDist(x,y)<21||creekDist(x,y)<18)continue;const r=4+random()*5;ell(x+1,y+1.5,r,r*.5,"#8fa3b455");ell(x,y,r,r*.5,"#f6f9fb");}
+  if(padDist(x,y)<30||roadDist(x,y)<21||creekDist(x,y)<18||inIce(x,y,6))continue;const r=4+random()*5;ell(x+1,y+1.5,r,r*.5,"#8fa3b455");ell(x,y,r,r*.5,"#f6f9fb");}
+
+ // Causeway: where the road crosses a frozen lake it runs on a raised stone causeway topped with packed snow,
+ // so the slow stretch of ice is obvious at a glance.
+ for(const r of ice){a.save();lakePath(r,-1);a.clip();a.lineJoin="round";a.lineCap="butt";roadPath();
+  a.strokeStyle="#3d4e5a66";a.lineWidth=66;a.stroke();a.strokeStyle=INK;a.lineWidth=58;a.stroke();a.strokeStyle="#7d848a";a.lineWidth=54;a.stroke();
+  a.save();a.setLineDash([9,2]);a.strokeStyle="#9aa2a8";a.lineWidth=50;a.stroke();a.restore();
+  a.strokeStyle="#5f676d";a.lineWidth=42;a.stroke();a.strokeStyle="#dfe7ec";a.lineWidth=38;a.stroke();a.strokeStyle="#f4f8fa";a.globalAlpha=.8;a.lineWidth=22;a.stroke();a.globalAlpha=1;
+  for(const side of [-1,1]){a.save();a.setLineDash([18,8]);a.lineDashOffset=side*5;a.strokeStyle="#b7c4ce";a.lineWidth=2.4;a.beginPath();for(const [s0,s1] of spans){for(let n=s0;n<=s1;n+=4){const p=game.pointAt(n),q=game.pointAt(Math.min(s1,n+2)),dx=q.x-p.x,dy=q.y-p.y,l=Math.hypot(dx,dy)||1,x=p.x-dy/l*9*side,y=p.y+dx/l*9*side;n===s0?a.moveTo(x,y):a.lineTo(x,y);}}a.stroke();a.restore();}
+  a.restore();
+  // Little ice-blue markers on the causeway edge warn that the footing is slick.
+  for(const [s0,s1] of spans)for(let n=s0;n<s1;n+=34){const p=game.pointAt(n),q=game.pointAt(n+1),dx=q.x-p.x,dy=q.y-p.y,l=Math.hypot(dx,dy)||1;if(!inIce(p.x,p.y,-6))continue;
+   for(const side of [-1,1]){const x=p.x-dy/l*29*side,y=p.y+dx/l*29*side;rect(x-2,y-12,4,12,"#6b4a2c");ell(x,y-13,3,3,INK);ell(x,y-13,2.2,2.2,"#9fe0ff");}}}
 
  // Plank bridges where the creek passes under the road: stone piers at each bank, deck and rails on top.
  if(creek)for(const b of creek.bridges){a.save();a.translate(b.x,b.y);
