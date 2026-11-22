@@ -344,3 +344,10 @@ Logan: enemies took damage well before the projectile reached them. Tower damage
 - Splash, and hex or root spreads, still burst where the target was if it died meanwhile; single-target shots at a dead enemy fizzle. Shots from a sold tower are dropped.
 - Arcanum, Judgment, Mirror and Hex towers skip an enemy that shots already in flight will kill, so several towers no longer pour shots into a dying enemy.
 - In-flight shots are plain data: saves, restores and replays stay deterministic. Benchmark run: 9 to 10 health (less overkill).
+
+## 2026-11-22 — Beta 13.19 Frostfen and death-burst balance
+
+Logan's first Frostfen run (Hard, winter, 3 stars, 18 health, 2 flier leaks). One Goblin Warcamp (Goblin King's Warband with Funeral, Twins, Blade and Forge) dealt 998k of 1.94M damage, 714k of it from death bursts, about eight times the damage per mana of any other tower.
+- Death bursts (Funeral enchantment, Powderkeg Legion): base 45 + 8 per tier → 30 + 6 per tier, and late-wave scaling `late(.6)` → `late(.5)`. Roughly half the damage by wave 25.
+- A tower's death bursts fire at most once every 0.6 s (`DEATH_BURST_GAP`), so a horde dying together can't chain-detonate a wave. Resonance and Teysa still double each burst.
+- Frostfen ice: ground enemies move at 70% speed on the lake (was 60%).
