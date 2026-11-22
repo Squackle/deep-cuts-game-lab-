@@ -35,3 +35,9 @@ test("stars are kept per battlefield, and the Hollow Road keeps its old keys",()
  assert.ok(!progress.recordStars(p,"normal",3,"Bad Map"));
  const back=progress.sanitize(JSON.parse(JSON.stringify({...p,map:"confluence",stars:{...p.stars,"x:y":3,"__proto__:easy":3}})),all);assert.deepEqual(back.stars,{normal:2,"confluence:normal":3});assert.equal(back.map,"confluence");
  assert.equal(progress.sanitize({starter:"krenko",map:"<b>"},all).map,"hollow");});
+test("star upgrades spend the star pool, refund, and sanitize",()=>{const p=progress.newProfile();progress.chooseStarter(p,"krenko");
+ assert.ok(!progress.buyPerk(p,"R"),"no stars yet");progress.recordStars(p,"normal",3);progress.recordStars(p,"easy",2,"confluence");assert.equal(progress.totalStars(p),5);
+ assert.ok(progress.buyPerk(p,"R"));assert.ok(progress.buyPerk(p,"R"));assert.equal(progress.freeStars(p),2);assert.ok(!progress.buyPerk(p,"R"),"rank 3 costs 3");assert.ok(progress.buyPerk(p,"treasury"));assert.ok(!progress.buyPerk(p,"nope"));
+ assert.deepEqual(p.perks,{R:2,treasury:1});const back=progress.sanitize(JSON.parse(JSON.stringify(p)),all);assert.deepEqual(back.perks,{R:2,treasury:1});
+ assert.deepEqual(progress.sanitize({...JSON.parse(JSON.stringify(p)),perks:{R:3,G:3}},all).perks,{},"more spent than earned resets");
+ assert.ok(progress.resetPerks(p));assert.equal(progress.freeStars(p),5);});

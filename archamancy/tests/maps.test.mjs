@@ -45,3 +45,15 @@ test("saves keep their map and refuse to load on another map",()=>{
  const old=JSON.parse(JSON.stringify(createEngine(1).snapshot()));delete old.state.mapId;assert.ok(createEngine(1).restore(old),"older saves load on the Hollow Road");
  assert.equal(g.playtestReport().map,"confluence");
 });
+
+test("star upgrades apply once at the start of a run and never in the Proving Grounds",async()=>{
+ const {PERKS}=await import("../engine.mjs");assert.ok(Object.keys(PERKS).length>=8);
+ const base=createEngine(1),g=createEngine(1);const m=g.state.mana;assert.ok(g.command({type:"perks",perks:{treasury:2,spellcraft:3,command:1,R:3,bogus:3,G:9}}));
+ assert.deepEqual(g.state.perks,{treasury:2,spellcraft:3,command:1,R:3});assert.equal(g.state.mana,m+60);assert.ok(!g.command({type:"perks",perks:{treasury:3}}),"only once");
+ assert.equal(g.castCost("meteor"),Math.round(base.castCost("meteor")*.85));
+ g.command({type:"commander",id:"krenko"});base.command({type:"commander",id:"krenko"});assert.equal(g.state.commander.maxHp,Math.round(base.state.commander.maxHp*1.1));
+ const hit=e=>{e.command({type:"sandboxMana",amount:0});e.state.mana=5000;e.command({type:"build",pad:5,kind:"pyre"});e.command({type:"wave"});for(let i=0;i<200&&!e.state.stats.towerDamage;i++)e.step();return e.state.towers[5].damage;};
+ assert.ok(hit(g)>hit(base),"red towers hit harder");
+ const s=createEngine(1,"sandbox");assert.ok(!s.command({type:"perks",perks:{treasury:3}}));
+ const save=JSON.parse(JSON.stringify(g.snapshot()));const r=createEngine(1);assert.ok(r.restore(save));assert.deepEqual(r.state.perks,g.state.perks);
+});

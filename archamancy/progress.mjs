@@ -1,3 +1,4 @@
+import { PERKS, PERK_COSTS } from "./engine.mjs";
 // Commander collection: pick one starter, unlock the rest through play in Gauntlet or Endless.
 // Saved only in this browser. Proving Grounds shows every commander and never unlocks anything.
 export const STARTERS = ["krenko", "talrand", "omnath"];
@@ -15,13 +16,15 @@ export const UNLOCKS = [
 const KEY = "archemancy.progress.v1";
 
 export const LEVELS = ["easy", "normal", "hard"];
-export function newProfile() { return { version: 1, starter: null, unlocked: [], last: null, bestWave: 0, stars: {}, difficulty: "normal", map: "hollow" }; }
+export function newProfile() { return { version: 1, starter: null, unlocked: [], last: null, bestWave: 0, stars: {}, difficulty: "normal", map: "hollow", perks: {} }; }
 
 export function sanitize(raw, all) {
  const p = newProfile();
  if (!raw || typeof raw !== "object") return p;
  if (LEVELS.includes(raw.difficulty)) p.difficulty = raw.difficulty;
  for (const [k, n] of Object.entries(raw.stars || {})) if (/^([a-z]+:)?(easy|normal|hard)$/.test(k) && !k.startsWith("hollow:") && Number.isInteger(n) && n >= 1 && n <= 3) p.stars[k] = n;
+ if (raw.perks && typeof raw.perks === "object") for (const k of Object.keys(PERKS)) { const n = raw.perks[k]; if (Number.isInteger(n) && n >= 1 && n <= 3) p.perks[k] = n; }
+ if (spentStars(p) > totalStars(p)) p.perks = {};
  if (typeof raw.map === "string" && /^[a-z]+$/.test(raw.map)) p.map = raw.map;
  if (STARTERS.includes(raw.starter) && all.includes(raw.starter)) p.starter = raw.starter;
  if (!p.starter) return p;
@@ -80,3 +83,11 @@ export function load(storage, all) {
 export function save(storage, p) {
  try { storage?.setItem(KEY, JSON.stringify(p)); return true; } catch { return false; }
 }
+
+// Star upgrades. Every best-star result on every map and difficulty adds to the pool; perks spend from it and can be refunded any time.
+export const totalStars = p => Object.values(p.stars || {}).reduce((a, b) => a + b, 0);
+export const perkCost = n => PERK_COSTS.slice(0, n).reduce((a, b) => a + b, 0);
+export const spentStars = p => Object.values(p.perks || {}).reduce((a, n) => a + perkCost(n), 0);
+export const freeStars = p => totalStars(p) - spentStars(p);
+export function buyPerk(p, k) { if (!Object.hasOwn(PERKS, k)) return false; const n = p.perks[k] || 0; if (n >= PERK_COSTS.length || freeStars(p) < PERK_COSTS[n]) return false; p.perks[k] = n + 1; return true; }
+export function resetPerks(p) { const had = spentStars(p) > 0; p.perks = {}; return had; }

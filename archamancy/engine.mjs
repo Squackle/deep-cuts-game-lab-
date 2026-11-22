@@ -1,7 +1,7 @@
 // ARCHAMANCY beta simulation: fixed ticks, original data-driven rules, DOM independent.
 // Bump only when the saved run format changes, so saves survive ordinary updates.
 export const SAVE_FORMAT=1;
-export const VERSION="0.1.0-beta.13.0";
+export const VERSION="0.1.0-beta.13.1";
 // Status effects from towers (ticks are 100 ms): Pyre blasts burn, Thornheart poisons (stacking), Arcanum freezes (slow), Hex curses (+35% damage taken).
 export const BURN=10,POISON=30,POISON_STACKS=3;
 // Enemy health multiplier per difficulty. Gauntlet stars: 3 at 18+ fortress left, 2 at 10+, otherwise 1.
@@ -16,6 +16,18 @@ export const MAPS={
  confluence:{name:"The Confluence",blurb:"Two roads enter and merge into one before the keep.",segments:[{pts:[[0,80],[740,80],[740,200],[210,200],[210,300]],next:2},{pts:[[0,520],[740,520],[740,400],[210,400],[210,300]],next:2},{pts:[[210,300],[1000,300]],next:null}],entrances:[0,1],commander:[2,.3],
   pads:[[300,140],[440,140,"height"],[580,140],[320,250],[460,250],[600,250],[860,150],[860,235],[955,140],[300,460],[440,460],[580,460],[320,350],[460,350],[600,350],[860,450],[860,365],[955,460],[105,190],[105,300,"spring"],[105,410]],
   labels:[["NORTH FORD",110,45],["SOUTH FORD",110,570],["THE CONFLUENCE",226,288],["VERDANT KEEP",890,402]]}
+};
+// Star upgrades: permanent perks bought with Gauntlet stars, three ranks each. Rank n costs PERK_COSTS[n-1] stars.
+export const PERK_COSTS=[1,2,3];
+export const PERKS={
+ W:{name:"White Mastery",color:"W",text:"White towers: +8% damage and +10% troop health per rank."},
+ U:{name:"Blue Mastery",color:"U",text:"Blue towers: +8% damage and +10% troop health per rank."},
+ B:{name:"Black Mastery",color:"B",text:"Black towers: +8% damage and +10% troop health per rank."},
+ R:{name:"Red Mastery",color:"R",text:"Red towers: +8% damage and +10% troop health per rank."},
+ G:{name:"Green Mastery",color:"G",text:"Green towers: +8% damage and +10% troop health per rank."},
+ treasury:{name:"War Chest",text:"Start each run with +30 mana per rank."},
+ spellcraft:{name:"Spellcraft",text:"Spells cost 5% less mana per rank."},
+ command:{name:"Commander Training",text:"Your commander gets +10% health and damage per rank."}
 };
 export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  if(!Object.hasOwn(MAPS,mapId))mapId="hollow";
@@ -130,8 +142,9 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  const commanderReach=220,commanderRespawn=200;
  const defaultDeck=["meteor","wild","legion","inquiry","funeral","offering","twins","echo","freeze","raise","resonance","reset","cascade","ward","root","recall","matrix","forge","valor","bloom","flame","rally","reflection","deathmark","bloodrush","lightning","verdant","awaken","prism","blade"];
  const stats={damage:0,towerDamage:0,troopDamage:0,deathDamage:0,spellDamage:0,manaEarned:0,farmMana:0,killMana:0,waveMana:0,earlyMana:0,earlyCalls:0,soulMana:0,spellMana:0,sandboxMana:0,commanderMana:0,commanderDamage:0,commanderArmyDamage:0,returns:0,sacrifices:0,spent:0,refunds:0,kills:0,leaks:0,summoned:0,fallen:0,casts:0,draws:0,triggers:0,healing:0,control:0};
- const state={mapId,initialMode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",seed:seed>>>0,rng:seed>>>0||1,mode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",tick:0,wave:0,phase:"ready",mana:350,health:20,towers:{},enemies:[],troops:[],queue:[],nextSpawn:0,nextId:1,stats,events:[],sequence:0,commands:[],library:[],hand:[],discard:[],deck:defaultDeck.slice(),echo:false,prism:0,storm:0,fallen:[],waveHistory:[],towerHistory:[], farmPaid:{}, soulPaid:{}, pendingWaves:[], lastWaveTick:0, bonusDeadline:0, lastWaveSpawned:false, waveCalls:[], commander:null, difficulty:"normal", stars:0, cmdOwner:{id:"cmd",uid:0,damage:0,troopDamage:0,summons:0}, cmdSummons:0, enemyKills:{}, enemyLeaks:{}, cardCasts:{}, effects:[], projectiles:[]};
+ const state={perks:null,mapId,initialMode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",seed:seed>>>0,rng:seed>>>0||1,mode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",tick:0,wave:0,phase:"ready",mana:350,health:20,towers:{},enemies:[],troops:[],queue:[],nextSpawn:0,nextId:1,stats,events:[],sequence:0,commands:[],library:[],hand:[],discard:[],deck:defaultDeck.slice(),echo:false,prism:0,storm:0,fallen:[],waveHistory:[],towerHistory:[], farmPaid:{}, soulPaid:{}, pendingWaves:[], lastWaveTick:0, bonusDeadline:0, lastWaveSpawned:false, waveCalls:[], commander:null, difficulty:"normal", stars:0, cmdOwner:{id:"cmd",uid:0,damage:0,troopDamage:0,summons:0}, cmdSummons:0, enemyKills:{}, enemyLeaks:{}, cardCasts:{}, effects:[], projectiles:[]};
  const d2=(a,b)=>(a.x-b.x)**2+(a.y-b.y)**2;
+ const perk=k=>state.perks?.[k]||0;
  function rand(){let x=state.rng;x^=x<<13;x^=x>>>17;x^=x<<5;return state.rng=x>>>0;}
  function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rand()%(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
  function pointAt(n){const s=segOf(n),{pts,lengths}=s;let p=Math.max(0,Math.min(s.len,n-s.off));for(let i=0;i<lengths.length;i++){if(p<=lengths[i]){const [x,y]=pts[i],[a,b]=pts[i+1];return {x:x+Math.sign(a-x)*p,y:y+Math.sign(b-y)*p};}p-=lengths[i];}const [x,y]=pts.at(-1);return {x,y};}
@@ -147,7 +160,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  // Late-game power: spells, burns, troops, death blasts and commanders grow with enemy health so they stay relevant in Endless.
  function late(k=.8){return Math.pow(scale(Math.max(1,state.wave)),k);}
  function commanderAlive(id){const c=state.commander;return !!c&&!c.dead&&(!id||c.id===id);}
- function castCost(id){return cards[id]?.cost??0;}
+ function castCost(id){const c=cards[id]?.cost??0;return Math.round(c*(1-.05*perk("spellcraft")));}
  function makeToken(model,hp,damage,flier=false){hp=Math.round(hp*late(.6));damage=Math.round(damage*late(.8));const c=state.commander;if(!c||state.troops.length>=220||state.troops.filter(u=>u.source==="cmd"&&u.model===model&&u.hp>0).length>=TOKEN_CAP[model])return false;state.troops.push({id:state.nextId++,source:"cmd",sourceUid:0,hp,maxHp:hp,progress:c.progress,next:state.tick+5,damage,revived:false,model,ward:0,flier});stats.summoned++;state.cmdOwner.summons++;emit("summon",{source:"cmd"});return true;}
  function commanderPos(){return pointAt(state.commander.progress);}
  function farmMultiplier(t){return (pads[t.id].bonus==="spring"?1.35:1)*(1+Math.min(3,t.growth)*.1);}
@@ -178,14 +191,14 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  state.early=early;state.lastWaveTick=state.tick;state.bonusDeadline=state.tick+Math.max(200,next.length*spacing+80);state.lastWaveSpawned=false;
  state.waveCalls.push({wave:state.wave,tick:state.tick,early,bonus});if(state.waveCalls.length>120)state.waveCalls.shift();
  draw();emit("waveStart",{wave:state.wave,early,bonus});
- if(state.commander){const c=state.commander,max=Math.round((commanders[c.id].hp+40*(c.voltron||0))*late(.6));c.hp=Math.min(max,c.hp+Math.max(0,max-c.maxHp));c.maxHp=max;}
+ if(state.commander){const c=state.commander,max=Math.round((commanders[c.id].hp+40*(c.voltron||0))*late(.6)*(1+.1*perk("command")));c.hp=Math.min(max,c.hp+Math.max(0,max-c.maxHp));c.maxHp=max;}
  }
  function hurt(e,raw,magic,t,pierce=false,source=t?"tower":"spell"){if(e.hp<=0)return;e.exposedUntil=state.tick+30;const resistance=magic?e.resist:e.armor*(pierce===2?0:pierce?.5:1);if(resistance>=100)return;const n=Math.min(e.hp,Math.max(1,Math.floor(raw*(100-resistance)/100*(e.curseUntil>state.tick||e.markUntil>state.tick?1.35:1))));e.hp-=n;stats.damage+=n;stats[source+"Damage"]+=n;if(t&&t===state.cmdOwner)stats.commanderArmyDamage+=n;if(t){t.damage+=n;t[source+"Damage"]=(t[source+"Damage"]||0)+n;}if(e.hp===0){stats.kills++;state.enemyKills[e.kind]=(state.enemyKills[e.kind]||0)+1;earn(e.reward,"kill");if(e.markUntil>state.tick)earn(6,"spell");emit("enemyKilled",{id:e.id,source:t?.id??null});}}
  function area(q,r){return state.enemies.filter(e=>e.hp>0&&d2(enemyPos(e),q)<=r*r);}
  function troopCap(t){const d=roster[t.kind];return (d.cap+t.tier-1+Math.floor(bonus(t,"cap")))*(t.twins?2:1);}
  // Barracks are fully manned the moment they are built or upgraded between waves, so their fighters are always visible.
  function muster(t){if(state.phase==="active"||roster[t.kind].kind!=="troops")return;let n=state.troops.filter(u=>u.source===t.id&&u.hp>0).length;while(n<troopCap(t)&&makeTroop(t))n++;}
- function makeTroop(t,opts={}){if(state.troops.length>=220)return false;const def=roster[t.kind];if(def.kind!=="troops")return false;const hp=opts.hp??Math.round(late(.6)*((def.hp+30*(t.tier-1))*(t.construct?1.6:1)*(1+bonus(t,"hp"))+(t.blade?40:0))),damage=opts.damage??Math.round(late(.6)*(def.damage+5*(t.tier-1)+t.growth*4)*(1+bonus(t,"melee"))*(t.blade?1.6:1));state.troops.push({id:state.nextId++,source:t.id,sourceUid:t.uid,hp,maxHp:hp,progress:t.rally,next:state.tick+5,damage,revived:!!opts.revived,model:opts.model||(bonus(t,"giant")?"bloom":t.construct?"construct":t.kind),ward:Math.round(bonus(t,"ward"))});stats.summoned++;t.summons++;if(opts.revived)stats.returns++;emit("summon",{source:t.id});if(commanderAlive("edgar")&&++state.cmdSummons%3===0)makeToken("vampire",30,10);return true;}
+ function makeTroop(t,opts={}){if(state.troops.length>=220)return false;const def=roster[t.kind];if(def.kind!=="troops")return false;const hp=opts.hp??Math.round(late(.6)*((def.hp+30*(t.tier-1))*(t.construct?1.6:1)*(1+bonus(t,"hp"))+(t.blade?40:0))*(1+.1*perk(def.color))),damage=opts.damage??Math.round(late(.6)*(def.damage+5*(t.tier-1)+t.growth*4)*(1+bonus(t,"melee"))*(t.blade?1.6:1)*(1+.08*perk(def.color)));state.troops.push({id:state.nextId++,source:t.id,sourceUid:t.uid,hp,maxHp:hp,progress:t.rally,next:state.tick+5,damage,revived:!!opts.revived,model:opts.model||(bonus(t,"giant")?"bloom":t.construct?"construct":t.kind),ward:Math.round(bonus(t,"ward"))});stats.summoned++;t.summons++;if(opts.revived)stats.returns++;emit("summon",{source:t.id});if(commanderAlive("edgar")&&++state.cmdSummons%3===0)makeToken("vampire",30,10);return true;}
  // A death is processed once; explosions can kill enemies but cannot cause more friendly deaths.
  // Provenance and per-tick entity caps keep the supported trigger graph finite.
  // Bosses stop for whoever blocks them and smash every ground troop (and the commander) within reach.
@@ -231,6 +244,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  if(!c||typeof c!=="object")return false;
  const p=Number.isInteger(c.pad)?pads[c.pad]:null,t=p?state.towers[p.id]:null;
  let ok=false;
+ if(c.type==="perks"&&state.wave===0&&state.phase==="ready"&&state.mode!=="sandbox"&&!state.perks&&!Object.keys(state.towers).length&&c.perks&&typeof c.perks==="object"){const p={};for(const k of Object.keys(PERKS)){const n=c.perks[k];if(Number.isInteger(n)&&n>=1&&n<=3)p[k]=n;}state.perks=p;state.mana+=30*perk("treasury");const cm=state.commander;if(cm){cm.maxHp=cm.hp=Math.round(commanders[cm.id].hp*(1+.1*perk("command")));}emit("perks",{perks:p});ok=true;}
  if(c.type==="difficulty"&&state.wave===0&&state.phase==="ready"&&state.mode!=="sandbox"&&Object.hasOwn(DIFFICULTY,c.level)){state.difficulty=c.level;emit("difficulty",{level:c.level});ok=true;}
  if(c.type==="continue"&&state.phase==="won"){state.mode="endless";state.phase="ready";ok=true;}
  if(!["ready","active"].includes(state.phase)&&!ok)return false;
@@ -240,7 +254,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  if(c.type==="upgrade"&&t){const n=upgradeCost(t),choice=t.tier===2; if(n!==null&&(!choice||["A","B"].includes(c.branch))&&(!c.branch||choice)&&spend(n)){if(choice)t.branch=c.branch;t.paid+=n;t.tier++;emit("upgrade",{pad:t.id,tier:t.tier,branch:t.branch});muster(t);ok=true;}}
  if(c.type==="sell"&&t){const amount=Math.floor(t.paid*.7);state.mana+=amount;stats.refunds+=amount;state.towerHistory.push({...t,sold:true});delete state.towers[p.id];state.troops=state.troops.filter(u=>u.source!==p.id);emit("sell",{pad:p.id,amount});ok=true;}
  if(c.type==="rally"&&t&&roster[t.kind].kind==="troops"&&Number.isFinite(c.x)&&Number.isFinite(c.y)){const pos=nearestPath(c.x,c.y);if(d2(pointAt(pos),p)<=roster[t.kind].range**2){t.rally=pos;ok=true;}}
- if(c.type==="commander"&&state.wave===0&&state.phase==="ready"&&(c.id===null||Object.hasOwn(commanders,c.id))){const d=commanders[c.id];state.commander=d?{id:c.id,hp:d.hp,maxHp:d.hp,attack:d.damage,growth:0,progress:commanderStart,target:commanderStart,next:0,dead:false,respawnAt:0,kills:0,damage:0,deaths:0,voltron:0}:null;emit("commander",{id:c.id});ok=true;}
+ if(c.type==="commander"&&state.wave===0&&state.phase==="ready"&&(c.id===null||Object.hasOwn(commanders,c.id))){const d=commanders[c.id];state.commander=d?{id:c.id,hp:Math.round(d.hp*(1+.1*perk("command"))),maxHp:Math.round(d.hp*(1+.1*perk("command"))),attack:d.damage,growth:0,progress:commanderStart,target:commanderStart,next:0,dead:false,respawnAt:0,kills:0,damage:0,deaths:0,voltron:0}:null;emit("commander",{id:c.id});ok=true;}
  if(c.type==="commanderMove"&&state.commander&&Number.isFinite(c.x)&&Number.isFinite(c.y)&&c.x>=0&&c.y>=0&&c.x<=W&&c.y<=H){state.commander.target=Math.round(nearestPath(c.x,c.y));if(state.phase!=="active"&&!state.commander.dead)state.commander.progress=state.commander.target;ok=true;}
  if(c.type==="deck"&&state.wave===0&&state.phase==="ready"&&Array.isArray(c.deck)&&c.deck.length===30&&c.deck.every(k=>Object.hasOwn(cards,k))&&c.deck.every(k=>c.deck.filter(x=>x===k).length<=3)){resetDeck(c.deck);ok=true;}
  if(c.type==="cast"&&Number.isInteger(c.index)){const id=state.hand[c.index],spec=cards[id];if(spec&&allowedTarget(id,c)&&spend(castCost(id))){const copy=(state.echo||state.prism>0)&&COPYABLE.includes(id);state.hand.splice(c.index,1);state.storm++;stats.casts++;state.cardCasts[id]=(state.cardCasts[id]||0)+1;emit("spellCast",{card:id});if(copy){if(state.echo)state.echo=false;else state.prism--;}resolve(id,c);if(copy)resolve(id,c,true);state.discard.push(id);if(commanderAlive("talrand")&&isInstantOrSorcery(id))makeToken("drake",40,14,true);if(commanderAlive("lightpaws")&&ENCHANTMENTS.includes(id)&&state.commander.voltron<15){const c=state.commander;c.voltron++;c.growth+=8;const add=Math.round(40*late(.6));c.maxHp+=add;c.hp+=add;}ok=true;}}
@@ -271,7 +285,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  }
  for(const t of Object.values(state.towers)){
  const d=roster[t.kind],p=pads[t.id];if(state.tick<t.next)continue;if(t.silencedUntil>state.tick){t.next=t.silencedUntil;continue;}
- const k=d.kind,tier=t.tier,range=d.range+(p.bonus==="height"?30:0)+bonus(t,"range"),power=Math.round((d.damage+t.growth*6)*[1,1.8,3.3,8][tier-1]*(1+bonus(t,"power")))*(t.matrixUntil>state.tick?2:1),hitPower=e=>power*(1+(e.boss?bonus(t,"boss"):0)+(e.armor>0?bonus(t,"armor"):0));
+ const k=d.kind,tier=t.tier,range=d.range+(p.bonus==="height"?30:0)+bonus(t,"range"),power=Math.round((d.damage+t.growth*6)*[1,1.8,3.3,8][tier-1]*(1+bonus(t,"power"))*(1+.08*perk(d.color)))*(t.matrixUntil>state.tick?2:1),hitPower=e=>power*(1+(e.boss?bonus(t,"boss"):0)+(e.armor>0?bonus(t,"armor"):0));
  if(k==="farm"){const limit=farmBudget(t),paid=state.farmPaid[t.id]||0,rate=Math.floor([3,7,16,34][tier-1]*farmMultiplier(t)*(1+bonus(t,"farmRate"))*(commanderAlive("omnath")?1.25:1));const n=Math.max(0,Math.min(rate,limit-paid));if(n){state.farmPaid[t.id]=paid+n;earn(n,"farm",t);}}
  else if(k==="draw"){const before=stats.draws;draw(tier>=3?2:1);if(bonus(t,"recycle")&&!state.library.length&&state.hand.length<5){const i=state.discard.findIndex(id=>!["recall","inquiry","echo","reset"].includes(id));if(i>=0){state.hand.push(state.discard.splice(i,1)[0]);stats.triggers++;stats.draws++;}}if(bonus(t,"accelerate"))for(const o of Object.values(state.towers))if(o!==t&&o.kind!=="library"&&d2(pads[o.id],p)<=bonus(t,"aura")**2)o.next=Math.max(state.tick+1,o.next-Math.floor(bonus(t,"accelerate")));t.draws+=stats.draws-before;}
  else if(k==="troops"){const n=state.troops.filter(u=>u.source===t.id&&u.hp>0).length,cap=troopCap(t);for(let i=0;i<(t.twins?2:1)&&n+i<cap;i++)makeTroop(t);}
@@ -296,7 +310,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  const cm=state.commander;
  if(cm&&cm.dead&&state.tick>=cm.respawnAt){cm.dead=false;cm.hp=cm.maxHp;cm.progress=cm.target;emit("commanderReturn",{id:cm.id});}
  if(cm&&!cm.dead){cm.progress=stepToward(cm.progress,cm.target,14);const here=pointAt(cm.progress);
-  const power=Math.round((cm.attack+cm.growth)*late())+(cm.id==="omnath"?Math.min(200,Math.floor(state.mana/50)):0);
+  const power=Math.round((cm.attack+cm.growth)*late()*(1+.1*perk("command")))+(cm.id==="omnath"?Math.min(200,Math.floor(state.mana/50)):0);
   if(cm.id==="krenko"&&state.tick%80===0){const n=Math.max(1,state.troops.filter(u=>u.source==="cmd"&&u.hp>0).length);for(let i=0;i<n;i++)if(!makeToken("goblin",30,8))break;}
   if(cm.id==="meren"&&state.tick%100===0){for(let i=state.fallen.length-1;i>=0;i--){const f=state.fallen[i],t=Object.values(state.towers).find(t=>t.uid===f.sourceUid);if(f.revived||!t)continue;if(makeTroop(t,{hp:f.hp,damage:f.damage,model:f.model,revived:true}))state.fallen.splice(i,1);break;}}
   if(cm.id==="atraxa"&&state.tick%100===0){for(const t of Object.values(state.towers))if((t.prolif||0)<10){t.prolif=(t.prolif||0)+1;t.growth++;}cm.growth=Math.min(200,cm.growth+4);stats.triggers++;}
@@ -316,7 +330,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  const s=state;
  const counts=arr=>arr.reduce((acc,k)=>(acc[k]=(acc[k]||0)+1,acc),{});
  const tower=t=>({pad:t.id+1,kind:roster[t.kind].name,branch:t.branch,specialization:branchName(t),tier:t.tier,sold:!!t.sold,invested:t.paid,damage:t.damage,towerDamage:t.towerDamage||0,troopDamage:t.troopDamage||0,deathDamage:t.deathDamage||0,mana:t.mana,summons:t.summons,healing:t.healing,control:t.control,draws:t.draws,growth:t.growth,enchantments:["twins","funeral","resonance","construct","blade"].filter(k=>t[k]),rally:roster[t.kind].kind==="troops"?Math.round(t.rally):undefined});
- return {game:"ARCHEMANCY",version:VERSION,schema:1,map:s.mapId,seed:s.seed,initialMode:s.initialMode,mode:s.mode,wave:s.wave,phase:s.phase,simulationSeconds:s.tick/10,health:s.health,mana:s.mana,difficulty:s.difficulty,stars:s.stars,enemyHealthScale:scale(Math.max(1,s.wave)),stats:{...s.stats},enemyKills:{...s.enemyKills},enemyLeaks:{...s.enemyLeaks},remainingEnemies:counts(s.enemies.filter(e=>e.hp>0&&!e.escaped).map(e=>e.kind)),queuedEnemies:counts(s.queue.map(e=>e.kind)),cardCasts:{...s.cardCasts},spellbook:counts(s.deck),hand:s.hand.slice(),library:s.library.length,graveyard:counts(s.discard),commander:s.commander?{id:s.commander.id,name:commanders[s.commander.id].name,alive:!s.commander.dead,kills:s.commander.kills,damage:s.commander.damage,armyDamage:s.cmdOwner.troopDamage||0,deaths:s.commander.deaths,attack:s.commander.attack+s.commander.growth,tokens:s.troops.filter(u=>u.source==="cmd"&&u.hp>0).length}:null,echoArmed:s.echo,prismCharges:s.prism,towers:Object.values(s.towers).map(tower),soldTowers:s.towerHistory.slice(-30).map(tower),soldTowerCount:s.towerHistory.length,waveHistory:s.waveHistory.slice(-60).map(w=>({...w})),completedWaveCount:s.waveHistory.length,waveCalls:s.waveCalls.map(w=>({...w})),pendingWaves:s.pendingWaves.slice()};
+ return {game:"ARCHEMANCY",version:VERSION,schema:1,map:s.mapId,seed:s.seed,initialMode:s.initialMode,mode:s.mode,wave:s.wave,phase:s.phase,simulationSeconds:s.tick/10,health:s.health,mana:s.mana,difficulty:s.difficulty,perks:{...(s.perks||{})},stars:s.stars,enemyHealthScale:scale(Math.max(1,s.wave)),stats:{...s.stats},enemyKills:{...s.enemyKills},enemyLeaks:{...s.enemyLeaks},remainingEnemies:counts(s.enemies.filter(e=>e.hp>0&&!e.escaped).map(e=>e.kind)),queuedEnemies:counts(s.queue.map(e=>e.kind)),cardCasts:{...s.cardCasts},spellbook:counts(s.deck),hand:s.hand.slice(),library:s.library.length,graveyard:counts(s.discard),commander:s.commander?{id:s.commander.id,name:commanders[s.commander.id].name,alive:!s.commander.dead,kills:s.commander.kills,damage:s.commander.damage,armyDamage:s.cmdOwner.troopDamage||0,deaths:s.commander.deaths,attack:s.commander.attack+s.commander.growth,tokens:s.troops.filter(u=>u.source==="cmd"&&u.hp>0).length}:null,echoArmed:s.echo,prismCharges:s.prism,towers:Object.values(s.towers).map(tower),soldTowers:s.towerHistory.slice(-30).map(tower),soldTowerCount:s.towerHistory.length,waveHistory:s.waveHistory.slice(-60).map(w=>({...w})),completedWaveCount:s.waveHistory.length,waveCalls:s.waveCalls.map(w=>({...w})),pendingWaves:s.pendingWaves.slice()};
  }
  // Save and resume. A snapshot is the whole run state as plain JSON; restore only accepts a matching save format and known content.
  function snapshot(){const keep={...state,events:[],effects:[],projectiles:[],commands:state.commands.slice(-400)};return {format:SAVE_FORMAT,version:VERSION,savedAt:Date.now(),state:JSON.parse(JSON.stringify(keep))};}

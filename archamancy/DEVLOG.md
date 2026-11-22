@@ -224,3 +224,10 @@ A second battlefield, picked on the title screen next to The Hollow Road.
 - Saves remember their map, and a save only loads on its own map. Saves from before 13.0 load on The Hollow Road. The save format is unchanged.
 - Best Gauntlet stars are kept per map. The Hollow Road keeps its old star keys, so earlier stars still count.
 - Bot benchmark (same bot, seeds 1–3): The Confluence plays a little harder than The Hollow Road on Normal (won all three with 1–5 health, against 2 of 3 won on the Hollow Road).
+
+## 2026-11-22 — Beta 13.1 Logan's first upgrade picks
+
+Logan picked three upgrades from the quality list.
+- Build and upgrade animations: scaffolding goes up and the tower rises out of the ground inside it, then settles with a bounce. Upgrades flash the old tier and pop in the new one. Sold towers shake, sink into the ground and throw up rubble. Restored runs and map changes show towers as they are, without animating.
+- Next-wave preview beside the wave button: each enemy type with its count and flags (Boss, Flying, Armored, Physical immune, Magic resist, Magic immune, Shrouded, Regenerates). It shows between waves and while an early call is open, hides while a pad or spell is selected, and folds up with a tap (remembered). The list ignores taps so it never blocks a pad.
+- Star upgrades: best Gauntlet stars on every map and difficulty form a star pool. Eight perks with three ranks each (1, 2 and 3 stars): a mastery per tower color (+8% damage and +10% troop health per rank), War Chest (+30 starting mana), Spellcraft (spells 5% cheaper) and Commander Training (+10% commander health and damage). Refund any time. Perks apply once, at the start of new Gauntlet and Endless runs, are stored in saves and the copied run report, and never apply in the Proving Grounds.
