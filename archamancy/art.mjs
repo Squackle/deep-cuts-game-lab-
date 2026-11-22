@@ -14,7 +14,7 @@ export function createArt(ctx){
  function flag(a,x,y,c){line(a,[[x,y],[x,y-24]],"#b6a486",2);poly(a,[[x,y-24],[x+15,y-20],[x,y-14]],c);}
  const cache=new Map();
  function makeSprite(key,draw,w=96,h=96){if(cache.has(key))return cache.get(key);const c=document.createElement("canvas");c.width=w;c.height=h;const a=c.getContext("2d");a.translate(w/2,h*.75);draw(a);cache.set(key,c);return c;}
- function towerModel(a,k,tier){
+ function towerModel(a,k,tier,branch){
   const c=school[towerSchools[k]];oval(a,0,10,28,11,"#10241eb0");poly(a,[[-27,1],[-18,-8],[18,-8],[27,1],[24,10],[-24,10]],"#637263");
   a.save();a.scale(1+(tier-1)*.065,1+(tier-1)*.09);
   switch(k){
@@ -35,6 +35,7 @@ export function createArt(ctx){
    case "thorn":line(a,[[-18,6],[-10,-18],[3,-32],[0,-47]],"#61794f",9);line(a,[[13,7],[4,-12],[-7,-28],[0,-47]],"#9bad66",7);for(const [x,y] of [[-10,-18],[9,-9],[-6,-32],[5,-38]])poly(a,[[x-3,y+5],[x+13,y-12],[x+5,y+5]],leaf);crystal(a,0,-49,8,"#c5ef9b");break;
   }
   a.restore();
+  if(branch==="A"){for(const x of [-23,23]){poly(a,[[x-5,6],[x-5,-18],[x,-26],[x+5,-18],[x+5,6]],c);if(tier===4)crystal(a,x,-28,5,"#f7e7ba");}}else if(branch==="B"){oval(a,0,-38,tier===4?26:22,8,c+"55",c);for(const x of [-17,17])crystal(a,x,-38,tier===4?9:6,c);}
   for(let i=0;i<tier;i++)oval(a,(i-(tier-1)/2)*6,12,2.6,2.6,c,ink);
  }
  function humanoid(a,c,skin,opts={}){
@@ -64,7 +65,7 @@ export function createArt(ctx){
    case "titan":humanoid(a,"#927b72","#a68a79",{bulk:true,helmet:true,shield:"#bc9878"});poly(a,[[-8,-34],[-14,-46],[-2,-36],[2,-36],[14,-46],[8,-34]],"#c5b79e");crystal(a,0,-13,6,fire);break;
   }
  }
- function tower(t,p){const s=makeSprite("tower:"+t.kind+":"+t.tier,a=>towerModel(a,t.kind,t.tier),96,120);const scale=Math.min(1,p.y/71.25);ctx.drawImage(s,p.x-38*scale,p.y-71.25*scale,76*scale,95*scale);}
+ function tower(t,p){const s=makeSprite("tower:"+t.kind+":"+t.tier+":"+(t.branch||"-"),a=>towerModel(a,t.kind,t.tier,t.branch),96,120);const scale=Math.min(1,p.y/71.25);ctx.drawImage(s,p.x-38*scale,p.y-71.25*scale,76*scale,95*scale);}
  function unit(k,x,y,opt={}){const s=makeSprite("unit:"+k,a=>creature(a,k),68,68),size=k==="titan"?61:k==="bloom"?52:k==="wing"?46:40;ctx.save();oval(ctx,x,y+3,size*.28,4,"#10231d88");ctx.translate(x,y+(opt.flying?-14:0));ctx.scale(opt.dir<0?-1:1,1);const bob=opt.animate?Math.sin(opt.time*.4+(opt.id||0))*(opt.flying?2:1):0;ctx.drawImage(s,-size/2,-size*.75+bob,size,size);ctx.restore();const yy=y+(opt.flying?-14:0)-size*.65;const ww=size*.60;rect(ctx,x-ww/2,yy,ww,3,"#26332d",null);rect(ctx,x-ww/2,yy,ww*Math.max(0,Math.min(1,opt.hp||0)),3,opt.ally?"#94db93":"#e9a181",null);if(opt.ward) {ctx.strokeStyle="#f1d991aa";ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y-9,15,19,0,0,Math.PI*2);ctx.stroke();}}
  const projectileColors={strike:gold,arcane:ice,mirror:"#c1edff",hex:violet,splash:fire,chain:"#ffdf83",root:leaf,melee:"#f6e0bd",heal:"#b0efad"};
  function projectile(f,clock){
