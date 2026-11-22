@@ -93,3 +93,22 @@ Deferred: partners, paid instant resummoning, commander-specific cards and abili
 Owner direction: players pick a first commander like a game's starter choice, then unlock more as they progress. On first visit a "Choose your first commander" dialog offers three starters: Ysolde (W tokens), Quill (U spellslinger) and Bramblemother (G ramp). Mother Vesk unlocks at wave 10 and Kragg Emberjaw at wave 15; the two starters you did not pick unlock at wave 25. Unlocks count the best wave reached in Gauntlet or Endless; Proving Grounds shows every commander and never unlocks anything. Your last chosen commander is preselected for new runs. Locked commanders show their requirement.
 
 Progress is saved only in this browser (`archemancy.progress.v1` in localStorage) and is sanitized on load, so tampered or broken data falls back to a fresh profile. Nothing is sent anywhere. New `archamancy/progress.mjs` and three tests cover starter rules, unlock thresholds, sandbox exclusion, save/load and tamper handling. Engine rules unchanged apart from the report version. Further original commanders are being designed with the owner and will slot into the same unlock list.
+
+## v0.1.0-beta.10 — Real Magic cards and legendary commanders
+
+Owner decision: use real Magic: The Gathering cards for commanders, spells and tokens; towers stay original. ARCHEMANCY is free, unofficial Fan Content under the Wizards Fan Content Policy, and the menu now shows the required notice.
+
+Spells keep their rules and get the closest real card: Raise the Alarm, Make a Stand, Return to the Ranks, Anointed Procession, Intangible Virtue (W); Divination, Rite of Replication, Twincast, Sleep, Twiddle (U); Animate Dead, Culling the Weak, Grim Discovery, Blood Artist, Deathmark (B); Fireball, Pyroclasm, Grapeshot, Chain Lightning, Temur Battle Rage (R); Wild Growth, Root Snare, Craterhoof Behemoth, Parallel Lives, Seedborn Muse (G); Lithoform Engine, Strionic Resonator, Fireshrieker, Steel Overseer, Loxodon Warhammer (colorless).
+
+Commanders (owner-approved list) replace the Beta 8 originals:
+- Starters: Krenko, Mob Boss (goblin tokens that double, cap 12), Talrand, Sky Summoner (a flying Drake per spell that can hit fliers, cap 8), Omnath, Locus of Mana (groves +25% speed, +1 attack per 50 unspent mana).
+- Edgar Markov (R/W/B) at wave 10: a Vampire token for every 3 troops summoned (cap 10).
+- Light-Paws, Emperor's Voice at wave 15: +8 attack and +40 health per Aura/enchantment/Equipment cast (up to 15).
+- Unpicked starters at wave 25.
+- Meren of Clan Nel Toth (B/G), return 10 troops in a battle: returns your latest fallen troop every 10 s.
+- Teysa Karlov (W/B), lose 200 troops in a battle: death triggers happen twice.
+- Korvold, Fae-Cursed King (B/R/G), sacrifice 50 troops in a battle: +4 attack and a card per sacrifice.
+- Atraxa, Praetors' Voice (W/U/B/G), Endless wave 30: proliferate every 10 s (towers up to +10 growth).
+- The Ur-Dragon (WUBRG), win the Gauntlet with a tower of every color: flying fire breath on 3 leading enemies, triple vs bosses.
+
+Card and commander art is looked up from Scryfall in the browser (art crops, one request at a time, cached locally) and every tile credits its artist; failures just show the card without art. Beta 9 saves with the old original starters reset to a fresh starter pick. New stats: troops returned and sacrificed. 51 Archemancy tests pass, including commander passives, token caps and all unlock rules.

@@ -1,10 +1,16 @@
-// Commander collection: pick one starter, unlock the rest by reaching waves in Gauntlet or Endless.
-// Saved only in this browser. Sandbox shows every commander and never unlocks anything.
-export const STARTERS = ["marshal", "quill", "bramble"];
+// Commander collection: pick one starter, unlock the rest through play in Gauntlet or Endless.
+// Saved only in this browser. Proving Grounds shows every commander and never unlocks anything.
+export const STARTERS = ["krenko", "talrand", "omnath"];
+// Battle stats (fallen, returns, sacrifices) count within a single run.
 export const UNLOCKS = [
- { id: "vesk", wave: 10 },
- { id: "kragg", wave: 15 },
- { starter: true, wave: 25 }
+ { id: "edgar", wave: 10, text: "Reach wave 10 in Gauntlet or Endless" },
+ { id: "lightpaws", wave: 15, text: "Reach wave 15 in Gauntlet or Endless" },
+ { starter: true, wave: 25, text: "Reach wave 25 in Gauntlet or Endless" },
+ { id: "meren", stat: "returns", min: 10, text: "Return 10 fallen troops in one battle" },
+ { id: "teysa", stat: "fallen", min: 200, text: "Lose 200 troops in one battle" },
+ { id: "korvold", stat: "sacrifices", min: 50, text: "Sacrifice 50 troops in one battle" },
+ { id: "atraxa", endless: 30, text: "Reach wave 30 in Endless" },
+ { id: "urdragon", rainbow: true, text: "Win the 25-wave Gauntlet with a tower of every color" }
 ];
 const KEY = "archemancy.progress.v1";
 
@@ -13,10 +19,10 @@ export function newProfile() { return { version: 1, starter: null, unlocked: [],
 export function sanitize(raw, all) {
  const p = newProfile();
  if (!raw || typeof raw !== "object") return p;
- if (STARTERS.includes(raw.starter)) p.starter = raw.starter;
+ if (STARTERS.includes(raw.starter) && all.includes(raw.starter)) p.starter = raw.starter;
+ if (!p.starter) return p;
  if (Array.isArray(raw.unlocked)) p.unlocked = [...new Set(raw.unlocked.filter(id => all.includes(id)))];
- if (p.starter && !p.unlocked.includes(p.starter)) p.unlocked.unshift(p.starter);
- if (!p.starter) p.unlocked = [];
+ if (!p.unlocked.includes(p.starter)) p.unlocked.unshift(p.starter);
  if (p.unlocked.includes(raw.last)) p.last = raw.last;
  if (Number.isInteger(raw.bestWave) && raw.bestWave > 0) p.bestWave = raw.bestWave;
  return p;
@@ -27,22 +33,31 @@ export function chooseStarter(p, id) {
  p.starter = id; p.unlocked = [id]; p.last = id; return true;
 }
 
+function ruleFor(id) { return UNLOCKS.find(u => u.id === id) || (STARTERS.includes(id) ? UNLOCKS.find(u => u.starter) : null); }
+
 // What a locked commander needs, for the dialog.
 export function requirement(p, id) {
  if (p.unlocked.includes(id)) return null;
- const rule = UNLOCKS.find(u => u.id === id) || (STARTERS.includes(id) ? UNLOCKS.find(u => u.starter) : null);
- return rule ? "Reach wave " + rule.wave + " in Gauntlet or Endless" : "Locked";
+ return ruleFor(id)?.text || "Locked";
 }
 
-// Call after each completed wave. Returns newly unlocked commander ids.
-export function recordWave(p, wave, mode) {
- if (mode === "sandbox" || !p.starter || !Number.isInteger(wave)) return [];
- p.bestWave = Math.max(p.bestWave, wave);
+function met(rule, p, run) {
+ if (rule.wave) return p.bestWave >= rule.wave;
+ if (rule.stat) return (run[rule.stat] || 0) >= rule.min;
+ if (rule.endless) return run.mode === "endless" && run.wave >= rule.endless;
+ if (rule.rainbow) return !!run.won && new Set(run.colors || []).size >= 5;
+ return false;
+}
+
+// Call after each completed wave with a snapshot of the run.
+// run = {wave, mode, fallen, returns, sacrifices, won, colors}. Returns newly unlocked commander ids.
+export function recordRun(p, run) {
+ if (!run || run.mode === "sandbox" || !p.starter || !Number.isInteger(run.wave)) return [];
+ p.bestWave = Math.max(p.bestWave, run.wave);
  const fresh = [];
  for (const rule of UNLOCKS) {
-  if (p.bestWave < rule.wave) continue;
-  const ids = rule.starter ? STARTERS : [rule.id];
-  for (const id of ids) if (!p.unlocked.includes(id)) { p.unlocked.push(id); fresh.push(id); }
+  if (!met(rule, p, run)) continue;
+  for (const id of rule.starter ? STARTERS : [rule.id]) if (!p.unlocked.includes(id)) { p.unlocked.push(id); fresh.push(id); }
  }
  return fresh;
 }
