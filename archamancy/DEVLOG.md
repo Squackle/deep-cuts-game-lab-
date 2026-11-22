@@ -336,3 +336,11 @@ Frostfen Crossing is on the title screen (level 6), with its frozen lake and pac
 ## 2026-11-22 — Beta 13.17 Picks up new versions
 
 Logan didn't see Frostfen Crossing after 13.16 shipped. The map list is correct (all three maps show, locked ones with "Opens at level N"), so the page was an older build still open. Now the game checks for a newer version when the tab comes back into view and every 5 minutes: on the title screen it reloads at once; mid-run it says so and reloads when you next return to the title (the run is saved first).
+
+## 2026-11-22 — Beta 13.18 Hits land on impact
+
+Logan: enemies took damage well before the projectile reached them. Tower damage was applied the tick a tower fired; the projectile was only drawn afterwards.
+- Every damaging tower shot is now a record in `state.inFlight` that lands `FLIGHT` ticks later (5; chain lightning 3), the same time the projectile is drawn for. Damage, slows, roots, curses, poison, burn, splash, chain hops and extra/reflected shots all apply on landing, so hit flashes and damage numbers line up.
+- Splash, and hex or root spreads, still burst where the target was if it died meanwhile; single-target shots at a dead enemy fizzle. Shots from a sold tower are dropped.
+- Arcanum, Judgment, Mirror and Hex towers skip an enemy that shots already in flight will kill, so several towers no longer pour shots into a dying enemy.
+- In-flight shots are plain data: saves, restores and replays stay deterministic. Benchmark run: 9 to 10 health (less overkill).
