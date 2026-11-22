@@ -1,4 +1,4 @@
-import {createEngine} from './engine.mjs';
+import {createEngine,VERSION} from './engine.mjs';
 import {createArt} from './art.mjs';
 import * as progress from './progress.mjs';
 import {createCardArt} from './cardart.mjs';
@@ -7,7 +7,7 @@ function boot(createEngine){
  const colors={W:"#e5d4a2",U:"#77b9e6",B:"#ac8ac3",R:"#ed8b65",G:"#9bc889",C:"#c5c9cc"};
  let game=createEngine(1), selected=null, speed=1, rallying=false, moving=false, accumulator=0,last=null,lastEvent=-1, selectedCard=null, handKey="", deckCountKey="", contributionKey="";
  const buttons=[], choices={}, statEls={};
- const labels={returns:"Troops returned",sacrifices:"Troops sacrificed",damage:"Damage dealt",towerDamage:"Direct tower damage",troopDamage:"Troop damage",deathDamage:"Death-trigger damage",spellDamage:"Spell damage",manaEarned:"Mana earned",farmMana:"Farm income",killMana:"Kill income",waveMana:"Wave rewards",earlyMana:"Early-call mana",earlyCalls:"Early calls",spent:"Mana spent",refunds:"Resale refunds",kills:"Enemies defeated",leaks:"Enemies escaped",summoned:"Troops summoned",fallen:"Troops fallen",casts:"Spells cast",draws:"Cards drawn",triggers:"Combo triggers",healing:"Healing restored",control:"Control applications",soulMana:"Soul income",spellMana:"Spell income",sandboxMana:"Sandbox grants",commanderMana:"Commander mana",commanderDamage:"Commander damage"};
+ const labels={returns:"Troops returned",sacrifices:"Troops sacrificed",damage:"Damage dealt",towerDamage:"Direct tower damage",troopDamage:"Troop damage",deathDamage:"Death-trigger damage",spellDamage:"Spell damage",manaEarned:"Mana earned",farmMana:"Farm income",killMana:"Kill income",waveMana:"Wave rewards",earlyMana:"Early-call mana",earlyCalls:"Early calls",spent:"Mana spent",refunds:"Resale refunds",kills:"Enemies defeated",leaks:"Enemies escaped",summoned:"Troops summoned",fallen:"Troops fallen",casts:"Spells cast",draws:"Cards drawn",triggers:"Combo triggers",healing:"Healing restored",control:"Control applications",soulMana:"Soul income",spellMana:"Spell income",sandboxMana:"Sandbox grants",commanderMana:"Commander mana",commanderDamage:"Commander damage",commanderArmyDamage:"Commander token damage"};
  const text=(el,value)=>{const s=String(value);if(el.textContent!==s)el.textContent=s;};
  const notice=s=>{text($("notice"),s);$("notice").title=s;};
  function showDialog(id){for(const d of document.querySelectorAll("dialog[open]"))d.close();$(id).showModal();accumulator=0;}
@@ -143,6 +143,11 @@ function boot(createEngine){
   checkUnlocks();renderField();renderHud();requestAnimationFrame(frame);
  }
  document.addEventListener("visibilitychange",()=>{last=null;accumulator=0;});
+ // Players can keep a tab open across releases. Check for a newer build and offer a reload.
+ const label=v=>"Beta "+String(v).replace(/^0\.1\.0-beta\./,"");text($("buildVersion"),label(VERSION));
+ async function checkForUpdate(){try{const r=await fetch("/archamancy/engine.mjs",{cache:"no-store"});if(!r.ok)return;const live=(await r.text()).match(/export const VERSION="([^"]+)"/)?.[1];if(live&&live!==VERSION){text($("updateText"),label(live)+" is out. You are playing "+label(VERSION)+".");$("updateBanner").hidden=false;}}catch{}}
+ $("updateReload").addEventListener("click",()=>location.reload());
+ checkForUpdate();setInterval(()=>{if(document.visibilityState==="visible"&&$("updateBanner").hidden)checkForUpdate();},300000);
  applyDefaultCommander();if(!profile.starter){renderCommanders();showDialog("commanderDialog");}
  renderHud();requestAnimationFrame(frame);
 }

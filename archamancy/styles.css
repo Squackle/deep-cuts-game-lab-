@@ -22,3 +22,4 @@ dialog{width:min(94vw,620px);max-height:calc(100dvh - 24px);overflow:auto;oversc
 #commanderChoices button[aria-pressed="true"]{background:#3d5a45;box-shadow:inset 0 0 0 2px #f2d698}#commanderChoices button{border-width:2px}
 .fan-notice{font-size:.72rem;line-height:1.35;opacity:.8}.fan-notice a{color:inherit}
 .has-art{background-image:linear-gradient(#0d1a14d9,#0d1a14f2),var(--art)!important;background-size:cover!important;background-position:center 30%!important}#commanderChoices .credit{color:#cfc6a6;font-size:.68rem;margin-top:0}
+.update-banner{display:flex;align-items:center;gap:8px;justify-content:space-between;background:#5a4a1e;border:1px solid var(--gold);border-radius:6px;padding:4px 8px;font-size:.75rem;color:#fff4d0}.update-banner[hidden]{display:none}.update-banner button{font-size:.75rem;padding:3px 10px}
