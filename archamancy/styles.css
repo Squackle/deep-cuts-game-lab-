@@ -209,3 +209,7 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 /* Continue the saved run */
 .continue-run{display:flex;flex-direction:column;align-items:center;gap:2px}.continue-run small{font-size:.72rem;font-weight:700;color:#2b4a2f;letter-spacing:.02em}
 .hero-btn.fallen .hero-face{color:transparent}
+.map-choices{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.map-choices button{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:150px;max-width:200px;padding:8px 12px;border:2px solid var(--rim);border-radius:12px;background:#13231bf2;text-align:center}
+.map-choices button small{font-size:.68rem;font-weight:400;color:#c9cdbd;line-height:1.25}
+.map-choices button[aria-pressed=true]{background:var(--gold);color:#1a2b20}.map-choices button[aria-pressed=true] small{color:#3a3a24}
