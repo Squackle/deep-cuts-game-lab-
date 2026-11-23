@@ -473,3 +473,13 @@ Owner report: "Mana Groves stop producing mana at some point." Cause: each Grove
 - Groves now pace their per-wave harvest across the wave: each payout aims to spread what is left over the time the slowest enemy still needs to walk out (stretching on its own while the road is held). Mana Nexus and Omnath still harvest faster, so they front-load the same amount.
 - Anything still unpaid when the road clears is paid then, so a Grove that stood all wave earns exactly one budget per wave as before (no balance change). A Grove built mid-wave keeps the old rule, so a last-second build cannot claim a full harvest.
 - The limit is now visible: a harvest bar under each Grove during a wave (turns gold when the wave's harvest is done), and the Grove's panel explains the per-wave amount.
+
+## 2026-11-23 — v0.1.0-beta.13.41 A final boss for every region (campaign stage C)
+
+Each campaign region now ends at wave 25 in its own Magic boss; the Verdant Lowlands keep Emrakul. Waves 1–24 are unchanged; wave 25 on each map (in any mode) swaps Emrakul for that region's boss with the same escort.
+- Riverlands (The Confluence): Lorthos, the Tidemaker. Marks the four nearest towers, then silences them.
+- Frostfen Marches: Isu the Abominable. After a 2 s warning ring, freezes nearby troops and your commander for 3 s (they can't fight or hold enemies).
+- Greyhorn Mountains (Greyhorn Pass): Kazuul, Tyrant of the Cliffs. Brings two Indomitable Ancients every 8 s (up to 8).
+- Ember Wastes (Emberfall Caldera): Inferno Titan. After a 2 s warning ring, scorches the three nearest troops for a third of their health (or your commander, who can't be killed by it).
+- Each gets a drawn card-based model, boss bar and codex entry, and its own notices. Card names and type lines are checked on Scryfall by the card-check workflow.
+- Tests: wave-25 boss per map, Isu's freeze and thaw, Inferno Titan's scorch.
