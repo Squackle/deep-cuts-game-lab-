@@ -473,3 +473,10 @@ Owner report: "Mana Groves stop producing mana at some point." Cause: each Grove
 - Groves now pace their per-wave harvest across the wave: each payout aims to spread what is left over the time the slowest enemy still needs to walk out (stretching on its own while the road is held). Mana Nexus and Omnath still harvest faster, so they front-load the same amount.
 - Anything still unpaid when the road clears is paid then, so a Grove that stood all wave earns exactly one budget per wave as before (no balance change). A Grove built mid-wave keeps the old rule, so a last-second build cannot claim a full harvest.
 - The limit is now visible: a harvest bar under each Grove during a wave (turns gold when the wave's harvest is done), and the Grove's panel explains the per-wave amount.
+## 2026-11-23 — v0.1.0-beta.13.39 every friendly death fires death triggers
+
+Logan: "For death triggers tower, ensure that all friendly troops and commander deaths trigger it."
+- Audit before: a Necropolis death blast (Lich Citadel branch or Blood Artist) only fired when that same tower's own troops died. Commander tokens (Krenko goblins, Wilhelt zombies, Kaalia's angels, etc.) and the commander's own death fired nothing at all, and also never fed a nearby Soul Foundry.
+- Now one shared `deathTriggers()` runs on every friendly death: any troop tower's troops, spell-made troops, commander tokens, and the commander. Every death-trigger tower blasts at the spot of the death, anywhere on the map (like Blood Artist), still limited to one blast per tower every DEATH_BURST_GAP ticks. Soul Foundry still needs the death to be in its range. Teysa still doubles, Resonance doubles the tower that holds it.
+- Commander death handling merged into `commanderFall()` (boss smash and normal attacks shared the same copy).
+- Tests: archamancy/tests/death-triggers.test.mjs.
