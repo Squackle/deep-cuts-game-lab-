@@ -2,7 +2,7 @@ import {test} from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {createEngine} from "../engine.mjs";
-import {firstFlyerWarning} from "../wave-guidance.mjs";
+import {firstFlyerWarning,bossOverlapWarning} from "../wave-guidance.mjs";
 
 const start=()=>createEngine(1,"campaign","hollow");
 
@@ -60,4 +60,48 @@ test("UI renders the first-flyers warning before wave four, even if the preview 
  assert.match(js,/s\.mode==="campaign"&&n===4/);
  assert.match(css,/\.wave-peek\.closed ul\{display:none\}/);
  assert.match(css,/\.wave-counter-hint\[hidden\]\{display:none\}/);
+});
+
+test("major boss early calls reveal name and exact count of unfinished waves",()=>{
+ const g=createEngine(1,"campaign","confluence");
+ g.state.wave=4;g.state.phase="active";g.state.pendingWaves=[3,4];
+ const first=bossOverlapWarning(g,g.state,5);
+ assert.match(first,/Lovisa Coldeyes/);
+ assert.match(first,/wave 5/);
+ assert.match(first,/2 unfinished waves/);
+ assert.match(first,/Calling early overlaps/);
+ g.state.wave=24;g.state.pendingWaves=[24];
+ const last=bossOverlapWarning(g,g.state,25);
+ assert.match(last,/Lorthos/);
+ assert.match(last,/1 unfinished wave\./);
+});
+
+test("early-call boss warning respects available actions and does not alter wave state",()=>{
+ const g=createEngine(1,"campaign","confluence");
+ g.state.wave=19;g.state.phase="active";g.state.pendingWaves=[18,19];
+ const before=JSON.stringify(g.state);
+ assert.match(bossOverlapWarning(g,g.state,20),/Iona/);
+ assert.equal(bossOverlapWarning(g,g.state,21),"");
+ g.state.onslaught=true;
+ const onslaught=bossOverlapWarning(g,g.state,20);
+ assert.match(onslaught,/Prepare your defenses/);
+ assert.doesNotMatch(onslaught,/Calling early/);
+ g.state.onslaught=false;
+ g.state.phase="ready";
+ assert.equal(bossOverlapWarning(g,g.state,20),"");
+ g.state.phase="active";g.state.pendingWaves=[];
+ assert.equal(bossOverlapWarning(g,g.state,20),"");
+ g.state.pendingWaves=[19];g.state.mode="sandbox";
+ assert.equal(bossOverlapWarning(g,g.state,20),"");
+ assert.ok(before.includes('"pendingWaves":[18,19]'),"fixture covers a real overlapping state");
+});
+
+test("boss overlap advice stays visible in collapsed forecast and accessible wave-call label",()=>{
+ const js=readFileSync(new URL("../main.mjs",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../../archemancy/index.html",import.meta.url),"utf8");
+ assert.match(js,/bossOverlapWarning\(game,s,n\)/);
+ assert.match(js,/firstFlyerWarning\(game,s,n\)\|\|overlap/);
+ assert.match(js,/\|\|!!overlap/);
+ assert.match(js,/startText\+\(risk\?" "\+risk:""\)/);
+ assert.match(html,/id="waveCounterHint"/);
 });
