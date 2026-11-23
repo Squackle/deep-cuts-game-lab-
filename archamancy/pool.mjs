@@ -35,7 +35,7 @@ export const RELICS = [
  // +Chips: flat damage
  R("bonesplitter", "Bonesplitter", "", "Equipment", "+2/+0", "chips", "common", { troopFlat: 5 }, "Troops deal +5 damage per hit."),
  R("anthem", "Glorious Anthem", "W", "Enchantment", "Creatures you control get +1/+1", "chips", "common", { troopFlat: 3, troopHp: .1 }, "Troops deal +3 damage per hit and have +10% health."),
- R("gauntlet", "Pyromancer's Gauntlet", "R", "Artifact", "plus 2", "chips", "uncommon", { spellFlat: { R: 25 } }, "Red spells deal +25 damage to each enemy they hit."),
+ R("gauntlet", "Pyromancer's Gauntlet", "", "Artifact", "plus 2", "chips", "uncommon", { spellFlat: { R: 25 } }, "Red spells deal +25 damage to each enemy they hit."),
  R("tremors", "Impact Tremors", "R", "Enchantment", "deals 1 damage to each opponent", "chips", "common", { summonZap: 20 }, "Whenever a troop is summoned, it zaps the leading enemy in reach for 20."),
  R("bombardment", "Goblin Bombardment", "R", "Enchantment", "Sacrifice a creature", "chips", "uncommon", { deathZap: 30 }, "Whenever a troop dies, it hurls a goblin at the nearest enemy for 30."),
  R("sofi", "Sword of Fire and Ice", "", "Equipment", "+2/+2", "chips", "rare", { towerFlat: { U: 8, R: 8 } }, "Blue and red towers deal +8 damage per hit."),
@@ -74,7 +74,7 @@ export const RELICS = [
  R("doubling", "Doubling Season", "G", "Enchantment", "twice that many", "retrigger", "rare", { tokenTwice: true }, "Your commander's token makers create two tokens instead of one (caps still apply)."),
  R("scepter", "Isochron Scepter", "", "Artifact", "copy the exiled card", "retrigger", "uncommon", { firstCopy: true }, "The first spell you cast each wave resolves twice."),
  // Utility
- R("arena", "Phyrexian Arena", "B", "Enchantment", "you lose 1 life", "utility", "uncommon", { waveDraw: 1, bleed: 5 }, "Draw an extra card every wave. Lose 1 fortress every 5th wave."),
+ R("arena", "Phyrexian Arena", "B", "Enchantment", "lose 1 life", "utility", "uncommon", { waveDraw: 1, bleed: 5 }, "Draw an extra card every wave. Lose 1 fortress every 5th wave."),
  R("rhystic", "Rhystic Study", "U", "Enchantment", "unless that player pays {1}", "utility", "uncommon", { evenDraw: 1 }, "Draw an extra card on every even-numbered wave."),
  R("clamp", "Skullclamp", "", "Equipment", "draw two cards", "utility", "uncommon", { clamp: 6 }, "Draw a card for every 6 troops that die (up to 2 a wave)."),
  R("prison", "Ghostly Prison", "W", "Enchantment", "can't attack you unless", "utility", "common", { slow: .08 }, "Enemies move 8% slower."),
