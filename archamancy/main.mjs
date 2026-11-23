@@ -351,8 +351,13 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  function buyItem(i){const it=camp.shop.items[i];if(it.kind==="ritual"&&campaignLib.needsTarget(it.id)){pickTarget(it,i);return;}const line=campaignLib.buy(camp,i,game.cards);if(line){saveCamp();sfx.play("coin");notice(line,true);renderCampShop();renderWorld();}}
  function pickTarget(it,i){const d=BY_ID[it.id],ids=campaignLib.ritualTargets(camp,it.id,game.cards);text($("pickTitle"),d.name);text($("pickStatus"),d.text+" Pick a spell.");
   $("pickList").replaceChildren(...ids.map(id=>campTile({kind:"spell",id},f=>f.append(btn("Choose",()=>{const line=campaignLib.buy(camp,i,game.cards,id);if(line){saveCamp();sfx.play("coin");notice(line,true);}showDialog("campShopDialog");renderCampShop();renderWorld();})))));showDialog("pickDialog");}
- function renderDraft(){if(!camp.draft){closeDialogs();return;}const full=camp.deck.length>=campaignLib.deckCap(camp);text($("draftStatus"),full?"Your deck is full ("+camp.deck.length+"). Skip for Treasure, then exile a spell in your Deck to make room next time.":"Add one spell to your deck, or skip for +2 Treasure.");
-  $("draftList").replaceChildren(...camp.draft.map(id=>campTile({kind:"spell",id},f=>f.append(btn("Take",()=>{if(campaignLib.pickDraft(camp,id)){saveCamp();sfx.play("star");notice(game.cards[id].name+" joins your deck.");closeDialogs();renderWorld();}},full)))));}
+ function renderDraft(swapFor=null){if(!camp.draft){closeDialogs();return;}const full=camp.deck.length>=campaignLib.deckCap(camp);
+  const take=(id,out=null)=>{if(campaignLib.pickDraft(camp,id,out)){saveCamp();sfx.play("star");notice(game.cards[id].name+" joins your deck"+(out?", replacing "+game.cards[out].name:"")+".");closeDialogs();renderWorld();}};
+  // Full deck: Swap in shows your deck so you choose which spell leaves (its upgrades go with it).
+  if(swapFor){text($("draftStatus"),"Swap "+game.cards[swapFor].name+" in for which spell? The spell you pick leaves your deck along with its upgrades.");
+   $("draftList").replaceChildren(...camp.deck.map(out=>campTile({kind:"spell",id:out},f=>f.append(btn("Swap out",()=>take(swapFor,out))))),btn("Back",()=>{sfx.play("click");renderDraft();}));return;}
+  text($("draftStatus"),full?"Your deck is full ("+camp.deck.length+"). Swap a drafted spell in for one of yours, or skip for +2 Treasure.":"Add one spell to your deck, or skip for +2 Treasure.");
+  $("draftList").replaceChildren(...camp.draft.map(id=>campTile({kind:"spell",id},f=>f.append(full?btn("Swap in",()=>{sfx.play("click");renderDraft(id);}):btn("Take",()=>take(id))))));}
  $("draftSkip").addEventListener("click",()=>{if(campaignLib.pickDraft(camp,null)){saveCamp();sfx.play("coin");notice("+2 Treasure.");closeDialogs();renderWorld();}});
  $("campReroll").addEventListener("click",()=>{if(campaignLib.reroll(camp,game.cards)){saveCamp();sfx.play("coin");renderCampShop();renderWorld();}});
  $("pickCancel").addEventListener("click",()=>{showDialog("campShopDialog");renderCampShop();});

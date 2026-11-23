@@ -91,6 +91,10 @@ test("campaign: battles pay Treasure, roll a shop and offer a draft; shop buys a
  assert.equal(r.gold, 14); assert.equal(c.treasure, 18);
  assert.equal(c.draft.length, 3); assert.ok(c.draft.every(k => !c.deck.includes(k)));
  assert.ok(camp.pickDraft(c, c.draft[0])); assert.equal(c.deck.length, 9);
+ {const f = camp.newCampaign(3); f.deck = Object.keys(cards).slice(0, camp.DECK_CAP); f.up[f.deck[0]] = 2; f.draft = Object.keys(cards).filter(k => !f.deck.includes(k)).slice(0, 3);
+  assert.equal(camp.pickDraft(f, f.draft[0]), false, "a full deck needs a spell to swap out"); assert.equal(camp.pickDraft(f, f.draft[0], "nope"), false);
+  const out = f.deck[0], inn = f.draft[0]; assert.ok(camp.pickDraft(f, inn, out)); assert.equal(f.deck.length, camp.DECK_CAP);
+  assert.ok(f.deck.includes(inn) && !f.deck.includes(out)); assert.equal(f.up[out], undefined); assert.equal(f.draft, null);}
  assert.ok(c.shop.items.some(i => i.kind === "spell") && c.shop.items.some(i => i.kind === "boon"));
  for (const it of c.shop.items) assert.ok(it.kind === "spell" || BY_ID[it.id], it.id);
  c.treasure = 100;

@@ -135,5 +135,6 @@ export function finishBattle(c, run, cards) {
  return { gold, draft: c.draft };
 }
 export function draftOffer(c, cards) { const pool = Object.keys(cards).filter(k => !c.deck.includes(k)), out = [], n = 3 + (metaFx(c).draftChoices || 0); while (out.length < n && pool.length) out.push(pool.splice(Math.floor(rnd(c) * pool.length), 1)[0]); return out.length ? out : null; }
-export function pickDraft(c, id) { if (!c.draft) return false; if (id === null) { c.draft = null; c.treasure += 2; return true; } if (!c.draft.includes(id) || c.deck.length >= deckCap(c)) return false; c.deck.push(id); c.draft = null; return true; }
+// Take a drafted spell. With a full deck, name a deck spell to swap out (it leaves with its upgrades); null skips for +2 Treasure.
+export function pickDraft(c, id, swapOut = null) { if (!c.draft) return false; if (id === null) { c.draft = null; c.treasure += 2; return true; } if (!c.draft.includes(id)) return false; if (c.deck.length >= deckCap(c)) { if (!c.deck.includes(swapOut)) return false; exile(c, swapOut); } c.deck.push(id); c.draft = null; return true; }
 export { POOL };
