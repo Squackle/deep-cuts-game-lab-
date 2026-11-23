@@ -462,3 +462,10 @@ Card names, mana costs and rules text checked against Scryfall (2026-11-23).
 - New map `caldera`, Emberfall Caldera, for the Ember Wastes region: the road spirals into a volcano to a keep at the centre. Three lava vents (map.vents [x,y,radius]) erupt every 15 s of a wave (VENT_EVERY 150 ticks), taking 12% max health from ground enemies (bosses 4%, armor ignored) and 30% from ground troops in range. Fliers are unharmed. Damage counts as hazardDamage in stats.
 - Ash palette (map.palette "ember"): lava instead of water, charred trees, rising embers. Vents glow and show their blast ring for the last 2.5 s before each eruption. One season only.
 - The world map's fifth stop now opens it (win Greyhorn Pass, or level 6). Crude bot: Hollow 17–18, Greyhorn 15, Caldera 15–16.
+
+## 2026-11-23 — v0.1.0-beta.13.36 Mana Groves pay all wave
+
+Owner report: "Mana Groves stop producing mana at some point." Cause: each Grove has a per-wave harvest limit (22/65/165/400 by tier), and it paid at full speed until that was reached, which took about 15 to 25 seconds. Waves usually last much longer, so Groves went quiet for most of every wave.
+- Groves now pace their per-wave harvest across the wave: each payout aims to spread what is left over the time the slowest enemy still needs to walk out (stretching on its own while the road is held). Mana Nexus and Omnath still harvest faster, so they front-load the same amount.
+- Anything still unpaid when the road clears is paid then, so a Grove that stood all wave earns exactly one budget per wave as before (no balance change). A Grove built mid-wave keeps the old rule, so a last-second build cannot claim a full harvest.
+- The limit is now visible: a harvest bar under each Grove during a wave (turns gold when the wave's harvest is done), and the Grove's panel explains the per-wave amount.
