@@ -423,6 +423,23 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .pad.built.can-up::after{content:"▲";position:absolute;top:-6px;right:-4px;font-size:clamp(.7rem,1.6cqw,1rem);color:#ffd36b;text-shadow:0 0 4px #000,0 0 2px #000;pointer-events:none;animation:canup 1.4s ease-in-out infinite}
 @keyframes canup{50%{transform:translateY(-3px)}}
 @media (prefers-reduced-motion:reduce){.pad.built.can-up::after{animation:none}}
+
+/* Card-frame look for the build menu and the tower panel (towers stay original; the frame borrows Magic's layout). */
+.ring-items>button.tower-choice{width:calc(var(--rs) * .9);height:calc(var(--rs) * 1.24);margin:calc(var(--rs) * -.62) calc(var(--rs) * -.45);border-radius:7px;border:3px solid var(--school,var(--rim));background-color:#13231b;background-position:center 34%;background-size:96%;box-shadow:inset 0 0 0 1.5px #f2cf6bcc,inset 0 -14px 12px -6px color-mix(in srgb,var(--school,#555) 55%,transparent),0 3px 8px #000b;overflow:visible}
+.ring-items>button.tower-choice::before{content:"";position:absolute;inset:3px 3px auto;height:5px;border-radius:2px;background:linear-gradient(90deg,var(--school,#888),#fff8,var(--school,#888));opacity:.85;pointer-events:none}
+.ring-items>button.tower-choice .price{bottom:auto;top:-8px;left:auto;right:-8px;transform:none;min-width:20px;height:20px;padding:0 3px;display:grid;place-items:center;border-radius:999px;background:radial-gradient(circle at 35% 30%,#fffbe9,var(--school,#ccc) 70%);border:1.5px solid #15241c;color:#15241c;font:900 .62rem/1 system-ui;box-shadow:0 1px 3px #000a}
+.ring-items>button.tower-choice.unaffordable .price{color:#7a1d10;border-color:#7a1d10}
+.ring-items>button.tower-choice[aria-pressed=true]{border-color:var(--school,#fff3d2);box-shadow:0 0 0 3px #f2cf6b,inset 0 0 0 1.5px #fff3d2,0 3px 10px #000c;background-color:#3b4c2a}
+.ring-items>button.tower-choice.locked::after{top:auto;bottom:-4px}
+.ring-info{border:2px solid var(--school,var(--rim));box-shadow:inset 0 0 0 1px #f2cf6b88,0 3px 8px #000a;padding:4px;border-radius:9px}
+.ring-info strong{margin:0 0 3px;padding:2px 8px;border-radius:5px;background:linear-gradient(180deg,color-mix(in srgb,var(--school,#3c5244) 42%,#12201a),#12201a);border:1px solid #f2cf6b66}
+.ring-info .type-line{display:block;font:italic 700 .64rem/1.3 system-ui;color:#15241c;background:color-mix(in srgb,var(--school,#cbbd94) 55%,#efe4c8);border-radius:4px;padding:1px 8px;margin:0 0 3px;text-align:left}
+.ring-info .type-line:empty{display:none}
+.ring-info .type-line:not(:empty)~span{display:block;background:#efe4c8;color:#1d2a22;border-radius:4px;padding:3px 8px;text-align:left}
+.ring-info .info-art{display:block;height:46px;margin:0 0 3px;border-radius:4px;border:1px solid #15241c;background:#13231b var(--art) center 30%/cover;position:relative;font:600 .56rem/1 system-ui;color:#fff3d2;text-align:right;padding:33px 5px 0;text-shadow:0 1px 2px #000,0 0 3px #000;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ring-info .info-art[hidden]{display:none}
+/* Color-identity trim under every built tower on the map. */
+.pad.built::before{content:"";position:absolute;left:6%;right:6%;top:62%;height:34%;border-radius:50%;border:2px solid var(--tier-color);box-shadow:0 0 7px var(--tier-color),inset 0 0 5px var(--tier-color);opacity:.7;pointer-events:none}
 /* Daily Challenge + run card */
 .daily-btn{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%}
 .daily-btn small{font-size:.72rem;opacity:.85;font-weight:500;line-height:1.25}

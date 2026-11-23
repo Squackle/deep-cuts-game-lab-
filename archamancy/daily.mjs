@@ -1,8 +1,8 @@
 // Daily Challenge: one fixed run per calendar day, the same for every player.
 // Everything is derived from the date, so no server is needed. Results stay in this browser.
 export const DAILY_KEY="archemancy.daily.v1";
-export const DAILY_MAPS=["hollow","confluence","frostfen"];
-export const DAILY_COMMANDERS=["krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon"];
+export const DAILY_MAPS=["hollow","confluence","frostfen","pass"];
+export const DAILY_COMMANDERS=["krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","toxrill","torbran","urza","urdragon"];
 const SCHOOLS=["W","U","B","R","G"];
 const SCHOOL_NAMES={W:"White",U:"Blue",B:"Black",R:"Red",G:"Green"};
 // Each twist uses only existing engine commands (difficulty, onslaught, tower locks), so runs stay deterministic.

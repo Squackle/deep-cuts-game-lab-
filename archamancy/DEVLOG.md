@@ -404,3 +404,34 @@ From Logan's 13.24 Hard + Onslaught Confluence run (two Inferno Cannons ~31% of 
 ## 2026-11-23 — v0.1.0-beta.13.26 Grand Battalion buff
 
 Logan's 13.25 run was a flawless 3-star Hard Onslaught win, but Legion Hall Grand Battalion (branch B) did 1.5k damage for 2,242 mana while Royal Paladins did 22k. Grand Battalion now also gives +30% troop damage and +25% troop health (×1.6 at tier 4) on top of extra soldiers and faster reinforcement. Sandbox wave 20: T4 189k → 269k. Elder Wildwood left as is (~17% of damage per tower, under the 30% guideline).
+
+## 2026-11-23 — v0.1.0-beta.13.27 Combat feedback
+
+Logan picked "combat feedback" from the idea list. Cosmetic only; the simulation, seeded runs and copied stats are unchanged.
+- Damage numbers on every enemy (hits inside 300 ms add up into one number so crowds stay readable; bosses get larger numbers).
+- Big hits (a fifth of a normal enemy's health, or 5% of a boss) pop a larger orange number with "!", a flash and a small screen shake (at most one every 0.65 s).
+- Screen shake is off when the device asks for reduced motion.
+- Every barracks now has its own strike sound (Legion steel, Necropolis bone, Goblin squeals, Beast snarls), plus commander strikes, commander tokens and Dawn Chapel heals. Each attacking tower already had its own shot sound.
+## 2026-11-23 — v0.1.0-beta.13.28 Greyhorn Pass (fourth map)
+
+- New map `pass`, Greyhorn Pass: one road that runs through a tunnel under a mountain. Ground enemies inside the tunnel (map.tunnel rects) can't be seen, targeted, splashed, chained, blocked by troops or hit by the commander; damage over time keeps ticking. Fliers cross over the peak and stay targetable. Troop rally points and commander moves into the tunnel are refused.
+- 20 pads, rubble on 3, fliers at 90% health (shorter road, like the Confluence). All three seasons. Opens at player level 6 with Frostfen.
+- terrain.mjs paints a craggy massif over the tunnel with a stone portal and torch at each end (snow-capped, autumn and winter palettes).
+- Crude seeded bot (same placement rule on every map): Hollow wave 17–18, Confluence 17, Frostfen 16, Greyhorn 15. A little harder than the others, as a later map should be.
+
+## 2026-11-23 — v0.1.0-beta.13.29 Voices and fuller music
+
+Logan picked tower voice lines and fuller music. Still no audio files: everything is made in the browser.
+- Voice barks: towers and commanders speak short made-up "mumble" lines (no real words), built from a buzzy voice through moving vowel filters. Each tower school has its own voice (white bright, blue airy, black low and raspy, red gruff and quick, green deep and slow); towers sound deeper as they rank up. Each commander has a voice of their own (Krenko squeaky, Korvold and the Ur-Dragon growling, Atraxa choral).
+- Lines: tower picked (a question), built, upgraded, and an occasional battle shout (at most every 7 seconds); commander picked, moved, and ability. One bark at a time, panned to where it happened, and the music dips under it.
+- New "Voices: on/off" toggle in the menu next to Music (saved per browser). The main sound toggle mutes voices too.
+- Fuller music: every theme gains a harmony line under the melody, plus a string counter-line or low cellos.
+
+## 2026-11-23 — v0.1.0-beta.13.30 three new commanders, new unlock paths
+
+Owner request: more popular commanders with a pick-a-starter, unlock-more progression. Starters stay Krenko, Talrand and Omnath. Card names, mana costs and rules text checked against Scryfall (2026-11-23).
+- **Toxrill, the Corrosive** (mono-black, Slime counters). Every 10 s every enemy gets a slime counter (up to 5): each one takes 10% off its attack and 3% of its full health. Slimed enemies that die leave a Slug token (up to 8). Tap: Slime Tide, two counters on every enemy near him. Unlock: win a Gauntlet on Hard (earlier Hard wins count).
+- **Torbran, Thane of Red Fell** (mono-red, Red damage). Red towers and red troops deal +4 per hit, scaled by late waves. Tap: Red Fell Fury, hits nearby enemies for twice his attack and triples the red bonus for 10 s. Unlock: win any 25-wave Gauntlet.
+- **Urza, Lord High Artificer** (mono-blue, Artifacts). Brings a Construct token that grows with every tower you control and comes back 20 s after it falls; each wave your towers tap for 4 mana each (up to 60). Tap: draw a card and the next spell costs no mana. Unlock: reach player level 3.
+- New unlock rule kinds in progress.mjs: `level`, `win`, `hard`. recordRun now takes `difficulty`.
+- Seeded benchmark build with each commander, seeds 1–4, fortress health after wave 30: Toxrill 15, Torbran 15, Urza 13 (field: Krenko 10, Talrand 17, Atraxa 20, Ur-Dragon 17). None dominates.

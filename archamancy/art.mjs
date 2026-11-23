@@ -1,10 +1,10 @@
 // Original cached procedural sprites and purely cosmetic combat illustrations.
-export function createArt(ctx,{res:startRes=1}={}){
+export function createArt(ctx,{res:startRes=1,portrait=null}={}){
  const ink="#172722",metal="#7d8e85",stone="#aab0a0",gold="#ead49a",ice="#8ee5fb",violet="#ca9be9",fire="#ffb267",leaf="#a0d481";
  const school={W:gold,U:ice,B:violet,R:fire,G:leaf};
  const towerSchools={legion:"W",chapel:"W",judgment:"W",arcanum:"U",library:"U",mirror:"U",necropolis:"B",foundry:"B",hex:"B",pyre:"R",goblin:"R",storm:"R",grove:"G",beast:"G",thorn:"G"};
- const enemyKeys=["raider","runner","armored","wing","mage","regen","titan","stalker","warden","golem","grimgut","matron","colossus","hierophant","tyrant"],allyKeys=["legion","necropolis","goblin","beast","construct","bloom","drake","vampire","krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon"];
- const commanderKeys=["krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon"];
+ const enemyKeys=["raider","runner","armored","wing","mage","regen","titan","stalker","warden","golem","grimgut","matron","colossus","hierophant","tyrant"],allyKeys=["legion","necropolis","goblin","beast","construct","bloom","drake","vampire","slug","toxrill","torbran","urza","krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon"];
+ const commanderKeys=["krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon","toxrill","torbran","urza"];
  function crown(a,y,c){poly(a,[[-7,y],[-7,y-7],[-3,y-3],[0,y-9],[3,y-3],[7,y-7],[7,y]],c);}
  function poly(a,points,fill,stroke=ink){a.beginPath();points.forEach(([x,y],i)=>i?a.lineTo(x,y):a.moveTo(x,y));a.closePath();a.fillStyle=fill;a.fill();if(stroke){a.strokeStyle=stroke;a.lineWidth=1.8;a.stroke();}}
  function oval(a,x,y,rx,ry,fill,stroke=null){a.beginPath();a.ellipse(x,y,rx,ry,0,0,Math.PI*2);a.fillStyle=fill;a.fill();if(stroke){a.strokeStyle=stroke;a.lineWidth=1.6;a.stroke();}}
@@ -86,6 +86,10 @@ export function createArt(ctx,{res:startRes=1}={}){
    case "teysa":poly(a,[[-13,4],[-8,-22],[8,-22],[13,4]],"#e8e2d3");oval(a,0,-25,7,8,"#d9b9a1",ink);poly(a,[[-8,-29],[0,-35],[8,-29]],"#2a2530");line(a,[[13,-36],[13,4]],"#3b3442",3);crystal(a,13,-38,6,violet);break;
    case "korvold":beast(a,"#6b3a2c","#c86b4b");poly(a,[[-10,-20],[-24,-36],[-6,-26]],"#4c2a22");crown(a,-33,gold);break;
    case "atraxa":humanoid(a,"#e8e6dc","#f1e4d0",{});poly(a,[[-4,-18],[-30,-34],[-24,-8]],"#f4f1e6");poly(a,[[4,-18],[30,-34],[24,-8]],"#f4f1e6");for(const [x,c] of [[-9,gold],[-3,ice],[3,violet],[9,leaf]])oval(a,x,-36,2.6,2.6,c);break;
+   case "slug":oval(a,0,-6,13,7,"#4a3a55",ink);oval(a,6,-12,6,6,"#5d4a6b",ink);line(a,[[8,-17],[10,-24]],"#5d4a6b",2);line(a,[[4,-17],[3,-24]],"#5d4a6b",2);oval(a,-4,-8,2.5,1.5,"#9fe07a");break;
+   case "toxrill":oval(a,0,-12,18,13,"#3b2d47",ink);oval(a,10,-24,9,9,"#4e3c5e",ink);for(const [x,y] of [[-10,-14],[-2,-8],[6,-16],[-6,-20]])oval(a,x,y,2.6,2,"#9fe07a");line(a,[[14,-31],[18,-42]],"#4e3c5e",3);line(a,[[8,-32],[6,-42]],"#4e3c5e",3);oval(a,13,-25,2,2,"#d6ff9a");break;
+   case "torbran":humanoid(a,"#9c3a2a","#d7a07d",{bulk:true,helmet:true,shield:"#c0582f"});line(a,[[-6,-12],[6,-12]],"#e8d0a8",4);line(a,[[12,-8],[22,-34]],"#7d8e85",4);poly(a,[[18,-34],[28,-38],[24,-28]],fire);break;
+   case "urza":poly(a,[[-13,4],[-8,-22],[8,-22],[13,4]],"#3a5d86");oval(a,0,-25,7,8,"#d9c3a6",ink);line(a,[[-6,-30],[6,-30]],"#c9c3b6",2);rect(a,-16,-14,7,7,"#9aa6ad");crystal(a,-12,-20,5,ice);line(a,[[13,-36],[13,4]],"#9aa6ad",3);crystal(a,13,-38,6,ice);break;
    case "urdragon":for(const [x,c] of [[-26,gold],[-14,ice],[14,fire],[26,leaf]])poly(a,[[0,-18],[x,-34],[x*.8,-10]],c);oval(a,0,-14,9,14,"#5a3f63",ink);poly(a,[[-5,-26],[0,-40],[5,-26]],"#7a4c6e");oval(a,-3,-24,2,2,fire);oval(a,3,-24,2,2,fire);break;
    case "stalker":humanoid(a,"#2d2a3a","#6e6880",{});poly(a,[[-9,-24],[0,-38],[9,-24],[7,-16],[-7,-16]],"#1d1b26");oval(a,-3,-25,1.8,1.8,"#b9f0ff");oval(a,3,-25,1.8,1.8,"#b9f0ff");break;
    case "warden":humanoid(a,"#6a7aa6","#c3b3a4",{helmet:true,shield:"#9fb7e8"});oval(a,-9,-12,7,7,"#ffffff22","#bfe8ff");break;
@@ -143,16 +147,29 @@ export function createArt(ctx,{res:startRes=1}={}){
   if(next!==undefined&&p.seen&&(p.next===undefined||next>p.next))p.atk=now;if(hp<p.hp)p.hurt=now;p.next=next;p.hp=hp;p.seen=now;
   if(now-poseSweep>4000){poseSweep=now;for(const [k,v] of poses)if(now-v.seen>3000)poses.delete(k);}
   const a=(now-p.atk)/280,h=(now-p.hurt)/220;return {atk:a>=0&&a<1?a:0,hurt:h>=0&&h<1?h:0,engaged:now-p.atk<1400};}
- function unit(k,x,y,opt={}){const s=makeSprite("unit:"+k,a=>creature(a,k),68,68),size=sizeOf(k);const dir=(opt.dir<0?-1:1)*(opt.ally&&opt.engaged?-1:1),atk=opt.atk||0,hurt=opt.hurt||0;
+ // Enemies wear their real Magic card: a round art-crop medallion on a stone stand, rimmed in the card's color.
+ // portrait(k) returns a loaded art-crop image (or null while loading/offline, which keeps the drawn creature).
+ const tokenRim={raider:fire,runner:fire,armored:gold,wing:violet,mage:ice,regen:leaf,titan:leaf,stalker:ice,warden:ice,golem:metal,grimgut:fire,matron:violet,colossus:metal,hierophant:gold,tyrant:"#b9b2c9"};
+ const tokenBoss=["grimgut","matron","colossus","hierophant","tyrant"],tokenWings=["wing","matron"];
+ function token(a,k,img){const boss=tokenBoss.includes(k),r=boss?19:22,cy=boss?-22:-24,rim=tokenRim[k]||stone;
+  poly(a,[[-13,4],[-9,-6],[9,-6],[13,4]],"#4d5a50");
+  if(tokenWings.includes(k))for(const sd of [-1,1])poly(a,[[sd*(r-6),cy-4],[sd*(r+11),cy-18],[sd*(r+8),cy-4],[sd*(r+12),cy+2],[sd*(r-4),cy+6]],"#6d5873");
+  oval(a,0,cy,r+3,r+3,boss?gold:rim,ink);
+  a.save();a.beginPath();a.arc(0,cy,r-1,0,Math.PI*2);a.clip();
+  const iw=img.naturalWidth||img.width||1,ih=img.naturalHeight||img.height||1,side=Math.min(iw,ih)*.82,sx=(iw-side)/2,sy=Math.max(0,(ih-side)*.35);
+  a.drawImage(img,sx,sy,side,side,-(r-1),cy-(r-1),(r-1)*2,(r-1)*2);a.restore();
+  a.beginPath();a.arc(0,cy,r-1,0,Math.PI*2);a.strokeStyle=ink;a.lineWidth=1.6;a.stroke();
+  if(boss){crown(a,cy-r-1,gold);oval(a,0,cy,r+3,r+3,"#00000000",rim);}}
+ function unit(k,x,y,opt={}){const img=!opt.ally&&portrait&&enemyKeys.includes(k)?portrait(k):null,s=img?makeSprite("token:"+k,a=>token(a,k,img),68,68):makeSprite("unit:"+k,a=>creature(a,k),68,68),size=sizeOf(k);const dir=(opt.dir<0?-1:1)*(opt.ally&&opt.engaged?-1:1),flip=img?1:dir,atk=opt.atk||0,hurt=opt.hurt||0;
   const lunge=atk?Math.sin(Math.PI*Math.min(1,atk*1.4))*size*.2:0,recoil=hurt?Math.sin(Math.PI*hurt)*-3.5:0,lean=atk?Math.sin(Math.PI*Math.min(1,atk*1.4))*.22:0;
   x+=(lunge+recoil)*dir;
   ctx.save();softShadow(x+1,y+3,size*(opt.flying?.24:.32),size*.11,opt.flying?.3:.5);ctx.translate(x,y+(opt.flying?-14:0));const ph=opt.animate?Math.sin(opt.time*.4+(opt.id||0)):0,squash=opt.flying?0:Math.abs(ph)*.05;
-  if(lean)ctx.rotate(lean*dir);ctx.scale(dir*(1+squash*.5),1-squash);const bob=opt.animate?ph*(opt.flying?2:1):0;
+  if(lean)ctx.rotate(lean*dir);ctx.scale(flip*(1+squash*.5),1-squash);const bob=opt.animate?ph*(opt.flying?2:1):0;
   if(hurt&&hurt<.6)ctx.filter="brightness(1.9) saturate(.6)";ctx.drawImage(s,-size/2,-size*.75+bob,size,size);ctx.filter="none";ctx.restore();
   // Swing arc: a quick bright crescent sweeping in front of the attacker.
   if(atk>.12&&atk<.8){const k=(atk-.12)/.68,cx=x+dir*size*.26,cy=y+(opt.flying?-14:0)-size*.32,r=size*.34,a0=-1.3+k*1.6;ctx.save();ctx.globalAlpha=(1-k)*.85;ctx.strokeStyle=opt.ally?"#fff6d8":"#ffd0c0";ctx.lineWidth=2.6;ctx.lineCap="round";ctx.beginPath();
    if(dir>0)ctx.arc(cx,cy,r,a0,a0+1.1);else ctx.arc(cx,cy,r,Math.PI-a0-1.1,Math.PI-a0);ctx.stroke();ctx.globalAlpha=(1-k)*.35;ctx.lineWidth=6;ctx.stroke();ctx.restore();}
-  const yy=y+(opt.flying?-14:0)-size*.65;const ww=size*.60;rect(ctx,x-ww/2,yy,ww,3,"#26332d",null);rect(ctx,x-ww/2,yy,ww*Math.max(0,Math.min(1,opt.hp||0)),3,opt.ally?"#94db93":"#e9a181",null);if(opt.ward) {ctx.strokeStyle="#f1d991aa";ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y-9,15,19,0,0,Math.PI*2);ctx.stroke();}}
+  const yy=y+(opt.flying?-14:0)-size*(img?.8:.65);const ww=size*.60;rect(ctx,x-ww/2,yy,ww,3,"#26332d",null);rect(ctx,x-ww/2,yy,ww*Math.max(0,Math.min(1,opt.hp||0)),3,opt.ally?"#94db93":"#e9a181",null);if(opt.ward) {ctx.strokeStyle="#f1d991aa";ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y-9,15,19,0,0,Math.PI*2);ctx.stroke();}}
  const projectileColors={strike:gold,arcane:ice,mirror:"#c1edff",hex:violet,splash:fire,chain:"#ffdf83",root:leaf,melee:"#f6e0bd",heal:"#b0efad"};
  // Art pass: projectiles get a shaped core with an ink edge, an additive glow and a fading trail; impacts flash.
  function glow(x,y,r,c,a=1){ctx.save();ctx.globalCompositeOperation="lighter";for(const [k,al] of [[1,.14],[.6,.24],[.32,.4]]){ctx.globalAlpha=al*a;ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r*k,0,Math.PI*2);ctx.fill();}ctx.restore();}
@@ -188,7 +205,7 @@ export function createArt(ctx,{res:startRes=1}={}){
   if(st.freeze){ctx.globalAlpha=.28;oval(ctx,x,body,size*.3,size*.4,"#c8f1ff");ctx.globalAlpha=.9;for(let i=0;i<3;i++){const a=i*2.1+id,px=x+Math.cos(a)*size*.27,py=body+Math.sin(a)*size*.3;poly(ctx,[[px,py-4],[px+2.5,py],[px,py+4],[px-2.5,py]],"#e9fbff","#7cc9ec");}ctx.globalAlpha=1;}
   if(st.poison){for(let i=0;i<Math.min(3,st.poison);i++){const ph=((s*1.2+i*.37+id*.13)%1),px=x+(i-1)*size*.16,py=body-size*.05+ph*size*.45;ctx.globalAlpha=1-ph*.7;ctx.fillStyle=STATUS.poison;ctx.strokeStyle="#1d4a16";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px,py-6);ctx.quadraticCurveTo(px+4.5,py+1,px,py+3.5);ctx.quadraticCurveTo(px-4.5,py+1,px,py-6);ctx.fill();ctx.stroke();}ctx.globalAlpha=.22;oval(ctx,x,body,size*.26,size*.34,STATUS.poison);ctx.globalAlpha=1;}
   if(st.burn){for(let i=0;i<3;i++){const fl=Math.sin(s*14+i*2+id)*.5+.5,px=x+(i-1)*size*.17,base=body+size*.12,h=size*(.22+.14*fl);ctx.globalAlpha=.9;poly(ctx,[[px-4,base],[px,base-h],[px+4,base]],"#ff7a2e",null);poly(ctx,[[px-2,base],[px,base-h*.6],[px+2,base]],"#ffd36b",null);}ctx.globalAlpha=1;}
-  const keys=["burn","poison","freeze","curse"].filter(k=>st[k]);if(!keys.length)return;const iy=cy-size*.65-7,w=keys.length*10;
+  const keys=["burn","poison","freeze","curse"].filter(k=>st[k]);if(!keys.length)return;const iy=cy-size*(cache.has("token:"+k)?.8:.65)-7,w=keys.length*10;
   keys.forEach((kk,i)=>{const ix=x-w/2+5+i*10;oval(ctx,ix,iy,4.6,4.6,"#0d1712",null);oval(ctx,ix,iy,3.6,3.6,STATUS[kk],null);ctx.fillStyle="#0d1712";ctx.strokeStyle="#0d1712";ctx.lineWidth=1;
    if(kk==="burn")poly(ctx,[[ix-1.6,iy+2],[ix,iy-2.4],[ix+1.6,iy+2]],"#0d1712",null);
    else if(kk==="poison"){ctx.font="800 6px system-ui";ctx.textAlign="center";ctx.fillText(String(Math.min(9,st.poison)),ix,iy+2.2);ctx.textAlign="start";}
