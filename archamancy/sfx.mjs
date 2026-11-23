@@ -146,6 +146,14 @@ export function createSfx(storage=null){
   shot_hex:o=>tone(180,.25,{type:"sawtooth",vol:.035,slide:1.4},o),
   shot_root:o=>{noise(.15,{vol:.07,freq:500,q:4},o);},
   shot_mirror:o=>{tone(1320,.15,{type:"sine",vol:.04},o);tone(1760,.15,{type:"sine",vol:.03,delay:.04},o);},
+  // Barracks fighters, the commander and the chapel each have their own sound (fx.mjs sends these on a strike).
+  melee_legion:o=>{noise(.06,{vol:.07,freq:3600,q:5},o);tone(1900,.09,{type:"triangle",vol:.03,slide:.9},o);},
+  melee_necropolis:o=>{noise(.03,{vol:.08,freq:1500,q:8},o);noise(.03,{vol:.06,freq:1100,q:8,delay:.05},o);},
+  melee_goblin:o=>{tone(900,.07,{type:"square",vol:.022,slide:1.5},o);noise(.04,{vol:.05,freq:2200,q:2},o);},
+  melee_beast:o=>{noise(.18,{vol:.09,freq:260,q:3},o);tone(110,.16,{type:"sawtooth",vol:.035,slide:.7},o);},
+  melee_token:o=>{noise(.05,{vol:.06,freq:1800,q:3},o);},
+  melee_commander:o=>{noise(.08,{vol:.09,freq:2600,q:4},o);tone(330,.12,{type:"triangle",vol:.06,slide:.6},o);},
+  heal:o=>{play1("bell",midi("E6"),.18,.025,o);play1("bell",midi("B6"),.18,.02,o,.05);},
   sell:o=>{play1("bell",midi("E6"),.2,.05,o);play1("bell",midi("A6"),.2,.05,o,.07);},
   hit:o=>noise(.05,{vol:.06,freq:2400,q:2},o),
   kill:o=>{noise(.09,{vol:.12,freq:1200},o);tone(1320,.08,{type:"triangle",vol:.05},o);},
@@ -163,7 +171,7 @@ export function createSfx(storage=null){
   defeat:o=>{["A3","F3","D3","C#3"].forEach((n,i)=>play1("strings",midi(n),.7,.09,o,i*.35));play1("lowbrass",midi("D2"),2,.12,o,1);play1("timp",midi("D2"),.6,.25,o,1);},
   star:o=>play1("bell",midi("A6"),.25,.07,o)
  };
- const gaps={shot_arcane:90,shot_strike:80,shot_splash:140,shot_chain:110,shot_hex:160,shot_root:160,shot_mirror:120,smash:120,hit:45,kill:60,coin:70,harvest:180,harvestBig:260,leak:150,ability:300};
+ const gaps={shot_arcane:90,shot_strike:80,shot_splash:140,shot_chain:110,shot_hex:160,shot_root:160,shot_mirror:120,melee_legion:110,melee_necropolis:110,melee_goblin:110,melee_beast:150,melee_token:120,melee_commander:120,heal:350,smash:120,hit:45,kill:60,coin:70,harvest:180,harvestBig:260,leak:150,ability:300};
  function play(name,o){if(!prefs.sound||!ensure())return;if(ac.state==="suspended")ac.resume();const now=performance.now();if(gaps[name]&&now-(last[name]||0)<gaps[name])return;last[name]=now;sounds[name]?.(o);}
  // ---- Music scheduler: looks a little ahead and queues whole bars, switching theme on a bar line. ----
  function fadeBus(){if(!musicBus)return;const b=musicBus,t=ac.currentTime;b.gain.setTargetAtTime(0,t,.25);setTimeout(()=>{try{b.disconnect();}catch{}},2500);musicBus=null;}
