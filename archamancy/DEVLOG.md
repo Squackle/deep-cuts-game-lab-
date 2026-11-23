@@ -384,3 +384,11 @@ Logan's Normal Hollow Road run (3 stars, 19 health): a Necropolis (Lich Citadel 
 - Internal keys, stats, wave mixes and abilities unchanged; a seed-1 31-wave bot run matches main exactly apart from the name strings. `role`, `card` and `short` are non-enumerable so they stay out of saved enemy state.
 - Codex shows the card's Scryfall art, type line and artist; boss bar shows a small art portrait; boss alerts use short names (Lovisa, Oona, Iona, Emrakul). Map sprites unchanged.
 - Test: `enemy-cards.test.mjs`.
+
+## 2026-11-23 — v0.1.0-beta.13.24 Thornheart and troop balance, Oona clarity
+
+From Logan's Hard + Onslaught Confluence run (three Thornhearts did ~790k of 1.78M damage; Grand Battalion 4.8k) and "how am I supposed to beat the second boss":
+- Grasping Forest / Elder Wildwood spread now hits at most 8 enemies; spread targets take 50% damage and get one poison stack refreshed (only the main target stacks). Poison was ~78% of its damage. Sandbox at wave 20: Grasping T3 290k → 111k (Pyre Inferno 243k, Venom Thicket 45k unchanged). Thornheart hits still land on arrival through `land()` (13.18 sync intact).
+- Tier 4 troop towers: troops get ×1.6 health and damage (`TROOP_T4`). Grand Battalion T4 sandbox 83k → 130k.
+- Oona (wave 10 boss) is revealed for 3 s each time she births Stalkers (`BROOD_REVEAL`). The boss bar shows "ⓘ Hidden" while she is shrouded, and a held notice explains how to reveal her when she arrives.
+- Benchmark fortress health 11 → 13. Seeded map bot wins all 9 runs.
