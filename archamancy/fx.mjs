@@ -2,7 +2,7 @@ import {animateMap} from './terrain.mjs';
 // Visual feedback layer: reads engine events and health changes, draws short-lived effects.
 // Purely cosmetic. It never changes the simulation.
 export function createFx(ctx,{maxParticles=260}={}){
- const parts=[],texts=[],seenHp=new Map(),lastPos=new Map();let clock=0,lastSeq=0,shakeUntil=0,shakePower=0,flashUntil=0;
+ const parts=[],texts=[],seenHp=new Map(),lastPos=new Map();let clock=0,lastSeq=0,shakeUntil=0,shakePower=0,flashUntil=0,lastBigShake=-1e9,lastTick=-1;const timers=new Map();
  const rnd=()=>Math.random();
  function burst(x,y,color,n=8,speed=1.6,life=420,size=2.6){for(let i=0;i<n&&parts.length<maxParticles;i++){const a=rnd()*Math.PI*2,v=speed*(.4+rnd());parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-.6,g:.05,born:clock,life:life*(.6+rnd()*.6),color,size:size*(.6+rnd()*.7)});}}
  function ring(x,y,color,r=30,life=380){parts.push({x,y,ring:r,born:clock,life,color});}
@@ -10,17 +10,30 @@ export function createFx(ctx,{maxParticles=260}={}){
  function flash(x,y,color,r=16,life=200){if(parts.length<maxParticles)parts.push({x,y,flash:r,born:clock,life,color});}
  function smoke(x,y,n=4,life=700,size=6){for(let i=0;i<n&&parts.length<maxParticles;i++){const a=rnd()*Math.PI*2;parts.push({x:x+Math.cos(a)*4,y:y+Math.sin(a)*3,vx:Math.cos(a)*.35,vy:-.35-rnd()*.3,g:0,born:clock,life:life*(.7+rnd()*.6),color:"#e9e4d6",size:size*(.7+rnd()*.6),smoke:1});}}
  function spark(x,y,color,size=7,life=180){if(parts.length<maxParticles)parts.push({x,y,star:size,rot:rnd()*Math.PI,born:clock,life,color});}
- function float(x,y,text,color,size=13,life=900){if(texts.length>40)texts.shift();texts.push({x,y,text,color,size,born:clock,life});}
+ function float(x,y,text,color,size=13,life=900){if(texts.length>=48)texts.shift();texts.push({x,y,text,color,size,born:clock,life});}
  function shake(power,ms){shakePower=Math.max(shakePower,power);shakeUntil=Math.max(shakeUntil,clock+ms);}
  // Call once per frame before drawing. Returns UI cues for the HUD (banners, flashes).
  function update(game,now){
   clock=now;const s=game.state,cues=[];
-  // Hit sparks where health dropped since the last frame; numbers only on bosses and titans to keep the field clean.
+  // Hit sparks and damage numbers where health dropped since the last frame.
   const live=new Set();
   for(const e of s.enemies){live.add(e.id);const q=game.pointAt(e.progress),y=q.y-(e.flying?21:10);lastPos.set(e.id,{x:q.x,y,kind:e.kind});const prev=seenHp.get(e.id);
-   if(prev!==undefined&&e.hp<prev){const def=game.types[e.kind];if(parts.length<maxParticles*.7){const hx=q.x+(rnd()-.5)*8;burst(hx,y,"#ffe3a3",2,1.1,220,2);spark(hx,y,"#fff4d0",def.boss?10:6);}cues.push({type:"sound",name:"hit"});if(def.boss){const key="dmg"+e.id,t=texts.find(t=>t.key===key&&now-t.born<300);if(t){t.amount+=prev-e.hp;t.text="-"+t.amount.toLocaleString("en-US");}else{const f={x:q.x+(rnd()-.5)*16,y:y-28,text:"-"+(prev-e.hp).toLocaleString("en-US"),color:"#fff1cf",size:12,born:now,life:700,key,amount:prev-e.hp};texts.push(f);}}}
+   if(prev!==undefined&&e.hp<prev){const def=game.types[e.kind],dmg=prev-e.hp;if(parts.length<maxParticles*.7){const hx=q.x+(rnd()-.5)*8;burst(hx,y,"#ffe3a3",2,1.1,220,2);spark(hx,y,"#fff4d0",def.boss?10:6);}cues.push({type:"sound",name:"hit"});
+    // Damage numbers on every enemy: hits inside 300 ms add up into one number so a crowd stays readable.
+    // A big hit (a fifth of a normal enemy's health, or 5% of a boss) gets a larger orange number, a flash and a small shake.
+    const big=dmg>=Math.max(30,e.maxHp*(def.boss?.05:.2)),key="dmg"+e.id,t=texts.find(t=>t.key===key&&now-t.born<300&&!t.big);
+    if(big){texts.push({x:q.x+(rnd()-.5)*12,y:y-30,text:dmg.toLocaleString("en-US")+"!",color:"#ffb04a",size:def.boss?17:15,born:now,life:850,big:1,pop:1});flash(q.x,y,"#ffd08a",def.boss?30:20,180);if(now-lastBigShake>650){lastBigShake=now;shake(def.boss?3.2:2.2,160);}}
+    else if(t){t.amount+=dmg;t.text=t.amount.toLocaleString("en-US");}
+    else{if(texts.length>=48)texts.splice(texts.findIndex(t=>t.key),1);texts.push({x:q.x+(rnd()-.5)*16,y:y-(def.boss?30:22),text:dmg.toLocaleString("en-US"),color:def.boss?"#fff1cf":"#f4f1e8",size:def.boss?13:12,born:now,life:def.boss?700:650,key,amount:dmg});}}
    seenHp.set(e.id,e.hp);}
   for(const id of seenHp.keys())if(!live.has(id))seenHp.delete(id);
+  // Each barracks sounds different when its fighters strike (steel, bone, goblin squeals, beast snarls), as does the commander.
+  // A strike shows as a jump in the fighter's attack timer, the same signal art.mjs uses for the lunge.
+  if(s.tick!==lastTick){const seen=new Set(),hit=(key,next,name,x)=>{seen.add(key);const was=timers.get(key);timers.set(key,next);if(was!==undefined&&next>was)cues.push({type:"sound",name,x});};
+   for(const u of s.troops){const t=s.towers[u.source],k=u.source==="cmd"?"token":t&&game.roster[t.kind]?.kind==="troops"?t.kind:null;if(k&&u.next!==undefined)hit("u"+u.id,u.next,"melee_"+k,game.pointAt(u.progress).x);}
+   const cm=s.commander;if(cm&&!cm.dead&&cm.next!==undefined)hit("c",cm.next,"melee_commander",game.pointAt(cm.progress).x);
+   for(const p of s.projectiles)if(p.kind==="heal"&&p.start>lastTick&&lastTick>=0){cues.push({type:"sound",name:"heal",x:p.x});break;}
+   for(const k of timers.keys())if(!seen.has(k))timers.delete(k);lastTick=s.tick;}
   for(const ev of s.events){if(ev.seq<=lastSeq)continue;
    if(ev.type==="enemyKilled"){const p=lastPos.get(ev.id);if(p){const def=game.types[p.kind];burst(p.x,p.y,def.boss?"#f6c45b":"#d9d2bf",def.boss?26:9,def.boss?2.6:1.5,def.boss?800:450,def.boss?3.6:2.4);flash(p.x,p.y,def.boss?"#ffd77a":"#fff1d0",def.boss?46:20,def.boss?420:220);smoke(p.x,p.y+6,def.boss?10:4,def.boss?1100:650,def.boss?11:6);float(p.x,p.y-14,"+"+def.reward,"#f2cf6b",def.boss?16:11,800);cues.push({type:"sound",name:def.boss&&p.kind!=="titan"?"bossDown":"kill"});if(def.boss&&p.kind!=="titan"){shake(7,450);cues.push({type:"banner",title:def.name+" falls!",sub:"",tone:"win"});}}}
    else if(ev.type==="leak"){const p=lastPos.get(ev.id),boss=p&&game.types[p.kind].boss;shake(boss?9:4,boss?420:220);flashUntil=now+260;cues.push({type:"leak",amount:ev.cost||(boss?3:1)},{type:"sound",name:"leak"});if(p){const k=game.map.keep||{x:1000,y:490};ring(k.x-50,k.y-7,"#f06b5b",44,500);}}
@@ -58,10 +71,10 @@ export function createFx(ctx,{maxParticles=260}={}){
    if(p.ring){ctx.globalAlpha=(1-t)*.8;ctx.strokeStyle=p.color;ctx.lineWidth=3*(1-t)+1;ctx.beginPath();ctx.ellipse(p.x,p.y,p.ring*(.4+t*.8),p.ring*(.4+t*.8)*.6,0,0,Math.PI*2);ctx.stroke();continue;}
    const age=now-p.born;const x=p.x+p.vx*age/16,y=p.y+p.vy*age/16+p.g*(age/16)**2/2;ctx.globalAlpha=1-t;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(x,y,p.size*(1-t*.5),0,Math.PI*2);ctx.fill();}
   ctx.textAlign="center";
-  for(let i=texts.length-1;i>=0;i--){const f=texts[i],t=(now-f.born)/f.life;if(t>=1){texts.splice(i,1);continue;}const y=f.y-t*26;ctx.globalAlpha=t<.7?1:(1-t)/.3;ctx.font="800 "+f.size+"px system-ui";ctx.lineWidth=3;ctx.strokeStyle="#0b130f";ctx.strokeText(f.text,f.x,y);ctx.fillStyle=f.color;ctx.fillText(f.text,f.x,y);}
+  for(let i=texts.length-1;i>=0;i--){const f=texts[i],t=(now-f.born)/f.life;if(t>=1){texts.splice(i,1);continue;}const y=f.y-t*26,sz=f.pop&&t<.15?f.size*(1.5-t/.3):f.size;ctx.globalAlpha=t<.7?1:(1-t)/.3;ctx.font="800 "+Math.round(sz)+"px system-ui";ctx.lineWidth=3;ctx.strokeStyle="#0b130f";ctx.strokeText(f.text,f.x,y);ctx.fillStyle=f.color;ctx.fillText(f.text,f.x,y);}
   ctx.textAlign="start";ctx.globalAlpha=1;
   if(now<flashUntil){ctx.globalAlpha=(flashUntil-now)/260*.25;ctx.fillStyle="#c0392b";ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);ctx.globalAlpha=1;}
  }
- function reset(){parts.length=0;texts.length=0;seenHp.clear();lastPos.clear();lastSeq=0;shakeUntil=0;flashUntil=0;}
+ function reset(){parts.length=0;texts.length=0;seenHp.clear();lastPos.clear();timers.clear();lastSeq=0;lastTick=-1;shakeUntil=0;flashUntil=0;}
  return {update,draw,ambient,offset,reset,sync:game=>{lastSeq=game.state.sequence;}};
 }

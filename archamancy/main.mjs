@@ -260,7 +260,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
   // Between Onslaught waves the clock keeps running too (clock.mjs), so the next wave arrives on time.
   if(speed&&clockRunning(game)&&!document.querySelector("dialog[open]")){accumulator=advance(game,accumulator+elapsed*speed);if(!clockRunning(game)){notice(game.state.phase==="won"?"Victory! All 25 Gauntlet waves completed. Continue into endless survival.":game.state.phase==="lost"?"Defeat. Open the menu to restart.":"Wave complete. Prepare your next defense.",game.state.phase!=="ready");}}
   else accumulator=0;
-  handleCues(fx.update(game,now));const sh=fx.offset(now);$("map").style.transform=sh.x||sh.y?"translate("+sh.x.toFixed(1)+"px,"+sh.y.toFixed(1)+"px)":"";
+  handleCues(fx.update(game,now));const sh=calmMotion?{x:0,y:0}:fx.offset(now);$("map").style.transform=sh.x||sh.y?"translate("+sh.x.toFixed(1)+"px,"+sh.y.toFixed(1)+"px)":"";
   checkUnlocks();renderField();renderHud();renderTutorial();musicMood();if(now-lastSave>4000&&$("titleScreen").hidden)saveRun();
  }
  // Music follows the game: menu, building, battle (louder from waves 10 and 20), boss, then quiet for the fanfare.
