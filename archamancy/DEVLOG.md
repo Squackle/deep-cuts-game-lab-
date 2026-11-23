@@ -502,3 +502,38 @@ Logan asked for "Balatro deck building meets MTG": a deck you build over the cam
 - World map: a Treasure counter with Deck and Shop buttons under the region map. Deck shows spells (upgrade twice for 4 then 6 Treasure: +25% damage and -15% cost per level; exile for 3, minimum 5 spells), relics (sell for half), lands and boons. Shop shows the stock rolled after the last battle, with rerolls (2 Treasure, +1 each). Rituals that need a spell open a picker.
 - Every Gauntlet battle (not the Daily) plays the campaign deck. At the end it pays Treasure once (shown on the end screen, whose menu button now says World map) and, if 5+ waves were cleared, opens a draft of 3 spells; a pending draft also shows a "Pick a spell" button on the world map. The 30-card spellbook editor stays for Endless and the Proving Grounds.
 - Profile gains `camp` (sanitized by campaign.mjs against the live spell list).
+
+## 2026-11-23 — v0.1.0-beta.13.43 Green counterplay and placement warnings
+
+Owner request after a Normal Onslaught mono-Green Greyhorn Pass loss at wave 23 (23 leaks: ten flying Crows, twelve physically immune Juggernauts and one Darksteel Colossus):
+- **Beast Pack Reach (Tier III/A and later):** Beasts from that specialization may engage, attack and block flying enemies. Existing live beasts acquire Reach immediately on specialization; new, revived and saved troops retain it. Other Beast Den branches stay ground-only; troop damage is still physical.
+- **Venom Thicket armor-piercing poison (Tier III/B and later):** Thornheart now selects physically immune ground enemies on this branch. Its initial physical strike still does zero to 100% armor, but its existing poison stacks deal gradual piercing damage. Grasping Forest remains physical and ground-only; this does not create an anti-air Thornheart.
+- **Placement and counterplay visibility:** Prebuild previews, tower details, and the branch picker disclose Reach, physical-immune interactions, and the danger of mountain-tunnel or minimal exposed-road coverage. Non-Green tower anti-air hints remain intact.
+- Six focused regression tests cover flying engagement, branch exclusion, armored poison, direct immunity, save/replay, and visibility. Other colors, existing boss movement, ranked rules, economy, map layouts and the main DeepCutsEDH site are untouched.
+- Release gate: full Game Lab Node suite, required GitHub checks and Cloudflare Pages deployment status. This patch does not by itself prove all five mono-color campaign builds are balanced. Branches for other beta features may require version reconciliation when merged.
+
+## 2026-11-23 — Deck view follow-up (after 13.40)
+
+- World map Deck view draws all relic slots; empty ones show as dashed sockets, like Balatro's Joker row.
+- In battle, tap the "Library · Graveyard" line to see your hand, library (alphabetical, so draw order stays hidden), graveyard, and the relics, boons and land levels this run carries. Works in every mode; campaign runs also list the kit.
+- Verified with Playwright renders of both dialogs; `node --test archamancy/tests/*.test.mjs` 147/147.
+
+## 2026-11-23 — v0.1.0-beta.13.41 Campaign deckbuilding: every Relic, Boon, Ritual and Forbidden card tested and balanced
+
+Follow-up to 13.40. Every card in the pool now has its own effect test, and a bot simulator checks balance.
+- New tests: archamancy/tests/relics.test.mjs (one test per relic, each checks the effect and that conditional ones do nothing when their condition is off) and boons-rituals.test.mjs (each boon, tutors by type, Gamble, Giant Growth, Path to Exile, the four one-shot Forbidden cards, land leveling). Shared scenarios in tests/relic-fx-helpers.mjs.
+- New tool archamancy/tools/relic-balance.mjs: plays the benchmark build on Hard (with spells cast from the starter deck), then Endless until it falls, once per relic, boon and 3-land stack. Baseline reaches wave 29.
+- Fixes found by the tests: flat tower bonuses were multiplied by the late-game enemy curve although tower damage only grows by tier, so Sword of Fire and Ice was worth +5.7 waves (now scaled by tier, +4 per hit at tier 1, about +0.3 waves). Troop flat bonuses use the troop curve. Small percent bonuses on low-damage troops rounded away to nothing (Cathars' Crusade did 0); a kit bonus now always adds at least 1. Thousand-Year Storm was merged as a multiplier (two copies shrank it). Sylvan Library's second card was cut by the 5-card hand limit; it is now +1 hand size and +1 opening card.
+- Balance: Death's Shadow x1.6 -> x1.35 and rare (+3 waves as uncommon). Acidic Slime x1.35 -> x1.25 (common was +1.7 waves). Economy relics (Sol Ring, Arcane Signet, Smothering Tithe, Revel in Riches, Pitiless Plunderer) now grow with the wave on the troop-health curve, caps too, so they stay worth a slot late.
+- Shop: Spark Double no longer appears once you have used one, and Prismatic Omen can't be bought with every color at level 5.
+- Guard test: no single relic carries the bot more than 4 waves further.
+- Also in 13.41 (carried over from draft PR #316, owner-requested): Dawn Chapel sustain. Base healing 12 -> 16, radius 170 -> 190, tier I ward 4 -> 6, and each pulse heals a living, wounded commander in range for half the troop heal (no ward, no revive). Healing stats count real restored HP. Tests: archamancy/tests/chapel-sustain.test.mjs.
+## 2026-11-23 — v0.1.0-beta.13.42 A final boss for every region (campaign stage C)
+
+Each campaign region now ends at wave 25 in its own Magic boss; the Verdant Lowlands keep Emrakul. Waves 1–24 are unchanged; wave 25 on each map (in any mode) swaps Emrakul for that region's boss with the same escort.
+- Riverlands (The Confluence): Lorthos, the Tidemaker. Marks the four nearest towers, then silences them.
+- Frostfen Marches: Isu the Abominable. After a 2 s warning ring, freezes nearby troops and your commander for 3 s (they can't fight or hold enemies).
+- Greyhorn Mountains (Greyhorn Pass): Kazuul, Tyrant of the Cliffs. Brings two Indomitable Ancients every 8 s (up to 8).
+- Ember Wastes (Emberfall Caldera): Inferno Titan. After a 2 s warning ring, scorches the three nearest troops for a third of their health (or your commander, who can't be killed by it).
+- Each gets a drawn card-based model, boss bar and codex entry, and its own notices. The Scryfall card check now also covers every enemy and boss (name, type line, power/toughness).
+- Tests: wave-25 boss per map, Isu's freeze and thaw, Inferno Titan's scorch.

@@ -1,8 +1,17 @@
 import {animateMap} from './terrain.mjs';
+// Tier IV visual accent identity only: the combat engine remains authoritative.
+// Each direct-fire tower gets a brief color-school flourish at its OWN pad.
+const CAST_PALETTE=Object.freeze({W:"#f7dfa4",U:"#92defb",B:"#cca6f3",R:"#ff9b57",G:"#9bd77c"});
+const DIRECT_ATTACKS=new Set(["strike","arcane","mirror","hex","splash","chain","root"]);
+export function tierFourCastSignature(tower,definition){
+ if(!tower||tower.tier!==4||!definition||!DIRECT_ATTACKS.has(definition.kind))return null;
+ const color=CAST_PALETTE[definition.color];if(!color)return null;
+ return {motif:definition.color,color,turn:tower.branch==="B"?-1:1};
+}
 // Visual feedback layer: reads engine events and health changes, draws short-lived effects.
 // Purely cosmetic. It never changes the simulation.
 export function createFx(ctx,{maxParticles=260}={}){
- const parts=[],texts=[],seenHp=new Map(),lastPos=new Map();let clock=0,lastSeq=0,shakeUntil=0,shakePower=0,flashUntil=0,lastBigShake=-1e9,lastTick=-1;const timers=new Map();
+ const parts=[],texts=[],seenHp=new Map(),lastPos=new Map();let clock=0,lastSeq=0,shakeUntil=0,shakePower=0,flashUntil=0,lastBigShake=-1e9,lastTick=-1;const timers=new Map(),castMarks=new Map();
  const rnd=()=>Math.random();
  function burst(x,y,color,n=8,speed=1.6,life=420,size=2.6){for(let i=0;i<n&&parts.length<maxParticles;i++){const a=rnd()*Math.PI*2,v=speed*(.4+rnd());parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-.6,g:.05,born:clock,life:life*(.6+rnd()*.6),color,size:size*(.6+rnd()*.7)});}}
  function ring(x,y,color,r=30,life=380){parts.push({x,y,ring:r,born:clock,life,color});}
@@ -40,7 +49,15 @@ export function createFx(ctx,{maxParticles=260}={}){
    else if(ev.type==="waveStart"){const spec=game.waveSpec(ev.wave),boss=spec.map(x=>x.split(":")[0]).find(k=>game.types[k].boss&&k!=="titan");const fliers=spec.some(x=>game.types[x.split(":")[0]]?.flying);cues.push({type:"banner",title:"Wave "+ev.wave,sub:boss?"Boss: "+game.types[boss].name:fliers?"Flyers incoming · ground-only towers can’t hit them":ev.early?"Called early · +"+ev.bonus+" mana":"",tone:boss?"boss":"wave"},{type:"sound",name:boss?"boss":"wave"});if(boss)shake(5,500);}
    else if(ev.type==="build"||ev.type==="upgrade"){const p=game.map.pads[ev.pad];if(p){ring(p.x,p.y,"#f2db9e",ev.type==="upgrade"?40:32,450);burst(p.x,p.y+4,"#b7a17b",12,1.8,500,3);if(ev.type==="upgrade"){burst(p.x,p.y-30,"#fff1cf",10,1.4,600,2.4);flash(p.x,p.y-34,"#fff1cf",44,420);}smoke(p.x,p.y+6,5,800,7);}cues.push({type:"sound",name:ev.type});}
    else if(ev.type==="bossSmash"){const p=lastPos.get(ev.id);if(p){ring(p.x,p.y+8,"#e0573f",36,320);smoke(p.x,p.y+8,6,700,8);spark(p.x,p.y-6,"#ffd0a8",14,220);}shake(2.5,140);cues.push({type:"sound",name:"smash",x:p?.x});}
-   else if(ev.type==="towerAttack"){const t=s.towers[ev.source],k=t&&game.roster[t.kind]?.kind;if(k)cues.push({type:"sound",name:"shot_"+k,x:game.map.pads[ev.source]?.x});}
+   else if(ev.type==="towerAttack"){const t=s.towers[ev.source],def=t&&game.roster[t.kind],k=def?.kind,p=game.map.pads[ev.source];if(k)cues.push({type:"sound",name:"shot_"+k,x:p?.x});
+     const mark=tierFourCastSignature(t,def),last=t&&castMarks.get(t.uid);
+     // Cap simultaneous flourishes and repeated fire: large Onslaught armies
+     // should not drown out enemies or turn each frame into a particle storm.
+     if(mark&&p&&!calm&&parts.length<maxParticles-12&&(last===undefined||now-last>=520)){
+       parts.push({x:p.x,y:p.y-32,signature:mark.motif,color:mark.color,turn:mark.turn,born:clock,life:480});
+       castMarks.set(t.uid,now);
+       if(castMarks.size>64)for(const [uid,at] of castMarks)if(now-at>5000)castMarks.delete(uid);
+     }}
    else if(ev.type==="clear"){const p=game.map.pads[ev.pad];if(p){burst(p.x,p.y-6,"#958b76",18,2.4,700,3.6);burst(p.x,p.y,"#c9b58e",12,1.5,900,5);ring(p.x,p.y,"#f2db9e",34,450);}}
    else if(ev.type==="sell"){const p=game.map.pads[ev.pad];if(p){burst(p.x,p.y-10,"#8b8166",16,2.2,650,3.4);burst(p.x,p.y+2,"#c9b58e",10,1.4,800,4.5);ring(p.x,p.y,"#b7a17b",34,500);shake(2,180);}cues.push({type:"sound",name:"sell"});}
    // Mana Grove payout: the grove pulses green, leaves and sparkles lift off, "+N" rises, and main.mjs flies a gem to the mana counter.
@@ -52,7 +69,7 @@ export function createFx(ctx,{maxParticles=260}={}){
    else if(ev.type==="spellCast")cues.push({type:"sound",name:"cast"});
    else if(ev.type==="gameOver")cues.push({type:"gameOver",won:!!ev.won,stars:ev.stars||0},{type:"sound",name:ev.won?"victory":"defeat"});
    else if(ev.type==="deathExplosion"){/* drawn by engine effects already */}
-   else if(ev.type==="bossAbility"){const T=game.types,nm=k=>T[k].short||T[k].name,names={warcry:nm("grimgut")+"'s war cry! Nearby enemies speed up",brood:nm("matron")+" births "+T.stalker.name+"s",silenceWarning:nm("hierophant")+" marks two towers",silence:"Towers silenced!",phaseWarning:nm("tyrant")+" is shifting",cracked:"Boss cracked! Every tower can hurt it now",phase:nm("tyrant")+" becomes "+(ev.phase==="iron"?"immune to physical damage":"immune to magic")};if(names[ev.ability])cues.push({type:"toast",text:names[ev.ability]},{type:"sound",name:"ability"});if(ev.ability==="silence"||ev.ability==="phase"||ev.ability==="cracked")shake(4,260);}
+   else if(ev.type==="bossAbility"){const T=game.types,nm=k=>T[k].short||T[k].name,b=T[ev.boss]?ev.boss:null,names={warcry:nm("grimgut")+"'s war cry! Nearby enemies speed up",brood:nm(b||"matron")+" brings "+T[(b&&T[b].broodKind)||"stalker"].name+"s",silenceWarning:nm(b||"hierophant")+" marks "+(b&&T[b].silenceCount===4?"four":"two")+" towers",frostWarning:nm("isu")+" draws a freezing breath! Pull troops back",frost:"Troops frozen!",infernoWarning:nm("infernotitan")+" is gathering fire! Pull troops back",inferno:"Troops scorched!",silence:"Towers silenced!",phaseWarning:nm("tyrant")+" is shifting",cracked:"Boss cracked! Every tower can hurt it now",phase:nm("tyrant")+" becomes "+(ev.phase==="iron"?"immune to physical damage":"immune to magic")};if(names[ev.ability])cues.push({type:"toast",text:names[ev.ability]},{type:"sound",name:"ability"});if(["silence","phase","cracked","frost","inferno"].includes(ev.ability))shake(4,260);}
    else if(ev.type==="commanderFall")cues.push({type:"toast",text:"Your commander has fallen. Returning soon."});
   }
   lastSeq=s.sequence;
@@ -67,7 +84,22 @@ export function createFx(ctx,{maxParticles=260}={}){
  function ambient(now){animateMap(ctx,now);const t=now/1000;for(const m of motes){const x=(m.x+Math.sin(t*.3*m.s+m.p)*40+t*6*m.s)%1000,y=m.y+Math.cos(t*.4*m.s+m.p)*25,a=.25+.35*Math.max(0,Math.sin(t*1.3+m.p));ctx.globalAlpha=a;ctx.fillStyle="#f6f0a8";ctx.beginPath();ctx.arc(x,y,1.8,0,Math.PI*2);ctx.fill();ctx.globalAlpha=a*.25;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;}
  function draw(now){
   for(let i=parts.length-1;i>=0;i--){const p=parts[i],t=(now-p.born)/p.life;if(t>=1){parts.splice(i,1);continue;}
-   if(p.flash){ctx.save();ctx.globalCompositeOperation="lighter";const r=p.flash*(.6+t*.6);for(const [k,al] of [[1,.18],[.62,.3],[.3,.5]]){ctx.globalAlpha=al*(1-t);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,r*k,0,Math.PI*2);ctx.fill();}ctx.restore();continue;}
+   if(p.signature){
+     // Transient, non-circular W/U/B/R/G shapes around an attacking T4 tower.
+     // A and B branches reverse the directional sweep, without extra HUD clutter.
+     const fade=(1-t)*.85,r=10+8*t,turn=p.turn;
+     ctx.save();ctx.translate(p.x,p.y);ctx.globalAlpha=fade;
+     ctx.strokeStyle=p.color;ctx.fillStyle=p.color;ctx.lineWidth=2.2;ctx.lineCap="round";
+     ctx.rotate(turn*t*.35);
+     const seg=(ax,ay,bx,by)=>{ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();};
+     if(p.signature==="W"){for(const a of [-.65,0,.65]){const x=Math.sin(a)*r,y=-Math.cos(a)*r;seg(x*.28,y*.28,x,y);seg(x,y,x+turn*3,y+5);}}
+     else if(p.signature==="U"){for(let n=0;n<6;n++){const a=n*Math.PI/3,x=Math.cos(a),y=Math.sin(a);seg(x*3,y*3,x*r,y*r);seg(x*r,y*r,x*r-y*3,y*r+x*3);}}
+     else if(p.signature==="B"){for(let n=0;n<3;n++){const x=(n-1)*8*turn,y=-(r+n*3)*.72;ctx.beginPath();ctx.moveTo(x,y-4);ctx.lineTo(x+3,y);ctx.lineTo(x,y+4);ctx.lineTo(x-3,y);ctx.closePath();ctx.stroke();}}
+     else if(p.signature==="R"){for(let n=-1;n<=1;n++){const x=n*7;ctx.beginPath();ctx.moveTo(x+3,r*.4);ctx.quadraticCurveTo(x-6,-r*.2,x+turn*3,-r*(.8+(n===0?.2:0)));ctx.quadraticCurveTo(x+6,0,x+3,r*.4);ctx.stroke();}}
+     else if(p.signature==="G"){for(const side of [-1,1]){ctx.beginPath();ctx.moveTo(0,r*.4);ctx.quadraticCurveTo(side*14,-r*.7,side*8,-r);ctx.quadraticCurveTo(side*2,-r*.3,0,r*.4);ctx.stroke();}seg(0,r*.5,0,-r*.8);}
+     ctx.restore();continue;
+    }
+    if(p.flash){ctx.save();ctx.globalCompositeOperation="lighter";const r=p.flash*(.6+t*.6);for(const [k,al] of [[1,.18],[.62,.3],[.3,.5]]){ctx.globalAlpha=al*(1-t);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,r*k,0,Math.PI*2);ctx.fill();}ctx.restore();continue;}
    if(p.star){ctx.save();ctx.globalCompositeOperation="lighter";ctx.globalAlpha=1-t;ctx.fillStyle=p.color;ctx.translate(p.x,p.y);ctx.rotate(p.rot);const r=p.star*(.6+t*.7);ctx.beginPath();for(let i=0;i<8;i++){const a=i*Math.PI/4,rr=i%2?r*.22:r;i?ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr):ctx.moveTo(rr,0);}ctx.closePath();ctx.fill();ctx.restore();continue;}
    if(p.smoke){const age=now-p.born,x=p.x+p.vx*age/16,y=p.y+p.vy*age/16;ctx.globalAlpha=.42*(1-t);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(x,y,p.size*(.6+t*1.1),0,Math.PI*2);ctx.fill();continue;}
    if(p.ring){ctx.globalAlpha=(1-t)*.8;ctx.strokeStyle=p.color;ctx.lineWidth=3*(1-t)+1;ctx.beginPath();ctx.ellipse(p.x,p.y,p.ring*(.4+t*.8),p.ring*(.4+t*.8)*.6,0,0,Math.PI*2);ctx.stroke();continue;}
@@ -77,6 +109,6 @@ export function createFx(ctx,{maxParticles=260}={}){
   ctx.textAlign="start";ctx.globalAlpha=1;
   if(now<flashUntil){ctx.globalAlpha=(flashUntil-now)/260*.25;ctx.fillStyle="#c0392b";ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);ctx.globalAlpha=1;}
  }
- function reset(){parts.length=0;texts.length=0;seenHp.clear();lastPos.clear();timers.clear();lastSeq=0;lastTick=-1;shakeUntil=0;flashUntil=0;}
+ function reset(){parts.length=0;texts.length=0;seenHp.clear();lastPos.clear();timers.clear();castMarks.clear();lastSeq=0;lastTick=-1;shakeUntil=0;flashUntil=0;}
  return {update,draw,ambient,offset,reset,sync:game=>{lastSeq=game.state.sequence;}};
 }

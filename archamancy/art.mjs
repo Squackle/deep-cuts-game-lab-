@@ -3,7 +3,7 @@ export function createArt(ctx,{res:startRes=1,portrait=null}={}){
  const ink="#172722",metal="#7d8e85",stone="#aab0a0",gold="#ead49a",ice="#8ee5fb",violet="#ca9be9",fire="#ffb267",leaf="#a0d481";
  const school={W:gold,U:ice,B:violet,R:fire,G:leaf};
  const towerSchools={legion:"W",chapel:"W",judgment:"W",arcanum:"U",library:"U",mirror:"U",necropolis:"B",foundry:"B",hex:"B",pyre:"R",goblin:"R",storm:"R",grove:"G",beast:"G",thorn:"G"};
- const enemyKeys=["raider","runner","armored","wing","mage","regen","titan","stalker","warden","golem","grimgut","matron","colossus","hierophant","tyrant"],allyKeys=["legion","necropolis","goblin","beast","construct","bloom","drake","vampire","slug","toxrill","torbran","urza","zombie","angel","demon","dragon","heliod","wilhelt","kaalia","krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon"];
+ const enemyKeys=["raider","runner","armored","wing","mage","regen","titan","stalker","warden","golem","grimgut","matron","colossus","hierophant","tyrant","lorthos","isu","kazuul","infernotitan"],allyKeys=["legion","necropolis","goblin","beast","construct","bloom","drake","vampire","slug","toxrill","torbran","urza","zombie","angel","demon","dragon","heliod","wilhelt","kaalia","krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon"];
  const commanderKeys=["krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon","toxrill","torbran","urza","heliod","wilhelt","kaalia"];
  function crown(a,y,c){poly(a,[[-7,y],[-7,y-7],[-3,y-3],[0,y-9],[3,y-3],[7,y-7],[7,y]],c);}
  function poly(a,points,fill,stroke=ink){a.beginPath();points.forEach(([x,y],i)=>i?a.lineTo(x,y):a.moveTo(x,y));a.closePath();a.fillStyle=fill;a.fill();if(stroke){a.strokeStyle=stroke;a.lineWidth=1.8;a.stroke();}}
@@ -158,10 +158,36 @@ export function createArt(ctx,{res:startRes=1,portrait=null}={}){
     poly(a,[[-12,-8],[-14,-30],[-6,-42],[6,-42],[14,-30],[12,-8]],"#8b6f86");
     for(const y of [-34,-24,-15])poly(a,[[-11,y],[0,y-4],[11,y],[0,y+3]],"#e6ddcc");line(a,[[-9,-12],[-4,-28]],"#ff9ad8",1.2);line(a,[[8,-13],[4,-27]],"#ff9ad8",1.2);
     poly(a,[[-10,-39],[-17,-49],[-4,-43],[0,-50],[4,-43],[17,-49],[10,-39]],"#e6ddcc");for(const [x,y] of [[-6,-22],[6,-30],[0,-11]])oval(a,x,y,1.5,1.5,"#ff9ad8");break;
+   case "lorthos": // Lorthos, the Tidemaker: a vast blue Octopus rising from the tide.
+    for(const [x0,x1,x2] of [[-9,-20,-27],[-5,-12,-17],[-1,-3,-6],[3,7,9],[7,16,21],[10,22,29]]){line(a,[[x0,-8],[x1,-1],[x2,5]],ink,6);line(a,[[x0,-8],[x1,-1],[x2,5]],"#3f7fb8",4);}
+    oval(a,0,4,24,3.5,"#7fc8ff55",null);
+    oval(a,0,-24,15,17,"#3f7fb8",ink);oval(a,-4,-31,6,5,"#6aa8dd",null);for(const [x,y] of [[-9,-18],[8,-16],[-3,-12],[6,-30]])oval(a,x,y,1.6,1.6,"#9fd8ff");
+    oval(a,-5,-22,3,3.2,"#f3e9b8",ink);oval(a,6,-22,3,3.2,"#f3e9b8",ink);oval(a,-4.5,-22,1.2,2,ink);oval(a,6.5,-22,1.2,2,ink);
+    line(a,[[13,-20],[24,-30],[28,-42]],ink,5);line(a,[[13,-20],[24,-30],[28,-42]],"#3f7fb8",3.4);break;
+   case "isu": // Isu the Abominable: a white snow Yeti, legendary.
+    legs(a,[[[-7,-4],[-9,5]],[[6,-4],[8,5]]],"#d9e3ea",7);
+    line(a,[[-13,-24],[-18,-5]],"#e8eff4",7);oval(a,-18,-4,4,3.4,"#c9d6df",ink);
+    oval(a,0,-19,15,16,"#eef3f6",ink);for(const [x,y] of [[-9,-12],[-4,-26],[7,-10],[10,-24],[-1,-6]])line(a,[[x,y],[x+2,y+4]],"#b8c8d4",1.4);
+    oval(a,3,-34,8,7.5,"#eef3f6",ink);oval(a,5,-32,5.5,4.5,"#7fa2b8",null);oval(a,3,-33,1.3,1.3,"#9ff0ff");oval(a,7,-33,1.3,1.3,"#9ff0ff");poly(a,[[4,-29],[5,-26.5],[6,-29]],"#f2ead2");
+    line(a,[[12,-24],[19,-6]],"#e8eff4",7);oval(a,19,-5,4,3.4,"#c9d6df",ink);for(const [x,y] of [[-20,-30],[22,-28],[-16,-40]])crystal(a,x,y,2.4,"#d9f4ff");break;
+   case "kazuul": // Kazuul, Tyrant of the Cliffs: a red Ogre Warrior with a stone club.
+    legs(a,[[[-6,-4],[-8,5]],[[5,-4],[7,5]]],"#6b4a34",7);
+    poly(a,[[-14,-4],[-16,-24],[-8,-34],[10,-34],[15,-22],[12,-4]],"#b0603e");rect(a,-14,-10,26,5,"#4a3324",null);oval(a,-1,-8,3,2.5,"#c9a75a",ink);
+    oval(a,-15,-30,6,5,"#7a6a5a",ink);poly(a,[[-18,-33],[-15,-40],[-12,-33]],"#d8cfb6");
+    oval(a,4,-38,7.5,7,"#c06c48",ink);oval(a,7,-39,1.5,1.5,"#ffd24a");line(a,[[5,-42],[10,-41]],ink,1.6);poly(a,[[5,-34],[6,-30],[7.5,-34]],"#f2ead2");poly(a,[[9,-34],[10,-30],[11,-34]],"#f2ead2");
+    line(a,[[-13,-22],[-18,-6]],"#b0603e",6);line(a,[[12,-24],[20,-34]],"#b0603e",6);line(a,[[20,-34],[24,-48]],"#6b4f35",4);poly(a,[[19,-48],[23,-58],[30,-55],[29,-46]],"#8a8478");break;
+   case "infernotitan": // Inferno Titan: a Giant wreathed in fire with a burning axe, red.
+    poly(a,[[-10,5],[-9,-11],[-2,-11],[-3,5]],"#5a2a1c");poly(a,[[3,5],[3,-11],[10,-11],[11,5]],"#5a2a1c");
+    poly(a,[[-15,-33],[15,-33],[11,-10],[-11,-10]],"#7a3420");line(a,[[-9,-28],[-3,-19],[-7,-12]],"#ffb347",2);line(a,[[8,-30],[3,-20],[7,-12]],"#ffb347",2);
+    oval(a,-15,-31,6,5,"#5a2a1c",ink);oval(a,15,-31,6,5,"#5a2a1c",ink);line(a,[[-14,-27],[-17,-11]],"#7a3420",6);oval(a,-17,-10,3.2,3.2,"#5a2a1c",ink);
+    oval(a,0,-38,6.5,6.5,"#7a3420",ink);oval(a,-2,-39,1.5,1.5,"#ffe26a");oval(a,3,-39,1.5,1.5,"#ffe26a");
+    for(const [x,h] of [[-6,10],[-2,14],[2,12],[6,9]])poly(a,[[x-3,-43],[x,-43-h],[x+3,-43]],"#ff8a2e");
+    for(const [x,h] of [[-2,7],[2,6]])poly(a,[[x-2,-43],[x,-43-h],[x+2,-43]],"#ffe26a");
+    line(a,[[14,-27],[22,-42]],"#3a2a20",3);poly(a,[[19,-48],[30,-44],[25,-36],[19,-40]],"#c9cfc6");for(const [x,y] of [[24,-50],[29,-48],[20,-53]])oval(a,x,y,2,3,"#ff8a2e88",null);break;
   }
-  if(tokenBoss.includes(k)&&k!=="tyrant")crown(a,({grimgut:-35,matron:-35,colossus:-45,hierophant:-35})[k],k==="matron"?"#b9a6e8":gold);
+  if(tokenBoss.includes(k)&&k!=="tyrant"&&k!=="infernotitan")crown(a,({grimgut:-35,matron:-35,colossus:-45,hierophant:-35,lorthos:-41,isu:-41,kazuul:-45})[k],k==="matron"?"#b9a6e8":gold);
  }
- const tokenBoss=["grimgut","matron","colossus","hierophant","tyrant"];
+ const tokenBoss=["grimgut","matron","colossus","hierophant","tyrant","lorthos","isu","kazuul","infernotitan"];
  function creature(a,k){
   if(enemyKeys.includes(k))return enemyModel(a,k);
   switch(k){
@@ -229,7 +255,7 @@ export function createArt(ctx,{res:startRes=1,portrait=null}={}){
   ctx.strokeStyle="#5d8a4e";ctx.lineWidth=1.4;for(const dx of [-12,6,18]){ctx.beginPath();ctx.moveTo(x+dx,y+2);ctx.quadraticCurveTo(x+dx+2,y-5,x+dx+4,y-9);ctx.stroke();}ctx.restore();}
  // Health bars sit just above each model's head: the card-based enemy models stand taller than the old figures.
  function barTop(k){return tokenBoss.includes(k)||k==="titan"?.79:enemyKeys.includes(k)?.72:.65;}
- function sizeOf(k){return ["titan","grimgut","matron","colossus","hierophant","tyrant"].includes(k)?(k==="tyrant"?78:70):commanderKeys.includes(k)?(k==="urdragon"?66:54):k==="bloom"?56:k==="wing"?50:45;}
+ function sizeOf(k){return ["titan","grimgut","matron","colossus","hierophant","tyrant","lorthos","isu","kazuul","infernotitan"].includes(k)?(k==="titan"||k==="grimgut"||k==="matron"||k==="colossus"||k==="hierophant"?70:k==="tyrant"?78:76):commanderKeys.includes(k)?(k==="urdragon"?66:54):k==="bloom"?56:k==="wing"?50:45;}
  // Attack poses (visual only): pose() watches each fighter's attack timer and health between frames.
  // A rising timer means it just struck (lunge, lean and a swing arc); falling health means it was hit (recoil and a flash).
  const poses=new Map();let poseSweep=0;
