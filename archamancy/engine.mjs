@@ -7,9 +7,9 @@ export const BURN=10,POISON=30,POISON_STACKS=3,SPREAD_HIT=.5,SPREAD_MAX=8,BROOD_
 // Enemy health multiplier per difficulty. Gauntlet stars: 3 at 18+ fortress left, 2 at 10+, otherwise 1.
 // Boss smash hits every ground troop in reach for 3× the boss attack.
 export const SMASH=3;
-// A boss breaks a sustained blockade after twelve seconds; its push lasts three seconds.
-// Physical-immune non-bosses retain their existing six-second shove rule.
-export const BOSS_HOLD_TICKS=120,BOSS_PUSH_TICKS=30,BOSS_WARN_TICKS=20,BOSS_KEEP_LINE=250;
+// Physical-immune bosses already shove through blockers after six seconds. Warn before that existing shove.
+// No movement or balance change: the warning and burst effect are presentation only.
+export const IMMUNE_BOSS_HOLD_TICKS=60,IMMUNE_BOSS_PUSH_TICKS=30,IMMUNE_BOSS_WARN_TICKS=20;
 // Below 40% health a boss cracks: any immunity drops to 50% resistance, so a one-sided defence can still finish it.
 export const CRACK_AT=.4,CRACKED_RESIST=50;
 // A boss that leaks costs 3 health, 2 if it is under two-thirds health, 1 if it is under a third.
@@ -263,17 +263,13 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  effect(q.x,q.y,({W:"#f5df9e",U:"#76bdf1",B:"#ba8ad8",R:"#f7a564",G:"#8ed28e"})[d.color],k==="splash"?60:18);
  }
  function expectHit(e,raw,magic,pierce){const r=magic?e.resist:e.armor*(pierce===2?0:pierce?.5:1);return r>=100?0:Math.floor(raw*(100-r)/100*(e.curseUntil>state.tick||e.markUntil>state.tick?1.35:1));}
- function holdable(e){
-  // The last 250 road units are the keep's final stand: a boss may smash blockers but cannot
-  // gain an unavoidable free leak by entering a forced-march window beside the fortress.
-  if((!e.boss&&e.baseArmor<100)||e.kind==="titan"||(e.boss&&e.baseArmor<100&&remaining(e.progress)<=BOSS_KEEP_LINE))return true;if(e.pushUntil>state.tick)return false;
-  if(e.heldAt!==state.tick){e.held=e.heldAt===state.tick-1?(e.held||0)+1:1;e.heldAt=state.tick;
-   const limit=e.baseArmor>=100?60:BOSS_HOLD_TICKS;
-   if(e.boss&&e.held===limit-BOSS_WARN_TICKS){const q=enemyPos(e);effect(q.x,q.y,"#f7ac63",54);emit("bossAbility",{boss:e.kind,ability:"breakthroughWarning"});}
-   if(e.held>=limit){e.held=0;e.pushUntil=state.tick+(e.boss?BOSS_PUSH_TICKS:30);
+ function holdable(e){if(e.baseArmor<100)return true;if(e.pushUntil>state.tick)return false;
+  if(e.heldAt!==state.tick){e.heldAt=state.tick;e.held=(e.held||0)+1;
+   if(e.boss&&e.held===IMMUNE_BOSS_HOLD_TICKS-IMMUNE_BOSS_WARN_TICKS){const q=enemyPos(e);effect(q.x,q.y,"#f7ac63",54);emit("bossAbility",{boss:e.kind,ability:"breakthroughWarning"});}
+   if(e.held>=IMMUNE_BOSS_HOLD_TICKS){e.held=0;e.pushUntil=state.tick+IMMUNE_BOSS_PUSH_TICKS;
     if(e.boss){const q=enemyPos(e);effect(q.x,q.y,"#f46f41",72);emit("bossAbility",{boss:e.kind,ability:"breakthrough"});}return false;}}
   return true;}
- // Commander health keeps pace with later waves (enemy hits grow with the square root of the wave scale).
+  // Commander health keeps pace with later waves (enemy hits grow with the square root of the wave scale).
  function scaleCommander(){const cm=state.commander;if(!cm)return;const base=commanders[cm.id].hp*(1+.1*perk("command")),want=Math.round(base*late(.4)),had=cm.baseHp||Math.round(base);if(want>had){cm.maxHp+=want-had;if(!cm.dead)cm.hp+=want-had;cm.baseHp=want;}}
  function late(k=.8){return Math.pow(scale(Math.max(1,state.wave)),k);}
  function commanderAlive(id){const c=state.commander;return !!c&&!c.dead&&(!id||c.id===id);}
