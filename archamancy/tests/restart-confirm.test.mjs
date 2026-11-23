@@ -36,8 +36,9 @@ test('confirming restart resets only the active run, retaining previous difficul
  assert.match(confirmation,/restart\(run\.mode,challenge,run\)/);
  assert.match(confirmation,/daily\.dailyFor\(run\.daily\.date,MAPS\)/);
  const restartBody=code(' function restart(mode,dc=null,from=null){',' let restartSource=null');
- for(const span of ['from?.seed','from?.mapId','from?.season','from?.difficulty','from?.perks','from?.onslaught','from?.locked','from?.commander?.id','from?.kit','clearRun()'])
+ for(const span of ['from?.seed','from?.mapId','from?.season','from?.difficulty','from?.perks','from?.locked','from?.commander?.id','from?.kit','clearRun()'])
   assert.ok(restartBody.includes(span),'retains '+span);
+ assert.match(restartBody,/from\?!!from\.onslaught/,'saved Onslaught setting is preserved');
  assert.match(restartBody,/clearRun\(\)/);
  assert.ok(js.indexOf('clearRun();',js.indexOf('function restart(mode,dc=null,from=null)'))>js.indexOf('function restart(mode,dc=null,from=null)'), 'clear on the confirmed path only');
 });
