@@ -9,7 +9,7 @@ import {hubFor} from './hub.mjs';
 import {advance,clockRunning} from './clock.mjs';
 import {animationLoop} from './loop.mjs';
 function boot(createEngine){
- const $=id=>document.getElementById(id), canvas=$("field"), ctx=canvas.getContext("2d"),art=createArt(ctx),fx=createFx(ctx);let bannerTimer=0;
+ const $=id=>document.getElementById(id), canvas=$("field"), ctx=canvas.getContext("2d"),art=createArt(ctx,{portrait:k=>enemyPortrait(k)}),fx=createFx(ctx);let bannerTimer=0;
  const colors={W:"#e5d4a2",U:"#77b9e6",B:"#ac8ac3",R:"#ed8b65",G:"#9bc889",C:"#c5c9cc"};
  let game=createEngine(1), selected=null, schoolOpen=false, preview=null, heroKey="", speed=1, rallying=false, moving=false, accumulator=0,last=null,lastEvent=-1, selectedCard=null, handKey="", deckCountKey="", contributionKey="";
  const buttons=[], choices={}, statEls={};
@@ -37,6 +37,8 @@ function boot(createEngine){
  function xpPop(n){const b=$("hudLevel"),el=document.createElement("span");el.className="xp-pop";el.textContent="+"+n+" XP";b.append(el);setTimeout(()=>el.remove(),1700);renderHudLevel();}
  let bossArtKey="";
  const cardArt=createCardArt({storage,onUpdate:()=>{handKey="";bossArtKey="";if($("commanderDialog").open)renderCommanders();if($("codexDialog").open)renderCodex();}});
+ // On-map enemies show their card's art crop once it has loaded (CORS-enabled so icons can still be exported).
+ const portraits={};function enemyPortrait(k){const t=game?.types?.[k];if(!t)return null;let p=portraits[k];if(!p){const a=cardArt.get(t.name);if(!a)return null;const img=new Image();img.crossOrigin="anonymous";p=portraits[k]={img,ok:false};img.onload=()=>{p.ok=true;delete enemyIcons[k];peekKey="";};img.onerror=()=>{};img.src=a.art;}return p.ok?p.img:null;}
  function paintArt(el,name){const a=cardArt.get(name);el.classList.toggle("has-art",!!a);if(a)el.style.setProperty("--art",'url("'+a.art+'")');return a;}
  function applyDefaultCommander(){if(game.state.mode==="sandbox"||!profile.last)return;game.command({type:"commander",id:profile.last});}
  function renderCommanders(){const s=game.state,c=s.commander,pane=$("commanderChoices"),starter=!profile.starter&&s.mode!=="sandbox",pick=starter||(s.wave===0&&s.phase==="ready"),open=progress.available(profile,s.mode,allCommanders);pane.replaceChildren();pane.hidden=!pick;$("commanderMove").hidden=true;
@@ -131,7 +133,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  // Next-wave preview beside the wave button: who is coming, how many, and what each one shrugs off.
  const enemyIcons={},PEEK="archemancy.peek.v1";let peekKey="",peekOpen=true;const smallScreen=()=>matchMedia("(max-width:900px),(max-height:500px)").matches;try{const v=storage?.getItem(PEEK);peekOpen=v==null?!smallScreen():v!=="0";}catch{peekOpen=!smallScreen();}
 
- function enemyIcon(k){if(enemyIcons[k]!==undefined)return enemyIcons[k];try{const c=document.createElement("canvas"),r=2;c.width=c.height=40*r;const a=c.getContext("2d");a.scale(r,r);createArt(a,{res:r}).unit(k,20,game.types[k].flying?40:31,{hp:1,time:0,id:1});enemyIcons[k]=c.toDataURL();}catch{enemyIcons[k]="";}return enemyIcons[k];}
+ function enemyIcon(k,plain){if(enemyIcons[k]!==undefined)return enemyIcons[k];try{const c=document.createElement("canvas"),r=2;c.width=c.height=40*r;const a=c.getContext("2d");a.scale(r,r);createArt(a,{res:r,portrait:plain?null:enemyPortrait}).unit(k,20,game.types[k].flying?40:31,{hp:1,time:0,id:1});enemyIcons[k]=c.toDataURL();}catch{enemyIcons[k]=plain?"":enemyIcon(k,true);}return enemyIcons[k];}
  const HIDDEN_HINT="Hidden: towers can only shoot her inside a Judgment Spire or Hex Sanctum's range, within reach of your troops or commander, for 3 s after any damage, and for 3 s each time she births Stalkers. Build a Spire or Sanctum by the road before wave 10.";let warnedBoss=null;
 // Bosses that shrug off one damage type say which towers still hurt them, so idle towers don't look broken.
  const MAGIC_KINDS=["arcane","chain","hex","mirror"];
