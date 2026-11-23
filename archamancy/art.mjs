@@ -67,7 +67,103 @@ export function createArt(ctx,{res:startRes=1,portrait=null}={}){
   else {line(a,[[7,-13],[17,-19]],"#8f9389",4);line(a,[[13,-16],[22,-30]],"#e2e4d8",3);}
  }
  function beast(a,c,accent){oval(a,-5,-11,17,10,c,ink);line(a,[[-16,-7],[-17,4]],c,6);line(a,[[5,-7],[7,4]],c,6);line(a,[[-19,-12],[-26,-20]],c,5);poly(a,[[6,-18],[12,-30],[16,-22],[23,-28],[24,-10],[12,-5]],accent);oval(a,19,-16,2,2,"#fcf2b8");}
+ // Enemy models: each enemy is drawn as the creature on its Magic card (type lines in engine.mjs enemyCards), facing right.
+ // Original drawings in the game's painted style; bosses wear a small crown (Emrakul's bone crest stands in for hers).
+ function legs(a,pts,c,w=5){for(const p of pts)line(a,p,c,w);}
+ function wingPair(a,pts,fill,stroke=ink){poly(a,pts,fill,stroke);poly(a,pts.map(([x,y])=>[-x,y]),fill,stroke);}
+ function enemyModel(a,k){
+  switch(k){
+   case "raider": // Goblin Raider: Goblin Warrior, red.
+    legs(a,[[[-4,-4],[-7,4]],[[4,-4],[6,4]]],"#4a3226");oval(a,-7,5,3.4,1.8,"#2a1d17");oval(a,7,5,3.4,1.8,"#2a1d17");
+    oval(a,-10,-12,6.5,7.5,"#8b5a34",ink);oval(a,-10,-12,2,2,"#d9c08a");
+    poly(a,[[-8,-20],[8,-20],[9,-4],[-9,-4]],"#8a3b2a");rect(a,-9,-10,18,3,"#3a2a20",null);
+    poly(a,[[-4,-28],[-16,-34],[-6,-22]],"#7fae4f");poly(a,[[8,-29],[19,-36],[10,-22]],"#7fae4f");
+    oval(a,2,-26,8,7,"#7fae4f",ink);poly(a,[[-6,-29],[9,-33],[11,-28],[-6,-26]],"#b5402c");
+    oval(a,6,-26,1.7,1.7,"#ffd84a",ink);line(a,[[3,-21],[9,-22]],ink,1.4);poly(a,[[5,-21.5],[6,-19.5],[7,-21.7]],"#f4efd8",null);
+    line(a,[[6,-15],[13,-19]],"#7fae4f",4);poly(a,[[12,-20],[15,-37],[18,-34],[17,-30],[20,-28],[17,-19]],"#c9cfc6");break;
+   case "runner": // Monastery Swiftspear: Human Monk mid-sprint, red.
+    for(const [y,w] of [[-24,12],[-17,16],[-9,10]])line(a,[[-12,y],[-12-w,y+1]],"#fff1d088",1.6);
+    legs(a,[[[-2,-5],[-11,3]],[[3,-5],[11,1]]],"#5a3424",4.5);
+    poly(a,[[-6,-21],[8,-22],[10,-5],[-7,-5]],"#d0632f");line(a,[[-6,-12],[10,-14]],"#f1c75a",3);line(a,[[-6,-12],[-15,-9],[-22,-13]],"#f1c75a",2.2);
+    oval(a,4,-27,6.5,7,"#d9a37c",ink);oval(a,7,-28,1.2,1.2,ink);line(a,[[0,-31],[3,-33]],"#9e5746",1.4);
+    line(a,[[-14,-6],[24,-26]],"#8b6a44",2.6);poly(a,[[22,-27],[32,-31],[25,-22]],"#e9ecef");oval(a,-1,-12,2.6,2.6,"#d9a37c",ink);oval(a,11,-18,2.6,2.6,"#d9a37c",ink);break;
+   case "armored": // Indomitable Ancients: Treefolk Warrior behind a great shield, white.
+    poly(a,[[-13,5],[-10,-7],[-3,-7],[-5,5]],"#6a4c32");poly(a,[[3,5],[4,-7],[11,-7],[14,5]],"#6a4c32");
+    poly(a,[[-13,-6],[-11,-31],[10,-31],[12,-6]],"#7a5a3c");for(const x of [-6,-1,5])line(a,[[x,-29],[x-1,-9]],"#5a412b",1.4);
+    oval(a,-3,-21,1.7,2.1,"#f3e6a8");oval(a,4,-21,1.7,2.1,"#f3e6a8");line(a,[[-6,-25],[7,-24]],"#4a3424",2);
+    line(a,[[-11,-24],[-18,-33]],"#6a4c32",3.5);for(const [x,y,r] of [[-9,-34,8],[7,-35,8],[-1,-40,9],[-18,-35,5]])oval(a,x,y,r,r*.8,"#b6c48a",ink);
+    line(a,[[9,-20],[13,-16]],"#6a4c32",4);poly(a,[[7,-27],[21,-27],[21,-8],[14,0],[7,-8]],"#ece3c4");line(a,[[14,-25],[14,-3]],"#c9a75a",2);line(a,[[9,-17],[19,-17]],"#c9a75a",2);crystal(a,14,-17,4,gold);break;
+   case "wing": // Carrion Crow: Zombie Bird, black; tattered wings, exposed bone, sickly eye.
+    wingPair(a,[[-2,-14],[-28,-27],[-24,-19],[-28,-13],[-20,-11],[-22,-5],[-8,-8]],"#2b2830");
+    line(a,[[-4,-14],[-24,-24]],"#d9d2bf",1.3);line(a,[[4,-14],[24,-24]],"#d9d2bf",1.3);poly(a,[[16,-17],[21,-12],[18,-9]],"#7a6a5a",null);
+    poly(a,[[-8,-10],[-17,-4],[-9,-6]],"#2b2830");oval(a,0,-11,9,7,"#35303a",ink);for(const x of [-3,0,3])line(a,[[x,-13],[x+1,-8]],"#d9d2bf",1.2);
+    oval(a,9,-17,5.2,5,"#35303a",ink);poly(a,[[13,-18],[21,-16],[13,-14.5]],"#c9b98a");oval(a,10,-18,1.7,1.7,"#b6ff6a");line(a,[[-1,-5],[-2,0]],"#c9b98a",1.5);line(a,[[3,-5],[3,0]],"#c9b98a",1.5);break;
+   case "mage": // Prodigal Sorcerer: Human Wizard casting a bolt, blue.
+    line(a,[[-12,-34],[-12,4]],"#8b6a44",2.5);oval(a,-12,-36,3.2,3.2,"#8ee5fb",ink);
+    poly(a,[[-11,5],[-7,-21],[7,-21],[11,5]],"#2f5c9a");line(a,[[0,-20],[0,5]],"#c9d8f0",1.5);line(a,[[-11,4],[11,4]],"#c9d8f0",1.5);
+    oval(a,1,-26,6.5,7,"#e0b896",ink);poly(a,[[-4,-24],[6,-24],[3,-15],[-1,-15]],"#ece9df");oval(a,4,-27,1.2,1.2,ink);
+    poly(a,[[-10,-29],[11,-29],[4,-33],[2,-46],[-3,-33]],"#244a80");line(a,[[-10,-29],[11,-29]],"#c9d8f0",1.5);
+    line(a,[[4,-17],[16,-21]],"#2f5c9a",4.5);oval(a,17,-21,2.5,2.5,"#e0b896",ink);oval(a,20,-22,6,6,"#8ee5fb44",null);line(a,[[19,-21],[24,-26],[22,-20],[29,-24]],"#e6fbff",2);break;
+   case "regen": // Mossbridge Troll: hulking, stooped Troll with moss on its back and long arms, green.
+    legs(a,[[[-6,-4],[-9,5]],[[4,-4],[5,5]]],"#4e6a39",6.5);line(a,[[-10,-20],[-14,-4]],"#5f7f45",6);oval(a,-14,-3,3.2,2.6,"#4e6a39",ink);
+    poly(a,[[-12,-4],[-14,-22],[-6,-32],[8,-31],[12,-18],[9,-4]],"#5f7f45");poly(a,[[-14,-20],[-8,-33],[6,-33],[2,-27],[-3,-30],[-6,-25],[-10,-27]],"#8bb35a");for(const x of [-12,-7])line(a,[[x,-24],[x,-16]],"#8bb35a",1.6);
+    oval(a,9,-30,7,6.5,"#6b8c4c",ink);oval(a,11,-32,1.5,1.5,"#ffcf4a");line(a,[[8,-34],[13,-33]],ink,1.4);oval(a,12,-26,4.5,2.6,"#4e6a39",ink);poly(a,[[10,-27],[11,-31],[12.5,-27]],"#f2ead2");poly(a,[[14,-27],[15,-31],[16,-26.5]],"#f2ead2");
+    line(a,[[8,-22],[16,-3]],"#5f7f45",6.5);oval(a,16,-2,3.6,2.8,"#4e6a39",ink);break;
+   case "titan": // Primeval Titan: a Giant of stone and vine, carrying land, green.
+    poly(a,[[-10,5],[-9,-11],[-2,-11],[-3,5]],"#7a7466");poly(a,[[3,5],[3,-11],[10,-11],[11,5]],"#7a7466");
+    line(a,[[-13,-26],[-17,-11]],"#857c69",6);oval(a,-17,-10,3.2,3.2,"#857c69",ink);
+    poly(a,[[-15,-31],[15,-31],[11,-10],[-11,-10]],"#857c69");line(a,[[-10,-28],[-4,-20],[-8,-12]],"#5f9b4a",2);line(a,[[9,-29],[4,-19],[8,-12]],"#5f9b4a",2);rect(a,-11,-14,22,4,"#5a4f3f",null);
+    oval(a,-15,-30,6.5,5,"#9a917e",ink);oval(a,15,-30,6.5,5,"#9a917e",ink);poly(a,[[-19,-34],[-16,-38],[-13,-34]],"#6fb34f",null);poly(a,[[12,-34],[15,-38],[18,-34]],"#6fb34f",null);
+    oval(a,0,-36,6,6,"#857c69",ink);oval(a,-2,-37,1.4,1.4,"#a8ff6a");oval(a,3,-37,1.4,1.4,"#a8ff6a");
+    poly(a,[[-4,-41],[-11,-49],[-6,-42]],"#5f9b4a");poly(a,[[4,-41],[11,-49],[6,-42]],"#5f9b4a");
+    line(a,[[13,-26],[18,-13]],"#857c69",6);poly(a,[[13,-13],[25,-11],[23,-4],[14,-6]],"#6b4f35");line(a,[[20,-12],[20,-18]],"#5a412b",2);oval(a,20,-21,4.5,4,"#4e8251",ink);break;
+   case "stalker": // Invisible Stalker: hooded Human Rogue, half-seen, blue.
+    a.save();a.globalAlpha=.6;
+    poly(a,[[-10,5],[-7,-22],[1,-35],[8,-22],[10,5]],"#5b7fa0","#2a4258");poly(a,[[-3,-20],[1,-28],[6,-20],[5,-14],[-2,-14]],"#2a4258",null);a.restore();
+    for(const [x,y] of [[-13,-8],[-11,-20],[12,-4],[-6,-33]])crystal(a,x,y,2,"#c9f3ff");oval(a,2,-25,4,5,"#13202b");oval(a,1,-26,1.3,1.3,"#c9f3ff");oval(a,4,-26,1.3,1.3,"#c9f3ff");line(a,[[6,-12],[17,-17]],"#d4e3ea",2.2);line(a,[[5,-11],[8,-14]],"#5b7fa0",3);break;
+   case "warden": // Kappa Cannoneer: artifact Turtle Warrior with a shoulder cannon, blue.
+    legs(a,[[[-6,-3],[-7,5]],[[5,-3],[6,5]]],"#4f8f86",6);
+    oval(a,-4,-15,13,12,"#6e7f86",ink);for(const [x,y] of [[-11,-19],[-4,-23],[3,-19],[-9,-10],[-2,-11]])oval(a,x,y,1.3,1.3,"#c3ccd0");line(a,[[-15,-15],[6,-15]],"#4f5a60",1.4);crystal(a,-5,-16,3.5,ice);
+    oval(a,5,-12,6.5,8.5,"#c9b27a",ink);line(a,[[2,-15],[8,-15]],"#9c8758",1.2);line(a,[[2,-10],[8,-10]],"#9c8758",1.2);
+    oval(a,9,-24,6,5.5,"#5f9f90",ink);oval(a,12,-25,1.5,1.5,"#ffe9a0");line(a,[[10,-21],[15,-22]],ink,1.2);
+    poly(a,[[-8,-28],[17,-35],[18,-30],[-7,-24]],"#56606a");line(a,[[2,-31],[3,-27]],"#c9a75a",2);oval(a,18,-32.5,2.6,3.2,"#1b2226",ink);break;
+   case "golem": // Darksteel Juggernaut: an unstoppable darksteel siege engine, colorless.
+    rect(a,-18,-3,36,8,"#24282d");for(const x of [-12,-4,4,12])oval(a,x,1,3.2,3.2,"#5b6570",ink);
+    poly(a,[[-18,-3],[-20,-16],[-12,-31],[10,-31],[18,-19],[18,-3]],"#3a4048");line(a,[[-14,-26],[6,-27]],"#8fa3b8",1.6);line(a,[[-17,-14],[-10,-27]],"#8fa3b8",1.2);
+    poly(a,[[7,-26],[18,-19],[18,-5],[7,-7]],"#2a2f36");line(a,[[10,-16],[17,-15]],"#ff7a4a",2.2);
+    for(const y of [-22,-12,-5])poly(a,[[18,y-2.5],[26,y],[18,y+2.5]],"#9aa6ad");poly(a,[[-8,-31],[-5,-38],[-2,-31]],"#9aa6ad");poly(a,[[0,-31],[3,-38],[6,-31]],"#9aa6ad");break;
+   case "grimgut": // Lovisa Coldeyes: Human barbarian warlord with a war axe, red.
+    poly(a,[[-15,4],[-12,-22],[6,-22],[0,4]],"#8a7660");legs(a,[[[-4,-3],[-6,5]],[[4,-3],[6,5]]],"#4a3a2c",5.5);
+    poly(a,[[-9,-21],[9,-21],[9,-4],[-9,-4]],"#8e3a2a");rect(a,-9,-10,18,3,"#3a2a20",null);oval(a,-8,-21,5,3.5,"#cbb89a",ink);oval(a,8,-21,5,3.5,"#cbb89a",ink);
+    poly(a,[[-7,-31],[6,-33],[-1,-11],[-9,-13]],"#e0c27a");oval(a,2,-27,6.5,7,"#e2b89a",ink);oval(a,5,-28,1.5,1.5,"#9fe3ff");oval(a,6,-23,1.5,1.1,ink);
+    line(a,[[7,-17],[14,-37]],"#7a5a3c",3);poly(a,[[11,-41],[22,-39],[21,-30],[13,-34]],"#c9cfc6");break;
+   case "matron": // Oona, Queen of the Fae: Faerie Wizard queen on gauzy wings, blue-black.
+    wingPair(a,[[-2,-26],[-24,-44],[-29,-32],[-6,-22]],"#9fd8ff77","#5b4f86");wingPair(a,[[-2,-20],[-22,-14],[-18,-5],[-4,-16]],"#c9a6ff66","#5b4f86");
+    poly(a,[[-12,5],[-6,-22],[6,-22],[12,5]],"#2b2650");line(a,[[-6,-22],[-12,5]],"#8a6ad0",1.4);line(a,[[6,-22],[12,5]],"#8a6ad0",1.4);
+    poly(a,[[-7,-31],[7,-31],[8,-14],[-8,-14]],"#1d1830");oval(a,0,-27,6,7,"#cfc7e8",ink);oval(a,-2,-27,1.3,1.3,"#c9f3ff");oval(a,2.5,-27,1.3,1.3,"#c9f3ff");
+    for(const [x,y] of [[-14,-8],[15,-26],[18,-6]])crystal(a,x,y,2.5,"#e6d7ff");break;
+   case "colossus": // Darksteel Colossus: artifact Golem of dark steel.
+    rect(a,-11,-12,8,17,"#3e454e");rect(a,3,-12,8,17,"#3e454e");
+    line(a,[[-18,-29],[-20,-12]],"#4a525c",7);oval(a,-20,-10,4,4,"#3e454e",ink);
+    poly(a,[[-16,-35],[16,-35],[12,-12],[-12,-12]],"#4a525c");line(a,[[-10,-30],[10,-30]],"#8fa3b8",1.4);line(a,[[0,-34],[0,-13]],"#2f353c",1.4);crystal(a,0,-24,5,"#9fd8ff");
+    oval(a,-17,-33,6.5,5,"#5a636e",ink);oval(a,17,-33,6.5,5,"#5a636e",ink);line(a,[[18,-29],[20,-12]],"#4a525c",7);oval(a,20,-10,4,4,"#3e454e",ink);
+    rect(a,-5,-44,10,9,"#3a4048");line(a,[[-3,-39],[4,-39]],"#9fd8ff",2);break;
+   case "hierophant": // Iona, Shield of Emeria: Angel in white and gold with a sword.
+    wingPair(a,[[-3,-24],[-30,-44],[-32,-30],[-26,-17],[-8,-14]],"#f4f1e6");for(const s of [-1,1])for(const y of [-36,-28,-21])line(a,[[s*8,-21],[s*26,y]],"#d8cfb6",1.1);
+    poly(a,[[-10,5],[-7,-22],[7,-22],[10,5]],"#e8dcb8");poly(a,[[-7,-22],[7,-22],[5,-11],[-5,-11]],"#d9b45a");
+    poly(a,[[-7,-30],[7,-30],[7,-17],[-7,-17]],"#e9d38a",null);oval(a,0,-27,6,7,"#f1dcc4",ink);oval(a,2.5,-27,1.2,1.2,ink);
+    line(a,[[7,-14],[20,-41]],"#eef2f5",3);line(a,[[4,-17],[11,-13]],gold,2.4);break;
+   case "tyrant": // Emrakul, the Aeons Torn: colossal Eldrazi of bone plates and tentacles, colorless.
+    for(const [x0,x1,x2] of [[-8,-20,-26],[-3,-10,-12],[3,8,13],[8,20,27]]){line(a,[[x0,-10],[x1,-2],[x2,5]],ink,6);line(a,[[x0,-10],[x1,-2],[x2,5]],"#c9a3c0",4);}
+    poly(a,[[-12,-8],[-14,-30],[-6,-42],[6,-42],[14,-30],[12,-8]],"#8b6f86");
+    for(const y of [-34,-24,-15])poly(a,[[-11,y],[0,y-4],[11,y],[0,y+3]],"#e6ddcc");line(a,[[-9,-12],[-4,-28]],"#ff9ad8",1.2);line(a,[[8,-13],[4,-27]],"#ff9ad8",1.2);
+    poly(a,[[-10,-39],[-17,-49],[-4,-43],[0,-50],[4,-43],[17,-49],[10,-39]],"#e6ddcc");for(const [x,y] of [[-6,-22],[6,-30],[0,-11]])oval(a,x,y,1.5,1.5,"#ff9ad8");break;
+  }
+  if(tokenBoss.includes(k)&&k!=="tyrant")crown(a,({grimgut:-35,matron:-35,colossus:-45,hierophant:-35})[k],k==="matron"?"#b9a6e8":gold);
+ }
+ const tokenBoss=["grimgut","matron","colossus","hierophant","tyrant"];
  function creature(a,k){
+  if(enemyKeys.includes(k))return enemyModel(a,k);
   switch(k){
    case "legion":humanoid(a,"#e2cc99","#e5bd93",{helmet:true,shield:gold});break;
    case "necropolis":humanoid(a,"#827393","#d8d7c1",{});oval(a,-3,-26,2,2,ink);oval(a,3,-26,2,2,ink);line(a,[[-6,-15],[6,-15]],"#e3decf",2);break;
@@ -98,21 +194,6 @@ export function createArt(ctx,{res:startRes=1,portrait=null}={}){
    case "wilhelt":humanoid(a,"#3d4a5a","#a9b59a",{helmet:true});line(a,[[12,-6],[24,-34]],"#7d8e85",5);poly(a,[[20,-34],[30,-40],[28,-28]],"#9aa6ad");oval(a,-3,-25,1.8,1.8,"#9fe07a");oval(a,3,-25,1.8,1.8,"#9fe07a");break;
    case "kaalia":poly(a,[[-4,-18],[-24,-30],[-18,-8]],"#b8a7c8");poly(a,[[4,-18],[24,-30],[18,-8]],"#b8a7c8");humanoid(a,"#7c2a2a","#d9b49a",{});line(a,[[-8,-30],[8,-30]],gold,2);break;
    case "urdragon":for(const [x,c] of [[-26,gold],[-14,ice],[14,fire],[26,leaf]])poly(a,[[0,-18],[x,-34],[x*.8,-10]],c);oval(a,0,-14,9,14,"#5a3f63",ink);poly(a,[[-5,-26],[0,-40],[5,-26]],"#7a4c6e");oval(a,-3,-24,2,2,fire);oval(a,3,-24,2,2,fire);break;
-   case "stalker":humanoid(a,"#2d2a3a","#6e6880",{});poly(a,[[-9,-24],[0,-38],[9,-24],[7,-16],[-7,-16]],"#1d1b26");oval(a,-3,-25,1.8,1.8,"#b9f0ff");oval(a,3,-25,1.8,1.8,"#b9f0ff");break;
-   case "warden":humanoid(a,"#6a7aa6","#c3b3a4",{helmet:true,shield:"#9fb7e8"});oval(a,-9,-12,7,7,"#ffffff22","#bfe8ff");break;
-   case "golem":humanoid(a,"#6f6a62","#8d877c",{bulk:true});for(const [x,y] of [[-6,-15],[5,-9],[0,-27]])rect(a,x-3,y-3,6,6,"#a59d8f");break;
-   case "grimgut":humanoid(a,"#a1402f","#b98a6c",{bulk:true,shield:"#7c3b2c"});crown(a,-34,"#d1a654");line(a,[[10,-12],[24,-36]],"#9a9a8e",5);break;
-   case "matron":poly(a,[[-16,4],[-9,-24],[9,-24],[16,4]],"#2b2436");oval(a,0,-27,8,9,"#5a5368",ink);poly(a,[[-12,-26],[0,-44],[12,-26]],"#3b3049");for(const x of [-6,0,6])oval(a,x,-29,1.6,1.6,"#c9f3ff");break;
-   case "colossus":humanoid(a,"#5d6268","#7c8389",{bulk:true,helmet:true,shield:"#8b9298"});rect(a,-12,-22,24,6,"#3e4246");crystal(a,0,-11,6,"#9fb4c1");break;
-   case "hierophant":poly(a,[[-15,4],[-9,-24],[9,-24],[15,4]],"#5c3f7a");oval(a,0,-27,7,8,"#d9c8b6",ink);poly(a,[[-10,-28],[0,-46],[10,-28]],"#e2d6f2");line(a,[[15,-44],[15,4]],"#bda98a",3);oval(a,15,-46,6,6,"#00000000","#d7a6ff");break;
-   case "tyrant":humanoid(a,"#3a3238","#5e555b",{bulk:true,helmet:true});poly(a,[[-10,-34],[-18,-50],[-4,-38],[4,-38],[18,-50],[10,-34]],"#a99c8d");crystal(a,-6,-13,5,"#76bdf1");crystal(a,6,-13,5,"#d9d3c3");break;
-   case "runner":humanoid(a,"#b48b60","#d9ad89",{});poly(a,[[-8,-31],[0,-38],[8,-31]],"#9e5746");break;
-   case "raider":humanoid(a,"#ae574a","#b8886f",{shield:"#9c5f4c"});break;
-   case "armored":humanoid(a,"#7d8886","#9daba5",{helmet:true,shield:"#9ca6a0",bulk:true});break;
-   case "mage":poly(a,[[-13,4],[-7,-22],[7,-22],[13,4]],"#765789");oval(a,0,-25,7,8,"#bc9b91",ink);poly(a,[[-10,-25],[0,-43],[10,-25]],"#624b79");line(a,[[14,-40],[14,4]],"#a7957c",3);crystal(a,14,-40,7,violet);break;
-   case "wing":poly(a,[[-3,-14],[-27,-29],[-23,-8],[-14,-13],[-10,0],[0,-7]],"#9c7189");poly(a,[[3,-14],[27,-29],[23,-8],[14,-13],[10,0],[0,-7]],"#9c7189");oval(a,0,-13,8,12,"#68516c",ink);poly(a,[[-6,-21],[-10,-31],[0,-25],[10,-31],[6,-21]],"#786079");oval(a,-3,-18,2,2,fire);oval(a,3,-18,2,2,fire);break;
-   case "regen":beast(a,"#61925c","#94ba6e");for(let x=-18;x<6;x+=9)poly(a,[[x,-15],[x+3,-28],[x+7,-15]],"#b5c988");break;
-   case "titan":humanoid(a,"#927b72","#a68a79",{bulk:true,helmet:true,shield:"#bc9878"});poly(a,[[-8,-34],[-14,-46],[-2,-36],[2,-36],[14,-46],[8,-34]],"#c5b79e");crystal(a,0,-13,6,fire);break;
   }
  }
  // Towers draw about 10% larger than before so they sit proud of their pads; a soft contact shadow grounds them.
@@ -146,6 +227,8 @@ export function createArt(ctx,{res:startRes=1,portrait=null}={}){
  function rubble(x,y){ctx.save();oval(ctx,x,y+4,30,10,"#10231d77");const stones=[[-16,-2,11,7,"#7d7564"],[10,0,13,8,"#857c69"],[-2,-8,12,8,"#958b76"],[16,-10,7,6,"#6e6757"],[-20,-12,6,5,"#a39a84"]];for(const [dx,dy,rx,ry,c] of stones){oval(ctx,x+dx,y+dy,rx,ry,c,"#3b382f");}
   ctx.fillStyle="#b3a88e";ctx.strokeStyle="#3b382f";ctx.lineWidth=1.5;ctx.beginPath();ctx.rect(x-8,y-34,10,26);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(x-8,y-34);ctx.lineTo(x-4,y-40);ctx.lineTo(x+2,y-36);ctx.lineTo(x+2,y-34);ctx.closePath();ctx.fill();ctx.stroke();
   ctx.strokeStyle="#5d8a4e";ctx.lineWidth=1.4;for(const dx of [-12,6,18]){ctx.beginPath();ctx.moveTo(x+dx,y+2);ctx.quadraticCurveTo(x+dx+2,y-5,x+dx+4,y-9);ctx.stroke();}ctx.restore();}
+ // Health bars sit just above each model's head: the card-based enemy models stand taller than the old figures.
+ function barTop(k){return tokenBoss.includes(k)||k==="titan"?.79:enemyKeys.includes(k)?.72:.65;}
  function sizeOf(k){return ["titan","grimgut","matron","colossus","hierophant","tyrant"].includes(k)?(k==="tyrant"?78:70):commanderKeys.includes(k)?(k==="urdragon"?66:54):k==="bloom"?56:k==="wing"?50:45;}
  // Attack poses (visual only): pose() watches each fighter's attack timer and health between frames.
  // A rising timer means it just struck (lunge, lean and a swing arc); falling health means it was hit (recoil and a flash).
@@ -154,15 +237,7 @@ export function createArt(ctx,{res:startRes=1,portrait=null}={}){
   if(next!==undefined&&p.seen&&(p.next===undefined||next>p.next))p.atk=now;if(hp<p.hp)p.hurt=now;p.next=next;p.hp=hp;p.seen=now;
   if(now-poseSweep>4000){poseSweep=now;for(const [k,v] of poses)if(now-v.seen>3000)poses.delete(k);}
   const a=(now-p.atk)/280,h=(now-p.hurt)/220;return {atk:a>=0&&a<1?a:0,hurt:h>=0&&h<1?h:0,engaged:now-p.atk<1400};}
- // Enemies wear their real Magic card: the card's art crop shown bare (no medallion, rim or stand), with the
- // sprite pass adding the usual ink outline so it reads on the map. Bosses keep a small crown on top.
- // portrait(k) returns a loaded art-crop image (or null while loading/offline, which keeps the drawn creature).
- const tokenBoss=["grimgut","matron","colossus","hierophant","tyrant"];
- function token(a,k,img){const boss=tokenBoss.includes(k),w=boss?54:52,h=Math.round(w*.76),cy=-h/2-2,x0=-w/2,y0=cy-h/2;
-  const iw=img.naturalWidth||img.width||1,ih=img.naturalHeight||img.height||1,sw=Math.min(iw,ih*w/h),sh=sw*h/w,sx=(iw-sw)/2,sy=Math.max(0,(ih-sh)*.35);
-  a.save();a.beginPath();a.roundRect?a.roundRect(x0,y0,w,h,4):a.rect(x0,y0,w,h);a.clip();a.drawImage(img,sx,sy,sw,sh,x0,y0,w,h);a.restore();
-  if(boss)crown(a,y0+1,gold);}
- function unit(k,x,y,opt={}){const img=!opt.ally&&portrait&&enemyKeys.includes(k)?portrait(k):null,s=img?makeSprite("token:"+k,a=>token(a,k,img),68,68):makeSprite("unit:"+k,a=>creature(a,k),68,68),size=sizeOf(k);const dir=(opt.dir<0?-1:1)*(opt.ally&&opt.engaged?-1:1),flip=img?1:dir,atk=opt.atk||0,hurt=opt.hurt||0;
+ function unit(k,x,y,opt={}){const s=makeSprite("unit:"+k,a=>creature(a,k),68,68),size=sizeOf(k),top=barTop(k);const dir=(opt.dir<0?-1:1)*(opt.ally&&opt.engaged?-1:1),flip=dir,atk=opt.atk||0,hurt=opt.hurt||0;
   const lunge=atk?Math.sin(Math.PI*Math.min(1,atk*1.4))*size*.2:0,recoil=hurt?Math.sin(Math.PI*hurt)*-3.5:0,lean=atk?Math.sin(Math.PI*Math.min(1,atk*1.4))*.22:0;
   x+=(lunge+recoil)*dir;
   const die=opt.die||0;if(die){ctx.save();ctx.globalAlpha*=die<.55?1:1-(die-.55)/.45;}
@@ -181,7 +256,7 @@ export function createArt(ctx,{res:startRes=1,portrait=null}={}){
   // Swing arc: a quick bright crescent sweeping in front of the attacker.
   if(atk>.12&&atk<.8){const k=(atk-.12)/.68,cx=x+dir*size*.26,cy=y+(opt.flying?-14:0)-size*.32,r=size*.34,a0=-1.3+k*1.6;ctx.save();ctx.globalAlpha=(1-k)*.85;ctx.strokeStyle=opt.ally?"#fff6d8":"#ffd0c0";ctx.lineWidth=2.6;ctx.lineCap="round";ctx.beginPath();
    if(dir>0)ctx.arc(cx,cy,r,a0,a0+1.1);else ctx.arc(cx,cy,r,Math.PI-a0-1.1,Math.PI-a0);ctx.stroke();ctx.globalAlpha=(1-k)*.35;ctx.lineWidth=6;ctx.stroke();ctx.restore();}
-  const yy=y+(opt.flying?-14:0)-size*(img?.8:.65);const ww=size*.60;rect(ctx,x-ww/2,yy,ww,3,"#26332d",null);rect(ctx,x-ww/2,yy,ww*Math.max(0,Math.min(1,opt.hp||0)),3,opt.ally?"#94db93":"#e9a181",null);if(opt.ward) {ctx.strokeStyle="#f1d991aa";ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y-9,15,19,0,0,Math.PI*2);ctx.stroke();}}
+  const yy=y+(opt.flying?-14:0)-size*top;const ww=size*.60;rect(ctx,x-ww/2,yy,ww,3,"#26332d",null);rect(ctx,x-ww/2,yy,ww*Math.max(0,Math.min(1,opt.hp||0)),3,opt.ally?"#94db93":"#e9a181",null);if(opt.ward) {ctx.strokeStyle="#f1d991aa";ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y-9,15,19,0,0,Math.PI*2);ctx.stroke();}}
  const projectileColors={strike:gold,arcane:ice,mirror:"#c1edff",hex:violet,splash:fire,chain:"#ffdf83",root:leaf,melee:"#f6e0bd",heal:"#b0efad"};
  // Art pass: projectiles get a shaped core with an ink edge, an additive glow and a fading trail; impacts flash.
  function glow(x,y,r,c,a=1){ctx.save();ctx.globalCompositeOperation="lighter";for(const [k,al] of [[1,.14],[.6,.24],[.32,.4]]){ctx.globalAlpha=al*a;ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r*k,0,Math.PI*2);ctx.fill();}ctx.restore();}
@@ -217,7 +292,7 @@ export function createArt(ctx,{res:startRes=1,portrait=null}={}){
   if(st.freeze){ctx.globalAlpha=.28;oval(ctx,x,body,size*.3,size*.4,"#c8f1ff");ctx.globalAlpha=.9;for(let i=0;i<3;i++){const a=i*2.1+id,px=x+Math.cos(a)*size*.27,py=body+Math.sin(a)*size*.3;poly(ctx,[[px,py-4],[px+2.5,py],[px,py+4],[px-2.5,py]],"#e9fbff","#7cc9ec");}ctx.globalAlpha=1;}
   if(st.poison){for(let i=0;i<Math.min(3,st.poison);i++){const ph=((s*1.2+i*.37+id*.13)%1),px=x+(i-1)*size*.16,py=body-size*.05+ph*size*.45;ctx.globalAlpha=1-ph*.7;ctx.fillStyle=STATUS.poison;ctx.strokeStyle="#1d4a16";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px,py-6);ctx.quadraticCurveTo(px+4.5,py+1,px,py+3.5);ctx.quadraticCurveTo(px-4.5,py+1,px,py-6);ctx.fill();ctx.stroke();}ctx.globalAlpha=.22;oval(ctx,x,body,size*.26,size*.34,STATUS.poison);ctx.globalAlpha=1;}
   if(st.burn){for(let i=0;i<3;i++){const fl=Math.sin(s*14+i*2+id)*.5+.5,px=x+(i-1)*size*.17,base=body+size*.12,h=size*(.22+.14*fl);ctx.globalAlpha=.9;poly(ctx,[[px-4,base],[px,base-h],[px+4,base]],"#ff7a2e",null);poly(ctx,[[px-2,base],[px,base-h*.6],[px+2,base]],"#ffd36b",null);}ctx.globalAlpha=1;}
-  const keys=["burn","poison","freeze","curse"].filter(k=>st[k]);if(!keys.length)return;const iy=cy-size*(cache.has("token:"+k)?.8:.65)-7,w=keys.length*10;
+  const keys=["burn","poison","freeze","curse"].filter(k=>st[k]);if(!keys.length)return;const iy=cy-size*barTop(k)-7,w=keys.length*10;
   keys.forEach((kk,i)=>{const ix=x-w/2+5+i*10;oval(ctx,ix,iy,4.6,4.6,"#0d1712",null);oval(ctx,ix,iy,3.6,3.6,STATUS[kk],null);ctx.fillStyle="#0d1712";ctx.strokeStyle="#0d1712";ctx.lineWidth=1;
    if(kk==="burn")poly(ctx,[[ix-1.6,iy+2],[ix,iy-2.4],[ix+1.6,iy+2]],"#0d1712",null);
    else if(kk==="poison"){ctx.font="800 6px system-ui";ctx.textAlign="center";ctx.fillText(String(Math.min(9,st.poison)),ix,iy+2.2);ctx.textAlign="start";}
