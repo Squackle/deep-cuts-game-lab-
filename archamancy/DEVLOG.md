@@ -560,3 +560,11 @@ Owner feedback from a Normal Hollow Road first-campaign run: seven wave-4 Carrio
 - A full-screen green rotation prompt replaces the old portrait battlefield. Rotation pauses combat and music, saves an active run, and brings back any open dialog in landscape. A manual pause stays in effect.
 - Previewing an attacking tower draws its firing range before purchase, including the high-ground bonus. Tower descriptions stay in view and tutorial tips avoid covering their controls.
 - A run without a commander skips the empty card-art lookup. Battle rules and save format stay the same.
+
+## 2026-11-23 — v0.1.0-beta.13.48 boss overlap preparation
+
+Beta 13.47 Confluence Normal playtest finished 25/25, 6/20 fortress health, 12 leaks, with Grimgut (41% HP), the Hierophant (50%), and Lorthos (11%) escaping. The player manually started wave 5 immediately after wave 4, wave 20 immediately after wave 19, and wave 25 immediately after wave 24; multiple unfinished waves overlapped.
+- The existing next-wave forecast displays a **nonblocking boss overlap advisory** when a major boss is next and earlier waves remain in progress. It identifies the boss and exact unfinished-wave count. It stays present even if the enemy list is collapsed or early calling is momentarily capped, and is included in the wave-call button's accessible name and title.
+- Onslaught mode is worded appropriately for automatic waves (prepare defenses), rather than telling players to stop an automatic call.
+- No change to early-call availability, bonus mana, enemy strength, boss behavior, unlocks, save format, ranking or deployment scope. Existing first-flyer tutorial behavior stays intact.
+- Tests: `archamancy/tests/wave-guidance.test.mjs` covers boss wave 5/20/25 identification, concurrent-wave count, Onslaught/manual differences, hiding the hint outside eligible encounters, and UI visibility.
