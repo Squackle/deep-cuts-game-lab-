@@ -1,7 +1,7 @@
 // Real Magic card art from Scryfall (art crops), with the artist credit Scryfall requires.
 // Looked up lazily in the browser, one request at a time well under Scryfall's rate limit, and cached locally.
 // Any failure leaves the card without art and is not retried until the page reloads.
-const KEY = "archemancy.cardart.v1", API = "https://api.scryfall.com/cards/named?exact=";
+const KEY = "archemancy.cardart.v1", API = "https://api.scryfall.com/cards/named?exact=", SEARCH = "https://api.scryfall.com/cards/search?q=";
 export function createCardArt({ fetchFn = globalThis.fetch?.bind(globalThis), storage = null, delay = 120, onUpdate = () => {} } = {}) {
  let cache = {};
  try { cache = JSON.parse(storage?.getItem(KEY) || "{}") || {}; } catch { cache = {}; }
@@ -16,9 +16,14 @@ export function createCardArt({ fetchFn = globalThis.fetch?.bind(globalThis), st
   while (queue.length) {
    const name = queue.shift();
    try {
-    const r = await fetchFn(API + encodeURIComponent(name), { headers: { Accept: "application/json" } });
+    // "token:Soldier:W" looks up the newest Soldier token whose colors are exactly white; anything else is an exact card name.
+    const tok = /^token:([A-Za-z]+):([WUBRGC])$/.exec(name);
+    const url = tok ? SEARCH + encodeURIComponent("t:token t:" + tok[1] + " c=" + tok[2]) + "&order=released&dir=desc" : API + encodeURIComponent(name);
+    const r = await fetchFn(url, { headers: { Accept: "application/json" } });
     if (r.ok) {
-     const card = await r.json(), face = card.image_uris || card.card_faces?.[0]?.image_uris || {};
+     let card = await r.json();
+     if (tok) card = card?.data?.[0] || {};
+     const face = card.image_uris || card.card_faces?.[0]?.image_uris || {};
      const entry = { art: face.art_crop, artist: card.artist || card.card_faces?.[0]?.artist || "Unknown artist", link: card.scryfall_uri };
      if (valid(entry)) { cache[name] = entry; persist(); onUpdate(name); }
     }
