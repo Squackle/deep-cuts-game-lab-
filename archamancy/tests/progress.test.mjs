@@ -19,8 +19,16 @@ test("battle-stat, endless and rainbow unlocks",()=>{const p=progress.newProfile
  assert.deepEqual(progress.recordRun(p,run(3,{returns:9,fallen:199,sacrifices:49})),[]);
  assert.deepEqual(progress.recordRun(p,run(3,{returns:10})),["meren"]);assert.deepEqual(progress.recordRun(p,run(3,{fallen:200})),["teysa"]);assert.deepEqual(progress.recordRun(p,run(3,{sacrifices:50})),["korvold"]);
  assert.ok(!progress.recordRun(p,run(30)).includes("atraxa"),"campaign wave 30 is not endless");assert.ok(progress.recordRun(p,run(30,{mode:"endless"})).includes("atraxa"));
- assert.deepEqual(progress.recordRun(p,run(25,{won:true,colors:["W","U","B","R","R"]})),[]);assert.deepEqual(progress.recordRun(p,run(25,{won:true,colors:["W","U","B","R","G","G"]})),["urdragon"]);
- assert.equal(progress.available(p,"campaign",all).length,all.length);});
+ assert.deepEqual(progress.recordRun(p,run(25,{won:true,colors:["W","U","B","R","R"]})),["torbran"]);assert.deepEqual(progress.recordRun(p,run(25,{won:true,colors:["W","U","B","R","G","G"]})),["urdragon"]);
+ assert.deepEqual(all.filter(id=>!progress.available(p,"campaign",all).includes(id)).sort(),["toxrill","urza"]);});
+
+test("level, Gauntlet win and Hard win unlocks",()=>{const p=progress.newProfile();progress.chooseStarter(p,"krenko");
+ assert.match(progress.requirement(p,"urza"),/level 3/);assert.match(progress.requirement(p,"toxrill"),/Hard/);
+ assert.deepEqual(progress.recordRun(p,run(25,{won:true,mode:"endless"})),["edgar","lightpaws","talrand","omnath"]);
+ assert.deepEqual(progress.recordRun(p,run(25,{won:true,difficulty:"normal"})),["torbran"]);
+ p.xp=progress.xpToReach(3);assert.deepEqual(progress.recordRun(p,run(1)),["urza"]);
+ assert.deepEqual(progress.recordRun(p,run(25,{won:true,difficulty:"hard"})),["toxrill"]);
+ const vet=progress.newProfile();progress.chooseStarter(vet,"omnath");vet.stars={"confluence:hard":1};assert.ok(progress.recordRun(vet,run(1)).includes("toxrill"),"earlier Hard wins count");});
 
 test("profile saves, loads and rejects tampered or retired data",()=>{const s=memory(),p=progress.newProfile();progress.chooseStarter(p,"krenko");progress.recordRun(p,run(12));assert.ok(progress.save(s,p));assert.deepEqual(progress.load(s,all),p);
  s.setItem("archemancy.progress.v1",JSON.stringify({starter:"marshal",unlocked:["marshal","quill"],bestWave:12}));assert.deepEqual(progress.load(s,all),progress.newProfile(),"beta 9 starters are retired");

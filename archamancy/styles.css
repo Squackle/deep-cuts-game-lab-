@@ -182,6 +182,8 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .end-stats div{background:#15291f;border-radius:8px;padding:6px 8px;text-align:left}.end-stats span{display:block;font-size:.68rem;color:var(--muted)}.end-stats strong{font-size:.95rem;color:#fff1cf;overflow-wrap:anywhere}
 .end-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%}.end-actions button{border-radius:999px}.end-actions .primary{grid-column:1/-1}
 .tutorial{position:fixed;z-index:8;max-width:min(280px,80vw);background:#f6e8c4;color:#1a2b20;border-radius:12px;padding:8px 12px;box-shadow:0 6px 18px #000b;font-size:.85rem;font-weight:600;line-height:1.35;animation:tip-bob 1.6s ease-in-out infinite}
+.tutorial-step{display:block;font-size:.66rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6b5a2e;margin-bottom:2px}
+.tutorial p{margin:0}
 .tutorial button{margin-top:6px;min-height:24px;padding:1px 10px;font-size:.72rem;background:transparent;color:#4a5a4c;border-color:#8a9a8c;border-radius:999px}
 @keyframes tip-bob{50%{transform:translateY(-3px)}}
 .tip-glow{animation:tip-glow 1.2s ease-in-out infinite!important;border-color:#fff1cf!important;border-radius:12px}
@@ -440,6 +442,22 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .ring-info .info-art[hidden]{display:none}
 /* Color-identity trim under every built tower on the map. */
 .pad.built::before{content:"";position:absolute;left:6%;right:6%;top:62%;height:34%;border-radius:50%;border:2px solid var(--tier-color);box-shadow:0 0 7px var(--tier-color),inset 0 0 5px var(--tier-color);opacity:.7;pointer-events:none}
+/* Daily Challenge + run card */
+.daily-btn{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%}
+.daily-btn small{font-size:.72rem;opacity:.85;font-weight:500;line-height:1.25}
+.end-daily{margin:4px 0 8px;font-size:.9rem;color:var(--ink)}
+.run-card-img{display:block;width:auto;max-width:100%;max-height:min(62dvh,560px);height:auto;margin:10px auto;border-radius:10px;box-shadow:0 6px 20px #0008;background:#0e1913}
+.card-actions-row{display:flex;gap:8px;justify-content:center}
+.card-actions-row button{flex:1;max-width:220px}
+@media (max-height:520px){
+.daily-btn small{display:none}
+.daily-btn{min-height:0;padding-top:6px;padding-bottom:6px}
+.card-body{display:flex;gap:14px;align-items:center;justify-content:center}
+.run-card-img{max-height:calc(100dvh - 110px);margin:6px 0}
+.card-side{flex:1;max-width:260px}
+.card-side .card-actions-row{flex-direction:column}
+.card-side .card-actions-row button{max-width:none}
+}
 /* Campaign world map above the battlefield cards. */
 .world-map{position:relative;aspect-ratio:10/3;margin:0 0 12px;border:3px solid #6f5c37;border-radius:14px;overflow:hidden;box-shadow:0 6px 0 #0a110d}
 .world-map canvas{display:block;width:100%;height:100%}
