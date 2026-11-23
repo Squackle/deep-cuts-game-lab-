@@ -352,6 +352,10 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .title-actions button.big:active{box-shadow:0 2px 0 #0008,0 4px 10px #0008}
 .title-actions .stone-btn{min-height:44px;border-radius:12px;font-weight:800;background:linear-gradient(#4b5d51,#2e3b33);border:2px solid #9fb29c55;box-shadow:0 4px 0 #141d18,0 8px 14px #0008;color:#f3ecd8}
 .title-icons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;width:min(340px,100%)}
+.title-reset-progress{width:min(340px,100%);min-height:32px;padding:5px 12px;font-size:.78rem;color:#dfd2bb;background:#1d231f;border:1px solid #877a60aa;border-radius:10px;cursor:pointer}
+.title-reset-progress:hover,.title-reset-progress:focus-visible{color:#fff2d8;border-color:#d9b974}
+#fullResetDialog{max-width:min(480px,calc(100vw - 24px))}#fullResetDialog label{display:block;margin:14px 0 5px;font-weight:700}#fullResetPhrase{display:block;width:100%;font-size:1rem;text-align:center;letter-spacing:.13em}#fullResetConfirm:not(:disabled){background:#8a2d24;color:white;border-color:#c97660}
+
 .icon-tile{display:flex;flex-direction:column;align-items:center;gap:1px;min-height:64px;padding:7px 2px 6px;border-radius:14px;background:linear-gradient(#20342af2,#13211af2);border:2px solid #e9c66f59;box-shadow:0 4px 0 #0b130f,0 8px 14px #0008;font:800 .74rem system-ui;color:#fff1cf}
 .icon-tile .tile-ico{font-size:1.35rem;line-height:1.1;color:#f2cf6b;filter:drop-shadow(0 2px 0 #0008)}
 .icon-tile small{font-size:.62rem;font-weight:700;color:#c9cdbd}.icon-tile small:empty{display:none}
@@ -384,7 +388,7 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 @media (max-width:760px) and (orientation:portrait),(max-width:560px){
  .title-card{display:flex;flex-direction:column;gap:12px;min-height:0}
  .title-brand{display:contents}
- .title-logo{order:1}.title-tag{order:2;font-size:.8rem}#playerLevel{order:3}.title-maps{order:4;width:100%;padding:12px 0 14px}.title-actions{order:5}.title-icons{order:6}.title-foot{order:7}
+ .title-logo{order:1}.title-tag{order:2;font-size:.8rem}#playerLevel{order:3}.title-maps{order:4;width:100%;padding:12px 0 14px}.title-actions{order:5}.title-icons{order:6}.title-reset-progress{order:6}.title-foot{order:7}
  .title-head{padding:0 12px}
  .map-choices{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;padding:4px 14% 10px;scrollbar-width:none}
  .map-choices::-webkit-scrollbar{display:none}

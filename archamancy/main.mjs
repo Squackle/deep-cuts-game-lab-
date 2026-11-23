@@ -2,6 +2,7 @@ import {createEngine,VERSION,MAPS,PERKS,PERK_COSTS,TARGET_MODES,AIMED,ABILITIES,
 import {createArt} from './art.mjs';
 import {paintTerrain as paintMapArt} from './terrain.mjs';
 import * as progress from './progress.mjs';
+import {resetGameProgress} from './game-reset.mjs';
 import {paintWorld,NODES} from './worldmap.mjs';
 import {createCardArt} from './cardart.mjs';
 import {createFx} from './fx.mjs';
@@ -383,9 +384,9 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  function musicMood(){const s=game.state;sfx.mood(pickMood({title:!$("titleScreen").hidden,phase:s.phase,boss:s.enemies.some(e=>e.hp>0&&game.types[e.kind].boss&&e.kind!=="titan")}),intensityFor(s.wave));}
  document.addEventListener("visibilitychange",()=>{last=null;accumulator=0;if(document.hidden)saveRun();});
  // Continue: the current run is saved in this browser every few seconds, when the tab is hidden or closed, and when leaving to the menu.
- const RUN_KEY="archemancy.run.v1";let lastSave=0;
+ const RUN_KEY="archemancy.run.v1";let lastSave=0,resettingGame=false;
  function runLive(){const s=game.state;return s.mode!=="sandbox"&&(s.phase==="ready"||s.phase==="active")&&(s.wave>0||Object.keys(s.towers).length>0);}
- function saveRun(){if(!runLive())return;try{storage?.setItem(RUN_KEY,JSON.stringify(game.snapshot()));lastSave=performance.now();}catch{}}
+ function saveRun(){if(resettingGame||!runLive())return;try{storage?.setItem(RUN_KEY,JSON.stringify(game.snapshot()));lastSave=performance.now();}catch{}}
  function clearRun(){try{storage?.removeItem(RUN_KEY);}catch{}}
  function loadRun(){try{const save=JSON.parse(storage?.getItem(RUN_KEY)||"null");if(!save)return null;if(!createEngine(1,save.state?.initialMode,save.state?.mapId).restore(save)){clearRun();return null;}return save;}catch{clearRun();return null;}}
  window.addEventListener("pagehide",saveRun);
@@ -534,6 +535,16 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  for(const b of document.querySelectorAll("[data-season]"))b.addEventListener("click",()=>{profile.season=b.dataset.season;progress.save(storage,profile);sfx.unlock();sfx.play("click");renderTitle();});
  for(const b of document.querySelectorAll("[data-difficulty]"))b.addEventListener("click",()=>{profile.difficulty=b.dataset.difficulty;progress.save(storage,profile);sfx.unlock();sfx.play("click");renderTitle();});
  $("titleRestart").addEventListener("click",()=>askRestart("title"));
+ // Full reset is separate from Restart Run: it erases ARCHEMANCY progression only after deliberate confirmation.
+ $("resetGameProgress").addEventListener("click",()=>{const phrase=$("fullResetPhrase");phrase.value="";$("fullResetConfirm").disabled=true;$("fullResetError").hidden=true;showDialog("fullResetDialog");$("fullResetCancel").focus();});
+ $("fullResetPhrase").addEventListener("input",()=>{$("fullResetConfirm").disabled=$("fullResetPhrase").value.trim()!=="RESET";});
+ $("fullResetCancel").addEventListener("click",()=>{$("fullResetDialog").close();});
+ $("fullResetConfirm").addEventListener("click",()=>{
+  if($("fullResetPhrase").value.trim()!=="RESET")return;
+  resettingGame=true; // Prevent pagehide/visibilitychange from resurrecting the old saved run.
+  if(!resetGameProgress(storage)){resettingGame=false;text($("fullResetError"),"The browser could not erase all saved progress. Check storage permissions and try again.");$("fullResetError").hidden=false;return;}
+  location.reload(); // Reconstruct level 1, starter selection, fresh campaign deck and tutorial.
+ });
  $("continueRun").addEventListener("click",continueRun);$("playDaily").addEventListener("click",startDaily);$("playGauntlet").addEventListener("click",()=>startRun("campaign"));$("playEndless").addEventListener("click",()=>startRun("endless"));$("playSandbox").addEventListener("click",()=>startRun("sandbox"));
  $("mainMenu").addEventListener("click",showTitle);$("endMenu").addEventListener("click",showTitle);
  $("endRetry").addEventListener("click",()=>{if(game.state.daily){const dc=todayDaily();if(dc.date===game.state.daily.date){restart("campaign",dc);return;}}startRun(game.state.daily?"campaign":game.state.mode);});
