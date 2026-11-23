@@ -38,7 +38,7 @@ export const RELICS = [
  R("gauntlet", "Pyromancer's Gauntlet", "", "Artifact", "plus 2", "chips", "uncommon", { spellFlat: { R: 25 } }, "Red spells deal +25 damage to each enemy they hit."),
  R("tremors", "Impact Tremors", "R", "Enchantment", "deals 1 damage to each opponent", "chips", "common", { summonZap: 20 }, "Whenever a troop is summoned, it zaps the leading enemy in reach for 20."),
  R("bombardment", "Goblin Bombardment", "R", "Enchantment", "Sacrifice a creature", "chips", "uncommon", { deathZap: 30 }, "Whenever a troop dies, it hurls a goblin at the nearest enemy for 30."),
- R("sofi", "Sword of Fire and Ice", "", "Equipment", "+2/+2", "chips", "rare", { towerFlat: { U: 8, R: 8 } }, "Blue and red towers deal +8 damage per hit."),
+ R("sofi", "Sword of Fire and Ice", "", "Equipment", "+2/+2", "chips", "rare", { towerFlat: { U: 4, R: 4 } }, "Blue and red towers deal +4 damage per hit (more as they level up)."),
  // +Mult: percent damage
  R("honor", "Honor of the Pure", "W", "Enchantment", "White creatures you control get +1/+1", "mult", "common", { color: { W: .2 } }, "White towers, troops and spells: +20% damage."),
  R("winds", "Favorable Winds", "U", "Enchantment", "with flying get +1/+1", "mult", "common", { color: { U: .2 } }, "Blue towers and spells: +20% damage."),
@@ -58,17 +58,17 @@ export const RELICS = [
  R("violence", "Gratuitous Violence", "R", "Enchantment", "double that damage", "xmult", "uncommon", { xTroop: 1.5 }, "Troops deal x1.5 damage."),
  R("giantkiller", "Giant Killer", "W", "Creature", "power 4 or greater", "xmult", "common", { xBoss: 1.6 }, "Damage to bosses x1.6."),
  R("archer", "Thornweald Archer", "G", "Creature", "Reach", "xmult", "common", { xFlier: 1.5 }, "Damage to fliers x1.5."),
- R("slime", "Acidic Slime", "G", "Creature", "Deathtouch", "xmult", "common", { xArmor: 1.35 }, "Damage to armored enemies x1.35."),
- R("shadow", "Death's Shadow", "B", "Creature", "where X is your life total", "xmult", "uncommon", { xLow: 1.6 }, "While your fortress has 10 or less, all damage x1.6."),
+ R("slime", "Acidic Slime", "G", "Creature", "Deathtouch", "xmult", "common", { xArmor: 1.25 }, "Damage to armored enemies x1.25."),
+ R("shadow", "Death's Shadow", "B", "Creature", "where X is your life total", "xmult", "rare", { xLow: 1.35 }, "While your fortress has 10 or less, all damage x1.35."),
  R("storm", "Thousand-Year Storm", "UR", "Enchantment", "for each other instant and sorcery spell", "xmult", "rare", { stormX: .25 }, "Spells deal +25% more for each spell already cast this wave (up to x2)."),
  R("embercleave", "Embercleave", "R", "Equipment", "double strike", "xmult", "rare", { xCommander: 2 }, "Your commander deals x2 damage."),
  R("memorial", "Akroma's Memorial", "", "Artifact", "first strike", "xmult", "rare", { xTroop: 1.3, troopHp: .3 }, "Troops deal x1.3 damage and have +30% health."),
  // Economy
- R("solring", "Sol Ring", "", "Artifact", "{C}{C}", "econ", "uncommon", { waveMana: 20 }, "+20 mana whenever a wave starts."),
- R("signet", "Arcane Signet", "", "Artifact", "commander's color identity", "econ", "common", { waveMana: 10 }, "+10 mana whenever a wave starts."),
- R("tithe", "Smothering Tithe", "W", "Enchantment", "Whenever an opponent draws a card", "econ", "uncommon", { spawnMana: 1 / 3 }, "+1 mana for every 3 enemies that arrive."),
- R("revel", "Revel in Riches", "B", "Enchantment", "create a Treasure token", "econ", "common", { killMana: 1 }, "+1 mana for every enemy defeated (up to 40 a wave)."),
- R("plunderer", "Pitiless Plunderer", "B", "Creature", "create a Treasure token", "econ", "common", { deathMana: 3 }, "+3 mana whenever one of your troops dies (up to 30 a wave)."),
+ R("solring", "Sol Ring", "", "Artifact", "{C}{C}", "econ", "uncommon", { waveMana: 20 }, "+20 mana whenever a wave starts (grows in later waves)."),
+ R("signet", "Arcane Signet", "", "Artifact", "commander's color identity", "econ", "common", { waveMana: 10 }, "+10 mana whenever a wave starts (grows in later waves)."),
+ R("tithe", "Smothering Tithe", "W", "Enchantment", "Whenever an opponent draws a card", "econ", "uncommon", { spawnMana: 1 / 3 }, "+1 mana for every 3 enemies that arrive (grows in later waves)."),
+ R("revel", "Revel in Riches", "B", "Enchantment", "create a Treasure token", "econ", "common", { killMana: 1 }, "+1 mana for every enemy defeated, up to 40 a wave (both grow in later waves)."),
+ R("plunderer", "Pitiless Plunderer", "B", "Creature", "create a Treasure token", "econ", "common", { deathMana: 3 }, "+3 mana whenever one of your troops dies, up to 30 a wave (both grow in later waves)."),
  R("reflection", "Mana Reflection", "G", "Enchantment", "twice as much", "econ", "rare", { farm: .25 }, "Mana Groves harvest 25% more, and their wave budgets grow to match."),
  // Retrigger
  R("doubling", "Doubling Season", "G", "Enchantment", "twice that many", "retrigger", "rare", { tokenTwice: true }, "Your commander's token makers create two tokens instead of one (caps still apply)."),
@@ -85,7 +85,7 @@ export const RELICS = [
  R("greaves", "Lightning Greaves", "", "Equipment", "haste and shroud", "utility", "common", { respawn: .5 }, "Your commander returns twice as fast after falling."),
  R("mother", "Mother of Runes", "W", "Creature", "protection from the color", "utility", "common", { ward: 15 }, "New troops arrive with a 15-point ward."),
  R("warden", "Soul Warden", "W", "Creature", "you gain 1 life", "utility", "common", { mend: 5 }, "Every 5th wave, regain 1 fortress (up to 20)."),
- R("sylvan", "Sylvan Library", "G", "Enchantment", "draw two additional cards", "utility", "uncommon", { openDraw: 2 }, "Start each battle with 2 extra cards in hand.")
+ R("sylvan", "Sylvan Library", "G", "Enchantment", "draw two additional cards", "utility", "uncommon", { openDraw: 1, hand: 1 }, "Hold 6 spells in hand instead of 5, and start each battle with 1 extra card.")
 ];
 
 const B = (id, name, ci, type, has, fx, text) => ({ id, name, ci, type, has, kind: "boon", rarity: "uncommon", fx, text });

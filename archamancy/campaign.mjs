@@ -47,7 +47,7 @@ export function rollShop(c, cards) {
   let pick = null;
   if (kind === "relic") pick = weighted(c, RELICS.filter(r => !c.relics.includes(r.id) && !taken.has(r.id)), r => RARITY[r.rarity].weight);
   else if (kind === "land") pick = weighted(c, LANDS.filter(l => (c.lands[l.color] || 0) < LAND_MAX && !taken.has(l.id)), () => 1);
-  else pick = weighted(c, (kind === "ritual" ? RITUALS : FORBIDDEN).filter(r => !taken.has(r.id)), () => 1);
+  else pick = weighted(c, (kind === "ritual" ? RITUALS : FORBIDDEN).filter(r => !taken.has(r.id) && !(r.fx.cloneRelic && c.marks.includes(r.id))), () => 1);
   if (!pick) { i--; if (items.length + i > 20) break; continue; }
   taken.add(pick.id); items.push({ kind: pick.kind, id: pick.id, price: priceOf(c, pick.kind === "relic" ? RARITY[pick.rarity].cost : PRICE[pick.kind]), sold: false });
  }
@@ -80,6 +80,8 @@ export function blocker(c, item, cards) {
  if (item.kind === "ritual") { const fx = BY_ID[item.id].fx; if ((fx.tutor && fx.tutor !== "random") && c.deck.length >= deckCap(c)) return "Deck full: exile a spell first"; const t = ritualTargets(c, item.id, cards); if (t && !t.length) return "Nothing to use it on"; }
  if (item.kind === "forbidden" && BY_ID[item.id].fx.freeRelic && c.relics.length >= slots(c)) return "Relic slots full";
  if (item.kind === "forbidden" && BY_ID[item.id].fx.cloneRelic && !c.relics.length) return "You have no relic to copy";
+ if (item.kind === "forbidden" && BY_ID[item.id].fx.cloneRelic && c.marks.includes(item.id)) return "Already copying a relic";
+ if (item.kind === "forbidden" && BY_ID[item.id].fx.allLands && [..."WUBRG"].every(k => (c.lands[k] || 0) >= LAND_MAX)) return "Every color is at max level";
  return null;
 }
 
