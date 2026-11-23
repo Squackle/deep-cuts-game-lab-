@@ -15,3 +15,16 @@ export function firstFlyerWarning(game,state,nextWave){
  const reach=unlocked("beast")?" Beast Pack gains Reach at Tier III.":"";
  return "Wave 4 brings flying enemies! Ground-only towers and troops cannot hit them. "+starter+" before calling."+reach;
 }
+
+ // Give a nonblocking warning before deliberately overlapping a major boss wave.
+ // pendingWaves is the engine's authoritative list of unfinished waves.
+export function bossOverlapWarning(game,state,nextWave){
+ if(state.phase!=="active"||!["campaign","endless"].includes(state.mode))return "";
+ const unfinished=state.pendingWaves?.length||0;
+ if(!unfinished)return "";
+ const boss=game.waveSpec(nextWave).map(spec=>spec.split(":")[0]).find(kind=>kind!=="titan"&&game.types[kind]?.boss);
+ if(!boss)return "";
+ const name=game.types[boss].name;
+ if(state.onslaught)return "Boss ahead — "+name+" (wave "+nextWave+") joins "+unfinished+" unfinished wave"+(unfinished===1?"":"s")+". Prepare your defenses.";
+ return "Boss ahead — "+name+" (wave "+nextWave+"). Calling early overlaps "+unfinished+" unfinished wave"+(unfinished===1?"":"s")+". Clear earlier enemies first if you need breathing room.";
+}
