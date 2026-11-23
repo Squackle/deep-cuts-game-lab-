@@ -6,7 +6,9 @@ import { createEngine } from "../engine.mjs";
 
 const game = createEngine(1);
 const spells = Object.entries(game.cards).map(([id, c]) => ({ id, name: c.name, ci: c.color === "C" ? "" : c.color, type: c.type, kind: "spell" }));
-const cards = [...spells, ...POOL];
+// Enemies and bosses: name, type line and power/toughness from their card label (color identity isn't tracked for enemies).
+const enemies = Object.entries(game.types).map(([id, t]) => { const [type, pt] = String(t.card).split(" · "); return { id, name: t.name, type, pt, kind: "enemy" }; });
+const cards = [...spells, ...POOL, ...enemies];
 const norm = s => String(s || "").replace(/[−–—]/g, "-").replace(/\s+/g, " ").toLowerCase();
 const order = c => [..."WUBRG"].filter(x => c.includes(x)).join("");
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -36,8 +38,9 @@ for (const c of cards) {
  const typeLine = card.type_line || faces.map(f => f.type_line).join(" // ");
  const problems = [];
  if (card.name !== c.name && !card.name.startsWith(c.name + " // ")) problems.push("name is " + card.name);
- if (order(card.color_identity.join("")) !== order(c.ci)) problems.push("color identity is " + (card.color_identity.join("") || "colorless") + ", expected " + (c.ci || "colorless"));
+ if (c.ci !== undefined && order(card.color_identity.join("")) !== order(c.ci)) problems.push("color identity is " + (card.color_identity.join("") || "colorless") + ", expected " + (c.ci || "colorless"));
  if (c.type && !norm(typeLine).includes(norm(c.type))) problems.push("type line is " + typeLine);
+ if (c.pt && (card.power ?? faces[0].power) + "/" + (card.toughness ?? faces[0].toughness) !== c.pt) problems.push("P/T is " + (card.power ?? faces[0].power) + "/" + (card.toughness ?? faces[0].toughness) + ", expected " + c.pt);
  if (c.has && !norm(oracle).includes(norm(c.has))) problems.push("rules text lacks \"" + c.has + "\"");
  if (problems.length) bad.push(c.name + ": " + problems.join("; "));
  rows.push([c.kind, card.name, problems.length ? "✗ " + problems.join("; ") : "✓", (card.color_identity.join("") || "C"), typeLine + " — " + oracle.replace(/\n/g, " ").slice(0, 160)]);

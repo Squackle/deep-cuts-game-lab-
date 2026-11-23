@@ -135,3 +135,18 @@ test("Emberfall Caldera: vents erupt every 15 s, scorching ground enemies and tr
  for(let i=0;i<VENT_EVERY;i++)far.step();assert.equal(lone.hp,1000,"nothing near the entrance");
  assert.equal(createEngine(1,"campaign","hollow").map.vents.length,0);
 });
+test("each later region ends in its own final boss at wave 25; the Lowlands keep Emrakul",()=>{
+ const want={hollow:"tyrant",confluence:"lorthos",frostfen:"isu",pass:"kazuul",caldera:"infernotitan"};
+ for(const [id,boss] of Object.entries(want)){const g=createEngine(1,"campaign",id),w=g.waveSpec(25);assert.ok(w.includes(boss+":1"),id);assert.ok(!w.some(x=>x.startsWith(boss==="tyrant"?"lorthos:":"tyrant:")),id);assert.deepEqual(g.waveSpec(24),createEngine(1,"campaign","hollow").waveSpec(24));}
+ const g=createEngine(1,"campaign","pass");assert.equal(g.types.kazuul.broodKind,"armored");assert.equal(g.types.lorthos.silenceCount,4);
+});
+function bossNear(map,kind,commander){const g=createEngine(1,"sandbox",map);assert.ok(g.command({type:"commander",id:commander}));g.command({type:"sandboxEnemy",enemy:kind,count:1});const e=g.state.enemies[0],cm=g.state.commander;e.speed=0;e.attack=0;e.progress=cm.progress+60;e.abilityAt=g.state.tick+1;return {g,e,cm};}
+test("Isu warns for 2 s, then freezes the commander nearby for 3 s",()=>{
+ const {g,e,cm}=bossNear("frostfen","isu","talrand");for(let i=0;i<3;i++)g.step();assert.ok(e.blastAt>g.state.tick,"warning first");assert.ok(!(cm.frozenUntil>g.state.tick));
+ while(e.blastAt)g.step();assert.ok(cm.frozenUntil>g.state.tick,"frozen");const until=cm.frozenUntil;while(g.state.tick<until)g.step();assert.ok(!(cm.frozenUntil>g.state.tick),"thaws");
+});
+test("Inferno Titan scorches the commander for a third of its health but never kills it",()=>{
+ const {g,e,cm}=bossNear("caldera","infernotitan","talrand");cm.hp=cm.maxHp;for(let i=0;i<3;i++)g.step();assert.ok(e.blastAt>0);const before=cm.hp;
+ while(e.blastAt)g.step();assert.ok(cm.hp<=before-Math.ceil(cm.maxHp/3)+Math.ceil(cm.maxHp*.2)&&cm.hp>=1,"scorched");
+ cm.hp=2;e.abilityAt=g.state.tick;while(!e.blastAt)g.step();while(e.blastAt)g.step();assert.ok(cm.hp>=1&&!cm.dead);
+});

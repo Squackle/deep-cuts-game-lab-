@@ -502,3 +502,12 @@ Logan asked for "Balatro deck building meets MTG": a deck you build over the cam
 - World map: a Treasure counter with Deck and Shop buttons under the region map. Deck shows spells (upgrade twice for 4 then 6 Treasure: +25% damage and -15% cost per level; exile for 3, minimum 5 spells), relics (sell for half), lands and boons. Shop shows the stock rolled after the last battle, with rerolls (2 Treasure, +1 each). Rituals that need a spell open a picker.
 - Every Gauntlet battle (not the Daily) plays the campaign deck. At the end it pays Treasure once (shown on the end screen, whose menu button now says World map) and, if 5+ waves were cleared, opens a draft of 3 spells; a pending draft also shows a "Pick a spell" button on the world map. The 30-card spellbook editor stays for Endless and the Proving Grounds.
 - Profile gains `camp` (sanitized by campaign.mjs against the live spell list).
+## 2026-11-23 — v0.1.0-beta.13.42 A final boss for every region (campaign stage C)
+
+Each campaign region now ends at wave 25 in its own Magic boss; the Verdant Lowlands keep Emrakul. Waves 1–24 are unchanged; wave 25 on each map (in any mode) swaps Emrakul for that region's boss with the same escort.
+- Riverlands (The Confluence): Lorthos, the Tidemaker. Marks the four nearest towers, then silences them.
+- Frostfen Marches: Isu the Abominable. After a 2 s warning ring, freezes nearby troops and your commander for 3 s (they can't fight or hold enemies).
+- Greyhorn Mountains (Greyhorn Pass): Kazuul, Tyrant of the Cliffs. Brings two Indomitable Ancients every 8 s (up to 8).
+- Ember Wastes (Emberfall Caldera): Inferno Titan. After a 2 s warning ring, scorches the three nearest troops for a third of their health (or your commander, who can't be killed by it).
+- Each gets a drawn card-based model, boss bar and codex entry, and its own notices. The Scryfall card check now also covers every enemy and boss (name, type line, power/toughness).
+- Tests: wave-25 boss per map, Isu's freeze and thaw, Inferno Titan's scorch.
