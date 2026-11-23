@@ -400,3 +400,7 @@ From Logan's 13.24 Hard + Onslaught Confluence run (two Inferno Cannons ~31% of 
 - Troop damage scales with late(.75) instead of late(.6), so troops keep up with late enemy health (+67% at wave 25). Troop health unchanged.
 - Sandbox wave 20: Inferno T3 243k → 191k; Grand Battalion T4 130k → 189k; Necropolis T3 53k → 79k; Goblin T3 65k → 101k.
 - Benchmark fortress health 13 → 10. Seeded map bot still wins all 9 runs.
+
+## 2026-11-23 — v0.1.0-beta.13.26 Grand Battalion buff
+
+Logan's 13.25 run was a flawless 3-star Hard Onslaught win, but Legion Hall Grand Battalion (branch B) did 1.5k damage for 2,242 mana while Royal Paladins did 22k. Grand Battalion now also gives +30% troop damage and +25% troop health (×1.6 at tier 4) on top of extra soldiers and faster reinforcement. Sandbox wave 20: T4 189k → 269k. Elder Wildwood left as is (~17% of damage per tower, under the 30% guideline).
