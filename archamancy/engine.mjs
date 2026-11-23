@@ -2,7 +2,7 @@
 // Bump only when the saved run format changes, so saves survive ordinary updates.
 import {BY_ID as POOL_BY_ID,LAND_STEP} from "./pool.mjs";
 export const SAVE_FORMAT=1;
-export const VERSION="0.1.0-beta.13.46";
+export const VERSION="0.1.0-beta.13.47";
 // Status effects from towers (ticks are 100 ms): Pyre blasts burn, Thornheart poisons (stacking), Arcanum freezes (slow), Hex curses (+35% damage taken).
 export const BURN=10,POISON=30,POISON_STACKS=3,SPREAD_HIT=.5,SPREAD_MAX=8,BROOD_REVEAL=30,SPLASH_EDGE=.75,TOWER_BURN=9;
 // Enemy health multiplier per difficulty. Gauntlet stars: 3 at 18+ fortress left, 2 at 10+, otherwise 1.

@@ -55,6 +55,24 @@ details{margin:10px 0;color:var(--muted);font-size:.8rem}
 /* Beta 12 layout: the battlefield fills the screen; small controls sit in the corners and menus open where you tap. */
 :root{--hud:#0f1c16e0;--rim:#c9b07a;--rs:clamp(38px,5.2cqw,52px)}
 .game-shell{position:relative;height:100vh;height:100dvh;width:100%;overflow:hidden;background:#0b1510}
+.orientation-gate{display:none}
+@media (orientation:portrait){
+ .game-shell{display:none}
+ .orientation-gate{
+  position:fixed;inset:0;z-index:50;display:grid;place-content:center;justify-items:center;gap:12px;
+  padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));
+  text-align:center;color:#fff5d8;background:radial-gradient(ellipse at 50% 38%,#2c6747,#133b2a 78%);
+ }
+ .orientation-gate:focus{outline:none}
+ .orientation-gate h2{font:700 clamp(1.7rem,7vw,2.6rem)/1.08 Georgia,serif}
+ .orientation-gate p{color:#d5ead9;font-size:1rem}
+ .orientation-device{
+  width:68px;height:42px;margin-bottom:8px;display:grid;place-items:center;position:relative;
+  border:2px solid #eed29b;border-radius:9px;background:#17402e;box-shadow:0 0 0 6px #f5df9733;
+ }
+ .orientation-device::before{content:"↻";font:600 1.55rem/1 system-ui;color:#eed29b}
+ .orientation-device::after{content:"";position:absolute;right:4px;width:2px;height:10px;border-radius:3px;background:#eed29b}
+}
 .game-shell>h1{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 .map-stage{position:absolute;inset:0;display:grid;place-items:center;container-type:size;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 .map{position:relative;width:min(100cqw,calc(100cqh * 5 / 3));aspect-ratio:5/3}
@@ -131,11 +149,8 @@ details{margin:10px 0;color:var(--muted);font-size:.8rem}
 .card-tip strong{color:var(--gold);font-size:.82rem}
 #castHint{font-size:.72rem;color:#d9dccd;margin:3px 0 5px;line-height:1.3;max-height:5.4em;overflow:auto}
 .card-actions{display:flex;gap:5px;justify-content:flex-end}.card-actions button{font-size:.74rem;min-height:28px;padding:3px 9px}
-.rotate-hint{position:absolute;left:50%;top:calc(max(8px,env(safe-area-inset-top)) + 56px);transform:translateX(-50%);width:min(320px,90vw);text-align:center;background:var(--hud);border:1px solid var(--rim);border-radius:10px;padding:8px 10px;font-size:.8rem;z-index:7}
-.rotate-hint button{min-height:26px;padding:2px 10px;margin-left:4px}
 .lab-link{font-size:.85rem}
 @media(max-height:480px){.round{width:34px;height:34px}.hud-item{padding:2px 9px 2px 6px}.toast{top:44px}.hero-btn{width:46px;height:46px}.spell{width:clamp(42px,6vw,58px)}.card-tip{width:min(260px,50vw)}}
-@media(orientation:portrait) and (max-width:700px){.hud{gap:4px}.hud-item{padding:2px 8px 2px 6px}}
 /* Drop 2: game feel */
 .map{transition:transform .05s linear}
 .wave-banner{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);z-index:8;pointer-events:none;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 34px;background:linear-gradient(90deg,transparent,#0f1c16e8 18%,#0f1c16e8 82%,transparent);border-top:2px solid #c9b07a;border-bottom:2px solid #c9b07a;min-width:min(420px,80vw)}
@@ -181,13 +196,13 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .end-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;width:100%}
 .end-stats div{background:#15291f;border-radius:8px;padding:6px 8px;text-align:left}.end-stats span{display:block;font-size:.68rem;color:var(--muted)}.end-stats strong{font-size:.95rem;color:#fff1cf;overflow-wrap:anywhere}
 .end-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%}.end-actions button{border-radius:999px}.end-actions .primary{grid-column:1/-1}
-.tutorial{position:fixed;z-index:8;max-width:min(280px,80vw);background:#f6e8c4;color:#1a2b20;border-radius:12px;padding:8px 12px;box-shadow:0 6px 18px #000b;font-size:.85rem;font-weight:600;line-height:1.35;animation:tip-bob 1.6s ease-in-out infinite}
+.tutorial{position:fixed;z-index:8;max-width:min(280px,80vw);background:#f6e8c4;color:#1a2b20;border-radius:12px;padding:8px 12px;box-shadow:0 6px 18px #000b;font-size:.85rem;font-weight:600;line-height:1.35;pointer-events:none}
 .tutorial-step{display:block;font-size:.66rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6b5a2e;margin-bottom:2px}
 .tutorial p{margin:0}
-.tutorial button{margin-top:6px;min-height:24px;padding:1px 10px;font-size:.72rem;background:transparent;color:#4a5a4c;border-color:#8a9a8c;border-radius:999px}
-@keyframes tip-bob{50%{transform:translateY(-3px)}}
+.tutorial button{pointer-events:auto;margin-top:6px;min-height:24px;padding:1px 10px;font-size:.72rem;background:transparent;color:#4a5a4c;border-color:#8a9a8c;border-radius:999px}
 .tip-glow{animation:tip-glow 1.2s ease-in-out infinite!important;border-color:#fff1cf!important;border-radius:12px}
 .pad.tip-glow{border-radius:50%}
+@media (prefers-reduced-motion:reduce){.tip-glow{animation:none!important}}
 @keyframes tip-glow{0%,100%{box-shadow:0 0 0 0 #f6e8c4cc}50%{box-shadow:0 0 0 10px #f6e8c400}}
 @media(max-height:480px){.title-card{gap:7px}#titleName{font-size:2.2rem}.title-tag{display:none}button.big{min-height:42px}.end-card{padding:12px;gap:8px}.end-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .ico{width:58%;height:58%;fill:currentColor;display:block;margin:auto}.round .ico{width:20px;height:20px}.hud-item i .ico{width:16px;height:16px}.hud-item i{display:grid;place-items:center;color:inherit}.hud-item.lives i{color:#f06b5b}.hud-item.gold i{color:#f2cf6b}.hud-item:not(.lives):not(.gold) i{color:#d9dccd}.wave-call .wave-icon{display:grid;place-items:center;width:60%;height:60%}.wave-call .ico{width:100%;height:100%}
@@ -265,15 +280,8 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 }
 @media(max-width:900px),(max-height:500px){.wave-peek{pointer-events:auto}}
 @media(max-height:500px){.wave-peek{top:calc(env(safe-area-inset-top) + 46px)!important;left:auto!important;right:calc(env(safe-area-inset-right) + 8px);max-height:calc(100dvh - 120px)}}
-@media(orientation:portrait) and (max-width:700px){.wave-peek{max-height:max(90px,calc(50dvh - 50vw - 56px))}}
 /* Empty and ruined pads take taps before a built tower's taller tap area that reaches up over them. */
 .pads{isolation:isolate}.pad{z-index:2}.pad.built{z-index:1}
-/* Phones held upright: the battlefield is drawn taller than the screen is wide, and you slide it sideways. */
-@media(orientation:portrait) and (max-width:700px){
-.map-stage{overflow-x:auto;overflow-y:hidden;justify-items:start;overscroll-behavior-x:contain;scrollbar-width:none}
-.map-stage::-webkit-scrollbar{display:none}
-.map{width:min(165cqw,calc(100cqh * 5 / 3));flex:none}
-}
 
 /* Beta 13.7 level chip: progress ring around the player level, floating +XP, glow on level up. */
 .hud-level{position:relative;pointer-events:auto;cursor:pointer;min-height:0;gap:4px;padding:2px 9px 2px 3px;color:var(--gold);font:800 .72rem system-ui}
@@ -284,8 +292,6 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 @keyframes lvGlow{0%{box-shadow:0 0 0 0 #f2cf6bcc}100%{box-shadow:0 0 0 14px #f2cf6b00}}
 .xp-pop{position:absolute;left:50%;top:100%;transform:translateX(-50%);white-space:nowrap;color:#f6d77a;font:800 .8rem system-ui;text-shadow:0 1px 2px #000;pointer-events:none;animation:xpPop 1.7s ease-out forwards}
 @keyframes xpPop{0%{opacity:0;transform:translate(-50%,6px)}15%{opacity:1;transform:translate(-50%,2px)}100%{opacity:0;transform:translate(-50%,-14px)}}
-/* Narrow phones held upright: the chip drops under the health pill so the top row stays clear of the corner buttons. */
-@media(orientation:portrait) and (max-width:480px){.hud-level{position:absolute;left:0;top:calc(100% + 6px)}.wave-peek{top:calc(env(safe-area-inset-top) + 84px)!important}}
 @media (prefers-reduced-motion:reduce){.xp-pop{animation-duration:2.4s}.hud-level.leveled{animation:none}}
 .end-xp{display:grid;gap:4px;width:min(320px,100%);margin:0 auto;text-align:center;font-size:.8rem}.end-xp strong{color:var(--gold)}.end-xp small{color:#c9cdbd;font-size:.72rem}
 .end-xp[hidden]{display:none}
@@ -294,7 +300,6 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .boss-bar #bossHint{max-width:100%;text-align:center;font:600 .7rem system-ui;color:#ffd9c9;background:#0f1c16d9;border-radius:8px;padding:1px 8px;text-shadow:0 1px 2px #000}
 .boss-bar #bossHint[hidden]{display:none}
 @media(max-height:500px){.boss-bar{top:max(6px,env(safe-area-inset-top));width:min(340px,30vw)}.boss-bar:not([hidden])~.toast{top:calc(max(8px,env(safe-area-inset-top)) + 72px)}}
-@media(orientation:portrait) and (max-width:480px){.boss-bar{top:calc(max(8px,env(safe-area-inset-top)) + 116px);width:min(420px,86vw)}.boss-bar:not([hidden])~.toast{top:calc(max(8px,env(safe-area-inset-top)) + 186px)}}
 
 /* Beta 13.11 readable battlefield (Kingdom Rush style): status lives at the screen edges, the boss bar is compact, boss counters are a tap-for-details tag. */
 .boss-bar .boss-tag{pointer-events:auto;min-height:0;padding:1px 9px;border-radius:999px;border:1px solid #ff9a7a88;background:#0f1c16e0;color:#ffd9c9;font:700 .66rem system-ui;cursor:pointer}
@@ -410,7 +415,7 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
  .title-toggles{gap:6px}.title-toggles .difficulty button{min-height:32px;padding:3px 10px;font-size:.8rem}.title-toggles .onslaught-toggle{min-height:32px;padding:2px 10px}.title-toggles .onslaught-toggle small{display:none}
 }
 /* While the menu is open, the battle HUD steps aside so the painted map reads as the backdrop. */
-.game-shell:has(#titleScreen:not([hidden])) :is(.hud,.top-right,.bottom-left,.spell-tray,#start,#wavePeek,#ring,#pads,#bossBar,#tutorial,.rotate-hint){visibility:hidden}
+.game-shell:has(#titleScreen:not([hidden])) :is(.hud,.top-right,.bottom-left,.spell-tray,#start,#wavePeek,#ring,#pads,#bossBar,#tutorial){visibility:hidden}
 .game-shell:has(#titleScreen:not([hidden])) .toast{z-index:12}
 @media (max-width:760px) and (orientation:portrait),(max-width:560px){#titleName{font-size:clamp(2rem,11vw,3rem)}}
 @media (max-width:760px) and (orientation:portrait),(max-width:560px){

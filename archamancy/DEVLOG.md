@@ -554,3 +554,9 @@ Owner feedback from a Normal Hollow Road first-campaign run: seven wave-4 Carrio
 - Preview also remains available before wave 4 when an Onslaught/early-call cap makes the wave button temporarily unavailable. Warning disappears after the wave starts.
 - Focused deterministic unit and UI-contract tests cover wave scope, level-one Arcanum, configured targeting, Reach, locked alternatives and collapsed preview.
 - Information-only change: no tower damage, unlocks, difficulty, wave schedule, saves, ranking or main DeepCutsEDH production site changes.
+
+## 2026-11-23 — v0.1.0-beta.13.47 landscape play and clearer tower previews
+
+- A full-screen green rotation prompt replaces the old portrait battlefield. Rotation pauses combat and music, saves an active run, and brings back any open dialog in landscape. A manual pause stays in effect.
+- Previewing an attacking tower draws its firing range before purchase, including the high-ground bonus. Tower descriptions stay in view and tutorial tips avoid covering their controls.
+- A run without a commander skips the empty card-art lookup. Battle rules and save format stay the same.

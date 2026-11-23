@@ -36,6 +36,7 @@ export function createCardArt({ fetchFn = globalThis.fetch?.bind(globalThis), st
  }
  // Returns {art, artist, link} or null while loading / unavailable.
  function get(name) {
+  if (typeof name !== "string" || !name.trim()) return null;
   if (valid(cache[name])) return cache[name];
   if (fetchFn && !pending.has(name) && !failed.has(name)) { pending.add(name); queue.push(name); pump(); }
   return null;
