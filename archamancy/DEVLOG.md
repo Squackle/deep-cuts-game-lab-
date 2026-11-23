@@ -404,3 +404,10 @@ From Logan's 13.24 Hard + Onslaught Confluence run (two Inferno Cannons ~31% of 
 ## 2026-11-23 — v0.1.0-beta.13.26 Grand Battalion buff
 
 Logan's 13.25 run was a flawless 3-star Hard Onslaught win, but Legion Hall Grand Battalion (branch B) did 1.5k damage for 2,242 mana while Royal Paladins did 22k. Grand Battalion now also gives +30% troop damage and +25% troop health (×1.6 at tier 4) on top of extra soldiers and faster reinforcement. Sandbox wave 20: T4 189k → 269k. Elder Wildwood left as is (~17% of damage per tower, under the 30% guideline).
+
+## 2026-11-23 — v0.1.0-beta.13.27 Greyhorn Pass (fourth map)
+
+- New map `pass`, Greyhorn Pass: one road that runs through a tunnel under a mountain. Ground enemies inside the tunnel (map.tunnel rects) can't be seen, targeted, splashed, chained, blocked by troops or hit by the commander; damage over time keeps ticking. Fliers cross over the peak and stay targetable. Troop rally points and commander moves into the tunnel are refused.
+- 20 pads, rubble on 3, fliers at 90% health (shorter road, like the Confluence). All three seasons. Opens at player level 6 with Frostfen.
+- terrain.mjs paints a craggy massif over the tunnel with a stone portal and torch at each end (snow-capped, autumn and winter palettes).
+- Crude seeded bot (same placement rule on every map): Hollow wave 17–18, Confluence 17, Frostfen 16, Greyhorn 15. A little harder than the others, as a later map should be.

@@ -109,3 +109,18 @@ test("locked towers cannot be built until unlocked, outside the Proving Grounds"
  const g=createEngine(1);assert.ok(g.command({type:"locks",towers:["storm","nope"]}));assert.deepEqual(g.state.locked,["storm"]);assert.ok(!g.command({type:"build",pad:0,kind:"storm"}));assert.ok(g.command({type:"build",pad:0,kind:"pyre"}));
  assert.ok(!g.command({type:"locks",towers:[]}),"only before building");const s=createEngine(1,"sandbox");assert.ok(!s.command({type:"locks",towers:["storm"]}));
 });
+
+test("Greyhorn Pass: ground enemies in the tunnel can't be targeted, hit or blocked; fliers can",()=>{
+ const g=createEngine(1,"sandbox","pass"),t=g.map.tunnel[0];assert.ok(t);g.command({type:"sandboxMana",amount:9000});
+ const mid=g.nearestPath(t.x+t.w/2,t.y+t.h/2);
+ g.command({type:"sandboxEnemy",enemy:"raider",count:1});g.command({type:"sandboxEnemy",enemy:"wing",count:1});
+ const [ground,flier]=g.state.enemies;assert.ok(!ground.flying&&flier.flying);for(const e of [ground,flier]){e.progress=mid;e.speed=0;e.attack=0;}
+ assert.ok(g.inTunnel(ground)&&!g.inTunnel(flier));
+ const pad=g.map.pads.findIndex(p=>p.x===420&&p.y===375);assert.ok(g.command({type:"build",pad,kind:"judgment"}));
+ for(let i=0;i<60;i++)g.step();assert.equal(ground.hp,ground.maxHp,"hidden in the tunnel");assert.ok(flier.hp<flier.maxHp,"fliers are fair game");
+ ground.progress=g.nearestPath(t.x-40,t.y+t.h/2);for(let i=0;i<60&&ground.hp===ground.maxHp;i++)g.step();assert.ok(ground.hp<ground.maxHp,"hit once it comes out");
+ const tp=g.map.pads.findIndex(p=>p.x===250&&p.y===365);assert.ok(g.command({type:"build",pad:tp,kind:"legion"}));assert.ok(!g.command({type:"rally",pad:tp,x:t.x+20,y:t.y+t.h/2}),"no rallying inside the mountain");
+ const c=createEngine(1,"campaign","pass");c.command({type:"commander",id:"krenko"});assert.ok(!c.command({type:"commanderMove",x:t.x+t.w/2,y:t.y+t.h/2}));assert.ok(c.command({type:"commanderMove",x:t.x-60,y:t.y+t.h/2}));
+ for(const p of g.map.pads)assert.ok(!(g.pointAt(g.nearestPath(p.x,p.y)).x>t.x&&g.pointAt(g.nearestPath(p.x,p.y)).x<t.x+t.w&&g.pointAt(g.nearestPath(p.x,p.y)).y>t.y&&g.pointAt(g.nearestPath(p.x,p.y)).y<t.y+t.h),"pad "+p.id+" rallies outside");
+ assert.equal(createEngine(1,"campaign","hollow").map.tunnel.length,0);
+});

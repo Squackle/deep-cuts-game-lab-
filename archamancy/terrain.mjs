@@ -61,6 +61,9 @@ export function paintTerrain(a,game,opts={}){
  // Frozen lakes (map.ice, e.g. Frostfen): the lake is the map's water, so no generic creek is carved.
  const ice=game.map.ice||[],inIce=(x,y,m=0)=>ice.some(r=>x>r.x-m&&x<r.x+r.w+m&&y>r.y-m&&y<r.y+r.h+m);
  const lakePath=(r,grow=0)=>{const cx=r.x+r.w/2,cy=r.y+r.h/2,hx=r.w/2+16+grow,hy=r.h/2+16+grow;a.beginPath();for(let k=0;k<=96;k++){const th=k/96*Math.PI*2,c=Math.cos(th),sn=Math.sin(th),w=1+Math.sin(th*5+r.x)*.025+Math.sin(th*11+r.y)*.015,x=cx+hx*Math.sign(c)*Math.abs(c)**.55*w,y=cy+hy*Math.sign(sn)*Math.abs(sn)**.55*w;k?a.lineTo(x,y):a.moveTo(x,y);}a.closePath();};
+ // Mountain tunnels (map.tunnel, e.g. Greyhorn Pass): a rocky massif is painted over that stretch of road in step 2c.
+ const tunnel=game.map.tunnel||[],inTun=(x,y,m=0)=>tunnel.some(r=>x>r.x-m&&x<r.x+r.w+m&&y>r.y-m-50&&y<r.y+r.h+m);
+ for(const r of tunnel)for(let x=r.x-20;x<=r.x+r.w+20;x+=26)for(let y=r.y-60;y<=r.y+r.h+16;y+=26)occ.push({x,y,r:28});
  for(const r of ice){for(let x=r.x-10;x<=r.x+r.w+10;x+=26)for(let y=r.y-10;y<=r.y+r.h+10;y+=26)occ.push({x,y,r:30});
   lakePath(r,12);a.fillStyle="#8fa3b455";a.fill();lakePath(r,7);a.fillStyle="#b7c6d0";a.fill();lakePath(r,2);a.fillStyle="#5f7686";a.fill();
   const g2=a.createLinearGradient(r.x,r.y,r.x+r.w,r.y+r.h);g2.addColorStop(0,"#e2f1f8");g2.addColorStop(.5,"#b9d7e8");g2.addColorStop(1,"#96bcd4");lakePath(r);a.fillStyle=g2;a.fill();
@@ -78,14 +81,14 @@ export function paintTerrain(a,game,opts={}){
   for(let k=0;k<14;k++){const th=random()*Math.PI*2,c=Math.cos(th),sn=Math.sin(th),x=r.x+r.w/2+(r.w/2+30)*Math.sign(c)*Math.abs(c)**.55,y=r.y+r.h/2+(r.h/2+30)*Math.sign(sn)*Math.abs(sn)**.55;if(roadDist(x,y)<34)continue;a.strokeStyle=S.reed;a.lineWidth=1.5;for(let j=-1;j<=1;j++){a.beginPath();a.moveTo(x+j*2,y);a.lineTo(x+j*3,y-9-random()*5);a.stroke();}ell(x,y-11,1.3,2.8,"#6b4a2c");}}
  if(!ice.length){const keepAt=keep||{x:W,y:H*.8};
   for(let cx=90;cx<=W-90;cx+=10){const pts=[];for(let y=-30;y<=H+30;y+=5){const w=Math.sin(y*.028+cx*.37)*13+Math.sin(y*.083+cx)*4;pts.push([cx+w,y]);}
-   let minPad=1e9,ok=true;for(const [x,y] of pts){minPad=Math.min(minPad,padDist(x,y));if(Math.hypot(x-keepAt.x,y-keepAt.y)<90)ok=false;}if(!ok||minPad<46)continue;
+   let minPad=1e9,ok=true;for(const [x,y] of pts){minPad=Math.min(minPad,padDist(x,y));if(Math.hypot(x-keepAt.x,y-keepAt.y)<90||inTun(x,y,40))ok=false;}if(!ok||minPad<46)continue;
    const runs=[];let run=[];pts.forEach(([x,y],k)=>{if(roadDist(x,y)<44)run.push(k);else if(run.length){runs.push(run);run=[];}});if(run.length)runs.push(run);
    const bridges=[];for(const r of runs){let bk=r[0],bd=1e9;for(const k of r){const d=roadDist(pts[k][0],pts[k][1]);if(d<bd){bd=d;bk=k;}}if(bd>6){ok=false;break;}
     const n=game.nearestPath(pts[bk][0],pts[bk][1]),c=game.pointAt(n),p1=game.pointAt(n-46),p2=game.pointAt(n+46);
     if(Math.abs(p2.y-p1.y)>3||Math.abs(p2.x-p1.x)<80){ok=false;break;}bridges.push({x:c.x,y:c.y,ux:Math.sign(p2.x-p1.x)||1});}
    if(!ok||bridges.length>3)continue;const score=bridges.length*100-Math.min(minPad,120)*.3;if(!creek||score<creek.score)creek={score,pts,bridges};}
   // No clean crossing (too many roads in the way): a spring-fed brook instead, running from a pond off the nearest map edge.
-  if(!creek){let best=null;for(let cx=60;cx<=W-60;cx+=10)for(const dir of [1,-1]){const pts=[];let len=0;for(let k=0;k<70;k++){const y=dir>0?-30+k*5:H+30-k*5,x=cx+Math.sin(y*.028+cx*.37)*13+Math.sin(y*.083+cx)*4;if(roadDist(x,y)<46||padDist(x,y)<46||Math.hypot(x-keepAt.x,y-keepAt.y)<90)break;pts.push([x,y]);len=k;}
+  if(!creek){let best=null;for(let cx=60;cx<=W-60;cx+=10)for(const dir of [1,-1]){const pts=[];let len=0;for(let k=0;k<70;k++){const y=dir>0?-30+k*5:H+30-k*5,x=cx+Math.sin(y*.028+cx*.37)*13+Math.sin(y*.083+cx)*4;if(roadDist(x,y)<46||padDist(x,y)<46||Math.hypot(x-keepAt.x,y-keepAt.y)<90||inTun(x,y,40))break;pts.push([x,y]);len=k;}
     if(len>=11&&(!best||len>best.len)){const end=pts.at(-1);if(roadDist(end[0],end[1])>48&&padDist(end[0],end[1])>60)best={len,pts};}}
    if(best){const pts=best.pts.slice(0,Math.min(best.pts.length,40)),[sx,sy]=pts.at(-1);creek={pts,bridges:[],spring:{x:sx,y:sy}};}}}
  const creekDist=(x,y)=>creek?Math.min(...creek.pts.map(([px,py])=>Math.hypot(px-x,py-y))):1e9;
@@ -136,6 +139,28 @@ export function paintTerrain(a,game,opts={}){
   // Little ice-blue markers on the causeway edge warn that the footing is slick.
   for(const [s0,s1] of spans)for(let n=s0;n<s1;n+=34){const p=game.pointAt(n),q=game.pointAt(n+1),dx=q.x-p.x,dy=q.y-p.y,l=Math.hypot(dx,dy)||1;if(!inIce(p.x,p.y,-6))continue;
    for(const side of [-1,1]){const x=p.x-dy/l*29*side,y=p.y+dx/l*29*side;rect(x-2,y-12,4,12,"#6b4a2c");ell(x,y-13,3,3,INK);ell(x,y-13,2.2,2.2,"#9fe0ff");}}}
+
+ // 2c. Tunnel: a craggy mountain sits on top of the road, with a stone portal at each end, so it is obvious
+ // where ground enemies disappear and where they come out again.
+ for(const r of tunnel){const rk=S.snow?["#c9d3da","#9aa6ae","#6a7680"]:season==="autumn"?["#b7a88a","#8f8168","#635847"]:["#b3ab92","#8e8774","#5f5a4c"];
+  const base=r.y+r.h+12,crag=(cx,by,w,h)=>{const px=cx+(random()-.5)*w*.2,py=by-h;ell(cx+w*.25,by+2,w*.55,8,"#13241a55");
+   poly([[cx-w/2,by],[px,py],[cx+w/2,by]],rk[1]);poly([[cx-w/2,by],[px,py],[cx-w*.05,by]],rk[0],null);poly([[px,py],[cx+w/2,by],[cx+w*.12,by]],rk[2],null);
+   a.strokeStyle="#00000026";a.lineWidth=1.2;for(let k=1;k<4;k++){const t=k/4;a.beginPath();a.moveTo(px+(cx-w/2-px)*t+4,py+(by-py)*t);a.lineTo(px+(cx+w/2-px)*t*.6,py+(by-py)*t+3);a.stroke();}
+   const cap=.3;poly([[px,py],[px+(cx-w/2-px)*cap,py+h*cap],[px-w*.04,py+h*cap*.75],[px+w*.05,py+h*cap*.95],[px+(cx+w/2-px)*cap,py+h*cap]],S.snow||h>110?"#f4f8fa":rk[0],INK,1.2);
+   if(!S.snow&&h<=110)for(let k=0;k<3;k++)ell(cx+(random()-.5)*w*.6,by-4-random()*8,6+random()*5,3,S.moss[k%2]);};
+  // Rock skirt hides the road the whole way through.
+  poly([[r.x-8,base],[r.x-14,r.y+18],[r.x+r.w*.3,r.y-6],[r.x+r.w*.7,r.y-8],[r.x+r.w+14,r.y+16],[r.x+r.w+8,base]],rk[2]);
+  const peaks=[];for(let k=0;k<7;k++){const t=(k+.5)/7;peaks.push({cx:r.x+r.w*t+(random()-.5)*14,by:base-6-(k%2?r.h*.45:r.h*.15)-random()*10,w:r.w*.36+random()*20,h:70+Math.sin(t*Math.PI)*70+random()*20});}
+  // Low foothills along the front hide the skirt's edge.
+  for(let k=0;k<6;k++){const t=(k+.5)/6;peaks.push({cx:r.x-6+(r.w+12)*t+(random()-.5)*10,by:base+6+random()*6,w:r.w*.24+random()*14,h:28+random()*22});}
+  peaks.sort((p,q)=>p.by-q.by);for(const p of peaks)crag(p.cx,p.by,p.w,p.h);
+  // Portals where the road enters and leaves the mountain.
+  for(const [s0,s1] of spans)for(let n=s0;n<s1;n+=2){const p=game.pointAt(n),q=game.pointAt(n+2);const inside=v=>v.x>=r.x&&v.x<=r.x+r.w&&v.y>=r.y&&v.y<=r.y+r.h;if(inside(p)===inside(q))continue;
+   const e=inside(p)?q:p,dx=Math.sign(q.x-p.x),dy=Math.sign(q.y-p.y),hz=!!dx;a.save();a.translate(e.x,e.y);if(!hz)a.rotate(Math.PI/2);
+   ell(0,4,12,36,"#13241a55");rect(-7,-38,14,10,rk[0]);rect(-7,28,14,10,rk[1]);ell(0,0,10,30,INK);ell(0,0,8,28,"#1b1a17");ell(0,4,6,20,"#0d0c0b");
+   a.strokeStyle=INK;a.lineWidth=9;a.beginPath();a.ellipse(0,0,12,32,0,0,Math.PI*2);a.stroke();a.strokeStyle=rk[0];a.lineWidth=6;a.beginPath();a.ellipse(0,0,12,32,0,0,Math.PI*2);a.stroke();
+   a.strokeStyle=INK;a.lineWidth=1;for(let k=0;k<10;k++){const an=k/10*Math.PI*2;a.beginPath();a.moveTo(Math.cos(an)*9,Math.sin(an)*29);a.lineTo(Math.cos(an)*15,Math.sin(an)*35);a.stroke();}
+   a.restore();living.push({type:"torch",x:e.x+(hz?-dx*0:0)+(hz?0:22),y:e.y-(hz?40:0),ph:random()*6});}}
 
  // Plank bridges where the creek passes under the road: stone piers at each bank, deck and rails on top.
  if(creek)for(const b of creek.bridges){a.save();a.translate(b.x,b.y);
@@ -287,6 +312,7 @@ export function animateMap(ctx,now){const t=now/1000;
   else if(L.type==="wisp"||L.type==="rune"){const k=Math.sin(t*2+L.ph)*.5+.5,y=L.y-(L.type==="wisp"?Math.sin(t*.8+L.ph)*6:0);ctx.save();ctx.globalCompositeOperation="lighter";for(const [r,al] of [[11,.12],[6,.22],[3,.5]]){ctx.globalAlpha=al*(.5+k*.5);ctx.fillStyle=L.type==="wisp"?"#bfe8d0":"#c9a6ff";ctx.beginPath();ctx.arc(L.x,y,r,0,Math.PI*2);ctx.fill();}ctx.restore();}
   else if(L.type==="snow"){ctx.fillStyle="#ffffff";for(let i=0;i<110;i++){const sp=18+(i*37%23),x0=(i*97.3)%L.W,y=((i*61.7)+t*sp)%(L.H+20)-10,x=x0+Math.sin(t*.8+i)*10,r=.9+(i%3)*.55;ctx.globalAlpha=.55+(i%4)*.1;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;}
   else if(L.type==="leaves"){const C=["#c9542e","#e8823a","#f2b84a","#a8382e"];for(let i=0;i<26;i++){const sp=22+(i*13%17),x0=(i*131.7)%L.W,y=((i*53.3)+t*sp)%(L.H+30)-15,x=x0+Math.sin(t*1.1+i)*24,rot=t*2+i;ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.scale(1,Math.abs(Math.sin(t*3+i))*.7+.3);ctx.fillStyle=C[i%4];ctx.beginPath();ctx.ellipse(0,0,4,2,0,0,Math.PI*2);ctx.fill();ctx.restore();}}
+  else if(L.type==="torch"){const f=Math.sin(t*12+L.ph)*.5+.5;ctx.fillStyle="#15241c";ctx.fillRect(L.x-1.5,L.y-2,3,10);ctx.save();ctx.globalCompositeOperation="lighter";ctx.globalAlpha=.25+f*.15;ctx.fillStyle="#ffb24a";ctx.beginPath();ctx.arc(L.x,L.y-5,9,0,Math.PI*2);ctx.fill();ctx.restore();ctx.fillStyle=f>.5?"#ffd27a":"#ff9a3a";ctx.beginPath();ctx.ellipse(L.x,L.y-6,2.6,4+f*1.5,0,0,Math.PI*2);ctx.fill();}
   else if(L.type==="birds"){const period=26,k=(t%period)/period;if(k>.55)continue;const u=k/.55,bx=-60+u*(L.W+120),by=L.H*.28+Math.sin(u*3)*40;for(let i=0;i<5;i++){const ox=bx-i*16-(i%2)*8,oy=by+(i%2?10:-4)*(1+i*.2),fl=Math.sin(t*12+i)*3;ctx.fillStyle="#13241a30";ctx.beginPath();ctx.ellipse(ox+30,oy+90,4,1.6,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#22302a";ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(ox-5,oy-fl);ctx.quadraticCurveTo(ox-2,oy-1,ox,oy);ctx.quadraticCurveTo(ox+2,oy-1,ox+5,oy-fl);ctx.stroke();}}
  }
  ctx.globalAlpha=1;}
