@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createEngine, BOSS_HOLD_TICKS, BOSS_PUSH_TICKS, VERSION } from '../engine.mjs';
+import { createEngine, BOSS_HOLD_TICKS, BOSS_PUSH_TICKS, BOSS_KEEP_LINE, VERSION } from '../engine.mjs';
 
 function fortifiedBossRun() {
   const g = createEngine(1, 'sandbox');
@@ -88,4 +88,21 @@ test('game exports a new rules version and the UI exposes blocking / immunity te
   for (const fragment of ['Enemy delay', 'immune hits', 'bossBlockedTicks', 'BREAKTHROUGH_HINT', 'Breaking soon']) {
     assert.ok(ui.includes(fragment), fragment + ' should be visible in the game UI');
   }
+});
+
+test('the last keep defense is never bypassed by an automatic boss surge', () => {
+  const g = createEngine(1, 'sandbox');
+  assert.equal(g.command({ type: 'build', pad: 23, kind: 'legion' }), true);
+  assert.equal(g.command({ type: 'sandboxEnemy', enemy: 'hierophant', count: 1 }), true);
+  const tower = g.state.towers[23], enemy = g.state.enemies[0];
+  assert.ok(g.map.distance - tower.rally <= BOSS_KEEP_LINE, 'test pad must guard the keep approach');
+  enemy.progress = tower.rally;
+  enemy.hp = enemy.maxHp = 100000000;
+  enemy.attack = 0;
+  enemy.speed = 5;
+  for (const u of g.state.troops) { u.progress = tower.rally; u.leave = 0; u.damage = 0; u.hp = u.maxHp = 100000000; }
+  for (let i = 0; i < BOSS_HOLD_TICKS + 40; i++) g.step();
+  assert.equal(enemy.progress, tower.rally, 'boss cannot gain a forced, uncounterable leak at the keep');
+  assert.ok(tower.blockTicks >= BOSS_HOLD_TICKS, 'the defenders keep receiving blocking credit');
+  assert.ok(!enemy.pushUntil, 'no breakthrough window at the keep');
 });
