@@ -404,3 +404,11 @@ From Logan's 13.24 Hard + Onslaught Confluence run (two Inferno Cannons ~31% of 
 ## 2026-11-23 — v0.1.0-beta.13.26 Grand Battalion buff
 
 Logan's 13.25 run was a flawless 3-star Hard Onslaught win, but Legion Hall Grand Battalion (branch B) did 1.5k damage for 2,242 mana while Royal Paladins did 22k. Grand Battalion now also gives +30% troop damage and +25% troop health (×1.6 at tier 4) on top of extra soldiers and faster reinforcement. Sandbox wave 20: T4 189k → 269k. Elder Wildwood left as is (~17% of damage per tower, under the 30% guideline).
+
+## 2026-11-23 — v0.1.0-beta.13.27 Voices and fuller music
+
+Logan picked tower voice lines and fuller music. Still no audio files: everything is made in the browser.
+- Voice barks: towers and commanders speak short made-up "mumble" lines (no real words), built from a buzzy voice through moving vowel filters. Each tower school has its own voice (white bright, blue airy, black low and raspy, red gruff and quick, green deep and slow); towers sound deeper as they rank up. Each commander has a voice of their own (Krenko squeaky, Korvold and the Ur-Dragon growling, Atraxa choral).
+- Lines: tower picked (a question), built, upgraded, and an occasional battle shout (at most every 7 seconds); commander picked, moved, and ability. One bark at a time, panned to where it happened, and the music dips under it.
+- New "Voices: on/off" toggle in the menu next to Music (saved per browser). The main sound toggle mutes voices too.
+- Fuller music: every theme gains a harmony line under the melody, plus a string counter-line or low cellos.

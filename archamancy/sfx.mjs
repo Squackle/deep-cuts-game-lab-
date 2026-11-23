@@ -14,21 +14,21 @@ export function chord(name){const m=/^([A-G](?:#|b)?)(m?)$/.exec(name);if(!m)thr
 export function line(text){let beat=0;const out=[];for(const tok of text.trim().split(/\s+/)){const [n,l]=tok.split(":"),len=+l;if(!(len>0))throw new Error("Bad length "+tok);if(n!=="r")out.push({m:midi(n),beat,len});beat+=len;}out.total=beat;return out;}
 
 // Original themes (composed for ARCHEMANCY). Each has 8 bars of 4 beats; melodies are one bar per string.
-// Layers with `from` only play at that battle intensity or above.
+// Layers with `from` only play at that battle intensity or above. harmony/counter/cello fill out the middle and low end.
 export const THEMES={
  menu:{name:"The Spellbook Opens",bpm:80,chords:["Dm","Bb","F","C","Dm","Bb","Gm","A"],
   lead:"horn",melody:["A4:1.5 D5:.5 E5:1 F5:1","D5:2 r:1 C5:.5 Bb4:.5","A4:1.5 C5:.5 F5:1 E5:.5 D5:.5","E5:3 r:1","A4:1.5 D5:.5 E5:1 F5:1","G5:1.5 F5:.5 D5:1 Bb4:1","C5:1 D5:1 Bb4:1 G4:1","A4:2 E4:1 C#5:1"],
-  layers:[{part:"pad",inst:"strings",vol:.09},{part:"arp",inst:"harp",vol:.11,step:.5},{part:"bass",inst:"bass",vol:.14,beats:[0]},{part:"drum",inst:"timp",vol:.2,hits:{0:[0],4:[0]}}]},
+  layers:[{part:"pad",inst:"strings",vol:.09},{part:"arp",inst:"harp",vol:.11,step:.5},{part:"bass",inst:"bass",vol:.14,beats:[0]},{part:"drum",inst:"timp",vol:.2,hits:{0:[0],4:[0]}},{part:"harmony",inst:"strings",vol:.045},{part:"cello",inst:"strings",vol:.06}]},
  calm:{name:"Between the Waves",bpm:96,chords:["F","C","Dm","Bb","F","C","Bb","C"],
   lead:"flute",melody:["C5:1 F5:1 G5:.5 A5:.5 G5:1","E5:2 C5:1 r:1","D5:1 F5:1 A5:1 G5:.5 F5:.5","D5:3 r:1","C5:1 F5:1 G5:.5 A5:.5 Bb5:1","G5:2 E5:1 C5:1","D5:1 F5:.5 E5:.5 D5:1 Bb4:1","C5:3 r:1"],
-  layers:[{part:"pad",inst:"strings",vol:.05},{part:"arp",inst:"harp",vol:.1,step:1},{part:"bass",inst:"pizz",vol:.16,beats:[0,2]},{part:"drum",inst:"shaker",vol:.05,pattern:"..x...x...x...x."}]},
+  layers:[{part:"pad",inst:"strings",vol:.05},{part:"arp",inst:"harp",vol:.1,step:1},{part:"bass",inst:"pizz",vol:.16,beats:[0,2]},{part:"drum",inst:"shaker",vol:.05,pattern:"..x...x...x...x."},{part:"harmony",inst:"horn",vol:.04},{part:"counter",inst:"strings",vol:.035}]},
  battle:{name:"Hold the Line",bpm:138,chords:["Dm","Dm","Bb","C","Dm","Dm","Gm","A"],
   lead:"brass",melody:["D5:1.5 A4:.5 D5:.5 E5:.5 F5:1","E5:1 D5:1 A4:2","F5:1.5 D5:.5 F5:.5 G5:.5 A5:1","G5:2 E5:1 C5:1","D5:1.5 A4:.5 D5:.5 E5:.5 F5:1","A5:1 G5:.5 F5:.5 E5:1 D5:1","Bb4:1 D5:1 G5:1 F5:.5 E5:.5","E5:2 C#5:1 A4:1"],
   layers:[{part:"ostinato",inst:"spic",vol:.07},{part:"bass",inst:"lowbrass",vol:.12,beats:[0,2]},{part:"drum",inst:"timp",vol:.24,pattern:"x.......x.....x."},{part:"drum",inst:"snare",vol:.09,pattern:"....x.......x..x"},
-   {part:"pad",inst:"choir",vol:.06,from:2},{part:"drum",inst:"snare",vol:.06,pattern:"..x...x...x.xxxx",from:2},{part:"double",inst:"brass",vol:.05,from:3},{part:"drum",inst:"cymbal",vol:.08,hits:{0:[0],4:[0]},from:3}]},
+   {part:"pad",inst:"choir",vol:.06,from:2},{part:"drum",inst:"snare",vol:.06,pattern:"..x...x...x.xxxx",from:2},{part:"double",inst:"brass",vol:.05,from:3},{part:"drum",inst:"cymbal",vol:.08,hits:{0:[0],4:[0]},from:3},{part:"cello",inst:"strings",vol:.05},{part:"counter",inst:"strings",vol:.035},{part:"harmony",inst:"horn",vol:.045,from:2}]},
  boss:{name:"The Tyrant Walks",bpm:112,chords:["Cm","Db","Cm","Db","Ab","Bb","Cm","G"],
   lead:"lowbrass",melody:["C4:1.5 C4:.5 Eb4:1 G4:1","Ab4:1.5 G4:.5 F4:1 Db4:1","C4:1.5 C4:.5 Eb4:1 G4:1","Ab4:1 Bb4:1 Ab4:1 G4:1","C5:2 Bb4:1 Ab4:1","D5:2 C5:1 Bb4:1","Eb5:1.5 D5:.5 C5:1 G4:1","G4:2 B4:1 D5:1"],
-  layers:[{part:"pad",inst:"choir",vol:.09},{part:"tremolo",inst:"spic",vol:.035},{part:"bass",inst:"bass",vol:.16,beats:[0,1.5,2,3.5]},{part:"drum",inst:"tom",vol:.22,pattern:"x..x..x.x..x..x."},{part:"drum",inst:"timp",vol:.26,pattern:"x.......x......."},{part:"drum",inst:"cymbal",vol:.07,hits:{0:[0],4:[0]}},{part:"double",inst:"brass",vol:.06}]}
+  layers:[{part:"pad",inst:"choir",vol:.09},{part:"tremolo",inst:"spic",vol:.035},{part:"bass",inst:"bass",vol:.16,beats:[0,1.5,2,3.5]},{part:"drum",inst:"tom",vol:.22,pattern:"x..x..x.x..x..x."},{part:"drum",inst:"timp",vol:.26,pattern:"x.......x......."},{part:"drum",inst:"cymbal",vol:.07,hits:{0:[0],4:[0]}},{part:"double",inst:"brass",vol:.06},{part:"harmony",inst:"strings",vol:.045},{part:"cello",inst:"strings",vol:.06}]}
 };
 for(const t of Object.values(THEMES))t.lines=t.melody.map(line);
 
@@ -64,6 +64,8 @@ export const INSTRUMENTS={
 };
 function voice(ac,inst,t,m,dur,vol,dest,pan=0){INSTRUMENTS[inst](ac,t,hz(m),dur,vol,out(ac,dest,pan));}
 
+// The chord tone a third to a sixth under a melody note: the harmony line that makes the tune sound fuller.
+const below=(ch,m)=>{let best=m-12;for(const c of ch)for(let k=c-24;k<m-2;k+=12)if(k>best)best=k;return best;};
 // Schedule one bar of a theme starting at time t. Used live and by the offline renderer (tests, previews).
 export function scheduleBar(ac,dest,theme,bar,t,intensity=1){
  const T=typeof theme==="string"?THEMES[theme]:theme,beat=60/T.bpm,b=bar%T.chords.length,ch=chord(T.chords[b]);
@@ -75,14 +77,50 @@ export function scheduleBar(ac,dest,theme,bar,t,intensity=1){
   else if(L.part==="ostinato")for(let s=0;s<8;s++)voice(ac,L.inst,t+s*beat/2,[ch[0],ch[0]+12,ch[2],ch[0]+12][s%4],beat/2,v*(s%2?.7:1),dest,-.25);
   else if(L.part==="tremolo")for(let s=0;s<16;s++)voice(ac,L.inst,t+s*beat/4,ch[s%8<4?1:2]+12,beat/4,v*(s%4?.6:1),dest,.3);
   else if(L.part==="double")for(const n of T.lines[b])voice(ac,L.inst,t+n.beat*beat,n.m+(T.lead==="lowbrass"?12:-12),n.len*beat*.95,v,dest,-.12);
+  else if(L.part==="harmony")for(const n of T.lines[b]){const h=below(ch,n.m);voice(ac,L.inst,t+n.beat*beat,h,n.len*beat*.95,v,dest,-.2);}
+  else if(L.part==="counter"){voice(ac,L.inst,t,ch[2]+12,beat*2,v,dest,.35);voice(ac,L.inst,t+beat*2,ch[1]+12,beat*2,v,dest,.35);}
+  else if(L.part==="cello"){voice(ac,L.inst,t,ch[0]-12,beat*2,v,dest,-.35);voice(ac,L.inst,t+beat*2,ch[2]-12,beat*2,v,dest,-.35);}
   else if(L.part==="drum"){const hits=L.hits?(L.hits[b]||[]):[...L.pattern].flatMap((c,i)=>c==="x"?[i/4]:[]);for(const s of hits)voice(ac,L.inst,t+s*beat,L.inst==="timp"?ch[0]-12:0,beat,v,dest);}}
  return beat*4;
 }
 export function reverb(ac,seconds=2.4){const len=Math.floor(ac.sampleRate*seconds),b=ac.createBuffer(2,len,ac.sampleRate);for(let c=0;c<2;c++){const d=b.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.2);}const r=ac.createConvolver();r.buffer=b;return r;}
 
+// ---- Voice barks: short made-up "mumble" speech, like the chatter of little heroes. No words, no audio files. ----
+// A buzzy source runs through two vowel filters (formants) that jump between vowels each syllable, with a breath
+// of noise for consonants. Each tower school and commander has its own pitch, speed and timbre.
+const VOWELS=[[800,1200],[400,2000],[300,2300],[480,820],[330,700]];
+export const VOICES={
+ W:{f0:240,shift:1.15,rate:.1,wave:"triangle",breath:.1},
+ U:{f0:200,shift:1.05,rate:.105,wave:"sawtooth",breath:.3},
+ B:{f0:110,shift:.85,rate:.125,wave:"sawtooth",breath:.18,rasp:.45},
+ R:{f0:160,shift:1,rate:.085,wave:"square",breath:.15,rasp:.2},
+ G:{f0:100,shift:.8,rate:.14,wave:"sawtooth",breath:.08}
+};
+export const COMMANDER_VOICES={krenko:{f0:320,shift:1.3,rate:.07,wave:"square",breath:.2},talrand:{f0:150,shift:1,rate:.12,wave:"triangle",breath:.35},
+ omnath:{f0:85,shift:.75,rate:.16,wave:"sawtooth",breath:.05},edgar:{f0:120,shift:.9,rate:.12,wave:"sawtooth",breath:.15,rasp:.25},
+ lightpaws:{f0:280,shift:1.2,rate:.09,wave:"triangle",breath:.12},meren:{f0:200,shift:.95,rate:.11,wave:"sawtooth",breath:.3,rasp:.3},
+ teysa:{f0:210,shift:1.05,rate:.11,wave:"triangle",breath:.1},korvold:{f0:80,shift:.8,rate:.13,wave:"square",breath:.15,rasp:.6},
+ atraxa:{f0:250,shift:1.1,rate:.1,wave:"triangle",breath:.2,choir:1},urdragon:{f0:62,shift:.7,rate:.15,wave:"sawtooth",breath:.2,rasp:.8}};
+// Pitch shape of each kind of line, one number per syllable: a question when picked, firm when built, a cheer on upgrade.
+export const LINES={select:[1,1.22],build:[1.1,1,.84],upgrade:[1,1.18,1.34,1.12],attack:[1.32,1.12,.92],move:[1.06,.88],ability:[1.1,1.3,1.22,1.42,1.05]};
+export function voiceFor({color="R",commander=null,tier=1}={}){const v={...(COMMANDER_VOICES[commander]||VOICES[color]||VOICES.R)};if(!commander)v.f0*=1-.05*(Math.min(4,tier)-1);return v;}
+export function bark(ac,t,profile,kind,dest,vol=.26,rnd=Math.random){
+ const P={...VOICES.R,...profile},C=LINES[kind]||LINES.select,syl=P.rate*(kind==="attack"?.8:1),end=t+C.length*syl;
+ const amp=ac.createGain();amp.gain.setValueAtTime(0,t);amp.connect(dest);const mix=ac.createGain();mix.gain.value=1.6;mix.connect(amp);
+ const f1=filt(ac,"bandpass",500,5,mix),f2=filt(ac,"bandpass",1500,8,mix),src=ac.createGain();src.gain.value=1;src.connect(f1);src.connect(f2);
+ const oscsOn=[[P.wave,1,1]];if(P.rasp)oscsOn.push(["square",.5,P.rasp]);if(P.choir)oscsOn.push(["sawtooth",1.5,.5]);
+ const live=oscsOn.map(([type,k,g])=>{const o=ac.createOscillator(),og=ac.createGain();o.type=type;og.gain.value=g;o.connect(og);og.connect(src);o.start(t);o.stop(end+.25);return [o,k];});
+ C.forEach((c,i)=>{const s=t+i*syl,v=VOWELS[Math.floor(rnd()*VOWELS.length)],f=P.f0*c*(1+(rnd()-.5)*.08);
+  for(const [o,k] of live)o.frequency.setTargetAtTime(f*k,s,.012);
+  f1.frequency.setTargetAtTime(v[0]*P.shift,s,.018);f2.frequency.setTargetAtTime(v[1]*P.shift,s,.018);
+  amp.gain.setTargetAtTime(vol,s+.004,.012);amp.gain.setTargetAtTime(vol*.12,s+syl*.72,.014);
+  if(rnd()<.55)noiseHit(ac,s,.035,vol*(.15+P.breath),"highpass",2800,.7,dest);});
+ amp.gain.setTargetAtTime(0,end,.03);return end-t+.1;
+}
+
 export function createSfx(storage=null){
  let ac=null,master=null,dry=null,musicGain=null,musicBus=null,timer=0,enabled=false,mood="menu",moodNow=null,intensity=1,bar=0,nextBar=0;const last={};
- let prefs={sound:true,music:true};try{prefs={...prefs,...JSON.parse(storage?.getItem(KEY)||"{}")};}catch{}
+ let prefs={sound:true,music:true,voice:true};let barkAt=0,attackAt=0;try{prefs={...prefs,...JSON.parse(storage?.getItem(KEY)||"{}")};}catch{}
  const save=()=>{try{storage?.setItem(KEY,JSON.stringify(prefs));}catch{}};
  function ensure(){if(ac)return ac;const AC=globalThis.AudioContext||globalThis.webkitAudioContext;if(!AC)return null;ac=new AC();
   const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.connect(ac.destination);
@@ -137,7 +175,14 @@ export function createSfx(storage=null){
  function music(on){enabled=on;clearInterval(timer);timer=0;if(!on){if(ac)fadeBus();return;}if(!prefs.music||!prefs.sound||!ensure())return;timer=setInterval(tick,60);tick();}
  function setMood(name,level=1){mood=THEMES[name]||name==="end"?name:"calm";intensity=level;}
  function setSound(on){prefs.sound=on;save();ensure();if(master)master.gain.value=on?.6:0;if(!on)music(false);}
- function setMusic(on){prefs.music=on;save();ensure();if(musicGain)musicGain.gain.value=on?.4:0;}
+ function setMusic(on){prefs.music=on;save();ensure();if(musicGain){musicGain.gain.cancelScheduledValues?.(0);musicGain.gain.value=on?.4:0;}}
+ function setVoice(on){prefs.voice=on;save();}
+ // Speak a bark. Never more than one at a time; the music dips under it so it is heard on a phone speaker.
+ function say(who,kind,o){if(!prefs.sound||!prefs.voice||!ensure())return false;if(ac.state==="suspended")ac.resume();const now=performance.now();if(now-barkAt<650)return false;barkAt=now;
+  const t=ac.currentTime+.04,len=bark(ac,t,voiceFor(who),kind,out(ac,dry,o?.pan||0));
+  if(prefs.music&&musicGain){const g=musicGain.gain;g.cancelScheduledValues?.(t);g.setTargetAtTime(.24,t,.04);g.setTargetAtTime(.4,t+len,.25);}return true;}
+ // Towers shout in battle only now and then: at most every 7 seconds, and only some of those chances.
+ function attackDue(){if(!prefs.sound||!prefs.voice)return false;const now=performance.now();if(now-attackAt<7000||now-barkAt<1500)return false;attackAt=now;return Math.random()<.4;}
  function unlock(){if(ensure()&&ac.state==="suspended")ac.resume();}
- return {play,music,mood:setMood,setSound,setMusic,unlock,get prefs(){return {...prefs};},get state(){return {mood,playing:moodNow,intensity,enabled};}};
+ return {play,music,mood:setMood,setSound,setMusic,setVoice,say,attackDue,unlock,get prefs(){return {...prefs};},get state(){return {mood,playing:moodNow,intensity,enabled};}};
 }
