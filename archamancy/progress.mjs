@@ -34,6 +34,8 @@ export function sanitize(raw, all) {
  if (spentStars(p) > totalStars(p)) p.perks = {};
  if (raw.badges && typeof raw.badges === "object") for (const k of Object.keys(raw.badges)) if (BADGE.test(k) && raw.badges[k] === true) p.badges[k] = true;
  p.onslaught = raw.onslaught === true;
+ // Campaign deck, Treasure and shop (campaign.mjs sanitizes it against the live card list).
+ if (raw.camp && typeof raw.camp === "object") p.camp = raw.camp;
  if (Number.isInteger(raw.xp) && raw.xp > 0) p.xp = Math.min(raw.xp, 1e7);
  for (const k of ["e", "t", "c"]) if (Array.isArray(raw.seen?.[k])) p.seen[k] = [...new Set(raw.seen[k].filter(x => typeof x === "string" && /^[a-z]{2,20}$/.test(x)))].slice(0, 200);
  if (typeof raw.map === "string" && /^[a-z]+$/.test(raw.map)) p.map = raw.map;
