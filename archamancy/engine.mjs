@@ -1,7 +1,7 @@
 // ARCHAMANCY beta simulation: fixed ticks, original data-driven rules, DOM independent.
 // Bump only when the saved run format changes, so saves survive ordinary updates.
 export const SAVE_FORMAT=1;
-export const VERSION="0.1.0-beta.13.33";
+export const VERSION="0.1.0-beta.13.34";
 // Status effects from towers (ticks are 100 ms): Pyre blasts burn, Thornheart poisons (stacking), Arcanum freezes (slow), Hex curses (+35% damage taken).
 export const BURN=10,POISON=30,POISON_STACKS=3,SPREAD_HIT=.5,SPREAD_MAX=8,BROOD_REVEAL=30,SPLASH_EDGE=.75,TOWER_BURN=9;
 // Enemy health multiplier per difficulty. Gauntlet stars: 3 at 18+ fortress left, 2 at 10+, otherwise 1.
@@ -34,8 +34,18 @@ export const MAPS={
   segments:[{pts:[[0,90],[640,90],[640,260],[150,260],[150,470],[1000,470]],next:null}],entrances:[0],commander:[0,.6],
   tunnel:[[300,215,520,305]],rubble:{4:120,12:80,17:80},
   pads:[[220,175],[560,175,"height"],[300,46],[480,46],[730,130],[730,230],[860,150],[860,270,"spring"],[960,210],[60,340],[60,440],[250,365],[420,375],[580,360],[730,350],[870,370],[300,555],[520,555],[740,555],[880,555]],
-  labels:[["GREYHORN PASS",12,62],["THE TUNNEL",350,250],["MOUNTAIN KEEP",880,430]]}
+  labels:[["GREYHORN PASS",12,62],["THE TUNNEL",350,250],["MOUNTAIN KEEP",880,430]]},
+ // Volcanic caldera. The road spirals in to a keep at the centre. Lava vents [x,y,radius] erupt every VENT_EVERY ticks during waves,
+ // scorching ground enemies and your own troops nearby. Fliers are unharmed. Ash palette, no seasons.
+ caldera:{name:"Emberfall Caldera",blurb:"The road spirals into a volcano. Lava vents erupt every 15 seconds and scorch ground enemies, and your own troops, standing near them.",seasons:["summer"],palette:"ember",airScale:1.1,
+  segments:[{pts:[[0,90],[860,90],[860,510],[140,510],[140,250],[640,250],[640,370],[330,370]],next:null}],entrances:[0],commander:[0,.45],
+  vents:[[500,170,90],[480,440,80],[760,330,110]],rubble:{2:120,8:80,13:80},
+  pads:[[220,170],[360,170],[640,170],[760,170],[400,440],[560,440],[760,440],[470,310],[560,310],[940,200],[940,330,"height"],[940,450],[60,330],[60,440],[300,40],[600,40],[300,565,"spring"],[550,565],[800,565],[230,440]],
+  labels:[["EMBERFALL CALDERA",12,62],["THE CALDERA",400,320],["CALDERA KEEP",300,330]]}
 };
+// Lava vents erupt every this many ticks of a wave (15 s); the last VENT_WARN ticks before an eruption glow as a warning.
+// An eruption takes this share of max health from ground enemies (bosses less) and from troops in its radius.
+export const VENT_EVERY=150,VENT_WARN=25,VENT_HIT=.12,VENT_BOSS=.04,VENT_TROOP=.3;
 // Ground enemies on ice move at this share of their speed.
 export const ICE_SLOW=.7;
 // Ticks from a tower firing to its shot landing; matches how long the projectile is drawn.
@@ -201,7 +211,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  const isInstantOrSorcery=id=>/^(Instant|Sorcery)$/.test(cards[id]?.type),ENCHANTMENTS=Object.keys(TYPES).filter(id=>/Aura|Equipment/.test(TYPES[id])),TOKEN_CAP={goblin:12,drake:8,vampire:10,slug:8,construct:1};
  const commanderReach=220,commanderRespawn=200;
  const defaultDeck=["meteor","wild","legion","inquiry","funeral","offering","twins","echo","freeze","raise","resonance","reset","cascade","ward","root","recall","matrix","forge","valor","bloom","flame","rally","reflection","deathmark","bloodrush","lightning","verdant","awaken","prism","blade"];
- const stats={damage:0,towerDamage:0,troopDamage:0,deathDamage:0,spellDamage:0,manaEarned:0,farmMana:0,killMana:0,waveMana:0,earlyMana:0,earlyCalls:0,soulMana:0,spellMana:0,sandboxMana:0,commanderMana:0,commanderDamage:0,commanderArmyDamage:0,returns:0,sacrifices:0,spent:0,refunds:0,kills:0,leaks:0,summoned:0,fallen:0,casts:0,draws:0,triggers:0,healing:0,control:0};
+ const stats={hazardDamage:0,damage:0,towerDamage:0,troopDamage:0,deathDamage:0,spellDamage:0,manaEarned:0,farmMana:0,killMana:0,waveMana:0,earlyMana:0,earlyCalls:0,soulMana:0,spellMana:0,sandboxMana:0,commanderMana:0,commanderDamage:0,commanderArmyDamage:0,returns:0,sacrifices:0,spent:0,refunds:0,kills:0,leaks:0,summoned:0,fallen:0,casts:0,draws:0,triggers:0,healing:0,control:0};
  const state={locked:[],rubble:mode==="sandbox"?{}:{...(M.rubble||{})},onslaught:false,perks:null,mapId,initialMode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",seed:seed>>>0,rng:seed>>>0||1,mode:["campaign","endless","sandbox"].includes(mode)?mode:"campaign",tick:0,wave:0,phase:"ready",mana:350,health:20,towers:{},enemies:[],troops:[],queue:[],nextSpawn:0,nextId:1,stats,events:[],sequence:0,commands:[],library:[],hand:[],discard:[],deck:defaultDeck.slice(),echo:false,prism:0,storm:0,fallen:[],waveHistory:[],towerHistory:[], farmPaid:{}, soulPaid:{}, pendingWaves:[], lastWaveTick:0, bonusDeadline:0, lastWaveSpawned:false, waveCalls:[], commander:null, difficulty:"normal", season:M.seasons?.[0]||"summer", stars:0, cmdOwner:{id:"cmd",uid:0,damage:0,troopDamage:0,summons:0}, cmdSummons:0, enemyKills:{}, enemyLeaks:{}, cardCasts:{}, effects:[], projectiles:[],inFlight:[]};
  const d2=(a,b)=>(a.x-b.x)**2+(a.y-b.y)**2;
  const perk=k=>state.perks?.[k]||0;
@@ -408,6 +418,9 @@ function makeTroop(t,opts={}){if(state.troops.length>=220)return false;const def
  // Onslaught keeps the clock running between waves and sends the next wave on time.
  if(state.phase==="ready"&&onslaughtLeft()!==null){state.tick++;if(onslaughtLeft()===0)startWave();return;}
  if(state.phase!=="active")return;if(onslaughtLeft()===0&&state.pendingWaves.length<ONSLAUGHT_MAX)startWave(true,true);state.tick++;state.effects=state.effects.filter(e=>e.until>state.tick);state.projectiles=state.projectiles.filter(e=>e.start+e.duration>state.tick);
+ if(M.vents&&state.tick%VENT_EVERY===0)for(const [vx,vy,vr] of M.vents){const at={x:vx,y:vy};effect(vx,vy,"#ff7a2e",vr);emit("eruption",{x:vx,y:vy});
+  for(const e of state.enemies)if(e.hp>0&&!e.flying&&!e.escaped&&d2(enemyPos(e),at)<=vr*vr)hurt(e,Math.round(e.maxHp*(e.boss?VENT_BOSS:VENT_HIT)),false,null,2,"hazard");
+  for(const u of state.troops)if(u.hp>0&&!u.dead&&!u.flier&&d2(pointAt(u.progress),at)<=vr*vr){u.hp=Math.max(0,u.hp-Math.ceil(u.maxHp*VENT_TROOP));if(!u.hp)die(u);}}
  for(let n=0;n<8&&state.queue.length&&state.queue[0].due<=state.tick;n++){const v=state.queue.shift();spawnEnemy(v.kind,v.wave);if(v.wave===state.wave)state.lastWaveSpawned=true;}
  for(const e of state.enemies){if(e.hp<=0)continue;if(e.regen&&state.tick%10===0)e.hp=Math.min(e.maxHp,e.hp+e.regen);if(e.burnUntil>state.tick&&state.tick%5===0){const source=e.burnSource,owner=source===null?null:Object.values(state.towers).find(t=>t.uid===source)||state.towerHistory.find(t=>t.uid===source);hurt(e,Math.round((source===null?12:TOWER_BURN)*late()),true,owner||null,false,source===null?"spell":"tower");}
   // Poison stacks, ignores armor, and wears off all at once.
@@ -479,5 +492,5 @@ function makeTroop(t,opts={}){if(state.troops.length>=220)return false;const def
  // A boss's record is shared by the boss and the boss log, so later updates (outcome, stalls, crack) show in the report.
  // A save stores them as two separate copies; reconnect each boss to its own log entry so a resumed run reports them.
  function relinkBossRecords(){const log=state.bossLog||[],used=new Set();for(const e of state.enemies){if(!e.bossRec)continue;const want=JSON.stringify(e.bossRec),i=log.findIndex((b,j)=>!used.has(j)&&JSON.stringify(b)===want);if(i>=0){used.add(i);e.bossRec=log[i];}}}
- return {onslaughtLeft,abilityReady:()=>!!state.commander&&!state.commander.dead&&state.tick>=(state.commander.abilityAt||0),snapshot,restore,commanders,commanderAlive,castCost,commanderRespawn,branchOptions,branchName,bonus,playtestReport,canCallEarly,earlyBonus,earlySeconds,farmLimit,farmBudget,scale,state,map:{id:mapId,get season(){return SEASONS.includes(state.season)?state.season:"summer";},name:M.name,width:W,height:H,path,segments:segs.map(s=>s.pts),spans:segs.map(s=>[s.off,s.off+s.len]),entrances:M.entrances.map(i=>segs[i].pts[0]),keep:{x:exitSeg.pts.at(-1)[0],y:exitSeg.pts.at(-1)[1]},labels:M.labels,seasons:M.seasons||SEASONS,ice:(M.ice||[]).map(r=>({x:r[0],y:r[1],w:r[2]-r[0],h:r[3]-r[1]})),tunnel:(M.tunnel||[]).map(r=>({x:r[0],y:r[1],w:r[2]-r[0],h:r[3]-r[1]})),pads,distance},roster,types,waves,waveSpec,cards,pointAt,nearestPath,inTunnel,upgradeCost,command,step,tickMs};
+ return {onslaughtLeft,abilityReady:()=>!!state.commander&&!state.commander.dead&&state.tick>=(state.commander.abilityAt||0),snapshot,restore,commanders,commanderAlive,castCost,commanderRespawn,branchOptions,branchName,bonus,playtestReport,canCallEarly,earlyBonus,earlySeconds,farmLimit,farmBudget,scale,state,map:{id:mapId,get season(){return SEASONS.includes(state.season)?state.season:"summer";},name:M.name,width:W,height:H,path,segments:segs.map(s=>s.pts),spans:segs.map(s=>[s.off,s.off+s.len]),entrances:M.entrances.map(i=>segs[i].pts[0]),keep:{x:exitSeg.pts.at(-1)[0],y:exitSeg.pts.at(-1)[1]},labels:M.labels,seasons:M.seasons||SEASONS,ice:(M.ice||[]).map(r=>({x:r[0],y:r[1],w:r[2]-r[0],h:r[3]-r[1]})),palette:M.palette||null,vents:(M.vents||[]).map(v=>({x:v[0],y:v[1],r:v[2]})),tunnel:(M.tunnel||[]).map(r=>({x:r[0],y:r[1],w:r[2]-r[0],h:r[3]-r[1]})),pads,distance},roster,types,waves,waveSpec,cards,pointAt,nearestPath,inTunnel,upgradeCost,command,step,tickMs};
 }

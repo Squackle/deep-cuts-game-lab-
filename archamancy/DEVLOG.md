@@ -448,3 +448,9 @@ Logan picked these from the idea list. Visual and UI only; the simulation, seede
 - Title screen gains a painted world map above the battlefield cards: five regions on a trail (Verdant Lowlands = Hollow Road, The Riverlands = Confluence, Frostfen Marches, Greyhorn Mountains = Greyhorn Pass, The Ember Wastes = coming soon). Each stop shows its best stars; tapping one picks that battlefield.
 - progress.REGIONS / mapOpen / mapStars: a region opens at its map's player level as before, or as soon as the region before it has been won (any stars, any difficulty). Locked cards say both ways in.
 - Cosmetic module archamancy/worldmap.mjs (paintWorld, NODES). No engine or save changes.
+
+## 2026-11-23 — v0.1.0-beta.13.34 Emberfall Caldera (campaign region 5)
+
+- New map `caldera`, Emberfall Caldera, for the Ember Wastes region: the road spirals into a volcano to a keep at the centre. Three lava vents (map.vents [x,y,radius]) erupt every 15 s of a wave (VENT_EVERY 150 ticks), taking 12% max health from ground enemies (bosses 4%, armor ignored) and 30% from ground troops in range. Fliers are unharmed. Damage counts as hazardDamage in stats.
+- Ash palette (map.palette "ember"): lava instead of water, charred trees, rising embers. Vents glow and show their blast ring for the last 2.5 s before each eruption. One season only.
+- The world map's fifth stop now opens it (win Greyhorn Pass, or level 6). Crude bot: Hollow 17–18, Greyhorn 15, Caldera 15–16.

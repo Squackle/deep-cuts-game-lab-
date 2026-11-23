@@ -25,7 +25,7 @@ function play({seed,map,commander,waves,early=false,saveEvery=0}){
 // Regression: a resumed run lost the link between each boss on the road and its boss-log entry, so the copied
 // battle stats never recorded that boss's outcome and its time kept counting up.
 test("a run saved and resumed mid-wave plays out and reports exactly like an unbroken run",()=>{
- for(const sc of [{seed:1,map:"hollow",commander:"krenko",waves:15},{seed:7,map:"confluence",commander:"edgar",waves:12,early:true},{seed:42,map:"frostfen",commander:"urdragon",waves:10},{seed:9,map:"pass",commander:"talrand",waves:10}]){
+ for(const sc of [{seed:1,map:"hollow",commander:"krenko",waves:15},{seed:7,map:"confluence",commander:"edgar",waves:12,early:true},{seed:42,map:"frostfen",commander:"urdragon",waves:10},{seed:9,map:"pass",commander:"talrand",waves:10},{seed:5,map:"caldera",commander:"krenko",waves:10}]){
   const straight=play(sc),resumed=play({...sc,saveEvery:97});
   assert.ok(straight.bossLog.length>=2&&straight.bossLog.every(b=>b.outcome),"bosses reached and finished in "+sc.map);
   assert.deepEqual(resumed.bossLog,straight.bossLog,"boss log after resuming on "+sc.map);
