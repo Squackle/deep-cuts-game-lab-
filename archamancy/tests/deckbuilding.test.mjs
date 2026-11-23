@@ -23,7 +23,7 @@ function kitGame(kit, mode = "campaign") { const g = createEngine(3, mode, "holl
 test("a campaign kit sets the deck, hand size and opening hand; only before wave 1 and only in the Gauntlet", () => {
  const g = kitGame({ relics: ["sylvan"], boons: ["reliquary"] });
  assert.deepEqual(g.state.deck, camp.STARTER_DECK);
- assert.equal(g.state.hand.length, 6, "4 + Sylvan Library 2, hand max 6");
+ assert.equal(g.state.hand.length, 5, "4 + Sylvan Library 1"); assert.equal(g.state.handMax, 7, "5 + Sylvan + Reliquary");
  assert.equal(g.state.library.length + g.state.hand.length, 8);
  assert.equal(g.command({ type: "kit", deck: camp.STARTER_DECK }), false, "only once");
  assert.equal(createEngine(1, "endless").command({ type: "kit", deck: camp.STARTER_DECK }), false, "not in Endless");
