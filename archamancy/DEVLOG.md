@@ -512,3 +512,4 @@ Follow-up to 13.40. Every card in the pool now has its own effect test, and a bo
 - Balance: Death's Shadow x1.6 -> x1.35 and rare (+3 waves as uncommon). Acidic Slime x1.35 -> x1.25 (common was +1.7 waves). Economy relics (Sol Ring, Arcane Signet, Smothering Tithe, Revel in Riches, Pitiless Plunderer) now grow with the wave on the troop-health curve, caps too, so they stay worth a slot late.
 - Shop: Spark Double no longer appears once you have used one, and Prismatic Omen can't be bought with every color at level 5.
 - Guard test: no single relic carries the bot more than 4 waves further.
+- Also in 13.41 (carried over from draft PR #316, owner-requested): Dawn Chapel sustain. Base healing 12 -> 16, radius 170 -> 190, tier I ward 4 -> 6, and each pulse heals a living, wounded commander in range for half the troop heal (no ward, no revive). Healing stats count real restored HP. Tests: archamancy/tests/chapel-sustain.test.mjs.
