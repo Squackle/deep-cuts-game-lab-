@@ -449,7 +449,15 @@ Logan picked these from the idea list. Visual and UI only; the simulation, seede
 - progress.REGIONS / mapOpen / mapStars: a region opens at its map's player level as before, or as soon as the region before it has been won (any stars, any difficulty). Locked cards say both ways in.
 - Cosmetic module archamancy/worldmap.mjs (paintWorld, NODES). No engine or save changes.
 
-## 2026-11-23 — v0.1.0-beta.13.34 Emberfall Caldera (campaign region 5)
+## 2026-11-23 — v0.1.0-beta.13.34 commanders batch 2: Heliod, Wilhelt, Kaalia
+
+Card names, mana costs and rules text checked against Scryfall (2026-11-23).
+- **Heliod, Sun-Crowned** (mono-white, Lifegain). Every 10 s troops heal 25%; when anyone healed, the three strongest troops get a +1/+1 counter (up to 5 each) and Heliod gains +3 attack. Indestructible: respawns in half the time. Tap: Sun's Blessing, a counter on Heliod and every troop plus 10 s of lifelink. Unlock: 6 Gauntlet stars in total.
+- **Wilhelt, the Rotcleaver** (blue-black, Zombies). Each tower troop that dies makes a 2/2 decayed Zombie that crumbles after 10 s (up to 10); every 10 s he sacrifices a Zombie to draw a card. Tap: Rotcleave, three Zombies. Unlock: win a Gauntlet on two different battlefields.
+- **Kaalia of the Vast** (red-white-black). Every 12 s while she fights, puts an Angel, Demon or Dragon onto the field (one of each at most). Tap: Call of the Vast, all three at once. Unlock: reach player level 6.
+- New unlock rule kinds: `stars`, `maps`. Troop tokens can carry `expires` (decayed) and `counters`.
+- Seeded benchmark, fortress health after wave 30 (avg of seeds 1–4): Heliod 12, Wilhelt 11, Kaalia 15 (field 10–20).
+## 2026-11-23 — v0.1.0-beta.13.35 Emberfall Caldera (campaign region 5)
 
 - New map `caldera`, Emberfall Caldera, for the Ember Wastes region: the road spirals into a volcano to a keep at the centre. Three lava vents (map.vents [x,y,radius]) erupt every 15 s of a wave (VENT_EVERY 150 ticks), taking 12% max health from ground enemies (bosses 4%, armor ignored) and 30% from ground troops in range. Fliers are unharmed. Damage counts as hazardDamage in stats.
 - Ash palette (map.palette "ember"): lava instead of water, charred trees, rising embers. Vents glow and show their blast ring for the last 2.5 s before each eruption. One season only.

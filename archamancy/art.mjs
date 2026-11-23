@@ -3,8 +3,8 @@ export function createArt(ctx,{res:startRes=1,portrait=null}={}){
  const ink="#172722",metal="#7d8e85",stone="#aab0a0",gold="#ead49a",ice="#8ee5fb",violet="#ca9be9",fire="#ffb267",leaf="#a0d481";
  const school={W:gold,U:ice,B:violet,R:fire,G:leaf};
  const towerSchools={legion:"W",chapel:"W",judgment:"W",arcanum:"U",library:"U",mirror:"U",necropolis:"B",foundry:"B",hex:"B",pyre:"R",goblin:"R",storm:"R",grove:"G",beast:"G",thorn:"G"};
- const enemyKeys=["raider","runner","armored","wing","mage","regen","titan","stalker","warden","golem","grimgut","matron","colossus","hierophant","tyrant"],allyKeys=["legion","necropolis","goblin","beast","construct","bloom","drake","vampire","slug","toxrill","torbran","urza","krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon"];
- const commanderKeys=["krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon","toxrill","torbran","urza"];
+ const enemyKeys=["raider","runner","armored","wing","mage","regen","titan","stalker","warden","golem","grimgut","matron","colossus","hierophant","tyrant"],allyKeys=["legion","necropolis","goblin","beast","construct","bloom","drake","vampire","slug","toxrill","torbran","urza","zombie","angel","demon","dragon","heliod","wilhelt","kaalia","krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon"];
+ const commanderKeys=["krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon","toxrill","torbran","urza","heliod","wilhelt","kaalia"];
  function crown(a,y,c){poly(a,[[-7,y],[-7,y-7],[-3,y-3],[0,y-9],[3,y-3],[7,y-7],[7,y]],c);}
  function poly(a,points,fill,stroke=ink){a.beginPath();points.forEach(([x,y],i)=>i?a.lineTo(x,y):a.moveTo(x,y));a.closePath();a.fillStyle=fill;a.fill();if(stroke){a.strokeStyle=stroke;a.lineWidth=1.8;a.stroke();}}
  function oval(a,x,y,rx,ry,fill,stroke=null){a.beginPath();a.ellipse(x,y,rx,ry,0,0,Math.PI*2);a.fillStyle=fill;a.fill();if(stroke){a.strokeStyle=stroke;a.lineWidth=1.6;a.stroke();}}
@@ -90,6 +90,13 @@ export function createArt(ctx,{res:startRes=1,portrait=null}={}){
    case "toxrill":oval(a,0,-12,18,13,"#3b2d47",ink);oval(a,10,-24,9,9,"#4e3c5e",ink);for(const [x,y] of [[-10,-14],[-2,-8],[6,-16],[-6,-20]])oval(a,x,y,2.6,2,"#9fe07a");line(a,[[14,-31],[18,-42]],"#4e3c5e",3);line(a,[[8,-32],[6,-42]],"#4e3c5e",3);oval(a,13,-25,2,2,"#d6ff9a");break;
    case "torbran":humanoid(a,"#9c3a2a","#d7a07d",{bulk:true,helmet:true,shield:"#c0582f"});line(a,[[-6,-12],[6,-12]],"#e8d0a8",4);line(a,[[12,-8],[22,-34]],"#7d8e85",4);poly(a,[[18,-34],[28,-38],[24,-28]],fire);break;
    case "urza":poly(a,[[-13,4],[-8,-22],[8,-22],[13,4]],"#3a5d86");oval(a,0,-25,7,8,"#d9c3a6",ink);line(a,[[-6,-30],[6,-30]],"#c9c3b6",2);rect(a,-16,-14,7,7,"#9aa6ad");crystal(a,-12,-20,5,ice);line(a,[[13,-36],[13,4]],"#9aa6ad",3);crystal(a,13,-38,6,ice);break;
+   case "zombie":humanoid(a,"#4f5b46","#8fa27e",{});line(a,[[-8,-14],[-16,-18]],"#8fa27e",3);line(a,[[8,-14],[16,-18]],"#8fa27e",3);break;
+   case "angel":poly(a,[[-3,-18],[-22,-34],[-16,-8]],"#f4f1e6");poly(a,[[3,-18],[22,-34],[16,-8]],"#f4f1e6");humanoid(a,"#e8dcb8","#f1e0c8",{});oval(a,0,-36,6,2,"#00000000",gold);break;
+   case "demon":humanoid(a,"#5a1f2a","#8e3a3a",{bulk:true});poly(a,[[-6,-30],[-12,-42],[-2,-32]],"#2a1418");poly(a,[[6,-30],[12,-42],[2,-32]],"#2a1418");oval(a,-3,-26,1.8,1.8,fire);oval(a,3,-26,1.8,1.8,fire);break;
+   case "dragon":poly(a,[[-3,-16],[-26,-30],[-20,-8],[-6,-12]],"#c0582f");poly(a,[[3,-16],[26,-30],[20,-8],[6,-12]],"#c0582f");oval(a,0,-12,8,12,"#8e2f22",ink);poly(a,[[-4,-21],[0,-32],[4,-21]],"#f7a564");break;
+   case "heliod":humanoid(a,"#e8d9a8","#f1dfc0",{});for(let i=0;i<8;i++){const r=i*Math.PI/4;line(a,[[Math.cos(r)*9,-28+Math.sin(r)*9],[Math.cos(r)*15,-28+Math.sin(r)*15]],gold,2);}line(a,[[13,-36],[13,4]],"#c9a75a",3);break;
+   case "wilhelt":humanoid(a,"#3d4a5a","#a9b59a",{helmet:true});line(a,[[12,-6],[24,-34]],"#7d8e85",5);poly(a,[[20,-34],[30,-40],[28,-28]],"#9aa6ad");oval(a,-3,-25,1.8,1.8,"#9fe07a");oval(a,3,-25,1.8,1.8,"#9fe07a");break;
+   case "kaalia":poly(a,[[-4,-18],[-24,-30],[-18,-8]],"#b8a7c8");poly(a,[[4,-18],[24,-30],[18,-8]],"#b8a7c8");humanoid(a,"#7c2a2a","#d9b49a",{});line(a,[[-8,-30],[8,-30]],gold,2);break;
    case "urdragon":for(const [x,c] of [[-26,gold],[-14,ice],[14,fire],[26,leaf]])poly(a,[[0,-18],[x,-34],[x*.8,-10]],c);oval(a,0,-14,9,14,"#5a3f63",ink);poly(a,[[-5,-26],[0,-40],[5,-26]],"#7a4c6e");oval(a,-3,-24,2,2,fire);oval(a,3,-24,2,2,fire);break;
    case "stalker":humanoid(a,"#2d2a3a","#6e6880",{});poly(a,[[-9,-24],[0,-38],[9,-24],[7,-16],[-7,-16]],"#1d1b26");oval(a,-3,-25,1.8,1.8,"#b9f0ff");oval(a,3,-25,1.8,1.8,"#b9f0ff");break;
    case "warden":humanoid(a,"#6a7aa6","#c3b3a4",{helmet:true,shield:"#9fb7e8"});oval(a,-9,-12,7,7,"#ffffff22","#bfe8ff");break;
