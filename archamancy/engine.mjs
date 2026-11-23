@@ -1,7 +1,7 @@
 // ARCHAMANCY beta simulation: fixed ticks, original data-driven rules, DOM independent.
 // Bump only when the saved run format changes, so saves survive ordinary updates.
 export const SAVE_FORMAT=1;
-export const VERSION="0.1.0-beta.13.29";
+export const VERSION="0.1.0-beta.13.30";
 // Status effects from towers (ticks are 100 ms): Pyre blasts burn, Thornheart poisons (stacking), Arcanum freezes (slow), Hex curses (+35% damage taken).
 export const BURN=10,POISON=30,POISON_STACKS=3,SPREAD_HIT=.5,SPREAD_MAX=8,BROOD_REVEAL=30,SPLASH_EDGE=.75,TOWER_BURN=9;
 // Enemy health multiplier per difficulty. Gauntlet stars: 3 at 18+ fortress left, 2 at 10+, otherwise 1.
@@ -51,6 +51,8 @@ export const PERK_COSTS=[1,2,3];
 export const ONSLAUGHT_GAP=300;
 // Onslaught holds its next wave while this many waves are still on the road (same cap as calling early).
 export const ONSLAUGHT_MAX=3;
+// Toxrill slime counters (cap and share of full health per counter) and Torbran's extra red damage per hit, before late-wave scaling.
+export const SLIME_MAX=5,SLIME_HP=.03,TORBRAN_BONUS=4;
 // Commander abilities: one tap power per commander, during waves, then a cooldown (seconds). Themes follow each card's Scryfall text (checked 2026-11-22).
 export const ABILITIES={
  krenko:{name:"Mob Rally",cooldown:40,text:"Create Goblin tokens equal to the goblins you control (at least 3)."},
@@ -62,6 +64,9 @@ export const ABILITIES={
  teysa:{name:"Lifelink Vigil",cooldown:60,text:"Fully heal every troop and restore 1 fortress health."},
  korvold:{name:"Royal Feast",cooldown:40,text:"Sacrifice your three weakest troops. Each one grows Korvold and draws a card."},
  atraxa:{name:"Proliferate",cooldown:45,text:"Proliferate now: every tower gains a growth counter, Atraxa grows, and every troop gains a ward."},
+ toxrill:{name:"Slime Tide",cooldown:45,text:"Put two slime counters on every enemy near Toxrill."},
+ torbran:{name:"Red Fell Fury",cooldown:45,text:"Torbran hits every enemy near him for twice his attack, and for 10 seconds the extra red damage is tripled."},
+ urza:{name:"Shuffle and Exile",cooldown:50,text:"Draw a card. The next spell you cast costs no mana."},
  urdragon:{name:"Dragon Tempest",cooldown:45,text:"Breathe fire on every enemy near The Ur-Dragon for four times her attack, then draw a card."}
 };
 // Towers that aim at one enemy can switch targeting.
@@ -185,12 +190,15 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
   teysa:{name:"Teysa Karlov",color:"W",colors:"WB",archetype:"Death triggers",hp:240,damage:12,desc:"Death triggers happen twice: Blood Artist blasts, death-blast towers and Soul Foundry income."},
   korvold:{name:"Korvold, Fae-Cursed King",color:"R",colors:"BRG",archetype:"Sacrifice",hp:360,damage:22,desc:"Whenever a troop is sacrificed, Korvold gains +4 attack (up to +200) and you draw a card."},
   atraxa:{name:"Atraxa, Praetors' Voice",color:"G",colors:"GWUB",archetype:"Counters",hp:340,damage:20,desc:"Every 10 seconds, proliferate: every tower gains a growth counter (up to 10 each) and Atraxa gains +4 attack."},
+  toxrill:{name:"Toxrill, the Corrosive",color:"B",colors:"B",archetype:"Slime counters",hp:380,damage:24,desc:"Every 10 seconds, puts a slime counter on every enemy (up to 5 each). Each counter weakens its attack and eats away its health. Slimed enemies that die leave a Slug token (up to 8)."},
+  torbran:{name:"Torbran, Thane of Red Fell",color:"R",colors:"R",archetype:"Red damage",hp:320,damage:16,desc:"Red towers and red troops deal extra damage on every hit (+4, growing with later waves)."},
+  urza:{name:"Urza, Lord High Artificer",color:"U",colors:"U",archetype:"Artifacts",hp:240,damage:10,desc:"Brings a Construct token that grows with every tower you control and returns 20 seconds after it falls. Each wave, your towers tap for 4 mana each (up to 60)."},
   urdragon:{name:"The Ur-Dragon",color:"R",colors:"WUBRG",archetype:"Dragons",hp:500,damage:40,desc:"Flies over the road: every 1.5 seconds breathes fire on the 3 leading enemies in reach, fliers included, for triple damage to bosses. Does not block."}
  };
  // Card types checked against Scryfall (2026-11-22). Talrand reacts to instants and sorceries; Light-Paws to Auras and Equipment.
  const TYPES={legion:"Instant",ward:"Instant",rally:"Sorcery",twins:"Enchantment",valor:"Enchantment",inquiry:"Sorcery",reflection:"Sorcery",echo:"Instant",freeze:"Sorcery",reset:"Instant",raise:"Enchantment — Aura",offering:"Instant",recall:"Sorcery",funeral:"Creature — Vampire",deathmark:"Sorcery",meteor:"Sorcery",flame:"Sorcery",cascade:"Sorcery",lightning:"Sorcery",bloodrush:"Instant",wild:"Enchantment — Aura",root:"Instant",bloom:"Creature — Beast",verdant:"Enchantment",awaken:"Creature — Spirit",prism:"Legendary Artifact",resonance:"Artifact",matrix:"Artifact — Equipment",forge:"Artifact Creature — Construct",blade:"Artifact — Equipment"};
  for(const [id,type] of Object.entries(TYPES))cards[id].type=type;
- const isInstantOrSorcery=id=>/^(Instant|Sorcery)$/.test(cards[id]?.type),ENCHANTMENTS=Object.keys(TYPES).filter(id=>/Aura|Equipment/.test(TYPES[id])),TOKEN_CAP={goblin:12,drake:8,vampire:10};
+ const isInstantOrSorcery=id=>/^(Instant|Sorcery)$/.test(cards[id]?.type),ENCHANTMENTS=Object.keys(TYPES).filter(id=>/Aura|Equipment/.test(TYPES[id])),TOKEN_CAP={goblin:12,drake:8,vampire:10,slug:8,construct:1};
  const commanderReach=220,commanderRespawn=200;
  const defaultDeck=["meteor","wild","legion","inquiry","funeral","offering","twins","echo","freeze","raise","resonance","reset","cascade","ward","root","recall","matrix","forge","valor","bloom","flame","rally","reflection","deathmark","bloodrush","lightning","verdant","awaken","prism","blade"];
  const stats={damage:0,towerDamage:0,troopDamage:0,deathDamage:0,spellDamage:0,manaEarned:0,farmMana:0,killMana:0,waveMana:0,earlyMana:0,earlyCalls:0,soulMana:0,spellMana:0,sandboxMana:0,commanderMana:0,commanderDamage:0,commanderArmyDamage:0,returns:0,sacrifices:0,spent:0,refunds:0,kills:0,leaks:0,summoned:0,fallen:0,casts:0,draws:0,triggers:0,healing:0,control:0};
@@ -239,8 +247,11 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  function scaleCommander(){const cm=state.commander;if(!cm)return;const base=commanders[cm.id].hp*(1+.1*perk("command")),want=Math.round(base*late(.4)),had=cm.baseHp||Math.round(base);if(want>had){cm.maxHp+=want-had;if(!cm.dead)cm.hp+=want-had;cm.baseHp=want;}}
  function late(k=.8){return Math.pow(scale(Math.max(1,state.wave)),k);}
  function commanderAlive(id){const c=state.commander;return !!c&&!c.dead&&(!id||c.id===id);}
- function castCost(id){const c=cards[id]?.cost??0;return Math.round(c*(1-.05*perk("spellcraft")));}
+ function castCost(id){if(state.freeCast)return 0;const c=cards[id]?.cost??0;return Math.round(c*(1-.05*perk("spellcraft")));}
  function makeToken(model,hp,damage,flier=false){hp=Math.round(hp*late(.6));damage=Math.round(damage*late(.8));const c=state.commander;if(!c||state.troops.length>=220||state.troops.filter(u=>u.source==="cmd"&&u.model===model&&u.hp>0).length>=TOKEN_CAP[model])return false;state.troops.push({id:state.nextId++,source:"cmd",sourceUid:0,hp,maxHp:hp,progress:c.progress,next:state.tick+5,damage,revived:false,model,ward:0,flier});stats.summoned++;state.cmdOwner.summons++;emit("summon",{source:"cmd"});return true;}
+ // Toxrill: each slime counter (up to 5) takes 10% off the enemy's attack and 4% of its full health.
+ function slime(e,n=1){for(let i=0;i<n&&e.hp>0&&(e.slime||0)<SLIME_MAX;i++){e.slime=(e.slime||0)+1;e.attack=Math.max(1,Math.round(e.attack*.9));const before=stats.commanderDamage;hurt(e,Math.max(1,Math.round(e.maxHp*SLIME_HP)),false,null,2,"commander");state.commander.damage+=stats.commanderDamage-before;if(e.hp===0)state.commander.kills++;}}
+ function urzaConstruct(){const n=Object.keys(state.towers).length;return makeToken("construct",80+20*n,10+3*n);}
  function useAbility(){const cm=state.commander,id=cm.id,q=pointAt(cm.progress);
   if(id==="krenko"){const n=Math.max(3,state.troops.filter(u=>u.source==="cmd"&&u.model==="goblin"&&u.hp>0).length);let made=0;for(let i=0;i<n;i++)if(makeToken("goblin",30,8))made++;return made>0;}
   if(id==="talrand"){let made=0;for(let i=0;i<3;i++)if(makeToken("drake",40,14,true))made++;return made>0;}
@@ -251,6 +262,9 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
   if(id==="teysa"){for(const u of state.troops)if(u.hp>0){stats.healing+=u.maxHp-u.hp;u.hp=u.maxHp;}state.health=Math.min(20,state.health+1);effect(q.x,q.y,"#f5df9e",120);return true;}
   if(id==="korvold"){const weak=state.troops.filter(u=>u.hp>0&&!u.dead).sort((a,b)=>a.hp-b.hp||a.id-b.id).slice(0,3);for(const u of weak)die(u,true);return weak.length>0;}
   if(id==="atraxa"){for(const t of Object.values(state.towers))t.growth=Math.min(10,t.growth+1);cm.growth=Math.min(200,cm.growth+4);for(const u of state.troops)if(u.hp>0)u.ward=Math.max(u.ward,20);stats.triggers++;return true;}
+  if(id==="toxrill"){const hit=area(q,220);for(const e of hit)slime(e,2);effect(q.x,q.y,"#ba8ad8",220);return hit.length>0;}
+  if(id==="torbran"){cm.furyUntil=state.tick+100;const dmg=Math.round((cm.attack+cm.growth)*late()*(1+.1*perk("command"))*2),before=stats.commanderDamage;for(const e of area(q,160)){hurt(e,dmg,false,null,false,"commander");if(e.hp===0)cm.kills++;}cm.damage+=stats.commanderDamage-before;effect(q.x,q.y,"#f7a564",160);return true;}
+  if(id==="urza"){draw(1);state.freeCast=true;return true;}
   if(id==="urdragon"){const hit=area(q,210);if(!hit.length)return false;const dmg=Math.round((cm.attack+cm.growth)*late()*(1+.1*perk("command"))*4);const before=stats.commanderDamage;for(const e of hit){hurt(e,e.boss?dmg*2:dmg,true,null,false,"commander");if(e.hp===0)cm.kills++;}cm.damage+=stats.commanderDamage-before;effect(q.x,q.y,"#f7a564",210);draw(1);return true;}
   return false;}
  // A hurt commander steps back behind nearby troops and heals there; with no troops around it stands and fights.
@@ -290,7 +304,7 @@ function commanderPos(){return pointAt(state.commander.progress);}
  function earlyBonus(){return canCallEarly()&&state.lastWaveSpawned?Math.max(0,Math.min(40,Math.ceil(40*(state.bonusDeadline-state.tick)/Math.max(1,state.bonusDeadline-state.lastWaveTick)))):0;}
  function earlySeconds(){return Math.max(0,Math.ceil((state.bonusDeadline-state.tick)/10));}
  function startWave(early=false,auto=false){
- const bonus=early&&!auto?earlyBonus():0;state.wave++;state.phase="active";scaleCommander();
+ const bonus=early&&!auto?earlyBonus():0;state.wave++;state.phase="active";scaleCommander();if(commanderAlive("urza")){earn(Math.min(60,4*Object.keys(state.towers).length),"commander");urzaConstruct();}
  const spacing=Math.max(2,7-Math.floor(state.wave/9));
  const next=shuffle(waveSpec(state.wave).flatMap(s=>{const [k,n]=s.split(":");return Array(Number(n)).fill(k).map(kind=>({kind,wave:state.wave}));}));
  next.forEach((v,i)=>v.due=state.tick+1+i*spacing);
@@ -303,7 +317,7 @@ function commanderPos(){return pointAt(state.commander.progress);}
  draw();emit("waveStart",{wave:state.wave,early,bonus});
  if(state.commander){const c=state.commander,max=Math.round((commanders[c.id].hp+40*(c.voltron||0))*late(.6)*(1+.1*perk("command")));c.hp=Math.min(max,c.hp+Math.max(0,max-c.maxHp));c.maxHp=max;}
  }
- function hurt(e,raw,magic,t,pierce=false,source=t?"tower":"spell"){if(e.hp<=0)return;e.exposedUntil=state.tick+30;const resistance=magic?e.resist:e.armor*(pierce===2?0:pierce?.5:1);if(resistance>=100){stats.immuneHits=(stats.immuneHits||0)+1;stats.immuneDamage=(stats.immuneDamage||0)+Math.round(raw);if(t){t.immuneHits=(t.immuneHits||0)+1;}return;}if(resistance>0){const lost=Math.round(raw*Math.min(resistance,100)/100);stats.resistedDamage=(stats.resistedDamage||0)+lost;if(t)t.resisted=(t.resisted||0)+lost;}const n=Math.min(e.hp,Math.max(1,Math.floor(raw*(100-resistance)/100*(e.curseUntil>state.tick||e.markUntil>state.tick?1.35:1))));e.hp-=n;stats.damage+=n;stats[source+"Damage"]+=n;if(t&&t===state.cmdOwner)stats.commanderArmyDamage+=n;if(t){t.damage+=n;t[source+"Damage"]=(t[source+"Damage"]||0)+n;}if(e.hp===0){stats.kills++;state.enemyKills[e.kind]=(state.enemyKills[e.kind]||0)+1;earn(e.reward,"kill");if(e.markUntil>state.tick)earn(6,"spell");emit("enemyKilled",{id:e.id,source:t?.id??null});}}
+ function hurt(e,raw,magic,t,pierce=false,source=t?"tower":"spell"){if(e.hp<=0)return;if(t&&t!==state.cmdOwner&&roster[t.kind]?.color==="R"&&commanderAlive("torbran"))raw+=Math.round(TORBRAN_BONUS*late()*(state.commander.furyUntil>state.tick?3:1));e.exposedUntil=state.tick+30;const resistance=magic?e.resist:e.armor*(pierce===2?0:pierce?.5:1);if(resistance>=100){stats.immuneHits=(stats.immuneHits||0)+1;stats.immuneDamage=(stats.immuneDamage||0)+Math.round(raw);if(t){t.immuneHits=(t.immuneHits||0)+1;}return;}if(resistance>0){const lost=Math.round(raw*Math.min(resistance,100)/100);stats.resistedDamage=(stats.resistedDamage||0)+lost;if(t)t.resisted=(t.resisted||0)+lost;}const n=Math.min(e.hp,Math.max(1,Math.floor(raw*(100-resistance)/100*(e.curseUntil>state.tick||e.markUntil>state.tick?1.35:1))));e.hp-=n;stats.damage+=n;stats[source+"Damage"]+=n;if(t&&t===state.cmdOwner)stats.commanderArmyDamage+=n;if(t){t.damage+=n;t[source+"Damage"]=(t[source+"Damage"]||0)+n;}if(e.hp===0){stats.kills++;state.enemyKills[e.kind]=(state.enemyKills[e.kind]||0)+1;earn(e.reward,"kill");if(e.markUntil>state.tick)earn(6,"spell");if(e.slime&&commanderAlive("toxrill"))makeToken("slug",24,6);emit("enemyKilled",{id:e.id,source:t?.id??null});}}
  function area(q,r){return state.enemies.filter(e=>e.hp>0&&!inTunnel(e)&&d2(enemyPos(e),q)<=r*r);}
  function troopCap(t){const d=roster[t.kind];return (d.cap+t.tier-1+Math.floor(bonus(t,"cap")))*(t.twins?2:1);}
  // Barracks are fully manned the moment they are built or upgraded between waves, so their fighters are always visible.
@@ -378,7 +392,7 @@ function makeTroop(t,opts={}){if(state.troops.length>=220)return false;const def
  if(c.type==="commander"&&state.wave===0&&state.phase==="ready"&&(c.id===null||Object.hasOwn(commanders,c.id))){const d=commanders[c.id];state.commander=d?{id:c.id,hp:Math.round(d.hp*(1+.1*perk("command"))),maxHp:Math.round(d.hp*(1+.1*perk("command"))),attack:d.damage,growth:0,progress:commanderStart,target:commanderStart,next:0,dead:false,respawnAt:0,kills:0,damage:0,deaths:0,voltron:0}:null;emit("commander",{id:c.id});ok=true;}
  if(c.type==="commanderMove"&&state.commander&&Number.isFinite(c.x)&&Number.isFinite(c.y)&&c.x>=0&&c.y>=0&&c.x<=W&&c.y<=H&&!deep(Math.round(nearestPath(c.x,c.y)))){state.commander.target=Math.round(nearestPath(c.x,c.y));state.commander.retreat=0;if(state.phase!=="active"&&!state.commander.dead)state.commander.progress=state.commander.target;ok=true;}
  if(c.type==="deck"&&state.wave===0&&state.phase==="ready"&&Array.isArray(c.deck)&&c.deck.length===30&&c.deck.every(k=>Object.hasOwn(cards,k))&&c.deck.every(k=>c.deck.filter(x=>x===k).length<=3)){resetDeck(c.deck);ok=true;}
- if(c.type==="cast"&&Number.isInteger(c.index)){const id=state.hand[c.index],spec=cards[id];if(spec&&allowedTarget(id,c)&&spend(castCost(id))){const copy=(state.echo||state.prism>0)&&COPYABLE.includes(id);state.hand.splice(c.index,1);state.storm++;stats.casts++;state.cardCasts[id]=(state.cardCasts[id]||0)+1;logPush("castLog",{card:id,wave:state.wave,tick:state.tick,cost:castCost(id),mana:state.mana,enemies:state.enemies.length,damage0:stats.damage},80);emit("spellCast",{card:id});if(copy){if(state.echo)state.echo=false;else state.prism--;}resolve(id,c);if(copy)resolve(id,c,true);state.discard.push(id);if(commanderAlive("talrand")&&isInstantOrSorcery(id))makeToken("drake",40,14,true);if(commanderAlive("lightpaws")&&ENCHANTMENTS.includes(id)&&state.commander.voltron<15){const c=state.commander;c.voltron++;c.growth+=8;const add=Math.round(40*late(.6));c.maxHp+=add;c.hp+=add;}ok=true;}}
+ if(c.type==="cast"&&Number.isInteger(c.index)){const id=state.hand[c.index],spec=cards[id];if(spec&&allowedTarget(id,c)&&spend(castCost(id))){const free=!!state.freeCast;state.freeCast=false;const copy=(state.echo||state.prism>0)&&COPYABLE.includes(id);state.hand.splice(c.index,1);state.storm++;stats.casts++;state.cardCasts[id]=(state.cardCasts[id]||0)+1;logPush("castLog",{card:id,wave:state.wave,tick:state.tick,cost:free?0:castCost(id),mana:state.mana,enemies:state.enemies.length,damage0:stats.damage},80);emit("spellCast",{card:id});if(copy){if(state.echo)state.echo=false;else state.prism--;}resolve(id,c);if(copy)resolve(id,c,true);state.discard.push(id);if(commanderAlive("talrand")&&isInstantOrSorcery(id))makeToken("drake",40,14,true);if(commanderAlive("lightpaws")&&ENCHANTMENTS.includes(id)&&state.commander.voltron<15){const c=state.commander;c.voltron++;c.growth+=8;const add=Math.round(40*late(.6));c.maxHp+=add;c.hp+=add;}ok=true;}}
  if(c.type==="discard"&&Number.isInteger(c.index)&&state.hand[c.index]){state.discard.push(state.hand.splice(c.index,1)[0]);ok=true;}
  if(state.mode==="sandbox"){
   if(c.type==="sandboxMana"&&Number.isInteger(c.amount)&&c.amount>0&&c.amount<=1000000){earn(c.amount,"sandbox");ok=true;}
@@ -436,6 +450,8 @@ function makeTroop(t,opts={}){if(state.troops.length>=220)return false;const def
   if(cm.id==="krenko"&&state.tick%80===0){const n=Math.max(1,state.troops.filter(u=>u.source==="cmd"&&u.hp>0).length);for(let i=0;i<n;i++)if(!makeToken("goblin",30,8))break;}
   if(cm.id==="meren"&&state.tick%100===0){for(let i=state.fallen.length-1;i>=0;i--){const f=state.fallen[i],t=Object.values(state.towers).find(t=>t.uid===f.sourceUid);if(f.revived||!t)continue;if(makeTroop(t,{hp:f.hp,damage:f.damage,model:f.model,revived:true}))state.fallen.splice(i,1);break;}}
   if(cm.id==="atraxa"&&state.tick%100===0){for(const t of Object.values(state.towers))if((t.prolif||0)<10){t.prolif=(t.prolif||0)+1;t.growth++;}cm.growth=Math.min(200,cm.growth+4);stats.triggers++;}
+  if(cm.id==="toxrill"&&state.tick%100===0){for(const e of state.enemies)if(e.hp>0&&!e.escaped&&!inTunnel(e))slime(e,1);}
+  if(cm.id==="urza"&&state.tick%200===0&&!state.troops.some(u=>u.source==="cmd"&&u.model==="construct"&&u.hp>0))urzaConstruct();
   if(cm.id==="urdragon"){if(state.tick>=cm.next){const targets=state.enemies.filter(e=>e.hp>0&&!e.escaped&&!inTunnel(e)&&d2(enemyPos(e),here)<=commanderReach**2).sort(firstOrder).slice(0,3);if(targets.length){const before=stats.commanderDamage;for(const x of targets){shot("splash",{x:here.x,y:here.y-30},enemyPos(x),x);hurt(x,power*(x.boss?3:1),true,null,false,"commander");if(x.hp===0)cm.kills++;}cm.damage+=stats.commanderDamage-before;cm.next=state.tick+15;}}}
   else{const near=state.enemies.filter(e=>e.hp>0&&!e.flying&&!inTunnel(e)&&Math.abs(e.progress-cm.progress)<=30).sort(firstOrder),free=near.find(e=>!blocked.has(e.id)),e=free||near[0];
   if(e){if(free&&holdable(e))blocked.add(e.id);if(state.tick>=cm.next){const before=stats.commanderDamage;shot("melee",here,enemyPos(e));hurt(e,power,false,null,false,"commander");if(e.hp===0)cm.kills++;cm.damage+=stats.commanderDamage-before;cm.next=state.tick+8;}
