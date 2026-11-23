@@ -136,7 +136,23 @@ export function createArt(ctx,{res:startRes=1}={}){
   ctx.fillStyle="#b3a88e";ctx.strokeStyle="#3b382f";ctx.lineWidth=1.5;ctx.beginPath();ctx.rect(x-8,y-34,10,26);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(x-8,y-34);ctx.lineTo(x-4,y-40);ctx.lineTo(x+2,y-36);ctx.lineTo(x+2,y-34);ctx.closePath();ctx.fill();ctx.stroke();
   ctx.strokeStyle="#5d8a4e";ctx.lineWidth=1.4;for(const dx of [-12,6,18]){ctx.beginPath();ctx.moveTo(x+dx,y+2);ctx.quadraticCurveTo(x+dx+2,y-5,x+dx+4,y-9);ctx.stroke();}ctx.restore();}
  function sizeOf(k){return ["titan","grimgut","matron","colossus","hierophant","tyrant"].includes(k)?(k==="tyrant"?78:70):commanderKeys.includes(k)?(k==="urdragon"?66:54):k==="bloom"?56:k==="wing"?50:45;}
- function unit(k,x,y,opt={}){const s=makeSprite("unit:"+k,a=>creature(a,k),68,68),size=sizeOf(k);ctx.save();softShadow(x+1,y+3,size*(opt.flying?.24:.32),size*.11,opt.flying?.3:.5);ctx.translate(x,y+(opt.flying?-14:0));const ph=opt.animate?Math.sin(opt.time*.4+(opt.id||0)):0,squash=opt.flying?0:Math.abs(ph)*.05;ctx.scale((opt.dir<0?-1:1)*(1+squash*.5),1-squash);const bob=opt.animate?ph*(opt.flying?2:1):0;ctx.drawImage(s,-size/2,-size*.75+bob,size,size);ctx.restore();const yy=y+(opt.flying?-14:0)-size*.65;const ww=size*.60;rect(ctx,x-ww/2,yy,ww,3,"#26332d",null);rect(ctx,x-ww/2,yy,ww*Math.max(0,Math.min(1,opt.hp||0)),3,opt.ally?"#94db93":"#e9a181",null);if(opt.ward) {ctx.strokeStyle="#f1d991aa";ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y-9,15,19,0,0,Math.PI*2);ctx.stroke();}}
+ // Attack poses (visual only): pose() watches each fighter's attack timer and health between frames.
+ // A rising timer means it just struck (lunge, lean and a swing arc); falling health means it was hit (recoil and a flash).
+ const poses=new Map();let poseSweep=0;
+ function pose(key,next,hp,now=performance.now()){let p=poses.get(key);if(!p){p={next,hp,atk:-1e9,hurt:-1e9};poses.set(key,p);}
+  if(next!==undefined&&p.seen&&(p.next===undefined||next>p.next))p.atk=now;if(hp<p.hp)p.hurt=now;p.next=next;p.hp=hp;p.seen=now;
+  if(now-poseSweep>4000){poseSweep=now;for(const [k,v] of poses)if(now-v.seen>3000)poses.delete(k);}
+  const a=(now-p.atk)/280,h=(now-p.hurt)/220;return {atk:a>=0&&a<1?a:0,hurt:h>=0&&h<1?h:0,engaged:now-p.atk<1400};}
+ function unit(k,x,y,opt={}){const s=makeSprite("unit:"+k,a=>creature(a,k),68,68),size=sizeOf(k);const dir=(opt.dir<0?-1:1)*(opt.ally&&opt.engaged?-1:1),atk=opt.atk||0,hurt=opt.hurt||0;
+  const lunge=atk?Math.sin(Math.PI*Math.min(1,atk*1.4))*size*.2:0,recoil=hurt?Math.sin(Math.PI*hurt)*-3.5:0,lean=atk?Math.sin(Math.PI*Math.min(1,atk*1.4))*.22:0;
+  x+=(lunge+recoil)*dir;
+  ctx.save();softShadow(x+1,y+3,size*(opt.flying?.24:.32),size*.11,opt.flying?.3:.5);ctx.translate(x,y+(opt.flying?-14:0));const ph=opt.animate?Math.sin(opt.time*.4+(opt.id||0)):0,squash=opt.flying?0:Math.abs(ph)*.05;
+  if(lean)ctx.rotate(lean*dir);ctx.scale(dir*(1+squash*.5),1-squash);const bob=opt.animate?ph*(opt.flying?2:1):0;
+  if(hurt&&hurt<.6)ctx.filter="brightness(1.9) saturate(.6)";ctx.drawImage(s,-size/2,-size*.75+bob,size,size);ctx.filter="none";ctx.restore();
+  // Swing arc: a quick bright crescent sweeping in front of the attacker.
+  if(atk>.12&&atk<.8){const k=(atk-.12)/.68,cx=x+dir*size*.26,cy=y+(opt.flying?-14:0)-size*.32,r=size*.34,a0=-1.3+k*1.6;ctx.save();ctx.globalAlpha=(1-k)*.85;ctx.strokeStyle=opt.ally?"#fff6d8":"#ffd0c0";ctx.lineWidth=2.6;ctx.lineCap="round";ctx.beginPath();
+   if(dir>0)ctx.arc(cx,cy,r,a0,a0+1.1);else ctx.arc(cx,cy,r,Math.PI-a0-1.1,Math.PI-a0);ctx.stroke();ctx.globalAlpha=(1-k)*.35;ctx.lineWidth=6;ctx.stroke();ctx.restore();}
+  const yy=y+(opt.flying?-14:0)-size*.65;const ww=size*.60;rect(ctx,x-ww/2,yy,ww,3,"#26332d",null);rect(ctx,x-ww/2,yy,ww*Math.max(0,Math.min(1,opt.hp||0)),3,opt.ally?"#94db93":"#e9a181",null);if(opt.ward) {ctx.strokeStyle="#f1d991aa";ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y-9,15,19,0,0,Math.PI*2);ctx.stroke();}}
  const projectileColors={strike:gold,arcane:ice,mirror:"#c1edff",hex:violet,splash:fire,chain:"#ffdf83",root:leaf,melee:"#f6e0bd",heal:"#b0efad"};
  // Art pass: projectiles get a shaped core with an ink edge, an additive glow and a fading trail; impacts flash.
  function glow(x,y,r,c,a=1){ctx.save();ctx.globalCompositeOperation="lighter";for(const [k,al] of [[1,.14],[.6,.24],[.32,.4]]){ctx.globalAlpha=al*a;ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r*k,0,Math.PI*2);ctx.fill();}ctx.restore();}
@@ -178,5 +194,5 @@ export function createArt(ctx,{res:startRes=1}={}){
    else if(kk==="poison"){ctx.font="800 6px system-ui";ctx.textAlign="center";ctx.fillText(String(Math.min(9,st.poison)),ix,iy+2.2);ctx.textAlign="start";}
    else if(kk==="freeze"){for(let j=0;j<3;j++){const a=j*Math.PI/3;ctx.beginPath();ctx.moveTo(ix-Math.cos(a)*2.4,iy-Math.sin(a)*2.4);ctx.lineTo(ix+Math.cos(a)*2.4,iy+Math.sin(a)*2.4);ctx.stroke();}}
    else {ctx.beginPath();ctx.arc(ix,iy,1.5,0,Math.PI*2);ctx.fill();}});}
- return {rubble,scaffold,setRes,status,tower,unit,projectile,towerKeys:Object.keys(towerSchools),enemyKeys,allyKeys};
+ return {rubble,scaffold,setRes,status,tower,unit,pose,projectile,towerKeys:Object.keys(towerSchools),enemyKeys,allyKeys};
 }
