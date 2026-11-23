@@ -423,3 +423,19 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .pad.built.can-up::after{content:"▲";position:absolute;top:-6px;right:-4px;font-size:clamp(.7rem,1.6cqw,1rem);color:#ffd36b;text-shadow:0 0 4px #000,0 0 2px #000;pointer-events:none;animation:canup 1.4s ease-in-out infinite}
 @keyframes canup{50%{transform:translateY(-3px)}}
 @media (prefers-reduced-motion:reduce){.pad.built.can-up::after{animation:none}}
+/* Daily Challenge + run card */
+.daily-btn{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%}
+.daily-btn small{font-size:.72rem;opacity:.85;font-weight:500;line-height:1.25}
+.end-daily{margin:4px 0 8px;font-size:.9rem;color:var(--ink)}
+.run-card-img{display:block;width:auto;max-width:100%;max-height:min(62dvh,560px);height:auto;margin:10px auto;border-radius:10px;box-shadow:0 6px 20px #0008;background:#0e1913}
+.card-actions-row{display:flex;gap:8px;justify-content:center}
+.card-actions-row button{flex:1;max-width:220px}
+@media (max-height:520px){
+.daily-btn small{display:none}
+.daily-btn{min-height:0;padding-top:6px;padding-bottom:6px}
+.card-body{display:flex;gap:14px;align-items:center;justify-content:center}
+.run-card-img{max-height:calc(100dvh - 110px);margin:6px 0}
+.card-side{flex:1;max-width:260px}
+.card-side .card-actions-row{flex-direction:column}
+.card-side .card-actions-row button{max-width:none}
+}
