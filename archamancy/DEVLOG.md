@@ -419,6 +419,14 @@ Logan picked "combat feedback" from the idea list. Cosmetic only; the simulation
 - terrain.mjs paints a craggy massif over the tunnel with a stone portal and torch at each end (snow-capped, autumn and winter palettes).
 - Crude seeded bot (same placement rule on every map): Hollow wave 17–18, Confluence 17, Frostfen 16, Greyhorn 15. A little harder than the others, as a later map should be.
 
+## 2026-11-23 — v0.1.0-beta.13.29 Voices and fuller music
+
+Logan picked tower voice lines and fuller music. Still no audio files: everything is made in the browser.
+- Voice barks: towers and commanders speak short made-up "mumble" lines (no real words), built from a buzzy voice through moving vowel filters. Each tower school has its own voice (white bright, blue airy, black low and raspy, red gruff and quick, green deep and slow); towers sound deeper as they rank up. Each commander has a voice of their own (Krenko squeaky, Korvold and the Ur-Dragon growling, Atraxa choral).
+- Lines: tower picked (a question), built, upgraded, and an occasional battle shout (at most every 7 seconds); commander picked, moved, and ability. One bark at a time, panned to where it happened, and the music dips under it.
+- New "Voices: on/off" toggle in the menu next to Music (saved per browser). The main sound toggle mutes voices too.
+- Fuller music: every theme gains a harmony line under the melody, plus a string counter-line or low cellos.
+
 ## 2026-11-23 — v0.1.0-beta.13.30 three new commanders, new unlock paths
 
 Owner request: more popular commanders with a pick-a-starter, unlock-more progression. Starters stay Krenko, Talrand and Omnath. Card names, mana costs and rules text checked against Scryfall (2026-11-23).

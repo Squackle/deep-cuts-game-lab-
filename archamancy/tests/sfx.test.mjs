@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {THEMES,INSTRUMENTS,chord,line,midi,pickMood,intensityFor,scheduleBar,createSfx} from '../sfx.mjs';
+import {THEMES,INSTRUMENTS,chord,line,midi,pickMood,intensityFor,scheduleBar,createSfx,bark,voiceFor,VOICES,COMMANDER_VOICES,LINES} from '../sfx.mjs';
 
 // A stand-in AudioContext that counts the nodes a bar creates.
 function fakeContext(){
@@ -45,4 +45,19 @@ test('works with no Web Audio and saves the player\'s choices',()=>{
  const s=createSfx(storage);s.play("wave",{pan:.5});s.music(true);s.mood("boss",3);
  assert.equal(s.state.mood,"boss");s.mood("nonsense");assert.equal(s.state.mood,"calm");
  s.setMusic(false);assert.equal(createSfx(storage).prefs.music,false);s.music(false);
+});
+
+test('voice barks: every school and commander has a voice, every line speaks, and voices can be muted',()=>{
+ for(const c of ["W","U","B","R","G"])assert.ok(voiceFor({color:c}).f0>0,c);
+ assert.ok(voiceFor({color:"W",tier:4}).f0<voiceFor({color:"W",tier:1}).f0,"higher tiers sound deeper");
+ assert.equal(voiceFor({commander:"krenko",tier:4}).f0,COMMANDER_VOICES.krenko.f0);
+ assert.equal(voiceFor({color:"X"}).f0,VOICES.R.f0);
+ for(const kind of Object.keys(LINES)){const ac=fakeContext();const len=bark(ac,0,voiceFor({commander:"urdragon"}),kind,{});assert.ok(len>.1&&len<1,kind);assert.ok(ac.started>=1&&ac.started<=4,kind);}
+ const store=new Map(),storage={getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,v)};
+ const s=createSfx(storage);assert.equal(s.prefs.voice,true);assert.equal(s.say({color:"G"},"build"),false);
+ s.setVoice(false);assert.equal(createSfx(storage).prefs.voice,false);assert.equal(s.attackDue(),false);
+});
+
+test('fuller music: harmony, counter-melody and low strings join every theme',()=>{
+ for(const t of Object.values(THEMES))assert.ok(t.layers.some(l=>["harmony","counter","cello"].includes(l.part)));
 });
