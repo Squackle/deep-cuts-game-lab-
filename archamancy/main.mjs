@@ -215,6 +215,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  // Portrait phones get a one-time hint to turn sideways; the battlefield is wide.
  try{if(matchMedia("(orientation:portrait) and (max-width:700px)").matches&&!storage?.getItem("archemancy.rotateHint"))$("rotateHint").hidden=false;}catch{}
  $("rotateDismiss").addEventListener("click",()=>{$("rotateHint").hidden=true;try{storage?.setItem("archemancy.rotateHint","1");}catch{}});
+ let gaitTrack=new Map(),dying=[],gaitState=null;
  function renderField(){
   const s=game.state,{width:w,height:h,path,pads}=game.map;ctx.clearRect(0,0,w,h);
   ctx.drawImage(terrain,0,0,w,h);
@@ -228,7 +229,12 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
   watchTowers(s);for(const [id,a] of padAnim)if(a.type==="sell"&&!s.towers[id]&&pads[id])actors.push({y:pads[id].y,draw:()=>drawSold(a,pads[id])});
   for(const t of Object.values(s.towers)){const p=pads[t.id];actors.push({y:p.y,draw:()=>{drawTower(t,p);const silenced=t.silencedUntil>s.tick,warn=t.silenceWarnUntil>s.tick;if(silenced||warn){ctx.strokeStyle=silenced?"#c48df0":"#c48df099";ctx.lineWidth=silenced?4:2;ctx.setLineDash(warn&&!silenced?[4,4]:[]);ctx.beginPath();ctx.ellipse(p.x,p.y,32,20,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}}});}
   for(const u of s.troops){const q=game.pointAt(u.progress),t=s.towers[u.source];if(!t&&u.source!=="cmd")continue;let x=q.x+(u.id%5-2)*5,y=q.y+((u.id%3)-1)*8;const out=t&&u.leave>s.tick?Math.min(1,(u.leave-s.tick)/4):0;if(out){const p=game.map.pads[u.source];x+=(p.x-x)*out;y+=(p.y+10-y)*out;}actors.push({y,draw:()=>art.unit(u.model||t.kind,x,y+(u.flier?-12:0),{ally:true,hp:u.hp/u.maxHp,ward:u.ward,dir:facing(u.progress),time:clock,id:u.id,animate,...art.pose("u"+u.id,u.next,u.hp)})});}
-  for(const e of s.enemies){const q=game.pointAt(e.progress),x=q.x,y=q.y,def=game.types[e.kind];actors.push({y,draw:()=>{if(!e.revealed)ctx.globalAlpha=.35;if(def.boss&&e.kind!=="titan"){ctx.strokeStyle=e.phase==="iron"?"#c9ccd1":e.phase?"#b58df0":"#e0573f";ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y+4,20,9,0,0,Math.PI*2);ctx.stroke();}art.unit(e.kind,x,y,{hp:e.hp/e.maxHp,flying:e.flying,dir:facing(e.progress),time:clock,id:e.id,animate,...art.pose("e"+e.id,e.nextAttack,e.hp)});ctx.globalAlpha=1;if(e.rootUntil>s.tick){ctx.strokeStyle="#8fc96faa";ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y+3,14,7,0,0,Math.PI*2);ctx.stroke();}{const st={burn:e.burnUntil>s.tick,poison:e.poisonUntil>s.tick?e.poisonStacks:0,freeze:e.slowUntil>s.tick,curse:e.curseUntil>s.tick||e.markUntil>s.tick};if(st.burn||st.poison||st.freeze||st.curse){if(!e.revealed)ctx.globalAlpha=.35;art.status(e.kind,x,y,st,{flying:e.flying,t:performance.now(),id:e.id});ctx.globalAlpha=1;}}}});}
+  // Enemy walk and death animations (visual only): track whether each enemy moved this tick, and keep a body for half a second after a kill.
+  const nowMs=performance.now(),liveIds=new Set();if(gaitState!==s){gaitTrack=new Map();dying=[];gaitState=s;}
+  for(const e of s.enemies){let r=gaitTrack.get(e.id);if(!r){r={p:e.progress,tick:s.tick,moving:true};gaitTrack.set(e.id,r);}else if(r.tick!==s.tick){r.moving=e.progress!==r.p;r.p=e.progress;r.tick=s.tick;}liveIds.add(e.id);const q=game.pointAt(e.progress);r.kind=e.kind;r.x=q.x;r.y=q.y;r.flying=e.flying;r.dir=facing(e.progress);r.revealed=e.revealed;}
+  for(const [id,r] of gaitTrack)if(!liveIds.has(id)){gaitTrack.delete(id);if(s.events.some(ev=>ev.type==="enemyKilled"&&ev.id===id)&&dying.length<40)dying.push({...r,id,at:nowMs});}
+  for(let i=dying.length-1;i>=0;i--){const d=dying[i],k=(nowMs-d.at)/520;if(k>=1||k<0){dying.splice(i,1);continue;}actors.push({y:d.y,draw:()=>{if(!d.revealed)ctx.globalAlpha=.35;art.unit(d.kind,d.x,d.y,{flying:d.flying,dir:d.dir,time:clock,id:d.id,die:k});ctx.globalAlpha=1;}});}
+  for(const e of s.enemies){const q=game.pointAt(e.progress),x=q.x,y=q.y,def=game.types[e.kind],gait={speed:def.speed,moving:gaitTrack.get(e.id).moving};actors.push({y,draw:()=>{if(!e.revealed)ctx.globalAlpha=.35;if(def.boss&&e.kind!=="titan"){ctx.strokeStyle=e.phase==="iron"?"#c9ccd1":e.phase?"#b58df0":"#e0573f";ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y+4,20,9,0,0,Math.PI*2);ctx.stroke();}art.unit(e.kind,x,y,{hp:e.hp/e.maxHp,flying:e.flying,dir:facing(e.progress),time:clock,id:e.id,animate,gait,...art.pose("e"+e.id,e.nextAttack,e.hp)});ctx.globalAlpha=1;if(e.rootUntil>s.tick){ctx.strokeStyle="#8fc96faa";ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y+3,14,7,0,0,Math.PI*2);ctx.stroke();}{const st={burn:e.burnUntil>s.tick,poison:e.poisonUntil>s.tick?e.poisonStacks:0,freeze:e.slowUntil>s.tick,curse:e.curseUntil>s.tick||e.markUntil>s.tick};if(st.burn||st.poison||st.freeze||st.curse){if(!e.revealed)ctx.globalAlpha=.35;art.status(e.kind,x,y,st,{flying:e.flying,t:performance.now(),id:e.id});ctx.globalAlpha=1;}}}});}
   const cm=s.commander;if(!cm||cm.dead)heroWalk.p=null;if(cm&&!cm.dead){const now=performance.now(),dt=Math.min(100,now-(heroWalk.at||now));heroWalk.at=now;if(heroWalk.id!==cm.id||heroWalk.p===null)heroWalk.p=cm.progress;else{const d=cm.progress-heroWalk.p,stepLen=dt*.18*Math.max(1,speed);heroWalk.p+=Math.abs(d)<=stepLen?d:Math.sign(d)*stepLen;}heroWalk.id=cm.id;const q=game.pointAt(heroWalk.p);actors.push({y:q.y,draw:()=>{if(moving){const t=performance.now()/1000,r=22+Math.sin(t*6)*2.5;ctx.strokeStyle="#ffe9a8";ctx.lineWidth=2.5;ctx.setLineDash([6,4]);ctx.lineDashOffset=-t*20;ctx.beginPath();ctx.ellipse(q.x,q.y+3,r,r*.45,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.lineDashOffset=0;}ctx.strokeStyle=colors[game.commanders[cm.id].color];ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(q.x,q.y+3,17,7,0,0,Math.PI*2);ctx.stroke();art.unit(cm.id,q.x,q.y,{ally:true,flying:cm.id==="urdragon",hp:cm.hp/cm.maxHp,dir:facing(cm.progress),time:clock,id:0,animate,...art.pose("c"+cm.id,cm.next,cm.hp)});}});if(cm.target!==cm.progress){const r=game.pointAt(cm.target);ctx.fillStyle=colors[game.commanders[cm.id].color];ctx.fillRect(r.x-1,r.y-14,3,14);}}
   actors.sort((a,b)=>a.y-b.y);for(const actor of actors)actor.draw();if(moveMark){const k=(performance.now()-moveMark.at)/900;if(k>=1)moveMark=null;else{const {x,y}=moveMark;ctx.globalAlpha=1-k;ctx.strokeStyle="#ffe9a8";ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(x,y,10+k*14,(10+k*14)*.45,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#ffe9a8";ctx.beginPath();ctx.moveTo(x-7,y-16+k*4);ctx.lineTo(x+7,y-16+k*4);ctx.lineTo(x,y-4+k*4);ctx.fill();ctx.globalAlpha=1;}}
   const liveTargets=new Map(s.enemies.map(e=>[e.id,e]));
@@ -356,21 +362,34 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
   $("endStats").replaceChildren(...rows.map(([k,v])=>{const d=document.createElement("div"),a=document.createElement("span"),b=document.createElement("strong");a.textContent=k;b.textContent=v;d.append(a,b);return d;}));
   {const i=levelInfo(),x=$("endXp");x.hidden=s.mode==="sandbox";if(!x.hidden){text($("endXpLine"),"+"+runXp+" XP this run · Level "+i.lv);$("endXpFill").style.width=i.pct.toFixed(1)+"%";text($("endXpNext"),i.max?"Max level: everything is open.":(i.need-i.have)+" XP to level "+(i.lv+1)+(i.names.length?": "+i.names.join(", "):""));}}
   $("endContinue").hidden=!won;text($("endCopy"),"Copy battle stats");text($("endKicker"),game.map.name+" · "+(campaign?(s.onslaught?"Onslaught ":"")+"Gauntlet":"Endless Siege")+" · "+(levelName[s.difficulty]||"Normal"));$("endScreen").hidden=false;}
- // First-run tips, Gauntlet only, until the first wave is cleared or skipped.
+ // Guided first battle (Gauntlet only, first time): seven short steps that wait for you to do each thing for real.
+ // Build, send a wave, move the commander, use the commander's power, cast a spell, upgrade, and call a wave early.
+ // A step that can't happen yet (no mana for an upgrade, power recharging) is passed over and comes back later. Skip any time;
+ // "Replay tutorial" in the menu starts it again.
  const TIPS="archemancy.tips.v1";let tipsOn=true;try{tipsOn=!storage?.getItem(TIPS);}catch{}
- function endTips(){tipsOn=false;$("tutorial").hidden=true;document.querySelectorAll(".tip-glow").forEach(e=>e.classList.remove("tip-glow"));try{storage?.setItem(TIPS,"1");}catch{}}
- $("tutorialSkip").addEventListener("click",endTips);
+ const TUT_STEPS=["build","wave","move","power","spell","upgrade","early"];let tut={done:new Set(),seq:-1,state:null};
+ function endTips(finished){const was=tipsOn;tipsOn=false;$("tutorial").hidden=true;document.querySelectorAll(".tip-glow").forEach(e=>e.classList.remove("tip-glow"));try{storage?.setItem(TIPS,"1");}catch{}if(finished&&was){notice("Tutorial complete. You know everything you need. Good luck, archmage!");sfx.play("star");}}
+ $("tutorialSkip").addEventListener("click",()=>endTips(false));
+ $("replayTutorial")?.addEventListener("click",()=>{try{storage?.removeItem(TIPS);}catch{}tipsOn=true;tut={done:new Set(),seq:-1,state:null};$("menuDialog").close?.();restart("campaign");});
+ function tutStep(s){if(tut.state!==s){tut={done:new Set(),seq:-1,state:s};}
+  for(const ev of s.events){if(ev.seq<=tut.seq)continue;if(ev.type==="build")tut.done.add("build");else if(ev.type==="upgrade")tut.done.add("upgrade");else if(ev.type==="spellCast")tut.done.add("spell");else if(ev.type==="commanderAbility")tut.done.add("power");else if(ev.type==="waveStart"){tut.done.add("wave");if(ev.early)tut.done.add("early");}}
+  tut.seq=s.sequence;if(Object.keys(s.towers).length)tut.done.add("build");if(s.wave>0)tut.done.add("wave");if(movedOnce)tut.done.add("move");
+  const c=s.commander,can={build:true,wave:s.phase==="ready",move:!!c&&!c.dead,power:!!c&&!c.dead&&s.phase==="active"&&!!ABILITIES[c.id]&&(c.abilityAt||0)<=s.tick,
+   spell:s.hand?.length>0,upgrade:Object.values(s.towers).some(t=>{const u=game.upgradeCost(t);return u!==null&&u<=s.mana;}),early:s.phase==="active"&&s.wave<25&&!$("start").hidden};
+  return TUT_STEPS.find(k=>!tut.done.has(k)&&can[k])||null;}
  function renderTutorial(){const s=game.state,box=$("tutorial");document.querySelectorAll(".tip-glow").forEach(e=>e.classList.remove("tip-glow"));if(!tipsOn||s.mode!=="campaign"||!$("titleScreen").hidden||!$("endScreen").hidden||document.querySelector("dialog[open]")){box.hidden=true;return;}
-  if(s.waveHistory.length>=1){endTips();return;}
-  const built=Object.keys(s.towers).length>0;let msg,target;
-  if(!built&&selected===null){msg="Tap a glowing stone to build your first tower.";target=buttons[4];}
-  else if(!built&&!schoolOpen){msg="Pick a school of magic. Each color plays differently.";target=$("ring");}
-  else if(!built){msg="Tap a tower to read about it, then tap it again to build.";target=$("ring");}
-  else if(s.wave===0){msg="Send the first wave with the pulsing button on the road.";target=$("start");}
-  else if(s.commander&&!s.commander.dead&&!movedOnce){msg=moving?"Now tap a spot on the road to send them there.":"Tap your commander, then tap the road to move them.";target=$("commanderOpen");}
-  else if(selectedCard===null){msg="Your cards are spells. Tap one to read it, then cast it.";target=$("hand");}
-  else{msg="Some spells target a tower, some the road, some cast at once.";target=$("cardTip").hidden?$("hand"):$("cardTip");}
-  text($("tutorialText"),msg);box.hidden=false;if(target&&target!==$("ring"))target.classList.add("tip-glow");
+  const step=tutStep(s);if(TUT_STEPS.every(k=>tut.done.has(k))){endTips(true);return;}if(s.wave>=6){endTips(false);return;}
+  if(!step){box.hidden=true;return;}
+  let msg,target;const firstTower=Object.values(s.towers)[0],upTower=Object.values(s.towers).find(t=>{const u=game.upgradeCost(t);return u!==null&&u<=s.mana;});
+  if(step==="build"){if(selected===null){msg="Tap a glowing stone to build your first tower.";target=buttons[4];}else if(!schoolOpen){msg="Pick a school of magic. Each color plays differently.";target=$("ring");}else{msg="Tap a tower to read about it, then tap it again to build.";target=$("ring");}}
+  else if(step==="wave"){msg="Send the first wave with the pulsing button on the road.";target=$("start");}
+  else if(step==="move"){msg=moving?"Now tap a spot on the road to send them there.":"Tap your commander, then tap the road to move them.";target=$("commanderOpen");}
+  else if(step==="power"){msg="Your commander has a power. Tap it to use it, then it recharges.";target=$("abilityBtn");}
+  else if(step==="spell"){msg=selectedCard===null?"Your cards are spells. Tap one to read it, then cast it.":"Follow the card: tap Cast, or tap the tower or road spot it asks for.";target=selectedCard===null||$("cardTip").hidden?$("hand"):$("cardTip");}
+  else if(step==="upgrade"){if(selected!==null&&s.towers[selected]){msg="Tap Upgrade to make this tower stronger.";target=$("upgrade");}else{msg="You have mana to spare. Tap a tower to upgrade it.";target=buttons[(upTower||firstTower).id];}}
+  else{msg="Call the next wave early with the button on the road. Early waves pay bonus mana.";target=$("start");}
+  if(!target||target.hidden){box.hidden=true;return;}
+  text($("tutorialStep"),"Tutorial "+(tut.done.size+1)+" of "+TUT_STEPS.length);text($("tutorialText"),msg);box.hidden=false;if(target!==$("ring"))target.classList.add("tip-glow");
   const r=target.getBoundingClientRect(),bw=box.offsetWidth,bh=box.offsetHeight,near=target===$("ring")?90:12;let top=r.bottom+near;if(top+bh>innerHeight-8)top=r.top-near-bh;top=Math.max(54,Math.min(innerHeight-bh-8,top));const left=Math.max(8,Math.min(innerWidth-bw-8,r.left+r.width/2-bw/2));box.style.top=top+"px";box.style.left=left+"px";}
  {const hub=hubFor(location.hostname,document.querySelector('meta[name="archemancy-hub"]')?.content);for(const a of document.querySelectorAll(".hub-link")){a.href=hub.href;a.textContent="‹ "+hub.label;}}
  renderTitle();
