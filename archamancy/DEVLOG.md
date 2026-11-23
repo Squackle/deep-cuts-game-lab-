@@ -392,3 +392,11 @@ From Logan's Hard + Onslaught Confluence run (three Thornhearts did ~790k of 1.7
 - Tier 4 troop towers: troops get ×1.6 health and damage (`TROOP_T4`). Grand Battalion T4 sandbox 83k → 130k.
 - Oona (wave 10 boss) is revealed for 3 s each time she births Stalkers (`BROOD_REVEAL`). The boss bar shows "ⓘ Hidden" while she is shrouded, and a held notice explains how to reveal her when she arrives.
 - Benchmark fortress health 11 → 13. Seeded map bot wins all 9 runs.
+
+## 2026-11-23 — v0.1.0-beta.13.25 Pyre trimmed, troops scale better late
+
+From Logan's 13.24 Hard + Onslaught Confluence run (two Inferno Cannons ~31% of all damage; Grand Battalion T4 0.8%):
+- Tower burns deal 9 × late scaling per half second (was 12); spell burns (Flame) unchanged. Inferno Cannon extra burn 25 → 15 ticks. Pyre splash hits the main target in full and others for 75%.
+- Troop damage scales with late(.75) instead of late(.6), so troops keep up with late enemy health (+67% at wave 25). Troop health unchanged.
+- Sandbox wave 20: Inferno T3 243k → 191k; Grand Battalion T4 130k → 189k; Necropolis T3 53k → 79k; Goblin T3 65k → 101k.
+- Benchmark fortress health 13 → 10. Seeded map bot still wins all 9 runs.
