@@ -4,7 +4,7 @@ import {paintTerrain as paintMapArt} from './terrain.mjs';
 import * as progress from './progress.mjs';
 import {createCardArt} from './cardart.mjs';
 import {createFx} from './fx.mjs';
-import {createSfx} from './sfx.mjs';
+import {createSfx,pickMood,intensityFor} from './sfx.mjs';
 import {hubFor} from './hub.mjs';
 import {advance,clockRunning} from './clock.mjs';
 import {animationLoop} from './loop.mjs';
@@ -245,7 +245,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
   const lift=-26-c.tier*4,side=(Math.random()-.5)*30;
   const a=g.animate([{transform:"translate(-50%,-50%) translate(0,0) scale(.3) rotate(45deg)",opacity:0},{offset:.22,transform:"translate(-50%,-50%) translate("+side+"px,"+lift+"px) scale(1.15) rotate(45deg)",opacity:1},{offset:.38,transform:"translate(-50%,-50%) translate("+side*1.2+"px,"+(lift-6)+"px) scale(1) rotate(45deg)",opacity:1},{transform:"translate(-50%,-50%) translate("+dx+"px,"+dy+"px) scale(.45) rotate(45deg)",opacity:.9}],{duration:900+Math.min(400,Math.hypot(dx,dy)*.25),easing:"cubic-bezier(.45,0,.4,1)"});
   a.onfinish=a.oncancel=()=>{g.remove();gemsInFlight--;manaBump(c.tier);};}
- function handleCues(cues){for(const c of cues){if(c.type==="sound")sfx.play(c.name);else if(c.type==="harvest")flyGem(c);else if(c.type==="gameOver"){clearRun();}if(c.type==="gameOver")setTimeout(()=>showEnd(c.won,c.stars),c.won?900:600);else if(c.type==="banner")banner(c.title,c.sub,c.tone);else if(c.type==="toast")notice(c.text);else if(c.type==="leak"){const el=$("health").parentElement;el.classList.remove("hit");void el.offsetWidth;el.classList.add("hit");}}}
+ function handleCues(cues){for(const c of cues){if(c.type==="sound")sfx.play(c.name,c.x!=null?{pan:(c.x/game.map.width*2-1)*.7}:undefined);else if(c.type==="harvest")flyGem(c);else if(c.type==="gameOver"){clearRun();}if(c.type==="gameOver")setTimeout(()=>showEnd(c.won,c.stars),c.won?900:600);else if(c.type==="banner")banner(c.title,c.sub,c.tone);else if(c.type==="toast")notice(c.text);else if(c.type==="leak"){const el=$("health").parentElement;el.classList.remove("hit");void el.offsetWidth;el.classList.add("hit");}}}
  // Copied battle stats: the engine report plus the device, game speed and pause time, and any errors this session.
  const noteError=m=>{if(session.errors.length<12)session.errors.push(String(m).slice(0,240));};
  addEventListener("error",e=>noteError((e.message||"error")+" @"+(e.filename||"").split("/").pop()+":"+(e.lineno||0)));
@@ -259,8 +259,10 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
   if(speed&&clockRunning(game)&&!document.querySelector("dialog[open]")){accumulator=advance(game,accumulator+elapsed*speed);if(!clockRunning(game)){notice(game.state.phase==="won"?"Victory! All 25 Gauntlet waves completed. Continue into endless survival.":game.state.phase==="lost"?"Defeat. Open the menu to restart.":"Wave complete. Prepare your next defense.",game.state.phase!=="ready");}}
   else accumulator=0;
   handleCues(fx.update(game,now));const sh=fx.offset(now);$("map").style.transform=sh.x||sh.y?"translate("+sh.x.toFixed(1)+"px,"+sh.y.toFixed(1)+"px)":"";
-  checkUnlocks();renderField();renderHud();renderTutorial();if(now-lastSave>4000&&$("titleScreen").hidden)saveRun();
+  checkUnlocks();renderField();renderHud();renderTutorial();musicMood();if(now-lastSave>4000&&$("titleScreen").hidden)saveRun();
  }
+ // Music follows the game: menu, building, battle (louder from waves 10 and 20), boss, then quiet for the fanfare.
+ function musicMood(){const s=game.state;sfx.mood(pickMood({title:!$("titleScreen").hidden,phase:s.phase,boss:s.enemies.some(e=>e.hp>0&&game.types[e.kind].boss&&e.kind!=="titan")}),intensityFor(s.wave));}
  document.addEventListener("visibilitychange",()=>{last=null;accumulator=0;if(document.hidden)saveRun();});
  // Continue: the current run is saved in this browser every few seconds, when the tab is hidden or closed, and when leaving to the menu.
  const RUN_KEY="archemancy.run.v1";let lastSave=0;
@@ -370,7 +372,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
   const r=target.getBoundingClientRect(),bw=box.offsetWidth,bh=box.offsetHeight,near=target===$("ring")?90:12;let top=r.bottom+near;if(top+bh>innerHeight-8)top=r.top-near-bh;top=Math.max(54,Math.min(innerHeight-bh-8,top));const left=Math.max(8,Math.min(innerWidth-bw-8,r.left+r.width/2-bw/2));box.style.top=top+"px";box.style.left=left+"px";}
  {const hub=hubFor(location.hostname,document.querySelector('meta[name="archemancy-hub"]')?.content);for(const a of document.querySelectorAll(".hub-link")){a.href=hub.href;a.textContent="‹ "+hub.label;}}
  renderTitle();
- document.addEventListener("pointerdown",()=>sfx.unlock(),{once:true});
+ document.addEventListener("pointerdown",()=>{sfx.unlock();sfx.music(true);},{once:true});
  renderHud();
  // Errors in a frame go into the copied battle stats; the game keeps running.
  animationLoop(frame,{onError:e=>{noteError("frame: "+(e?.message||e));console.error(e);}})();
