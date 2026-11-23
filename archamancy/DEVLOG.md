@@ -435,3 +435,12 @@ Owner request: more popular commanders with a pick-a-starter, unlock-more progre
 - **Urza, Lord High Artificer** (mono-blue, Artifacts). Brings a Construct token that grows with every tower you control and comes back 20 s after it falls; each wave your towers tap for 4 mana each (up to 60). Tap: draw a card and the next spell costs no mana. Unlock: reach player level 3.
 - New unlock rule kinds in progress.mjs: `level`, `win`, `hard`. recordRun now takes `difficulty`.
 - Seeded benchmark build with each commander, seeds 1–4, fortress health after wave 30: Toxrill 15, Torbran 15, Urza 13 (field: Krenko 10, Talrand 17, Atraxa 20, Ur-Dragon 17). None dominates.
+
+## 2026-11-23 — v0.1.0-beta.13.NEXT commanders batch 2: Heliod, Wilhelt, Kaalia
+
+Card names, mana costs and rules text checked against Scryfall (2026-11-23).
+- **Heliod, Sun-Crowned** (mono-white, Lifegain). Every 10 s troops heal 25%; when anyone healed, the three strongest troops get a +1/+1 counter (up to 5 each) and Heliod gains +3 attack. Indestructible: respawns in half the time. Tap: Sun's Blessing, a counter on Heliod and every troop plus 10 s of lifelink. Unlock: 6 Gauntlet stars in total.
+- **Wilhelt, the Rotcleaver** (blue-black, Zombies). Each tower troop that dies makes a 2/2 decayed Zombie that crumbles after 10 s (up to 10); every 10 s he sacrifices a Zombie to draw a card. Tap: Rotcleave, three Zombies. Unlock: win a Gauntlet on two different battlefields.
+- **Kaalia of the Vast** (red-white-black). Every 12 s while she fights, puts an Angel, Demon or Dragon onto the field (one of each at most). Tap: Call of the Vast, all three at once. Unlock: reach player level 6.
+- New unlock rule kinds: `stars`, `maps`. Troop tokens can carry `expires` (decayed) and `counters`.
+- Seeded benchmark, fortress health after wave 30 (avg of seeds 1–4): Heliod 12, Wilhelt 11, Kaalia 15 (field 10–20).
