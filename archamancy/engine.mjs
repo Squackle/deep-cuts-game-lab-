@@ -263,9 +263,9 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  effect(q.x,q.y,({W:"#f5df9e",U:"#76bdf1",B:"#ba8ad8",R:"#f7a564",G:"#8ed28e"})[d.color],k==="splash"?60:18);
  }
  function expectHit(e,raw,magic,pierce){const r=magic?e.resist:e.armor*(pierce===2?0:pierce?.5:1);return r>=100?0:Math.floor(raw*(100-r)/100*(e.curseUntil>state.tick||e.markUntil>state.tick?1.35:1));}
- function holdable(e){if(!e.boss&&e.baseArmor<100)return true;if(e.pushUntil>state.tick)return false;
+ function holdable(e){if((!e.boss&&e.baseArmor<100)||e.kind==="titan")return true;if(e.pushUntil>state.tick)return false;
   if(e.heldAt!==state.tick){e.held=e.heldAt===state.tick-1?(e.held||0)+1:1;e.heldAt=state.tick;
-   const limit=e.boss?BOSS_HOLD_TICKS:60;
+   const limit=e.baseArmor>=100?60:BOSS_HOLD_TICKS;
    if(e.boss&&e.held===limit-BOSS_WARN_TICKS){const q=enemyPos(e);effect(q.x,q.y,"#f7ac63",54);emit("bossAbility",{boss:e.kind,ability:"breakthroughWarning"});}
    if(e.held>=limit){e.held=0;e.pushUntil=state.tick+(e.boss?BOSS_PUSH_TICKS:30);
     if(e.boss){const q=enemyPos(e);effect(q.x,q.y,"#f46f41",72);emit("bossAbility",{boss:e.kind,ability:"breakthrough"});}return false;}}
