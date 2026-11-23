@@ -66,7 +66,7 @@ test("major boss early calls reveal name and exact count of unfinished waves",()
  const g=createEngine(1,"campaign","confluence");
  g.state.wave=4;g.state.phase="active";g.state.pendingWaves=[3,4];
  const first=bossOverlapWarning(g,g.state,5);
- assert.match(first,/Grimgut/);
+ assert.match(first,/Lovisa Coldeyes/);
  assert.match(first,/wave 5/);
  assert.match(first,/2 unfinished waves/);
  assert.match(first,/Calling early overlaps/);
