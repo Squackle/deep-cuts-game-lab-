@@ -404,3 +404,12 @@ From Logan's 13.24 Hard + Onslaught Confluence run (two Inferno Cannons ~31% of 
 ## 2026-11-23 — v0.1.0-beta.13.26 Grand Battalion buff
 
 Logan's 13.25 run was a flawless 3-star Hard Onslaught win, but Legion Hall Grand Battalion (branch B) did 1.5k damage for 2,242 mana while Royal Paladins did 22k. Grand Battalion now also gives +30% troop damage and +25% troop health (×1.6 at tier 4) on top of extra soldiers and faster reinforcement. Sandbox wave 20: T4 189k → 269k. Elder Wildwood left as is (~17% of damage per tower, under the 30% guideline).
+
+## 2026-11-23 — v0.1.0-beta.13.28 three new commanders, new unlock paths
+
+Owner request: more popular commanders with a pick-a-starter, unlock-more progression. Starters stay Krenko, Talrand and Omnath. Card names, mana costs and rules text checked against Scryfall (2026-11-23).
+- **Toxrill, the Corrosive** (mono-black, Slime counters). Every 10 s every enemy gets a slime counter (up to 5): each one takes 10% off its attack and 3% of its full health. Slimed enemies that die leave a Slug token (up to 8). Tap: Slime Tide, two counters on every enemy near him. Unlock: win a Gauntlet on Hard (earlier Hard wins count).
+- **Torbran, Thane of Red Fell** (mono-red, Red damage). Red towers and red troops deal +4 per hit, scaled by late waves. Tap: Red Fell Fury, hits nearby enemies for twice his attack and triples the red bonus for 10 s. Unlock: win any 25-wave Gauntlet.
+- **Urza, Lord High Artificer** (mono-blue, Artifacts). Brings a Construct token that grows with every tower you control and comes back 20 s after it falls; each wave your towers tap for 4 mana each (up to 60). Tap: draw a card and the next spell costs no mana. Unlock: reach player level 3.
+- New unlock rule kinds in progress.mjs: `level`, `win`, `hard`. recordRun now takes `difficulty`.
+- Seeded benchmark build with each commander, seeds 1–4, fortress health after wave 30: Toxrill 15, Torbran 15, Urza 13 (field: Krenko 10, Talrand 17, Atraxa 20, Ur-Dragon 17). None dominates.

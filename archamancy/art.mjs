@@ -3,8 +3,8 @@ export function createArt(ctx,{res:startRes=1}={}){
  const ink="#172722",metal="#7d8e85",stone="#aab0a0",gold="#ead49a",ice="#8ee5fb",violet="#ca9be9",fire="#ffb267",leaf="#a0d481";
  const school={W:gold,U:ice,B:violet,R:fire,G:leaf};
  const towerSchools={legion:"W",chapel:"W",judgment:"W",arcanum:"U",library:"U",mirror:"U",necropolis:"B",foundry:"B",hex:"B",pyre:"R",goblin:"R",storm:"R",grove:"G",beast:"G",thorn:"G"};
- const enemyKeys=["raider","runner","armored","wing","mage","regen","titan","stalker","warden","golem","grimgut","matron","colossus","hierophant","tyrant"],allyKeys=["legion","necropolis","goblin","beast","construct","bloom","drake","vampire","krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon"];
- const commanderKeys=["krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon"];
+ const enemyKeys=["raider","runner","armored","wing","mage","regen","titan","stalker","warden","golem","grimgut","matron","colossus","hierophant","tyrant"],allyKeys=["legion","necropolis","goblin","beast","construct","bloom","drake","vampire","slug","toxrill","torbran","urza","krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon"];
+ const commanderKeys=["krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon","toxrill","torbran","urza"];
  function crown(a,y,c){poly(a,[[-7,y],[-7,y-7],[-3,y-3],[0,y-9],[3,y-3],[7,y-7],[7,y]],c);}
  function poly(a,points,fill,stroke=ink){a.beginPath();points.forEach(([x,y],i)=>i?a.lineTo(x,y):a.moveTo(x,y));a.closePath();a.fillStyle=fill;a.fill();if(stroke){a.strokeStyle=stroke;a.lineWidth=1.8;a.stroke();}}
  function oval(a,x,y,rx,ry,fill,stroke=null){a.beginPath();a.ellipse(x,y,rx,ry,0,0,Math.PI*2);a.fillStyle=fill;a.fill();if(stroke){a.strokeStyle=stroke;a.lineWidth=1.6;a.stroke();}}
@@ -86,6 +86,10 @@ export function createArt(ctx,{res:startRes=1}={}){
    case "teysa":poly(a,[[-13,4],[-8,-22],[8,-22],[13,4]],"#e8e2d3");oval(a,0,-25,7,8,"#d9b9a1",ink);poly(a,[[-8,-29],[0,-35],[8,-29]],"#2a2530");line(a,[[13,-36],[13,4]],"#3b3442",3);crystal(a,13,-38,6,violet);break;
    case "korvold":beast(a,"#6b3a2c","#c86b4b");poly(a,[[-10,-20],[-24,-36],[-6,-26]],"#4c2a22");crown(a,-33,gold);break;
    case "atraxa":humanoid(a,"#e8e6dc","#f1e4d0",{});poly(a,[[-4,-18],[-30,-34],[-24,-8]],"#f4f1e6");poly(a,[[4,-18],[30,-34],[24,-8]],"#f4f1e6");for(const [x,c] of [[-9,gold],[-3,ice],[3,violet],[9,leaf]])oval(a,x,-36,2.6,2.6,c);break;
+   case "slug":oval(a,0,-6,13,7,"#4a3a55",ink);oval(a,6,-12,6,6,"#5d4a6b",ink);line(a,[[8,-17],[10,-24]],"#5d4a6b",2);line(a,[[4,-17],[3,-24]],"#5d4a6b",2);oval(a,-4,-8,2.5,1.5,"#9fe07a");break;
+   case "toxrill":oval(a,0,-12,18,13,"#3b2d47",ink);oval(a,10,-24,9,9,"#4e3c5e",ink);for(const [x,y] of [[-10,-14],[-2,-8],[6,-16],[-6,-20]])oval(a,x,y,2.6,2,"#9fe07a");line(a,[[14,-31],[18,-42]],"#4e3c5e",3);line(a,[[8,-32],[6,-42]],"#4e3c5e",3);oval(a,13,-25,2,2,"#d6ff9a");break;
+   case "torbran":humanoid(a,"#9c3a2a","#d7a07d",{bulk:true,helmet:true,shield:"#c0582f"});line(a,[[-6,-12],[6,-12]],"#e8d0a8",4);line(a,[[12,-8],[22,-34]],"#7d8e85",4);poly(a,[[18,-34],[28,-38],[24,-28]],fire);break;
+   case "urza":poly(a,[[-13,4],[-8,-22],[8,-22],[13,4]],"#3a5d86");oval(a,0,-25,7,8,"#d9c3a6",ink);line(a,[[-6,-30],[6,-30]],"#c9c3b6",2);rect(a,-16,-14,7,7,"#9aa6ad");crystal(a,-12,-20,5,ice);line(a,[[13,-36],[13,4]],"#9aa6ad",3);crystal(a,13,-38,6,ice);break;
    case "urdragon":for(const [x,c] of [[-26,gold],[-14,ice],[14,fire],[26,leaf]])poly(a,[[0,-18],[x,-34],[x*.8,-10]],c);oval(a,0,-14,9,14,"#5a3f63",ink);poly(a,[[-5,-26],[0,-40],[5,-26]],"#7a4c6e");oval(a,-3,-24,2,2,fire);oval(a,3,-24,2,2,fire);break;
    case "stalker":humanoid(a,"#2d2a3a","#6e6880",{});poly(a,[[-9,-24],[0,-38],[9,-24],[7,-16],[-7,-16]],"#1d1b26");oval(a,-3,-25,1.8,1.8,"#b9f0ff");oval(a,3,-25,1.8,1.8,"#b9f0ff");break;
    case "warden":humanoid(a,"#6a7aa6","#c3b3a4",{helmet:true,shield:"#9fb7e8"});oval(a,-9,-12,7,7,"#ffffff22","#bfe8ff");break;

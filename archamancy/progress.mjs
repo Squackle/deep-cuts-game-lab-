@@ -11,6 +11,9 @@ export const UNLOCKS = [
  { id: "teysa", stat: "fallen", min: 200, text: "Lose 200 troops in one battle" },
  { id: "korvold", stat: "sacrifices", min: 50, text: "Sacrifice 50 troops in one battle" },
  { id: "atraxa", endless: 30, text: "Reach wave 30 in Endless" },
+ { id: "urza", level: 3, text: "Reach player level 3" },
+ { id: "torbran", win: true, text: "Win any 25-wave Gauntlet" },
+ { id: "toxrill", hard: true, text: "Win a 25-wave Gauntlet on Hard" },
  { id: "urdragon", rainbow: true, text: "Win the 25-wave Gauntlet with a tower of every color" }
 ];
 const KEY = "archemancy.progress.v1";
@@ -59,12 +62,15 @@ function met(rule, p, run) {
  if (rule.wave) return p.bestWave >= rule.wave;
  if (rule.stat) return (run[rule.stat] || 0) >= rule.min;
  if (rule.endless) return run.mode === "endless" && run.wave >= rule.endless;
+ if (rule.level) return level(p) >= rule.level;
+ if (rule.win) return totalStars(p) > 0 || (!!run.won && run.mode === "campaign");
+ if (rule.hard) return Object.keys(p.stars).some(k => k.endsWith("hard")) || (!!run.won && run.mode === "campaign" && run.difficulty === "hard");
  if (rule.rainbow) return !!run.won && new Set(run.colors || []).size >= 5;
  return false;
 }
 
 // Call after each completed wave with a snapshot of the run.
-// run = {wave, mode, fallen, returns, sacrifices, won, colors}. Returns newly unlocked commander ids.
+// run = {wave, mode, difficulty, fallen, returns, sacrifices, won, colors}. Returns newly unlocked commander ids.
 export function recordRun(p, run) {
  if (!run || run.mode === "sandbox" || !p.starter || !Number.isInteger(run.wave)) return [];
  p.bestWave = Math.max(p.bestWave, run.wave);
