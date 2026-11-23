@@ -154,19 +154,14 @@ export function createArt(ctx,{res:startRes=1,portrait=null}={}){
   if(next!==undefined&&p.seen&&(p.next===undefined||next>p.next))p.atk=now;if(hp<p.hp)p.hurt=now;p.next=next;p.hp=hp;p.seen=now;
   if(now-poseSweep>4000){poseSweep=now;for(const [k,v] of poses)if(now-v.seen>3000)poses.delete(k);}
   const a=(now-p.atk)/280,h=(now-p.hurt)/220;return {atk:a>=0&&a<1?a:0,hurt:h>=0&&h<1?h:0,engaged:now-p.atk<1400};}
- // Enemies wear their real Magic card: a round art-crop medallion on a stone stand, rimmed in the card's color.
+ // Enemies wear their real Magic card: the card's art crop shown bare (no medallion, rim or stand), with the
+ // sprite pass adding the usual ink outline so it reads on the map. Bosses keep a small crown on top.
  // portrait(k) returns a loaded art-crop image (or null while loading/offline, which keeps the drawn creature).
- const tokenRim={raider:fire,runner:fire,armored:gold,wing:violet,mage:ice,regen:leaf,titan:leaf,stalker:ice,warden:ice,golem:metal,grimgut:fire,matron:violet,colossus:metal,hierophant:gold,tyrant:"#b9b2c9"};
- const tokenBoss=["grimgut","matron","colossus","hierophant","tyrant"],tokenWings=["wing","matron"];
- function token(a,k,img){const boss=tokenBoss.includes(k),r=boss?19:22,cy=boss?-22:-24,rim=tokenRim[k]||stone;
-  poly(a,[[-13,4],[-9,-6],[9,-6],[13,4]],"#4d5a50");
-  if(tokenWings.includes(k))for(const sd of [-1,1])poly(a,[[sd*(r-6),cy-4],[sd*(r+11),cy-18],[sd*(r+8),cy-4],[sd*(r+12),cy+2],[sd*(r-4),cy+6]],"#6d5873");
-  oval(a,0,cy,r+3,r+3,boss?gold:rim,ink);
-  a.save();a.beginPath();a.arc(0,cy,r-1,0,Math.PI*2);a.clip();
-  const iw=img.naturalWidth||img.width||1,ih=img.naturalHeight||img.height||1,side=Math.min(iw,ih)*.82,sx=(iw-side)/2,sy=Math.max(0,(ih-side)*.35);
-  a.drawImage(img,sx,sy,side,side,-(r-1),cy-(r-1),(r-1)*2,(r-1)*2);a.restore();
-  a.beginPath();a.arc(0,cy,r-1,0,Math.PI*2);a.strokeStyle=ink;a.lineWidth=1.6;a.stroke();
-  if(boss){crown(a,cy-r-1,gold);oval(a,0,cy,r+3,r+3,"#00000000",rim);}}
+ const tokenBoss=["grimgut","matron","colossus","hierophant","tyrant"];
+ function token(a,k,img){const boss=tokenBoss.includes(k),w=boss?54:52,h=Math.round(w*.76),cy=-h/2-2,x0=-w/2,y0=cy-h/2;
+  const iw=img.naturalWidth||img.width||1,ih=img.naturalHeight||img.height||1,sw=Math.min(iw,ih*w/h),sh=sw*h/w,sx=(iw-sw)/2,sy=Math.max(0,(ih-sh)*.35);
+  a.save();a.beginPath();a.roundRect?a.roundRect(x0,y0,w,h,4):a.rect(x0,y0,w,h);a.clip();a.drawImage(img,sx,sy,sw,sh,x0,y0,w,h);a.restore();
+  if(boss)crown(a,y0+1,gold);}
  function unit(k,x,y,opt={}){const img=!opt.ally&&portrait&&enemyKeys.includes(k)?portrait(k):null,s=img?makeSprite("token:"+k,a=>token(a,k,img),68,68):makeSprite("unit:"+k,a=>creature(a,k),68,68),size=sizeOf(k);const dir=(opt.dir<0?-1:1)*(opt.ally&&opt.engaged?-1:1),flip=img?1:dir,atk=opt.atk||0,hurt=opt.hurt||0;
   const lunge=atk?Math.sin(Math.PI*Math.min(1,atk*1.4))*size*.2:0,recoil=hurt?Math.sin(Math.PI*hurt)*-3.5:0,lean=atk?Math.sin(Math.PI*Math.min(1,atk*1.4))*.22:0;
   x+=(lunge+recoil)*dir;
