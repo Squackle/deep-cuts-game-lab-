@@ -1,6 +1,4 @@
 import {createEngine,VERSION,MAPS,PERKS,PERK_COSTS,TARGET_MODES,AIMED,ABILITIES,IMMUNE_BOSS_HOLD_TICKS,IMMUNE_BOSS_WARN_TICKS,BOSS_BLAST} from './engine.mjs';
-// Isu's frost: an icy shell over a frozen troop or commander.
-function drawFrost(x,y){ctx.save();ctx.fillStyle="#cfeeff55";ctx.strokeStyle="#e8f8ff";ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y-12,13,17,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();}
 import {createArt} from './art.mjs';
 import {paintTerrain as paintMapArt} from './terrain.mjs';
 import * as progress from './progress.mjs';
@@ -17,6 +15,8 @@ import {BY_ID,LAND_MAX} from './pool.mjs';
 import {cardData,drawRunCard,shareText,CARD_W,CARD_H} from './runcard.mjs';
 function boot(createEngine){
  const $=id=>document.getElementById(id), canvas=$("field"), ctx=canvas.getContext("2d"),art=createArt(ctx,{portrait:k=>enemyPortrait(k)}),fx=createFx(ctx);let bannerTimer=0;
+ // Isu's frost: an icy shell over a frozen troop or commander.
+ function drawFrost(x,y){ctx.save();ctx.fillStyle="#cfeeff55";ctx.strokeStyle="#e8f8ff";ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(x,y-12,13,17,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();}
  // Troop towers show the real Magic token their troops stand in for (art looked up on Scryfall by token type and color).
  const TROOP_TOKENS={legion:"Soldier",necropolis:"Zombie",goblin:"Goblin",beast:"Beast"};
  const colors={W:"#e5d4a2",U:"#77b9e6",B:"#ac8ac3",R:"#ed8b65",G:"#9bc889",C:"#c5c9cc"};
@@ -55,7 +55,7 @@ function boot(createEngine){
   text($("commanderStatus"),starter?"Pick a starter. It leads every run from now on, and you unlock more legends by playing Gauntlet or Endless.":pick?"Choose a commander before wave 1. Commanders fight on the road, block one ground enemy and return 20 seconds after falling. Passives work only while your commander is alive. Best wave: "+profile.bestWave+".":c?game.commanders[c.id].name+" · "+(c.dead?"Fallen, returns in "+Math.max(0,Math.ceil((c.respawnAt-s.tick)/10))+"s":"Health "+c.hp+"/"+c.maxHp)+" · Attack "+(c.attack+c.growth)+" · Kills "+c.kills+". "+game.commanders[c.id].desc:"No commander this run. Commanders are chosen before wave 1.");
   if(!pick)return;const ids=starter?progress.STARTERS:allCommanders;for(const id of [...ids,...(starter?[]:[null])]){const d=id?game.commanders[id]:{name:"No commander",archetype:"",desc:"Fight without a hero.",color:"C",hp:0,damage:0},locked=!!id&&!starter&&!open.includes(id),b=document.createElement("button"),name=document.createElement("strong"),desc=document.createElement("span"),tag=document.createElement("small");b.type="button";b.style.borderColor=colors[d.color];b.disabled=locked;b.setAttribute("aria-pressed",String(!starter&&(c?.id??null)===id));name.textContent=(locked?"🔒 ":"")+d.name;desc.textContent=d.desc;tag.textContent=locked?progress.requirement(profile,id):id?d.colors+" · "+d.archetype+" · "+d.hp+" health · "+(id==="urdragon"?"flying":d.damage+" attack"):"";if(id){const a=paintArt(b,d.name);if(a){const credit=document.createElement("small");credit.className="credit";credit.textContent="Art: "+a.artist;b.append(name,desc,tag,credit);}else b.append(name,desc,tag);}else b.append(name,desc,tag);
    b.addEventListener("click",()=>{if(starter){if(!progress.chooseStarter(profile,id))return;progress.save(storage,profile);if(s.wave===0&&s.phase==="ready")game.command({type:"commander",id});closeDialogs();notice(d.name+" is your first commander. Play to unlock more legends.");renderHud();return;}if(game.command({type:"commander",id})){if(s.mode!=="sandbox"){profile.last=id;progress.save(storage,profile);}notice(id?d.name+" leads your defense.":"No commander selected.");renderCommanders();renderHud();}});pane.append(b);}}
- function checkUnlocks(){const s=game.state;if(s.waveHistory.length===seenWaves)return;const cleared=s.waveHistory.slice(seenWaves).map(w=>w.wave);seenWaves=s.waveHistory.length;if(s.mode!=="sandbox"&&s.mana>=500&&Object.values(s.towers).some(t=>{const c=game.upgradeCost(t);return c!==null&&c<=s.mana;}))notice("Spare mana: towers with a gold ▲ can be upgraded. Tap one.");const xp0=profile.xp,ups=progress.gainXp(profile,cleared,s.mode),gained=profile.xp-xp0;if(gained>0){runXp+=gained;xpPop(gained);}if(!s.daily)for(const u of ups)for(const k of u.towers||[])game.command({type:"unlock",kind:k});if(ups.length){const top=ups.at(-1),opened=ups.flatMap(u=>[...(u.towers||[]).map(k=>game.roster[k].name),...(u.maps||[]).map(m=>MAPS[m].name),...(u.modes||[]).map(m=>({endless:"Endless Siege",onslaught:"Onslaught"})[m])]);setTimeout(()=>{banner("Level "+top.level+"!",opened.length?"Unlocked: "+opened.join(", "):"","win");notice("Level "+top.level+"! "+(opened.length?"Unlocked: "+opened.join(", ")+".":""),true);$("hudLevel").classList.add("leveled");setTimeout(()=>$("hudLevel").classList.remove("leveled"),2600);},900);sfx.play("star");}const fresh=progress.recordRun(profile,{wave:s.waveHistory.at(-1).wave,mode:s.mode,difficulty:s.difficulty,fallen:s.stats.fallen,returns:s.stats.returns,sacrifices:s.stats.sacrifices,won:s.phase==="won",colors:Object.values(s.towers).map(t=>game.roster[t.kind].color)});progress.save(storage,profile);if(fresh.length)notice("New commander unlocked: "+fresh.map(id=>game.commanders[id].name).join(", ")+". Choose them before wave 1 of your next run.");}
+ function checkUnlocks(){const s=game.state;if(s.waveHistory.length===seenWaves)return;const lastWave=s.waveHistory.at(-1);if(!lastWave){seenWaves=0;return;}const cleared=s.waveHistory.slice(seenWaves).map(w=>w.wave);seenWaves=s.waveHistory.length;if(s.mode!=="sandbox"&&s.mana>=500&&Object.values(s.towers).some(t=>{const c=game.upgradeCost(t);return c!==null&&c<=s.mana;}))notice("Spare mana: towers with a gold ▲ can be upgraded. Tap one.");const xp0=profile.xp,ups=progress.gainXp(profile,cleared,s.mode),gained=profile.xp-xp0;if(gained>0){runXp+=gained;xpPop(gained);}if(!s.daily)for(const u of ups)for(const k of u.towers||[])game.command({type:"unlock",kind:k});if(ups.length){const top=ups.at(-1),opened=ups.flatMap(u=>[...(u.towers||[]).map(k=>game.roster[k].name),...(u.maps||[]).map(m=>MAPS[m].name),...(u.modes||[]).map(m=>({endless:"Endless Siege",onslaught:"Onslaught"})[m])]);setTimeout(()=>{banner("Level "+top.level+"!",opened.length?"Unlocked: "+opened.join(", "):"","win");notice("Level "+top.level+"! "+(opened.length?"Unlocked: "+opened.join(", ")+".":""),true);$("hudLevel").classList.add("leveled");setTimeout(()=>$("hudLevel").classList.remove("leveled"),2600);},900);sfx.play("star");}const fresh=progress.recordRun(profile,{wave:lastWave.wave,mode:s.mode,difficulty:s.difficulty,fallen:s.stats.fallen,returns:s.stats.returns,sacrifices:s.stats.sacrifices,won:s.phase==="won",colors:Object.values(s.towers).map(t=>game.roster[t.kind].color)});progress.save(storage,profile);if(fresh.length)notice("New commander unlocked: "+fresh.map(id=>game.commanders[id].name).join(", ")+". Choose them before wave 1 of your next run.");}
  $("commanderOpen").addEventListener("click",()=>{const c=game.state.commander;if(!c||c.dead||moving){moving=false;renderCommanders();showDialog("commanderDialog");renderHud();return;}selectCommander();});
 // Voice barks: towers speak in their school's voice (deeper as they rank up); commanders have their own.
  function towerSay(pad,kind){const t=game.state.towers[pad],p=game.map.pads[pad];if(!t||!p)return;sfx.say({color:game.roster[t.kind]?.color,tier:t.tier},kind,{pan:(p.x/game.map.width*2-1)*.7});}
@@ -125,8 +125,67 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  const mapLook=()=>game.map.id+":"+game.map.season;
  let mapKey=mapLook();
  function useMap(){if(mapLook()===mapKey)return;mapKey=mapLook();buildPads();paintTerrain();placeStart();}
- function restart(mode,dc=null){clearRun();game=dc?createEngine(dc.seed,"campaign",dc.map):createEngine(1,mode,mapPick());if(dc){mode="campaign";game.state.daily={date:dc.date,commander:dc.commander,twist:dc.twist};}game.command({type:"season",season:dc?dc.season:seasonPick()});useMap();fx.reset();$("waveBanner").hidden=true;$("endScreen").hidden=true;seenWaves=0;runXp=0;renderHudLevel();session.time={};if(dc){game.command({type:"difficulty",level:dc.difficulty});if(dc.onslaught)game.command({type:"onslaught",on:true});game.command({type:"locks",towers:daily.dailyLocks(dc,game.roster)});game.command({type:"commander",id:dc.commander});}else if(mode!=="sandbox"){game.command({type:"difficulty",level:profile.difficulty});game.command({type:"perks",perks:profile.perks});if(mode==="campaign"&&profile.onslaught&&progress.isOpen(profile,"modes","onslaught"))game.command({type:"onslaught",on:true});game.command({type:"locks",towers:progress.lockedTowers(profile)});}if(!dc)applyDefaultCommander();if(!dc&&mode==="campaign")game.command({type:"kit",...campaignLib.kitFor(camp)});selected=null;selectedCard=null;rallying=false;moving=false;schoolOpen=false;preview=null;heroKey="";lastEvent=-1;handKey="";contributionKey="";setSpeed(1);$("padSelect").value="";$("mode").value=mode;closeDialogs();notice(dc?"Daily Challenge: "+dc.detail:"New "+mode+" run. Select a build pad.");renderHud();}
- $("restart").addEventListener("click",()=>restart(game.state.mode));
+ function restart(mode,dc=null,from=null){
+  clearRun();
+  game=dc?createEngine(dc.seed,"campaign",dc.map):createEngine(from?.seed??1,mode,from?.mapId||mapPick());
+  if(dc){mode="campaign";game.state.daily={date:dc.date,commander:dc.commander,twist:dc.twist};}
+  game.command({type:"season",season:dc?dc.season:from?.season||seasonPick()});
+  useMap();fx.reset();$("waveBanner").hidden=true;$("endScreen").hidden=true;
+  seenWaves=0;runXp=0;renderHudLevel();session.time={};
+  if(dc){
+   game.command({type:"difficulty",level:dc.difficulty});
+   if(dc.onslaught)game.command({type:"onslaught",on:true});
+   game.command({type:"locks",towers:daily.dailyLocks(dc,game.roster)});
+   game.command({type:"commander",id:dc.commander});
+  }else if(mode!=="sandbox"){
+   game.command({type:"difficulty",level:from?.difficulty||profile.difficulty});
+   game.command({type:"perks",perks:from?.perks||profile.perks});
+   if(mode==="campaign"&&(from?!!from.onslaught:profile.onslaught&&progress.isOpen(profile,"modes","onslaught")))game.command({type:"onslaught",on:true});
+   game.command({type:"locks",towers:Array.isArray(from?.locked)?from.locked:progress.lockedTowers(profile)});
+  }
+  if(!dc){
+   if(from?.commander?.id)game.command({type:"commander",id:from.commander.id});
+   else applyDefaultCommander();
+  }
+  if(!dc&&mode==="campaign"){
+   const kit=from?.kit&&Array.isArray(from.deck)?{deck:from.deck,relics:from.kit.relics,boons:from.kit.boons,lands:from.kit.lands,up:from.kit.up}:campaignLib.kitFor(camp);
+   game.command({type:"kit",...kit});
+  }
+  selected=null;selectedCard=null;rallying=false;moving=false;schoolOpen=false;preview=null;
+  heroKey="";lastEvent=-1;handKey="";contributionKey="";
+  setSpeed(1);$("padSelect").value="";$("mode").value=mode;closeDialogs();
+  notice(dc?"Daily Challenge: "+dc.detail:"New "+mode+" run. Select a build pad.");
+  renderHud();
+ }
+ let restartSource=null;
+ function askRestart(source){
+  const run=source==="title"?loadRun()?.state:game.state;
+  if(!run)return;
+  restartSource=source;
+  const mapName=MAPS[run.mapId]?.name||"this battlefield";
+  text($("restartConfirmText"),"Restart "+mapName+" from wave 1? This permanently replaces the current run at wave "+run.wave+". Permanent unlocks and campaign rewards remain.");
+  showDialog("restartConfirmDialog");
+  $("restartCancel").focus();
+ }
+ function cancelRestart(){
+  const source=restartSource;
+  restartSource=null;
+  $("restartConfirmDialog").close();
+  if(source==="menu")showDialog("menuDialog");
+ }
+ $("restartCancel").addEventListener("click",cancelRestart);
+ $("restartConfirmDialog").addEventListener("cancel",event=>{event.preventDefault();cancelRestart();});
+ $("restartConfirm").addEventListener("click",()=>{
+  const source=restartSource;
+  const run=source==="title"?loadRun()?.state:game.state;
+  restartSource=null;
+  if(!run){$("restartConfirmDialog").close();return;}
+  const challenge=run.daily?daily.dailyFor(run.daily.date,MAPS):null;
+  restart(run.mode,challenge,run);
+  if(source==="title"){$("titleScreen").hidden=true;sfx.unlock();sfx.music(true);}
+  notice("Run restarted at wave 1. Your previous run was replaced.",true);
+ });
+ $("restart").addEventListener("click",()=>askRestart("menu"));
  $("newMode").addEventListener("click",()=>restart($("mode").value));
  function waveText(n){return game.waveSpec(n).map(x=>{const [k,c]=x.split(":"),d=game.types[k];return (d.boss&&k!=="titan"?"BOSS ":"")+d.name+" × "+c;}).join(" · ");}
  function traitText(n){const seen=new Set();return game.waveSpec(n).map(x=>x.split(":")[0]).filter(k=>game.types[k].trait&&!seen.has(k)&&seen.add(k)).map(k=>game.types[k].name+": "+game.types[k].trait).join(" ");}
@@ -438,7 +497,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
    const n=progress.bestStars(profile,profile.difficulty||"normal",id),st=b.querySelector(".map-stars");st.textContent="★".repeat(n)+"☆".repeat(3-n);st.title=n+" of 3 stars on "+(levelName[profile.difficulty]||"Normal");}
   const eOpen=progress.isOpen(profile,"modes","endless");$("playEndless").disabled=!eOpen;$("playEndless").textContent=eOpen?"Endless Siege":"Endless · Level "+progress.unlockLevel("modes","endless");
   const oOpen=progress.isOpen(profile,"modes","onslaught");$("onslaughtToggle").disabled=!oOpen;$("onslaughtToggle").lastChild.textContent=oOpen?ONS_TEXT:"Opens at level "+progress.unlockLevel("modes","onslaught");}
- function renderTitle(){renderLevel();renderWorld();renderDaily();{const b=$("onslaughtToggle");b.setAttribute("aria-pressed",String(!!profile.onslaught));b.firstChild.textContent="Onslaught: "+(profile.onslaught&&progress.isOpen(profile,"modes","onslaught")?"on":"off");b.setAttribute("aria-pressed",String(!!profile.onslaught&&progress.isOpen(profile,"modes","onslaught")));const got=trialRows().filter(r=>profile.badges[r[0]]).length;text($("trialsBadge"),got+" of "+trialRows().length);{const all=Object.keys(game.types).length+Object.keys(game.roster).length+Object.keys(game.cards).length,seen=profile.seen.e.length+profile.seen.t.length+profile.seen.c.length;text($("codexBadge"),Math.min(seen,all)+" of "+all);}}{const free=progress.freeStars(profile);text($("perksBadge"),free>0?free+" to spend":"");}for(const b of document.querySelectorAll("[data-map]"))b.setAttribute("aria-pressed",String(b.dataset.map===mapPick()));for(const b of document.querySelectorAll("[data-difficulty]"))b.setAttribute("aria-pressed",String(b.dataset.difficulty===profile.difficulty));{const row=$("seasonChoices");const ok=mapSeasons();row.hidden=ok.length<2;for(const b of row.children){b.hidden=!ok.includes(b.dataset.season);b.setAttribute("aria-pressed",String(b.dataset.season===seasonPick()));}}text($("titleStars"),"Best Gauntlet on "+MAPS[mapPick()].name+": "+["easy","normal","hard"].map(l=>{const n=progress.bestStars(profile,l,mapPick());return levelName[l]+" "+(n?"★".repeat(n)+"☆".repeat(3-n):"—");}).join(" · "));text($("titleVersion"),label(VERSION));{const save=loadRun(),b=$("continueRun");b.hidden=!save;if(save){const st=save.state;text($("continueLabel"),(MAPS[st.mapId]&&st.mapId!=="hollow"?MAPS[st.mapId].name+" · ":"")+(st.mode==="endless"?"Endless Siege":"Gauntlet")+" · Wave "+Math.max(1,st.phase==="active"?st.wave:st.wave+1)+(st.mode==="endless"?"":" of 25")+" · "+(levelName[st.difficulty]||"Normal"));}$("playGauntlet").classList.toggle("primary",!save);}renderSound();paintThumbs();{const row=$("mapChoices"),c=row.querySelector(".map-card[aria-pressed=true]");if(c&&row.scrollWidth>row.clientWidth){const cr=c.getBoundingClientRect(),rr=row.getBoundingClientRect();row.scrollLeft+=cr.left-rr.left-(rr.width-cr.width)/2;}}}
+ function renderTitle(){renderLevel();renderWorld();renderDaily();{const b=$("onslaughtToggle");b.setAttribute("aria-pressed",String(!!profile.onslaught));b.firstChild.textContent="Onslaught: "+(profile.onslaught&&progress.isOpen(profile,"modes","onslaught")?"on":"off");b.setAttribute("aria-pressed",String(!!profile.onslaught&&progress.isOpen(profile,"modes","onslaught")));const got=trialRows().filter(r=>profile.badges[r[0]]).length;text($("trialsBadge"),got+" of "+trialRows().length);{const all=Object.keys(game.types).length+Object.keys(game.roster).length+Object.keys(game.cards).length,seen=profile.seen.e.length+profile.seen.t.length+profile.seen.c.length;text($("codexBadge"),Math.min(seen,all)+" of "+all);}}{const free=progress.freeStars(profile);text($("perksBadge"),free>0?free+" to spend":"");}for(const b of document.querySelectorAll("[data-map]"))b.setAttribute("aria-pressed",String(b.dataset.map===mapPick()));for(const b of document.querySelectorAll("[data-difficulty]"))b.setAttribute("aria-pressed",String(b.dataset.difficulty===profile.difficulty));{const row=$("seasonChoices");const ok=mapSeasons();row.hidden=ok.length<2;for(const b of row.children){b.hidden=!ok.includes(b.dataset.season);b.setAttribute("aria-pressed",String(b.dataset.season===seasonPick()));}}text($("titleStars"),"Best Gauntlet on "+MAPS[mapPick()].name+": "+["easy","normal","hard"].map(l=>{const n=progress.bestStars(profile,l,mapPick());return levelName[l]+" "+(n?"★".repeat(n)+"☆".repeat(3-n):"—");}).join(" · "));text($("titleVersion"),label(VERSION));{const save=loadRun(),b=$("continueRun");b.hidden=!save;$("titleRestart").hidden=!save;if(save){const st=save.state;text($("continueLabel"),(MAPS[st.mapId]&&st.mapId!=="hollow"?MAPS[st.mapId].name+" · ":"")+(st.mode==="endless"?"Endless Siege":"Gauntlet")+" · Wave "+Math.max(1,st.phase==="active"?st.wave:st.wave+1)+(st.mode==="endless"?"":" of 25")+" · "+(levelName[st.difficulty]||"Normal"));}$("playGauntlet").classList.toggle("primary",!save);}renderSound();paintThumbs();{const row=$("mapChoices"),c=row.querySelector(".map-card[aria-pressed=true]");if(c&&row.scrollWidth>row.clientWidth){const cr=c.getBoundingClientRect(),rr=row.getBoundingClientRect();row.scrollLeft+=cr.left-rr.left-(rr.width-cr.width)/2;}}}
  function renderSound(){const p=sfx.prefs;$("soundToggle").innerHTML=p.sound?ICONS.sound:ICONS.mute;$("soundToggle").setAttribute("aria-label",p.sound?"Sound on":"Sound off");text($("titleSound").querySelector(".tile-label"),"Sound: "+(p.sound?"on":"off"));text($("musicToggle"),"Music: "+(p.music?"on":"off"));text($("voiceToggle"),"Voices: "+(p.voice?"on":"off"));}
  function showTitle(){saveRun();if(updateSeen){location.reload();return;}closeDialogs();$("endScreen").hidden=true;$("titleScreen").hidden=false;setSpeed(0);renderTitle();}
  function todayDaily(){return daily.dailyFor(daily.dateKey(),MAPS);}
@@ -447,6 +506,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  function startRun(mode){sfx.unlock();restart(mode);$("titleScreen").hidden=true;sfx.music(true);if(!profile.starter&&mode!=="sandbox"){renderCommanders();showDialog("commanderDialog");}else notice(mode==="sandbox"?"Proving Grounds: open the menu for sandbox tools.":"Tap a stone to build your first tower.");}
  for(const b of document.querySelectorAll("[data-season]"))b.addEventListener("click",()=>{profile.season=b.dataset.season;progress.save(storage,profile);sfx.unlock();sfx.play("click");renderTitle();});
  for(const b of document.querySelectorAll("[data-difficulty]"))b.addEventListener("click",()=>{profile.difficulty=b.dataset.difficulty;progress.save(storage,profile);sfx.unlock();sfx.play("click");renderTitle();});
+ $("titleRestart").addEventListener("click",()=>askRestart("title"));
  $("continueRun").addEventListener("click",continueRun);$("playDaily").addEventListener("click",startDaily);$("playGauntlet").addEventListener("click",()=>startRun("campaign"));$("playEndless").addEventListener("click",()=>startRun("endless"));$("playSandbox").addEventListener("click",()=>startRun("sandbox"));
  $("mainMenu").addEventListener("click",showTitle);$("endMenu").addEventListener("click",showTitle);
  $("endRetry").addEventListener("click",()=>{if(game.state.daily){const dc=todayDaily();if(dc.date===game.state.daily.date){restart("campaign",dc);return;}}startRun(game.state.daily?"campaign":game.state.mode);});
