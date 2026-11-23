@@ -420,7 +420,24 @@ Logan picked "combat feedback" from the idea list. Cosmetic only; the simulation
 - terrain.mjs paints a craggy massif over the tunnel with a stone portal and torch at each end (snow-capped, autumn and winter palettes).
 - Crude seeded bot (same placement rule on every map): Hollow wave 17–18, Confluence 17, Frostfen 16, Greyhorn 15. A little harder than the others, as a later map should be.
 
-## 2026-11-23 — v0.1.0-beta.13.29 Enemy animations and guided first battle
+## 2026-11-23 — v0.1.0-beta.13.29 Voices and fuller music
+
+Logan picked tower voice lines and fuller music. Still no audio files: everything is made in the browser.
+- Voice barks: towers and commanders speak short made-up "mumble" lines (no real words), built from a buzzy voice through moving vowel filters. Each tower school has its own voice (white bright, blue airy, black low and raspy, red gruff and quick, green deep and slow); towers sound deeper as they rank up. Each commander has a voice of their own (Krenko squeaky, Korvold and the Ur-Dragon growling, Atraxa choral).
+- Lines: tower picked (a question), built, upgraded, and an occasional battle shout (at most every 7 seconds); commander picked, moved, and ability. One bark at a time, panned to where it happened, and the music dips under it.
+- New "Voices: on/off" toggle in the menu next to Music (saved per browser). The main sound toggle mutes voices too.
+- Fuller music: every theme gains a harmony line under the melody, plus a string counter-line or low cellos.
+
+## 2026-11-23 — v0.1.0-beta.13.30 three new commanders, new unlock paths
+
+Owner request: more popular commanders with a pick-a-starter, unlock-more progression. Starters stay Krenko, Talrand and Omnath. Card names, mana costs and rules text checked against Scryfall (2026-11-23).
+- **Toxrill, the Corrosive** (mono-black, Slime counters). Every 10 s every enemy gets a slime counter (up to 5): each one takes 10% off its attack and 3% of its full health. Slimed enemies that die leave a Slug token (up to 8). Tap: Slime Tide, two counters on every enemy near him. Unlock: win a Gauntlet on Hard (earlier Hard wins count).
+- **Torbran, Thane of Red Fell** (mono-red, Red damage). Red towers and red troops deal +4 per hit, scaled by late waves. Tap: Red Fell Fury, hits nearby enemies for twice his attack and triples the red bonus for 10 s. Unlock: win any 25-wave Gauntlet.
+- **Urza, Lord High Artificer** (mono-blue, Artifacts). Brings a Construct token that grows with every tower you control and comes back 20 s after it falls; each wave your towers tap for 4 mana each (up to 60). Tap: draw a card and the next spell costs no mana. Unlock: reach player level 3.
+- New unlock rule kinds in progress.mjs: `level`, `win`, `hard`. recordRun now takes `difficulty`.
+- Seeded benchmark build with each commander, seeds 1–4, fortress health after wave 30: Toxrill 15, Torbran 15, Urza 13 (field: Krenko 10, Talrand 17, Atraxa 20, Ur-Dragon 17). None dominates.
+
+## 2026-11-23 — v0.1.0-beta.13.32 Enemy animations and guided first battle
 
 Logan picked these from the idea list. Visual and UI only; the simulation, seeded runs and copied stats are unchanged.
 - Enemy walk cycles: ground enemies bounce and rock in step with their speed, heavy ones (speed 7 or less) stomp and squash on each footfall, fliers flap. Enemies held up by troops breathe in place.

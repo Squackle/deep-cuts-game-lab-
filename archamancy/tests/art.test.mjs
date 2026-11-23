@@ -11,7 +11,7 @@ test("all tower tiers, creature models and projectile families can render with c
  for(const kind of art.towerKeys)for(const branch of ["A","B"])for(const tier of [3,4])art.tower({kind,tier,branch},{x:220,y:47});
  const initial=counts.createElement;art.tower({kind:"legion",tier:1},{x:220,y:47});assert.equal(counts.createElement,initial);
  for(const kind of ["strike","arcane","mirror","hex","splash","chain","root","melee","heal"])art.projectile({kind,x:20,y:50,tx:80,ty:50,start:2,duration:5},6);
- assert.equal(initial,154);// 153 sprites + 1 shared scratch canvas for the outline/lighting pass
+ assert.equal(initial,158);// 153 sprites + 1 shared scratch canvas for the outline/lighting pass
 assert.ok(counts.drawImage>=134);
  }finally{if(old===undefined)delete globalThis.document;else globalThis.document=old;}
 });
