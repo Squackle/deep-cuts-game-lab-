@@ -14,6 +14,9 @@ export const UNLOCKS = [
  { id: "urza", level: 3, text: "Reach player level 3" },
  { id: "torbran", win: true, text: "Win any 25-wave Gauntlet" },
  { id: "toxrill", hard: true, text: "Win a 25-wave Gauntlet on Hard" },
+ { id: "heliod", stars: 6, text: "Earn 6 Gauntlet stars in total" },
+ { id: "wilhelt", maps: 2, text: "Win a 25-wave Gauntlet on two different battlefields" },
+ { id: "kaalia", level: 6, text: "Reach player level 6" },
  { id: "urdragon", rainbow: true, text: "Win the 25-wave Gauntlet with a tower of every color" }
 ];
 const KEY = "archemancy.progress.v1";
@@ -65,6 +68,8 @@ function met(rule, p, run) {
  if (rule.level) return level(p) >= rule.level;
  if (rule.win) return totalStars(p) > 0 || (!!run.won && run.mode === "campaign");
  if (rule.hard) return Object.keys(p.stars).some(k => k.endsWith("hard")) || (!!run.won && run.mode === "campaign" && run.difficulty === "hard");
+ if (rule.stars) return totalStars(p) >= rule.stars;
+ if (rule.maps) return new Set(Object.keys(p.stars).map(k => k.includes(":") ? k.split(":")[0] : "hollow")).size >= rule.maps;
  if (rule.rainbow) return !!run.won && new Set(run.colors || []).size >= 5;
  return false;
 }

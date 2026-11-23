@@ -20,7 +20,7 @@ test("battle-stat, endless and rainbow unlocks",()=>{const p=progress.newProfile
  assert.deepEqual(progress.recordRun(p,run(3,{returns:10})),["meren"]);assert.deepEqual(progress.recordRun(p,run(3,{fallen:200})),["teysa"]);assert.deepEqual(progress.recordRun(p,run(3,{sacrifices:50})),["korvold"]);
  assert.ok(!progress.recordRun(p,run(30)).includes("atraxa"),"campaign wave 30 is not endless");assert.ok(progress.recordRun(p,run(30,{mode:"endless"})).includes("atraxa"));
  assert.deepEqual(progress.recordRun(p,run(25,{won:true,colors:["W","U","B","R","R"]})),["torbran"]);assert.deepEqual(progress.recordRun(p,run(25,{won:true,colors:["W","U","B","R","G","G"]})),["urdragon"]);
- assert.deepEqual(all.filter(id=>!progress.available(p,"campaign",all).includes(id)).sort(),["toxrill","urza"]);});
+ assert.deepEqual(all.filter(id=>!progress.available(p,"campaign",all).includes(id)).sort(),["heliod","kaalia","toxrill","urza","wilhelt"]);});
 
 test("level, Gauntlet win and Hard win unlocks",()=>{const p=progress.newProfile();progress.chooseStarter(p,"krenko");
  assert.match(progress.requirement(p,"urza"),/level 3/);assert.match(progress.requirement(p,"toxrill"),/Hard/);
@@ -70,3 +70,8 @@ test("campaign regions: winning a region opens the next one before its level",as
  progress.recordStars(p,"hard",3,"confluence");assert.equal(progress.mapStars(p,"confluence"),3);assert.ok(progress.mapOpen(p,"frostfen"));
  p.xp=progress.xpToReach(6);assert.ok(progress.mapOpen(p,"pass"),"level still opens maps");
 });
+
+test("star total, two-battlefield and level 6 unlocks",()=>{const p=progress.newProfile();progress.chooseStarter(p,"talrand");
+ p.stars={normal:3,hard:2};assert.ok(!progress.recordRun(p,run(1)).includes("heliod"));p.stars.easy=1;assert.ok(progress.recordRun(p,run(1)).includes("heliod"),"6 stars");
+ assert.ok(!p.unlocked.includes("wilhelt"),"one battlefield so far");p.stars["frostfen:easy"]=1;assert.ok(progress.recordRun(p,run(1)).includes("wilhelt"));
+ assert.ok(!p.unlocked.includes("kaalia"));p.xp=progress.xpToReach(6);assert.ok(progress.recordRun(p,run(1)).includes("kaalia"));});
