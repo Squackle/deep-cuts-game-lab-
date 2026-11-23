@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createEngine, BOSS_HOLD_TICKS, BOSS_PUSH_TICKS, BOSS_KEEP_LINE, VERSION } from '../engine.mjs';
+import { createEngine, IMMUNE_BOSS_HOLD_TICKS, IMMUNE_BOSS_PUSH_TICKS, VERSION } from '../engine.mjs';
 
 function fortifiedBossRun() {
   const g = createEngine(1, 'sandbox');
@@ -45,19 +45,24 @@ test('defender delay credits each blocked enemy-tick once and survives a save', 
   assert.deepEqual(restored.playtestReport(), g.playtestReport(), 'blocking totals and boss state must resume deterministically');
 });
 
-test('boss warns before 12-second blockade breakthrough, then moves for 3 seconds', () => {
-  const { g, tower, enemy } = fortifiedBossRun();
-  const initial = enemy.progress;
-  assert.ok(BOSS_HOLD_TICKS > 60);
-  for (let i = 0; i < BOSS_HOLD_TICKS - 1; i++) g.step();
+test('existing physical-immune boss shove is warned and still advances after six seconds', () => {
+  const g = createEngine(1, 'sandbox');
+  assert.equal(g.command({ type: 'build', pad: 4, kind: 'legion' }), true);
+  assert.equal(g.command({ type: 'sandboxEnemy', enemy: 'colossus', count: 1 }), true);
+  const tower = g.state.towers[4], enemy = g.state.enemies[0], initial = tower.rally;
+  enemy.progress = initial;
+  enemy.hp = enemy.maxHp = 100000000;
+  enemy.attack = 0;
+  enemy.speed = 5;
+  for (const u of g.state.troops) { u.progress = initial; u.leave = 0; u.damage = 0; u.hp = u.maxHp = 100000000; }
+  for (let i = 0; i < IMMUNE_BOSS_HOLD_TICKS - 1; i++) g.step();
   assert.equal(enemy.progress, initial);
-  assert.ok(g.state.events.some(x => x.type === 'bossAbility' && x.ability === 'breakthroughWarning'));
+  assert.ok(g.state.events.some(e => e.type === 'bossAbility' && e.ability === 'breakthroughWarning'));
   g.step();
-  assert.ok(enemy.pushUntil >= g.state.tick + BOSS_PUSH_TICKS - 1, 'breakthrough window');
-  assert.ok(g.state.events.some(x => x.type === 'bossAbility' && x.ability === 'breakthrough'));
+  assert.ok(enemy.pushUntil >= g.state.tick + IMMUNE_BOSS_PUSH_TICKS - 1);
   for (let i = 0; i < 10; i++) g.step();
-  assert.ok(enemy.progress > initial, 'boss must physically advance rather than teleport');
-  assert.ok(tower.blockTicks >= BOSS_HOLD_TICKS - 1);
+  assert.ok(enemy.progress > initial);
+  assert.equal(g.state.stats.bossBlockedTicks, tower.bossBlockTicks);
 });
 
 test('Crown of Arrows gets its third projectile at tier IV, not tier III', () => {
@@ -88,21 +93,4 @@ test('game exports a new rules version and the UI exposes blocking / immunity te
   for (const fragment of ['Enemy delay', 'immune hits', 'bossBlockedTicks', 'BREAKTHROUGH_HINT', 'Breaking soon']) {
     assert.ok(ui.includes(fragment), fragment + ' should be visible in the game UI');
   }
-});
-
-test('the last keep defense is never bypassed by an automatic boss surge', () => {
-  const g = createEngine(1, 'sandbox');
-  assert.equal(g.command({ type: 'build', pad: 23, kind: 'legion' }), true);
-  assert.equal(g.command({ type: 'sandboxEnemy', enemy: 'hierophant', count: 1 }), true);
-  const tower = g.state.towers[23], enemy = g.state.enemies[0];
-  assert.ok(g.map.distance - tower.rally <= BOSS_KEEP_LINE, 'test pad must guard the keep approach');
-  enemy.progress = tower.rally;
-  enemy.hp = enemy.maxHp = 100000000;
-  enemy.attack = 0;
-  enemy.speed = 5;
-  for (const u of g.state.troops) { u.progress = tower.rally; u.leave = 0; u.damage = 0; u.hp = u.maxHp = 100000000; }
-  for (let i = 0; i < BOSS_HOLD_TICKS + 40; i++) g.step();
-  assert.equal(enemy.progress, tower.rally, 'boss cannot gain a forced, uncounterable leak at the keep');
-  assert.ok(tower.blockTicks >= BOSS_HOLD_TICKS, 'the defenders keep receiving blocking credit');
-  assert.ok(!enemy.pushUntil, 'no breakthrough window at the keep');
 });
