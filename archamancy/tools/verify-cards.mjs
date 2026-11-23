@@ -11,17 +11,25 @@ const norm = s => String(s || "").replace(/[−–—]/g, "-").replace(/\s+/g, "
 const order = c => [..."WUBRG"].filter(x => c.includes(x)).join("");
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rows = [], bad = [];
-for (const c of cards) {
- let card = null, err = "";
- for (let tries = 0; tries < 3 && !card; tries++) {
-  try {
-   const r = await fetch("https://api.scryfall.com/cards/named?exact=" + encodeURIComponent(c.name), { headers: { "User-Agent": "ArchemancyCardCheck/1.0", Accept: "application/json" } });
-   if (r.status === 404) { err = "not found"; break; }
-   if (!r.ok) { err = "HTTP " + r.status; await sleep(1000); continue; }
-   card = await r.json();
-  } catch (e) { err = String(e.message || e); await sleep(1000); }
+const H = { "User-Agent": "ArchemancyCardCheck/1.0", Accept: "application/json" };
+// Scryfall asks for few requests: one /cards/collection call per 75 cards, then /cards/named for any name the collection missed
+// (adventure and double-faced cards are listed by their full "A // B" name). 429s back off and retry.
+async function get(url, opts = {}) {
+ for (let tries = 0; tries < 6; tries++) {
+  try { const r = await fetch(url, { ...opts, headers: { ...H, ...(opts.headers || {}) } }); if (r.status === 429 || r.status >= 500) { await sleep(1000 * 2 ** tries); continue; } return r; } catch { await sleep(1000 * 2 ** tries); }
  }
- await sleep(110);
+ return null;
+}
+const found = new Map();
+for (let i = 0; i < cards.length; i += 75) {
+ const batch = cards.slice(i, i + 75);
+ const r = await get("https://api.scryfall.com/cards/collection", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ identifiers: batch.map(c => ({ name: c.name })) }) });
+ if (r?.ok) for (const card of (await r.json()).data || []) { found.set(card.name, card); for (const f of card.card_faces || []) if (!found.has(f.name)) found.set(f.name, card); }
+ await sleep(300);
+}
+for (const c of cards) {
+ let card = found.get(c.name) || null, err = "";
+ if (!card) { const r = await get("https://api.scryfall.com/cards/named?exact=" + encodeURIComponent(c.name)); if (r?.ok) card = await r.json(); else err = r ? (r.status === 404 ? "not found" : "HTTP " + r.status) : "no response"; await sleep(300); }
  if (!card) { bad.push(c.name + ": " + err); rows.push([c.kind, c.name, "✗ " + err, "", ""]); continue; }
  const faces = card.card_faces || [card];
  const oracle = faces.map(f => f.oracle_text || "").join(" // ") || card.oracle_text || "";
