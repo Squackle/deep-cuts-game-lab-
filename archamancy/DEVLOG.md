@@ -502,3 +502,9 @@ Logan asked for "Balatro deck building meets MTG": a deck you build over the cam
 - World map: a Treasure counter with Deck and Shop buttons under the region map. Deck shows spells (upgrade twice for 4 then 6 Treasure: +25% damage and -15% cost per level; exile for 3, minimum 5 spells), relics (sell for half), lands and boons. Shop shows the stock rolled after the last battle, with rerolls (2 Treasure, +1 each). Rituals that need a spell open a picker.
 - Every Gauntlet battle (not the Daily) plays the campaign deck. At the end it pays Treasure once (shown on the end screen, whose menu button now says World map) and, if 5+ waves were cleared, opens a draft of 3 spells; a pending draft also shows a "Pick a spell" button on the world map. The 30-card spellbook editor stays for Endless and the Proving Grounds.
 - Profile gains `camp` (sanitized by campaign.mjs against the live spell list).
+
+## 2026-11-23 — Deck view follow-up (after 13.40)
+
+- World map Deck view draws all relic slots; empty ones show as dashed sockets, like Balatro's Joker row.
+- In battle, tap the "Library · Graveyard" line to see your hand, library (alphabetical, so draw order stays hidden), graveyard, and the relics, boons and land levels this run carries. Works in every mode; campaign runs also list the kit.
+- Verified with Playwright renders of both dialogs; `node --test archamancy/tests/*.test.mjs` 147/147.
