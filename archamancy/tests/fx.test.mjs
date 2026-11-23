@@ -11,3 +11,11 @@ test("effects read engine events without changing the simulation",()=>{
  const o=fx.offset(t+10000);assert.deepEqual(o,{x:0,y:0});
  const b=createEngine(1),f2=createFx(ctx);f2.sync(b);b.state.wave=4;b.command({type:"wave"});const c5=f2.update(b,0);assert.ok(c5.some(c=>c.tone==="boss"&&/Lovisa Coldeyes/.test(c.sub)),JSON.stringify(c5));
 });
+test("combat feedback: damage numbers, big-hit shake and a sound per barracks, all cosmetic",()=>{
+ const g=createEngine(1,"sandbox"),fx=createFx(ctx);fx.sync(g);
+ for(const [pad,kind] of [[4,"legion"],[5,"goblin"]])g.command({type:"build",pad,kind});
+ const before=JSON.stringify(createEngine(1,"sandbox").playtestReport());assert.ok(g.command({type:"wave"}));
+ let t=0;const names=new Set();for(let i=0;i<900&&g.state.phase==="active";i++){g.step();t+=16;for(const c of fx.update(g,t))if(c.type==="sound")names.add(c.name);fx.draw(t);}
+ assert.ok(names.has("melee_legion"),[...names].join());assert.ok(names.has("melee_goblin"),[...names].join());assert.ok(names.has("hit"));
+ assert.equal(JSON.stringify(createEngine(1,"sandbox").playtestReport()),before,"fx never touches a fresh engine");
+});
