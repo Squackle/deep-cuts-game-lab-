@@ -125,3 +125,16 @@ export function lockedTowers(p) { return Object.values(LEVEL_UNLOCKS).flatMap(u 
 export function gainXp(p, waves, mode) { if (mode === "sandbox" || !Array.isArray(waves)) return []; const before = level(p); for (const w of waves) if (Number.isInteger(w) && w > 0) p.xp += 10 + w; const after = level(p), out = []; for (let n = before + 1; n <= after; n++) out.push({ level: n, ...(LEVEL_UNLOCKS[n] || {}) }); return out; }
 // Codex: first sightings of enemies (e), towers (t) and cards (c). Returns true when something new was added.
 export function see(p, kind, ids) { const list = p.seen[kind]; if (!list) return false; let added = false; for (const id of ids) if (!list.includes(id) && list.length < 200) { list.push(id); added = true; } return added; }
+
+// Campaign: five regions on the world map, each holding one battlefield. A region opens at its map's player level,
+// or as soon as the region before it has been won (any stars, any difficulty). map null = not built yet.
+export const REGIONS = [
+ { id: "lowlands", name: "Verdant Lowlands", map: "hollow" },
+ { id: "riverlands", name: "The Riverlands", map: "confluence" },
+ { id: "marches", name: "Frostfen Marches", map: "frostfen" },
+ { id: "greyhorn", name: "Greyhorn Mountains", map: "pass" },
+ { id: "wastes", name: "The Ember Wastes", map: null }
+];
+export const mapStars = (p, map) => Math.max(0, ...LEVELS.map(l => bestStars(p, l, map)));
+export function regionOf(map) { return REGIONS.findIndex(r => r.map === map); }
+export function mapOpen(p, map) { if (isOpen(p, "maps", map)) return true; const i = regionOf(map); return i > 0 && mapStars(p, REGIONS[i - 1].map) > 0; }

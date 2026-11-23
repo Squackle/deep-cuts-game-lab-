@@ -418,3 +418,9 @@ Logan picked "combat feedback" from the idea list. Cosmetic only; the simulation
 - 20 pads, rubble on 3, fliers at 90% health (shorter road, like the Confluence). All three seasons. Opens at player level 6 with Frostfen.
 - terrain.mjs paints a craggy massif over the tunnel with a stone portal and torch at each end (snow-capped, autumn and winter palettes).
 - Crude seeded bot (same placement rule on every map): Hollow wave 17–18, Confluence 17, Frostfen 16, Greyhorn 15. A little harder than the others, as a later map should be.
+
+## 2026-11-23 — v0.1.0-beta.13.29 Campaign world map (stage A)
+
+- Title screen gains a painted world map above the battlefield cards: five regions on a trail (Verdant Lowlands = Hollow Road, The Riverlands = Confluence, Frostfen Marches, Greyhorn Mountains = Greyhorn Pass, The Ember Wastes = coming soon). Each stop shows its best stars; tapping one picks that battlefield.
+- progress.REGIONS / mapOpen / mapStars: a region opens at its map's player level as before, or as soon as the region before it has been won (any stars, any difficulty). Locked cards say both ways in.
+- Cosmetic module archamancy/worldmap.mjs (paintWorld, NODES). No engine or save changes.
