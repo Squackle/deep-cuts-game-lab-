@@ -299,7 +299,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  const sfx=createSfx(storage);const levelName={easy:"Easy",normal:"Normal",hard:"Hard"};
  const mapPick=()=>MAP_LOOKS.includes(profile.map)&&progress.mapOpen(profile,profile.map)?profile.map:"hollow";
  // Maps the art can draw (terrain.mjs). A new map stays off the title screen until its terrain lands.
- const MAP_LOOKS=["hollow","confluence","frostfen","pass"];
+ const MAP_LOOKS=["hollow","confluence","frostfen","pass","caldera"];
  // Map select cards: a painted thumbnail of the real battlefield (in the chosen season), name, stars and a lock.
  for(const [id,m] of Object.entries(MAPS)){if(!MAP_LOOKS.includes(id))continue;const b=document.createElement("button");b.type="button";b.className="map-card";b.dataset.map=id;
   b.innerHTML='<span class="map-thumb"><canvas width="320" height="192"></canvas><span class="map-lock" hidden><span class="lock-ico" aria-hidden="true">🔒</span><span class="lock-text"></span></span><span class="map-season" hidden></span></span><span class="map-info"><strong class="map-name"></strong><span class="map-stars" aria-hidden="true"></span><small class="map-sub"></small></span>';

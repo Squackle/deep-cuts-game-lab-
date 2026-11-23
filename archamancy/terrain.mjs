@@ -1,3 +1,4 @@
+import {VENT_EVERY,VENT_WARN} from './engine.mjs';
 // Painted battlefield backdrop (cosmetic only, drawn once per map and resize into an offscreen canvas).
 // Art direction, from studying top tower defense games such as Kingdom Rush:
 // - Keep the ground mid-value and low-contrast so towers, troops and enemies always pop on top of it.
@@ -24,8 +25,13 @@ const PALETTES={
  winter:{ground:["#eef3f6","#dde7ee","#c4d3de"],patch:["#ffffff","#a9bccb"],grass:["#cbd8e2","#ffffff","#b2c3d0","#dfe8ef"],grassAlpha:.5,earth:["#a7b1b6aa","#bcc5c988"],
   tuft:["#8f8466","#b8ab84"],bush:["#4d6a5c","#f4f8fa"],berry:"#c8302a",pine:[["#1f4033","#24493a","#2a5242"],["#eaf1f5","#f4f8fa","#ffffff"]],trees:[["#5a6f66","#e3ecf1","#ffffff"]],
   bank:["#8fa0ab","#a9b8c2","#7f8a8e","#6c7477"],water:["#7fa7bd","#a6c8da","#cfe5ef","#ffffff"],reed:"#8f8466",moss:["#eef3f6","#ffffff"],ao:"#36485a",
-  road:["#5d5248","#8e8274","#a59a8c","#b8afa2","#7a7062"],cobble:["#c9c1b4","#a49a8b"],key:"#e8f2ff",shade:"#16243a",flowers:0,litter:null,snow:true}};
-export function seasonOf(game){let q=null;try{q=new URLSearchParams(globalThis.location?.search||"").get("season");}catch{}
+  road:["#5d5248","#8e8274","#a59a8c","#b8afa2","#7a7062"],cobble:["#c9c1b4","#a49a8b"],key:"#e8f2ff",shade:"#16243a",flowers:0,litter:null,snow:true},
+ // Volcanic ash plain (map.palette "ember", e.g. Emberfall Caldera): water becomes lava, trees are charred.
+ ember:{ground:["#5a4a42","#4a3d37","#382e2a"],patch:["#6e5a4a","#2a2220"],grass:["#6a5c52","#7a6a5e","#43382f","#574a40"],grassAlpha:.4,earth:["#2a2220aa","#3a2e2a88"],
+  tuft:["#6a5a3a","#8a7a4a"],bush:["#3a3430","#5a4f48"],berry:"#ff7a2e",pine:[["#2b2523","#332b28","#3b322e"],["#4a3f3a","#544843","#5e514b"]],trees:[["#3a2e2a","#4a3c36","#5a4a42"]],
+  bank:["#1e1816","#2e2420","#4a2a1e","#2a1a14"],water:["#7a1f0a","#d2481a","#ff8a2e","#ffe08a"],reed:"#5a4a3a",moss:["#5a4a40","#6e5a4a"],ao:"#100a08",
+  road:["#2a2420","#6a5c52","#7e7064","#92857a","#4a3e36"],cobble:["#9a8c80","#74685e"],key:"#ff9a50",shade:"#200805",flowers:0,litter:null,snow:false,lava:true}};
+export function seasonOf(game){if(PALETTES[game?.map?.palette])return game.map.palette;let q=null;try{q=new URLSearchParams(globalThis.location?.search||"").get("season");}catch{}
  const s=game?.map?.season||q||"summer";return PALETTES[s]?s:"summer";}
 // opts.still paints a thumbnail without touching the live map's animated props.
 export function paintTerrain(a,game,opts={}){
@@ -64,6 +70,9 @@ export function paintTerrain(a,game,opts={}){
  // Mountain tunnels (map.tunnel, e.g. Greyhorn Pass): a rocky massif is painted over that stretch of road in step 2c.
  const tunnel=game.map.tunnel||[],inTun=(x,y,m=0)=>tunnel.some(r=>x>r.x-m&&x<r.x+r.w+m&&y>r.y-m-50&&y<r.y+r.h+m);
  for(const r of tunnel)for(let x=r.x-20;x<=r.x+r.w+20;x+=26)for(let y=r.y-60;y<=r.y+r.h+16;y+=26)occ.push({x,y,r:28});
+ // A keep inside the map (Emberfall's caldera) keeps props off its footprint.
+ if(keep&&keep.x<W-60)occ.push({x:keep.x-30,y:keep.y-20,r:58});
+ const vents=game.map.vents||[];for(const v of vents)occ.push({x:v.x,y:v.y,r:34});
  for(const r of ice){for(let x=r.x-10;x<=r.x+r.w+10;x+=26)for(let y=r.y-10;y<=r.y+r.h+10;y+=26)occ.push({x,y,r:30});
   lakePath(r,12);a.fillStyle="#8fa3b455";a.fill();lakePath(r,7);a.fillStyle="#b7c6d0";a.fill();lakePath(r,2);a.fillStyle="#5f7686";a.fill();
   const g2=a.createLinearGradient(r.x,r.y,r.x+r.w,r.y+r.h);g2.addColorStop(0,"#e2f1f8");g2.addColorStop(.5,"#b9d7e8");g2.addColorStop(1,"#96bcd4");lakePath(r);a.fillStyle=g2;a.fill();
@@ -97,7 +106,7 @@ export function paintTerrain(a,game,opts={}){
   if(S.snow)iceCracks(pts);
   if(creek.spring){const {x,y}=creek.spring;ell(x+2,y+3,30,17,S.bank[0]+"88");ell(x,y,28,16,S.bank[2]);ell(x,y,25,14,S.water[0]);ell(x,y,21,11,S.water[1]);ell(x-4,y-3,13,6,S.water[2]);occ.push({x,y,r:34});
    for(let i=0;i<7;i++){const an=i/7*Math.PI*2,rx=x+Math.cos(an)*26,ry=y+Math.sin(an)*15,r=2.4+random()*2;ell(rx,ry,r+.6,r*.75+.4,INK);ell(rx,ry,r,r*.75,"#9a9a88");ell(rx-r*.3,ry-r*.3,r*.45,r*.3,"#cfd2c0");}
-   if(!S.snow)living.push({type:"duck",x,y,r:20});}
+   if(!S.snow&&!S.lava)living.push({type:"duck",x,y,r:20});}
   // Shore stones and reeds, lit from the top-left, so the banks look carved rather than pasted on.
   pts.forEach(([x,y],k)=>{if(roadDist(x,y)<46)return;if(k%3===0)occ.push({x,y,r:20});
    for(const sd of [-1,1]){if(random()<.42){const sx=x+sd*(12+random()*3),sy=y+(random()-.5)*4,r=1.8+random()*2.4;ell(sx+.8,sy+1,r+.6,r*.7,"#1d2a1e88");ell(sx,sy,r+.6,r*.75+.4,INK);ell(sx,sy,r,r*.75,random()<.5?"#9a9a88":"#8a8c7a");ell(sx-r*.3,sy-r*.3,r*.45,r*.3,"#cfd2c0");}
@@ -162,6 +171,12 @@ export function paintTerrain(a,game,opts={}){
    a.strokeStyle=INK;a.lineWidth=1;for(let k=0;k<10;k++){const an=k/10*Math.PI*2;a.beginPath();a.moveTo(Math.cos(an)*9,Math.sin(an)*29);a.lineTo(Math.cos(an)*15,Math.sin(an)*35);a.stroke();}
    a.restore();living.push({type:"torch",x:e.x+(hz?-dx*0:0)+(hz?0:22),y:e.y-(hz?40:0),ph:random()*6});}}
 
+ // 2d. Lava vents: a cracked crater with a molten pool. Its glow (animateMap) swells before each eruption.
+ for(const v of vents){const {x,y}=v;a.save();a.globalAlpha=.18;ell(x,y,v.r,v.r*.62,"#ff6a1e");a.restore();ell(x+3,y+5,30,17,"#0a050488");
+  for(let k=0;k<12;k++){const an=k/12*Math.PI*2;a.strokeStyle="#ff7a2e88";a.lineWidth=1.6;a.beginPath();a.moveTo(x+Math.cos(an)*24,y+Math.sin(an)*14);a.lineTo(x+Math.cos(an)*(34+random()*16),y+Math.sin(an)*(20+random()*9));a.stroke();}
+  ell(x,y,28,16,INK);ell(x,y-1,26,14.5,"#5a4a42");ell(x-4,y-4,20,9,"#7a6a5e");ell(x,y+1,17,9,"#2a1a14");ell(x,y+1,14,7.4,"#d2481a");ell(x-2,y,9,4.6,"#ff8a2e");ell(x-3,y-1,4,2,"#ffe08a");
+  living.push({type:"vent",x,y,r:v.r,game});}
+
  // Plank bridges where the creek passes under the road: stone piers at each bank, deck and rails on top.
  if(creek)for(const b of creek.bridges){a.save();a.translate(b.x,b.y);
   for(const sd of [-1,1]){a.fillStyle="#13241a66";a.fillRect(-27,sd*34-3,54,6);}
@@ -186,10 +201,10 @@ export function paintTerrain(a,game,opts={}){
  for(let k=0;k<3;k++){const r=20+random()*12;let spot=null;for(let t=0;t<300&&!spot;t++){const x=40+random()*(W-80),y=40+random()*(H-80);if(roadDist(x,y)>r+40&&padDist(x,y)>r+36&&!taken(x,y,r+10))spot=[x,y];}if(!spot)continue;const [x,y]=spot;occ.push({x,y,r:r+6});
   ell(x,y+2,r*1.25+3,r*.7+3,S.bank[1]);ell(x,y,r*1.25+2,r*.7+2,S.bank[2]);ell(x,y,r*1.25,r*.7,S.water[1]);ell(x-r*.15,y-r*.12,r*.95,r*.48,S.water[2]);
   if(S.snow){a.strokeStyle="#ffffffaa";a.lineWidth=1.2;a.beginPath();a.moveTo(x-r*.6,y-r*.1);a.lineTo(x-r*.1,y+r*.15);a.lineTo(x+r*.5,y-r*.05);a.moveTo(x-r*.1,y+r*.15);a.lineTo(x,y+r*.4);a.stroke();}
-  else for(let i=0;i<3;i++){const lx=x+(random()-.5)*r*1.4,ly=y+(random()-.3)*r*.5;ell(lx,ly,4,2.4,"#4f8f3f");ell(lx+1,ly,1.2,1.2,"#f3b6d0");}
+  else if(!S.lava)for(let i=0;i<3;i++){const lx=x+(random()-.5)*r*1.4,ly=y+(random()-.3)*r*.5;ell(lx,ly,4,2.4,"#4f8f3f");ell(lx+1,ly,1.2,1.2,"#f3b6d0");}
   for(let i=0;i<7;i++){const ang=Math.PI*(.75+random()*.5)+(random()<.5?0:Math.PI),rx=x+Math.cos(ang)*r*1.2,ry=y+Math.sin(ang)*r*.66;a.strokeStyle=S.reed;a.lineWidth=1.6;for(let j=-1;j<=1;j++){a.beginPath();a.moveTo(rx+j*2,ry);a.lineTo(rx+j*3,ry-10-random()*5);a.stroke();}ell(rx,ry-12,1.4,3,"#6b4a2c");}
   for(let i=0;i<5;i++)living.push({type:"glint",x:x+(random()-.5)*r*1.6,y:y+(random()-.5)*r*.6,ph:random()*6});
-  if(k===0&&!S.snow)living.push({type:"duck",x,y,r});}
+  if(k===0&&!S.snow&&!S.lava)living.push({type:"duck",x,y,r});}
 
  // 3c. Landmarks and set dressing, placed in free ground away from the road and pads.
  const land=[];
@@ -209,9 +224,9 @@ export function paintTerrain(a,game,opts={}){
  for(let c=0;c<44;c++){const cx=random()*W,cy=random()*H,n=3+Math.floor(random()*6),pine=random()<.55;for(let i=0;i<n;i++){const x=cx+(random()-.5)*90,y=cy+(random()-.5)*60;if(x<-10||x>W+10||y<-10||y>H+30||clear(x,y,50,46))continue;const h=24+random()*20;props.push({y,draw:pine?()=>pineTree(x,y,h):()=>roundTree(x,y,h*.55)});}}
  for(const L of land)props.push({y:L.y,draw:()=>landmark(L)});
  // Butterflies over flowery spots and a flock of birds that crosses the map now and then.
- for(let i=0;i<(S.snow?0:season==="autumn"?3:7);i++){let s=null;for(let t=0;t<80&&!s;t++){const x=random()*W,y=random()*H;if(!clear(x,y,50,44))s=[x,y];}if(s)living.push({type:"butterfly",x:s[0],y:s[1],ph:random()*6,c:["#f6e27a","#f3a6c8","#bfe0ff","#ffffff"][i%4]});}
+ for(let i=0;i<(S.snow||S.lava?0:season==="autumn"?3:7);i++){let s=null;for(let t=0;t<80&&!s;t++){const x=random()*W,y=random()*H;if(!clear(x,y,50,44))s=[x,y];}if(s)living.push({type:"butterfly",x:s[0],y:s[1],ph:random()*6,c:["#f6e27a","#f3a6c8","#bfe0ff","#ffffff"][i%4]});}
  living.push({type:"birds",W,H});
- if(season!=="summer")living.push({type:season==="winter"?"snow":"leaves",W,H});
+ if(season!=="summer")living.push({type:season==="winter"?"snow":S.lava?"embers":"leaves",W,H});
  props.sort((p,q)=>p.y-q.y);for(const p of props)p.draw();
 
  // 5. Keep at the road's end.
@@ -312,6 +327,11 @@ export function animateMap(ctx,now){const t=now/1000;
   else if(L.type==="wisp"||L.type==="rune"){const k=Math.sin(t*2+L.ph)*.5+.5,y=L.y-(L.type==="wisp"?Math.sin(t*.8+L.ph)*6:0);ctx.save();ctx.globalCompositeOperation="lighter";for(const [r,al] of [[11,.12],[6,.22],[3,.5]]){ctx.globalAlpha=al*(.5+k*.5);ctx.fillStyle=L.type==="wisp"?"#bfe8d0":"#c9a6ff";ctx.beginPath();ctx.arc(L.x,y,r,0,Math.PI*2);ctx.fill();}ctx.restore();}
   else if(L.type==="snow"){ctx.fillStyle="#ffffff";for(let i=0;i<110;i++){const sp=18+(i*37%23),x0=(i*97.3)%L.W,y=((i*61.7)+t*sp)%(L.H+20)-10,x=x0+Math.sin(t*.8+i)*10,r=.9+(i%3)*.55;ctx.globalAlpha=.55+(i%4)*.1;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;}
   else if(L.type==="leaves"){const C=["#c9542e","#e8823a","#f2b84a","#a8382e"];for(let i=0;i<26;i++){const sp=22+(i*13%17),x0=(i*131.7)%L.W,y=((i*53.3)+t*sp)%(L.H+30)-15,x=x0+Math.sin(t*1.1+i)*24,rot=t*2+i;ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.scale(1,Math.abs(Math.sin(t*3+i))*.7+.3);ctx.fillStyle=C[i%4];ctx.beginPath();ctx.ellipse(0,0,4,2,0,0,Math.PI*2);ctx.fill();ctx.restore();}}
+  else if(L.type==="vent"){const tick=L.game?.state?.tick||0,active=L.game?.state?.phase==="active",until=VENT_EVERY-(tick%VENT_EVERY),warn=active&&until<=VENT_WARN?1-until/VENT_WARN:0,f=Math.sin(t*3+L.x)*.5+.5;
+   ctx.save();ctx.globalCompositeOperation="lighter";ctx.globalAlpha=.18+f*.08+warn*.5;const g=ctx.createRadialGradient(L.x,L.y,0,L.x,L.y,24+warn*(L.r-24));g.addColorStop(0,"#ffb24a");g.addColorStop(1,"#ff4a1a00");ctx.fillStyle=g;ctx.beginPath();ctx.arc(L.x,L.y,24+warn*(L.r-24),0,Math.PI*2);ctx.fill();
+   if(warn>0){ctx.globalAlpha=warn*.7;ctx.strokeStyle="#ff7a2e";ctx.lineWidth=2;ctx.setLineDash([8,6]);ctx.beginPath();ctx.ellipse(L.x,L.y,L.r,L.r*.62,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
+   for(let i=0;i<3;i++){const k=((t*.5+i/3+L.x*.01)%1);ctx.globalAlpha=.5*(1-k);ctx.fillStyle="#6a5a52";ctx.beginPath();ctx.arc(L.x+Math.sin(t+i*2)*5,L.y-6-k*30,4+k*7,0,Math.PI*2);ctx.fill();}ctx.restore();}
+  else if(L.type==="embers"){ctx.save();ctx.globalCompositeOperation="lighter";for(let i=0;i<60;i++){const sp=14+(i*37%19),x0=(i*97.3)%L.W,y=L.H+10-(((i*61.7)+t*sp)%(L.H+20)),x=x0+Math.sin(t*.9+i)*12;ctx.globalAlpha=.35+(i%4)*.12;ctx.fillStyle=i%3?"#ff8a2e":"#ffd27a";ctx.fillRect(x,y,1.8,1.8);}ctx.restore();}
   else if(L.type==="torch"){const f=Math.sin(t*12+L.ph)*.5+.5;ctx.fillStyle="#15241c";ctx.fillRect(L.x-1.5,L.y-2,3,10);ctx.save();ctx.globalCompositeOperation="lighter";ctx.globalAlpha=.25+f*.15;ctx.fillStyle="#ffb24a";ctx.beginPath();ctx.arc(L.x,L.y-5,9,0,Math.PI*2);ctx.fill();ctx.restore();ctx.fillStyle=f>.5?"#ffd27a":"#ff9a3a";ctx.beginPath();ctx.ellipse(L.x,L.y-6,2.6,4+f*1.5,0,0,Math.PI*2);ctx.fill();}
   else if(L.type==="birds"){const period=26,k=(t%period)/period;if(k>.55)continue;const u=k/.55,bx=-60+u*(L.W+120),by=L.H*.28+Math.sin(u*3)*40;for(let i=0;i<5;i++){const ox=bx-i*16-(i%2)*8,oy=by+(i%2?10:-4)*(1+i*.2),fl=Math.sin(t*12+i)*3;ctx.fillStyle="#13241a30";ctx.beginPath();ctx.ellipse(ox+30,oy+90,4,1.6,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#22302a";ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(ox-5,oy-fl);ctx.quadraticCurveTo(ox-2,oy-1,ox,oy);ctx.quadraticCurveTo(ox+2,oy-1,ox+5,oy-fl);ctx.stroke();}}
  }

@@ -457,3 +457,8 @@ Card names, mana costs and rules text checked against Scryfall (2026-11-23).
 - **Kaalia of the Vast** (red-white-black). Every 12 s while she fights, puts an Angel, Demon or Dragon onto the field (one of each at most). Tap: Call of the Vast, all three at once. Unlock: reach player level 6.
 - New unlock rule kinds: `stars`, `maps`. Troop tokens can carry `expires` (decayed) and `counters`.
 - Seeded benchmark, fortress health after wave 30 (avg of seeds 1–4): Heliod 12, Wilhelt 11, Kaalia 15 (field 10–20).
+## 2026-11-23 — v0.1.0-beta.13.35 Emberfall Caldera (campaign region 5)
+
+- New map `caldera`, Emberfall Caldera, for the Ember Wastes region: the road spirals into a volcano to a keep at the centre. Three lava vents (map.vents [x,y,radius]) erupt every 15 s of a wave (VENT_EVERY 150 ticks), taking 12% max health from ground enemies (bosses 4%, armor ignored) and 30% from ground troops in range. Fliers are unharmed. Damage counts as hazardDamage in stats.
+- Ash palette (map.palette "ember"): lava instead of water, charred trees, rising embers. Vents glow and show their blast ring for the last 2.5 s before each eruption. One season only.
+- The world map's fifth stop now opens it (win Greyhorn Pass, or level 6). Crude bot: Hollow 17–18, Greyhorn 15, Caldera 15–16.

@@ -123,7 +123,7 @@ export const LEVEL_UNLOCKS = {
  3: { towers: ["hex", "beast"], maps: ["confluence"] },
  4: { towers: ["chapel", "goblin"], modes: ["endless"] },
  5: { towers: ["library", "thorn"], modes: ["onslaught"] },
- 6: { towers: ["foundry", "mirror"], maps: ["frostfen", "pass"] }
+ 6: { towers: ["foundry", "mirror"], maps: ["frostfen", "pass", "caldera"] }
 };
 export const MAX_LEVEL = 6;
 export const xpToReach = n => 30 * n * (n - 1);
@@ -138,13 +138,13 @@ export function gainXp(p, waves, mode) { if (mode === "sandbox" || !Array.isArra
 export function see(p, kind, ids) { const list = p.seen[kind]; if (!list) return false; let added = false; for (const id of ids) if (!list.includes(id) && list.length < 200) { list.push(id); added = true; } return added; }
 
 // Campaign: five regions on the world map, each holding one battlefield. A region opens at its map's player level,
-// or as soon as the region before it has been won (any stars, any difficulty). map null = not built yet.
+// or as soon as the region before it has been won (any stars, any difficulty).
 export const REGIONS = [
  { id: "lowlands", name: "Verdant Lowlands", map: "hollow" },
  { id: "riverlands", name: "The Riverlands", map: "confluence" },
  { id: "marches", name: "Frostfen Marches", map: "frostfen" },
  { id: "greyhorn", name: "Greyhorn Mountains", map: "pass" },
- { id: "wastes", name: "The Ember Wastes", map: null }
+ { id: "wastes", name: "The Ember Wastes", map: "caldera" }
 ];
 export const mapStars = (p, map) => Math.max(0, ...LEVELS.map(l => bestStars(p, l, map)));
 export function regionOf(map) { return REGIONS.findIndex(r => r.map === map); }

@@ -124,3 +124,14 @@ test("Greyhorn Pass: ground enemies in the tunnel can't be targeted, hit or bloc
  for(const p of g.map.pads)assert.ok(!(g.pointAt(g.nearestPath(p.x,p.y)).x>t.x&&g.pointAt(g.nearestPath(p.x,p.y)).x<t.x+t.w&&g.pointAt(g.nearestPath(p.x,p.y)).y>t.y&&g.pointAt(g.nearestPath(p.x,p.y)).y<t.y+t.h),"pad "+p.id+" rallies outside");
  assert.equal(createEngine(1,"campaign","hollow").map.tunnel.length,0);
 });
+
+test("Emberfall Caldera: vents erupt every 15 s, scorching ground enemies and troops nearby but not fliers",async()=>{
+ const {VENT_EVERY,VENT_HIT}=await import("../engine.mjs");const g=createEngine(1,"sandbox","caldera"),v=g.map.vents[0];assert.equal(g.map.palette,"ember");assert.deepEqual(g.map.seasons,["summer"]);
+ g.command({type:"sandboxEnemy",enemy:"raider",count:1});g.command({type:"sandboxEnemy",enemy:"wing",count:1});const [ground,flier]=g.state.enemies;
+ const near=g.nearestPath(v.x,v.y);for(const e of [ground,flier]){e.progress=near;e.speed=0;e.attack=0;e.hp=e.maxHp=1000;}
+ const far=createEngine(1,"sandbox","caldera");far.command({type:"sandboxEnemy",enemy:"raider",count:1});const lone=far.state.enemies[0];lone.speed=0;lone.hp=lone.maxHp=1000;
+ while(g.state.tick%VENT_EVERY!==VENT_EVERY-1)g.step();assert.equal(ground.hp,1000);g.step();
+ assert.equal(ground.hp,1000-Math.round(1000*VENT_HIT),"ground enemy scorched");assert.equal(flier.hp,1000,"fliers unharmed");assert.ok(g.state.stats.hazardDamage>0);
+ for(let i=0;i<VENT_EVERY;i++)far.step();assert.equal(lone.hp,1000,"nothing near the entrance");
+ assert.equal(createEngine(1,"campaign","hollow").map.vents.length,0);
+});
