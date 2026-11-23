@@ -1,0 +1,23 @@
+name: ARCHEMANCY card check
+# Verifies every real Magic card ARCHEMANCY uses (names, color identity, type line, rules text) against Scryfall.
+on:
+  pull_request:
+    paths:
+      - "archamancy/pool.mjs"
+      - "archamancy/engine.mjs"
+      - "archamancy/tools/verify-cards.mjs"
+      - ".github/workflows/archemancy-cards.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scryfall:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Check cards against Scryfall
+        run: node archamancy/tools/verify-cards.mjs

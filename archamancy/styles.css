@@ -470,3 +470,27 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .world-node.locked .node-stars{color:#c9c9c0}
 @media (max-width:760px) and (orientation:portrait),(max-width:560px){.title-maps .world-map{margin:0 12px 10px}.node-name{display:none}.world-node[aria-pressed=true] .node-name{display:block}}
 .world-map .world-node,.world-map .world-node[aria-pressed]{background:none!important;border:0!important;box-shadow:none!important;color:#fff4d6!important;transform:translate(-50%,-50%)!important;padding:0!important}
+/* Campaign deckbuilding: Treasure, Deck and Shop under the world map; card tiles in the Deck, Shop and draft dialogs. */
+.camp-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin:-4px 0 12px}
+.camp-bar .stone-btn{min-height:40px;padding:6px 14px;font-size:.86rem}
+.camp-gold{font:800 1rem system-ui;color:#f6d77e;padding:6px 12px;border-radius:999px;background:#0f1a14cc;border:1px solid #e9c66f59}
+.camp-draft{animation:camp-pulse 1.4s ease-in-out infinite}
+@keyframes camp-pulse{50%{box-shadow:0 0 0 3px #f6d77e,0 0 16px #f6d77e}}
+@media (prefers-reduced-motion:reduce){.camp-draft{animation:none}}
+.camp-dialog{width:min(96vw,900px)}
+.camp-head{margin:14px 0 6px;font-size:.95rem;color:#f2cf6b}
+.camp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.camp-card{--school:#c5c9cc;display:flex;flex-direction:column;border:2px solid var(--school);border-radius:12px;background:#13231b;overflow:hidden;min-width:0}
+.camp-art{display:block;aspect-ratio:16/9;background:linear-gradient(135deg,var(--school),#13231b);background-size:cover;background-position:center}
+.camp-art.has-art{background-image:var(--art)}
+.camp-card>div:not(.camp-foot){padding:7px 9px 4px}
+.camp-card strong{display:block;font-size:.9rem;line-height:1.2}
+.camp-card em{display:block;font-size:.7rem;color:var(--school);font-style:normal;margin:2px 0 4px}
+.camp-card small{display:block;color:var(--muted);font-size:.75rem;line-height:1.3}
+.camp-foot{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 9px 9px;margin-top:auto}
+.camp-foot button{flex:1 1 auto;min-height:34px;font-size:.78rem}
+.camp-why{width:100%;color:#e8a07a!important}
+.camp-level{font:700 .78rem system-ui;color:#f6d77e}
+.camp-empty{grid-column:1/-1;color:var(--muted);font-size:.85rem;margin:0}
+.end-camp{color:#f6d77e;font-weight:700}
+@media (max-width:520px){.camp-grid{grid-template-columns:1fr 1fr;gap:7px}.camp-card small{font-size:.7rem}}

@@ -474,12 +474,40 @@ Owner report: "Mana Groves stop producing mana at some point." Cause: each Grove
 - Anything still unpaid when the road clears is paid then, so a Grove that stood all wave earns exactly one budget per wave as before (no balance change). A Grove built mid-wave keeps the old rule, so a last-second build cannot claim a full harvest.
 - The limit is now visible: a harvest bar under each Grove during a wave (turns gold when the wave's harvest is done), and the Grove's panel explains the per-wave amount.
 
-## 2026-11-23 — v0.1.0-beta.13.41 A final boss for every region (campaign stage C)
+## 2026-11-23 — v0.1.0-beta.13.38 Hard Gauntlet playtest tuning
+
+Based on Logan's 25-wave Hard, autumn Hollow Road, 3-star flawless run (1,456 kills, 20/20 health):
+- **Defensive contribution tracking:** Count enemy-ticks actually stopped by units instead of inferring utility from damage. Attribute each blocked enemy-tick to exactly one troop tower, commander token army or commander; distinguish bosses. Display enemy-seconds in selected tower details and battle contributions, and export per-tower blockedSeconds/bossBlockedSeconds plus raw counters. Existing saves receive default counters; determinism is preserved.
+- **Boss readability, no balance change:** The existing physical-immune boss shove (after 6 seconds held, 3 seconds unblocked) now telegraphs with an on-map warning and boss-bar hint at 4 seconds. Ordinary Titans and non-immune named bosses retain their existing movement. A proposed all-boss 12-second forced push was tested but rejected: it changed the deterministic Gauntlet benchmark from 10 to 5 fortress health. The original movement rules remain in place.
+- **Targeted Tier IV distinction:** Judgment Spire's Crown of Arrows now attacks two additional targets per shot at Tier IV (three arrows total), rather than only one additional target at Tier III. Its secondary strikes retain the existing per-target damage factor. All other specializations retain their current values pending comparable placement and targeting tests.
+- **Immunity and efficiency clarity:** Selected tower panels show immunity-blocked hits and Tier IV attacks/idle checks; detailed contributions show immune hits, resisted damage, shot counts and time held. Battle statistics now expose aggregated immunity and enemy-delay counters.
+- **Regression tests:** New tests for blocker attribution, save/restore, the existing immune-boss shove warning and movement, Crown's third projectile, rules version and UI data. Existing seeded campaign/endless and Game Lab regression checks remain required prior to merge. The engine changes preserve the 13.37 Mana Grove payout update.
+
+## 2026-11-23 — v0.1.0-beta.13.39 every friendly death fires death triggers
+
+Logan: "For death triggers tower, ensure that all friendly troops and commander deaths trigger it."
+- Audit before: a Necropolis death blast (Lich Citadel branch or Blood Artist) only fired when that same tower's own troops died. Commander tokens (Krenko goblins, Wilhelt zombies, Kaalia's angels, etc.) and the commander's own death fired nothing at all, and also never fed a nearby Soul Foundry.
+- Now one shared `deathTriggers()` runs on every friendly death: any troop tower's troops, spell-made troops, commander tokens, and the commander. Every death-trigger tower blasts at the spot of the death, anywhere on the map (like Blood Artist), still limited to one blast per tower every DEATH_BURST_GAP ticks. Soul Foundry still needs the death to be in its range. Teysa still doubles, Resonance doubles the tower that holds it.
+- Commander death handling merged into `commanderFall()` (boss smash and normal attacks shared the same copy).
+- Tests: archamancy/tests/death-triggers.test.mjs.
+
+## 2026-11-23 — v0.1.0-beta.13.40 Campaign deckbuilding: card pool, Shop, Deck and drafts
+
+Logan asked for "Balatro deck building meets MTG": a deck you build over the campaign instead of the big spell list. 
+- Balatro's pool (1.0): 150 Jokers (61 common, 64 uncommon, 20 rare, 5 legendary), 22 Tarot, 12 Planet, 18 Spectral, 32 Vouchers = 234. Shares: Jokers 64%, Vouchers 14%, Tarot 9%, Spectral 8%, Planet 5%. Joker effect mix: +Mult 22%, xMult 23%, +Chips 13%, Economy 13%, Retrigger 4%, Utility 24%.
+- archamancy/pool.mjs maps that onto 76 real Magic cards in the same proportions: 48 Relics (Jokers: 6 flat damage, 11 percent damage, 11 multipliers, 6 economy, 2 double-up, 12 utility), 10 Boons (Vouchers), 7 Rituals (Tarot: tutors, Giant Growth upgrades, Path to Exile removes), 6 Forbidden (Spectral), 5 basic Lands (Planets: level up a color). The 30 existing spells are the playing cards; the campaign deck is a singleton set of them.
+- Engine `kit` command (Gauntlet, before wave 1): deck, relics, boons, land levels and spell upgrades. Relic hooks live in one place (`kitDamage` inside `hurt`) plus wave start, deaths, kills, casts and summons. Small decks reshuffle the graveyard into the library when it runs dry. Runs without a kit are unchanged.
+- archamancy/campaign.mjs: starting deck of 8, deck cap 15, 5 relic slots, Treasure payouts, Balatro-weighted shop (relic 20, ritual 4, land 4, forbidden 1, plus one spell and one boon), rerolls, drafts, upgrades and exiles.
+- New CI check `.github/workflows/archemancy-cards.yml` runs archamancy/tools/verify-cards.mjs against Scryfall for every pool card and spell: exact name, color identity, type line and a phrase of rules text.
+- World map: a Treasure counter with Deck and Shop buttons under the region map. Deck shows spells (upgrade twice for 4 then 6 Treasure: +25% damage and -15% cost per level; exile for 3, minimum 5 spells), relics (sell for half), lands and boons. Shop shows the stock rolled after the last battle, with rerolls (2 Treasure, +1 each). Rituals that need a spell open a picker.
+- Every Gauntlet battle (not the Daily) plays the campaign deck. At the end it pays Treasure once (shown on the end screen, whose menu button now says World map) and, if 5+ waves were cleared, opens a draft of 3 spells; a pending draft also shows a "Pick a spell" button on the world map. The 30-card spellbook editor stays for Endless and the Proving Grounds.
+- Profile gains `camp` (sanitized by campaign.mjs against the live spell list).
+## 2026-11-23 — v0.1.0-beta.13.42 A final boss for every region (campaign stage C)
 
 Each campaign region now ends at wave 25 in its own Magic boss; the Verdant Lowlands keep Emrakul. Waves 1–24 are unchanged; wave 25 on each map (in any mode) swaps Emrakul for that region's boss with the same escort.
 - Riverlands (The Confluence): Lorthos, the Tidemaker. Marks the four nearest towers, then silences them.
 - Frostfen Marches: Isu the Abominable. After a 2 s warning ring, freezes nearby troops and your commander for 3 s (they can't fight or hold enemies).
 - Greyhorn Mountains (Greyhorn Pass): Kazuul, Tyrant of the Cliffs. Brings two Indomitable Ancients every 8 s (up to 8).
 - Ember Wastes (Emberfall Caldera): Inferno Titan. After a 2 s warning ring, scorches the three nearest troops for a third of their health (or your commander, who can't be killed by it).
-- Each gets a drawn card-based model, boss bar and codex entry, and its own notices. Card names and type lines are checked on Scryfall by the card-check workflow.
+- Each gets a drawn card-based model, boss bar and codex entry, and its own notices. The Scryfall card check now also covers every enemy and boss (name, type line, power/toughness).
 - Tests: wave-25 boss per map, Isu's freeze and thaw, Inferno Titan's scorch.
