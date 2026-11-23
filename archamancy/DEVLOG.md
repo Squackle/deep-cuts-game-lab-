@@ -545,3 +545,12 @@ Each campaign region now ends at wave 25 in its own Magic boss; the Verdant Lowl
 - Primary targets and chain/extra secondary shots respect the flight preference. If a tower is set to Flying only with no flyer in reach, it deliberately holds fire rather than hitting a ground enemy.
 - The selected mode is stored on the tower, included in playtest reports, and resumes across save/restore. Old saves missing the optional field act as Both; save format remains 1. Version bumped for deterministic rules/replay distinction.
 - Tests: archamancy/tests/flight-targeting.test.mjs; regression checks include targeting, immutability of existing modes, in-flight save continuation, and defense against unsupported towers/modes. Game Lab only; no main Arcade changes.
+
+## 2026-11-23 — v0.1.0-beta.13.46 first-flyers warning
+
+Owner feedback from a Normal Hollow Road first-campaign run: seven wave-4 Carrion Crows escaped at full health before anti-air towers were constructed, even though Arcanum is already available at level one.
+- The next-wave forecast now explicitly warns ahead of the first flying wave (wave 4), even when its enemy list is collapsed; no new modal or interruption.
+- Advice is tailored to current tower build, airborne targeting setting (Both/Flying/Ground), unlocked alternatives, and Beast Pack Reach at Tier III. It avoids claiming that all anti-air is progression-locked, and avoids suggesting locked towers.
+- Preview also remains available before wave 4 when an Onslaught/early-call cap makes the wave button temporarily unavailable. Warning disappears after the wave starts.
+- Focused deterministic unit and UI-contract tests cover wave scope, level-one Arcanum, configured targeting, Reach, locked alternatives and collapsed preview.
+- Information-only change: no tower damage, unlocks, difficulty, wave schedule, saves, ranking or main DeepCutsEDH production site changes.

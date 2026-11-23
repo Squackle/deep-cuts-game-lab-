@@ -1,5 +1,6 @@
 import {createEngine,VERSION,MAPS,PERKS,PERK_COSTS,TARGET_MODES,AIMED,FLIGHT_TARGET_MODES,FLIGHT_CAPABLE,ABILITIES,IMMUNE_BOSS_HOLD_TICKS,IMMUNE_BOSS_WARN_TICKS,BOSS_BLAST} from './engine.mjs';
 import {createArt} from './art.mjs';
+import {firstFlyerWarning} from './wave-guidance.mjs';
 import {paintTerrain as paintMapArt} from './terrain.mjs';
 import * as progress from './progress.mjs';
 import {resetGameProgress} from './game-reset.mjs';
@@ -242,8 +243,9 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  const BREAKTHROUGH_HINT="Physical-immune bosses warn after 4 seconds of being held and shove past blockers after 6 seconds for a brief window. This is their existing movement behavior.";
  function bossHint(e){const hint=e.shroud?HIDDEN_HINT:e.cracked?"Cracked below 40% health: every tower and troop can hurt it now.":e.armor>=100?"Only magic hurts it: "+towerNames(true).join(", ")+". Below 40% health it cracks and everything can hurt it.":e.resist>=100?"Only physical hurts it: "+towerNames(false).join(", ")+", troops. Below 40% health it cracks and everything can hurt it.":"";return [hint,e.boss&&e.baseArmor>=100?BREAKTHROUGH_HINT:""].filter(Boolean).join(" ");}
  function enemyTags(d){const tags=[];if(d.boss)tags.push(["Boss","boss"]);if(d.flying)tags.push(["Flying","fly"]);if(d.armor>=100)tags.push(["Physical immune","armor"]);else if(d.armor>=40)tags.push(["Armored","armor"]);if(d.resist>=100)tags.push(["Magic immune","magic"]);else if(d.resist>=40)tags.push(["Magic resist","magic"]);if(d.shroud)tags.push(["Shrouded","shroud"]);if(d.regen)tags.push(["Regenerates","regen"]);return tags;}
- function renderPeek(s,early){const peek=$("wavePeek"),n=s.wave+1,show=$("titleScreen").hidden&&selected===null&&selectedCard===null&&(s.phase==="ready"||(s.phase==="active"&&early))&&(s.mode!=="campaign"||n<=25);peek.hidden=!show;if(!show)return;
-  peek.classList.toggle("closed",!peekOpen);$("wavePeekToggle").setAttribute("aria-expanded",String(peekOpen));const key=n+"|"+s.phase+"|"+peekOpen;if(key===peekKey)return;peekKey=key;
+ function renderPeek(s,early){const peek=$("wavePeek"),n=s.wave+1,show=$("titleScreen").hidden&&selected===null&&selectedCard===null&&(s.phase==="ready"||(s.phase==="active"&&(early||s.mode==="campaign"&&n===4)))&&(s.mode!=="campaign"||n<=25);peek.hidden=!show;if(!show)return;
+  peek.classList.toggle("closed",!peekOpen);$("wavePeekToggle").setAttribute("aria-expanded",String(peekOpen));const hint=firstFlyerWarning(game,s,n),key=n+"|"+s.phase+"|"+peekOpen+"|"+hint;if(key===peekKey)return;peekKey=key;
+  text($("waveCounterHint"),hint);$("waveCounterHint").hidden=!hint;
   text($("wavePeekTitle"),(s.phase==="active"?"Next: wave ":"Wave ")+n);
   $("wavePeekList").replaceChildren(...game.waveSpec(n).map(x=>{const [k,c]=x.split(":"),d=game.types[k],li=document.createElement("li"),img=document.createElement("img"),name=document.createElement("span"),count=document.createElement("b"),tags=document.createElement("span");
    img.src=enemyIcon(k);img.alt="";name.className="peek-name";name.textContent=d.name;count.textContent="×"+c;tags.className="peek-tags";for(const [t,cls] of enemyTags(d)){const i=document.createElement("i");i.className="tag-"+cls;i.textContent=t;tags.append(i);}
