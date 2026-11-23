@@ -466,3 +466,10 @@ Card names, mana costs and rules text checked against Scryfall (2026-11-23).
 ## 2026-11-23 — v0.1.0-beta.13.36 Enemies without medallions
 
 - Logan: "The circles around the enemies gotta go." On the map, enemies now show their card's art crop bare (a card-shaped crop with the usual ink outline), with no round medallion, colored rim, stone stand or wing flaps. Bosses keep a small gold crown on top. Walk, attack and death animations are unchanged; the drawn creature still shows until the art loads.
+
+## 2026-11-23 — v0.1.0-beta.13.37 Mana Groves pay all wave
+
+Owner report: "Mana Groves stop producing mana at some point." Cause: each Grove has a per-wave harvest limit (22/65/165/400 by tier), and it paid at full speed until that was reached, which took about 15 to 25 seconds. Waves usually last much longer, so Groves went quiet for most of every wave.
+- Groves now pace their per-wave harvest across the wave: each payout aims to spread what is left over the time the slowest enemy still needs to walk out (stretching on its own while the road is held). Mana Nexus and Omnath still harvest faster, so they front-load the same amount.
+- Anything still unpaid when the road clears is paid then, so a Grove that stood all wave earns exactly one budget per wave as before (no balance change). A Grove built mid-wave keeps the old rule, so a last-second build cannot claim a full harvest.
+- The limit is now visible: a harvest bar under each Grove during a wave (turns gold when the wave's harvest is done), and the Grove's panel explains the per-wave amount.
