@@ -473,6 +473,16 @@ Owner report: "Mana Groves stop producing mana at some point." Cause: each Grove
 - Groves now pace their per-wave harvest across the wave: each payout aims to spread what is left over the time the slowest enemy still needs to walk out (stretching on its own while the road is held). Mana Nexus and Omnath still harvest faster, so they front-load the same amount.
 - Anything still unpaid when the road clears is paid then, so a Grove that stood all wave earns exactly one budget per wave as before (no balance change). A Grove built mid-wave keeps the old rule, so a last-second build cannot claim a full harvest.
 - The limit is now visible: a harvest bar under each Grove during a wave (turns gold when the wave's harvest is done), and the Grove's panel explains the per-wave amount.
+
+## 2026-11-23 — v0.1.0-beta.13.38 Hard Gauntlet playtest tuning
+
+Based on Logan's 25-wave Hard, autumn Hollow Road, 3-star flawless run (1,456 kills, 20/20 health):
+- **Defensive contribution tracking:** Count enemy-ticks actually stopped by units instead of inferring utility from damage. Attribute each blocked enemy-tick to exactly one troop tower, commander token army or commander; distinguish bosses. Display enemy-seconds in selected tower details and battle contributions, and export per-tower blockedSeconds/bossBlockedSeconds plus raw counters. Existing saves receive default counters; determinism is preserved.
+- **Boss readability, no balance change:** The existing physical-immune boss shove (after 6 seconds held, 3 seconds unblocked) now telegraphs with an on-map warning and boss-bar hint at 4 seconds. Ordinary Titans and non-immune named bosses retain their existing movement. A proposed all-boss 12-second forced push was tested but rejected: it changed the deterministic Gauntlet benchmark from 10 to 5 fortress health. The original movement rules remain in place.
+- **Targeted Tier IV distinction:** Judgment Spire's Crown of Arrows now attacks two additional targets per shot at Tier IV (three arrows total), rather than only one additional target at Tier III. Its secondary strikes retain the existing per-target damage factor. All other specializations retain their current values pending comparable placement and targeting tests.
+- **Immunity and efficiency clarity:** Selected tower panels show immunity-blocked hits and Tier IV attacks/idle checks; detailed contributions show immune hits, resisted damage, shot counts and time held. Battle statistics now expose aggregated immunity and enemy-delay counters.
+- **Regression tests:** New tests for blocker attribution, save/restore, the existing immune-boss shove warning and movement, Crown's third projectile, rules version and UI data. Existing seeded campaign/endless and Game Lab regression checks remain required prior to merge. The engine changes preserve the 13.37 Mana Grove payout update.
+
 ## 2026-11-23 — v0.1.0-beta.13.39 every friendly death fires death triggers
 
 Logan: "For death triggers tower, ensure that all friendly troops and commander deaths trigger it."
