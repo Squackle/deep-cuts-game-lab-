@@ -169,7 +169,16 @@ export function createSfx(storage=null){
   ability:o=>{play1("brass",midi("D4"),.3,.1,o);play1("brass",midi("A4"),.4,.09,o,.12);},
   victory:o=>{fanfare(["D4","F#4","A4","D5",null,"A4","D5"],"brass",.15,.15,o);["D3","F#3","A3"].forEach(n=>play1("strings",midi(n)+12,1.8,.07,o,.9));play1("timp",midi("D2"),.5,.3,o,.9);play1("cymbal",0,1,.12,o,.9);},
   defeat:o=>{["A3","F3","D3","C#3"].forEach((n,i)=>play1("strings",midi(n),.7,.09,o,i*.35));play1("lowbrass",midi("D2"),2,.12,o,1);play1("timp",midi("D2"),.6,.25,o,1);},
-  star:o=>play1("bell",midi("A6"),.25,.07,o)
+  star:o=>play1("bell",midi("A6"),.25,.07,o),
+  // Booster pack opening (packfx.mjs): shake, tear, deal, flip (pitch climbs per card), rarity reveals and the pick.
+  packShake:o=>{for(let i=0;i<6;i++)noise(.07,{vol:.06+.025*i,freq:420+i*90,q:1.5,delay:i*.12},o);play1("timp",midi("A1"),.8,.12,o);},
+  packTear:o=>{noise(.32,{vol:.32,freq:2200,q:.5},o);tone(380,.3,{type:"sawtooth",vol:.05,slide:3},o);["A5","C#6","E6","A6"].forEach((n,i)=>play1("bell",midi(n),.4,.06,o,.08+i*.05));play1("cymbal",0,1,.07,o,.05);},
+  cardDeal:o=>noise(.05,{vol:.08,freq:2600,q:1.2},o),
+  cardFlip:o=>{noise(.07,{vol:.14,freq:3400,q:1.4},o);play1("harp",midi(["A4","C#5","E5","A5","C#6"][Math.min(4,o?.step||0)]),.35,.1,o,.03);},
+  revealUncommon:o=>{play1("bell",midi("E6"),.3,.05,o);play1("bell",midi("B6"),.3,.04,o,.06);},
+  revealRare:o=>{["E5","G#5","B5","E6","G#6"].forEach((n,i)=>play1("harp",midi(n),.5,.1,o,i*.045));play1("bell",midi("B6"),.6,.06,o,.24);play1("choir",midi("E5"),1.1,.06,o,.05);},
+  revealMythic:o=>{fanfare(["A4","E5","A5"],"brass",.12,.09,o);play1("choir",midi("A4"),1.4,.08,o);play1("timp",midi("A1"),.6,.25,o);play1("cymbal",0,1.2,.1,o,.18);["A6","C#7","E7"].forEach((n,i)=>play1("bell",midi(n),.5,.05,o,.3+i*.06));},
+  packPick:o=>{play1("harp",midi("A5"),.3,.1,o);play1("bell",midi("E6"),.4,.06,o,.08);play1("bell",midi("A6"),.5,.05,o,.16);}
  };
  const gaps={shot_arcane:90,shot_strike:80,shot_splash:140,shot_chain:110,shot_hex:160,shot_root:160,shot_mirror:120,melee_legion:110,melee_necropolis:110,melee_goblin:110,melee_beast:150,melee_token:120,melee_commander:120,heal:350,smash:120,hit:45,kill:60,coin:70,harvest:180,harvestBig:260,leak:150,ability:300};
  function play(name,o){if(!prefs.sound||!ensure())return;if(ac.state==="suspended")ac.resume();const now=performance.now();if(gaps[name]&&now-(last[name]||0)<gaps[name])return;last[name]=now;sounds[name]?.(o);}
