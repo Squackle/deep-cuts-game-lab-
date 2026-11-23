@@ -77,7 +77,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
   if(kind==="thorn")return t?.tier>=3&&t.branch==="B"?"Ground only. Venom Thicket poison bypasses physical immunity over time; its initial attack remains physical.":"Ground only. Physical immunity blocks direct damage. Choose Venom Thicket at Tier III for armor-piercing poison.";
   if(kind==="pyre")return "Ground only; physical-immune enemies ignore blasts.";
   if(kind==="storm")return "Hits flyers; magic-immune enemies resist its lightning.";
-  return "";
+  return ["splash","root","troops"].includes(game.roster[kind]?.kind)?"Ground only.":["arcane","strike","chain","hex","mirror"].includes(game.roster[kind]?.kind)?"Hits fliers.":"";
  }
  function towerPlacementHint(p,d,t=null){
   if(!p||!d)return "";
