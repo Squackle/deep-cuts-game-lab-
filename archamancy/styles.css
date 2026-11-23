@@ -458,3 +458,15 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .card-side .card-actions-row{flex-direction:column}
 .card-side .card-actions-row button{max-width:none}
 }
+/* Campaign world map above the battlefield cards. */
+.world-map{position:relative;aspect-ratio:10/3;margin:0 0 12px;border:3px solid #6f5c37;border-radius:14px;overflow:hidden;box-shadow:0 6px 0 #0a110d}
+.world-map canvas{display:block;width:100%;height:100%}
+.world-node{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:1px;padding:0;margin:0;background:none;border:0;box-shadow:none;color:#fff4d6;cursor:pointer;font:inherit;min-height:0}
+.node-num{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe9a6,#c9973e);color:#2a1d0c;font-weight:800;border:2px solid #15241c;box-shadow:0 3px 0 #0a110d}
+.world-node[aria-pressed=true] .node-num{box-shadow:0 0 0 3px #f6d77e,0 0 14px #f6d77e}
+.world-node.locked .node-num{background:radial-gradient(circle at 35% 30%,#a9a99c,#5d5d55);color:#e8e8e0}
+.node-name{font-size:.66rem;font-weight:700;white-space:nowrap;text-shadow:0 1px 2px #000,0 0 4px #000}
+.node-stars{font-size:.62rem;color:#f6d77e;text-shadow:0 1px 2px #000;letter-spacing:1px}
+.world-node.locked .node-stars{color:#c9c9c0}
+@media (max-width:760px) and (orientation:portrait),(max-width:560px){.title-maps .world-map{margin:0 12px 10px}.node-name{display:none}.world-node[aria-pressed=true] .node-name{display:block}}
+.world-map .world-node,.world-map .world-node[aria-pressed]{background:none!important;border:0!important;box-shadow:none!important;color:#fff4d6!important;transform:translate(-50%,-50%)!important;padding:0!important}

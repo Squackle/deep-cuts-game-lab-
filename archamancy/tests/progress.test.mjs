@@ -62,3 +62,11 @@ test("player level: XP per wave, unlocks in order, older players keep everything
  const mid=progress.sanitize({starter:"krenko",bestWave:12},all);assert.equal(progress.level(mid),4);
  assert.equal(progress.sanitize({starter:"krenko",bestWave:25,xp:70},all).xp,70,"saved XP wins");
  assert.ok(progress.see(p,"e",["raider","runner"]));assert.ok(!progress.see(p,"e",["raider"]));const back=progress.sanitize(JSON.parse(JSON.stringify({...p,seen:{e:["raider","<x>"],t:"no"}})),all);assert.deepEqual(back.seen,{e:["raider"],t:[],c:[]});});
+
+test("campaign regions: winning a region opens the next one before its level",async()=>{
+ const p=progress.newProfile();assert.equal(progress.REGIONS.length,5);assert.deepEqual(progress.REGIONS.slice(0,4).map(r=>r.map),["hollow","confluence","frostfen","pass"]);
+ assert.ok(progress.mapOpen(p,"hollow"));assert.ok(!progress.mapOpen(p,"confluence"));
+ progress.recordStars(p,"easy",1,"hollow");assert.equal(progress.mapStars(p,"hollow"),1);assert.ok(progress.mapOpen(p,"confluence"));assert.ok(!progress.mapOpen(p,"frostfen"));
+ progress.recordStars(p,"hard",3,"confluence");assert.equal(progress.mapStars(p,"confluence"),3);assert.ok(progress.mapOpen(p,"frostfen"));
+ p.xp=progress.xpToReach(6);assert.ok(progress.mapOpen(p,"pass"),"level still opens maps");
+});

@@ -443,3 +443,8 @@ Logan picked these from the idea list. Visual and UI only; the simulation, seede
 - Enemy walk cycles: ground enemies bounce and rock in step with their speed, heavy ones (speed 7 or less) stomp and squash on each footfall, fliers flap. Enemies held up by troops breathe in place.
 - Death animations: a killed enemy flashes, tips over, sinks and fades over half a second (fliers spin and drop) instead of vanishing. Leaked enemies don't leave a body.
 - Guided first battle: the first Gauntlet run walks through seven real steps (build, send a wave, move the commander, use its power, cast a spell, upgrade, call a wave early) with a "Tutorial n of 7" label. A step that can't happen yet is passed over and comes back. It ends when all seven are done or at wave 6. "Skip tutorial" any time; "Replay tutorial" in the menu starts a fresh Gauntlet with it on.
+## 2026-11-23 — v0.1.0-beta.13.33 Campaign world map (stage A)
+
+- Title screen gains a painted world map above the battlefield cards: five regions on a trail (Verdant Lowlands = Hollow Road, The Riverlands = Confluence, Frostfen Marches, Greyhorn Mountains = Greyhorn Pass, The Ember Wastes = coming soon). Each stop shows its best stars; tapping one picks that battlefield.
+- progress.REGIONS / mapOpen / mapStars: a region opens at its map's player level as before, or as soon as the region before it has been won (any stars, any difficulty). Locked cards say both ways in.
+- Cosmetic module archamancy/worldmap.mjs (paintWorld, NODES). No engine or save changes.
