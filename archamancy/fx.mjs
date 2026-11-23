@@ -59,7 +59,9 @@ export function createFx(ctx,{maxParticles=260}={}){
   for(const id of lastPos.keys())if(!live.has(id)&&!s.events.some(e=>e.id===id))lastPos.delete(id);
   return cues;
  }
- function offset(now){if(now>shakeUntil)return {x:0,y:0};const k=(shakeUntil-now)/300,p=shakePower*Math.min(1,k);return {x:(rnd()-.5)*p,y:(rnd()-.5)*p};}
+ // No shake when the device asks for reduced motion.
+ const calm=typeof matchMedia==="function"&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+ function offset(now){if(calm||now>shakeUntil)return {x:0,y:0};const k=(shakeUntil-now)/300,p=shakePower*Math.min(1,k);return {x:(rnd()-.5)*p,y:(rnd()-.5)*p};}
  // Drifting fireflies over the forest, for a living map.
  const motes=Array.from({length:22},(_,i)=>({x:(i*397)%1000,y:(i*233)%600,p:i*1.7,s:.6+(i%5)*.15}));
  function ambient(now){animateMap(ctx,now);const t=now/1000;for(const m of motes){const x=(m.x+Math.sin(t*.3*m.s+m.p)*40+t*6*m.s)%1000,y=m.y+Math.cos(t*.4*m.s+m.p)*25,a=.25+.35*Math.max(0,Math.sin(t*1.3+m.p));ctx.globalAlpha=a;ctx.fillStyle="#f6f0a8";ctx.beginPath();ctx.arc(x,y,1.8,0,Math.PI*2);ctx.fill();ctx.globalAlpha=a*.25;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;}
