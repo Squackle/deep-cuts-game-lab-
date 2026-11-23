@@ -416,3 +416,8 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 @keyframes mana-gain{30%{transform:scale(1.12);box-shadow:0 0 0 2px #8ff07a99,0 0 14px #8ff07acc;border-color:#a6f08c}}
 @keyframes mana-gain-big{30%{transform:scale(1.2);box-shadow:0 0 0 3px #f2e07acc,0 0 22px #c8f06acc;border-color:#f6e27a}}
 @media (prefers-reduced-motion:reduce){.hud-item.gold.gain,.hud-item.gold.gain-big{animation-duration:.01s}}
+
+/* Affordable upgrade marker */
+.pad.built.can-up::after{content:"▲";position:absolute;top:-6px;right:-4px;font-size:clamp(.7rem,1.6cqw,1rem);color:#ffd36b;text-shadow:0 0 4px #000,0 0 2px #000;pointer-events:none;animation:canup 1.4s ease-in-out infinite}
+@keyframes canup{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.pad.built.can-up::after{animation:none}}

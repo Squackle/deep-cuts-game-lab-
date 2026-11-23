@@ -1,7 +1,7 @@
 // ARCHAMANCY beta simulation: fixed ticks, original data-driven rules, DOM independent.
 // Bump only when the saved run format changes, so saves survive ordinary updates.
 export const SAVE_FORMAT=1;
-export const VERSION="0.1.0-beta.13.21";
+export const VERSION="0.1.0-beta.13.22";
 // Status effects from towers (ticks are 100 ms): Pyre blasts burn, Thornheart poisons (stacking), Arcanum freezes (slow), Hex curses (+35% damage taken).
 export const BURN=10,POISON=30,POISON_STACKS=3;
 // Enemy health multiplier per difficulty. Gauntlet stars: 3 at 18+ fortress left, 2 at 10+, otherwise 1.
@@ -120,7 +120,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  for(const [k,t] of Object.entries(types))t.name=t.name||({raider:"Raider",runner:"Runner",armored:"Armored Brute",wing:"Carrion Wing",mage:"Hex Mage",regen:"Mossback Troll",titan:"Titan"})[k];
  // Hand-designed Gauntlet: traits arrive gradually, a named boss closes every fifth wave.
  const campaign=[
-  "raider:10","raider:12 runner:6","armored:7 raider:12","wing:9 runner:12","raider:12 armored:8 wing:6 grimgut:1",
+  "raider:10","raider:12 runner:6","armored:7 raider:12","wing:7 runner:12","raider:12 armored:8 wing:6 grimgut:1",
   "raider:14 runner:6 armored:3 wing:4 stalker:3","raider:15 runner:6 armored:3 wing:4 mage:1 stalker:3","raider:16 runner:7 armored:4 wing:4 mage:2 warden:2","raider:17 runner:7 armored:4 wing:5 mage:2 stalker:4 warden:2","raider:16 runner:8 armored:5 wing:5 mage:2 regen:2 titan:1 matron:1",
   "raider:19 runner:8 armored:5 wing:5 mage:2 regen:2 golem:2","raider:20 runner:9 armored:6 wing:6 mage:3 regen:2 stalker:4 warden:3","raider:21 runner:9 armored:6 wing:6 mage:3 regen:2 golem:3","raider:22 runner:10 armored:7 wing:6 mage:3 regen:2 stalker:5 warden:3 golem:2","raider:20 runner:10 armored:12 wing:9 mage:3 regen:3 titan:2 golem:3 colossus:1",
   "raider:24 runner:11 armored:12 wing:10 mage:4 regen:3 stalker:5 warden:4","raider:25 runner:11 armored:13 wing:11 mage:4 regen:3 golem:4 warden:4","raider:26 runner:12 armored:14 wing:11 mage:4 regen:3 stalker:6 golem:4","raider:27 runner:12 armored:15 wing:12 mage:4 regen:3 stalker:6 warden:5 golem:4","raider:26 runner:13 armored:16 wing:13 mage:5 regen:4 titan:2 warden:6 hierophant:1",
@@ -294,7 +294,10 @@ function commanderPos(){return pointAt(state.commander.progress);}
  function troopCap(t){const d=roster[t.kind];return (d.cap+t.tier-1+Math.floor(bonus(t,"cap")))*(t.twins?2:1);}
  // Barracks are fully manned the moment they are built or upgraded between waves, so their fighters are always visible.
  function muster(t){if(state.phase==="active"||roster[t.kind].kind!=="troops")return;let n=state.troops.filter(u=>u.source===t.id&&u.hp>0).length;while(n<troopCap(t)&&makeTroop(t))n++;}
- function makeTroop(t,opts={}){if(state.troops.length>=220)return false;const def=roster[t.kind];if(def.kind!=="troops")return false;const hp=opts.hp??Math.round(late(.6)*((def.hp+30*(t.tier-1))*(t.construct?1.6:1)*(1+bonus(t,"hp"))+(t.blade?40:0))*(1+.1*perk(def.color))*(t.twins?TWIN_SCALE:1)),damage=opts.damage??Math.round(late(.6)*(def.damage+5*(t.tier-1)+t.growth*4)*(1+bonus(t,"melee"))*(t.blade?1.4:1)*(1+.08*perk(def.color))*(t.twins?TWIN_SCALE:1));state.troops.push({id:state.nextId++,source:t.id,sourceUid:t.uid,hp,maxHp:hp,progress:t.rally,next:state.tick+5,damage,revived:!!opts.revived,model:opts.model||(bonus(t,"giant")?"bloom":t.construct?"construct":t.kind),ward:Math.round(bonus(t,"ward"))});stats.summoned++;t.summons++;if(opts.revived)stats.returns++;emit("summon",{source:t.id});if(commanderAlive("edgar")&&++state.cmdSummons%3===0)makeToken("vampire",30,10);return true;}
+ // Troops leave their tower, reach the road at the nearest point, then run to the rally.
+const TROOP_EXIT=4;
+function troopDoor(t){if(t.door==null){const p=pads[t.id];t.door=Math.round(nearestPath(p.x,p.y));}return t.door;}
+function makeTroop(t,opts={}){if(state.troops.length>=220)return false;const def=roster[t.kind];if(def.kind!=="troops")return false;const hp=opts.hp??Math.round(late(.6)*((def.hp+30*(t.tier-1))*(t.construct?1.6:1)*(1+bonus(t,"hp"))+(t.blade?40:0))*(1+.1*perk(def.color))*(t.twins?TWIN_SCALE:1)),damage=opts.damage??Math.round(late(.6)*(def.damage+5*(t.tier-1)+t.growth*4)*(1+bonus(t,"melee"))*(t.blade?1.4:1)*(1+.08*perk(def.color))*(t.twins?TWIN_SCALE:1));state.troops.push({id:state.nextId++,source:t.id,sourceUid:t.uid,hp,maxHp:hp,progress:troopDoor(t),next:state.tick+5,leave:state.tick+TROOP_EXIT,damage,revived:!!opts.revived,model:opts.model||(bonus(t,"giant")?"bloom":t.construct?"construct":t.kind),ward:Math.round(bonus(t,"ward"))});stats.summoned++;t.summons++;if(opts.revived)stats.returns++;emit("summon",{source:t.id});if(commanderAlive("edgar")&&++state.cmdSummons%3===0)makeToken("vampire",30,10);return true;}
  // A death is processed once; explosions can kill enemies but cannot cause more friendly deaths.
  // Provenance and per-tick entity caps keep the supported trigger graph finite.
  // Bosses stop for whoever blocks them and smash every ground troop (and the commander) within reach.
@@ -411,7 +414,7 @@ function commanderPos(){return pointAt(state.commander.progress);}
  t.next=state.tick+(k==="farm"?d.interval:Math.max(t.awakenUntil>state.tick?2:3,Math.round((d.interval-(tier-1)*2)*(1-Math.min(.65,bonus(t,"haste")))*(t.awakenUntil>state.tick?.5:1))));
  }
  const blocked=new Set();
- for(const u of state.troops){if(u.hp<=0)continue;const cmd=u.source==="cmd",t=cmd?state.cmdOwner:state.towers[u.source];if(!t||(cmd&&!state.commander))continue;const diff=(cmd?(state.commander.retreat?state.commander.target:state.commander.progress)+((u.id%5)-2)*6:t.rally)-u.progress;u.progress=stepToward(u.progress,u.progress+diff,10);const e=frontmost(state.enemies,e=>Math.abs(e.progress-u.progress)<=28&&e.hp>0&&(!e.flying||u.flier)&&!blocked.has(e.id));if(!e)continue;if(!e.flying&&holdable(e))blocked.add(e.id);if(state.tick>=u.next){shot("melee",pointAt(u.progress),enemyPos(e));hurt(e,u.damage,false,t,false,"troop");u.next=state.tick+(t.rushUntil>state.tick?4:8);}if(e.hp>0&&state.tick>=e.nextAttack){if(e.boss){smash(e);}else{const absorbed=Math.min(u.ward,e.attack);u.ward-=absorbed;u.hp=Math.max(0,u.hp-e.attack+absorbed);e.nextAttack=state.tick+10;if(!u.hp)die(u);}}}
+ for(const u of state.troops){if(u.hp<=0)continue;const cmd=u.source==="cmd",t=cmd?state.cmdOwner:state.towers[u.source];if(!t||(cmd&&!state.commander))continue;const diff=(cmd?(state.commander.retreat?state.commander.target:state.commander.progress)+((u.id%5)-2)*6:t.rally)-u.progress;if(u.leave>state.tick)continue;u.progress=stepToward(u.progress,u.progress+diff,10);const e=frontmost(state.enemies,e=>Math.abs(e.progress-u.progress)<=28&&e.hp>0&&(!e.flying||u.flier)&&!blocked.has(e.id));if(!e)continue;if(!e.flying&&holdable(e))blocked.add(e.id);if(state.tick>=u.next){shot("melee",pointAt(u.progress),enemyPos(e));hurt(e,u.damage,false,t,false,"troop");u.next=state.tick+(t.rushUntil>state.tick?4:8);}if(e.hp>0&&state.tick>=e.nextAttack){if(e.boss){smash(e);}else{const absorbed=Math.min(u.ward,e.attack);u.ward-=absorbed;u.hp=Math.max(0,u.hp-e.attack+absorbed);e.nextAttack=state.tick+10;if(!u.hp)die(u);}}}
  const cm=state.commander;
  if(cm&&cm.dead&&state.tick>=cm.respawnAt){cm.dead=false;cm.hp=cm.maxHp;cm.retreat=0;cm.progress=cm.target;emit("commanderReturn",{id:cm.id});}
  if(cm&&!cm.dead){cm.progress=stepToward(cm.progress,commanderSpot(cm),14);if(cm.retreat&&cm.hp<cm.maxHp&&!state.enemies.some(e=>e.hp>0&&!e.flying&&Math.abs(e.progress-cm.progress)<=30))cm.hp=Math.min(cm.maxHp,cm.hp+Math.ceil(cm.maxHp*RETREAT_REGEN));const here=pointAt(cm.progress);

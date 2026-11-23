@@ -17,7 +17,7 @@ function play({seed,map,commander,waves,early=false,saveEvery=0}){
  let g=createEngine(seed,"campaign",map);if(commander)g.command({type:"commander",id:commander});let i=0;
  for(let n=0;n<200000;n++){const s=g.state;if(s.phase==="lost"||s.phase==="won"||(s.wave>=waves&&s.phase==="ready"))break;
   if(s.phase==="ready"){act(g,i++);g.command({type:"wave"});continue;}
-  if(s.tick%20===0)act(g,i);if(early&&s.tick%150===0)g.command({type:"early"});g.step();
+  if(s.tick%20===0)act(g,i);if(early&&s.wave<waves&&s.tick%150===0)g.command({type:"early"});g.step();
   if(saveEvery&&g.state.tick%saveEvery===0){const save=JSON.parse(JSON.stringify(g.snapshot())),h=createEngine(1,save.state.initialMode,save.state.mapId);assert.ok(h.restore(save),"restore at tick "+g.state.tick);g=h;}}
  return g.playtestReport();
 }

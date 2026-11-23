@@ -367,3 +367,11 @@ Logan's Normal Hollow Road run (3 stars, 19 health): a Necropolis (Lich Citadel 
 - While fallen back and out of melee it heals 0.5% of max health per tick. It returns to its spot at 70% health, when no enemies are near that spot, on respawn, or when the player moves it.
 - No troops nearby: no retreat, it keeps fighting. New stat `commanderRetreats` and event `commanderRetreat`.
 - Test: `hold.test.mjs` covers both cases. 95 ARCHEMANCY tests and 267 Lab tests pass.
+
+## 2026-11-23 — v0.1.0-beta.13.22 troops run out from their towers, spare-mana hint
+
+- Owner request: troops now appear at their tower, step onto the nearest point of the road (0.4 s) and run to the rally. They don't fight until they are out.
+- Run report (Hard + Onslaught, Confluence, lost wave 15 with 4,441 mana unspent; 8 of 9 wave-4 Carrion Wings leaked): wave 4 now sends 7 wings instead of 9.
+- Built towers whose next upgrade you can afford show a bobbing gold ▲, and a status hint appears after a wave when you have 500+ spare mana and an affordable upgrade. Not in sandbox.
+- The save/resume test's scripted player stops calling waves early once it reaches its target wave, so tiny balance changes no longer push it into endless overlapping waves.
+- Benchmark fortress health 10 → 11. 113 ARCHEMANCY tests pass.
