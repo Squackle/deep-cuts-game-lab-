@@ -127,3 +127,14 @@ test("new air/ground targeting button appears on air-capable towers, not ground-
  assert.match(js,/const hasFlight=items\.some\(b=>b\.id==="flightMode"\)/);
  assert.equal(VERSION,"0.1.0-beta.13.45");
 });
+
+test("different towers can independently choose air and ground without changing one another",()=>{
+ const g=arena("arcanum");
+ assert.equal(g.command({type:"build",pad:9,kind:"judgment"}),true);
+ assert.equal(g.command({type:"flightTarget",pad:8,mode:"flying"}),true);
+ assert.equal(g.command({type:"flightTarget",pad:9,mode:"ground"}),true);
+ assert.equal(g.state.towers[8].flightTarget,"flying");
+ assert.equal(g.state.towers[9].flightTarget,"ground");
+ assert.equal(g.command({type:"flightTarget",pad:8,mode:"both"}),true);
+ assert.equal(g.state.towers[9].flightTarget,"ground","changing one tower cannot affect another");
+});
