@@ -24,6 +24,7 @@ function boot(createEngine){
  const colors={W:"#e5d4a2",U:"#77b9e6",B:"#ac8ac3",R:"#ed8b65",G:"#9bc889",C:"#c5c9cc"};
  let game=createEngine(1), selected=null, schoolOpen=false, preview=null, heroKey="", speed=1, rallying=false, moving=false, accumulator=0,last=null,lastEvent=-1, selectedCard=null, handKey="", deckCountKey="", contributionKey="";
  const buttons=[], choices={}, statEls={};
+ const portrait=matchMedia("(orientation: portrait)");
  const labels={returns:"Troops returned",sacrifices:"Troops sacrificed",damage:"Damage dealt",towerDamage:"Direct tower damage",troopDamage:"Troop damage",deathDamage:"Death-trigger damage",spellDamage:"Spell damage",manaEarned:"Mana earned",farmMana:"Farm income",killMana:"Kill income",waveMana:"Wave rewards",earlyMana:"Early-call mana",earlyCalls:"Early calls",spent:"Mana spent",refunds:"Resale refunds",kills:"Enemies defeated",leaks:"Enemies escaped",summoned:"Troops summoned",fallen:"Troops fallen",casts:"Spells cast",draws:"Cards drawn",triggers:"Combo triggers",healing:"Healing restored",control:"Control applications",soulMana:"Soul income",spellMana:"Spell income",sandboxMana:"Sandbox grants",commanderMana:"Commander mana",commanderDamage:"Commander damage",commanderArmyDamage:"Commander token damage",blockedEnemyTicks:"Enemy delay (enemy-seconds)",bossBlockedTicks:"Boss delay (enemy-seconds)",commanderBlockedTicks:"Commander delay (enemy-seconds)",commanderArmyBlockedTicks:"Commander token delay (enemy-seconds)",immuneHits:"Immune hits",immuneDamage:"Damage stopped by immunity",resistedDamage:"Damage resisted"};
  const text=(el,value)=>{const s=String(value);if(el.textContent!==s)el.textContent=s;};
  // Drawn icons (SVG) so they look the same in every font.
@@ -67,7 +68,7 @@ function cancelMove(){if(!moving)return false;moving=false;$("notice").classList
 let moveMark=null,movedOnce=false;const heroWalk={id:null,p:null,at:0};
 function commanderAt(x,y){const c=game.state.commander;if(!c||c.dead)return false;const q=game.pointAt(heroWalk.id===c.id&&heroWalk.p!==null?heroWalk.p:c.progress);return Math.hypot(x-q.x,y-(q.y-10))<=30;}
 function onRoad(x,y){const q=game.pointAt(game.nearestPath(x,y));return Math.hypot(x-q.x,y-q.y)<=46;}
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.preventDefault();});
+document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&cancelMove())e.preventDefault();});
  $("commanderMove").addEventListener("click",()=>{closeDialogs();selectedCard=null;rallying=false;moving=true;notice("Tap a road location to move your commander.");renderHud();});
  for(const b of document.querySelectorAll("[data-close]"))b.addEventListener("click",closeDialogs);
  $("clearSelection").addEventListener("click",()=>{if(schoolOpen&&!game.state.towers[selected]){schoolOpen=false;preview=null;renderHud();}else selectPad(null);});
@@ -220,16 +221,33 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  function waveText(n){return game.waveSpec(n).map(x=>{const [k,c]=x.split(":"),d=game.types[k];return (d.boss&&k!=="titan"?"BOSS ":"")+d.name+" × "+c;}).join(" · ");}
  function traitText(n){const seen=new Set();return game.waveSpec(n).map(x=>x.split(":")[0]).filter(k=>game.types[k].trait&&!seen.has(k)&&seen.add(k)).map(k=>game.types[k].name+": "+game.types[k].trait).join(" ");}
  function ringLabel(b,icon,price,label){const k=icon+"|"+price;if(b.dataset.k!==k){b.dataset.k=k;const i=document.createElement("span"),c=document.createElement("span");i.className="ring-icon";i.textContent=icon;c.className="price";c.textContent=price;b.replaceChildren(i,c);}b.setAttribute("aria-label",label);b.title=label;}
- // Ring menu around the selected pad. Near the top or bottom edge the ring opens as an arc away from the edge.
- function placeRing(pad){const ring=$("ring"),rect=canvas.getBoundingClientRect(),unit=rect.height/game.map.height,rs=Math.max(38,Math.min(52,rect.width*.052)),reach=(rs*1.3+rs*.6)/unit;
-  ring.style.left=pad.x/game.map.width*100+"%";ring.style.top=pad.y/game.map.height*100+"%";
-  const py=rect.top+pad.y*unit,above=py-48,below=innerHeight-py-8,need=reach*unit,edge=above<need?"top":below<need?"bottom":"";ring.dataset.edge=edge;ring.dataset.info=!edge&&above<rs*1.95+64?"below":"";
+ // Keep the ring anchored to its pad and the description within the viewport.
+ function placeRing(pad){
+  const ring=$("ring"),rect=canvas.getBoundingClientRect(),rs=Math.max(38,Math.min(52,innerWidth*.052));
+  const px=rect.left+pad.x/game.map.width*rect.width,py=rect.top+pad.y/game.map.height*rect.height;
+  ring.style.left=pad.x/game.map.width*100+"%";
+  ring.style.top=pad.y/game.map.height*100+"%";
+  const above=py-48,below=innerHeight-py-8;
+  const edge=above<rs*1.9?"top":below<rs*1.9?"bottom":"";
+  ring.dataset.edge=edge;
+  const info=$("ringInfo"),half=info.offsetWidth/2;
+  ring.dataset.info=!edge&&above<rs*1.95+info.offsetHeight?"below":"";
+  info.style.setProperty("--shift",(Math.max(half+8,Math.min(innerWidth-half-8,px))-px)+"px");
   for(const group of ring.querySelectorAll(".ring-items")){const items=[...group.children].filter(b=>!b.hidden);const n=items.length;if(!n)continue;
    let angles;if(group.id==="towerActions"){const hasFlight=items.some(b=>b.id==="flightMode");if(hasFlight){const sectors={upgrade:-90,flightMode:0,sell:90,targetMode:180};const top={upgrade:25,flightMode:70,targetMode:110,sell:155},bottom={upgrade:-155,flightMode:-110,targetMode:-70,sell:-25};angles=items.map(b=>(edge==="top"?top:edge==="bottom"?bottom:sectors)[b.id]??180);}else{angles=items.map(b=>b.id==="upgrade"?-90:b.id==="sell"?90:180);/* rally and target never show together */if(edge==="top")angles=angles.map(a=>a===-90?30:a===90?150:90);if(edge==="bottom")angles=angles.map(a=>a===-90?-90:a===90?-150:-30);}}
    else if(!edge)angles=items.map((_,i)=>-90+i*360/n);else{const mid=edge==="top"?90:-90,span=n>3?150:130;angles=items.map((_,i)=>mid-span/2+(n===1?span/2:i*span/(n-1)));}
    items.forEach((b,i)=>{const a=angles[i]*Math.PI/180;b.style.setProperty("--cx",Math.cos(a).toFixed(3));b.style.setProperty("--cy",Math.sin(a).toFixed(3));});}
-  const shift=Math.max(0,140-pad.x/game.map.width*rect.width)-Math.max(0,140-(game.map.width-pad.x)/game.map.width*rect.width);$("ringInfo").style.setProperty("--shift",shift+"px");}
- function renderHero(){const s=game.state,c=s.commander,key=c?c.id:"none";if(heroKey!==key+(cardArt.get(c?game.commanders[c.id].name:"")?"a":"")){heroKey=key+(cardArt.get(c?game.commanders[c.id].name:"")?"a":"");const face=$("heroFace");face.classList.remove("has-art");face.style.removeProperty("--art");face.textContent=c?"":"♛";if(c){if(!paintArt(face,game.commanders[c.id].name))face.textContent=game.commanders[c.id].name[0];$("commanderOpen").style.setProperty("--school",colors[game.commanders[c.id].color]);}else $("commanderOpen").style.removeProperty("--school");}
+ }
+ function renderHero(){
+  const s=game.state,c=s.commander,def=c?game.commanders[c.id]:null,face=$("heroFace");
+  const art=def?cardArt.get(def.name):null,key=(c?.id||"none")+(art?"a":"");
+  if(heroKey!==key){
+   heroKey=key;
+   face.classList.toggle("has-art",!!art);
+   if(art)face.style.setProperty("--art",'url("'+art.art+'")');else face.style.removeProperty("--art");
+   text(face,def?(art?"":def.name[0]):"♛");
+   if(def)$("commanderOpen").style.setProperty("--school",colors[def.color]);else $("commanderOpen").style.removeProperty("--school");
+  }
   const hp=c?(c.dead?0:c.hp/c.maxHp):0;$("heroHp").style.width=Math.round(hp*100)+"%";$("commanderOpen").classList.toggle("fallen",!!c&&c.dead);{const btn=$("commanderOpen"),down=!!c&&c.dead;if(down&&moving)moving=false;const left=down?Math.max(0,c.respawnAt-s.tick):0;btn.style.setProperty("--respawn",down?(1-left/game.commanderRespawn).toFixed(3):"0");const tm=$("heroTimer"),txt=down?String(Math.ceil(left/10)):"";if(tm.textContent!==txt)tm.textContent=txt;tm.hidden=!down;}$("commanderOpen").classList.toggle("selected",moving);$("commanderOpen").setAttribute("aria-label",c?game.commanders[c.id].name+(c.dead?", fallen, returns in "+Math.ceil(Math.max(0,c.respawnAt-s.tick)/10)+" seconds":", health "+c.hp+" of "+c.maxHp):"Choose a commander");}
  // Next-wave preview beside the wave button: who is coming, how many, and what each one shrugs off.
  const enemyIcons={},PEEK="archemancy.peek.v1";let peekKey="",peekOpen=true;const smallScreen=()=>matchMedia("(max-width:900px),(max-height:500px)").matches;try{const v=storage?.getItem(PEEK);peekOpen=v==null?!smallScreen():v!=="0";}catch{peekOpen=!smallScreen();}
@@ -256,7 +274,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
   b.disabled=!ready;b.classList.toggle("ready",ready);b.style.setProperty("--school",colors[game.commanders[c.id].color]);b.style.setProperty("--cd",left?(1-left/(a.cooldown*10)).toFixed(3):"1");text($("abilityName"),a.name);text($("abilityTimer"),left?Math.ceil(left/10)+"s":"");
   const why=c.dead?"Your commander has fallen.":s.phase!=="active"?"Use it during a wave.":left?"Ready in "+Math.ceil(left/10)+" s.":"Ready! Tap or press Q.";const label=a.name+": "+a.text+" "+why;if(b.title!==label){b.title=label;b.setAttribute("aria-label",label);}}
  function useAbility(){const c=game.state.commander;if(!c||!ABILITIES[c.id])return;if(game.command({type:"ability"})){sfx.play("ability");commanderSay("ability");notice(ABILITIES[c.id].name+"!");renderHud();}else notice(c.dead?"Your commander has fallen.":game.state.phase!=="active"?"Commander abilities work during waves.":"Not ready yet.");}
- $("abilityBtn").addEventListener("click",useAbility);addEventListener("keydown",e=>{if((e.key==="q"||e.key==="Q")&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName||"")&&$("titleScreen").hidden&&!document.querySelector("dialog[open]"))useAbility();});
+ $("abilityBtn").addEventListener("click",useAbility);addEventListener("keydown",e=>{if(!portrait.matches&&(e.key==="q"||e.key==="Q")&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName||"")&&$("titleScreen").hidden&&!document.querySelector("dialog[open]"))useAbility();});
  function renderHud(){
   const s=game.state,terminal=s.phase==="won"||s.phase==="lost";
   text($("health"),s.health);text($("traitInfo"),traitText(s.phase==="active"?s.wave:s.wave+1)||"No special traits in this wave.");text($("mana"),s.mana.toLocaleString("en-US"));text($("wave"),s.wave+(s.mode==="campaign"?" / 25":" / ∞"));text($("enemies"),s.enemies.length+s.queue.length);text($("time"),Math.floor(s.tick/10)+"s");text($("phase"),s.phase==="won"?"VICTORY":s.phase==="lost"?"DEFEAT":s.phase==="ready"?"PREPARE":"IN COMBAT");
@@ -325,15 +343,23 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  fitCanvas();try{new ResizeObserver(()=>requestAnimationFrame(fitCanvas)).observe(canvas);}catch{addEventListener("resize",fitCanvas);}
  matchMedia?.("(resolution: 1dppx)")?.addEventListener?.("change",fitCanvas);
  function placeStart(){const q=game.pointAt(60);for(const id of ["start","wavePeek"]){$(id).style.left=q.x/game.map.width*100+"%";$(id).style.top=q.y/game.map.height*100+"%";}$("wavePeek").classList.toggle("below",q.y>game.map.height/2);peekKey="";}placeStart();
- // Portrait phones get a one-time hint to turn sideways; the battlefield is wide.
- try{if(matchMedia("(orientation:portrait) and (max-width:700px)").matches&&!storage?.getItem("archemancy.rotateHint"))$("rotateHint").hidden=false;}catch{}
- $("rotateDismiss").addEventListener("click",()=>{$("rotateHint").hidden=true;try{storage?.setItem("archemancy.rotateHint","1");}catch{}});
  let gaitTrack=new Map(),dying=[],gaitState=null;
  function renderField(){
   const s=game.state,{width:w,height:h,path,pads}=game.map;ctx.clearRect(0,0,w,h);
   ctx.drawImage(terrain,0,0,w,h);
   const t=selected===null?null:s.towers[selected],p=selected===null?null:pads[selected];
-  if(p&&t){const r=game.roster[t.kind].range+game.bonus(t,"range");if(r){ctx.fillStyle="#e8d7ae1a";ctx.strokeStyle="#f1db9e88";ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,r+(p.bonus==="height"&&game.roster[t.kind].kind!=="troops"?30:0),0,Math.PI*2);ctx.fill();ctx.stroke();}}
+  const tower=t?game.roster[t.kind]:game.roster[preview];
+  if(p&&tower?.range&&(t||AIMED.includes(tower.kind))){
+   const height=p.bonus==="height"&&tower.kind!=="troops"?30:0;
+   const range=tower.range+height+(t?game.bonus(t,"range"):0);
+   ctx.save();
+   ctx.fillStyle=t?"#e8d7ae1a":colors[tower.color]+"28";
+   ctx.strokeStyle=t?"#f1db9e88":colors[tower.color];
+   ctx.lineWidth=t?2:3;
+   if(!t)ctx.setLineDash([8,6]);
+   ctx.beginPath();ctx.arc(p.x,p.y,range,0,Math.PI*2);ctx.fill();ctx.stroke();
+   ctx.restore();
+  }
   for(const t of Object.values(s.towers)){const p=pads[t.id],def=game.roster[t.kind];if(def.kind==="troops"&&selected===t.id){const r=game.pointAt(t.rally);ctx.strokeStyle=colors[def.color];ctx.lineWidth=2;ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(r.x,r.y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=colors[def.color];ctx.fillRect(r.x-1,r.y-18,3,18);ctx.beginPath();ctx.moveTo(r.x,r.y-18);ctx.lineTo(r.x+14,r.y-13);ctx.lineTo(r.x,r.y-8);ctx.fill();}}
   const actors=[];
   const clock=s.tick+Math.min(.99,accumulator/game.tickMs),animate=s.phase==="active"&&speed>0&&!document.querySelector("dialog[open]");
@@ -376,6 +402,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  function fullReport(){const r=game.playtestReport();const secs=o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k,Math.round(v/1000)]));
   r.client={screen:innerWidth+"x"+innerHeight,dpr:Math.round((devicePixelRatio||1)*100)/100,orientation:innerWidth>innerHeight?"landscape":"portrait",touch:"ontouchstart" in window||navigator.maxTouchPoints>0,ua:navigator.userAgent.slice(0,160),realSecondsInBattle:secs(session.time),sessionMinutes:Math.round((Date.now()-session.started)/60000),errors:session.errors.slice()};return r;}
  function frame(now){
+  if(portrait.matches)return;
   const elapsed=last===null?0:Math.min(250,Math.max(0,now-last));last=now;
   if(game.state.phase==="active"&&$("titleScreen").hidden){const k=document.querySelector("dialog[open]")?"menu":speed?"x"+speed:"paused";session.time[k]=(session.time[k]||0)+elapsed;}
   // Between Onslaught waves the clock keeps running too (clock.mjs), so the next wave arrives on time.
@@ -586,7 +613,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  // "Replay tutorial" in the menu starts it again.
  const TIPS="archemancy.tips.v1";let tipsOn=true;try{tipsOn=!storage?.getItem(TIPS);}catch{}
  const TUT_STEPS=["build","wave","move","power","spell","upgrade","early"];let tut={done:new Set(),seq:-1,state:null};
- function endTips(finished){const was=tipsOn;tipsOn=false;$("tutorial").hidden=true;document.querySelectorAll(".tip-glow").forEach(e=>e.classList.remove("tip-glow"));try{storage?.setItem(TIPS,"1");}catch{}if(finished&&was){notice("Tutorial complete. You know everything you need. Good luck, archmage!");sfx.play("star");}}
+ function endTips(finished){const was=tipsOn;tipsOn=false;$("tutorial").hidden=true;highlightTutorial(null);try{storage?.setItem(TIPS,"1");}catch{}if(finished&&was){notice("Tutorial complete. You know everything you need. Good luck, archmage!");sfx.play("star");}}
  $("tutorialSkip").addEventListener("click",()=>endTips(false));
  $("replayTutorial")?.addEventListener("click",()=>{try{storage?.removeItem(TIPS);}catch{}tipsOn=true;tut={done:new Set(),seq:-1,state:null};$("menuDialog").close?.();restart("campaign");});
  function tutStep(s){if(tut.state!==s){tut={done:new Set(),seq:-1,state:s};}
@@ -595,23 +622,74 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
   const c=s.commander,can={build:true,wave:s.phase==="ready",move:!!c&&!c.dead,power:!!c&&!c.dead&&s.phase==="active"&&!!ABILITIES[c.id]&&(c.abilityAt||0)<=s.tick,
    spell:s.hand?.length>0,upgrade:Object.values(s.towers).some(t=>{const u=game.upgradeCost(t);return u!==null&&u<=s.mana;}),early:s.phase==="active"&&s.wave<25&&!$("start").hidden};
   return TUT_STEPS.find(k=>!tut.done.has(k)&&can[k])||null;}
- function renderTutorial(){const s=game.state,box=$("tutorial");document.querySelectorAll(".tip-glow").forEach(e=>e.classList.remove("tip-glow"));if(!tipsOn||s.mode!=="campaign"||s.daily||!$("titleScreen").hidden||!$("endScreen").hidden||document.querySelector("dialog[open]")){box.hidden=true;return;}
+ let tutorialTarget=null;
+ function highlightTutorial(target){
+  if(tutorialTarget===target)return;
+  tutorialTarget?.classList.remove("tip-glow");
+  tutorialTarget=target;
+  target?.classList.add("tip-glow");
+ }
+ function placeTutorial(box,target){
+  const ring=target===$("ring");
+  const anchors=ring
+   ? [...target.querySelectorAll(".ring-info,.ring-items button,.ring-close")].filter(el=>el.getClientRects().length)
+   : [target];
+  const rects=anchors.map(el=>el.getBoundingClientRect());
+  const left=Math.min(...rects.map(r=>r.left)),right=Math.max(...rects.map(r=>r.right));
+  const top=Math.min(...rects.map(r=>r.top)),bottom=Math.max(...rects.map(r=>r.bottom));
+  const w=box.offsetWidth,h=box.offsetHeight,gap=12;
+  const x=Math.max(8,Math.min(innerWidth-w-8,(left+right-w)/2));
+  const y=Math.max(54,Math.min(innerHeight-h-8,(top+bottom-h)/2));
+  const positions=[[x,bottom+gap],[x,top-h-gap],[right+gap,y],[left-w-gap,y]];
+  const controls=[...document.querySelectorAll(".hud,.top-right,.bottom-left,.spell-tray,#start,#wavePeek")];
+  const obstacles=[...rects,...controls.map(el=>el.getBoundingClientRect())];
+  const score=([x,y])=>obstacles.reduce((area,r)=>area+Math.max(0,Math.min(x+w,r.right)-Math.max(x,r.left))*Math.max(0,Math.min(y+h,r.bottom)-Math.max(y,r.top)),0);
+  const fits=positions.filter(([x,y])=>x>=8&&x+w<=innerWidth-8&&y>=54&&y+h<=innerHeight-8);
+  const [bx,by]=fits.sort((a,b)=>score(a)-score(b))[0]||[x,y];
+  box.style.left=bx+"px";
+  box.style.top=by+"px";
+ }
+ function renderTutorial(){const s=game.state,box=$("tutorial");if(!tipsOn||s.mode!=="campaign"||s.daily||!$("titleScreen").hidden||!$("endScreen").hidden||document.querySelector("dialog[open]")){highlightTutorial(null);box.hidden=true;return;}
   const step=tutStep(s);if(TUT_STEPS.every(k=>tut.done.has(k))){endTips(true);return;}if(s.wave>=6){endTips(false);return;}
-  if(!step){box.hidden=true;return;}
+  if(!step){highlightTutorial(null);box.hidden=true;return;}
   let msg,target;const firstTower=Object.values(s.towers)[0],upTower=Object.values(s.towers).find(t=>{const u=game.upgradeCost(t);return u!==null&&u<=s.mana;});
   if(step==="build"){if(selected===null){msg="Tap a glowing stone to build your first tower.";target=buttons[4];}else if(!schoolOpen){msg="Pick a school of magic. Each color plays differently.";target=$("ring");}else{msg="Tap a tower to read about it, then tap it again to build.";target=$("ring");}}
-  else if(step==="wave"){msg="Send the first wave with the pulsing button on the road.";target=$("start");}
+  else if(step==="wave"){msg="Start wave 1 with the swords button at the road entrance.";target=$("start");}
   else if(step==="move"){msg=moving?"Now tap a spot on the road to send them there.":"Tap your commander, then tap the road to move them.";target=$("commanderOpen");}
   else if(step==="power"){msg="Your commander has a power. Tap it to use it, then it recharges.";target=$("abilityBtn");}
   else if(step==="spell"){msg=selectedCard===null?"Your cards are spells. Tap one to read it, then cast it.":"Follow the card: tap Cast, or tap the tower or road spot it asks for.";target=selectedCard===null||$("cardTip").hidden?$("hand"):$("cardTip");}
   else if(step==="upgrade"){if(selected!==null&&s.towers[selected]){msg="Tap Upgrade to make this tower stronger.";target=$("upgrade");}else{msg="You have mana to spare. Tap a tower to upgrade it.";target=buttons[(upTower||firstTower).id];}}
   else{msg="Call the next wave early with the button on the road. Early waves pay bonus mana.";target=$("start");}
-  if(!target||target.hidden){box.hidden=true;return;}
-  text($("tutorialStep"),"Tutorial "+(tut.done.size+1)+" of "+TUT_STEPS.length);text($("tutorialText"),msg);box.hidden=false;if(target!==$("ring"))target.classList.add("tip-glow");
-  const r=target.getBoundingClientRect(),bw=box.offsetWidth,bh=box.offsetHeight,near=target===$("ring")?90:12;let top=r.bottom+near;if(top+bh>innerHeight-8)top=r.top-near-bh;top=Math.max(54,Math.min(innerHeight-bh-8,top));const left=Math.max(8,Math.min(innerWidth-bw-8,r.left+r.width/2-bw/2));box.style.top=top+"px";box.style.left=left+"px";}
+  if(!target||target.hidden){highlightTutorial(null);box.hidden=true;return;}
+  text($("tutorialStep"),"Tutorial "+(tut.done.size+1)+" of "+TUT_STEPS.length);
+  text($("tutorialText"),msg);
+  box.hidden=false;
+  highlightTutorial(target===$("ring")?null:target);
+  placeTutorial(box,target);
+ }
  {const hub=hubFor(location.hostname,document.querySelector('meta[name="archemancy-hub"]')?.content);for(const a of document.querySelectorAll(".hub-link")){a.href=hub.href;a.textContent="‹ "+hub.label;}}
  renderTitle();
- document.addEventListener("pointerdown",()=>{sfx.unlock();sfx.music(true);},{once:true});
+ document.querySelector(".game-shell").addEventListener("pointerdown",()=>{sfx.unlock();sfx.music(true);},{once:true});
+ let rotatedDialog=null,resumeMusic=false;
+ function syncOrientation(){
+  last=null;
+  accumulator=0;
+  if(portrait.matches){
+   saveRun();
+   rotatedDialog=document.querySelector("dialog[open]");
+   rotatedDialog?.close();
+   resumeMusic=sfx.state.enabled;
+   sfx.music(false);
+   $("orientationGate").focus({preventScroll:true});
+   return;
+  }
+  fitCanvas();
+  rotatedDialog?.showModal();
+  rotatedDialog=null;
+  if(resumeMusic)sfx.music(true);
+ }
+ portrait.addEventListener("change",syncOrientation);
+ if(portrait.matches)syncOrientation();
  renderHud();
  // Errors in a frame go into the copied battle stats; the game keeps running.
  animationLoop(frame,{onError:e=>{noteError("frame: "+(e?.message||e));console.error(e);}})();

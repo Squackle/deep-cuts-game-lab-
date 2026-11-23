@@ -23,3 +23,11 @@ test("settings, statistics, deck editor and sandbox are modal rather than scroll
 test("wave calling and playtest report are exposed through accessible gameplay controls",()=>{assert.match(html,/id="copyStats"/);assert.match(html,/id="statsReport"[^>]*readonly/);assert.match(js,/game\.playtestReport\(\)/);assert.match(js,/navigator\.clipboard\.writeText\(report\)/);assert.match(js,/game\.canCallEarly\(\)/);assert.match(js,/game\.earlyBonus\(\)/);});
 
 test("tier-three branch choice has a modal and both purchase options",()=>{assert.match(html,/id="branchDialog"/);assert.match(html,/id="branchChoices"/);assert.match(js,/game\.branchOptions\(t\)/);assert.match(js,/branch:option\.id/);});
+
+test("portrait replaces the game with a rotation prompt and freezes the battle clock",()=>{
+ assert.match(html,/<section id="orientationGate"[^>]*aria-labelledby="orientationTitle"[^>]*>/);
+ assert.match(html,/Turn your phone sideways/);
+ assert.match(css,/@media \(orientation:portrait\)\{\s*\.game-shell\{display:none\}/);
+ assert.match(js,/function frame\(now\)\{\s*if\(portrait.matches\)return;/);
+ assert.match(js,/portrait.addEventListener\("change",syncOrientation\)/);
+});

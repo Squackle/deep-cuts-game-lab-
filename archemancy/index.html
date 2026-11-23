@@ -10,6 +10,11 @@
 <link rel="stylesheet" href="/archamancy/styles.css">
 </head>
 <body>
+<section id="orientationGate" class="orientation-gate" aria-labelledby="orientationTitle" tabindex="-1">
+ <div class="orientation-device" aria-hidden="true"></div>
+ <h2 id="orientationTitle">Turn your phone sideways</h2>
+ <p>Archemancy plays in landscape mode.</p>
+</section>
 <main class="game-shell">
 <h1>ARCHEMANCY</h1>
 <div class="map-stage"><div class="map" id="map"><canvas id="field" width="1000" height="600" aria-label="Verdant Passage winding battlefield"></canvas><div id="pads" class="pads"></div>
@@ -60,7 +65,6 @@
 </div>
 </div>
 <div class="title-foot"><a href="/" class="hub-link">‹ Back to Game Lab</a> <span id="titleVersion"></span></div></div></section>
-<p id="rotateHint" class="rotate-hint" hidden>Turn your phone sideways for a bigger battlefield. <button id="rotateDismiss" type="button">OK</button></p>
 <dialog id="branchDialog" aria-labelledby="branchTitle"><div class="dialog-head"><h2 id="branchTitle">Choose specialization</h2><button data-close>Cancel</button></div><p>Choose a permanent path for this tower. Tier IV unlocks its ultimate. To change paths, sell and rebuild.</p><div id="branchChoices" class="branch-choices"></div></dialog>
 <dialog id="restartConfirmDialog" aria-labelledby="restartConfirmTitle" aria-describedby="restartConfirmText"><div class="dialog-head"><h2 id="restartConfirmTitle">Restart run?</h2></div><p id="restartConfirmText">Restarting removes progress in the current run. Permanent unlocks and campaign rewards are kept.</p><div class="actions"><button id="restartCancel" type="button" autofocus>Keep playing</button><button id="restartConfirm" type="button" class="primary">Restart run</button></div></dialog>
 <dialog id="fullResetDialog" aria-labelledby="fullResetTitle" aria-describedby="fullResetWarning"><div class="dialog-head"><h2 id="fullResetTitle">Reset all ARCHEMANCY progress?</h2></div><p id="fullResetWarning">This permanently erases your player level and XP, commanders, unlocked towers and maps, stars, upgrades, trials, Codex discoveries, campaign deck, relics, shop, Treasure, daily challenge records, tutorial progress, and current saved run <strong>in this browser</strong>. This cannot be undone. Other Game Lab games and sound preferences are unaffected.</p><label for="fullResetPhrase">Type RESET to confirm</label><input id="fullResetPhrase" type="text" spellcheck="false" autocomplete="off" autocapitalize="characters" aria-describedby="fullResetWarning"><p id="fullResetError" role="alert" hidden></p><div class="actions"><button id="fullResetCancel" type="button" autofocus>Cancel</button><button id="fullResetConfirm" type="button" disabled>Erase all progress</button></div></dialog>
