@@ -9,5 +9,5 @@ test("effects read engine events without changing the simulation",()=>{
  assert.ok(g.command({type:"wave"}));const cues=fx.update(g,1016);assert.ok(cues.some(c=>c.type==="banner"&&c.title==="Wave 1"));
  let t=1016,seen=[];for(let i=0;i<1500&&g.state.phase==="active";i++){g.step();t+=16;seen.push(...fx.update(g,t));fx.draw(t);}
  const o=fx.offset(t+10000);assert.deepEqual(o,{x:0,y:0});
- const b=createEngine(1),f2=createFx(ctx);f2.sync(b);b.state.wave=4;b.command({type:"wave"});const c5=f2.update(b,0);assert.ok(c5.some(c=>c.tone==="boss"&&/Grimgut/.test(c.sub)),JSON.stringify(c5));
+ const b=createEngine(1),f2=createFx(ctx);f2.sync(b);b.state.wave=4;b.command({type:"wave"});const c5=f2.update(b,0);assert.ok(c5.some(c=>c.tone==="boss"&&/Lovisa Coldeyes/.test(c.sub)),JSON.stringify(c5));
 });

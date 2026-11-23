@@ -1,7 +1,7 @@
 // ARCHAMANCY beta simulation: fixed ticks, original data-driven rules, DOM independent.
 // Bump only when the saved run format changes, so saves survive ordinary updates.
 export const SAVE_FORMAT=1;
-export const VERSION="0.1.0-beta.13.22";
+export const VERSION="0.1.0-beta.13.23";
 // Status effects from towers (ticks are 100 ms): Pyre blasts burn, Thornheart poisons (stacking), Arcanum freezes (slow), Hex curses (+35% damage taken).
 export const BURN=10,POISON=30,POISON_STACKS=3;
 // Enemy health multiplier per difficulty. Gauntlet stars: 3 at 18+ fortress left, 2 at 10+, otherwise 1.
@@ -107,17 +107,22 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  function branchSpec(t){return t?.branch?branches[t.kind][t.branch==="A"?0:1]:null;}
  function bonus(t,k){const v=branchSpec(t)?.[3][k]||0;return v*(t.tier===4?1.6:1);}
  function branchName(t){const b=branchSpec(t);return b?b[t.tier===4?1:0]:roster[t.kind].name;}
+ // [role in the wave, card type line · power/toughness, short name for alerts]
+ const enemyCards={raider:["Raider","Creature — Goblin Warrior · 2/2"],runner:["Runner","Creature — Human Monk · 1/2"],armored:["Armored brute","Creature — Treefolk Warrior · 2/10"],wing:["Flier","Creature — Zombie Bird · 2/2"],mage:["Spellcaster","Creature — Human Wizard Sorcerer · 1/1"],regen:["Regenerator","Creature — Troll · 5/5"],titan:["Titan","Creature — Giant · 6/6"],stalker:["Shrouded stalker","Creature — Human Rogue · 1/1"],warden:["Magic-immune warden","Artifact Creature — Turtle Warrior · 4/4"],golem:["Physical-immune juggernaut","Artifact Creature — Juggernaut · */*"],grimgut:["Boss, wave 5","Legendary Creature — Human · 3/3","Lovisa"],matron:["Boss, wave 10","Legendary Creature — Faerie Wizard · 5/5","Oona"],colossus:["Boss, wave 15","Artifact Creature — Golem · 11/11","Darksteel Colossus"],hierophant:["Boss, wave 20","Legendary Creature — Angel · 7/7","Iona"],tyrant:["Final boss, wave 25","Legendary Creature — Eldrazi · 15/15","Emrakul"]};
  const types={raider:{hp:38,speed:12,armor:0,resist:0,reward:9,attack:6},runner:{hp:27,speed:19,armor:0,resist:0,reward:10,attack:5},armored:{hp:95,speed:8,armor:45,resist:5,reward:16,attack:12},wing:{hp:42,speed:16,armor:0,resist:15,reward:12,attack:0,flying:true},mage:{hp:62,speed:11,armor:5,resist:45,reward:15,attack:18},regen:{hp:120,speed:9,armor:10,resist:15,reward:20,attack:15,regen:2},titan:{hp:650,speed:5,armor:30,resist:25,reward:120,attack:45,boss:true},
-  stalker:{hp:45,speed:16,armor:0,resist:10,reward:12,attack:6,shroud:true,name:"Shade Stalker",trait:"Shrouded: towers can only target it near a Judgment Spire, Hex Sanctum or your troops, or for 3 s after any damage reveals it."},
-  warden:{hp:110,speed:9,armor:25,resist:100,reward:18,attack:14,name:"Spellward Warden",trait:"Immune to magic damage."},
-  golem:{hp:150,speed:7,armor:100,resist:20,reward:20,attack:16,name:"Ironhide Golem",trait:"Immune to physical damage (Godpiercer still hurts it)."},
-  grimgut:{hp:1300,speed:6,armor:25,resist:10,reward:150,attack:30,boss:true,ability:"warcry",name:"Grimgut, Raider King",trait:"Boss. Every 8 s, a war cry hastes nearby enemies for 3 s."},
-  matron:{hp:1600,speed:6,armor:10,resist:35,reward:200,attack:30,boss:true,shroud:true,ability:"brood",name:"The Veiled Matron",trait:"Boss. Shrouded, and every 8 s she births two Shade Stalkers (up to 8)."},
-  colossus:{hp:1900,speed:4,armor:100,resist:30,reward:260,attack:60,boss:true,name:"Ironclad Colossus",trait:"Boss. Immune to physical damage. Troops can only hold it for a few seconds. Cracks below 40% health: immunity drops to 50% resistance."},
-  hierophant:{hp:2050,speed:5,armor:30,resist:100,reward:320,attack:45,boss:true,ability:"silence",name:"Spellbane Hierophant",trait:"Boss. Immune to magic. Every 10 s marks the two nearest towers, then silences them for 4 s. Cracks below 40% health: immunity drops to 50% resistance."},
-  tyrant:{hp:3200,speed:4,armor:40,resist:40,reward:500,attack:70,boss:true,ability:"phase",name:"The Hollow Tyrant",trait:"Final boss. Every 8 s, after a warning, swaps between physical immunity and magic immunity. Cracks below 40% health: immunity drops to 50% resistance."}
+  stalker:{hp:45,speed:16,armor:0,resist:10,reward:12,attack:6,shroud:true,name:"Invisible Stalker",trait:"Shrouded: towers can only target it near a Judgment Spire, Hex Sanctum or your troops, or for 3 s after any damage reveals it."},
+  warden:{hp:110,speed:9,armor:25,resist:100,reward:18,attack:14,name:"Kappa Cannoneer",trait:"Immune to magic damage."},
+  golem:{hp:150,speed:7,armor:100,resist:20,reward:20,attack:16,name:"Darksteel Juggernaut",trait:"Immune to physical damage (Godpiercer still hurts it)."},
+  grimgut:{hp:1300,speed:6,armor:25,resist:10,reward:150,attack:30,boss:true,ability:"warcry",name:"Lovisa Coldeyes",trait:"Boss. Every 8 s, a war cry hastes nearby enemies for 3 s."},
+  matron:{hp:1600,speed:6,armor:10,resist:35,reward:200,attack:30,boss:true,shroud:true,ability:"brood",name:"Oona, Queen of the Fae",trait:"Boss. Shrouded, and every 8 s she births two Invisible Stalkers (up to 8)."},
+  colossus:{hp:1900,speed:4,armor:100,resist:30,reward:260,attack:60,boss:true,name:"Darksteel Colossus",trait:"Boss. Immune to physical damage. Troops can only hold it for a few seconds. Cracks below 40% health: immunity drops to 50% resistance."},
+  hierophant:{hp:2050,speed:5,armor:30,resist:100,reward:320,attack:45,boss:true,ability:"silence",name:"Iona, Shield of Emeria",trait:"Boss. Immune to magic. Every 10 s marks the two nearest towers, then silences them for 4 s. Cracks below 40% health: immunity drops to 50% resistance."},
+  tyrant:{hp:3200,speed:4,armor:40,resist:40,reward:500,attack:70,boss:true,ability:"phase",name:"Emrakul, the Aeons Torn",trait:"Final boss. Every 8 s, after a warning, swaps between physical immunity and magic immunity. Cracks below 40% health: immunity drops to 50% resistance."}
  };
- for(const [k,t] of Object.entries(types))t.name=t.name||({raider:"Raider",runner:"Runner",armored:"Armored Brute",wing:"Carrion Wing",mage:"Hex Mage",regen:"Mossback Troll",titan:"Titan"})[k];
+ for(const [k,t] of Object.entries(types))t.name=t.name||({raider:"Goblin Raider",runner:"Monastery Swiftspear",armored:"Indomitable Ancients",wing:"Carrion Crow",mage:"Prodigal Sorcerer",regen:"Mossbridge Troll",titan:"Primeval Titan"})[k];
+ // Every enemy is a real Magic card (names, type lines and power/toughness checked on Scryfall). Stats and abilities are the game's own; the card is the look.
+ // Non-enumerable, so they stay out of each enemy's copied state (save files and replays are unchanged apart from the name).
+ for(const [k,c] of Object.entries(enemyCards))Object.defineProperties(types[k],{role:{value:c[0]},card:{value:c[1]},short:{value:c[2]||types[k].name}});
  // Hand-designed Gauntlet: traits arrive gradually, a named boss closes every fifth wave.
  const campaign=[
   "raider:10","raider:12 runner:6","armored:7 raider:12","wing:7 runner:12","raider:12 armored:8 wing:6 grimgut:1",

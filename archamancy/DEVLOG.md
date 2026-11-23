@@ -375,3 +375,12 @@ Logan's Normal Hollow Road run (3 stars, 19 health): a Necropolis (Lich Citadel 
 - Built towers whose next upgrade you can afford show a bobbing gold ▲, and a status hint appears after a wave when you have 500+ spare mana and an affordable upgrade. Not in sandbox.
 - The save/resume test's scripted player stops calling waves early once it reaches its target wave, so tiny balance changes no longer push it into endless overlapping waves.
 - Benchmark fortress health 10 → 11. 113 ARCHEMANCY tests pass.
+
+## 2026-11-23 — v0.1.0-beta.13.23 enemies are real Magic cards
+
+- Owner request: every enemy and boss is a real MTG creature that fits what it does. Names, type lines and power/toughness checked on Scryfall (2026-11-23).
+- Raider → Goblin Raider, Runner → Monastery Swiftspear, Armored → Indomitable Ancients (2/10), Wing → Carrion Crow, Mage → Prodigal Sorcerer, Regen → Mossbridge Troll, Titan → Primeval Titan, Stalker → Invisible Stalker, Warden → Kappa Cannoneer (ward), Golem → Darksteel Juggernaut (indestructible).
+- Bosses: Grimgut → Lovisa Coldeyes (gives warriors haste), Matron → Oona, Queen of the Fae (makes Faerie Rogues), Colossus → Darksteel Colossus, Hierophant → Iona, Shield of Emeria (shuts off spells), Tyrant → Emrakul, the Aeons Torn.
+- Internal keys, stats, wave mixes and abilities unchanged; a seed-1 31-wave bot run matches main exactly apart from the name strings. `role`, `card` and `short` are non-enumerable so they stay out of saved enemy state.
+- Codex shows the card's Scryfall art, type line and artist; boss bar shows a small art portrait; boss alerts use short names (Lovisa, Oona, Iona, Emrakul). Map sprites unchanged.
+- Test: `enemy-cards.test.mjs`.
