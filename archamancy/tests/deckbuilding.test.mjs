@@ -118,3 +118,33 @@ test("forbidden cards: Necropotence trades hand size for a relic slot; Spark Dou
  const g = createEngine(1); g.command({ type: "kit", ...camp.kitFor(c) }); assert.equal(g.state.handMax, 4); const m = g.state.mana; g.command({ type: "wave" }); assert.ok(g.state.mana >= m + 40, "Sol Ring twice");
  assert.ok(camp.reroll(c, cards) && c.shop.rerolls === 1);
 });
+
+test("shop booster packs: two per visit, kept on reroll, open one and keep one card free", () => {
+ const c = camp.newCampaign(7); c.treasure = 60;
+ camp.finishBattle(c, { won: true, stars: 3, wave: 25 }, cards);
+ assert.equal(c.shop.fresh, true, "a battle restocks with new stock");
+ assert.equal(c.shop.packs.length, camp.PACK_SLOTS);
+ assert.equal(new Set(c.shop.packs.map(p => p.kind)).size, camp.PACK_SLOTS, "different packs");
+ const packs = JSON.stringify(c.shop.packs);
+ assert.ok(camp.reroll(c, cards)); assert.equal(JSON.stringify(c.shop.packs), packs, "rerolls keep the packs, like Balatro");
+ camp.seenShop(c); assert.equal(c.shop.fresh, false);
+ for (const kind of Object.keys(camp.PACKS)) {
+  c.pack = null; c.treasure = 60; c.shop.packs = [{ kind, price: 4, sold: false }];
+  const before = c.treasure, p = camp.openPack(c, 0, cards);
+  assert.ok(p, kind + " opens"); assert.equal(c.treasure, before - 4); assert.ok(c.shop.packs[0].sold);
+  assert.equal(p.opts.length, camp.PACKS[kind].show); assert.equal(new Set(p.opts).size, p.opts.length);
+  assert.equal(camp.openPack(c, 0, cards), null, "can't open twice");
+  const free = p.opts.find(id => !camp.packCardBlocker(c, id, cards) && !(kind === "ritual" && camp.needsTarget(id)));
+  if (free) { const t = c.treasure; assert.ok(camp.choosePack(c, free, cards), kind + " pick works"); assert.equal(c.treasure, t + (kind === "forbidden" && BY_ID[free].fx.gold || 0), "pack cards are free"); assert.equal(c.pack, null); }
+  else assert.ok(camp.skipPack(c));
+ }
+ c.shop.packs = [{ kind: "ritual", price: 4, sold: false }, { kind: "relic", price: 6, sold: false }];
+ camp.openPack(c, 0, cards); assert.equal(camp.packBlocker(c, 1, cards), "Finish the pack you opened first");
+ const saved = camp.sanitize(JSON.parse(JSON.stringify(c)), cards);
+ assert.deepEqual(saved.pack, c.pack, "an open pack survives a reload"); assert.deepEqual(saved.shop.packs, c.shop.packs);
+ const tgt = c.pack.opts.find(id => camp.needsTarget(id));
+ if (tgt) { const t = camp.ritualTargets(c, tgt, cards)[0]; assert.equal(camp.choosePack(c, tgt, cards), null, "needs a target"); assert.ok(camp.choosePack(c, tgt, cards, t)); }
+ c.relics = RELICS.slice(0, camp.slots(c)).map(r => r.id); c.pack = null;
+ assert.equal(camp.packBlocker(c, 1, cards), "Relic slots full: sell one in your Deck");
+ assert.equal(camp.sanitize({ ...c, pack: { kind: "relic", opts: ["landR", "nope"] } }, cards).pack, null, "bad pack contents dropped");
+});

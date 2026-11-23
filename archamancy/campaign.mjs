@@ -8,8 +8,19 @@ export const DECK_CAP = 15, MIN_DECK = 5, BASE_SLOTS = 5, UPGRADE_COST = [4, 6],
 export const PRICE = { ritual: 3, land: 3, forbidden: 5 };
 // Balatro's shop card weights: Jokers 20, Tarot 4, Planet 4 (Spectral cards only from packs, so we give them a small weight).
 export const SHOP_WEIGHTS = { relic: 20, ritual: 4, land: 4, forbidden: 1 };
+// Booster packs, like Balatro's: Arcana (Tarot) -> Ritual Pack, Celestial (Planet) -> Land Pack, Standard -> Spell Pack,
+// Buffoon (Joker) -> Relic Pack, Spectral -> Forbidden Pack. Open one and keep one card of the few inside, free.
+// Balatro's pack weights: Standard, Arcana and Celestial 4 each, Buffoon 1.2, Spectral 0.6. Two packs per shop; rerolls keep them.
+export const PACKS = {
+ spell: { name: "Spell Pack", price: 4, show: 3, weight: 4, text: "Choose 1 of 3 spells to add to your deck." },
+ ritual: { name: "Ritual Pack", price: 4, show: 3, weight: 4, text: "Choose 1 of 3 Rituals and use it now." },
+ land: { name: "Land Pack", price: 4, show: 3, weight: 4, text: "Choose 1 of 3 basic lands to level up a color." },
+ relic: { name: "Relic Pack", price: 6, show: 2, weight: 1.2, text: "Choose 1 of 2 Relics." },
+ forbidden: { name: "Forbidden Pack", price: 6, show: 2, weight: .6, text: "Choose 1 of 2 Forbidden cards and use it now." }
+};
+export const PACK_SLOTS = 2;
 
-export function newCampaign(seed = 1) { return { v: 1, deck: STARTER_DECK.slice(), up: {}, relics: [], boons: [], marks: [], lands: {}, treasure: 4, shop: null, draft: null, battles: 0, wins: 0, seed: seed >>> 0 || 1 }; }
+export function newCampaign(seed = 1) { return { v: 1, deck: STARTER_DECK.slice(), up: {}, relics: [], boons: [], marks: [], lands: {}, treasure: 4, shop: null, pack: null, draft: null, battles: 0, wins: 0, seed: seed >>> 0 || 1 }; }
 
 const ids = (a, ok) => Array.isArray(a) ? [...new Set(a.filter(x => typeof x === "string" && ok(x)))] : [];
 export function sanitize(raw, cards) {
@@ -23,7 +34,8 @@ export function sanitize(raw, cards) {
  c.relics = ids(raw.relics, k => BY_ID[k]?.kind === "relic").slice(0, slots(c));
  for (const k of "WUBRG") { const n = raw.lands?.[k]; if (Number.isInteger(n) && n > 0) c.lands[k] = Math.min(LAND_MAX, n); }
  for (const k of ["treasure", "battles", "wins"]) if (Number.isInteger(raw[k]) && raw[k] >= 0) c[k] = Math.min(raw[k], 1e6);
- if (raw.shop && Array.isArray(raw.shop.items)) c.shop = { rerolls: Number.isInteger(raw.shop.rerolls) ? raw.shop.rerolls : 0, items: raw.shop.items.filter(i => i && typeof i.id === "string" && (i.kind === "spell" ? Object.hasOwn(cards, i.id) : !!BY_ID[i.id])).map(i => ({ kind: i.kind === "spell" ? "spell" : BY_ID[i.id].kind, id: i.id, price: Math.max(0, Math.min(99, Number(i.price) | 0)), sold: !!i.sold })) };
+ if (raw.shop && Array.isArray(raw.shop.items)) c.shop = { rerolls: Number.isInteger(raw.shop.rerolls) ? raw.shop.rerolls : 0, items: raw.shop.items.filter(i => i && typeof i.id === "string" && (i.kind === "spell" ? Object.hasOwn(cards, i.id) : !!BY_ID[i.id])).map(i => ({ kind: i.kind === "spell" ? "spell" : BY_ID[i.id].kind, id: i.id, price: Math.max(0, Math.min(99, Number(i.price) | 0)), sold: !!i.sold })), packs: Array.isArray(raw.shop.packs) ? raw.shop.packs.filter(p => p && Object.hasOwn(PACKS, p.kind)).slice(0, 4).map(p => ({ kind: p.kind, price: Math.max(0, Math.min(99, Number(p.price) | 0)), sold: !!p.sold })) : [], fresh: !!raw.shop.fresh };
+ if (raw.pack && Object.hasOwn(PACKS, raw.pack.kind) && Array.isArray(raw.pack.opts)) { const kind = raw.pack.kind, opts = [...new Set(raw.pack.opts.filter(k => typeof k === "string" && (kind === "spell" ? Object.hasOwn(cards, k) : BY_ID[k]?.kind === kind)))].slice(0, 5); if (opts.length) c.pack = { kind, opts }; }
  if (Array.isArray(raw.draft)) { const d = raw.draft.filter(k => Object.hasOwn(cards, k) && !c.deck.includes(k)); c.draft = d.length ? d.slice(0, 5) : null; }
  return c;
 }
@@ -39,8 +51,8 @@ function weighted(c, list, w) { const total = list.reduce((a, x) => a + w(x), 0)
 const off = c => metaFx(c).shopOff || 0;
 export const priceOf = (c, base) => Math.max(1, base - off(c));
 
-// A shop visit: card slots (relic / ritual / land / forbidden by Balatro weights), one spell and one boon you don't own.
-export function rollShop(c, cards) {
+// A shop visit: card slots (relic / ritual / land / forbidden by Balatro weights), one spell, one boon you don't own and two packs.
+export function rollShop(c, cards, keepPacks = false) {
  const items = [], taken = new Set(), n = 2 + (metaFx(c).shopSlots || 0);
  for (let i = 0; i < n; i++) {
   const kind = weighted(c, Object.keys(SHOP_WEIGHTS), k => SHOP_WEIGHTS[k]);
@@ -55,11 +67,51 @@ export function rollShop(c, cards) {
  if (spell) items.push({ kind: "spell", id: spell, price: priceOf(c, SPELL_COST), sold: false });
  const boon = weighted(c, BOONS.filter(b => !c.boons.includes(b.id)), () => 1);
  if (boon) items.push({ kind: "boon", id: boon.id, price: priceOf(c, BOON_COST), sold: false });
- c.shop = { rerolls: 0, items };
+ const packs = keepPacks && c.shop?.packs ? c.shop.packs : rollPacks(c);
+ c.shop = { rerolls: 0, items, packs, fresh: false };
  return c.shop;
 }
 export const rerollCost = c => Math.max(1, 2 + (c.shop?.rerolls || 0) - (metaFx(c).rerollOff || 0));
-export function reroll(c, cards) { const cost = rerollCost(c); if (c.treasure < cost) return false; const n = (c.shop?.rerolls || 0) + 1; c.treasure -= cost; rollShop(c, cards); c.shop.rerolls = n; return true; }
+export function reroll(c, cards) { const cost = rerollCost(c); if (c.treasure < cost) return false; const n = (c.shop?.rerolls || 0) + 1; c.treasure -= cost; rollShop(c, cards, true); c.shop.rerolls = n; return true; }
+function rollPacks(c) { const out = []; for (let i = 0; i < PACK_SLOTS; i++) { const kind = weighted(c, Object.keys(PACKS).filter(k => !out.some(p => p.kind === k)), k => PACKS[k].weight); if (kind) out.push({ kind, price: priceOf(c, PACKS[kind].price), sold: false }); } return out; }
+// What could be inside a pack of this kind right now.
+function packPool(c, kind, cards) {
+ if (kind === "spell") return Object.keys(cards).filter(k => !c.deck.includes(k));
+ if (kind === "relic") return RELICS.filter(r => !c.relics.includes(r.id)).map(r => r.id);
+ if (kind === "land") return LANDS.filter(l => (c.lands[l.color] || 0) < LAND_MAX).map(l => l.id);
+ if (kind === "ritual") return RITUALS.filter(r => { const t = ritualTargets(c, r.id, cards); return !t || t.length; }).map(r => r.id);
+ return FORBIDDEN.map(f => f.id);
+}
+// Why pack i can't be opened right now, or null.
+export function packBlocker(c, i, cards) {
+ const p = c.shop?.packs?.[i]; if (!p) return "Gone";
+ if (p.sold) return "Opened";
+ if (c.pack) return "Finish the pack you opened first";
+ if (c.treasure < p.price) return "Not enough Treasure";
+ if (p.kind === "spell" && c.deck.length >= deckCap(c)) return "Deck full: exile a spell first";
+ if (p.kind === "relic" && c.relics.length >= slots(c)) return "Relic slots full: sell one in your Deck";
+ if (!packPool(c, p.kind, cards).length) return "Nothing left for this pack";
+ return null;
+}
+// Open pack i: pay, then pick one of c.pack.opts with choosePack (or skip it).
+export function openPack(c, i, cards) {
+ if (packBlocker(c, i, cards)) return null;
+ const p = c.shop.packs[i], pool = packPool(c, p.kind, cards), opts = [];
+ const w = p.kind === "relic" ? id => RARITY[BY_ID[id].rarity].weight : () => 1;
+ while (opts.length < PACKS[p.kind].show && pool.length) { const id = weighted(c, pool, w); opts.push(id); pool.splice(pool.indexOf(id), 1); }
+ c.treasure -= p.price; p.sold = true; c.pack = { kind: p.kind, opts };
+ return c.pack;
+}
+// Why a card in the open pack can't be taken, or null. Pack cards are free.
+export function packCardBlocker(c, id, cards) { return c.pack?.opts.includes(id) ? blocker(c, { kind: c.pack.kind, id, price: 0, sold: false }, cards) : "Not in this pack"; }
+export function choosePack(c, id, cards, target = null) {
+ if (packCardBlocker(c, id, cards)) return null;
+ const line = apply(c, c.pack.kind, id, cards, target);
+ if (line) c.pack = null;
+ return line;
+}
+export function skipPack(c) { if (!c.pack) return false; c.pack = null; return true; }
+export function seenShop(c) { if (c.shop) c.shop.fresh = false; }
 
 // Which spells a ritual can fetch, or act on.
 export function ritualTargets(c, id, cards) {
@@ -86,7 +138,12 @@ export function blocker(c, item, cards) {
 // Buy shop item i. Rituals that need a spell take it as target. Returns a short result line, or null if nothing happened.
 export function buy(c, i, cards, target = null) {
  const item = c.shop?.items?.[i]; if (!item || blocker(c, item, cards)) return null;
- const x = BY_ID[item.id], fx = x?.fx || {};
+ const line = apply(c, item.kind, item.id, cards, target);
+ if (!line) return null;
+ c.treasure -= item.price; item.sold = true; return line;
+}
+function apply(c, kind, id, cards, target) {
+ const item = { kind, id }, x = BY_ID[id];
  let line = null;
  if (item.kind === "relic") { c.relics.push(item.id); line = x.name + " joins your relics."; }
  else if (item.kind === "boon") { c.boons.push(item.id); line = x.name + ": " + x.text; }
@@ -94,8 +151,7 @@ export function buy(c, i, cards, target = null) {
  else if (item.kind === "spell") { c.deck.push(item.id); line = cards[item.id].name + " added to your deck."; }
  else if (item.kind === "ritual") line = ritual(c, item.id, cards, target);
  else if (item.kind === "forbidden") line = forbidden(c, item.id, cards);
- if (!line) return null;
- c.treasure -= item.price; item.sold = true; return line;
+ return line;
 }
 function ritual(c, id, cards, target) {
  const fx = BY_ID[id].fx, ok = ritualTargets(c, id, cards);
@@ -130,7 +186,7 @@ export function finishBattle(c, run, cards) {
  const won = !!run.won, stars = won ? Math.max(1, Math.min(3, run.stars | 0)) : 0, waves = Math.max(0, run.wave | 0);
  const gold = (won ? 8 + 2 * stars : Math.floor(waves / 5)) + (metaFx(c).payout || 0);
  c.treasure += gold; c.battles++; if (won) c.wins++;
- rollShop(c, cards);
+ rollShop(c, cards); c.shop.fresh = true; c.pack = null;
  c.draft = won || waves >= 5 ? draftOffer(c, cards) : null;
  return { gold, draft: c.draft };
 }
