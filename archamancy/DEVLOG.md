@@ -359,3 +359,11 @@ Logan's Normal Hollow Road run (3 stars, 19 health): a Necropolis (Lich Citadel 
 - Blade troop damage bonus 1.6× → 1.4×.
 - Funeral death burst 30 + 6 per tier → 24 + 5 per tier; burst limit once per 0.6 s → once per second per tower.
 - Sandbox test of the full stack at wave 20: Necropolis −26% total damage, Goblin Warcamp −24%. Builds without these cards are unchanged.
+
+## 2026-11-22 — v0.1.0-beta.13.21 commanders fall back when hurt
+
+- Owner request: a low-health commander steps back behind the units around it, and stands and fights when there are none.
+- Below 35% health with a ground enemy within 60, the commander looks for friendly ground troops within 140 (its own tokens count at its chosen spot). If any exist it moves 30 past the rearmost of them, toward the keep, while its tokens hold the original spot.
+- While fallen back and out of melee it heals 0.5% of max health per tick. It returns to its spot at 70% health, when no enemies are near that spot, on respawn, or when the player moves it.
+- No troops nearby: no retreat, it keeps fighting. New stat `commanderRetreats` and event `commanderRetreat`.
+- Test: `hold.test.mjs` covers both cases. 95 ARCHEMANCY tests and 267 Lab tests pass.
