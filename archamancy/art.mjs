@@ -163,9 +163,19 @@ export function createArt(ctx,{res:startRes=1,portrait=null}={}){
  function unit(k,x,y,opt={}){const img=!opt.ally&&portrait&&enemyKeys.includes(k)?portrait(k):null,s=img?makeSprite("token:"+k,a=>token(a,k,img),68,68):makeSprite("unit:"+k,a=>creature(a,k),68,68),size=sizeOf(k);const dir=(opt.dir<0?-1:1)*(opt.ally&&opt.engaged?-1:1),flip=img?1:dir,atk=opt.atk||0,hurt=opt.hurt||0;
   const lunge=atk?Math.sin(Math.PI*Math.min(1,atk*1.4))*size*.2:0,recoil=hurt?Math.sin(Math.PI*hurt)*-3.5:0,lean=atk?Math.sin(Math.PI*Math.min(1,atk*1.4))*.22:0;
   x+=(lunge+recoil)*dir;
-  ctx.save();softShadow(x+1,y+3,size*(opt.flying?.24:.32),size*.11,opt.flying?.3:.5);ctx.translate(x,y+(opt.flying?-14:0));const ph=opt.animate?Math.sin(opt.time*.4+(opt.id||0)):0,squash=opt.flying?0:Math.abs(ph)*.05;
-  if(lean)ctx.rotate(lean*dir);ctx.scale(flip*(1+squash*.5),1-squash);const bob=opt.animate?ph*(opt.flying?2:1):0;
-  if(hurt&&hurt<.6)ctx.filter="brightness(1.9) saturate(.6)";ctx.drawImage(s,-size/2,-size*.75+bob,size,size);ctx.filter="none";ctx.restore();
+  const die=opt.die||0;if(die){ctx.save();ctx.globalAlpha*=die<.55?1:1-(die-.55)/.45;}
+  ctx.save();softShadow(x+1,y+3,size*(opt.flying?.24:.32)*(1-die*.5),size*.11,opt.flying?.3:.5);ctx.translate(x,y+(opt.flying?-14+die*die*16:0));const ph=opt.animate?Math.sin(opt.time*.4+(opt.id||0)):0;let squash=opt.flying?0:Math.abs(ph)*.05,bob=opt.animate?ph*(opt.flying?2:1):0,rock=0,flap=0;
+  // Enemy gait (visual only): ground enemies step with a bounce and a side-to-side rock timed to their speed; heavy ones stomp
+  // slowly and squash on each footfall; fliers flap. Enemies held up by troops breathe in place instead of walking.
+  if(opt.gait&&opt.animate&&!die){const g=opt.gait,t=opt.time,id=opt.id||0;
+   if(opt.flying){const f=Math.sin(t*(1.3+g.speed*.02)+id);flap=f*.1;bob=Math.sin(t*.45+id)*3;squash=0;}
+   else if(g.moving){const heavy=g.speed<=7,st=Math.sin(t*(.3+g.speed*.036)+id),up=Math.abs(st);bob=-up*(heavy?1.6:2.6)*(size/45);rock=st*(heavy?.045:.075);squash=heavy?(1-up)**3*.09:(1-up)**3*.05;}
+   else{bob=Math.sin(t*.16+id)*.7;squash=(Math.sin(t*.16+id)*.5+.5)*.025;}}
+  // Death (visual only): a white flash, then the body tips over and sinks while fading; fliers spin and drop.
+  if(die){const k=Math.min(1,die/.6),e=1-(1-k)**2;rock=(opt.flying?2.2:1.35)*e;squash=die>.5?(die-.5)*.5:0;bob=die*size*.12;}
+  if(lean)ctx.rotate(lean*dir);if(rock)ctx.rotate(rock*dir);ctx.scale(flip*(1+squash*.5-flap*.3),1-squash+flap);
+  if((hurt&&hurt<.6)||(die&&die<.18))ctx.filter="brightness(1.9) saturate(.6)";ctx.drawImage(s,-size/2,-size*.75+bob,size,size);ctx.filter="none";ctx.restore();
+  if(die){ctx.restore();return;}
   // Swing arc: a quick bright crescent sweeping in front of the attacker.
   if(atk>.12&&atk<.8){const k=(atk-.12)/.68,cx=x+dir*size*.26,cy=y+(opt.flying?-14:0)-size*.32,r=size*.34,a0=-1.3+k*1.6;ctx.save();ctx.globalAlpha=(1-k)*.85;ctx.strokeStyle=opt.ally?"#fff6d8":"#ffd0c0";ctx.lineWidth=2.6;ctx.lineCap="round";ctx.beginPath();
    if(dir>0)ctx.arc(cx,cy,r,a0,a0+1.1);else ctx.arc(cx,cy,r,Math.PI-a0-1.1,Math.PI-a0);ctx.stroke();ctx.globalAlpha=(1-k)*.35;ctx.lineWidth=6;ctx.stroke();ctx.restore();}

@@ -412,6 +412,7 @@ Logan picked "combat feedback" from the idea list. Cosmetic only; the simulation
 - Big hits (a fifth of a normal enemy's health, or 5% of a boss) pop a larger orange number with "!", a flash and a small screen shake (at most one every 0.65 s).
 - Screen shake is off when the device asks for reduced motion.
 - Every barracks now has its own strike sound (Legion steel, Necropolis bone, Goblin squeals, Beast snarls), plus commander strikes, commander tokens and Dawn Chapel heals. Each attacking tower already had its own shot sound.
+
 ## 2026-11-23 — v0.1.0-beta.13.28 Greyhorn Pass (fourth map)
 
 - New map `pass`, Greyhorn Pass: one road that runs through a tunnel under a mountain. Ground enemies inside the tunnel (map.tunnel rects) can't be seen, targeted, splashed, chained, blocked by troops or hit by the commander; damage over time keeps ticking. Fliers cross over the peak and stay targetable. Troop rally points and commander moves into the tunnel are refused.
@@ -435,3 +436,10 @@ Owner request: more popular commanders with a pick-a-starter, unlock-more progre
 - **Urza, Lord High Artificer** (mono-blue, Artifacts). Brings a Construct token that grows with every tower you control and comes back 20 s after it falls; each wave your towers tap for 4 mana each (up to 60). Tap: draw a card and the next spell costs no mana. Unlock: reach player level 3.
 - New unlock rule kinds in progress.mjs: `level`, `win`, `hard`. recordRun now takes `difficulty`.
 - Seeded benchmark build with each commander, seeds 1–4, fortress health after wave 30: Toxrill 15, Torbran 15, Urza 13 (field: Krenko 10, Talrand 17, Atraxa 20, Ur-Dragon 17). None dominates.
+
+## 2026-11-23 — v0.1.0-beta.13.32 Enemy animations and guided first battle
+
+Logan picked these from the idea list. Visual and UI only; the simulation, seeded runs and copied stats are unchanged.
+- Enemy walk cycles: ground enemies bounce and rock in step with their speed, heavy ones (speed 7 or less) stomp and squash on each footfall, fliers flap. Enemies held up by troops breathe in place.
+- Death animations: a killed enemy flashes, tips over, sinks and fades over half a second (fliers spin and drop) instead of vanishing. Leaked enemies don't leave a body.
+- Guided first battle: the first Gauntlet run walks through seven real steps (build, send a wave, move the commander, use its power, cast a spell, upgrade, call a wave early) with a "Tutorial n of 7" label. A step that can't happen yet is passed over and comes back. It ends when all seven are done or at wave 6. "Skip tutorial" any time; "Replay tutorial" in the menu starts a fresh Gauntlet with it on.
