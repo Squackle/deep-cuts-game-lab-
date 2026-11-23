@@ -22,3 +22,5 @@ test("cached art that could break out of CSS url() is ignored and looked up agai
  for(let i=0;i<bad.length;i++)assert.equal(art.get("Bad"+i),null,bad[i]);
  await settle();assert.equal(calls.length,bad.length,"each bad entry is fetched fresh instead");
 });
+test("token art searches Scryfall by token type and exact color",async()=>{const calls=[];const art=createCardArt({delay:0,fetchFn:async url=>{calls.push(url);return {ok:true,json:async()=>({data:[{name:"Soldier",artist:"Token Artist",image_uris:{art_crop:"https://cards.scryfall.io/art_crop/front/s.jpg"}}]})};}});
+ assert.equal(art.get("token:Soldier:W"),null);await settle();assert.equal(calls.length,1);assert.match(calls[0],/cards\/search\?q=t%3Atoken%20t%3ASoldier%20c%3DW&order=released&dir=desc$/);assert.equal(art.get("token:Soldier:W").artist,"Token Artist");});
