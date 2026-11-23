@@ -39,7 +39,7 @@ export function createFx(ctx,{maxParticles=260}={}){
    else if(ev.type==="spellCast")cues.push({type:"sound",name:"cast"});
    else if(ev.type==="gameOver")cues.push({type:"gameOver",won:!!ev.won,stars:ev.stars||0},{type:"sound",name:ev.won?"victory":"defeat"});
    else if(ev.type==="deathExplosion"){/* drawn by engine effects already */}
-   else if(ev.type==="bossAbility"){const names={warcry:"War cry! Nearby enemies speed up",brood:"The Matron births Shade Stalkers",silenceWarning:"The Hierophant marks two towers",silence:"Towers silenced!",phaseWarning:"The Tyrant is shifting",cracked:"Boss cracked! Every tower can hurt it now",phase:"The Tyrant becomes "+(ev.phase==="iron"?"immune to physical damage":"immune to magic")};if(names[ev.ability])cues.push({type:"toast",text:names[ev.ability]},{type:"sound",name:"ability"});if(ev.ability==="silence"||ev.ability==="phase"||ev.ability==="cracked")shake(4,260);}
+   else if(ev.type==="bossAbility"){const T=game.types,nm=k=>T[k].short||T[k].name,names={warcry:nm("grimgut")+"'s war cry! Nearby enemies speed up",brood:nm("matron")+" births "+T.stalker.name+"s",silenceWarning:nm("hierophant")+" marks two towers",silence:"Towers silenced!",phaseWarning:nm("tyrant")+" is shifting",cracked:"Boss cracked! Every tower can hurt it now",phase:nm("tyrant")+" becomes "+(ev.phase==="iron"?"immune to physical damage":"immune to magic")};if(names[ev.ability])cues.push({type:"toast",text:names[ev.ability]},{type:"sound",name:"ability"});if(ev.ability==="silence"||ev.ability==="phase"||ev.ability==="cracked")shake(4,260);}
    else if(ev.type==="commanderFall")cues.push({type:"toast",text:"Your commander has fallen. Returning soon."});
   }
   lastSeq=s.sequence;

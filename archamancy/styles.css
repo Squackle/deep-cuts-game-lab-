@@ -249,6 +249,8 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .codex-entry{--school:#8e9e83;display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:center;padding:7px 10px;border:1px solid var(--line);border-left:4px solid var(--school);border-radius:10px;background:#13231b}
 .codex-entry strong{display:block;font-size:.88rem}.codex-entry small{display:block;color:var(--muted);font-size:.74rem;line-height:1.35}
 .codex-pic{width:44px;height:44px;display:grid;place-items:center;border-radius:8px;background:#0b1712;color:var(--school);font-size:1.3rem;overflow:hidden}.codex-pic img{max-width:44px;max-height:44px}
+.codex-pic.has-art{background-image:var(--art)!important;background-position:center 25%!important}
+.boss-bar #bossName.with-art{padding-left:30px;background:#0f1c16d9 var(--art) no-repeat 4px center/22px 22px;min-height:24px;display:flex;align-items:center}
 .codex-entry.unseen{opacity:.55}.codex-entry.unseen .codex-pic::before{content:"?";color:#8e9e83;font-weight:800}
 .perks-btn{min-width:0}
 
