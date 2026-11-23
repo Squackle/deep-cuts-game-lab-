@@ -15,7 +15,7 @@ function enemy(g,kind,progress){
  e.progress=progress;e.speed=0;e.attack=0;e.hp=e.maxHp=1000000;
  return e;
 }
-function fire(g){g.step();return g.state.events.find(e=>e.type==="towerAttack");}
+function fire(g){const before=g.state.events.filter(e=>e.type==="towerAttack").length;g.step();return g.state.events.filter(e=>e.type==="towerAttack")[before];}
 
 test("air-capable tower types independently support Both, Flying only and Ground only",()=>{
  assert.deepEqual(FLIGHT_TARGET_MODES,["both","flying","ground"]);
@@ -69,7 +69,7 @@ test("ground-only and support towers reject impossible flight targeting requests
 
 test("secondary chain bolts obey tower flight targeting preference too",()=>{
  for(const mode of ["flying","ground"]){
-  const g=arena("storm"),primary=enemy(g,mode==="flying"?"wing":"raider",220);
+  const g=arena("storm"),primary=enemy(g,mode==="flying"?"wing":"raider",240);
   const ally=enemy(g,mode==="flying"?"wing":"raider",235),other=enemy(g,mode==="flying"?"raider":"wing",230);
   assert.equal(g.command({type:"flightTarget",pad:8,mode}),true);
   assert.equal(fire(g)?.target,primary.id);
@@ -84,7 +84,7 @@ test("extra shots respect altitude filter on a multishot Judgment Spire",()=>{
  const g=arena("judgment");
  assert.equal(g.command({type:"upgrade",pad:8}),true);
  assert.equal(g.command({type:"upgrade",pad:8,branch:"B"}),true);
- const wing=enemy(g,"wing",220),otherWing=enemy(g,"wing",232),ground=enemy(g,"raider",225);
+ const wing=enemy(g,"wing",240),otherWing=enemy(g,"wing",232),ground=enemy(g,"raider",225);
  assert.equal(g.command({type:"flightTarget",pad:8,mode:"flying"}),true);
  assert.equal(fire(g)?.target,wing.id);
  const rec=g.state.inFlight.find(r=>r.tower===8);
