@@ -482,3 +482,11 @@ Based on Logan's 25-wave Hard, autumn Hollow Road, 3-star flawless run (1,456 ki
 - **Targeted Tier IV distinction:** Judgment Spire's Crown of Arrows now attacks two additional targets per shot at Tier IV (three arrows total), rather than only one additional target at Tier III. Its secondary strikes retain the existing per-target damage factor. All other specializations retain their current values pending comparable placement and targeting tests.
 - **Immunity and efficiency clarity:** Selected tower panels show immunity-blocked hits and Tier IV attacks/idle checks; detailed contributions show immune hits, resisted damage, shot counts and time held. Battle statistics now expose aggregated immunity and enemy-delay counters.
 - **Regression tests:** New tests for blocker attribution, save/restore, the existing immune-boss shove warning and movement, Crown's third projectile, rules version and UI data. Existing seeded campaign/endless and Game Lab regression checks remain required prior to merge. The engine changes preserve the 13.37 Mana Grove payout update.
+
+## 2026-11-23 — v0.1.0-beta.13.39 every friendly death fires death triggers
+
+Logan: "For death triggers tower, ensure that all friendly troops and commander deaths trigger it."
+- Audit before: a Necropolis death blast (Lich Citadel branch or Blood Artist) only fired when that same tower's own troops died. Commander tokens (Krenko goblins, Wilhelt zombies, Kaalia's angels, etc.) and the commander's own death fired nothing at all, and also never fed a nearby Soul Foundry.
+- Now one shared `deathTriggers()` runs on every friendly death: any troop tower's troops, spell-made troops, commander tokens, and the commander. Every death-trigger tower blasts at the spot of the death, anywhere on the map (like Blood Artist), still limited to one blast per tower every DEATH_BURST_GAP ticks. Soul Foundry still needs the death to be in its range. Teysa still doubles, Resonance doubles the tower that holds it.
+- Commander death handling merged into `commanderFall()` (boss smash and normal attacks shared the same copy).
+- Tests: archamancy/tests/death-triggers.test.mjs.
