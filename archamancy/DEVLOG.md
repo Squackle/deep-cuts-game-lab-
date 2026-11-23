@@ -537,3 +537,11 @@ Each campaign region now ends at wave 25 in its own Magic boss; the Verdant Lowl
 - Ember Wastes (Emberfall Caldera): Inferno Titan. After a 2 s warning ring, scorches the three nearest troops for a third of their health (or your commander, who can't be killed by it).
 - Each gets a drawn card-based model, boss bar and codex entry, and its own notices. The Scryfall card check now also covers every enemy and boss (name, type line, power/toughness).
 - Tests: wave-25 boss per map, Isu's freeze and thaw, Inferno Titan's scorch.
+
+## 2026-11-23 — v0.1.0-beta.13.45 air and ground tower targeting
+
+- Air-capable attacking towers (Arcanum, Judgment Spire, Storm, Hex and Mirror) gain a separate tower-ring selector: Both (default), Flying only, Ground only. It does not change First / Last / Strongest / Closest targeting and remains independent per tower.
+- Ground-only Pyre and Thornheart cannot target flying enemies and do not offer this selector. Troop, farm, heal and utility towers keep their existing behavior.
+- Primary targets and chain/extra secondary shots respect the flight preference. If a tower is set to Flying only with no flyer in reach, it deliberately holds fire rather than hitting a ground enemy.
+- The selected mode is stored on the tower, included in playtest reports, and resumes across save/restore. Old saves missing the optional field act as Both; save format remains 1. Version bumped for deterministic rules/replay distinction.
+- Tests: archamancy/tests/flight-targeting.test.mjs; regression checks include targeting, immutability of existing modes, in-flight save continuation, and defense against unsupported towers/modes. Game Lab only; no main Arcade changes.
