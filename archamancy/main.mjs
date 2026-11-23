@@ -72,6 +72,32 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  for(const b of document.querySelectorAll("[data-school]"))b.addEventListener("click",()=>{$("colorFilter").value=b.dataset.school;schoolOpen=true;preview=null;renderHud();});
  $("castInstant").addEventListener("click",()=>{if(selectedCard!==null)cast(selectedCard);});
  function cast(index,target={}){const id=game.state.hand[index];if(!id)return false;moving=false;if(game.command({type:"cast",index,...target})){selectedCard=null;notice(game.cards[id].name+" resolved.");renderHud();return true;}notice("Invalid spell target or insufficient mana. No mana spent.");return false;}
+
+ // Keep mono-color weaknesses and position traps visible before spending mana.
+ function towerTargetHint(kind,t=null){
+  if(kind==="beast")return t?.tier>=3&&t.branch==="A"?"Reach: Beast Pack attacks and blocks flyers; its damage remains physical.":"Ground troops cannot hit flyers or physical-immune enemies. Beast Pack gains Reach at Tier III.";
+  if(kind==="thorn")return t?.tier>=3&&t.branch==="B"?"Ground only. Venom Thicket poison bypasses physical immunity over time; its initial attack remains physical.":"Ground only. Physical immunity blocks direct damage. Choose Venom Thicket at Tier III for armor-piercing poison.";
+  if(kind==="pyre")return "Ground only; physical-immune enemies ignore blasts.";
+  if(kind==="storm")return "Hits flyers; magic-immune enemies resist its lightning.";
+  return ["splash","root","troops"].includes(game.roster[kind]?.kind)?"Ground only.":["arcane","strike","chain","hex","mirror"].includes(game.roster[kind]?.kind)?"Hits fliers.":"";
+ }
+ function towerPlacementHint(p,d,t=null){
+  if(!p||!d)return "";
+  if(d.kind==="troops")return game.map.tunnel.length?"Mountain tunnel: ground enemies cannot be blocked inside; set the rally outside.":"";
+  if(!AIMED.includes(d.kind))return "";
+  const r=d.range+(p.bonus==="height"?30:0)+(t?game.bonus(t,"range"):0);
+  let exposed=0,hidden=0;
+  for(const [start,end] of game.map.spans)for(let at=start;at<=end;at+=35){
+   const q=game.pointAt(at),dx=q.x-p.x,dy=q.y-p.y;
+   if(dx*dx+dy*dy>r*r)continue;
+   if(game.map.tunnel.some(z=>q.x>=z.x&&q.x<=z.x+z.w&&q.y>=z.y&&q.y<=z.y+z.h))hidden++;
+   else exposed++;
+  }
+  if(!exposed)return hidden?"Warning: only tunnel road is in range; ground targets stay hidden.":"Warning: no exposed road is within firing range.";
+  if(exposed<=3)return "Warning: very limited exposed road coverage at this pad.";
+  if(hidden)return "Part of this tower's ground coverage is hidden by the mountain tunnel.";
+  return "";
+ }
  function selectPad(id){if(selectedCard!==null&&id!==null&&game.cards[game.state.hand[selectedCard]]?.target==="tower"){cast(selectedCard,{pad:id});return;}if(id!==null&&id===selected){id=null;}if(id!==null)$("notice").classList.remove("show");selected=id;rallying=false;moving=false;schoolOpen=false;preview=null;$("padSelect").value=id===null?"":String(id);if(id!==null&&game.state.towers[id])towerSay(id,"select");renderHud();}
  // Pad buttons follow the battlefield; rebuilt when a run starts on another map.
  function buildPads(){$("pads").replaceChildren();buttons.length=0;for(const o of [...$("padSelect").options])if(o.value!=="")o.remove();
@@ -84,10 +110,10 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
  // Small portraits of each tower, drawn once with the battlefield art, for the ring menu.
  const towerIcons={};try{const k=Math.min(3,Math.max(2,Math.ceil(devicePixelRatio||1)));for(const key of Object.keys(game.roster)){const c=document.createElement("canvas");c.width=76*k;c.height=95*k;const a=c.getContext("2d");a.scale(k,k);createArt(a,{res:k}).tower({kind:key,tier:1},{x:38,y:88});towerIcons[key]=c.toDataURL();}}catch{}
  for(const [key,def] of Object.entries(game.roster)){
-  const b=document.createElement("button");b.type="button";b.className="tower-choice";b.style.setProperty("--school",colors[def.color]);b.title=def.role;b.setAttribute("aria-label",def.name+", "+def.cost+" mana. "+def.role);
+  const b=document.createElement("button");b.type="button";b.className="tower-choice";b.style.setProperty("--school",colors[def.color]);b.title=def.role+" "+towerTargetHint(key);b.setAttribute("aria-label",def.name+", "+def.cost+" mana. "+def.role+" "+towerTargetHint(key));
   const stripe=document.createElement("span");stripe.className="stripe";stripe.style.background=colors[def.color];
   const body=document.createElement("span"),name=document.createElement("strong"),desc=document.createElement("small"),price=document.createElement("span");
-  name.textContent=def.name;desc.textContent=def.role+(["splash","root","troops"].includes(def.kind)?" Ground only.":["arcane","strike","chain","hex","mirror"].includes(def.kind)?" Hits fliers.":"");body.append(name,desc);price.className="price";price.textContent=def.cost;b.append(stripe,body,price);
+  name.textContent=def.name;desc.textContent=def.role+" "+towerTargetHint(key);body.append(name,desc);price.className="price";price.textContent=def.cost;b.append(stripe,body,price);
   if(towerIcons[key])b.style.backgroundImage="url("+towerIcons[key]+")";
   b.addEventListener("click",()=>{if(game.state.locked?.includes(key)){notice(def.name+" opens at player level "+progress.unlockLevel("towers",key)+". Clear waves to earn XP.");return;}if(preview!==key){preview=key;renderHud();return;}if(game.command({type:"build",pad:selected,kind:key})){towerSay(selected,"build");notice(def.name+" built.");selected=null;preview=null;schoolOpen=false;renderHud();}else notice("Not enough mana.");});
   $("buildMenu").append(b);choices[key]=b;
@@ -245,8 +271,9 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&cancelMove())e.prev
   const pad=selected===null?null:game.map.pads[selected],t=pad?s.towers[selected]:null;
   const pv=preview&&game.roster[preview]?game.roster[preview]:null;
   text($("selection"),pv?pv.name+" · "+pv.cost+" ◈":t?game.branchName(t)+" · Tier "+t.tier:pad?(schoolOpen?({W:"White",U:"Blue",B:"Black",R:"Red",G:"Green"})[$("colorFilter").value]+" towers":"Build a tower"):"");
-  text($("details"),pv?pv.role+(["splash","root","troops"].includes(pv.kind)?" Ground only.":["arcane","strike","chain","hex","mirror"].includes(pv.kind)?" Hits fliers.":"")+" Tap again to build.":t&&preview==="upgrade"?(game.upgradeCost(t)===null?"Fully upgraded.":"Upgrade for "+game.upgradeCost(t)+" mana. Tap again to confirm."):t&&preview==="sell"?"Sell for "+Math.floor(t.paid*.7)+" mana. Tap again to confirm.":t?(t.kind==="grove"?"Harvests "+game.farmLimit(t)+" mana per wave, paid steadily while the wave runs"+(s.phase==="active"?" ("+(s.farmPaid[t.id]||0)+"/"+game.farmBudget(t)+" so far)":"")+". Anything left is paid when the wave is cleared.":(t.branch?game.branchOptions(t).find(o=>o.id===t.branch).description:game.roster[t.kind].role)+(AIMED.includes(game.roster[t.kind].kind)?" · Target: "+TARGET_NAMES[t.target||"first"]:"")+(["splash","root","troops"].includes(game.roster[t.kind].kind)?" · Ground only":["arcane","strike","chain","hex","mirror"].includes(game.roster[t.kind].kind)?" · Hits fliers":"")):pad?(pad.bonus==="spring"?"Mana spring: +35% farm yield.":pad.bonus==="height"?"High ground: +30 attack range.":(schoolOpen?"Tap a tower to see it.":"Choose a school of magic.")):"");
-  // Show defensive contributions and wasted attacks only on selection, not on the battlefield.
+  text($("details"),pv?pv.role+" "+towerTargetHint(preview)+" Tap again to build.":t&&preview==="upgrade"?(game.upgradeCost(t)===null?"Fully upgraded.":"Upgrade for "+game.upgradeCost(t)+" mana. Tap again to confirm."):t&&preview==="sell"?"Sell for "+Math.floor(t.paid*.7)+" mana. Tap again to confirm.":t?(t.kind==="grove"?"Harvests "+game.farmLimit(t)+" mana per wave, paid steadily while the wave runs"+(s.phase==="active"?" ("+(s.farmPaid[t.id]||0)+"/"+game.farmBudget(t)+" so far)":"")+". Anything left is paid when the wave is cleared.":(t.branch?game.branchOptions(t).find(o=>o.id===t.branch).description:game.roster[t.kind].role)+(AIMED.includes(game.roster[t.kind].kind)?" · Target: "+TARGET_NAMES[t.target||"first"]:"")+" · "+towerTargetHint(t.kind,t)):pad?(pad.bonus==="spring"?"Mana spring: +35% farm yield.":pad.bonus==="height"?"High ground: +30 attack range.":(schoolOpen?"Tap a tower to see it.":"Choose a school of magic.")):"");
+  if(pad&&(pv||t)){const advice=towerPlacementHint(pad,pv||game.roster[t.kind],t);if(advice)text($("details"),$("details").textContent+" · "+advice);}
+   // Show defensive contributions and wasted attacks only on selection, not on the battlefield.
   if(t&&!preview){const notes=[];
    if(game.roster[t.kind].kind==="troops")notes.push("Enemy delay: "+((t.blockTicks||0)/10).toFixed(1)+"s"+(t.bossBlockTicks?" (boss "+(t.bossBlockTicks/10).toFixed(1)+"s)":""));
    if(t.immuneHits)notes.push(t.immuneHits+" immune hits");

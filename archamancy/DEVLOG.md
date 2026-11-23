@@ -503,6 +503,15 @@ Logan asked for "Balatro deck building meets MTG": a deck you build over the cam
 - Every Gauntlet battle (not the Daily) plays the campaign deck. At the end it pays Treasure once (shown on the end screen, whose menu button now says World map) and, if 5+ waves were cleared, opens a draft of 3 spells; a pending draft also shows a "Pick a spell" button on the world map. The 30-card spellbook editor stays for Endless and the Proving Grounds.
 - Profile gains `camp` (sanitized by campaign.mjs against the live spell list).
 
+## 2026-11-23 — v0.1.0-beta.13.43 Green counterplay and placement warnings
+
+Owner request after a Normal Onslaught mono-Green Greyhorn Pass loss at wave 23 (23 leaks: ten flying Crows, twelve physically immune Juggernauts and one Darksteel Colossus):
+- **Beast Pack Reach (Tier III/A and later):** Beasts from that specialization may engage, attack and block flying enemies. Existing live beasts acquire Reach immediately on specialization; new, revived and saved troops retain it. Other Beast Den branches stay ground-only; troop damage is still physical.
+- **Venom Thicket armor-piercing poison (Tier III/B and later):** Thornheart now selects physically immune ground enemies on this branch. Its initial physical strike still does zero to 100% armor, but its existing poison stacks deal gradual piercing damage. Grasping Forest remains physical and ground-only; this does not create an anti-air Thornheart.
+- **Placement and counterplay visibility:** Prebuild previews, tower details, and the branch picker disclose Reach, physical-immune interactions, and the danger of mountain-tunnel or minimal exposed-road coverage. Non-Green tower anti-air hints remain intact.
+- Six focused regression tests cover flying engagement, branch exclusion, armored poison, direct immunity, save/replay, and visibility. Other colors, existing boss movement, ranked rules, economy, map layouts and the main DeepCutsEDH site are untouched.
+- Release gate: full Game Lab Node suite, required GitHub checks and Cloudflare Pages deployment status. This patch does not by itself prove all five mono-color campaign builds are balanced. Branches for other beta features may require version reconciliation when merged.
+
 ## 2026-11-23 — Deck view follow-up (after 13.40)
 
 - World map Deck view draws all relic slots; empty ones show as dashed sockets, like Balatro's Joker row.
