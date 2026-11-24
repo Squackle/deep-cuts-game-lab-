@@ -75,7 +75,29 @@ export function searchStrategy(scene,{maxStates=3000,maxEdges=20000,reverseActio
  nodes.forEach((node,i)=>{if(node.state.status==='won'){winning.add(i);queue.push(i);}});
  for(let at=0;at<queue.length;at++)for(const prior of nodes[queue[at]].prev)if(!winning.has(prior)){winning.add(prior);queue.push(prior);}
  if(!winning.has(0))return result('unsolvable');
+ // Reverse distances distinguish shortcuts from forced action counts.
+ const distance=Array(nodes.length).fill(Infinity),back=[];
+ nodes.forEach((node,i)=>{if(node.state.status==='won'){distance[i]=0;back.push(i);}});
+ for(let at=0;at<back.length;at++)for(const prev of nodes[back[at]].prev)if(distance[prev]===Infinity){
+  distance[prev]=distance[back[at]]+1;back.push(prev);
+ }
+ // Dynamic programming across ALL shortest routes, not the first witness.
+ // A decision is consequential only if some distinct legal successors
+ // preserve a win while others lose. A forced move never counts.
+ const minCritical=Array(nodes.length).fill(0),maxCritical=Array(nodes.length).fill(0),
+  shortestRouteCount=Array(nodes.length).fill(0);
+ for(const i of back){
+  if(distance[i]===0){shortestRouteCount[i]=1;continue;}
+  const options=nodes[i].next,optimal=options.filter(j=>distance[j]===distance[i]-1);
+  const critical=Number(options.some(j=>winning.has(j))&&options.some(j=>!winning.has(j)));
+  minCritical[i]=critical+Math.min(...optimal.map(j=>minCritical[j]));
+  maxCritical[i]=critical+Math.max(...optimal.map(j=>maxCritical[j]));
+  shortestRouteCount[i]=Math.min(Number.MAX_SAFE_INTEGER,optimal.reduce((n,j)=>n+shortestRouteCount[j],0));
+ }
  const root=nodes[0].next,winningFirst=root.filter(i=>winning.has(i)).length;
- return {...result('complete'),metrics:{shortestActions:routeTo(winner).length,firstDistinctSuccessors:root.length,
-  winningFirstSuccessors:winningFirst,losingFirstSuccessors:root.length-winningFirst}};
+ return {...result('complete'),metrics:{shortestActions:distance[0],firstDistinctSuccessors:root.length,
+  winningFirstSuccessors:winningFirst,losingFirstSuccessors:root.length-winningFirst,
+  minimumConsequentialChoicesOnShortestRoute:minCritical[0],maximumConsequentialChoicesOnShortestRoute:maxCritical[0],
+  shortestDistinctStateRoutes:shortestRouteCount[0],routeCountCapped:shortestRouteCount[0]===Number.MAX_SAFE_INTEGER}};
+
 }
