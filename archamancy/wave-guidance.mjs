@@ -28,3 +28,32 @@ export function bossOverlapWarning(game,state,nextWave){
  if(state.onslaught)return "Boss ahead — "+name+" (wave "+nextWave+") joins "+unfinished+" unfinished wave"+(unfinished===1?"":"s")+". Prepare your defenses.";
  return "Boss ahead — "+name+" (wave "+nextWave+"). Calling early overlaps "+unfinished+" unfinished wave"+(unfinished===1?"":"s")+". Clear earlier enemies first if you need breathing room.";
 }
+
+// The forecast diagnoses missing persistent counters, not a guaranteed loss. Commander,
+// temporary troops, area effects and caldera vents may still handle isolated enemies.
+export function counterplayWarning(game,state,nextWave){
+ if(!["campaign","endless"].includes(state.mode)||!["ready","active"].includes(state.phase)||nextWave<1||state.mode==="campaign"&&nextWave>25)return "";
+ const threats=game.waveSpec(nextWave).map(spec=>game.types[spec.split(":")[0]]);
+ const towers=Object.values(state.towers),kind=t=>game.roster[t.kind]?.kind;
+ const physical=towers.some(t=>["strike","splash","root","troops"].includes(kind(t))&&t.flightTarget!=="flying");
+ const detection=towers.some(t=>["strike","hex","troops"].includes(kind(t)));
+ const magic=threats.some(e=>e?.resist>=100)&&!physical;
+ const shroud=threats.some(e=>e?.shroud)&&!detection;
+ if(!magic&&!shroud)return "";
+ const unlocked=k=>!state.locked?.includes(k);
+ if(magic&&shroud)return "Magic-immune and shrouded ahead. No physical or detection tower."+(unlocked("judgment")?" Judgment Spire covers both.":" Use physical allies and reveal enemies.");
+ if(magic)return "Magic-immune enemies ahead. No physical tower; "+(unlocked("judgment")?"build Judgment Spire or other physical damage.":"use physical troops or unlocked physical towers.");
+ return "Shrouded enemies ahead. No detection tower; "+(unlocked("judgment")?"Judgment Spire reveals them.":unlocked("hex")?"Hex Sanctum reveals them.":"nearby allies or damage reveal them.");
+}
+
+// Keep advice restricted to cards whose engine target contract requires a troop tower.
+// Ward is deliberately absent: it can target another tower and ward allies nearby.
+const TROOP_TOWER_CARDS=new Set(["legion","twins","valor","raise","offering","funeral","bloom","forge","rally","bloodrush","verdant","blade"]);
+const hasTroopTower=(game,state)=>Object.values(state.towers).some(t=>game.roster[t.kind]?.kind==="troops");
+export function troopCardHint(game,state,id){
+ return TROOP_TOWER_CARDS.has(id)&&!hasTroopTower(game,state)?"Needs a troop tower. Discard for free to make room for a later draw.":"";
+}
+export function handCycleHint(game,state){
+ if(!["ready","active"].includes(state.phase)||state.hand.length<(state.handMax??5)||hasTroopTower(game,state))return "";
+ return state.hand.some(id=>TROOP_TOWER_CARDS.has(id))?"Discard to draw":"";
+}
