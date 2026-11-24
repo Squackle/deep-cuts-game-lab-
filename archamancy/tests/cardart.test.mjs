@@ -48,7 +48,7 @@ test("bad cached artwork links, oversized caches and malformed names fail safely
  assert.equal(art.get("Good").link,valid.link,"valid existing Scryfall art survives");
  assert.equal(art.get("Evil"),null,"unsafe cached link is rejected");
  assert.equal(art.get("Host"),null,"lookalike hosts cannot be cached");
- for(const name of ["x".repeat(161),"bad\\nname"])assert.equal(art.get(name),null);
+ for(const name of ["x".repeat(161),"bad\nname"])assert.equal(art.get(name),null);
  await settle();assert.equal(calls.length,2,"only bad cached entries are refetched");
  const huge=store();huge.setItem("archemancy.cardart.v1","{".repeat(300000));
  const hCalls=[];const fresh=createCardArt({storage:huge,delay:0,fetchFn:async url=>{hCalls.push(url);return card("x");}});
