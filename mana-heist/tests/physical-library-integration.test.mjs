@@ -1,0 +1,42 @@
+import test from "node:test";import assert from "node:assert/strict";import {readFileSync} from "node:fs";
+import {LEVELS} from "../src/levels.js";import {VERSION,PHYSICAL_LIBRARY_VERSION,initial,actions,reduce,completed,medal} from "../src/engine.js";
+import {FIXTURE,createWorkbench} from "../src/physical-library-workbench.js";
+import {reservePresentation} from "../src/reserve-presentation.js";import {manualCastOptions,popUndoFrame} from "../src/cast-controls.js";
+import {chooseAutomaticCast} from "../src/auto-cast.js";import {solve,replay} from "../src/solver.js";
+import {legalContinuation} from "../src/verified-hints.js";
+import {SAVE_KEYS,readGuestSaves,createGuestBackup,parseGuestBackup,previewGuestRestore,applyGuestRestore} from "../src/guest-backup.js";
+const move=(p,s,predicate)=>{const a=actions(p,s).find(predicate);assert.ok(a);const result=reduce(p,s,a);assert.ok(result.ok);return result.state;};
+test("integrated physical reserve matches the actual reducer on fetch, bounce and undo",()=>{
+ const p=FIXTURE,start=initial(p),after=move(p,start,a=>a.type==="fetch"&&a.id==="f1"&&a.targetId==="blue1");
+ assert.deepEqual(reservePresentation(p,after).cards.map(c=>c.id),["blue2","red"]);
+ const bounce=move(p,after,a=>a.type==="play"&&a.returnId==="blue1");
+ assert.deepEqual(reservePresentation(p,bounce).cards.map(c=>c.id),["blue2","red"]);assert.ok(bounce.hand.includes("blue1"));
+ const frames=[{state:start,automatic:false},{state:after,automatic:false}];
+ assert.deepEqual(reservePresentation(p,popUndoFrame(frames).state).cards.map(c=>c.id),["blue2","red"]);
+ assert.equal(reservePresentation(p,popUndoFrame(frames).state).cards.length,3);
+});
+test("combined hint, explicit cast choice and auto-cast select legal candidate payments",()=>{
+ const p={...FIXTURE,stages:[{name:"First generic",cost:{N:1}},{name:"Final blue",cost:{U:1}}]};
+ let s=initial(p);
+ for(const [id,targetId] of [["f1","blue1"],["f2","red"]])s=move(p,s,a=>a.type==="fetch"&&a.id===id&&a.targetId===targetId);
+ for(const id of ["blue1","red"])s=move(p,s,a=>a.type==="tap"&&a.id===id);
+ const options=manualCastOptions(p,s);assert.equal(options.length,2);
+ const auto=chooseAutomaticCast(p,s);assert.equal(auto.spend.R,1);
+ assert.equal(legalContinuation(p,s,null).status,"solved");
+ const wrong=move(p,s,a=>a.type==="cast"&&a.spend.U===1);
+ assert.equal(solve(p,{startState:wrong}).status,"unsolvable");
+ const right=move(p,s,a=>a.type==="cast"&&a.spend.R===1);assert.ok(completed(p,move(p,right,a=>a.type==="cast")));
+});
+test("candidate play cannot migrate the unchanged 500 active definitions or guest save namespaces",()=>{
+ assert.equal(LEVELS.length,500);assert.ok(LEVELS.every(p=>p.version===VERSION));assert.equal(new Set(LEVELS.map(p=>p.id)).size,500);
+ const base=LEVELS.find(p=>p.id==="mh-12"),legacy={...base},candidate={...base,version:PHYSICAL_LIBRARY_VERSION};
+ const oldTrace=solve(legacy);assert.equal(oldTrace.status,"solved");assert.ok(replay(legacy,oldTrace.actions).ok);assert.ok(replay(candidate,oldTrace.actions).ok);
+ const map=new Map([[SAVE_KEYS.campaign,JSON.stringify({v:2,index:11,bests:{"mh-12":{turn:1,spentLife:1},"mh-01":{turn:1,spentLife:0}}})],["unrelated","keep"]]);
+ const storage={getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,v),removeItem:k=>map.delete(k)};
+ const before=readGuestSaves(storage.getItem),bytes=JSON.stringify([...map]);
+ const fixture=createWorkbench();fixture.move(fixture.choices.find(a=>a.type==="fetch"));fixture.undo();fixture.reset();
+ assert.equal(JSON.stringify([...map]),bytes);
+ const backup=parseGuestBackup(createGuestBackup(before));assert.deepEqual(backup,before);
+ assert.ok(applyGuestRestore(storage,previewGuestRestore(before,backup)));assert.deepEqual(readGuestSaves(storage.getItem),before);assert.equal(map.get("unrelated"),"keep");
+ const src=readFileSync(new URL("../src/physical-library-workbench.js",import.meta.url),"utf8");assert.doesNotMatch(src,/localStorage|sessionStorage|fetch\(|\/api\//);
+});

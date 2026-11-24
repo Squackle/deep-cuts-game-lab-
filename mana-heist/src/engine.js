@@ -3,6 +3,9 @@
 // Uses the validated Mana Engine 2.0 ability/payment kernel for advanced mana sources.
 import {SOURCES, modesFor, payments} from "./mana-engine-v2.js";
 export const VERSION="mh-landfall-0.2.0";
+// Opt-in preview rules only; existing campaign definitions retain VERSION.
+export const PHYSICAL_LIBRARY_VERSION="mh-landfall-0.2.1-physical-preview";
+const physical=level=>level.version===PHYSICAL_LIBRARY_VERSION;
 export const COLORS=["W","U","B","R","G","C"];
 const zero=()=>Object.fromEntries(COLORS.map(c=>[c,0]));
 const sum=v=>Object.values(v).reduce((a,b)=>a+b,0);
@@ -29,7 +32,7 @@ export const CARDS={
  checkWG:{name:"Sunpetal Grove",kind:"check",colors:["W","G"],types:[],check:["Plains","Forest"],flavor:"Check land · needs Plains or Forest"},
  fetchUR:{name:"Scalding Tarn",kind:"fetch",colors:[],types:[],fetch:["Island","Mountain"],flavor:"Fetch land · search Island / Mountain"},
  fetchBG:{name:"Verdant Catacombs",kind:"fetch",colors:[],types:[],fetch:["Swamp","Forest"],flavor:"Fetch land · search Swamp / Forest"},
- bounceUG:{name:"Simic Growth Chamber",kind:"bounce",colors:["U","G"],types:[],flavor:"Bounce land · makes U or G; returns a land"},
+ bounceUG:{name:"Simic Growth Chamber",kind:"bounce",colors:["U","G"],types:[],flavor:"Bounce land · makes U and G; returns a land"},
  relic:{name:"Wastes",kind:"utility",colors:["C"],types:[],flavor:"Utility land · adds colorless"},
  signet:{name:"Azorius Signet",kind:"artifact",colors:[],types:[],v2:"signet",flavor:"Artifact · pay {1}, tap for W and U"},
  bluffs:{name:"Cascade Bluffs",kind:"filter",colors:[],types:[],v2:"bluffs",flavor:"Filter land · pay U/R, tap for two colored mana"},
@@ -71,7 +74,7 @@ export const CARDS={
 };
 const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
 export function validate(level){
- if(!level||level.version!==VERSION||!/^mh-[\w-]+$/.test(level.id||""))throw Error("Invalid puzzle version/id");
+ if(!level||![VERSION,PHYSICAL_LIBRARY_VERSION].includes(level.version)||!/^mh-[\w-]+$/.test(level.id||""))throw Error("Invalid puzzle version/id");
  if(!Number.isInteger(level.turnLimit)||level.turnLimit<1||level.turnLimit>6||!Number.isInteger(level.life)||level.life<1||level.life>30)throw Error("Invalid turn limit/life");
  if(!Array.isArray(level.hand)||!Array.isArray(level.field)||!Array.isArray(level.library)||!Array.isArray(level.stages)||!level.stages.length||level.stages.length>6)throw Error("Invalid puzzle lists");
  const unique=new Set();
@@ -92,7 +95,7 @@ export function validate(level){
  }
  return true;
 }
-export function initial(level){validate(level);return {turn:1,life:level.life,played:0,stage:0,pool:zero(),manaUnits:[],manaSerial:0,graveyard:[],highTide:0,hand:level.hand.map(x=>x.id),field:level.field.map(x=>({id:x.id,tapped:false})),spentLife:0,actions:0};}
+export function initial(level){validate(level);return {turn:1,life:level.life,played:0,stage:0,pool:zero(),manaUnits:[],manaSerial:0,graveyard:[],highTide:0,hand:level.hand.map(x=>x.id),field:level.field.map(x=>({id:x.id,tapped:false})),spentLife:0,actions:0,...(physical(level)?{libraryAvailable:level.library.map(c=>c.id)}:{})};}
 export function lookup(level,id){return [...level.hand,...level.field,...level.library].find(x=>x.id===id);}
 export function getCard(level,id){const l=lookup(level,id);return l?CARDS[l.card]:null;}
 export function poolLabel(p){return COLORS.map(c=>p[c]?p[c]+c:"").filter(Boolean).join(" · ")||"empty";}
@@ -156,7 +159,18 @@ function enterTapped(level,state,land,shock){
  if(card.kind==="check")return !state.field.some(f=>card.check.some(t=>getCard(level,f.id).types.includes(t)));
  return false;
 }
+// Candidate-only validation; legacy snapshots retain their historical format.
+export function assertPhysicalLibraryState(level,s){
+ if(!Array.isArray(s.libraryAvailable))throw Error("Physical library state required; restart or replay under matching rules");
+ const library=new Set(level.library.map(c=>c.id));
+ const all=new Set([...level.library,...level.hand,...level.field].map(c=>c.id));
+ if(s.libraryAvailable.some(id=>!library.has(id)))throw Error("Unknown physical library instance");
+ const ids=[...s.libraryAvailable,...s.hand,...s.field.map(f=>f.id),...s.graveyard];
+ if(ids.some(id=>!all.has(id))||new Set(ids).size!==ids.length)throw Error("Invalid physical card identity or overlapping zones");
+ return true;
+}
 export function actions(level,s){
+ if(physical(level))assertPhysicalLibraryState(level,s);
  if(s.stage===level.stages.length)return [];
  const out=[];
  if(!s.played)for(const id of s.hand){
@@ -205,6 +219,7 @@ export function actions(level,s){
    }
   }
   if(!f.tapped&&card.kind==="fetch"&&s.life>1)for(const land of level.library){
+   if(physical(level)&&!s.libraryAvailable.includes(land.id))continue;
    const target=CARDS[land.card];
    if(!card.fetch.some(t=>target.types.includes(t)))continue;
    for(const shock of target.kind==="shock"?[false,true]:[false]){
@@ -267,6 +282,10 @@ export function reduce(level,s,action){
  }
  if(action.type==="fetch"){
   n.field=n.field.filter(f=>f.id!==action.id);
+  if(physical(level)){
+   n.libraryAvailable=s.libraryAvailable.filter(id=>id!==action.targetId);
+   n.graveyard.push(action.id);
+  }
   n.life--;n.spentLife++;
   if(action.shock){n.life-=2;n.spentLife+=2;}
   const land=lookup(level,action.targetId);
@@ -312,7 +331,7 @@ function explain(level,s,a){
  return "That move isn't legal.";
 }
 export function key(s){
- return JSON.stringify([s.turn,s.life,s.played,s.stage,COLORS.map(c=>s.pool[c]),[...s.hand].sort(),s.field.map(x=>x.id+":"+Number(x.tapped)).sort(),(s.manaUnits||[]).filter(u=>u.restriction).map(u=>u.color+":"+u.restriction).sort(),s.highTide||0,s.graveyard?.length||0]);
+ return JSON.stringify([s.turn,s.life,s.played,s.stage,COLORS.map(c=>s.pool[c]),[...s.hand].sort(),s.field.map(x=>x.id+":"+Number(x.tapped)).sort(),(s.manaUnits||[]).filter(u=>u.restriction).map(u=>u.color+":"+u.restriction).sort(),s.highTide||0,s.graveyard?.length||0,...(Array.isArray(s.libraryAvailable)?[PHYSICAL_LIBRARY_VERSION,[...s.libraryAvailable].sort(),[...(s.graveyard||[])].sort()]:[])]);
 }
 export function completed(level,s){return s.stage===level.stages.length;}
 export function medal(level,s,par){
