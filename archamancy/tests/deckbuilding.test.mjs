@@ -163,14 +163,15 @@ test("campaign saves retain legitimate shops but bound and reject malformed inve
  const retained=camp.sanitize(JSON.parse(JSON.stringify(good)),cards);
  assert.deepEqual(retained.shop,good.shop,"legitimate existing shop inventory remains unchanged");
  assert.deepEqual(retained.draft,good.draft);
- const bad={...good,shop:{rerolls:-90,fresh:true,
+ const bad={...good,deck:[...good.deck,...Array.from({length:10000},()=> "not-a-card")],
+  draft:[...good.draft,...Array.from({length:10000},()=> "not-a-card")],
+  shop:{rerolls:-90,fresh:true,
   items:[{kind:"relic",id:"solring",price:6,sold:false},
    {kind:"ritual",id:"solring",price:1,sold:false},
    {kind:"relic",id:"solring",price:-99,sold:false},
    ...Array.from({length:10000},()=>({kind:"relic",id:"solring",price:6,sold:false}))],
   packs:[{kind:"ritual",price:4,sold:false},{kind:"relic",price:-10,sold:false},...Array.from({length:10000},()=>({kind:"bogus",price:4,sold:false}))]},
-  deck:[...good.deck,...Array.from({length:10000},()=> "not-a-card")],
-  draft:[...good.draft,...Array.from({length:10000},()=> "not-a-card")]};
+  };
  const clean=camp.sanitize(bad,cards);
  assert.equal(clean.shop.rerolls,0,"negative reroll counts cannot give a free-reroll discount");
  assert.equal(clean.shop.items[0].id,"solring");
