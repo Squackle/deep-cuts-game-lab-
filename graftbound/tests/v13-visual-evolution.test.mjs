@@ -57,7 +57,8 @@ test('every implemented legendary boss has independent art, valid printed identi
    assert.equal(ENEMIES[name].sprite,'mtg_'+name,name);
    assert.ok(BOSS_PRINTINGS[name]?.name&&BOSS_PRINTINGS[name]?.set);
   }
-  assert.equal(Object.keys(EQUIPMENT_PRINTINGS).length,5);
+  assert.equal(Object.keys(EQUIPMENT_PRINTINGS).length,7);
+  assert.ok(EQUIPMENT_PRINTINGS['mtg:skullclamp']&&EQUIPMENT_PRINTINGS['mtg:shadowspear']);
   for(const val of Object.values(EQUIPMENT_PRINTINGS))assert.ok(val.set&&val.character);
 });
 class CanvasMock{

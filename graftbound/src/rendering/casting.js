@@ -9,6 +9,10 @@ const R = () => Math.random() - 0.5;
 
 /** Per-spell charge identity. tier: 0 quick, 1 normal, 2 powerful. Times are ms at normal speed. */
 export const CAST_PROFILE = {
+  pilotOpt: {col:[.25,.8,1],gather:85,build:50,tier:0,motes:18,cue:'castArcane',origin:'head',self:true},
+  pilotRites: {col:[.72,.2,.55],gather:145,build:75,tier:1,motes:25,cue:'castDark',origin:'hands'},
+  pilotSleep: {col:[.66,.77,1],gather:210,build:120,tier:1,motes:34,cue:'castFrost',origin:'chest',self:true},
+  pilotHarmonize: {col:[.4,.94,.58],gather:205,build:110,tier:1,motes:34,cue:'castNature',origin:'chest',self:true},
   shock:         { col: [0.55, 0.84, 1], gather: 62, build: 50, tier: 0, motes: 22, arcs: 4, cue: 'crackle', origin: 'hands' },
   lightningBolt: { col: [0.62, 0.82, 1], gather: 300, build: 220, tier: 2, motes: 60, arcs: 4, cue: 'charge',     origin: 'chest', core: true },
   flameSlash:    { col: [1, 0.5, 0.15],  gather: 200, build: 120, tier: 1, motes: 34, embers: true, cue: 'castFire', origin: 'hands' },

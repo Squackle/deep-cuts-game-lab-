@@ -199,7 +199,7 @@ export function resolveComboEvents(s,ev){
   const e=ev[i];if(e[STAMP])continue;
   if(++processed>MAX_EVENTS){ev.push({t:'graftTrigger',name:'Combo surge paused at engine safety limit',uid:player(s)?.uid});break;}
   Object.defineProperty(e,STAMP,{value:true,enumerable:false});
-  const hero=player(s);if(!alive(hero)||s.victoryDeclared||s.phase==='lost')continue;
+  const hero=player(s);if(!alive(hero)||s.phase==='lost'||(s.victoryDeclared&&e.t!=='comboLifeGain'))continue;
   if(e.t==='summon'){
    const u=s.units.find(x=>x.uid===e.uid);if(!u||u.hero)continue;
    if(owns(s,'soulWarden'))gainLife(s,ev,lv(s,'soulWarden').heal,'Soul Warden');
@@ -215,7 +215,7 @@ export function resolveComboEvents(s,ev){
   } else if(e.t==='comboLifeGain'){
    if(owns(s,'pridemate'))giveCounter(s,ev,hero,'pridemate');
    if(owns(s,'aerialist'))giveCounter(s,ev,hero,'aerialist');
-   if(owns(s,'blightPriest')){const foe=nearest(s);if(foe)loseLife(s,ev,hero,foe,1,'blightPriest');}
+   if(!s.victoryDeclared&&owns(s,'blightPriest')){const foe=nearest(s);if(foe)loseLife(s,ev,hero,foe,1,'blightPriest');}
   } else if(e.t==='cardDraw'){
    if(owns(s,'nadir')&&s.deck)queue(s,'nadir',{card:e.id});
   } else if(e.t==='death'){
