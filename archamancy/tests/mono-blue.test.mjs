@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {createEngine,VERSION,SAVE_FORMAT} from "../engine.mjs";
 import {counterplayWarning} from "../wave-guidance.mjs";
 import {trialBadges} from "../progress.mjs";
-import {playMonoBlue} from "../tools/mono-blue-balance.mjs";
+import {playMonoBlue,OPTIMIZED_DECK} from "../tools/mono-blue-balance.mjs";
 function arena(kind,branch){
  const g=createEngine(1,"sandbox","hollow");assert.ok(g.command({type:"sandboxMana",amount:100000}));
  assert.ok(g.command({type:"build",pad:8,kind}));
@@ -78,4 +78,13 @@ test("command-only Caldera Easy Onslaught completes all 25 waves and qualifies f
  const r=playMonoBlue({seed:1,map:"caldera",difficulty:"easy",onslaught:true});
  assert.equal(r.phase,"won");assert.equal(r.completed,25);assert.equal(r.monoBlue,true);assert.ok(r.health>0);
  assert.ok(trialBadges({won:r.won,mode:"campaign",onslaught:true,map:r.map,colors:r.towers.map(()=>"U")}).includes("mono:U"));
+});
+
+test("Hard Caldera Onslaught is beatable with blue-only towers and a trial-legal commander",()=>{
+ for(const seed of [1,2,3]){
+  const r=playMonoBlue({seed,map:"caldera",difficulty:"hard",onslaught:true,commander:"atraxa",deck:OPTIMIZED_DECK});
+  assert.equal(r.completed,25);assert.equal(r.won,true);assert.ok(r.health>=10);assert.equal(r.monoBlue,true);
+  const badges=trialBadges({won:r.won,mode:"campaign",onslaught:true,map:r.map,colors:r.towers.map(()=>"U")});
+  assert.ok(badges.includes("mono:U"));assert.ok(badges.includes("onslaught:caldera"));
+ }
 });
