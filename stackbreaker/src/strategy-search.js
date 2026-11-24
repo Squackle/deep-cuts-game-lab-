@@ -2,15 +2,23 @@
 // campaign, daily manifest or replay contract is changed. A finite search
 // of this engine is not a proof about full Magic or human difficulty.
 import {CARDS,LANDS} from './cards.js';
-import {createGame,tapLand,playLand,activate,pass,legalActions,legalTargets,paymentOptions} from './engine.js';
-export const STRATEGY_SEARCH_VERSION='sb-strategy-search-1';
+import {createGame,tapLand,playLand,activate,pass,legalActions,legalTargets,paymentOptions,maxSteps} from './engine.js';
+export const STRATEGY_SEARCH_VERSION='sb-strategy-search-2';
 const stable=x=>Array.isArray(x)?x.map(stable):x&&typeof x==='object'?Object.fromEntries(Object.keys(x).sort().map(k=>[k,stable(x[k])])):x;
 const signature=x=>JSON.stringify(stable(x));
-// Only the narrative log is discarded. Keep step count (engine cap),
-// battlefield/stack order, resource identities and all gameplay flags.
-function stateKey(s){
- const {log,...game}=s;
- return signature({...game,used:[...game.used].sort()});
+// The reducer's land abilities are only single-color taps. No supported
+// target or ability can distinguish two basic lands of the same card name.
+// Preserve all stack and creature IDs, and keep step if its cap is reachable.
+function keyFor(scene,canonical){
+ const safeStep=scene.stack.length+2*scene.hand.length+1<maxSteps;
+ return s=>{
+  const {log,...game}=s;
+  if(!canonical)return signature({...game,used:[...game.used].sort()});
+  const {step,lands,mana,...rest}=game;
+  const groups=lands.map(l=>[l.card,l.controller,Boolean(l.tapped)]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)));
+  return signature({...rest,...(safeStep?{}:{step}),lands:groups,
+   mana:Object.fromEntries(['W','U','B','R','G','C'].map(c=>[c,mana[c]||0])),used:[...game.used].sort()});
+ };
 }
 function legalMoves(s){
  if(s.status!=='playing')return [];
@@ -40,16 +48,17 @@ export function replayStrategy(scene,route){
  for(const move of route)s=apply(s,move);
  return s;
 }
-export function searchStrategy(scene,{maxStates=3000,maxEdges=20000,reverseActions=false}={}){
+export function searchStrategy(scene,{maxStates=3000,maxEdges=20000,reverseActions=false,canonical=true}={}){
  for(const [name,n] of Object.entries({maxStates,maxEdges}))if(!Number.isSafeInteger(n)||n<1)throw new RangeError('Invalid '+name);
+ const stateKey=keyFor(scene,canonical);
  const start=createGame(scene),nodes=[{state:start,prev:[],next:[],parent:-1,move:null}],seen=new Map([[stateKey(start),0]]);
- let edges=0,winner=-1;
+ let edges=0,winner=-1,mergedTransitions=0;
  const routeTo=i=>{
   const route=[];while(i>=0&&nodes[i].parent!==-1){route.push(nodes[i].move);i=nodes[i].parent;}
   return route.reverse();
  };
  const result=(status,reason=null)=>({version:STRATEGY_SEARCH_VERSION,status,reason,states:nodes.length,edges,
-  witness:winner<0?null:routeTo(winner),metrics:null});
+  witness:winner<0?null:routeTo(winner),metrics:null,canonical,mergedTransitions});
  for(let at=0;at<nodes.length;at++){
   const node=nodes[at];
   if(node.state.status!=='playing')continue;
@@ -59,6 +68,8 @@ export function searchStrategy(scene,{maxStates=3000,maxEdges=20000,reverseActio
   const successors=new Set();
   for(const move of moves){
    let next;try{next=apply(node.state,move);}catch{return result('inconclusive','unsupported-transition');}
+   // Narrative history is not read by legal transitions; avoid cloning it.
+   next.log=[];
    const key=stateKey(next);let to=seen.get(key);
    if(to===undefined){
     if(nodes.length>=maxStates)return result('inconclusive','state-budget');
@@ -66,6 +77,7 @@ export function searchStrategy(scene,{maxStates=3000,maxEdges=20000,reverseActio
     nodes.push({state:next,prev:[],next:[],parent:at,move});
     if(winner<0&&next.status==='won')winner=to;
    }
+   else mergedTransitions++;
    if(successors.has(to))continue;
    if(edges>=maxEdges)return result('inconclusive','edge-budget');
    successors.add(to);edges++;node.next.push(to);nodes[to].prev.push(at);
