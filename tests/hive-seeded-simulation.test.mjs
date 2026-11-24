@@ -67,6 +67,7 @@ for(const mode of ["hunt","classic"])test("seeded simulation: "+mode+" preserves
   const label=mode+" seed="+seed;
   const a=simulate(make,seed%2,label),b=simulate(make,seed%2,label);
   assert.deepEqual(a,b,label+" deterministic divergence");
+  t.diagnostic("SEED "+JSON.stringify({mode,seed:seed*7919,policy:seed%2,calls:a.calls,score:a.score,orbs:a.brood,captures:a.kills,evolutions:a.evolutions,survivalTicks:JSON.parse(a.state).runTicks,status:a.status,outcome:JSON.parse(a.state).outcome||null}));
   total+=a.calls;points+=a.score;brood+=a.brood;kills+=a.kills;evolutions+=a.evolutions;
  }
  assert.ok(total>24, "smoke policy must exercise more than one frame per seed");
@@ -76,7 +77,7 @@ for(const boss of LAIR_BOSSES)test("seeded Lair simulation: "+boss.id+" remains 
  const make=()=>createLairRun(boss.id);
  const a=simulate(make,1,boss.id),b=simulate(make,1,boss.id);
  assert.deepEqual(a,b);
- t.diagnostic(JSON.stringify({boss:boss.id,calls:a.calls,moves:a.moves,score:a.score,status:a.status}));
+ t.diagnostic("LAIR_SEED "+JSON.stringify({boss:boss.id,calls:a.calls,moves:a.moves,score:a.score,captures:a.kills,evolutions:a.evolutions,survivalTicks:JSON.parse(a.state).runTicks,status:a.status,outcome:JSON.parse(a.state).outcome||null}));
 });
 
 
