@@ -13,6 +13,7 @@ import {PRELOADED_MIX_COUNT} from "./fluid-palette.js";
 import {chooseAutomaticCast} from "./auto-cast.js";
 import {manualCastOptions,popUndoFrame} from "./cast-controls.js";
 import {reservePresentation} from "./reserve-presentation.js";
+import {reviewPlan,wardPaymentRecap} from "./decision-feedback.js";
 import {landPainting} from "./land-art.js";
 import {installLandDragging} from "./drag-lands.js";
 import {renderCardReferences,referenceFor} from "./card-references.js";
@@ -468,7 +469,7 @@ function perform(action,{automatic=false}={}){
  if(!out.ok){if(action?.type==="cast")rejectCast();else message(out.error,true);return;}
  cancelAuto();
  if(action.type!=="tap"){viewEpoch++;pendingFlights.clear();cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();}
- history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type,automatic:automatic&&action.type==="cast"});
+ history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type,action,automatic:automatic&&action.type==="cast"});
  notePlaytest("action");
  state=out.state;
  manaOrbs=(action.type==="ritual"||action.type==="activate"||action.type==="tap"&&(getCard(level,action.id).kind==="bounce"||state.highTide))?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
@@ -709,6 +710,11 @@ function render(pendingId=null){
    name.textContent=(i+1)+". "+spell.name+" · ";
    cost.innerHTML=costHtml(spell.cost);row.append(name,cost);decisionPlan.append(row);
   });
+  if(!isWin){const check=document.createElement("button");check.type="button";check.textContent="CHECK MY PLAN (MANUAL)";
+   const result=document.createElement("p");result.setAttribute("role","status");
+   check.onclick=()=>{try{result.textContent=reviewPlan(level,state).text;}catch{result.textContent="The plan could not be verified; no loss is established.";}};
+   decisionPlan.append(check,result);
+  }
  }
  const archived=level.revision===4?varietyBests[level.id]:null;
  if(archived){
@@ -767,7 +773,7 @@ function render(pendingId=null){
    "T"+proof.turn+" / "+proof.spentLife:"LEGAL ROUTE";
   if(decisionIndex!==null){
    el("winTitle").textContent="DECISION VAULT OPEN";
-   el("winCopy").textContent=level.decision.why;
+   el("winCopy").textContent=level.decision.why+" Your ward payments: "+wardPaymentRecap(level,history).join("; ")+". Life spent: "+state.spentLife+". This practice result is not scored.";
   }else if(trialIndex!==null){
    const best=trialBests[level.id],stars=medal(level,state,proof);
    el("winTitle").textContent="★".repeat(stars)+" BONUS VAULT OPEN";
