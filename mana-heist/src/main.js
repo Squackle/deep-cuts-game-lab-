@@ -11,6 +11,7 @@ import {renderWardCharge} from "./ward-charge.js";
 import {installFluidWard} from "./fluid-ward.js";
 import {PRELOADED_MIX_COUNT} from "./fluid-palette.js";
 import {chooseAutomaticCast} from "./auto-cast.js";
+import {manualCastOptions,popUndoFrame} from "./cast-controls.js";
 import {landPainting} from "./land-art.js";
 import {installLandDragging} from "./drag-lands.js";
 import {renderCardReferences,referenceFor} from "./card-references.js";
@@ -157,7 +158,7 @@ function cancelAuto(){
 // stirring postpone the finish, but NEVER let interaction block a puzzle.
 const AUTO_SETTLE_MS=2000,AUTO_STIR_MAX_MS=5100;
 function queueAutoCast(){
- if(!autoCastEnabled||pendingFlights.size||completed(level,state))return;
+ if(!autoCastEnabled||pendingFlights.size||completed(level,state)||choiceActions.some(a=>a.type==="cast"))return;
  if(!chooseAutomaticCast(level,state)||autoTimer!==null)return;
  el("wardTarget").classList.add("auto-primed");
  el("autoCastLabel").textContent="WARD READY · STIR TO MIX";
@@ -177,7 +178,7 @@ function queueAutoCast(){
    autoTimer=null;
    if(epoch!==viewEpoch||pendingFlights.size||completed(level,state))return;
    const stillLegal=chooseAutomaticCast(level,state);
-   if(stillLegal)perform(stillLegal);
+   if(stillLegal)perform(stillLegal,{automatic:true});
   },250);
  }
  autoTimer=setTimeout(tryCast,140);
@@ -459,13 +460,13 @@ function rejectCast(){
  flashWard({vault:el("heist").querySelector(".vault-card"),ward:el("lockGlyph"),costRow:el("wardCost"),button:null,pool:null,missing,reduced:reducedFx});
  message(failureText(missing),true);
 }
-function perform(action){
+function perform(action,{automatic=false}={}){
  const sourceRect=(action.type==="tap"||action.type==="activate")?el("battlefield").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():action.type==="ritual"?el("hand").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():null;
  const out=reduce(level,state,action);
  if(!out.ok){if(action?.type==="cast")rejectCast();else message(out.error,true);return;}
  cancelAuto();
  if(action.type!=="tap"){viewEpoch++;pendingFlights.clear();cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();}
- history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type});
+ history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type,automatic:automatic&&action.type==="cast"});
  notePlaytest("action");
  state=out.state;
  manaOrbs=(action.type==="ritual"||action.type==="activate"||action.type==="tap"&&(getCard(level,action.id).kind==="bounce"||state.highTide))?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
@@ -659,7 +660,7 @@ function selectHand(id){
  message(selectedHandId?"Selected "+getCard(level,id).name+" · play it or inspect it.":"Selection cleared.");
 }
 function updateCastButton(){
- const ready=!completed(level,state)&&!pendingFlights.size&&!!chooseAutomaticCast(level,state);
+ const ready=!completed(level,state)&&!pendingFlights.size&&manualCastOptions(level,state).length>0;
  const button=el("castButton");
  button.disabled=!ready;
  button.textContent=ready?"CAST SPELL ✦":state.manaUnits?.some(u=>u.restriction)&&COLORS.every(c=>(state.pool[c]||0)>=(level.stages[state.stage]?.cost?.[c]||0))?"MANA RESTRICTED":"NEED MORE MANA";
@@ -669,7 +670,7 @@ function updateCastButton(){
 function teachingCue(){
  if(completed(level,state))return "Vault opened. Nice work!";
  if(state.manaUnits?.some(u=>u.restriction)&&!actions(level,state).some(a=>a.type==="cast"))return "Some mana can only pay for creature spells. This vault may need a different mana source.";
- if(chooseAutomaticCast(level,state))return "Your mana matches the cost. Cast to spend it.";
+ if(manualCastOptions(level,state).length)return "Your mana matches the cost. Cast to spend it.";
  if(decisionIndex!==null)return level.decision.focus;
  if(index===0)return "Tap your Island. Turning a land sideways makes mana.";
  if(index===1)return state.hand.length?"Play your Mountain from your hand.":"Tap your Mountain for red mana.";
@@ -933,8 +934,11 @@ el("autoCastToggle").addEventListener("change",e=>{
 });
 el("castButton").addEventListener("click",()=>{
  if(pendingFlights.size)return;
- const cast=chooseAutomaticCast(level,state);
- if(cast){cancelAuto();fluid.burst();perform(cast);}else rejectCast();
+ const options=manualCastOptions(level,state);
+ if(!options.length){rejectCast();return;}
+ cancelAuto();
+ if(options.length===1){fluid.burst();perform(options[0]);}
+ else choices("CHOOSE SPELL PAYMENT","Choose the actual mana to spend and any untap target. Consider what the next ward needs.",options);
 });
 el("playSelectedLand").addEventListener("click",()=>{if(selectedHandId)playLand(selectedHandId);});
 el("inspectSelected").addEventListener("click",()=>{if(selectedHandId)inspectById(selectedHandId);});
@@ -1020,13 +1024,10 @@ el("undo").addEventListener("click",()=>{
  if(!history.length)return;
  notePlaytest("undo");
  cancelAuto();viewEpoch++;pendingFlights.clear();
- let prev=history.pop();
- // An automatic cast is a consequence of the previous manual move.
- // Undo that move and every automatically resolved ward after it together.
- while(prev.actionType==="cast"&&history.length)prev=history.pop();
+ const prev=popUndoFrame(history);
  state=prev.state;manaOrbs=prev.orbs;
  cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();render();
- message("Previous move undone, including any automatically cast wards.");
+ message("Previous move undone. Automatic casts undo with their triggering move; manual casts undo separately.");
 });
 window.addEventListener("resize",()=>{if(document.body.classList.contains("in-heist"))syncLandRows();},{passive:true});
 el("reset").addEventListener("click",()=>{closePlaytest("restart");sage.onRestart(level);load(index);startPlaytest();});
