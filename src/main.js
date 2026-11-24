@@ -55,7 +55,10 @@ function lairTitle(){return "THE LAIR · "+lairDetails(selectedLairBoss).name}
 let awaitingMutationResume=false;
 const sessionBests=createSessionBest();
 // Game state diagnostics remain hidden. Inspect local DOM/game state using developer tools.
-const prefersReducedMotion=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches??false;
+// MediaQueryList.matches is live: reuse the query instead of creating a new
+// object for every render pass and every animated effect.
+const reducedMotionQuery=window.matchMedia?.("(prefers-reduced-motion: reduce)");
+const prefersReducedMotion=()=>reducedMotionQuery?.matches??false;
 let selectedMode="hunt",selectedChallenge="arcade";
 try{selectedMode=localStorage.getItem("hive-mode-v1")==="classic"?"classic":"hunt"}catch{}
 $("gameMode").value=selectedMode;

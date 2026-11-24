@@ -5,6 +5,7 @@ import {replayScore} from "../src/replay-verification.js";
 import {createLairRun,completeLairRun,LAIR_BOSSES} from "../src/lair.js";
 import {ABILITIES} from "../src/miniboss.js";
 import {safePreyTile} from "../src/enemies.js";
+import {terrainBlocks} from "../src/environments.js";
 
 // Test-only search over legal actions. No seeded engine state, enemy position,
 // charge, phase, score, or collision is forced. A random tape allows each
@@ -60,7 +61,7 @@ function huntValue(r){
  }));
  return progress+defenses+trap-(r.food?md(head,r.food)*.25:0);
 }
-function search(make,{width=18,budget=600,evaluate=value}={}){
+function search(make,{width=18,budget=600,evaluate=value,bucketKey=null}={}){
  const initial=start(make()),source=initial.random,tape=[];
  let frontier=[{run:initial,index:0,path:[]}],best=frontier[0];
  let expanded=0;
@@ -90,7 +91,7 @@ function search(make,{width=18,budget=600,evaluate=value}={}){
   frontier=[];
   for(const c of next){
    const r=c.run,e=r.enemies[0];
-   const bucket=key(r.body[0])+"|"+(e?key(e.pos)+"|"+e.dir:"-");
+   const bucket=bucketKey?bucketKey(r):key(r.body[0])+"|"+(e?key(e.pos)+"|"+e.dir:"-");
    const count=buckets.get(bucket)||0;
    if(count>=2)continue;
    buckets.set(bucket,count+1);frontier.push(c);
@@ -134,4 +135,73 @@ test("full seeded Predator Hunt campaign and authentic terminal replay",t=>{
  const expected={score:replay.score,kills:replay.kills,evolutionsChosen:replay.evolutionsChosen,ticks:replay.runTicks,outcome:replay.outcome};
  assert.equal(replayScore(seed,events,expected,"hunt").ok,true);
  assert.equal(replayScore(seed,events,{...expected,outcome:ENDINGS.PERFECT_CLEAR},"hunt").ok,false);
+});
+
+/** Evaluate the real snake state using free-space connectivity rather than
+ * Manhattan distance alone. A tail that is about to move is traversable
+ * for planning; no state modifications are made to the actual engine.
+ */
+function classicValue(r){
+ if(r.status==="won")return 1e12;
+ const w=r.cols,h=r.rows,n=w*h,head=r.body[0],tail=r.body.at(-1);
+ const id=p=>p.y*w+p.x,blocked=new Uint8Array(n),seen=new Int16Array(n);
+ seen.fill(-1);
+ for(const b of (r.growthDebt>0?r.body.slice(1):r.body.slice(1,-1)))blocked[id(b)]=1;
+ for(const t of r.terrain)if(t.warningMs<=0)blocked[id(t.pos)]=1;
+ const queue=new Int32Array(n);let count=1;
+ queue[0]=id(head);seen[id(head)]=0;
+ for(let i=0;i<count;i++){
+  const at=queue[i],x=at%w,y=Math.floor(at/w);
+  for(const next of [x?at-1:-1,x<w-1?at+1:-1,y?at-w:-1,y<h-1?at+w:-1]){
+   if(next<0||blocked[next]||seen[next]>=0)continue;
+   seen[next]=seen[at]+1;queue[count++]=next;
+  }
+ }
+ const foodDistance=r.food?seen[id(r.food)]:0;
+ const tailAdjacent=Object.values(DIRECTIONS).some(v=>{
+  const q=offset(tail,v);return q.x>=0&&q.x<w&&q.y>=0&&q.y<h&&seen[id(q)]>=0;
+ });
+ const length=r.body.length+r.growthDebt;
+ const free=n-r.body.length;
+ // Progress dominates; steer toward reachable food while keeping access
+ // to the tail and penalizing fragmentation of the remaining open area.
+ return length*10000+r.brood*20+r.evolutionsChosen*100+
+  (r.effects.shield+r.effects.molt)*25+r.effects.greenPickups*8+
+  (tailAdjacent?45:0)+Math.min(count,free)*2-
+  (foodDistance>=0?foodDistance*8:100+md(head,r.food||tail)*4);
+}
+const classicBucket=r=>key(r.body[0])+"|"+r.direction+"|"+key(r.body.at(-1));
+function replayClassic(make,path){
+ const r=start(make()),events=[];
+ for(const action of path){
+  if(action.startsWith("choose:"))events.push([r.runTicks,"choose",action.slice(7)]);
+  else if(action!==".")events.push([r.runTicks,"turn",action]);
+  apply(r,action);
+ }
+ return {r,events};
+}
+test("Brood Trail compact board: search for genuine board-fill victory",t=>{
+ const seed=7919,make=()=>newRun({mode:"classic",seed,cols:8,rows:8});
+ const {best,expanded}=search(make,{width:48,budget:1600,evaluate:classicValue,bucketKey:classicBucket});
+ const {r}=replayClassic(make,best.path);
+ assert.equal(serial(r),serial(best.run));
+ const rocks=new Set(r.terrain.filter(t=>t.kind==="rock"&&t.lifeMs===null).map(t=>key(t.pos))).size;
+ t.diagnostic(JSON.stringify({seed,board:"8x8",expanded,actions:best.path.length,body:r.body.length,rockTiles:rocks,orbs:r.brood,evolutions:r.evolutionsChosen,outcome:r.outcome||"budget_limited",score:r.score}));
+ if(r.status==="won"){
+  assert.equal(r.outcome,ENDINGS.PERFECT_CLEAR);
+  assert.equal(r.body.length+rocks,r.cols*r.rows);
+ }else assert.ok(r.body.length>=20,"search must meaningfully exercise growth");
+});
+test("Brood Trail full arena: bounded growth and authentic replay",t=>{
+ const seed=7919,make=()=>newRun({mode:"classic",seed});
+ const {best,expanded}=search(make,{width:20,budget:1800,evaluate:classicValue,bucketKey:classicBucket});
+ const {r,events}=replayClassic(make,best.path);
+ assert.equal(serial(r),serial(best.run));
+ t.diagnostic(JSON.stringify({seed,board:"18x22",expanded,actions:best.path.length,body:r.body.length,orbs:r.brood,evolutions:r.evolutionsChosen,outcome:r.outcome||"budget_limited",score:r.score}));
+ assert.ok(r.brood>=10,"search must exceed the opening growth stage");
+ if(r.status==="won"){
+  assert.equal(r.outcome,ENDINGS.PERFECT_CLEAR);
+  const expected={score:r.score,kills:r.kills,evolutionsChosen:r.evolutionsChosen,ticks:r.runTicks,outcome:r.outcome};
+  assert.equal(replayScore(seed,events,expected,"classic").ok,true);
+ }
 });

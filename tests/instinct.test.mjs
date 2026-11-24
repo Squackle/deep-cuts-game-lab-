@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {KEY_DIRECTIONS,mutationSelectionIndex,isTouchMutationSelection,resumeHeading,swipeHeading,SWIPE_RESUME_KEYS} from "../src/input-controls.js";
-import {createMutationButton,mutationDescription,showMutationDraft} from "../src/evolution-ui.js";
+import {createMutationButton,mutationDescription,showMutationDraft,drawMutationHud} from "../src/evolution-ui.js";
 import {newRun,start,chooseMutation,turn,step,RULES_VERSION} from "../src/engine.js";
 import {createSessionBest} from "../src/session-best.js";
 import {boardKey} from "../src/modes.js";
@@ -152,4 +152,22 @@ test("Instinct Ready can resume with a safe mobile swipe, not a reverse or tap",
  const html=readFileSync(new URL("../hive-run/index.html",import.meta.url),"utf8");
  assert.match(main,/awaitingMutationResume\s*\?\s*resumeMutationByKey\(SWIPE_RESUME_KEYS\[heading\]\)\s*:\s*handleDirection\(heading\)/);
  assert.match(html,/SWIPE OR PRESS A MOVEMENT KEY TO RESUME/);
+});
+
+test("mutation HUD preserves badge nodes on unchanged state and updates on effect, mode and reset",()=>{
+ const doc={createElement:tag=>fake(tag)},root=fake("section");root.ownerDocument=doc;
+ let rebuilds=0;
+ root.replaceChildren=(...items)=>{rebuilds++;root.children=items};
+ const run=newRun({seed:42});
+ drawMutationHud(root,run);const empty=root.children[0];
+ drawMutationHud(root,run);assert.equal(root.children[0],empty);assert.equal(rebuilds,1);
+ run.mutations.G=1;run.effects.greenPickups=4;
+ drawMutationHud(root,run);assert.equal(rebuilds,2);assert.match(root.children[1].textContent,/bonus EV/);
+ const badge=root.children[0];drawMutationHud(root,run);assert.equal(root.children[0],badge);
+ run.effects.greenPickups=3;drawMutationHud(root,run);assert.equal(rebuilds,3);
+ run.mode="classic";drawMutationHud(root,run);assert.equal(rebuilds,4);assert.match(root.children[1].textContent,/bonus growth/);
+ drawMutationHud(root,newRun({seed:7,mode:"classic"}));assert.equal(rebuilds,5);
+ assert.equal(root.children[0].textContent,"NO MUTATIONS YET");
+ const other=fake("section");other.ownerDocument=doc;
+ drawMutationHud(other,newRun({seed:7}));assert.equal(other.children[0].textContent,"NO MUTATIONS YET");
 });
