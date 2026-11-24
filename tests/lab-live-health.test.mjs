@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {checkRoute,run,routes} from "../scripts/lab-live-health.mjs";
+import {checkRoute,run,routes,summarize} from "../scripts/lab-live-health.mjs";
 const html=(title,links="")=>new Response("<title>"+title+"</title>"+links,{headers:{"content-type":"text/html; charset=utf-8"}});
 test("200 fallback with incorrect page title fails",async()=>{
  const r=await checkRoute("/hive-run/","Game Lab | Hive Run",async()=>html("Game Lab | Deep Cuts EDH"));
@@ -25,4 +25,26 @@ test("all canonical routes pass and request only the Lab static pages",async()=>
  });
  assert.deepEqual(called,routes.map(([p])=>p));
  assert.ok(results.every(x=>x.ok));
+});
+
+test("transient failures retry once, recovered routes are visible, persistent failures stay red",async()=>{
+ const links=routes.slice(2).map(([p])=>'<a href="'+p+'">Play</a>').join("");
+ const attempts=new Map();let waits=0;
+ const results=await run(async url=>{
+  const path=new URL(url).pathname,n=(attempts.get(path)||0)+1;attempts.set(path,n);
+  if(path==="/hive-run/"&&n===1)throw Error("network");
+  if(path==="/mana-heist/")return new Response(null,{status:503});
+  if(path==="/stackbreaker/")return html("Wrong title");
+  return html(routes.find(([p])=>p===path)[1],links);
+ },async()=>{waits++});
+ assert.equal(waits,2);
+ assert.equal(attempts.get("/hive-run/"),2);
+ assert.equal(attempts.get("/mana-heist/"),2);
+ assert.equal(attempts.get("/stackbreaker/"),1);
+ assert.equal(results.find(x=>x.path==="/hive-run/").recovered,true);
+ assert.equal(results.find(x=>x.path==="/mana-heist/").ok,false);
+ assert.equal(results.find(x=>x.path==="/stackbreaker/").ok,false);
+ assert.match(summarize(results),/4 first-attempt healthy; 1 transient recovered; 2 failed/);
+ assert.match(summarize(results),/RECOVERED \/hive-run\//);
+ assert.match(summarize(results),/FAIL \/mana-heist\//);
 });
