@@ -86,7 +86,7 @@ export function onHeroHeal(s,ev,amount,kind){
   /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return;
  if(!owns(s,'vito')||kind==='vito'||amount<=0)return;
  const target=nearestFoe(s);if(!target)return;
- const dmg=amount; // Nominal gain, including at full HP; never amplify by graft level.
+ const dmg=amount+lv(s,'vito').bonus; // Capped level 1 has zero bonus, even for legacy duplicate grafts.
  ev.push({t:'graftTrigger',name:`Vito · ${dmg} life loss to ${target.name}`,uid:player(s).uid});
  loseLife(s,ev,player(s),target,dmg,'vito');
 }
