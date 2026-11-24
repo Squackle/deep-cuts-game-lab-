@@ -611,7 +611,14 @@ function makeTroop(t,opts={}){if(state.troops.length>=220)return false;const def
  }
  // Save and resume. A snapshot is the whole run state as plain JSON; restore only accepts a matching save format and known content.
  function snapshot(){const keep={...state,events:[],effects:[],projectiles:[],commands:state.commands.slice(-400)};return {format:SAVE_FORMAT,version:VERSION,savedAt:Date.now(),state:JSON.parse(JSON.stringify(keep))};}
- function restore(save){try{const s=save?.state;if(save?.format!==SAVE_FORMAT||!s||typeof s!=="object")return false;if((s.mapId||"hollow")!==mapId||!["campaign","endless","sandbox"].includes(s.mode)||!["ready","active"].includes(s.phase))return false;if(!Number.isFinite(s.tick)||!Number.isFinite(s.mana)||!Number.isFinite(s.health)||s.health<=0)return false;
+ function restore(save){try{const s=save?.state;if(save?.format!==SAVE_FORMAT||!s||typeof s!=="object")return false;if((s.mapId||"hollow")!==mapId||!["campaign","endless","sandbox"].includes(s.mode)||!["ready","active"].includes(s.phase))return false;if(!Number.isInteger(s.tick)||s.tick<0||!Number.isInteger(s.wave)||s.wave<0||!Number.isFinite(s.mana)||s.mana<0||!Number.isFinite(s.health)||s.health<=0)return false;
+  // Treat persisted runs as untrusted data. Reject bad collection shapes before changing any live state:
+  // malformed saves must not make later steps, reports or boss-log relinking throw.
+  const arrayFields=["enemies","troops","queue","hand","library","discard","commands","pendingWaves","waveHistory","towerHistory","waveCalls","bossLog","commanderDeaths","castLog","waveTop","leakLog","inFlight","effects","projectiles","fallen"];
+  if(arrayFields.some(k=>Object.hasOwn(s,k)&&!Array.isArray(s[k])))return false;
+  const objectFields=["towers","stats","rubble","farmPaid","soulPaid","enemyKills","enemyLeaks","cardCasts"];
+  if(objectFields.some(k=>Object.hasOwn(s,k)&&(!s[k]||typeof s[k]!=="object"||Array.isArray(s[k]))))return false;
+  if(Array.isArray(s.bossLog)&&!s.bossLog.every(b=>b&&typeof b==="object"&&!Array.isArray(b)))return false;
   if(!Object.values(s.towers||{}).every(t=>Object.hasOwn(roster,t.kind)&&pads[t.id]))return false;if(![...(s.hand||[]),...(s.library||[]),...(s.discard||[])].every(id=>Object.hasOwn(cards,id)))return false;if(s.commander&&!Object.hasOwn(commanders,s.commander.id))return false;if(!(s.enemies||[]).every(e=>Object.hasOwn(types,e.kind)))return false;
   const copy=JSON.parse(JSON.stringify(s));for(const k of new Set([...Object.keys(state),...Object.keys(copy)])){if(k==="stats"||k==="__proto__"||k==="constructor"||k==="prototype"||!Object.hasOwn(copy,k))continue;state[k]=copy[k];}Object.assign(stats,copy.stats||{});if(!Object.hasOwn(copy,"rubble"))state.rubble={};if(!SEASONS.includes(state.season)||(M.seasons&&!M.seasons.includes(state.season)))state.season=M.seasons?.[0]||"summer";relinkBossRecords();state.events=[];state.effects=[];state.projectiles=[];return true;}catch{return false;}}
  // A boss's record is shared by the boss and the boss log, so later updates (outcome, stalls, crack) show in the report.
