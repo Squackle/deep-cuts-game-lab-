@@ -35,3 +35,6 @@ Shared checklist: [website docs/MTG-RULES-VERIFICATION.md](https://github.com/Sq
 ## Shared reliability lane
 
 The dedicated security/QA developer owns shared CI, shared testing infrastructure and maintenance docs on `coord/*` branches. Consult [docs/RELIABILITY-HANDOFF.md](docs/RELIABILITY-HANDOFF.md). Coordinate game-specific tests/source with the game owner; do not alter rules or production data. All required prerequisite suites must succeed at the exact PR head, including GRAFTBOUND verification; a green source export is not test evidence.
+
+## Targeted maintenance navigation
+Read [docs/MAINTENANCE-HANDBOOK.md](docs/MAINTENANCE-HANDBOOK.md) before reliability or release work. Start at the affected game's entry and own source folder; for catalog/presence use index.html, lab/** and functions/api/lab-presence.js. For CI use .github/workflows/ and scripts/release-coordination.mjs. Run the exact failed test file first, then complete required CI. Don't read or modify every game for a shared navigation issue. Keep new runtime edits in the Game Lab lane with central coordination, never disguise them as Coordination docs. No live presence writes or score submissions for QA.
