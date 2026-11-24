@@ -30,7 +30,9 @@ test('Prowess stacks on successful spell and Aura, does not trigger on equip, ex
  cast(s,'mtg:harmonize',h.x,h.y);assert.equal(effectivePower(h),p+1);assert.equal(h.toughness,t+1);
  cast(s,'mtg:rancor',h.x,h.y);assert.equal(h.statuses.temporaryToughness,2);
  s.equipmentInventory=['mtg:shadowspear'];equipBattle(s,'mtg:shadowspear',h.uid);assert.equal(h.statuses.temporaryToughness,2);
- endTurn(s);assert.equal(h.statuses.temporaryToughness,0);assert.equal(h.toughness,t+1);
+ assert.equal(h.toughness,t+3); // 2 Prowess + 1 Equipment; Rancor adds power only.
+ enemies(s)[0].statuses.stunned=1; // Isolate the expiration from enemy-phase debuffs.
+ endTurn(s);assert.equal(h.statuses.temporaryToughness,0);assert.equal(h.toughness,t+1);assert.ok(h.equipment.includes('mtg:shadowspear'));
 });
 test('Tin Street attack counter precedes damage and creates exact red 1/1 Goblins on legal cells',()=>{
  const s=make(['krenko-tin-street-kingpin']);const h=player(s),f=enemies(s)[0];f.x=1;f.y=0;const p=h.power;
