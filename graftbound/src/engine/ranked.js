@@ -19,8 +19,9 @@ export const RANKED_CHALLENGES = {
 export const ACTIVE_CHALLENGE = 'gb-expedition-01';
 
 export function challengeFor(id, revision) {
+  if (typeof id !== 'string' || !Object.hasOwn(RANKED_CHALLENGES, id)) throw new Error('Unknown or retired challenge');
   const c = RANKED_CHALLENGES[id];
-  if (!c || (revision != null && c.revision !== revision)) throw new Error('Unknown or retired challenge');
+  if (revision != null && c.revision !== revision) throw new Error('Unknown or retired challenge');
   return c;
 }
 export function startRanked(id = ACTIVE_CHALLENGE) {
@@ -42,10 +43,14 @@ const SHAPES = {
 };
 /** Strict envelope validation: exact keys, typed values, contiguous sequence. */
 export function validDecision(d, seq) {
-  if (!d || typeof d !== 'object' || Array.isArray(d) || d.seq !== seq || !SHAPES[d.type]) return false;
+  if (!d || typeof d !== 'object' || Array.isArray(d)) return false;
+  const proto = Object.getPrototypeOf(d);
+  if (proto !== Object.prototype && proto !== null) return false;
+  if (!Object.hasOwn(d, 'seq') || !Object.hasOwn(d, 'type') || !Number.isSafeInteger(seq) || seq < 0 || d.seq !== seq ||
+      typeof d.type !== 'string' || !Object.hasOwn(SHAPES, d.type)) return false;
   const shape = SHAPES[d.type];
-  for (const k of Object.keys(d)) if (k !== 'seq' && k !== 'type' && !(k in shape)) return false;
-  return Object.entries(shape).every(([k, ok]) => ok(d[k]));
+  for (const k of Reflect.ownKeys(d)) if (k !== 'seq' && k !== 'type' && !Object.hasOwn(shape, k)) return false;
+  return Object.entries(shape).every(([k, ok]) => ok(Object.hasOwn(d, k) ? d[k] : undefined));
 }
 
 /** Apply ONE decision through the real engine. Throws on anything the engine would reject. */
