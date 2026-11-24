@@ -96,8 +96,19 @@ export function replayRun(id, decisions, { revision, rulesVersion = RULES_VERSIO
 /** Server checkpoint step: continue an authoritative run state with a bounded segment of new decisions. */
 export function applySegment(checkpoint, decisions) {
   if (!Array.isArray(decisions) || !decisions.length || decisions.length > MAX_SEGMENT) throw new Error('Bad segment size');
+  const meta = checkpoint?.ranked;
+  if (!meta || typeof meta !== 'object') throw new Error('Not a ranked checkpoint');
+  if (meta.rulesVersion !== RULES_VERSION) throw new Error('Rules version mismatch');
+  const challenge = challengeFor(meta.challengeId, meta.revision);
+  if (meta.revision !== challenge.revision || meta.cardPoolVersion !== challenge.cardPoolVersion ||
+      meta.scoringVersion !== challenge.scoringVersion || meta.replay !== REPLAY_VERSION) {
+    throw new Error('Checkpoint metadata mismatch');
+  }
+  if (!Number.isSafeInteger(meta.seq) || meta.seq < 0 || meta.seq > MAX_DECISIONS ||
+      decisions.length > MAX_DECISIONS - meta.seq) throw new Error('Replay too long or invalid checkpoint sequence');
+  // Only trusted server-owned checkpoints may reach this function. These checks
+  // reject incompatible metadata; they do not authenticate arbitrary state.
   const run = structuredClone(checkpoint);
-  if (run.ranked.rulesVersion !== RULES_VERSION) throw new Error('Rules version mismatch');
   for (const d of decisions) applyDecision(run, d);
   return { run, totals: expeditionTotals(run) };
 }
