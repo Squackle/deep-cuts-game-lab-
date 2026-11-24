@@ -34,7 +34,7 @@ import {certifyDiverse} from "./mana-variety-certificates.js";
 import {diverseFor} from "./mana-variety-puzzles.js";
 import {certifyRemix,REMIX_KEY,REMIXED_IDS,validateRemixBests} from "./certified-remixes.js";
 import {DECISION_LADDER} from "./decision-ladder.js";
-import replacementBoards from "../data/replacement-candidates.json" with {type:"json"};
+import replacementBoards from "./replacement-candidates.js";
 const replacementReview=new URLSearchParams(location.search).get("pack")==="replacement-review";
 const decisionBoards=replacementReview?replacementBoards:DECISION_LADDER;
 import {evaluateVault} from "./difficulty-metrics.js";

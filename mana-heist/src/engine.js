@@ -95,7 +95,7 @@ export function validate(level){
  }
  return true;
 }
-export function initial(level){validate(level);return {turn:1,life:level.life,played:0,stage:0,pool:zero(),manaUnits:[],manaSerial:0,graveyard:[],highTide:0,hand:level.hand.map(x=>x.id),field:level.field.map(x=>({id:x.id,tapped:false})),spentLife:0,actions:0,...(physical(level)?{libraryAvailable:level.library.map(c=>c.id)}:{})};}
+export function initial(level){validate(level);return {turn:1,life:level.life,played:0,stage:0,pool:zero(),manaUnits:[],manaSerial:0,graveyard:[],highTide:0,hand:level.hand.map(x=>x.id),field:level.field.map(x=>({id:x.id,tapped:false})),spentLife:0,actions:0,...(physical(level)?{libraryAvailable:level.library.map(c=>c.id),consumed:[]}:{})};}
 export function lookup(level,id){return [...level.hand,...level.field,...level.library].find(x=>x.id===id);}
 export function getCard(level,id){const l=lookup(level,id);return l?CARDS[l.card]:null;}
 export function poolLabel(p){return COLORS.map(c=>p[c]?p[c]+c:"").filter(Boolean).join(" · ")||"empty";}
@@ -161,12 +161,16 @@ function enterTapped(level,state,land,shock){
 }
 // Candidate-only validation; legacy snapshots retain their historical format.
 export function assertPhysicalLibraryState(level,s){
- if(!Array.isArray(s.libraryAvailable))throw Error("Physical library state required; restart or replay under matching rules");
+ if(!Array.isArray(s.libraryAvailable)||!Array.isArray(s.consumed)||!Array.isArray(s.hand)||!Array.isArray(s.field)||!Array.isArray(s.graveyard))throw Error("Physical library state required; restart or replay under matching rules");
  const library=new Set(level.library.map(c=>c.id));
  const all=new Set([...level.library,...level.hand,...level.field].map(c=>c.id));
  if(s.libraryAvailable.some(id=>!library.has(id)))throw Error("Unknown physical library instance");
- const ids=[...s.libraryAvailable,...s.hand,...s.field.map(f=>f.id),...s.graveyard];
+ // Treasure represents a token in this model. A sacrificed token ceases to exist;
+ // keep its instance ID in an explicit accounting zone, not the graveyard.
+ if(s.consumed.some(id=>lookup(level,id)?.card!=="treasure"))throw Error("Invalid consumed physical instance");
+ const ids=[...s.libraryAvailable,...s.hand,...s.field.map(f=>f?.id),...s.graveyard,...s.consumed];
  if(ids.some(id=>!all.has(id))||new Set(ids).size!==ids.length)throw Error("Invalid physical card identity or overlapping zones");
+ if(ids.length!==all.size)throw Error("Missing physical card instance");
  return true;
 }
 export function actions(level,s){
@@ -240,6 +244,7 @@ export function actions(level,s){
 const signature=a=>JSON.stringify(a);
 export function reduce(level,s,action){
  if(!action||typeof action!=="object")return {ok:false,error:"Choose an action."};
+ if(physical(level))assertPhysicalLibraryState(level,s);
  if(s.stage===level.stages.length)return {ok:false,error:"Vault already cracked."};
  if(!actions(level,s).some(a=>signature(a)===signature(action)))return {ok:false,error:explain(level,s,action)};
  const n={...s,pool:{...s.pool},manaUnits:[...(s.manaUnits||[])],manaSerial:s.manaSerial||0,graveyard:[...(s.graveyard||[])],highTide:s.highTide||0,hand:[...s.hand],field:s.field.map(f=>({...f})),actions:s.actions+1};
@@ -299,7 +304,13 @@ export function reduce(level,s,action){
   if(mode.untapTarget)n.field.find(x=>x.id===mode.untapTarget).tapped=false;
   if(mode.untapSelf)f.tapped=false;
   if(n.highTide&&mode.tap&&getCard(level,action.id).types.includes("Island"))for(let i=0;i<n.highTide;i++)addMana("U",action.id);
-  if(mode.sacrifice)n.field=n.field.filter(f=>f.id!==action.id);
+  if(mode.sacrifice){
+   n.field=n.field.filter(f=>f.id!==action.id);
+   if(physical(level)){
+    if(lookup(level,action.id).card==="treasure")n.consumed=[...s.consumed,action.id];
+    else n.graveyard.push(action.id);
+   }
+  }
   for(const color of mode.output)addMana(color,action.id,mode.restriction||null);
  }
  if(action.type==="cast"){
@@ -318,6 +329,7 @@ export function reduce(level,s,action){
   n.turn++;n.played=0;n.pool=zero();n.manaUnits=[];n.highTide=0;
   for(const f of n.field)if(getCard(level,f.id).v2!=="basalt")f.tapped=false;
  }
+ if(physical(level))assertPhysicalLibraryState(level,n);
  return {ok:true,state:n};
 }
 function explain(level,s,a){
@@ -331,7 +343,7 @@ function explain(level,s,a){
  return "That move isn't legal.";
 }
 export function key(s){
- return JSON.stringify([s.turn,s.life,s.played,s.stage,COLORS.map(c=>s.pool[c]),[...s.hand].sort(),s.field.map(x=>x.id+":"+Number(x.tapped)).sort(),(s.manaUnits||[]).filter(u=>u.restriction).map(u=>u.color+":"+u.restriction).sort(),s.highTide||0,s.graveyard?.length||0,...(Array.isArray(s.libraryAvailable)?[PHYSICAL_LIBRARY_VERSION,[...s.libraryAvailable].sort(),[...(s.graveyard||[])].sort()]:[])]);
+ return JSON.stringify([s.turn,s.life,s.played,s.stage,COLORS.map(c=>s.pool[c]),[...s.hand].sort(),s.field.map(x=>x.id+":"+Number(x.tapped)).sort(),(s.manaUnits||[]).filter(u=>u.restriction).map(u=>u.color+":"+u.restriction).sort(),s.highTide||0,s.graveyard?.length||0,...(Array.isArray(s.libraryAvailable)?[PHYSICAL_LIBRARY_VERSION,[...s.libraryAvailable].sort(),[...(s.graveyard||[])].sort(),[...(s.consumed||[])].sort()]:[])]);
 }
 export function completed(level,s){return s.stage===level.stages.length;}
 export function medal(level,s,par){

@@ -1,4 +1,5 @@
-[
+// Browser-compatible ES module: no JSON import attributes (Safari <17.2).
+export default [
   {
     "id": "mh-review-031",
     "sourceId": "mh-031",
@@ -90,4 +91,4 @@
       "retry": "Charge all three and choose blue manually; then try blue first with automatic casting."
     }
   }
-]
+];

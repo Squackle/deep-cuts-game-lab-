@@ -82,6 +82,8 @@ test("all 500 old certificates replay under candidate; affected boards audited f
  console.log("PHYSICAL_LIBRARY_COMPATIBILITY "+JSON.stringify({certificates:LEVELS.length,affected,budgetPerSearch:12000,counts,unresolved}));
  assert.equal(LEVELS.length,500);assert.ok(affected>0);
  assert.equal(counts.unsolvable,0,JSON.stringify(unresolved));
+ assert.equal(counts.inconclusive,0,JSON.stringify(unresolved));
+ assert.equal(affected,43);
  // Inconclusive is explicitly reported and blocks promotion, not a false pass.
 });
 
