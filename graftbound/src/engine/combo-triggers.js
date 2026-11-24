@@ -1,11 +1,11 @@
 // GRAFTBOUND v1.2.8 — deterministic, event-driven, composable permanent graft abilities.
 // All choices, counters and tokens are part of the serialized battle state, never the UI.
 // This layer deliberately shares triggers: one event can activate many grafts in printed order.
-import { player, enemies, allies, alive, heal, dealDamage, effectivePower, checkStateBasedDeath, sacrificeAlly } from './abilities.js';
+import { player, enemies, allies, alive, heal, dealDamage, loseLife, effectivePower, checkStateBasedDeath, sacrificeAlly } from './abilities.js';
 import { tileAt, unitAt, T, manhattan } from '../core/grid.js';
 import { drawCards, refillFromGraveyard } from './deck.js';
 import { availableMana, spendMana } from './mana.js';
-import { onHeroDraw } from './trait-triggers.js';
+import { onHeroDraw, traitDraw } from './trait-triggers.js';
 import { lv } from '../cards/graft-levels.js';
 
 const STAMP=Symbol('comboEventHandled');
@@ -18,6 +18,7 @@ const validCell=(s,x,y)=> x>=0&&y>=0&&x<s.w&&y<s.h&&![T.ROCK,T.LAVA].includes(ti
 const hasOpenTile=s=>{for(let y=0;y<s.h;y++)for(let x=0;x<s.w;x++)if(validCell(s,x,y))return true;return false;};
 const canDraw=s=>!!((s.deck?.library?.length||0)+(s.deck?.graveyard?.length||0));
 const TYPES={
+  Saproling:{types:['Saproling'],colors:['G'],feature:'saproling',move:2,keywords:{}},
   'Bird Illusion':{types:['Bird','Illusion'],colors:['U'],feature:'birdIllusion',move:3,keywords:{flying:1}},
   Tentacle:{types:['Tentacle'],colors:['U'],feature:'tentacle',move:2,keywords:{}},
   Skeleton:{types:['Skeleton','Warrior'],colors:['B'],feature:'skeleton',move:2,keywords:{}},
@@ -43,7 +44,7 @@ export function comboToken(s,ev,name,power=1,toughness=1,source='combo'){
     token:true,x:pos.x,y:pos.y,power,toughness,maxHp:toughness,hp:toughness,move:spec.move,
     keywords:{...spec.keywords},statuses:{},championLambholt:owns(s,'lambholt')};
   s.units.push(u);
-  ev.push({t:'summon',uid:u.uid,defId:'sproutling',x:u.x,y:u.y,by:h.uid,ally:true,name,trait:spec.feature});
+  ev.push({t:'summon',uid:u.uid,defId:'sproutling',x:u.x,y:u.y,by:h.uid,ally:true,name,trait:spec.feature,phase:s.phase,turn:s.turn,entryPower:u.power});
   return u;
 }
 const giveCounter=(s,ev,u,kind,amount=1)=>{
@@ -53,11 +54,7 @@ const giveCounter=(s,ev,u,kind,amount=1)=>{
  ev.push({t:'status',uid:u.uid,status:`${kind} +1/+1`,value:amount,total:u.comboCounters[kind]});
 };
 function comboDraw(s,ev,n=1){
- if(!s.deck)return 0;
- const back=refillFromGraveyard(s.deck);if(back)ev.push({t:'deckReshuffle',count:back,uid:player(s).uid});
- const cards=drawCards(s.deck,n);
- for(const c of cards){ev.push({t:'cardDraw',id:c.id,uid:player(s).uid});onHeroDraw(s,ev);}
- return cards.length;
+ return traitDraw(s,ev,n)||0;
 }
 function gainLife(s,ev,n,source){
  const h=player(s);if(!alive(h)||n<=0)return;
@@ -188,7 +185,10 @@ export function resolveComboEvents(s,ev){
   if(e.t==='summon'){
    const u=s.units.find(x=>x.uid===e.uid);if(!u||u.hero)continue;
    if(owns(s,'soulWarden'))gainLife(s,ev,lv(s,'soulWarden').heal,'Soul Warden');
+   if(owns(s,'essenceWarden'))gainLife(s,ev,1,'Essence Warden');
    if(u.side==='player'){
+    const entryPhase=`${e.turn??s.turn}:${e.phase||s.phase}`;
+    if(owns(s,'welcomingVampire')&&s.deck&&(e.entryPower??effectivePower(u))<=2&&co.actions.welcomingPhase!==entryPhase){co.actions.welcomingPhase=entryPhase;comboDraw(s,ev,1);}
     if(owns(s,'ayara')&&(u.colors||[]).includes('B')){const p=lv(s,'ayara');drain(s,ev,'Ayara',p.drain,p.heal??p.drain);}
     if(owns(s,'mentor')&&effectivePower(u)<=2&&s.deck)queue(s,'mentor',{source:u.uid});
     if(owns(s,'ivy')&&(u.colors||[]).includes('G'))queue(s,'ivy',{source:u.uid});
@@ -196,6 +196,8 @@ export function resolveComboEvents(s,ev){
    }
   } else if(e.t==='comboLifeGain'){
    if(owns(s,'pridemate'))giveCounter(s,ev,hero,'pridemate');
+   if(owns(s,'aerialist'))giveCounter(s,ev,hero,'aerialist');
+   if(owns(s,'blightPriest')){const foe=nearest(s);if(foe)loseLife(s,ev,hero,foe,1,'blightPriest');}
   } else if(e.t==='cardDraw'){
    if(owns(s,'nadir')&&s.deck)queue(s,'nadir',{card:e.id});
   } else if(e.t==='death'){
@@ -203,6 +205,8 @@ export function resolveComboEvents(s,ev){
    if(owns(s,'zulaport')&&u.side==='player'){const p=lv(s,'zulaport');drain(s,ev,'Zulaport Cutthroat',p.drain,p.heal??p.drain);}
    const turnKey=`${e.turn??s.turn}:${e.phase||s.phase}`;
    if(owns(s,'morbid')&&co.actions.morbidTurn!==turnKey){co.actions.morbidTurn=turnKey;comboDraw(s,ev,1);}
+  } else if(e.t==='noncreatureSpellCast'){
+   if(owns(s,'flamebreather')){const foe=nearest(s);if(foe)dealDamage(s,ev,hero,foe,1,{kind:'flamebreather',element:'ember'});}
   } else if(e.t==='comboSpellCast'){
    if(owns(s,'mystic'))comboToken(s,ev,'Bird Illusion',...lv(s,'mystic').token,'mystic');
    if(owns(s,'guttersnipe')){const p=lv(s,'guttersnipe'),foes=enemies(s).sort((a,b)=>manhattan(a,hero)-manhattan(b,hero)||a.uid-b.uid);if(foes[0])dealDamage(s,ev,hero,foes[0],p.damage,{kind:'guttersnipe',element:'ember'});if(p.splash&&foes[1]&&alive(foes[1]))dealDamage(s,ev,hero,foes[1],p.splash,{kind:'guttersnipe',element:'ember'});}
@@ -234,6 +238,16 @@ export function resolveComboEvents(s,ev){
  return ev;
 }
 
+// Unlike deferred turn notifications, this hook runs at the actual phase boundary.
+export function pilotPhaseStart(s,ev){
+ if(!owns(s,'verdantForce')||s.victoryDeclared||!['player','enemy'].includes(s.phase)||!alive(player(s)))return;
+ const co=state(s),phaseKey=s.turn+':'+s.phase;
+ if(co.actions.verdantPhase===phaseKey)return;
+ co.actions.verdantPhase=phaseKey;
+ const phaseEvents=[];
+ comboToken(s,phaseEvents,'Saproling',1,1,'verdantForce');
+ ev.push(...resolveComboEvents(s,phaseEvents));
+}
 export function initialComboEvents(s,ev){
  state(s);
  if(owns(s,'lambholt'))player(s).championLambholt=true;

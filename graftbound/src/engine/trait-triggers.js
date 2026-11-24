@@ -22,15 +22,19 @@ function spawnAlly(s,ev,name,power,toughness,keywords={}){
   ...cardIdentity,creatureTypes:cardIdentity.types.join(' '),
   x:pos.x,y:pos.y,power,toughness,hp:toughness,maxHp:toughness,move:2,keywords:{...keywords},statuses:{},token:true};
  s.units.push(u);
- ev.push({t:'summon',uid:u.uid,defId:u.defId,x:u.x,y:u.y,by:hero.uid,ally:true,trait:type,name});return u;
+ ev.push({t:'summon',uid:u.uid,defId:u.defId,x:u.x,y:u.y,by:hero.uid,ally:true,trait:type,name,phase:s.phase,turn:s.turn,entryPower:u.power});return u;
 }
 export function traitDraw(s,ev,n=1){
   /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return;
  if(!s.deck)return 0;
- const old=refillFromGraveyard(s.deck);if(old)ev.push({t:'deckReshuffle',count:old,uid:player(s).uid});
- const cards=drawCards(s.deck,n);
- for(const card of cards){ev.push({t:'cardDraw',id:card.id,uid:player(s).uid});onHeroDraw(s,ev);}
- return cards.length;
+ let count=0;
+ // Approved pilot rule: draw one at a time, refilling only when empty.
+ for(let i=0;i<n&&!s.victoryDeclared&&s.phase!=='lost';i++){
+  const old=refillFromGraveyard(s.deck);if(old)ev.push({t:'deckReshuffle',count:old,uid:player(s).uid});
+  const [card]=drawCards(s.deck,1);if(!card)break;
+  count++;ev.push({t:'cardDraw',id:card.id,uid:player(s).uid});onHeroDraw(s,ev);
+ }
+ return count;
 }
 export function onHeroDraw(s,ev){
   /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return;

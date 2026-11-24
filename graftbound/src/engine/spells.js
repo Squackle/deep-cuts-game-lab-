@@ -120,7 +120,7 @@ export function castSpellEffect(s, ev, id, level, tx, ty, xValue = 1, mode = nul
       for (const pos of [{ x: tx, y: ty }, second]) {
         const u = { uid: s.nextUid++, side: 'player', hero: false, defId: 'sproutling', name: c.reference ? 'Soldier' : 'Sproutling', x: pos.x, y: pos.y, hp: n[1], maxHp: n[1],
           power: n[0], toughness: n[1], move: 2, keywords: {}, statuses: {}, token: !!c.reference };
-        s.units.push(u); ev.push({ t: 'summon', uid: u.uid, defId: 'sproutling', x: pos.x, y: pos.y, by: p.uid, ally: true });
+        s.units.push(u); ev.push({ t: 'summon', uid: u.uid, defId: 'sproutling', x: pos.x, y: pos.y, by: p.uid, ally: true,phase:s.phase,turn:s.turn,entryPower:u.power });
       }
       break;
     }

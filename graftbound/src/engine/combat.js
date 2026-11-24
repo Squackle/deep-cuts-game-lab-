@@ -15,7 +15,7 @@ import { attachAura, hasGear, attachEquipment, detachEquipment, EQUIPMENT_SLOTS 
 import { resolveScarabEndStep, scarabRecast } from './printed-triggers.js';
 import { onBattleGrafts, onHeroAttack, onHeroSpell, onHeroDraw, traitDraw } from './trait-triggers.js';
 import { availableMana, spendMana, addChannel, CHANNEL_MANA_CAP, CHANNEL_CHARGE_CAP } from './mana.js';
-import { initialComboEvents, resolveComboEvents, hasComboChoices, comboActivate, resolveComboChoice } from './combo-triggers.js';
+import { initialComboEvents, resolveComboEvents, hasComboChoices, comboActivate, resolveComboChoice, pilotPhaseStart } from './combo-triggers.js';
 
 export const BATTLE_VERSION = 11;
 export const RIFT_DAMAGE = TERRAIN_RULES.rift.pulseDamage, LAVA_DAMAGE = TERRAIN_RULES.lava.endTurnDamage;
@@ -54,6 +54,8 @@ export function hazardPreview(s) {
 export function startPlayerTurn(s) {
   const ev = []; const p = player(s);
   s.turn++; s.phase = 'player'; s.stats.turns = s.turn;
+  pilotPhaseStart(s,ev);
+  if(s.phase!=='player')return finish(s,ev);
   if(s.deck){s.spellbook=s.deck.hand;if(s.turn>1){const back=refillFromGraveyard(s.deck);if(back)ev.push({t:'deckReshuffle',count:back,uid:p.uid});const drawn=drawCards(s.deck,1);for(const c of drawn){ev.push({t:'cardDraw',id:c.id,uid:p.uid});onHeroDraw(s,ev);}}}
   p.tapped=false;
   if (p.suppressed && p.suppressedTurn == null) p.suppressedTurn = s.turn;   // Redaction lasts for exactly this turn
@@ -244,6 +246,7 @@ export function cast(s, spellId, x, y, xValue = 1, mode = null) {
     attachAura(target,spellId);ev.push({t:'auraCast',uid:player(s).uid,target:target.uid,id:spellId,x,y,name:card.name,color:card.color});ev.push({t:'auraAttach',uid:target.uid,id:spellId,x,y,name:card.name});
   } else castSpellEffect(s, ev, spellId, entry.level, x, y, xValue, mode);
   if(s.deck){playFromHand(s.deck,spellId,{permanent:card.kind==='aura'});s.spellbook=s.deck.hand;}
+  if(card.kind==='spell'||card.kind==='aura')ev.push({t:'noncreatureSpellCast',uid:player(s).uid,id:spellId});
   if(card.kind==='spell'&&/^(Instant|Sorcery)\b/.test(card.sourceInfo?.typeLine||'')){
     onHeroSpell(s,ev);ev.push({t:'comboSpellCast',uid:player(s).uid,id:spellId});
   }
@@ -283,6 +286,8 @@ export function endTurn(s) {
   resolveScarabEndStep(s,ev);
   if(s.phase === 'lost')return finish(s,ev);
   s.phase = 'enemy'; ev.push({ t: 'turn', phase: 'enemy', turn: s.turn });
+  pilotPhaseStart(s,ev);
+  if(s.phase!=='enemy')return finish(s,ev);
   for(const u of s.units)if(u.side==='enemy')u.tapped=false;
   // Foe phase priority: existing enemies act before friendly summons. The ordering
   // of enemy UIDs and of surviving ally UIDs remains stable for replay determinism.

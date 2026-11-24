@@ -138,7 +138,7 @@ function kill(s, ev, u, element = null) {
       for(let i=0;i<3&&i<available.length;i++){
         const d=ENEMIES[forms[i]],tile=available[i];
         const golem={uid:s.nextUid++,side:'enemy',defId:forms[i],name:d.name,x:tile.x,y:tile.y,hp:d.toughness,maxHp:d.toughness,power:d.power,toughness:d.toughness,move:d.move,keywords:{...d.keywords},statuses:{},token:true};
-        s.units.push(golem);ev.push({t:'summon',uid:golem.uid,defId:forms[i],x:tile.x,y:tile.y,by:u.uid});
+        s.units.push(golem);ev.push({t:'summon',uid:golem.uid,defId:forms[i],x:tile.x,y:tile.y,by:u.uid,phase:s.phase,turn:s.turn,entryPower:golem.power});
       }
       ev.push({t:'realAbility',uid:u.uid,name:'Triplicate Titan · three Golems'});
     }
