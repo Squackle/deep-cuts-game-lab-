@@ -144,7 +144,7 @@ test('#10 wolf coats are deterministic per uid; the pack leader is always distin
 });
 test('#12 skeleton defeat: view removed immediately, bone pile is a decal; #13 poison orb; #16 four-stage hand', async () => {
   const sc = src('src/rendering/scene.js'), sm = src('src/rendering/shadow-magic.js'), v = src('src/rendering/vfx.js');
-  assert.match(sc, /if \(\/Skeleton\/i\.test\(v\.key\)\)/); assert.match(sc, /this\.removeUnit\(uid\);\n      this\.addShadow\(\{ tex: 'bones'/);
+  assert.match(sc, /if \(\/Skeleton\/i\.test\(v\.key\)\)/); assert.match(sc, /if \(!this\.removeUnit\(uid, v\)\) return;\n      this\.addShadow\(\{ tex: 'bones'/);
   assert.match(v, /export const VFX = \{ infest: toxicOrb,/); assert.match(v, /sort\(\(a, b\) => a\.d - b\.d\)/);
   const { GRASP_STAGES } = await import('../src/rendering/shadow-magic.js'); assert.ok(GRASP_STAGES.gather >= 300 && GRASP_STAGES.intensify >= 250);
   assert.match(sm, /1 · gather/); assert.match(sm, /2 · intensify/); assert.match(sm, /3 · emerge from the cloud/);
