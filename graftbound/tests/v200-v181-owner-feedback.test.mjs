@@ -120,5 +120,5 @@ test('#4/#7 boss sheets keep layout, frame order and binary alpha after the read
 });
 test('v1.8.1 rules fingerprint and challenge revision (archer + threat attribution change replays)', async () => {
   const { RULES_VERSION, RANKED_CHALLENGES } = await import('../src/engine/ranked.js'); const { GAME } = await import('../src/config.js');
-  assert.equal(GAME.version, '1.9.0-candidate'); assert.equal(RULES_VERSION, 'graftbound-rules-1.9.0-candidate'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 32);
+  assert.equal(GAME.version, '1.9.1-candidate'); assert.equal(RULES_VERSION, 'graftbound-rules-1.9.1-candidate'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 33);
 });
