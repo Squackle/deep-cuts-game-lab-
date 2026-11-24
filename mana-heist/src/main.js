@@ -1,6 +1,6 @@
 import {LEVELS,CHAPTERS,GALAXIES,BASE_LEVELS} from "./levels.js";
 import {COLORS,CARDS,initial,actions,reduce,completed,getCard,lookup,medal,key} from "./engine.js";
-import {solve} from "./solver.js";
+import {solve,replay} from "./solver.js";
 import {chapterIndex,stageCode,normalizedBests,validBest} from "./campaign.js";
 import {LEARN_GROUPS,LEARN_COUNT,isLearnLevel,normalizedLearnProgress,nextLearnIndex} from "./learn-track.js";
 import {renderOverworld} from "./overworld.js";
@@ -39,6 +39,8 @@ import {PHYSICAL_PREVIEW_BOARDS,CANDIDATE_SAVE_KEY,readCandidateProgress,recordC
 const pack=new URLSearchParams(location.search).get("pack");
 const replacementReview=pack==="replacement-review",physicalPreview=pack==="physical-campaign";
 const decisionBoards=physicalPreview?PHYSICAL_PREVIEW_BOARDS:replacementReview?replacementBoards:DECISION_LADDER;
+const decisionOrder=physicalPreview||replacementReview?decisionBoards.map((_,i)=>i):[0,5,6,1,2,3,4];
+const nextDecision=i=>decisionOrder[decisionOrder.indexOf(i)+1]??null;
 let candidateProgress={};if(physicalPreview){try{candidateProgress=readCandidateProgress(localStorage.getItem(CANDIDATE_SAVE_KEY));}catch{}}
 import {evaluateVault} from "./difficulty-metrics.js";
 import {mountSage} from "./sage-ui.js";
@@ -105,7 +107,7 @@ try{
 el("playtestOptIn").checked=playtestEnabled;
 function savePlaytest(){try{localStorage.setItem(PLAYTEST_KEY,JSON.stringify(playtestData));}catch{}}
 function startPlaytest(){
- if(!playtestEnabled||playtestAttempt||completed(level,state))return;
+ if(!playtestEnabled||playtestAttempt||completed(level,state)||physicalPreview&&decisionIndex!==null)return;
  playtestAttempt=beginPlaytest(level,performance.now());
 }
 function notePlaytest(event){if(playtestEnabled&&playtestAttempt)playtestAttempt=countPlaytestEvent(playtestAttempt,event);}
@@ -272,6 +274,7 @@ function proofFor(id){
  if(proofCache.has(id))return proofCache.get(id);
  const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id)||BONUS_TRIALS.find(v=>v.id===id)||decisionBoards.find(v=>v.id===id);
  if(!puzzle)return null;
+ if(puzzle.sourceVersion&&puzzle.sourceId){const reference=proofFor(puzzle.sourceId);const proof=reference?.status==="solved"&&replay(puzzle,reference.actions).ok?reference:solve(puzzle,{maxStates:65000});if(proof.status==="solved")proofCache.set(id,proof);return proof;}
  const exact=puzzle.revision===4?certifyRemix(puzzle):puzzle.revision===3?certifyDiverse(puzzle):puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
  let proof=exact;
  if(exact.status!=="solved"&&puzzle.templateId){
@@ -387,7 +390,7 @@ function renderLearn(){
  const heading=document.createElement("h3");heading.textContent=physicalPreview?"PHYSICAL LIBRARY · "+decisionBoards.length+" AFFECTED BOARDS":replacementReview?"REPLACEMENT REVIEW · "+decisionBoards.length+" PROPOSALS":"DECISION LAB · "+decisionBoards.length+" SAMPLE VAULTS";
  const description=document.createElement("p");description.textContent=physicalPreview?"Versioned rehearsal. New practice results use a separate local record; historical medals remain unchanged.":replacementReview?"Unscored proposals for repetitive campaign boards. No historical level, score or progress is replaced.":"From color matching to interlocking resource decisions. Unscored practice; difficulty order awaits player calibration. Your campaign and lesson saves are unchanged.";
  const picks=document.createElement("div");picks.className="learn-exercises";
- decisionBoards.forEach((p,i)=>{
+ decisionOrder.forEach(i=>{const p=decisionBoards[i];
   const button=document.createElement("button");button.type="button";button.className="learn-exercise";button.dataset.decisionIndex=String(i);
   const number=document.createElement("span");number.className="learn-number";number.textContent="D"+(i+1);
   const copy=document.createElement("span");copy.className="learn-exercise-copy";
@@ -785,7 +788,7 @@ function render(pendingId=null){
    "T"+proof.turn+" / "+proof.spentLife:"LEGAL ROUTE";
   if(decisionIndex!==null){
    el("winTitle").textContent="DECISION VAULT OPEN";
-   el("winCopy").textContent=level.decision.why+" Your ward payments: "+wardPaymentRecap(level,history).join("; ")+". Life spent: "+state.spentLife+". This practice result is not scored. Try another line: "+level.decision.retry;
+   el("winCopy").textContent=(physicalPreview?"Versioned rehearsal · separate local result. ":"")+level.decision.why+" Your ward payments: "+wardPaymentRecap(level,history).join("; ")+". Life spent: "+state.spentLife+". This practice result is not scored. Try another line: "+level.decision.retry;
   }else if(trialIndex!==null){
    const best=trialBests[level.id],stars=medal(level,state,proof);
    el("winTitle").textContent="★".repeat(stars)+" BONUS VAULT OPEN";
@@ -800,7 +803,7 @@ function render(pendingId=null){
   }
  }
  el("skip").textContent="← MAP";
- el("winNext").textContent=decisionIndex!==null?(decisionIndex+1<decisionBoards.length?"NEXT DECISION →":"BACK TO DECISIONS →"):trialIndex!==null?"BACK TO BONUS TRIALS →":mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
+ el("winNext").textContent=decisionIndex!==null?(nextDecision(decisionIndex)!==null?"NEXT DECISION →":"BACK TO DECISIONS →"):trialIndex!==null?"BACK TO BONUS TRIALS →":mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
  returnFromResult.hidden=!isWin;returnFromResult.textContent=decisionIndex!==null?"← DECISIONS":trialIndex!==null?"← BONUS TRIALS":mode==="learn"?"← LESSONS":"← VAULT MAP";
  if(isWin&&!wasWin)el("winNext").focus({preventScroll:true});
  sage.render({mode:decisionIndex!==null?"decision":trialIndex!==null?"bonus":mode,index,level,state,finished:isWin});
@@ -1054,7 +1057,7 @@ window.addEventListener("resize",()=>{if(document.body.classList.contains("in-he
 el("reset").addEventListener("click",()=>{closePlaytest("restart");sage.onRestart(level);load(index);startPlaytest();});
 el("skip").addEventListener("click",showMap);
 el("winNext").addEventListener("click",()=>{
- if(decisionIndex!==null){if(decisionIndex+1<decisionBoards.length){decisionIndex++;load(decisionIndex,true);}else showMap();return;}
+ if(decisionIndex!==null){const next=nextDecision(decisionIndex);if(next!==null){decisionIndex=next;load(decisionIndex,true);}else showMap();return;}
  if(trialIndex!==null){showMap();return;}
  if(mode==="learn"){const next=nextLearnIndex(index);if(next!==null)load(next,true);else showMap();return;}
  if(index+1<LEVELS.length)load(index+1,true);else showMap();
