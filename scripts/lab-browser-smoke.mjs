@@ -97,7 +97,10 @@ for(const [name,viewport,mobile] of [["desktop",{width:1280,height:800},false],[
     assert.ok((await p.title()).includes(title),game+" wrong destination identity");
     const scripts=await p.locator("script[src]").evaluateAll(nodes=>nodes.map(n=>n.src));
     const entries=scripts.filter(s=>new URL(s).origin===origin&&!new URL(s).pathname.startsWith("/lab/"));
-    assert.ok(entries.length>0,game+" no first-party entry script");
+    if(game==="Stackbreaker"){
+     // The classic entry deliberately embeds its generated engine and daily manifest.
+     assert.ok(await p.locator("script:not([src])").evaluateAll(nodes=>nodes.some(n=>n.textContent.includes("dailyManifest"))),game+" missing inline engine");
+    }else assert.ok(entries.length>0,game+" no first-party entry script");
     for(const script of entries){
      const result=await fetch(script,{method:"HEAD",redirect:"error",signal:AbortSignal.timeout(10000)});
      assert.equal(result.status,200,game+" missing entry script "+new URL(script).pathname);
