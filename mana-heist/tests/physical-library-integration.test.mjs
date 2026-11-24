@@ -16,7 +16,7 @@ test("integrated physical reserve matches the actual reducer on fetch, bounce an
  assert.equal(reservePresentation(p,popUndoFrame(frames).state).cards.length,3);
 });
 test("combined hint, explicit cast choice and auto-cast select legal candidate payments",()=>{
- const p={...FIXTURE,stages:[{name:"First generic",cost:{N:1}},{name:"Final blue",cost:{U:1}}]};
+ const p={...FIXTURE,turnLimit:1,hand:[],stages:[{name:"First generic",cost:{N:1}},{name:"Final blue",cost:{U:1}}]};
  let s=initial(p);
  for(const [id,targetId] of [["f1","blue1"],["f2","red"]])s=move(p,s,a=>a.type==="fetch"&&a.id===id&&a.targetId===targetId);
  for(const id of ["blue1","red"])s=move(p,s,a=>a.type==="tap"&&a.id===id);
