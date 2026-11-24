@@ -8,10 +8,10 @@ import { evoWith } from './helpers.mjs';
 import { makeRng } from '../src/core/rng.js';
 import { cardPool, generatePack, rarityFirstPick, rarityWeights } from '../src/engine/rewards.js';
 import { resolveCard } from '../src/cards/catalog.js';
-import { newRun, chooseReward } from '../src/engine/run.js';
+import { newRun, chooseReward, stepOfRun } from '../src/engine/run.js';
 
-function experimentalPack(seed,opts){
- const base=generatePack(seed,opts);
+import {simulateRun} from './sim.mjs';
+function experimentalPack(seed,opts,base=generatePack(seed,opts)){
  const target=opts.tier==='elite'||opts.tier==='boss'?5:opts.tier==='battle'?4:3;
  if(target===3||opts.forced?.length||opts.creaturesOnly||opts.only)return base;
  const result=base.slice(),pool=cardPool(opts),rng=makeRng(seed^0x50345233);
@@ -60,5 +60,26 @@ test('experiment does not alter shrine, restricted or forced offers; choosing on
   chooseReward(run,offers[0]);
   assert.equal(run.pending,null);assert.equal(run.phase,'map');
   assert.throws(()=>chooseReward(run,offers[1]));
+ }
+});
+
+test('matched campaign experiment: five policies, 8 seeds, normal/Pauper, ordinary/elite routes',()=>{
+ const rare=id=>['rare','mythic'].includes(resolveCard(id).rarity);
+ const transform=(run,ctx)=>{
+  const p=run.pending;if(p.firstVictoryPacks||!['battle','elite','boss'].includes(p.tier))return;
+  const opts={tier:p.tier,actualTier:ctx.actualTier,step:stepOfRun(run),evo:run.evo,spellbook:run.spellbook,equipmentInventory:run.equipmentInventory,noRares:run.challenges.includes('pauper')};
+  const before=p.cards.slice();p.cards=experimentalPack(ctx.seed,opts,before);
+  assert.deepEqual(p.cards.slice(0,before.length),before);
+  assert.equal(new Set(p.cards).size,p.cards.length);
+  if(opts.noRares)assert.ok(!p.cards.some(rare));
+ };
+ const summarize=runs=>({runs:runs.length,wins:runs.filter(r=>r.won).length,act2:runs.filter(r=>r.act>=1).length,act3:runs.filter(r=>r.act>=2).length,bossWins:runs.reduce((a,r)=>a+r.bossWins,0),timeouts:runs.reduce((a,r)=>a+(r.timeouts||0),0),battles:runs.reduce((a,r)=>a+r.battles,0),turns:runs.reduce((a,r)=>a+r.turns,0),rarePicks:runs.flatMap(r=>r.picks||[]).filter(x=>rare(x.picked)).length,offers:runs.flatMap(r=>r.picks||[]).reduce((a,x)=>a+x.offered.length,0),picks:runs.flatMap(r=>r.picks||[]).length});
+ for(const policy of ['melee','tank','spells','summoner','flyDeath']){
+  const base=[],expanded=[];
+  for(const pauper of [false,true])for(let i=1;i<=8;i++){
+   const seed=i*7919,opts={policy,smarterSpells:true,challenges:pauper?['pauper']:[],preferElites:i%2===0};
+   base.push(simulateRun(seed,opts));expanded.push(simulateRun(seed,{...opts,afterBattleReward:transform}));
+  }
+  console.log('BOOSTER_CAMPAIGN '+JSON.stringify({policy,base:summarize(base),expanded:summarize(expanded)}));
  }
 });
