@@ -656,7 +656,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  function placeTutorial(box,target){
   const ring=target===$("ring");
   const anchors=ring
-   ? [...target.querySelectorAll(".ring-info,.ring-items button,.ring-close")].filter(el=>el.getClientRects().length)
+   ? [...target.querySelectorAll(".ring-info,.ring-items button,.ring-close")].filter(el=>el.getClientRects().length&&getComputedStyle(el).position!=="fixed")
    : [target];
   const rects=anchors.map(el=>el.getBoundingClientRect());
   const left=Math.min(...rects.map(r=>r.left)),right=Math.max(...rects.map(r=>r.right));
