@@ -106,5 +106,5 @@ test("both page variants offer five accessible boss buttons and clear unranked s
  assert.match(js,/showBossBriefing\(\)/);
  assert.match(js,/RETRY BOSS/);
  assert.match(css,/\.lair-choices/);
- assert.match(html,/1\.5 · MATRIARCH/);
+ assert.match(html,/2\.0 · DOMINION/); // Presentation release; engine remains hive-1.5.4.
 });

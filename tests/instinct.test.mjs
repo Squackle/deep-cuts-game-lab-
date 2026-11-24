@@ -116,8 +116,8 @@ test("browser gate freezes the frame loop and retains replay-rules version",()=>
  assert.match(html,/SESSION BEST/);
  assert.match(html,/KEYBOARD 1 \/ 2 \/ 3 · MOVEMENT KEYS IGNORE THIS MENU/);
  assert.doesNotMatch(html,/TAP TO SELECT · W \/ A \/ S/);
- assert.match(html,/1\.5 · MATRIARCH/);
- assert.equal(RULES_VERSION,"hive-1.5.4","Matriarch standalone gameplay uses new rules, separate from public Beacon");
+ assert.match(html,/2\.0 · DOMINION/); // Presentation release; engine remains hive-1.5.4.
+ assert.equal(RULES_VERSION,"hive-1.5.4","Dominion retains the existing hive-1.5.4 rules");
 });
 test("permanent release naming instruction is kept in source control",()=>{
  const naming=readFileSync(new URL("../docs/HIVE-RUN-RELEASE-NAMING.md",import.meta.url),"utf8");
