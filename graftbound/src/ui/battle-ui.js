@@ -224,7 +224,7 @@ export class BattleUI {
       const ic = { attack: ICON.sword, spit: ICON.spit, hex: ICON.stun, harpoon: ICON.hook, aim: ICON.aim, fire: ICON.aim, slam: ICON.slam, summon: ICON.summon, support: ICON.shield, guard: ICON.guard, stunned: ICON.stun, move: ICON.move }[it.kind] || ICON.move;
       const threat = tacticalThreat(this.s, it);
       const cls = it.kind === 'fire' || it.kind === 'slam' ? 'locked' : (it.damage ? 'threat' : 'calm');
-      intent = `<div class="intent ${cls}" title="${esc(this.intentText(it))}">${ic}${it.damage ? `<b>${it.damage}${threat.hits > 1 ? '×' + threat.hits : ''}</b>` : ''}${it.extra ? `<span class="xtra">+${ICON.sword}${it.extra}</span>` : ''}${it.poison ? `<span class="psn">${ICON.poison}${it.poison}</span>` : ''}${it.weaken ? `<span class="wk">−${it.weaken}⚔</span>` : ''}</div>`;
+      intent = `<div class="intent ${cls}" title="${esc(this.intentText(it, threat))}">${ic}${it.damage ? `<b>${it.damage}${threat.hits > 1 ? '×' + threat.hits : ''}</b>` : ''}${it.extra ? `<span class="xtra">+${ICON.sword}${it.extra}</span>` : ''}${it.poison ? `<span class="psn">${ICON.poison}${it.poison}</span>` : ''}${it.weaken ? `<span class="wk">−${it.weaken}⚔</span>` : ''}</div>`;
     }
     const u = this.s.units.find(x => x.uid === uid);
     const armor = u && u.keywords && u.keywords.armor ? `<span class="st ar">▣${u.keywords.armor}</span>` : '';
@@ -235,10 +235,9 @@ export class BattleUI {
     el._h = el.offsetHeight || 24;
     { const view = this.scene.units.get(uid); if (view) view.statusFx = statusVisuals(d, view.statusFx); }
   }
-  intentText(it) {
+  intentText(it, threat = tacticalThreat(this.s, it)) {
     const tgt = it.target && this.s.units.find(u => u.uid === it.target);
     const who = tgt && !tgt.hero ? ' your ' + tgt.name : ' you';
-    const threat = tacticalThreat(this.s, it);
     return (({ attack: `Plans to strike${who} for ${it.damage}${threat.hits > 1 ? ' per hit' : ''}`, spit: `Will spit for ${it.damage} and poison ${it.poison}`, hex: `Will curse you: ${it.damage} damage and −${it.weaken} power on your next turn`,
       harpoon: `Harpoon: ${it.damage} damage${it.ground ? ' and Grounds you (no flying next turn)' : ''}`, aim: 'Will take aim along a line', fire: `Fires ${it.damage} along the red line`,
       slam: `${it.damage} to every red tile${it.extra ? ` (and strikes for ${it.extra} if adjacent)` : ''}`, summon: 'Will summon reinforcements', smash: 'Will smash through the rock (uses its whole turn)', support: 'Will empower its Saprolings', guard: 'Will shield adjacent allies', stunned: 'Stunned — loses its next action' })[it.kind] || 'Will move')
@@ -249,6 +248,7 @@ export class BattleUI {
   renderHUD() {
     const s = this.s; const p = player(s); const d = this.disp.get(p.uid) || { hp: p.hp, maxHp: p.maxHp, shield: 0 };
     const ap = deriveAppearance(this.run.evo, visualForRun(this.run));
+    const slimeWarning = slimeEndStepWarning(s);
     d.guardShield = p.statuses.guardShield || 0;
     $('plate').innerHTML = `
       <div class="pl-top"><div><div class="pl-name">${esc(this.run.name)}</div><div class="pl-stage">${STAGE[ap.stage]} · ${this.run.evo.absorbed.length} graft${this.run.evo.absorbed.length === 1 ? '' : 's'}</div></div>
@@ -258,7 +258,7 @@ export class BattleUI {
       <div class="pl-res"><span class="mana" tabindex="0" data-tip="Mana ${this.dispMana}/${s.p.maxMana}. Spells cost gems. You regain ${s.p.regen} each turn${s.p.arcane ? `; Arcane adds +${s.p.arcane} to spell numbers` : ''}.">${Array.from({ length: Math.max(s.p.maxMana, this.dispMana) }, (_, i) => `<i class="${i < this.dispMana ? 'on' : ''}">${ICON.gem}</i>`).join('')}</span>
 </div>
       <div class="pl-act" role="group" aria-label="Movement, attacks and banked mana"></div>
-      <div class="pl-kw">${kwChips(p.keywords)}${d.poison ? `<span class="chip bad" tabindex="0" data-tip="Poison: lose ${d.poison} health at the start of your turn, then it drops by 1.">${ICON.poison}Poison ${d.poison}</span>` : ''}${p.slime ? `<span class="chip bad" tabindex="0" data-tip="Toxrill adds one slime counter at each end step. Each counter gives −1/−1 while Toxrill is alive.">☣ Slime ${p.slime}</span>` : ''}${d.grounded ? `<span class="chip bad" tabindex="0" data-tip="Grounded: no flying and −1 movement this turn.">${ICON.hook}Grounded</span>` : ''}${p.suppressed ? `<span class="chip bad" tabindex="0" data-tip="Redacted by the Unwritten for this turn only. It returns when your turn ends.">✖ ${esc(Object.keys(p.suppressed).map(k => KEYWORDS[k].name).join(', '))}</span>` : ''}</div>`;
+      <div class="pl-kw">${kwChips(p.keywords)}${slimeWarning && p.toughness <= 2 ? `<span class="chip bad" tabindex="0" data-tip="${esc(slimeWarning)}">☣ ${p.toughness <= 1 ? 'Fatal end step' : 'Fatal slime risk'}</span>` : ''}${d.poison ? `<span class="chip bad" tabindex="0" data-tip="Poison: lose ${d.poison} health at the start of your turn, then it drops by 1.">${ICON.poison}Poison ${d.poison}</span>` : ''}${p.slime ? `<span class="chip bad" tabindex="0" data-tip="Toxrill adds one slime counter at each end step. Each counter gives −1/−1 while Toxrill is alive.">☣ Slime ${p.slime}</span>` : ''}${d.grounded ? `<span class="chip bad" tabindex="0" data-tip="Grounded: no flying and −1 movement this turn.">${ICON.hook}Grounded</span>` : ''}${p.suppressed ? `<span class="chip bad" tabindex="0" data-tip="Redacted by the Unwritten for this turn only. It returns when your turn ends.">✖ ${esc(Object.keys(p.suppressed).map(k => KEYWORDS[k].name).join(', '))}</span>` : ''}</div>`;
     // v1.5.0 compact HUD: movement and attacks live in the hero plate's action strip (one coordinated panel).
     $('gb-action-counters').innerHTML = '';
     const strip = $('plate').querySelector('.pl-act');
@@ -275,7 +275,6 @@ export class BattleUI {
     this.renderStances(s);
     const skill=$('graftPowers'), options=comboActiveOptions(s);
     if(skill){skill.hidden=!options.length&&!s.traits?.includes('skeleton');skill.disabled=this.busy||s.phase!=='player'||hasComboChoices(s)||!options.length;skill.textContent='✦';skill.setAttribute('aria-label',`Open ${options.length} available Graft Powers`);skill.title=`Graft Powers (${options.length})`;  if(!options.length&&s.traits?.includes('skeleton'))skill.title=reassembleReason(s)||'Reassemble available';}
-    const slimeWarning = slimeEndStepWarning(s);
     $('endTurn').title = slimeWarning;
     $('endTurn').setAttribute('aria-label', slimeWarning ? 'End turn. ' + slimeWarning : 'End turn');
     $('endTurn').disabled = this.busy || s.phase !== 'player';
