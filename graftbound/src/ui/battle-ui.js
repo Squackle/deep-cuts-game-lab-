@@ -274,7 +274,7 @@ export class BattleUI {
     if(s.deck){$('tray').setAttribute('aria-label',`Spell hand · ${s.deck.hand.length} cards · library ${s.deck.library.length} · graveyard ${s.deck.graveyard.length}`);}
     this.renderStances(s);
     const skill=$('graftPowers'), options=comboActiveOptions(s);
-    if(skill){skill.hidden=!options.length&&!s.traits?.includes('skeleton')&&!s.equipmentInventory?.includes('mtg:shadowspear');skill.disabled=this.busy||s.phase!=='player'||hasComboChoices(s)||!options.length;skill.textContent='✦';skill.setAttribute('aria-label',`Open ${options.length} available abilities`);skill.title=`Abilities (${options.length})`;  if(!options.length&&s.traits?.includes('skeleton'))skill.title=reassembleReason(s)||'Reassemble available';}
+    if(skill){skill.hidden=!options.length&&!s.traits?.includes('skeleton')&&!s.equipmentInventory?.includes('mtg:shadowspear');skill.disabled=this.busy||s.phase!=='player'||hasComboChoices(s)||!options.length;skill.textContent='◇';skill.classList.toggle('gb-ability-ready',!skill.disabled);skill.setAttribute('aria-label',`Open ${options.length} available abilities`);skill.title=`Abilities (${options.length})`;  if(!options.length&&s.traits?.includes('skeleton'))skill.title=reassembleReason(s)||'Reassemble available';}
     $('endTurn').title = slimeWarning;
     $('endTurn').setAttribute('aria-label', slimeWarning ? 'End turn. ' + slimeWarning : 'End turn');
     $('endTurn').disabled = this.busy || s.phase !== 'player';
