@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { arena,evoWith } from './helpers.mjs';
-import { player,enemies,attack,cast,endTurn,equipBattle } from '../src/engine/combat.js';
+import { player,enemies,attack,cast,endTurn,equipBattle,startPlayerTurn } from '../src/engine/combat.js';
 import { resolveCard,rewardCards } from '../src/cards/catalog.js';
 import { onBattleGrafts,onHeroAttack } from '../src/engine/trait-triggers.js';
 import { comboToken,resolveComboEvents } from '../src/engine/combo-triggers.js';
-import { sacrificeAlly,effectivePower } from '../src/engine/abilities.js';
+import { sacrificeAlly,effectivePower,heal } from '../src/engine/abilities.js';
 import { cardPool } from '../src/engine/rewards.js';
 const card=id=>({id:'mtg:'+id,level:1});
 const make=(ids=[],spells=[])=>{const s=arena(['P....','.....','....g'],{g:'grub'},{evo:evoWith(...ids.map(x=>'mtg:'+x)),spellbook:spells.map(card)});s.deck={library:[],hand:spells.map(card),graveyard:[],exile:[],capacity:7};s.spellbook=s.deck.hand;s.p.mana=20;const e=enemies(s)[0];e.hp=e.maxHp=60;return s;};
@@ -40,4 +40,14 @@ test('Tin Street attack counter precedes damage and creates exact red 1/1 Goblin
 test('Tin Street high power remains board bounded, no duplicate occupied tile',()=>{
  const s=make(['krenko-tin-street-kingpin']);player(s).power=100000;onHeroAttack(s,[]);
  assert.ok(s.units.length<=s.w*s.h);assert.equal(new Set(s.units.map(u=>u.x+','+u.y)).size,s.units.length);
+});
+
+test('Vito uses exact nominal gain even with legacy duplicate levels',()=>{
+ const s=make(['vito-thorn-of-the-dusk-rose']);const h=player(s),f=enemies(s)[0];s.traitLevels={...s.traitLevels,vito:2};h.hp=h.maxHp;const ev=[];heal(s,ev,h,3,'test');
+ assert.equal(ev.find(e=>e.t==='lifeLoss').amount,3);assert.equal(f.hp,57);
+});
+test('terminal gain retains both earned counters exactly once; no new turn or gain after victory',()=>{
+ const s=make(['vito-thorn-of-the-dusk-rose','ajani-s-pridemate','bloodthirsty-aerialist']);const h=player(s),f=enemies(s)[0];f.hp=1;const p=h.power,ev=[];heal(s,ev,h,1,'test');assert.equal(s.victoryDeclared,true);
+ resolveComboEvents(s,ev);assert.equal(h.power,p+2);resolveComboEvents(s,ev);assert.equal(h.power,p+2);
+ const turn=s.turn;assert.deepEqual(startPlayerTurn(s),[]);assert.equal(s.turn,turn);const after=[];heal(s,after,h,1,'test');assert.deepEqual(after,[]);
 });

@@ -192,7 +192,8 @@ export function comboActivate(s,kind,arg){
 // Appended events (e.g. lifegain -> damage -> death -> draws -> new summons) are processed
 // in stable FIFO order. The normal mana/board/deck rules naturally constrain combos.
 export function resolveComboEvents(s,ev){
-  /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return ev;
+  /* Only finish already-emitted life-gain counters after victory; never initiate new triggers. */
+  if(s&&s.victoryDeclared&&!ev.some(e=>e.t==='comboLifeGain'&&!e[STAMP]))return ev;
  if(!s?.traits?.length)return ev;
  const co=state(s);let processed=0;
  for(let i=0;i<ev.length;i++){
