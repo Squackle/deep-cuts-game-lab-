@@ -611,7 +611,12 @@ function combatInventoryModal(app) {
    try{
      const id=b.dataset.equipId;
      if(app.battle?.busy)throw Error('Wait for the current action');
-     await app.battle.act(()=>app.battle.exec({type:'equip',id,uid:targetUid,slot}));
+     const bearer=s.units.find(u=>u.uid===targetUid),prev=bearer.hero?(s.heroEquipmentSlots||[])[slot]:bearer.equipment?.[0];
+     const nextT=bearer.toughness+(getCard(id)?.toughnessBonus||0)-(getCard(prev)?.toughnessBonus||0);
+     const nextHp=bearer.hp+nextT-bearer.toughness;
+     const decision={type:'equip',id,uid:targetUid,slot};
+     if(bearer.hero&&(nextT<=0||nextHp<=0)){app.confirm('This Equipment would kill your hero and end the expedition. Equip anyway?','Equip and lose',()=>app.battle.act(()=>app.battle.exec(decision)));return;}
+     await app.battle.act(()=>app.battle.exec(decision));
      render();
    }catch(error){m.querySelector('[data-gear-error]').textContent=String(error.message||error);}
  });

@@ -30,9 +30,11 @@ function rebuildKeywords(unit){
 }
 function modify(unit,id,sign){
  const c=card(id);
+ const wasDead=unit.hp<=0;
  const p=sign*(c.powerBonus||0),t=sign*(c.toughnessBonus||0);
  unit.power=Math.max(0,unit.power+p);unit.toughness=Math.max(0,unit.toughness+t);
  unit.maxHp=Math.max(0,unit.maxHp+t);unit.hp=Math.min(unit.maxHp,Math.max(0,unit.hp+(t>0?t:Math.min(0,t))));
+ if(wasDead)unit.hp=0; // Removing gear from a corpse must not revive it.
  unit.move=Math.max(0,unit.move+sign*(c.moveBonus||0));
  rebuildKeywords(unit);
 }

@@ -274,7 +274,7 @@ export class BattleUI {
     if(s.deck){$('tray').setAttribute('aria-label',`Spell hand · ${s.deck.hand.length} cards · library ${s.deck.library.length} · graveyard ${s.deck.graveyard.length}`);}
     this.renderStances(s);
     const skill=$('graftPowers'), options=comboActiveOptions(s);
-    if(skill){skill.hidden=!options.length&&!s.traits?.includes('skeleton');skill.disabled=this.busy||s.phase!=='player'||hasComboChoices(s)||!options.length;skill.textContent='✦';skill.setAttribute('aria-label',`Open ${options.length} available Graft Powers`);skill.title=`Graft Powers (${options.length})`;  if(!options.length&&s.traits?.includes('skeleton'))skill.title=reassembleReason(s)||'Reassemble available';}
+    if(skill){skill.hidden=!options.length&&!s.traits?.includes('skeleton')&&!s.equipmentInventory?.includes('mtg:shadowspear');skill.disabled=this.busy||s.phase!=='player'||hasComboChoices(s)||!options.length;skill.textContent='✦';skill.setAttribute('aria-label',`Open ${options.length} available abilities`);skill.title=`Abilities (${options.length})`;  if(!options.length&&s.traits?.includes('skeleton'))skill.title=reassembleReason(s)||'Reassemble available';}
     $('endTurn').title = slimeWarning;
     $('endTurn').setAttribute('aria-label', slimeWarning ? 'End turn. ' + slimeWarning : 'End turn');
     $('endTurn').disabled = this.busy || s.phase !== 'player';
@@ -800,7 +800,7 @@ export class BattleUI {
     this._comboShowing=true;
     const options=choice.choices.map(x=>`<button type="button" class="btn gb-combo-option" data-combo-arg="${esc(String(x.arg))}">${esc(x.label)}</button>`).join('');
     // v1.7.0: locked — backdrop/Escape cannot dismiss an unresolved trigger; closeModal() re-prompts as a safety net.
-    const modal=this.app.openModal(`<div class="gb-combo-modal" role="alertdialog" aria-modal="true"><small class="sh-brand">Graftbound · Combo Engine</small><h2>${esc(choice.kind==='mentor'?'Mentor of the Meek':choice.kind.replace(/([A-Z])/g,' $1'))}</h2><p class="gb-combo-note">${esc(choice.subtitle)}${choice.reason?' · '+esc(choice.reason):''}</p><div class="gb-combo-options">${options}</div></div>`,'',{locked:true});
+    const modal=this.app.openModal(`<div class="gb-combo-modal gb-pilot-choice" role="alertdialog" aria-modal="true"><small class="sh-brand">Graftbound · Combo Engine</small><h2>${esc(choice.kind==='scry'?'Opt · Scry 1':choice.kind==='mentor'?'Mentor of the Meek':choice.kind.replace(/([A-Z])/g,' $1'))}</h2><p class="gb-combo-note">${esc(choice.subtitle)}${choice.reason?' · '+esc(choice.reason):''}</p>${choice.kind==='scry'&&choice.cardId?`<div class="gb-scry-card">${cardHTML(choice.cardId,{small:false})}</div>`:''}<div class="gb-combo-options gb-pilot-actions">${options}</div></div>`,'',{locked:true});
     for(const btn of modal.querySelectorAll('[data-combo-arg]'))btn.onclick=async()=>{
       if(!this._comboShowing)return;this._comboShowing=false;
       const argText=btn.dataset.comboArg;const arg=/^\d+$/.test(argText)?Number(argText):argText;
@@ -811,7 +811,7 @@ export class BattleUI {
   openGraftSkills(){
     if(!this.s||this.busy||hasComboChoices(this.s)||this.s.phase!=='player')return;
     const options=comboActiveOptions(this.s);if(!options.length)return;
-    const modal=this.app.openModal(`<div class="gb-combo-modal"><small class="sh-brand">Graftbound · Activated Abilities</small><h2>Graft Powers</h2><p>Choose a power. Every sacrifice, mana payment and card return is a real, replayable action.</p><div class="gb-combo-options">${options.map((o,i)=>`<button type="button" class="btn gb-combo-option" data-graft-index="${i}">${esc(o.label)}</button>`).join('')}</div><button type="button" class="btn" data-close>Cancel</button></div>`);
+    const modal=this.app.openModal(`<div class="gb-combo-modal gb-pilot-choice"><small class="sh-brand">Graftbound · Activated Abilities</small><h2>Abilities</h2><p>Graft and Equipment abilities share this menu. Choose a power. Every sacrifice, mana payment and card return is a real, replayable action.</p><div class="gb-combo-options">${options.map((o,i)=>`<button type="button" class="btn gb-combo-option" data-graft-index="${i}">${esc(o.label)}</button>`).join('')}</div><button type="button" class="btn" data-close>Cancel</button></div>`);
     for(const btn of modal.querySelectorAll('[data-graft-index]'))btn.onclick=async()=>{
       const option=options[Number(btn.dataset.graftIndex)];this.app.closeModal();
       await this.act(()=>this.exec({type:'graft',kind:option.kind,arg:option.arg}));
@@ -1029,6 +1029,7 @@ export class BattleUI {
         case 'counter': await this.wait(e.first ? 40 : 110); await sc.lunge(e.uid, e.target); this.float(e.uid, e.first ? 'First Strike!' : 'Strikes back', 'note'); break;
         case 'noCounter': this.float(e.uid, esc(NO_COUNTER[e.reason] || 'No strike back'), 'note'); break;
         case 'capped': this.float(e.uid, `Unyielding: ${e.from} → ${e.to}`, 'note'); break;
+        case 'legendaryResistance': this.float(e.uid,'Legendary Resistance · Sleep','blocked'); au.play('armor'); break;
         case 'deathtouchResisted': this.float(e.uid, this.s && this.s.units.find(u => u.uid === e.uid && u.hero) ? 'Deathtouch: +2 damage' : 'Legendary: resists Deathtouch', 'blocked'); au.play('armor'); break;
         case 'armored': au.play('armor'); this.float(e.uid, `▣ −${e.amount}`, 'blocked'); break;
         case 'damage': {
@@ -1045,7 +1046,7 @@ export class BattleUI {
           this.renderLabel(e.uid); if (this.isHero(e.uid)) this.renderHUD();
           await this.wait(big ? 230 : 140); break;
         }
-        case 'lifeLoss': if (d) d.hp = Math.max(0, d.hp - e.amount); this.float(e.uid, `−${e.amount} life (Vito)`, 'dmg'); this.renderLabel(e.uid); this.renderHUD(); await this.wait(110); break;
+        case 'lifeLoss': if (d) d.hp = Math.max(0, d.hp - e.amount); this.float(e.uid, `−${e.amount} life (${e.kind==='blightPriest'?'Blight-Priest':'Vito'})`, 'dmg'); this.renderLabel(e.uid); this.renderHUD(); await this.wait(110); break;
         case 'heal': if (d) d.hp += e.amount; au.play('heal'); if (e.kind === 'lifelink') { const atk = events.slice(0, idx).reverse().find(x => x.t === 'attack' && x.uid === e.uid); if (atk && sc.units.get(atk.target)) sc.fx.swirl(sc.centerPos(atk.target), () => sc.centerPos(e.uid), [1, 0.45, 0.5], 22, 0.6); } this.float(e.uid, `+${e.amount}${e.kind === 'lifelink' ? ' Lifelink' : e.kind === 'regenerate' ? ' Regenerate' : ''}`, 'heal'); sc.fx.burst(sc.centerPos(e.uid), [0.5, 1, 0.5], 14, { speed: 0.8, up: 1.5, grav: 1 }); this.renderLabel(e.uid); this.renderHUD(); await this.wait(140); break;
         case 'shield': if (d) { d.shield = e.total; if (e.kind === 'guard') d.guardShield = (d.guardShield || 0) + e.amount; if (e.kind === 'guardExpire') d.guardShield = 0; } if (e.kind !== 'barkskin' && e.amount > 0) au.play('block'); if (e.amount > 0) this.float(e.uid, `${ICON.shield}+${e.amount}${e.kind === 'guard' ? ' Guard' : e.kind === 'ward' ? ' Bulwark' : ''}`, 'shieldf'); this.renderLabel(e.uid); this.renderHUD(); if (e.amount > 0) await this.wait(120); break;
         case 'status': {

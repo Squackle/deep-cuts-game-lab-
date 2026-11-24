@@ -109,7 +109,7 @@ export function summonAngel(s,ev,bearer){
    const x=bearer.x+dx*radius,y=bearer.y+dy*radius;
    if(x<0||y<0||x>=s.w||y>=s.h||tileAt(s,x,y)===T.ROCK||s.units.some(u=>u.hp>0&&u.x===x&&u.y===y))continue;
    const u={uid:s.nextUid++,side:bearer.side,hero:false,defId:'angel',name:'Angel',power:4,toughness:4,hp:4,maxHp:4,move:3,
-     keywords:{flying:1},statuses:{},token:true,x,y};s.units.push(u);ev.push({t:'summon',uid:u.uid,defId:'angel',x,y,by:bearer.uid,ally:bearer.side==='player'});return u;
+     keywords:{flying:1},statuses:{},token:true,x,y};s.units.push(u);ev.push({t:'summon',uid:u.uid,defId:'angel',x,y,by:bearer.uid,ally:bearer.side==='player',phase:s.phase,turn:s.turn,entryPower:u.power});return u;
  }
  // Preserve trigger if crowded: spawn on a later opening. Never silently delete a promised Angel.
  s.pendingAngels=(s.pendingAngels||0)+1;ev.push({t:'legendaryAbility',uid:bearer.uid,name:'Angel waits for an open tile'});return null;

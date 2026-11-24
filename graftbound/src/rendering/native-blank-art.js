@@ -273,6 +273,7 @@ export function drawNativeBlankGraftSheet(g,app,pass){
 }
 // Equipment remains separate from permanent grafts and uses the same pose anchors.
 const GEAR={
+  'mtg:skullclamp':'clamp','mtg:shadowspear':'shadowSpear',
   'mtg:accorder-s-shield':'shield','mtg:basilisk-collar':'collar',
   'mtg:swiftfoot-boots':'boots','mtg:mask-of-memory':'mask',
   'mtg:moonsilver-spear':'spear'
@@ -280,6 +281,17 @@ const GEAR={
 export const nativeBlankGearKinds=ids=>[...new Set((ids||[]).map(id=>GEAR[id]).filter(Boolean))];
 function paintGearPose(g,A,view,state,frame,kind){
   const [hx,hy]=A.head,[fx,fy]=A.face,[nx,ny]=A.neck;
+  if(kind==='clamp'){
+    const y=hy-12;
+    shape(g,[[hx-14,y+12],[hx-15,y+1],[hx-8,y-6],[hx+8,y-6],[hx+15,y+1],[hx+14,y+12],[hx+8,y+12],[hx+8,y],[hx-8,y],[hx-8,y+12]],'#444c58',c.deep,1.6);
+    line(g,[[hx-9,y-3],[hx+9,y-3]],c.steelHi,1.8);oval(g,hx,y-5,2.6,2.6,c.gold,c.deep,1);return;
+  }
+  if(kind==='shadowSpear'){
+    const [x,y]=A.rightHand,tip=[Math.min(110,x+(state==='attack'?27:8)),Math.max(20,y-42)];
+    line(g,[[x-4,y+16],tip],c.bronze,3.6);
+    shape(g,[[tip[0],tip[1]-13],[tip[0]+7,tip[1]],[tip[0]+1,tip[1]+10],[tip[0]-7,tip[1]+2]],'#30243e',c.gold,1.4);
+    line(g,[[tip[0],tip[1]-8],[tip[0],tip[1]+5]],'#b19af0',1.7);return;
+  }
   if(kind==='boots'){
     for(const p of [A.leftFoot,A.rightFoot]){
       const [x,y]=p;
