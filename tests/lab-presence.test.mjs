@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import vm from "node:vm";
 import {onRequestGet,onRequestPost} from "../functions/api/lab-presence.js";
 const HOST="https://deep-cuts-game-lab.pages.dev/api/lab-presence";
 const sid="11111111-1111-4111-8111-111111111111";
@@ -54,4 +55,69 @@ test("Game counters heartbeat even when backgrounded; no activity or sign-in gat
  assert.match(script,/localStorage\.getItem\(KEY\)/);
  assert.match(script,/addEventListener\("focus"/);
  assert.equal(fs.existsSync("lab/command-center.html"),false,"Lab Command Center preview removed");
+});
+
+test("streamed body limit applies even when Content-Length is missing or dishonest",async()=>{
+ const env={LAB_PRESENCE:mockKV()};
+ for(const headers of [{},{"Content-Length":"12"},{"Content-Length":"5000"}]){
+  const body=JSON.stringify({session:sid,page:"Game Lab",padding:"x".repeat(4096)});
+  const req=new Request(HOST,{method:"POST",headers:{"Content-Type":"application/json",Origin:new URL(HOST).origin,...headers},body});
+  assert.equal((await onRequestPost({env,request:req})).status,413);
+ }
+ assert.equal(env.LAB_PRESENCE.puts.length,0);
+});
+test("newer game labels are accepted without requiring any game entry edits",async()=>{
+ const env={LAB_PRESENCE:mockKV()};
+ assert.equal((await post(env,sid,"GRAFTBOUND")).status,200);
+ assert.equal((await post(env,other,"ARCHEMANCY")).status,200);
+ assert.deepEqual((await (await onRequestGet({env})).json()).pages,{GRAFTBOUND:1,ARCHEMANCY:1});
+});
+const script=fs.readFileSync("lab/presence.js","utf8");
+function harness(path,{storage=new Map(),clock={now:100000},hidden=false,failPost=false,failGet=false}={}){
+ const requests=[],listeners={},timers=[],pill={},document={
+  visibilityState:hidden?"hidden":"visible",hidden,
+  createElement:()=>pill,body:{append(){}},addEventListener:(name,fn)=>{listeners[name]=fn}
+ };
+ pill.setAttribute=()=>{};
+ const window={addEventListener:(name,fn)=>{listeners[name]=fn},setInterval:(fn,ms)=>timers.push({fn,ms}),dispatchEvent(){}};
+ const context={location:{pathname:path},document,window,Date:{now:()=>clock.now},Event:class {},
+  AbortSignal,localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},
+  crypto:{randomUUID:()=>sid},fetch:async(url,opts)=>{
+   requests.push({method:opts.method||"GET",body:opts.body?JSON.parse(opts.body):null});
+   return {ok:opts.method==="POST"?!failPost:!failGet,json:async()=>({online:2})};
+  }};
+ vm.runInNewContext(script,context);
+ return {requests,listeners,timers,pill,clock,storage};
+}
+const settle=()=>new Promise(resolve=>setImmediate(resolve));
+test("route classifier attributes both catalogs and all five games without mislabeling unknown routes",async()=>{
+ for(const [path,page] of [["/","Game Lab"],["/lab","Game Lab"],["/lab/","Game Lab"],["/hive-run/","Hive Run"],["/stackbreaker/final-turn/","Stackbreaker: Final Turn"],["/stackbreaker/","Stackbreaker"],["/mana-heist/","Mana Heist"],["/graftbound/","GRAFTBOUND"],["/archemancy/","ARCHEMANCY"],["/archamancy/","ARCHEMANCY"],["/unknown","Game Lab"]]){
+  const h=harness(path);await settle();
+  assert.equal(h.requests.find(r=>r.method==="POST").body.page,page,path);
+ }
+});
+test("focus, pageshow, online and timer coalesce; tabs share successful leases and count cache",async()=>{
+ const storage=new Map(),clock={now:100000};
+ const a=harness("/",{storage,clock});await settle();
+ assert.equal(a.requests.length,2);
+ a.listeners.focus();a.listeners.pageshow();a.listeners.online();a.timers[0].fn();await settle();
+ assert.equal(a.requests.length,2);
+ const b=harness("/lab/",{storage,clock});await settle();
+ assert.equal(b.requests.length,0);
+ assert.match(b.pill.textContent,/2 ONLINE/);
+ const c=harness("/mana-heist/",{storage,clock});await settle();
+ assert.equal(c.requests.length,1,"foreground page change writes once but reuses count");
+ assert.equal(c.requests[0].body.page,"Mana Heist");
+ clock.now+=30001;
+ a.timers[0].fn();await settle();
+ assert.equal(a.requests.length,4);
+ assert.equal(a.requests[2].body.page,"Mana Heist","background pulse preserves latest foreground page");
+});
+test("failed writes and reads are not cached; hidden browsers retain normal heartbeat",async()=>{
+ const h=harness("/hive-run/",{hidden:true,failPost:true,failGet:true});await settle();
+ assert.equal(h.requests.length,2);
+ assert.equal(h.timers[0].ms,30000);
+ assert.match(h.pill.textContent,/— ONLINE/);
+ h.timers[0].fn();await settle();
+ assert.equal(h.requests.length,4);
 });
