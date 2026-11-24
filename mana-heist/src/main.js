@@ -34,6 +34,9 @@ import {certifyDiverse} from "./mana-variety-certificates.js";
 import {diverseFor} from "./mana-variety-puzzles.js";
 import {certifyRemix,REMIX_KEY,REMIXED_IDS,validateRemixBests} from "./certified-remixes.js";
 import {DECISION_LADDER} from "./decision-ladder.js";
+import replacementBoards from "../data/replacement-candidates.json" with {type:"json"};
+const replacementReview=new URLSearchParams(location.search).get("pack")==="replacement-review";
+const decisionBoards=replacementReview?replacementBoards:DECISION_LADDER;
 import {evaluateVault} from "./difficulty-metrics.js";
 import {mountSage} from "./sage-ui.js";
 import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
@@ -264,7 +267,7 @@ const proofCache=new Map();
 const sourceProofCache=new Map();
 function proofFor(id){
  if(proofCache.has(id))return proofCache.get(id);
- const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id)||BONUS_TRIALS.find(v=>v.id===id)||DECISION_LADDER.find(v=>v.id===id);
+ const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id)||BONUS_TRIALS.find(v=>v.id===id)||decisionBoards.find(v=>v.id===id);
  if(!puzzle)return null;
  const exact=puzzle.revision===4?certifyRemix(puzzle):puzzle.revision===3?certifyDiverse(puzzle):puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
  let proof=exact;
@@ -378,10 +381,10 @@ function renderLearn(){
  });
  trials.append(head,list);root.append(trials);
  const decisions=document.createElement("section");decisions.className="learn-group";
- const heading=document.createElement("h3");heading.textContent="DECISION LAB · "+DECISION_LADDER.length+" SAMPLE VAULTS";
- const description=document.createElement("p");description.textContent="From color matching to interlocking resource decisions. Unscored practice; difficulty order awaits player calibration. Your campaign and lesson saves are unchanged.";
+ const heading=document.createElement("h3");heading.textContent=replacementReview?"REPLACEMENT REVIEW · "+decisionBoards.length+" PROPOSALS":"DECISION LAB · "+decisionBoards.length+" SAMPLE VAULTS";
+ const description=document.createElement("p");description.textContent=replacementReview?"Unscored proposals for repetitive campaign boards. No historical level, score or progress is replaced.":"From color matching to interlocking resource decisions. Unscored practice; difficulty order awaits player calibration. Your campaign and lesson saves are unchanged.";
  const picks=document.createElement("div");picks.className="learn-exercises";
- DECISION_LADDER.forEach((p,i)=>{
+ decisionBoards.forEach((p,i)=>{
   const button=document.createElement("button");button.type="button";button.className="learn-exercise";button.dataset.decisionIndex=String(i);
   const number=document.createElement("span");number.className="learn-number";number.textContent="D"+(i+1);
   const copy=document.createElement("span");copy.className="learn-exercise-copy";
@@ -389,7 +392,7 @@ function renderLearn(){
   const detail=document.createElement("small");detail.textContent=p.decision.focus;
   copy.append(name,detail);button.append(number,copy);picks.append(button);
  });
- decisions.append(heading,description,picks);root.append(decisions);
+ const packLink=document.createElement("a");packLink.href=replacementReview?"./":"./?pack=replacement-review";packLink.textContent=replacementReview?"Return to seven strategy trials":"Review two proposed campaign replacements (unscored)";decisions.append(heading,description,picks,packLink);root.append(decisions);
 }
 function showModePanels(){
  const learn=mode==="learn",heist=mode==="heist";
@@ -688,7 +691,7 @@ function teachingCue(){
 function render(pendingId=null){
  syncHintLadder();
  const isWin=completed(level,state),proof=mode==="learn"&&trialIndex===null&&decisionIndex===null?{turn:level.turnLimit,spentLife:0}:proofs.get(level.id),stage=level.stages[state.stage];
- el("stageLabel").textContent=decisionIndex!==null?"D"+(decisionIndex+1)+" / "+DECISION_LADDER.length:trialIndex!==null?"BONUS TRIAL "+(trialIndex+1)+" / "+BONUS_TRIALS.length:mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
+ el("stageLabel").textContent=decisionIndex!==null?"D"+(decisionIndex+1)+" / "+decisionBoards.length:trialIndex!==null?"BONUS TRIAL "+(trialIndex+1)+" / "+BONUS_TRIALS.length:mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
  el("returnMap").textContent=mode==="learn"?(decisionIndex!==null?"← DECISIONS":trialIndex!==null?"← TRIALS":"← LESSONS"):"← MAP";
  el("toggleGuide").textContent=decisionIndex!==null?"WARD PLAN":mode==="learn"&&trialIndex===null?"✧ LESSON NOTES":"ⓘ GUIDE";
  el("chapterName").textContent=level.chapter;
@@ -794,7 +797,7 @@ function render(pendingId=null){
   }
  }
  el("skip").textContent="← MAP";
- el("winNext").textContent=decisionIndex!==null?(decisionIndex+1<DECISION_LADDER.length?"NEXT DECISION →":"BACK TO DECISIONS →"):trialIndex!==null?"BACK TO BONUS TRIALS →":mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
+ el("winNext").textContent=decisionIndex!==null?(decisionIndex+1<decisionBoards.length?"NEXT DECISION →":"BACK TO DECISIONS →"):trialIndex!==null?"BACK TO BONUS TRIALS →":mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
  returnFromResult.hidden=!isWin;returnFromResult.textContent=decisionIndex!==null?"← DECISIONS":trialIndex!==null?"← BONUS TRIALS":mode==="learn"?"← LESSONS":"← VAULT MAP";
  if(isWin&&!wasWin)el("winNext").focus({preventScroll:true});
  sage.render({mode:decisionIndex!==null?"decision":trialIndex!==null?"bonus":mode,index,level,state,finished:isWin});
@@ -869,7 +872,7 @@ function load(i,enter=false){
  if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(mode==="learn"&&!isLearnLevel(i)))return false;
  document.body.classList.toggle("is-decision-lab",decisionIndex!==null);
  index=i;world=chapterIndex(index);
- level=decisionIndex!==null?DECISION_LADDER[decisionIndex]:trialIndex!==null?BONUS_TRIALS[trialIndex]:mode==="learn"?LEARN_LEVELS[index]:LEVELS[index];state=initial(level);history=[];selectedMessage="";
+ level=decisionIndex!==null?decisionBoards[decisionIndex]:trialIndex!==null?BONUS_TRIALS[trialIndex]:mode==="learn"?LEARN_LEVELS[index]:LEVELS[index];state=initial(level);history=[];selectedMessage="";
  startStagePrintings(level);
  el("battlefield").replaceChildren();el("hand").replaceChildren();
  manaOrbs=reconstruct(state.pool);cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();
@@ -910,7 +913,7 @@ el("campaignScreen").addEventListener("click",e=>{
  const decision=e.target.closest("[data-decision-index]");
  if(decision&&mode==="learn"){
   const n=Number(decision.dataset.decisionIndex);
-  if(Number.isInteger(n)&&n>=0&&n<DECISION_LADDER.length){decisionIndex=n;trialIndex=null;load(n,true);}
+  if(Number.isInteger(n)&&n>=0&&n<decisionBoards.length){decisionIndex=n;trialIndex=null;load(n,true);}
   return;
  }
  const bonus=e.target.closest("[data-trial-index]");
@@ -1048,7 +1051,7 @@ window.addEventListener("resize",()=>{if(document.body.classList.contains("in-he
 el("reset").addEventListener("click",()=>{closePlaytest("restart");sage.onRestart(level);load(index);startPlaytest();});
 el("skip").addEventListener("click",showMap);
 el("winNext").addEventListener("click",()=>{
- if(decisionIndex!==null){if(decisionIndex+1<DECISION_LADDER.length){decisionIndex++;load(decisionIndex,true);}else showMap();return;}
+ if(decisionIndex!==null){if(decisionIndex+1<decisionBoards.length){decisionIndex++;load(decisionIndex,true);}else showMap();return;}
  if(trialIndex!==null){showMap();return;}
  if(mode==="learn"){const next=nextLearnIndex(index);if(next!==null)load(next,true);else showMap();return;}
  if(index+1<LEVELS.length)load(index+1,true);else showMap();
