@@ -152,3 +152,32 @@ test("shop booster packs: two per visit, kept on reroll, open one and keep one c
  assert.equal(camp.packBlocker(c, 1, cards), "Relic slots full: sell one in your Deck");
  assert.equal(camp.sanitize({ ...c, pack: { kind: "relic", opts: ["landR", "nope"] } }, cards).pack, null, "bad pack contents dropped");
 });
+
+test("campaign saves retain legitimate shops but bound and reject malformed inventory",()=>{
+ const good=camp.newCampaign(42),cards=createEngine(42).cards;
+ good.shop={rerolls:3,fresh:true,items:[
+  {kind:"relic",id:"solring",price:6,sold:false},
+  {kind:"spell",id:"meteor",price:3,sold:true}
+ ],packs:[{kind:"ritual",price:4,sold:false}]};
+ good.draft=["flame","meteor"];
+ const retained=camp.sanitize(JSON.parse(JSON.stringify(good)),cards);
+ assert.deepEqual(retained.shop,good.shop,"legitimate existing shop inventory remains unchanged");
+ assert.deepEqual(retained.draft,good.draft);
+ const bad={...good,shop:{rerolls:-90,fresh:true,
+  items:[{kind:"relic",id:"solring",price:6,sold:false},
+   {kind:"ritual",id:"solring",price:1,sold:false},
+   {kind:"relic",id:"solring",price:-99,sold:false},
+   ...Array.from({length:10000},()=>({kind:"relic",id:"solring",price:6,sold:false}))],
+  packs:[{kind:"ritual",price:4,sold:false},{kind:"relic",price:-10,sold:false},...Array.from({length:10000},()=>({kind:"spell",price:4,sold:false}))]},
+  deck:[...good.deck,...Array.from({length:10000},()=> "not-a-card")],
+  draft:[...good.draft,...Array.from({length:10000},()=> "not-a-card")]};
+ const clean=camp.sanitize(bad,cards);
+ assert.equal(clean.shop.rerolls,0,"negative reroll counts cannot give a free-reroll discount");
+ assert.equal(clean.shop.items[0].id,"solring");
+ assert.ok(clean.shop.items.length<=64,"a corrupted saved shop cannot materialize thousands of entries");
+ assert.deepEqual(clean.shop.packs,[{kind:"ritual",price:4,sold:false}]);
+ assert.deepEqual(clean.deck,good.deck,"valid player deck survives trailing malformed entries");
+ assert.deepEqual(clean.draft,good.draft,"valid draft offer survives trailing malformed entries");
+ const high=camp.sanitize({...good,shop:{...good.shop,rerolls:Number.MAX_SAFE_INTEGER}},cards);
+ assert.equal(high.shop.rerolls,1e6,"large reroll counters cannot overflow later costs");
+});
