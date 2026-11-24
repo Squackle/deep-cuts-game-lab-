@@ -12,24 +12,27 @@ const SOURCE=[...original,...expansion];
 const DESIGNS=Object.freeze([
  {source:'sb-07',title:'Do Less, Win More',focus:'Avoid unnecessary responses',
   question:'Does the stack really need both answers, or can one well-timed protection solve the actual objective?',
-  lesson:'A reference line is only one legal answer. Test whether one response already accomplishes the goal.'},
+  lesson:'Selfless Spirit grants your creatures indestructible before either destroy effect resolves. Sacrificing it is a cost. Countering Murder as well is unnecessary for this objective.'},
  {source:'sb-16',title:'Two Lives, Two Targets',focus:'Allocate protection to different threats',
   question:'Two creatures face separate damage. Which protection belongs on which permanent?',
-  lesson:'Read the incoming spell targets, then allocate the response effects. More casts alone do not guarantee success.'},
+  lesson:'Allocate the boosts to different creatures. Blossoming Defense also makes the opposing spell targeting its creature illegal; Titanic Growth protects the other by raising toughness above its damage.'},
  {source:'sb-18',title:'The Counterspell Trap',focus:'Read counterspell restrictions',
   question:'One response can stop any spell; another cannot target the threatening sorcery.',
-  lesson:'Legal target restrictions and stack order matter more than the number of cards in hand.'},
+  lesson:'Essence Scatter targets creature spells, not Wrath of God. Cancel can stop the sweeper; a toughness boost can survive damage but cannot prevent destruction.'},
  {source:'sb-23',title:'Counter or Gain Life?',focus:'Balance two incoming threats',
   question:'When multiple spells threaten your life, determine what must resolve and what must be stopped.',
-  lesson:'Preventing one hit might not be enough. Evaluate your final life total after the full stack resolves.'},
+  lesson:'Compare remaining life with the total incoming damage. Healing Salve can gain three life in this exercise; counter the other damaging spell if the total still threatens you.'},
  {source:'sb-28',title:'Win and Keep the Giant',focus:'Coordinate victory and preservation',
   question:'Lethal damage to the opponent is not enough if your named creature does not survive.',
-  lesson:'Track all objective conditions across priority windows; a fast win without the creature is still a loss.'}
+  lesson:'Protect the giant, survive the incoming damage and counter the spell aimed at your lethal Bolt. The stack resolves top first; your victory must satisfy both objective conditions.'}
 ]);
 const adapted=DESIGNS.map((design,i)=>{
  const ix=SOURCE.findIndex(p=>p.id===design.source);
  if(ix<0)throw Error('Missing original authored Stackbreaker case '+design.source);
- const source=commanderScenario(SOURCE[ix],ix);
+ // Preserve the authored interaction, not the seeded Commander filler.
+ // Ranked boards still use the original Commander adapter. Here the learner
+ // sees only the authored resources and deliberately selected alternatives.
+ const source={...structuredClone(SOURCE[ix]),solution:commanderScenario(SOURCE[ix],ix).solution};
  return {...source,id:'st-'+String(i+1).padStart(2,'0'),
   title:design.title,intro:design.question,
   strategyFocus:design.focus,strategyLesson:design.lesson,sourceId:design.source,
