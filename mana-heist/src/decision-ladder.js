@@ -12,7 +12,7 @@ const clues=[
 ];
 function puzzle(n,title,focus,why,turnLimit,life,field,hand,stages){
  return {id:`mh-decision-${n}`,version:VERSION,chapter:"DECISION LAB · SAMPLE PROGRESSION",
-  rank:n,title,briefing:focus,decision:{focus,why,clue:clues[n-1]},turnLimit,life,
+  rank:n,title,briefing:focus,decision:{focus,why,clue:clues[n-1],retry:["Try opening with the flexible land's red mode, then the fixed blue source. Reverse that tap order and compare.","Try producing red before opening the blue seal. Keep the red mana until the second ward; compare with using both blue modes.","Try using the second Island as filter fuel instead of the first. Confirm which output must remain for the red ward.","Try a different safe tap order within each turn. Check whether playing the shock land instead can still finish.","Try swapping the two Island roles on turn one; trace both filter outputs and the final life budget.","Try red first, then blue; reset and try blue first, then red. Both should finish.","In manual mode charge both sources, then select red for the generic seal. In automatic mode try red first; contrast with blue first."][n-1]},turnLimit,life,
   field:cards(field),hand:cards(hand),library:[],stages:stages.map(([name,cost])=>({name,cost}))};
 }
 export const DECISION_LADDER=Object.freeze([

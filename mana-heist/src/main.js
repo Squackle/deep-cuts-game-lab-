@@ -297,6 +297,9 @@ hintReveal.textContent="REVEAL HINT 1";
 const hintReset=document.createElement("button");hintReset.type="button";hintReset.id="hintReset";
 hintReset.textContent="HIDE HINTS";hintReset.hidden=true;
 hintActions.append(hintReveal,hintReset);hintPanel.append(hintHeading,hintCopy,hintActions);
+const decisionRetry=document.createElement("button");decisionRetry.type="button";decisionRetry.id="decisionRetry";decisionRetry.textContent="TRY ANOTHER LINE";decisionRetry.hidden=true;
+el("winCopy").after(decisionRetry);
+decisionRetry.addEventListener("click",()=>{if(decisionIndex!==null)load(decisionIndex,true);});
 const decisionPlan=document.createElement("section");decisionPlan.id="decisionPlan";decisionPlan.hidden=true;
  decisionPlan.setAttribute("aria-label","Complete ward plan");
  el("wardDescription").after(decisionPlan);
@@ -702,18 +705,21 @@ function render(pendingId=null){
  el("vaultName").textContent=level.title;
  el("briefing").textContent=level.briefing;
  decisionPlan.hidden=decisionIndex===null;
+ decisionRetry.hidden=decisionIndex===null||!isWin;
+ const planHadFocus=decisionPlan.contains(document.activeElement);
  decisionPlan.replaceChildren();
  if(decisionIndex!==null){
   const heading=document.createElement("h3");heading.textContent="PLAN EVERY WARD";decisionPlan.append(heading);
   level.stages.forEach((spell,i)=>{
    const row=document.createElement("p"),name=document.createElement("strong"),cost=document.createElement("span");
-   name.textContent=(i+1)+". "+spell.name+" · ";
+   name.textContent=(i<state.stage?"OPEN · ":i===state.stage?"CURRENT · ":"LATER · ")+(i+1)+". "+spell.name+" · ";
    cost.innerHTML=costHtml(spell.cost);row.append(name,cost);decisionPlan.append(row);
   });
   if(!isWin){const check=document.createElement("button");check.type="button";check.textContent="CHECK MY PLAN (MANUAL)";
    const result=document.createElement("p");result.setAttribute("role","status");
    check.onclick=()=>{try{result.textContent=reviewPlan(level,state).text;}catch{result.textContent="The plan could not be verified; no loss is established.";}};
    decisionPlan.append(check,result);
+   if(planHadFocus&&el("gameNotes").open)check.focus({preventScroll:true});
   }
  }
  const archived=level.revision===4?varietyBests[level.id]:null;
@@ -773,7 +779,7 @@ function render(pendingId=null){
    "T"+proof.turn+" / "+proof.spentLife:"LEGAL ROUTE";
   if(decisionIndex!==null){
    el("winTitle").textContent="DECISION VAULT OPEN";
-   el("winCopy").textContent=level.decision.why+" Your ward payments: "+wardPaymentRecap(level,history).join("; ")+". Life spent: "+state.spentLife+". This practice result is not scored.";
+   el("winCopy").textContent=level.decision.why+" Your ward payments: "+wardPaymentRecap(level,history).join("; ")+". Life spent: "+state.spentLife+". This practice result is not scored. Try another line: "+level.decision.retry;
   }else if(trialIndex!==null){
    const best=trialBests[level.id],stars=medal(level,state,proof);
    el("winTitle").textContent="★".repeat(stars)+" BONUS VAULT OPEN";
