@@ -1,0 +1,39 @@
+name: Game Lab browser navigation smoke
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'lab/**'
+      - 'hive-run/index.html'
+      - 'stackbreaker/index.html'
+      - 'mana-heist/index.html'
+      - 'graftbound/index.html'
+      - 'archemancy/index.html'
+      - 'archamancy/index.html'
+      - 'scripts/lab-browser-smoke.mjs'
+      - '.github/workflows/lab-browser-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: lab-browser-smoke-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  navigation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Install pinned isolated browser driver
+        run: |
+          npm install --prefix "$RUNNER_TEMP/lab-smoke" --no-save --no-package-lock --ignore-scripts playwright-core@1.56.1
+          node "$RUNNER_TEMP/lab-smoke/node_modules/playwright-core/cli.js" install --with-deps chromium
+      - name: Run local-only catalog navigation at desktop and mobile sizes
+        run: |
+          export PLAYWRIGHT_MODULE="$RUNNER_TEMP/lab-smoke/node_modules/playwright-core/index.mjs"
+          node --test scripts/lab-browser-smoke.mjs
