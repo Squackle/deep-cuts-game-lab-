@@ -25,7 +25,13 @@ export function spellNumbers(id, level = 1, arcane = 0) {
   return (BASE[e] || []).map(n => Math.max(1, n + add));
 }
 export function formatSpellText(id, level = 1, arcane = 0) {
-  const nums = spellNumbers(id, level, arcane); let i = 0;
+  const nums = spellNumbers(id, level, arcane), effect = effectOf(id);
+  // Presentation only: repeat the same resolved number for repeated placeholders.
+  // Explicit text for effects whose inherited legacy template omits real behavior.
+  if (effect === 'wither') return `Deal ${nums[0]} damage to a creature and Weaken it by ${nums[1]}: it strikes for ${nums[1]} less on its next action.`;
+  if (effect === 'sap_surge') return `Give target creature +${nums[0]}/+${nums[0]} until end of turn.`;
+  if (id === 'mtg:healing-hands' || id === 'mtg:revitalize') return `Heal ${nums[0]}, cleanse poison and weakness, and draw one card from your encounter library.`;
+  let i = 0;
   return getCard(id).text.replace(/\{(\d+)\}/g, () => String(nums[i++]));
 }
 /** Range only exists for 'empty' targets; everything else reaches the whole battlefield (Infinity). */
