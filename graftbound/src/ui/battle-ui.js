@@ -723,7 +723,7 @@ export class BattleUI {
   }
   canAutoEnd(s) {
     return this.s === s && this.app.mode === 'battle' && !this.app.modalOpen() &&
-      !document.hidden && !this.ending &&
+      !document.hidden && !this.ending && !discardRequirement(s).need &&
       shouldAutoEnd(s, { busy: this.busy, targeting: !!this.spell, enabled: this.app.meta.settings.autoEnd !== false });
   }
   maybeAutoEnd() {
