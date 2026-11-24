@@ -23,7 +23,7 @@
  <p class="eyebrow">STACK OPERATIONS / EXPERIMENTAL TRAINING</p>
  <h1>STRATEGY <em>TRIALS.</em></h1>
  <p class="lead">Seven deliberately selected decision exercises. The same limited Stackbreaker rules engine, no leaderboard, no account, no saved score. Think about choices and consequences, not how many spells you cast.</p>
- <p class="notice">Five cases adapt existing authored scenarios; two new comparison boards examine resource choices with the same response count. None are official Magic scenarios or human-calibrated difficulty ratings. Your Classic campaign, Daily attempt, and all saved progress remain unchanged.</p>
+ <p class="notice">Five cases isolate existing authored interactions without generated filler; two new comparison boards examine resource choices with the same response count. None are official Magic scenarios or human-calibrated difficulty ratings. Your Classic campaign, Daily attempt, and all saved progress remain unchanged.</p>
  <nav class="trial-nav" id="trialNav" aria-label="Choose a strategy trial"></nav>
  <section class="panel" aria-labelledby="currentTrial">
   <div class="panel-heading">
@@ -32,7 +32,7 @@
     <h2 id="currentTrial"></h2>
     <p id="trialPrompt"></p>
    </div>
-   <div class="panel-actions"><button id="restart" type="button">Restart trial</button><button id="hint" type="button">Reveal hint</button></div>
+   <div class="panel-actions"><button id="undo" type="button" disabled>Undo action</button><button id="restart" type="button">Restart trial</button><button id="hint" type="button">Reveal hint</button></div>
   </div>
   <p id="hintText" class="hint" hidden></p>
   <div id="notice" class="status" role="status" aria-live="polite">Select a challenge to start.</div>
@@ -44,6 +44,7 @@
    <section class="zone wide"><h3>Your hand &amp; abilities</h3><div id="hand"></div></section>
   </div>
   <div class="footer-actions"><button id="pass" type="button" class="primary">PASS / RESOLVE TOP</button><span id="pool" aria-live="polite"></span></div>
+  <section class="zone" aria-labelledby="actionLogHeading"><h3 id="actionLogHeading">Recent actions &amp; resolutions</h3><ol id="actionLog"></ol></section>
   <section id="outcome" class="outcome" hidden><h3 id="outcomeTitle"></h3><p id="outcomeText"></p></section>
  </section>
  <p class="fine">Educational fan-made practice game; a simplified rules subset, not an official Magic judge. The exercise examines only authored reference lines and possible alternatives. Do not read a suggested solution length as the minimum. No game data is submitted.</p>
