@@ -80,7 +80,13 @@ export function onHeroHeal(s,ev,amount,kind){
  ev.push({t:'graftTrigger',name:`Vito · ${dmg} life loss to ${target.name}`,uid:player(s).uid});
  loseLife(s,ev,player(s),target,dmg,'vito');
 }
+export function skullclampDraw(s,ev,dead){
+ if(dead.side==='player'&&dead.equipment?.includes('mtg:skullclamp')){
+   ev.push({t:'graftTrigger',uid:dead.uid,name:'Skullclamp · draw two cards'});traitDraw(s,ev,2);
+ }
+}
 export function onUnitDeath(s,ev,dead){
+ skullclampDraw(s,ev,dead);
  if(!owns(s,'bloodArtist')||dead.hero)return;
  const target=nearestFoe(s);
  if(target && target!==dead){

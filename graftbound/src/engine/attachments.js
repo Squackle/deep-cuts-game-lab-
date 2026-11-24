@@ -7,6 +7,7 @@ export function equipItem(run,id,slot){
  if(run.phase==='battle')throw new Error('Use in-combat equipment actions to change gear');
  if(!Number.isInteger(slot)||slot<0||slot>=EQUIPMENT_SLOTS)throw new Error('Invalid equipment slot');
  if(id!==null&&(!owned(run).includes(id)||resolveCard(id)?.kind!=='equipment'))throw new Error('Equipment not owned');
+ if(id==='mtg:skullclamp')throw new Error('Equip Skullclamp in battle after reviewing its lethal toughness reduction');
  const next=[...(run.equippedEquipment||[null,null])];
  if(id){for(let i=0;i<next.length;i++)if(next[i]===id)next[i]=null;}
  next[slot]=id;run.equippedEquipment=next;return next;
@@ -17,7 +18,7 @@ export function giveEquipment(run,id){
  if(!run.equipmentInventory.includes(id))run.equipmentInventory.push(id);
  if(!Array.isArray(run.equippedEquipment))run.equippedEquipment=[null,null];
  const first=run.equippedEquipment.findIndex(x=>!x);
- if(first>=0)run.equippedEquipment[first]=id;
+ if(first>=0&&id!=='mtg:skullclamp')run.equippedEquipment[first]=id;
  return id;
 }
 function card(id){const c=resolveCard(id);if(!c||!['aura','equipment'].includes(c.kind))throw new Error('Unsupported attachment');return c;}

@@ -4,7 +4,7 @@
 import { resolveCard } from '../cards/catalog.js';
 import { availableMana } from './mana.js';
 import { inBounds, unitAt, tileAt, T, manhattan } from '../core/grid.js';
-import { dealDamage, damageBatch, heal, addShield, addStatus, enemies, alive, player, enterTiles, grantConduitOnEntry } from './abilities.js';
+import { dealDamage, damageBatch, heal, addShield, addStatus, enemies, alive, player, enterTiles, grantConduitOnEntry, sacrificeAlly, has } from './abilities.js';
 import { traitDraw } from './trait-triggers.js';
 import { ENEMIES } from '../data/enemies.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
@@ -15,7 +15,7 @@ const BASE = {
   ember_dart: [2], barkskin: [3], sap_surge: [3], gale_push: [2], blink_step: [3], rootsnare: [1],
   venom_mist: [2], mending_rain: [4], wither: [1, 2], firestorm: [2], soul_siphon: [2], chain_lightning: [3, 2], starfall: [4, 2], call_sproutling: [2, 2],
 };
-const NO_ARCANE = new Set(['sap_surge', 'blink_step', 'call_sproutling']);
+const NO_ARCANE = new Set(['sap_surge', 'blink_step', 'call_sproutling','pilot_draw','pilot_scry','pilot_sacrifice','pilot_sleep']);
 export function spellNumbers(id, level = 1, arcane = 0) {
   const e = effectOf(id); const c = resolveCard(id); const bonus = (c && c.bonus) || 0;
   // The printed card always makes 1/1s; GRAFTBOUND empowers the summoned Soldiers
@@ -51,7 +51,8 @@ export function spellTargets(s, id, level = 1, mode = null) {
   const c = getCard(id), p = player(s), out = [];
   if (id === 'mtg:healing-salve' && mode === 'heal') return [{ x: p.x, y: p.y }];
   if (c.target === 'self') return [{ x: p.x, y: p.y }];
-  if(c.target==='creature') return s.units.filter(u=>u.hp>0&&(u.side==='player'||!u.keywords?.hexproof)).map(u=>({x:u.x,y:u.y}));
+  if(c.target==='sacrifice') return s.units.filter(u=>u.side==='player'&&!u.hero&&alive(u)).map(u=>({x:u.x,y:u.y}));
+  if(c.target==='creature') return s.units.filter(u=>u.hp>0&&(u.side==='player'||!has(u,'hexproof'))).map(u=>({x:u.x,y:u.y}));
   if (c.target === 'ally') return s.units.filter(u => u.side === 'player' && u.hp > 0).map(u => ({ x: u.x, y: u.y }));
   if (c.target === 'enemy') return enemies(s).map(e => ({ x: e.x, y: e.y }));
   const range = spellRange(id, level);
@@ -71,6 +72,7 @@ export function castBlockReason(s, id, xValue = 1) {
   const entry = s.spellbook.find(x => x.id === id);
   if (!entry) return 'Not in your spellbook';
   if (s.phase !== 'player') return 'Not your turn';
+  if(['pilot_draw','pilot_scry','pilot_sacrifice'].includes(effectOf(id))&&!s.deck)return 'Requires an encounter library';
   if (s.p.cast[id]) return 'Already cast this turn';
   if(s.deck?.pendingDiscards>0)return 'Discard a card first';
   if (s.p.silenced === id) return 'Silenced by the Unwritten for this turn';
@@ -99,6 +101,16 @@ export function castSpellEffect(s, ev, id, level, tx, ty, xValue = 1, mode = nul
       target.maxHp+=n[0];target.hp+=n[0];target.toughness+=n[0];target.statuses.temporaryToughness=(target.statuses.temporaryToughness||0)+n[0];
       ev.push({t:'status',uid:target.uid,status:'toughness',value:n[0],total:target.statuses.temporaryToughness});break;
     case 'page_draw': { if(s.deck)traitDraw(s,ev,2); break; }
+    case 'pilot_draw': traitDraw(s,ev,3); break;
+    case 'pilot_scry': break; // The combat action owns the pending choice and held casting card.
+    case 'pilot_sacrifice': sacrificeAlly(s,ev,target);traitDraw(s,ev,2);break;
+    case 'pilot_sleep':
+      for(const foe of enemies(s)){
+        if(foe.boss&&foe.sleepResisted){ev.push({t:'legendaryResistance',uid:foe.uid,source:'Sleep'});continue;}
+        if(foe.boss)foe.sleepResisted=true;
+        if(!(foe.statuses.stunned>0))addStatus(s,ev,foe,'stunned',1);
+      }
+      break;
     case 'mending_rain':
       if (id === 'mtg:healing-salve' && mode === 'prevent') {
         if (!alive(target)) throw new Error('Healing Salve prevention needs a living target');

@@ -88,10 +88,15 @@ function queue(s,kind,detail={}){
  return true;
 }
 export const hasComboChoices=s=>{pruneUnpayableComboChoices(s);return !!s?.combo?.choices?.length;};
+export function beginScry(s,ev,held){
+ const old=refillFromGraveyard(s.deck);if(old)ev.push({t:'deckReshuffle',count:old,uid:player(s).uid});
+ state(s).choices.unshift({kind:'scry',held,top:s.deck.library[0]?.id||null});
+}
 export function comboChoices(s){
  pruneUnpayableComboChoices(s);
  const c=s?.combo?.choices?.[0];if(!c)return null;
  const choices=[];
+ if(c.kind==='scry')return {kind:'scry',cardId:c.top,subtitle:'Scry 1 · then draw one card',reason:c.top?'Inspect the actual top card of your library.':'No cards remain in library or graveyard.',choices:c.top?[{arg:0,label:'Keep on top'},{arg:1,label:'Put on bottom'}]:[{arg:0,label:'Continue'}]};
  if(c.kind==='mentor'||c.kind==='nadir'){
    choices.push({arg:0,label:'Skip (save mana)'});
    if(availableMana(s)>=1&&(c.kind!=='mentor'||canDraw(s)))choices.push({arg:1,label:`Pay 1 mana · ${c.kind==='mentor'?'draw a card':`gain +1/+1 and summon a ${lv(s,'nadir').token.join('/')} Tentacle`}`});
@@ -115,7 +120,13 @@ export function resolveComboChoice(s,kind,arg){
  const c=s.combo?.choices?.[0];if(!c||c.kind!==kind)throw Error('No matching pending combo choice');
  const view=comboChoices(s);if(!view.choices.some(x=>x.arg===arg))throw Error('Invalid combo choice or insufficient mana');
  const ev=[],h=player(s);
+ if(kind==='scry'&&(s.deck?.library[0]?.id||null)!==c.top)throw Error('Scry library changed');
  s.combo.choices.shift();
+ if(kind==='scry'){
+   if(arg===1)s.deck.library.push(s.deck.library.shift());
+   comboDraw(s,ev,1);s.deck.graveyard.push(c.held);
+   ev.push({t:'scryResolved',uid:h.uid,choice:arg===1?'bottom':'top',id:c.top});
+ }
  if(kind==='mentor'&&arg===1){ev.push(spendMana(s,1));comboDraw(s,ev,1);}
  if(kind==='nadir'&&arg===1){ev.push(spendMana(s,1));giveCounter(s,ev,h,'nadir');comboToken(s,ev,'Tentacle',...lv(s,'nadir').token,'nadir');}
  if(kind==='oracle'&&arg){
@@ -146,6 +157,7 @@ export function comboActiveOptions(s){
  if(owns(s,'ayara')&&co.actions.ayaraTurn!==s.turn){
   for(const u of allies(s))if(!u.hero&&(u.colors||[]).includes('B'))out.push({kind:'ayara',arg:u.uid,label:`Ayara · sacrifice ${u.name} → draw`});
  }
+ if(s.equipmentInventory?.includes('mtg:shadowspear')&&!(s.destroyedEquipment||[]).includes('mtg:shadowspear')&&availableMana(s)>=1)out.push({kind:'shadowspear',arg:0,label:'Shadowspear · remove enemy hexproof and indestructible · 1 mana'});
  if(owns(s,'skeleton') && !reassembleReason(s))out.push({kind:'skeleton',arg:0,label:`Reassemble Skeleton · ${lv(s,'skeleton').cost} mana`});
  if(owns(s,'witness')&&(co.actions.witnessUses||0)<lv(s,'witness').uses&&s.deck)for(const c of s.deck.graveyard)if(!out.some(x=>x.kind==='witness'&&x.arg===c.id))out.push({kind:'witness',arg:c.id,label:`Eternal Witness · return ${c.id.replace(/^mtg:/,'').replaceAll('-',' ')}`});
  return out;
@@ -157,6 +169,12 @@ export function comboActivate(s,kind,arg){
  if(kind==='ayara'){
   const u=s.units.find(x=>x.uid===arg);co.actions.ayaraTurn=s.turn;
   sacrificeAlly(s,ev,u);comboDraw(s,ev,1);
+ }
+ if(kind==='shadowspear'){
+  ev.push(spendMana(s,1));for(const foe of enemies(s)){
+    foe.shadowSuppressed={hexproof:!!foe.keywords?.hexproof,indestructible:!!(foe.statuses?.indestructible||foe.keywords?.indestructible)};
+    ev.push({t:'status',uid:foe.uid,status:'Shadowspear',value:1});
+  }
  }
  if(kind==='skeleton'){
   ev.push(spendMana(s,lv(s,'skeleton').cost));const u=comboToken(s,ev,'Skeleton',...lv(s,'skeleton').token,'skeleton');if(u){u.tapped=true;ev.push({t:'graftTrigger',name:'Reassembling Skeleton returns exhausted',uid:u.uid});}
