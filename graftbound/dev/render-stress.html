@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>GRAFTBOUND renderer stress fixture</title>
+<style>body{font:16px system-ui;background:#14201f;color:#f3f0e4;margin:1rem}canvas{display:block;width:min(960px,100%);aspect-ratio:16/9}pre{white-space:pre-wrap}button,select{font:inherit;margin:.4rem;padding:.5rem}label{display:inline-block}</style>
+<h1>GRAFTBOUND rendering stress fixture</h1>
+<p>Local presentation benchmark only. No campaign, storage, ranked API or card services.</p>
+<label>Creatures <select id="count"><option>8</option><option>32</option><option selected>64</option></select></label>
+<label>Quality <select id="quality"><option>high</option><option selected>balanced</option><option>performance</option></select></label>
+<button id="go" disabled>Run 180 measured frames</button>
+<canvas id="gl"></canvas><pre id="report" role="status" aria-live="polite">Loading original game assets…</pre>
+<script type="module">
+import { Scene } from '../src/rendering/scene.js';
+import { loadAssets } from '../src/rendering/sprites.js';
+import { composeEquippedSheet } from '../src/rendering/equipment-visuals.js';
+import { visualScale } from '../src/rendering/creature-scale.js';
+import { newEvolution, absorb } from '../src/engine/evolution.js';
+import { deriveAppearance } from '../src/engine/appearance.js';
+import { installReferenceSet } from '../src/cards/reference-set.js';
+import { T } from '../src/core/grid.js';
+const $=id=>document.getElementById(id),report=$('report');
+let scene,assets;
+try{installReferenceSet();assets=await loadAssets();scene=new Scene($('gl'),assets);report.textContent='Ready. Keep this tab visible throughout the run.';$('go').disabled=false;}catch(e){report.textContent=String(e);}
+const stats=a=>{if(!a.length)return null;const sorted=[...a].sort((x,y)=>x-y);return {samples:a.length,p50:+sorted[Math.floor((a.length-1)*.5)].toFixed(2),p95:+sorted[Math.floor((a.length-1)*.95)].toFixed(2),max:+sorted.at(-1).toFixed(2)};};
+$('go').onclick=async()=>{
+ $('go').disabled=true;
+ const count=Number($('count').value),quality=$('quality').value,gl=scene.r.gl;
+ const ext=gl.getExtension('EXT_disjoint_timer_query_webgl2'),info=gl.getExtension('WEBGL_debug_renderer_info');
+ const frame=[],cpu=[],gpu=[];let query=null,queryMeasured=false,last=null,hidden=false;
+ try{
+ scene.setQuality(quality);scene.loadArena({w:8,h:8,terrain:Array(64).fill(T.FLOOR),crystals:[]},0x5eed,'hollow');
+ scene.focus=[0,0,0];scene.focusTarget=[0,0,0];
+ const keys=['mtg_friendlySoldier','mtg_friendlyDrake','mtg_friendlySkeleton','mtg_friendlySquirrel','mtg_hound','mtg_golemFly','mtg_friendlyHornet'].filter(k=>assets.manifest.sprites[k]);
+ let evo=newEvolution();
+ for(const id of ['mtg:storm-crow','mtg:colossal-dreadmaw','mtg:vampire-nighthawk','mtg:war-mammoth'])evo=absorb(evo,id).evo;
+ const ap=deriveAppearance(evo),bm=assets.manifest.sprites.blank;
+ for(let i=0;i<count;i++){
+  const v=scene.addUnit({uid:i+1,side:i%2?'enemy':'player',x:i%8,y:Math.floor(i/8)},i===0?'blank':keys[(i-1)%keys.length]);
+  v.dir=[i%2?1:-1,1];
+  if(i===0)scene.setUnitTexture(v.uid,composeEquippedSheet(assets,ap,['mtg:basilisk-collar','mtg:moonsilver-spear'],['mtg:rancor']),visualScale('blank',bm,bm.bounds,{heroSize:ap.size}));
+ }
+ for(let i=0;i<210;i++){
+  const now=await new Promise(requestAnimationFrame);if(document.hidden){hidden=true;break;}
+  if(query&&gl.getQueryParameter(query,gl.QUERY_RESULT_AVAILABLE)){
+   if(queryMeasured&&!gl.getParameter(ext.GPU_DISJOINT_EXT))gpu.push(gl.getQueryParameter(query,gl.QUERY_RESULT)/1e6);
+   gl.deleteQuery(query);query=null;
+  }
+  if(i>=30&&last!=null)frame.push(now-last);last=now;
+  if(i%12===0){
+   for(let j=0;j<Math.min(count,16);j++){
+    const p=scene.centerPos(j+1);
+    scene.fx.burst(p,[.8,.5,.25],18,{speed:1.2,up:1});
+    scene.addRing({pos:[p[0],.035,p[2]],r0:.1,r1:.7,life:.5,col:[.8,.5,.25],width:.05});
+   }
+  }
+  const start=performance.now();let measuring=false;
+  if(ext&&!query){query=gl.createQuery();if(query){queryMeasured=i>=30;gl.beginQuery(ext.TIME_ELAPSED_EXT,query);measuring=true;}}
+  scene.frame(1/60);
+  if(measuring)gl.endQuery(ext.TIME_ELAPSED_EXT);
+  if(i>=30)cpu.push(performance.now()-start);
+ }
+ report.textContent=JSON.stringify({valid:!hidden,creatures:count,quality,viewport:[gl.drawingBufferWidth,gl.drawingBufferHeight],devicePixelRatio,renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),frameIntervalMs:stats(frame),cpuSubmitMs:stats(cpu),gpuElapsedMs:stats(gpu),gpuTimerAvailable:!!ext,notes:'30 warm-up frames; 180 measured frames; fixed simulation step; cosmetic particle jitter may vary. GPU timer unavailable/disjoint samples omitted; CPU submission is not GPU execution time.'},null,2);
+ }catch(e){report.textContent=String(e);}finally{if(query)gl.deleteQuery(query);$('go').disabled=false;}
+};
+</script>
+</html>
