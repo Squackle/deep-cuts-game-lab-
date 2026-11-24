@@ -9,7 +9,7 @@ import { regionAt, styleWeight, ditherSmooth, R as REG } from './body-regions.js
 const memo=new WeakMap();
 export function composePlayerSheet(assets, app) {
  const base=assets.images.blank,mask=assets.images['blank:mask'];
- const key=JSON.stringify([app.skinPattern,app.anatomy?.order,app.skinTone,app.tintMix,app.dominant,app.anatomy?.features,app.anatomy?.morph,app.markings,app.anatomy?.stage,app.pilotMarks]);
+ const key=JSON.stringify([app.skinPattern,app.anatomy?.order,app.skinTone,app.tintMix,app.dominant,app.anatomy?.features,app.anatomy?.morph,app.markings,app.pilotMarks,app.anatomy?.stage]);
  let cache=memo.get(base);if(!cache){cache=new Map();memo.set(base,cache);}
  if(cache.has(key))return cache.get(key);
  const c=document.createElement('canvas');c.width=base.width;c.height=base.height;
