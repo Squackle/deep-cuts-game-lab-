@@ -44,7 +44,7 @@ export function sanitize(raw, cards) {
 export function metaFx(c) { const fx = {}; for (const k of [...c.boons, ...c.marks]) for (const [n, v] of Object.entries(BY_ID[k]?.fx || {})) if (typeof v === "number") fx[n] = (fx[n] || 0) + v; return fx; }
 export const slots = c => BASE_SLOTS + (metaFx(c).slots || 0);
 export const deckCap = c => DECK_CAP + (metaFx(c).deckCap || 0);
-export const kitFor = c => ({ deck: c.deck.slice(), up: { ...c.up }, relics: c.marks.includes("spark") && c.relics.length ? [...c.relics, c.relics[0]] : c.relics.slice(), boons: [...c.boons, ...c.marks], lands: { ...c.lands } });
+export const kitFor = c => ({ deck: c.deck.slice(), up: { ...c.up }, relics: c.marks.includes("spark") && c.relics.length ? [...c.relics, c.relics[0]] : c.relics.slice(), boons: [...c.boons, ...c.marks], lands: { ...c.lands }, ante: Math.min(8, c.wins) }); // ante: each Gauntlet win makes battles tougher (engine ANTE_STEP, max 8)
 
 function rnd(c) { let t = c.seed = (c.seed + 0x6D2B79F5) >>> 0; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }
 function weighted(c, list, w) { const total = list.reduce((a, x) => a + w(x), 0); if (!total) return null; let r = rnd(c) * total; for (const x of list) { r -= w(x); if (r < 0) return x; } return list.at(-1); }

@@ -55,7 +55,7 @@ const CHECKS = {
  doubling: () => { const t = r => troopFight({ relics: r }, { commander: "krenko", kind: null, steps: 170 }).g.state.troops.filter(u => u.source === "cmd").length; assert.ok(t(["doubling"]) > t([]), "more goblins"); },
  scepter: () => { const a = spellDamage({}).damage, b = spellDamage({ relics: ["scepter"] }); up(a, b.damage, 1.9, 2.1, "first spell twice"); },
  // Utility
- arena: () => { const g = kitGame({ relics: ["arena"] }); g.state.discard.push(...g.state.hand.splice(0)); g.command({ type: "wave" }); assert.equal(g.state.hand.length, 2); },
+ arena: () => { const g = kitGame({ relics: ["arena"] }); g.state.discard.push(...g.state.hand.splice(0)); g.command({ type: "wave" }); assert.equal(g.state.hand.length, 3, "1 + kit extra + Arena"); },
  rhystic: () => { const d = r => { const g = kitGame({ relics: r }); g.state.discard.push(...g.state.hand.splice(0)); g.state.wave = 1; g.command({ type: "wave" }); return g.state.hand.length; }; assert.equal(d(["rhystic"]) - d([]), 1, "wave 2 draws one more"); },
  clamp: () => { const h = r => { const x = deaths(r); return x.g.state.hand.length + x.g.state.discard.length; }; assert.ok(h(["clamp"]) >= h([]), "draws on deaths"); },
  prison: () => { const m = r => { const g = kitGame({ relics: r }); quiet(g); const e = dummy(g, 0, { speed: 10 }); for (let i = 0; i < 50; i++) g.step(); return e.progress; }; up(m([]), m(["prison"]), .9, .94, "8% slower"); },

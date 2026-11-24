@@ -579,3 +579,13 @@ Logan asked for the Shop's booster packs to feel artistic and fun to open, like 
 - New sounds in `sfx.mjs`: packShake, packTear, cardDeal, cardFlip, revealUncommon, revealRare, revealMythic, packPick.
 - Performance: only transforms and opacity animate; sparks are a fixed set of spans. Reduced-motion players see the cards face up straight away. Reloading with a pack open shows it already revealed; card art arriving mid-show repaints in place without restarting it.
 - No change to pack prices, contents, weights, save format or battle rules. Tests: `archamancy/tests/packfx.test.mjs`.
+
+## 2026-11-24 — v0.1.0-beta.13.50 Deckbuilding rebalance: the deck drives the Gauntlet
+
+Logan's Beta 13.49 run (easy, Hollow, Edgar Markov, 25/25, 0 leaks) showed towers doing ~93% of damage, spells ~3% from only 33 casts, no relics, boons or lands, and 819 mana unspent. The real bottleneck: a campaign deck battle drew just one spell per wave, so even an 8-spell deck could cast about 30 times all battle. Changes apply only to campaign deck (kit) battles; Endless, Daily and the Proving Grounds are unchanged.
+- **Spells flow all wave** (Balatro-style hands): draw 2 spells as each wave starts (was 1) and 1 more every 12 seconds of an active wave (`KIT_DRAW_TICKS`). Hand size, Divination, Library, Phyrexian Arena and Rhystic Study still add on top, so hand-size and draw relics matter more. Bot runs cast ~170 spells a battle instead of ~35, and spend the late-game mana surplus.
+- **Spells keep pace with enemies**: kit spell damage x2 (`KIT_SPELL`) and grows on the full wave health curve (was its 0.8 power), plus the ante below. A late Fireball still one-shots a raider at max ante.
+- **Campaign ante**: each Gauntlet win adds +10% enemy health in later battles (`ANTE_STEP`), up to 8 wins (+80%). Kit spells get the same bonus, so a deck that leans on spells keeps up. The world map status bar and the battle Deck view show the current ante.
+- **Arcanum Archmage** branch: +55% magic damage (was +38%), since late Arcanums trailed the other attackers. The foundation benchmark now ends at 11 fortress health (was 10).
+- Bot results (5 seeds each, `tools/relic-balance.mjs`-style build): easy, towers only, max ante still wins 5/5 (3-8 health left). Normal at max ante with 5 relics, lands and a damage deck: 5/5 wins casting spells vs 4/5 with barely any health left without casting. Damage decks deal ~15-18% of all damage (was ~3%).
+- No change to save format, shop prices, relic effects, enemy waves or non-campaign modes. Tests: `archamancy/tests/rebalance.test.mjs`; draw-count assertions in deckbuilding/relic tests updated for the extra wave-start draw.

@@ -35,7 +35,7 @@ test("small decks reshuffle the graveyard when the library runs dry", () => {
  const g = kitGame({});
  g.state.discard.push(...g.state.library.splice(0)); g.state.hand.length = 0;
  g.command({ type: "wave" });
- assert.equal(g.state.hand.length, 1, "drew after reshuffle");
+ assert.equal(g.state.hand.length, 2, "drew after reshuffle (1 + kit wave draw)");
  assert.ok(g.state.events.some(e => e.type === "reshuffle"));
 });
 
@@ -64,7 +64,7 @@ test("economy and draw relics pay at wave start; Phyrexian Arena bleeds on every
  const g = kitGame({ relics: ["solring", "arena"] }), m = g.state.mana; g.state.discard.push(...g.state.hand.splice(0));
  g.command({ type: "wave" });
  assert.ok(g.state.mana >= m + 20, "Sol Ring");
- assert.equal(g.state.hand.length, 2, "wave draw + Arena");
+ assert.equal(g.state.hand.length, 3, "wave draw + kit extra + Arena");
  g.state.wave = 4; g.state.phase = "ready"; g.state.queue = []; g.state.enemies = []; const hp = g.state.health; g.command({ type: "wave" });
  assert.equal(g.state.health, hp - 1);
 });
