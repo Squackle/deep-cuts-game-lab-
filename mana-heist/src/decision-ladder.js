@@ -1,9 +1,18 @@
 // Optional unscored calibration boards. Campaign boards and save IDs stay intact.
 import {VERSION} from "./engine.js";
 const cards=list=>list.map(([id,card])=>({id,card}));
+const clues=[
+ "Which source can produce only blue, and which is your only red source?",
+ "Identify the source needed for the later red ward before opening the blue ward.",
+ "Reserve the mana used to activate Cascade Bluffs separately from its output.",
+ "A painful colored tap spends life that will not return at the next turn.",
+ "Count both turns, then track the life payment, filter fuel and true colorless requirement.",
+ "Try the opposite color ordering after a win; both generic wards accept either color.",
+ "Find a safe order for auto-cast, then compare both legal manual payments after charging both sources."
+];
 function puzzle(n,title,focus,why,turnLimit,life,field,hand,stages){
  return {id:`mh-decision-${n}`,version:VERSION,chapter:"DECISION LAB · SAMPLE PROGRESSION",
-  rank:n,title,briefing:focus,decision:{focus,why},turnLimit,life,
+  rank:n,title,briefing:focus,decision:{focus,why,clue:clues[n-1]},turnLimit,life,
   field:cards(field),hand:cards(hand),library:[],stages:stages.map(([name,cost])=>({name,cost}))};
 }
 export const DECISION_LADDER=Object.freeze([
