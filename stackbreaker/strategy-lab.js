@@ -1,10 +1,14 @@
 // Accessible, offline-first unranked decision practice. No remote scoring,
 // account reads, local save keys, or changes to the published Classic campaign.
+import replacementBoards from './data/replacement-candidates.json' with {type:'json'};
 import {STRATEGY_TRIALS,referenceSubsetEvidence} from './src/strategy-trials.js';
 import {CARDS,LANDS} from './src/cards.js';
 import {createGame,tapLand,activate,pass,legalActions,legalTargets,labelTarget,
  creaturePower,creatureToughness,paymentOptions} from './src/engine.js';
 const $=id=>document.getElementById(id);
+const replacementPreview=new URLSearchParams(location.search).get('pack')==='replacement-review';
+const trials=replacementPreview?replacementBoards:STRATEGY_TRIALS;
+if(replacementPreview){$('packHeading').textContent='REPLACEMENT REVIEW';$('packIntro').textContent='Two unranked proposals only. Original campaign boards and scores are unchanged.';}
 const node=(tag,text,cls='')=>{const e=document.createElement(tag);if(cls)e.className=cls;
  if(text!==undefined)e.textContent=String(text);return e;};
 let index=0,state,history=[],completedTrials=new Set(),notice='Tap your lands, select a response, then PASS to resolve the stack.';
@@ -29,7 +33,7 @@ function item(title,detail,cls=''){
 function cardDetail(box,name){const c=CARDS[name];if(!c)return; if(c.oracle)box.append(node('p',c.oracle,'card-rule'));if(c.note)box.append(node('small',c.note,'card-note'));}
 function setNotice(text){notice=text;$('notice').textContent=text;}
 function load(n){
- index=n;state=createGame(STRATEGY_TRIALS[index]);history=[];selections.clear();payments.clear();
+ index=n;state=createGame(trials[index]);history=[];selections.clear();payments.clear();
  $('hintText').hidden=true;
  setNotice('Tap mana sources, choose responses, and pass to resolve the stack. Nothing is ranked or saved.');
  render();
@@ -37,12 +41,12 @@ function load(n){
 function render(){
  const focused=document.activeElement;
  const focusKey=focused?.dataset?.land?['land',focused.dataset.land]:focused?.dataset?.cast?['cast',focused.dataset.cast]:focused?.dataset?.trial?['trial',focused.dataset.trial]:null;
- const p=STRATEGY_TRIALS[index],nav=$('trialNav');nav.replaceChildren();
- for(const [i,t] of STRATEGY_TRIALS.entries()){
+ const p=trials[index],nav=$('trialNav');nav.replaceChildren();
+ for(const [i,t] of trials.entries()){
   const b=node('button',(completedTrials.has(t.id)?'Solved · ':'')+(i+1)+' · '+t.strategyFocus);b.type='button';b.dataset.trial=String(i);
   b.setAttribute('aria-current',String(i===index));nav.append(b);
  }
- $('trialIndex').textContent='TRIAL '+(index+1)+' / '+STRATEGY_TRIALS.length+' · '+p.strategyFocus.toUpperCase();
+ $('trialIndex').textContent='TRIAL '+(index+1)+' / '+trials.length+' · '+p.strategyFocus.toUpperCase();
  $('currentTrial').textContent=p.title;$('trialPrompt').textContent=p.intro;
  const done=state.status!=='playing';
  const o=$('objective');o.replaceChildren();
@@ -117,7 +121,7 @@ function render(){
  $('undo').disabled=history.length===0;
  const log=$('actionLog');log.replaceChildren(...state.log.slice(-8).map(line=>node('li',line)));
  const outcome=$('outcome');outcome.hidden=!done;
- $('nextTrial').hidden=state.status!=='won'||index===STRATEGY_TRIALS.length-1;
+ $('nextTrial').hidden=state.status!=='won'||index===trials.length-1;
  $('retryTrial').hidden=state.status==='playing';
  if(done){
   $('outcomeTitle').textContent=state.status==='won'?'TRIAL SOLVED':'TRY ANOTHER LINE';
@@ -133,7 +137,7 @@ function render(){
 }
 function act(fn){
  if(state.status!=='playing')return;
- try{const next=fn();if(next){history.push(state);state=next;if(state.status==='won')completedTrials.add(STRATEGY_TRIALS[index].id);}setNotice(state.status==='playing'?
+ try{const next=fn();if(next){history.push(state);state=next;if(state.status==='won')completedTrials.add(trials[index].id);}setNotice(state.status==='playing'?
   'Action accepted. Reassess the top of the stack before passing.':
   state.status==='won'?'Objective achieved.':'Objective not met.');}
  catch(error){setNotice(error?.message||'That action is not legal.');}
@@ -172,9 +176,9 @@ $('pass').addEventListener('click',()=>act(()=>pass(state)));
 $('undo').addEventListener('click',()=>{if(!history.length)return;state=history.pop();selections.clear();payments.clear();setNotice('Previous action undone. Reconsider the resources and targets.');render();});
 $('restart').addEventListener('click',()=>load(index));
 $('retryTrial').addEventListener('click',()=>{load(index);$('currentTrial').focus();});
-$('nextTrial').addEventListener('click',()=>{if(index+1<STRATEGY_TRIALS.length){load(index+1);$('currentTrial').focus();}});
+$('nextTrial').addEventListener('click',()=>{if(index+1<trials.length){load(index+1);$('currentTrial').focus();}});
 $('hint').addEventListener('click',()=>{
  const hint=$('hintText'),show=hint.hidden;hint.hidden=!show;
- hint.textContent=show?STRATEGY_TRIALS[index].hint:'';setNotice(show?'Hint shown. Trial remains unranked.':'Hint hidden.');
+ hint.textContent=show?trials[index].hint:'';setNotice(show?'Hint shown. Trial remains unranked.':'Hint hidden.');
 });
 load(0);
