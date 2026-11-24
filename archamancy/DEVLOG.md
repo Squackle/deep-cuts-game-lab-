@@ -589,3 +589,14 @@ Logan's Beta 13.49 run (easy, Hollow, Edgar Markov, 25/25, 0 leaks) showed tower
 - **Arcanum Archmage** branch: +55% magic damage (was +38%), since late Arcanums trailed the other attackers. The foundation benchmark now ends at 11 fortress health (was 10).
 - Bot results (5 seeds each, `tools/relic-balance.mjs`-style build): easy, towers only, max ante still wins 5/5 (3-8 health left). Normal at max ante with 5 relics, lands and a damage deck: 5/5 wins casting spells vs 4/5 with barely any health left without casting. Damage decks deal ~15-18% of all damage (was ~3%).
 - No change to save format, shop prices, relic effects, enemy waves or non-campaign modes. Tests: `archamancy/tests/rebalance.test.mjs`; draw-count assertions in deckbuilding/relic tests updated for the extra wave-start draw.
+
+## 2026-11-24 — v0.1.0-beta.13.51 Phone layout: the map gets the middle, panels get the sides
+
+Logan's iPhone screenshot (Safari landscape with the tab bar, about 858x287 CSS px) showed the HUD over the wave button and map, cards cropped and covering the road, and the build ring's "Build a tower" box over the play area. Cause: the old wide-phone layout sized its side panels without the notch insets, so every panel spilled about 45px onto the map, and the 2-column hand grew to fill that width.
+- **One sideways-phone layout** for every landscape screen up to 500px tall (replaces the old 21:10-only block). The map keeps full height in the middle; side gutters are measured from the real viewport and the notch insets, with a 118px floor so the hand always fits. Shorter wide phones (like the iPhone SE) trade a little map width for clear gutters.
+- **Left gutter**: compact health, mana, wave and XP pills on top; messages and the boss bar below; commander, ability and wave info in one row at the bottom.
+- **Right gutter**: sound, pause, speed and menu in a 2x2 grid; the wave preview chip; then the hand. Cards size to the screen height, switch to 3 columns at 5+ cards and scroll if a big hand still does not fit.
+- **Card details and the build ring info** open in the left gutter in place of the commander row, so the battlefield stays clear while casting or building. The ring buttons, close button, tutorial bubble and wave banner are smaller on short screens.
+- **Title screen** on very short screens (360px or less) drops the crest so Play Gauntlet is on screen.
+- Portrait phones still show the "Turn your phone sideways" screen. Tablets and desktop are unchanged.
+- Checked with phone-sized browser screenshots at 858x287 (notch), 852x345 (notch), 667x331, 915x380 and 1133x700, with build ring, chosen card and a full 5-card hand. No change to rules or saves. Test: `archamancy/tests/ui-contract.test.mjs`.

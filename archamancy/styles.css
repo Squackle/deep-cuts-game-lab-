@@ -305,29 +305,6 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .boss-bar .boss-tag{pointer-events:auto;min-height:0;padding:1px 9px;border-radius:999px;border:1px solid #ff9a7a88;background:#0f1c16e0;color:#ffd9c9;font:700 .66rem system-ui;cursor:pointer}
 .boss-bar .boss-tag[hidden]{display:none}
 .boss-bar #bossName{font-size:.74rem}
-/* Wide landscape phones: the map leaves dark side margins, so every panel moves into them and the road and pads stay clear. */
-@media(max-height:500px) and (min-aspect-ratio:21/10){
-:root{--side:calc((100vw - (100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * 5 / 3) / 2 - 10px)}
-.hud{flex-direction:column;align-items:stretch;gap:4px;width:var(--side);top:max(6px,env(safe-area-inset-top));left:max(6px,env(safe-area-inset-left))}
-.hud-item{padding:1px 6px 1px 4px;gap:3px;justify-content:flex-start}.hud-item strong{font-size:.8rem}
-.hud-level,.hud-level{position:static!important}.hud-level .lv-word{display:inline}
-.top-right{display:grid;grid-template-columns:repeat(2,auto);gap:4px;top:max(6px,env(safe-area-inset-top));right:max(6px,env(safe-area-inset-right))}
-.top-right .round{width:32px;height:32px}
-.wave-peek{top:calc(env(safe-area-inset-top) + 82px)!important;right:calc(env(safe-area-inset-right) + 6px)}
-.wave-peek.closed{max-width:var(--side)}.wave-peek.closed .wave-peek-head{font-size:.6rem;padding:4px 6px}
-.boss-bar{left:max(6px,env(safe-area-inset-left));top:calc(max(6px,env(safe-area-inset-top)) + 128px);transform:none;width:var(--side);align-items:stretch}
-.boss-bar #bossName{font-size:.62rem;white-space:normal;text-align:center;padding:1px 4px;border-radius:6px}
-.boss-bar .boss-tag{font-size:.58rem;padding:1px 4px}
-.toast,.boss-bar:not([hidden])~.toast{left:max(6px,env(safe-area-inset-left));top:auto;bottom:calc(max(6px,env(safe-area-inset-bottom)) + 132px);transform:none;width:var(--side);max-width:none;border-radius:8px;padding:3px 5px;font-size:.62rem;line-height:1.25;text-align:left;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
-.bottom-left{flex-direction:column-reverse;align-items:center;width:var(--side);gap:5px}
-.bottom-left .hero-btn{width:44px;height:44px}.ability-btn{width:42px;height:42px}.ability-btn .ability-name{display:none}
-.spell-tray{width:var(--side);max-width:none;align-items:stretch}
-.hand{display:grid;grid-template-columns:1fr 1fr;gap:4px;align-items:end;direction:rtl}
-.hand .spell{width:auto;direction:ltr}.hand .spell strong{display:none}
-.spell[aria-pressed=true]{transform:translateX(-6px)}
-#zones{font-size:.52rem;text-align:center;padding:0 3px}
-.card-tip{position:fixed;right:calc(var(--side) + 14px);bottom:max(8px,env(safe-area-inset-bottom));width:min(260px,40vw)}
-}
 /* Beta 13.12: a notch at 40% on the boss bar marks where the boss cracks and loses its immunity. */
 .boss-track{position:relative}.boss-bar.crackable .boss-track::after{content:"";position:absolute;left:40%;top:-2px;bottom:-2px;width:2px;border-radius:1px;background:#fff9;box-shadow:0 0 3px #000}
 /* Beta 13.13: season picker on the title screen (shown once a season beyond summer has art). */
@@ -610,3 +587,58 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .peek-chip .camp-art{width:46px;flex:none;aspect-ratio:4/3}
 .peek-chip strong{font-size:.8rem;line-height:1.2;padding-right:6px;overflow-wrap:anywhere}
 @media (max-width:520px){.peek-grid{grid-template-columns:1fr 1fr}.camp-socket{min-height:80px}}
+
+/* Beta 13.51 phone layout. Sideways phones keep the battlefield in the middle at full height and every panel moves into
+   side gutters measured from the real screen and notch, so nothing covers the road, pads or map edges. */
+@media (orientation:landscape) and (max-height:500px){
+:root{--sl:env(safe-area-inset-left);--sr:env(safe-area-inset-right);--st:env(safe-area-inset-top);--sb:env(safe-area-inset-bottom);
+ --gut:max(118px,calc((100vw - var(--sl) - var(--sr) - (100dvh - var(--st) - var(--sb)) * 5 / 3) / 2));
+ --side:calc(var(--gut) - 10px);--edge-l:calc(var(--sl) + 6px);--edge-r:calc(var(--sr) + 6px);--edge-t:max(6px,var(--st));--edge-b:max(6px,var(--sb));
+ --rs:clamp(32px,10.5cqh,46px);
+ --cw:calc((100dvh - var(--st) - var(--sb) - 128px) / 2 * 5 / 7)}
+.map-stage{padding:var(--st) calc(var(--sr) + var(--gut)) var(--sb) calc(var(--sl) + var(--gut))}
+/* Left gutter: status on top, commander at the bottom, messages between. */
+.hud{flex-direction:column;align-items:flex-start;gap:3px;width:var(--side);top:var(--edge-t);left:var(--edge-l)}
+.hud-item{padding:1px 8px 1px 5px;gap:4px;max-width:100%}.hud-item strong{font-size:.8rem}.hud-item i{font-size:.85rem}
+.hud-level{position:relative!important;padding:1px 8px 1px 2px}.hud-level .lv-word{display:inline}.lv-ring{width:20px;height:20px}.lv-ring b{width:15px;height:15px;font-size:.64rem}
+.bottom-left{left:var(--edge-l);bottom:var(--edge-b);width:var(--side);flex-direction:row;align-items:flex-end;gap:4px;flex-wrap:wrap}
+.bottom-left .hero-btn{width:38px;height:38px}.hero-face{font-size:1rem}.ability-btn{width:34px;height:34px}.ability-btn .ability-name{display:none}.ability-btn .ability-icon{font-size:.95rem}
+.bottom-left .round.small{width:26px;height:26px;font-size:.8rem}
+.toast,.boss-bar:not([hidden])~.toast{left:var(--edge-l);top:calc(var(--edge-t) + 104px);bottom:auto;transform:none;width:var(--side);max-width:none;border-radius:8px;padding:3px 6px;font-size:.62rem;line-height:1.25;text-align:left;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+.toast.show{transform:none}
+.boss-bar:not([hidden])~.toast{top:calc(var(--edge-t) + 164px);-webkit-line-clamp:3}
+.boss-bar{left:var(--edge-l);top:calc(var(--edge-t) + 104px);transform:none;width:var(--side);align-items:stretch}
+.boss-bar #bossName{font-size:.62rem;white-space:normal;text-align:center;padding:1px 4px;border-radius:6px}
+.boss-bar .boss-tag{font-size:.58rem;padding:1px 4px}
+/* Right gutter: menu buttons on top, the wave preview chip, then the hand of cards at the bottom. */
+.top-right{display:grid;grid-template-columns:repeat(2,auto);gap:4px;top:var(--edge-t);right:var(--edge-r)}
+.top-right .round{width:30px;height:30px}.top-right .round .ico{width:16px;height:16px}
+.wave-peek{position:fixed;top:calc(var(--edge-t) + 72px)!important;left:auto!important;right:var(--edge-r);max-width:var(--side);max-height:calc(100dvh - var(--edge-t) - var(--edge-b) - 80px);font-size:.7rem;z-index:7}
+.wave-peek-head{font-size:.6rem;padding:4px 7px}.wave-peek li{grid-template-columns:18px 1fr auto;column-gap:4px}.wave-peek li img{width:18px;height:18px}
+.spell-tray{right:var(--edge-r);bottom:var(--edge-b);width:var(--side);max-width:none;align-items:stretch;gap:2px}
+.hand{display:grid;grid-template-columns:repeat(2,min(calc((var(--side) - 4px) / 2),var(--cw)));justify-content:end;align-items:end;gap:4px;direction:rtl;
+ max-height:calc(100dvh - var(--edge-t) - var(--edge-b) - 104px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;padding:3px}
+.hand::-webkit-scrollbar{display:none}
+.hand:has(.spell:nth-child(5)){grid-template-columns:repeat(3,min(calc((var(--side) - 8px) / 3),var(--cw)))}
+.hand .spell{width:auto;direction:ltr;padding:2px;border-radius:6px}.hand .spell strong{display:none}.hand .spell em{font-size:.56rem;padding:0 3px;white-space:nowrap;max-width:100%;overflow:hidden}
+.hand .spell[aria-pressed=true]{transform:none;box-shadow:0 0 0 2px #f2cf6b,0 0 10px #f2cf6b99}
+#zones{font-size:.52rem;text-align:center;padding:0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* A chosen card or an open build ring shows its details in the left gutter, in place of the commander row. */
+.card-tip,.ring .ring-info{position:fixed;left:var(--edge-l)!important;right:auto!important;top:auto!important;bottom:var(--edge-b)!important;transform:none!important;width:var(--side);max-width:none;z-index:8;
+ max-height:calc(100dvh - var(--edge-t) - var(--edge-b) - 104px);overflow-y:auto;overscroll-behavior:contain}
+.card-tip{padding:5px 6px}.card-tip strong{font-size:.7rem;display:block;line-height:1.2}
+#castHint{font-size:.62rem;margin:3px 0 4px;max-height:none;overflow:visible}
+.card-actions{display:grid;grid-template-columns:1fr 1fr;gap:3px}.card-actions button{min-height:26px;font-size:.66rem;padding:2px 4px}.card-actions #castInstant{grid-column:1/-1}
+.ring .ring-info{font-size:.62rem;padding:3px;text-align:left}.ring-info strong{font-size:.68rem}.ring-info .info-art{height:34px;padding-top:22px}.ring-info .type-line{font-size:.56rem;padding:1px 5px}.ring-info .type-line:not(:empty)~span{padding:2px 5px}
+.game-shell:has(#cardTip:not([hidden])) :is(.bottom-left,.toast),.game-shell:has(#ring:not([hidden])) :is(.bottom-left,.toast){visibility:hidden}
+.ring::before{width:calc(var(--rs) * 3.1);height:calc(var(--rs) * 3.1)}
+.ring-items .price{font-size:.56rem;bottom:-8px}
+.ring-close{width:26px;height:26px;margin:-13px}
+.tutorial{max-width:min(210px,40vw);font-size:.7rem;padding:5px 9px;border-radius:9px}.tutorial-step{font-size:.56rem}.tutorial button{margin-top:3px;min-height:20px;font-size:.62rem}
+.wave-banner{min-width:0;padding:6px 24px}.wave-banner strong{font-size:1.5rem}.wave-banner span{font-size:.75rem}
+}
+/* Very short sideways screens (Safari with its tab bar showing): trim the title logo so Play Gauntlet sits on screen. */
+@media (orientation:landscape) and (max-height:360px){
+ .title-card{align-items:start}.title-crest{display:none}#titleName{font-size:1.7rem}.title-ribbon{margin-top:0}
+ .player-level{font-size:.7rem}.title-actions button.big{min-height:40px;font-size:.95rem}
+}
