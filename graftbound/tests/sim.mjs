@@ -19,7 +19,7 @@ export const POLICIES = {
   summoner: (run, c) => c.kind === 'creature' ? (SUMMON_TRAITS.has(c.trait) ? 30 : 0) + graftRating(c, run.evo) * 0.6 : c.category === 'summon' ? 14 : ({ damage: 5, area: 5 }[c.category] || 2),
   flyDeath: (run, c) => c.kind === 'creature' ? (c.keywords.flying ? 6 : 0) + (c.keywords.deathtouch ? 6 : 0) + c.power + c.toughness : 1,
 };
-export function simulateRun(seed, { policy = 'greedy', smarterSpells = false } = {}) {
+export function simulateRun(seed, { policy = 'greedy', smarterSpells = false, onBattle = null } = {}) {
   const run = newRun({ seed, tutorial: false });
   const score = POLICIES[policy]; let steps = 0; const log = { battles: 0, turns: 0, taken: 0, bossWins: 0 };
   while (run.phase !== 'won' && run.phase !== 'lost' && steps++ < 60) {
@@ -39,6 +39,7 @@ export function simulateRun(seed, { policy = 'greedy', smarterSpells = false } =
     }
     if (run.phase === 'battle') {
       const boss = run.battle.nodeType === 'boss';
+      if (onBattle) onBattle(structuredClone(run.battle), { seed, policy, act: run.act, node: run.current });
       botPlay(run.battle, 60, { smarterSpells }); if (run.battle.phase === 'player') run.battle.phase = 'lost';
       (log.per ||= []).push({ act: run.act, type: run.battle.nodeType, name: run.battle.name, startHp: run.hp, won: run.battle.phase === 'won', enemyDamage: run.battle.stats.enemyHealthDamage || 0, maxHp: run.battle.units.find(u => u.hero)?.maxHp || 1, turns: run.battle.turn, threat: run.battle.worldThreat || 0, reinforced: run.battle.reinforced || 0 });
       log.battles++; log.turns += run.battle.turn; log.taken += run.battle.stats.damageTaken; if (boss && run.battle.phase === 'won') log.bossWins++;
