@@ -78,7 +78,7 @@ test("fixed-seed combat has identical outcomes after checkpoints across maps and
   let h=null;
   for(let t=0;t<380;t++){
    g.step();if(t===117){const saved=JSON.parse(JSON.stringify(g.snapshot()));h=createEngine(1,mode,map);assert.ok(h.restore(saved),map+" restore");}
-   if(h)h.step();
+   else if(h)h.step();
   }
   // h was resumed after g's step at checkpoint: h must advance from the same tick, not one extra tick.
   assert.equal(h.state.tick,g.state.tick+1,map+" replay offset");
