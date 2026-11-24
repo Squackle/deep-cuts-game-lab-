@@ -25,7 +25,7 @@ export function validateScenario(p){
  const ids=[...units,...stack,...hand,...lands,...enchantments].map(x=>x.id);
  say(ids.length<=48,'preview object budget');say(colors.every(c=>(p.mana?.[c]??0)<=20),'preview mana budget');
  for(const x of enchantments)say(x.card==='Impact Tremors'&&['player','opponent'].includes(x.controller)&&x.zone==='battlefield','unsupported enchantment snapshot');
- if(p.combat){const a=units.find(u=>u.id===p.combat.attackerId),b=units.find(u=>u.id===p.combat.blockerId);say(!!a&&a.controller===p.activeActor&&(!p.combat.blockerId||!!b&&b.controller!==a.controller),'invalid declared combat');say(!p.combat.resolved,'combat must start unresolved');}
+ if(p.combat){const a=units.find(u=>u.id===p.combat.attackerId),b=units.find(u=>u.id===p.combat.blockerId);say(!!a&&a.controller===p.activeActor&&(!p.combat.blockerId||!!b&&b.controller!==a.controller),'invalid declared combat');say(!p.combat.resolved,'combat must start unresolved');say([a,b].filter(Boolean).every(u=>['War Mammoth','Ambush Viper','Savannah Lions','Grizzly Bears','Hill Giant','Centaur Courser','Silvercoat Lion','Runeclaw Bear'].includes(u.card)),'unsupported combat characteristics');}
  for(const l of lands){say(!!LANDS[l.card],`unknown land ${l.card}`);say(l.controller==='player',`only player lands are supported`);say(l.tapped===undefined||typeof l.tapped==='boolean',`invalid tapped flag`);}say(ids.every(validId)&&unique(ids),'duplicate or bad object ids');
  for(const u of units){say(!!CARDS[u.card]&&isCreature(u.card),`unknown creature ${u.card}`);say(['player','opponent'].includes(u.controller),'bad unit controller');say(!u.zone||u.zone==='battlefield','bad starting zone');}
  for(const x of stack){say(!!CARDS[x.card],`unknown stack card ${x.card}`);say(['player','opponent'].includes(x.controller),'bad stack controller');say(!isCreature(x.card)||x.spell===true,'creature abilities need explicit support');}
@@ -146,7 +146,7 @@ export function activate(s0,actionId,targetId=null,genericSpend=null){if(!legalA
 export function labelTarget(s,id){if(id==='player')return'you';if(id==='opponent')return'opponent';return s.units.find(u=>u.id===id)?.card || s.stack.find(x=>x.id===id)?.card ||id;}
 function deal(s,item,target,amount){
  if(amount<=0)return;
- const prevented=s.preventedSpellDamage?.[item.id];
+ const prevented=Object.hasOwn(s.preventedSpellDamage||{},item.id)?s.preventedSpellDamage[item.id]:null;
  if(prevented){s.life[prevented]+=amount;s.log.push(`Hallow prevents ${amount} damage from ${item.card}.`);return;}
  if(target==='player'||target==='opponent')s.life[target]-=amount;else s.units.find(u=>u.id===target).damage+=amount;
  s.log.push(`${item.card} deals ${amount} damage to ${labelTarget(s,target)}.`);
@@ -165,7 +165,7 @@ function resolve(s,item){const c=CARDS[item.card],target=item.targetId;
  case 'ward':{let count=0;for(const u of s.units)if(u.zone==='battlefield'&&u.controller===item.controller){u.indestructible=true;count++}s.log.push(`Selfless Spirit's ability resolved after its source left: ${count} creature(s) gain indestructible.`);break;}
  case 'intervention':{let count=0;for(const u of s.units)if(u.zone==='battlefield'&&u.controller===item.controller){u.indestructible=true;u.hexproof=true;count++}s.log.push(`Heroic Intervention: ${count} permanent(s) gain hexproof and indestructible.`);break;}
  case 'damage':deal(s,item,target,c.amount);break;
- case 'preventSpellDamage':{s.preventedSpellDamage??={};s.preventedSpellDamage[target]=item.controller;s.log.push(`Hallow shields against all damage from ${labelTarget(s,target)} this turn.`);break;}
+ case 'preventSpellDamage':{s.preventedSpellDamage={...s.preventedSpellDamage,[target]:item.controller};s.log.push(`Hallow shields against all damage from ${labelTarget(s,target)} this turn.`);break;}
  case 'sacGain':{s.life[item.controller]+=c.amount;s.log.push(`${item.card}'s sacrificed ability resolves: ${item.controller} gains ${c.amount} life.`);break;}
  case 'heal':s.life[target]+=c.amount;s.log.push(`Healing Salve: ${labelTarget(s,target)} gains ${c.amount} life.`);break;
  case 'counter':{let idx=s.stack.findIndex(x=>x.id===target);if(idx>=0){const x=s.stack[idx];if(CARDS[x.card]?.uncounterable){s.log.push(`${x.card} cannot be countered by ${item.card}.`);}else{s.stack.splice(idx,1);s.log.push(`${item.card} counters ${x.card}.`);}}break;}

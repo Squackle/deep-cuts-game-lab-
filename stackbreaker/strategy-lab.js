@@ -3,11 +3,15 @@
 import replacementBoards from './data/replacement-candidates.json' with {type:'json'};
 import {STRATEGY_TRIALS,referenceSubsetEvidence} from './src/strategy-trials.js';
 import {CARDS,LANDS} from './src/cards.js';
-import {createGame,tapLand,activate,pass,legalActions,legalTargets,labelTarget,
- creaturePower,creatureToughness,paymentOptions} from './src/engine.js';
+import * as legacy from './src/engine.js';
+import * as preview from './src/rules-preview-engine.js';
+import {RULES_PREVIEW_BOARDS} from './src/rules-preview-boards.js';
 const $=id=>document.getElementById(id);
-const replacementPreview=new URLSearchParams(location.search).get('pack')==='replacement-review';
-const trials=replacementPreview?replacementBoards:STRATEGY_TRIALS;
+const pack=new URLSearchParams(location.search).get('pack');
+const replacementPreview=pack==='replacement-review',rulesPreview=pack==='rules-preview';
+const trials=rulesPreview?RULES_PREVIEW_BOARDS:replacementPreview?replacementBoards:STRATEGY_TRIALS;
+const {createGame,tapLand,activate,pass,legalActions,legalTargets,labelTarget,creaturePower,creatureToughness,paymentOptions}=rulesPreview?preview:legacy;
+if(rulesPreview){$('packHeading').textContent='RULES PREVIEW';$('packIntro').textContent='Versioned, unranked rules rehearsal: spell/trigger distinction, damage prevention and declared one-blocker combat. The opponent always passes. No full Magic combat system or saved scores.';}
 if(replacementPreview){$('packHeading').textContent='REPLACEMENT REVIEW';$('packIntro').textContent='Two unranked proposals only. Original campaign boards and scores are unchanged.';}
 const node=(tag,text,cls='')=>{const e=document.createElement(tag);if(cls)e.className=cls;
  if(text!==undefined)e.textContent=String(text);return e;};
@@ -51,11 +55,13 @@ function render(){
  const done=state.status!=='playing';
  const o=$('objective');o.replaceChildren();
  o.append(node('p',objectiveText(p)),node('p','Your life: '+state.life.player+' · Opponent: '+state.life.opponent));
+ if(state.combat)o.append(node('p','Declared attacker: '+labelTarget(state,state.combat.attackerId)+' · Blocker: '+(state.combat.blockerId?labelTarget(state,state.combat.blockerId):'none')+(state.combat.resolved?' · damage resolved':'')));
+ if(state.enchantments?.length)o.append(node('p','Enchantments: '+state.enchantments.map(x=>x.card+' ('+x.controller+')').join(' · ')));
  const st=$('stack');st.replaceChildren();
  const stackBox=node('div',undefined,'items');
  if(!state.stack.length)stackBox.append(node('p','Stack is empty.'));
  for(const [i,x] of [...state.stack].reverse().entries()){
-  const box=item((i===0?'TOP: ':'')+x.card,
+  const box=item((i===0?'TOP: ':'')+x.card+(x.spell===false?' · ability':''),
    x.targetId?'Target: '+labelTarget(state,x.targetId):'No target');cardDetail(box,x.card);stackBox.append(box);
  }st.append(stackBox);
  const creatures=$('units');creatures.replaceChildren();
@@ -117,6 +123,7 @@ function render(){
  $('pool').textContent='Mana: '+Object.entries(state.mana).filter(([,n])=>n>0)
   .map(([c,n])=>c+' × '+n).join(' · ').replace(/^$/,'empty');
  $('pass').disabled=done;
+ $('pass').textContent=state.stack.length?'PASS / RESOLVE TOP':state.combat&&!state.combat.resolved?'PASS / COMBAT DAMAGE':'PASS / FINISH WINDOW';
  $('restart').disabled=false;
  $('undo').disabled=history.length===0;
  const log=$('actionLog');log.replaceChildren(...state.log.slice(-8).map(line=>node('li',line)));
@@ -125,7 +132,7 @@ function render(){
  $('retryTrial').hidden=state.status==='playing';
  if(done){
   $('outcomeTitle').textContent=state.status==='won'?'TRIAL SOLVED':'TRY ANOTHER LINE';
-  const evidence=referenceSubsetEvidence(p);
+  const evidence=rulesPreview?{status:'not-applicable'}:referenceSubsetEvidence(p);
   const comparison=evidence.status==='verified-subset'
    ?' Supplied line: '+evidence.referenceResponses+' responses. A legal ordered subset uses '+
      evidence.shortestReferenceSubset+'; this is not a proof of global minimum.':'';
