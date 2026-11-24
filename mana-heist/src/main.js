@@ -35,8 +35,11 @@ import {diverseFor} from "./mana-variety-puzzles.js";
 import {certifyRemix,REMIX_KEY,REMIXED_IDS,validateRemixBests} from "./certified-remixes.js";
 import {DECISION_LADDER} from "./decision-ladder.js";
 import replacementBoards from "./replacement-candidates.js";
-const replacementReview=new URLSearchParams(location.search).get("pack")==="replacement-review";
-const decisionBoards=replacementReview?replacementBoards:DECISION_LADDER;
+import {PHYSICAL_PREVIEW_BOARDS,CANDIDATE_SAVE_KEY,readCandidateProgress,recordCandidateWin} from "./physical-campaign-preview.js";
+const pack=new URLSearchParams(location.search).get("pack");
+const replacementReview=pack==="replacement-review",physicalPreview=pack==="physical-campaign";
+const decisionBoards=physicalPreview?PHYSICAL_PREVIEW_BOARDS:replacementReview?replacementBoards:DECISION_LADDER;
+let candidateProgress={};if(physicalPreview){try{candidateProgress=readCandidateProgress(localStorage.getItem(CANDIDATE_SAVE_KEY));}catch{}}
 import {evaluateVault} from "./difficulty-metrics.js";
 import {mountSage} from "./sage-ui.js";
 import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
@@ -381,18 +384,18 @@ function renderLearn(){
  });
  trials.append(head,list);root.append(trials);
  const decisions=document.createElement("section");decisions.className="learn-group";
- const heading=document.createElement("h3");heading.textContent=replacementReview?"REPLACEMENT REVIEW · "+decisionBoards.length+" PROPOSALS":"DECISION LAB · "+decisionBoards.length+" SAMPLE VAULTS";
- const description=document.createElement("p");description.textContent=replacementReview?"Unscored proposals for repetitive campaign boards. No historical level, score or progress is replaced.":"From color matching to interlocking resource decisions. Unscored practice; difficulty order awaits player calibration. Your campaign and lesson saves are unchanged.";
+ const heading=document.createElement("h3");heading.textContent=physicalPreview?"PHYSICAL LIBRARY · "+decisionBoards.length+" AFFECTED BOARDS":replacementReview?"REPLACEMENT REVIEW · "+decisionBoards.length+" PROPOSALS":"DECISION LAB · "+decisionBoards.length+" SAMPLE VAULTS";
+ const description=document.createElement("p");description.textContent=physicalPreview?"Versioned rehearsal. New practice results use a separate local record; historical medals remain unchanged.":replacementReview?"Unscored proposals for repetitive campaign boards. No historical level, score or progress is replaced.":"From color matching to interlocking resource decisions. Unscored practice; difficulty order awaits player calibration. Your campaign and lesson saves are unchanged.";
  const picks=document.createElement("div");picks.className="learn-exercises";
  decisionBoards.forEach((p,i)=>{
   const button=document.createElement("button");button.type="button";button.className="learn-exercise";button.dataset.decisionIndex=String(i);
   const number=document.createElement("span");number.className="learn-number";number.textContent="D"+(i+1);
   const copy=document.createElement("span");copy.className="learn-exercise-copy";
-  const name=document.createElement("strong");name.textContent=p.title;
+  const name=document.createElement("strong");name.textContent=p.title+(physicalPreview&&candidateProgress[p.sourceId]?" · Preview completed":"");
   const detail=document.createElement("small");detail.textContent=p.decision.focus;
   copy.append(name,detail);button.append(number,copy);picks.append(button);
  });
- const packLink=document.createElement("a");packLink.href=replacementReview?"./":"./?pack=replacement-review";packLink.textContent=replacementReview?"Return to seven strategy trials":"Review two proposed campaign replacements (unscored)";decisions.append(heading,description,picks,packLink);root.append(decisions);
+ const packLink=document.createElement("a");packLink.href=replacementReview||physicalPreview?"./":"./?pack=replacement-review";packLink.textContent=replacementReview||physicalPreview?"Return to seven strategy trials":"Review proposed campaign replacements (unscored)";const physicalLink=document.createElement("a");physicalLink.href="./?pack=physical-campaign";physicalLink.textContent="Rehearse all affected physical-library boards";decisions.append(heading,description,picks,packLink,physicalLink);root.append(decisions);
 }
 function showModePanels(){
  const learn=mode==="learn",heist=mode==="heist";
@@ -506,7 +509,7 @@ function perform(action,{automatic=false}={}){
   closePlaytest("win");
   magnifier.hide();
   if(decisionIndex!==null){
-   message("Decision vault opened. Unscored practice; no campaign or lesson save was changed.");
+   if(physicalPreview){try{candidateProgress=recordCandidateWin(candidateProgress,level,history.map(frame=>frame.action));localStorage.setItem(CANDIDATE_SAVE_KEY,JSON.stringify(candidateProgress));message("Physical preview completed. Separate rehearsal result saved.");}catch{message("Physical preview completed; rehearsal result not saved.");}}else message("Decision vault opened. Unscored practice; no campaign or lesson save was changed.");
   }else if(trialIndex!==null){
    const proof=proofs.get(level.id),record={turn:state.turn,spentLife:state.spentLife,actions:state.actions,
     stars:medal(level,state,proof)};
@@ -695,7 +698,7 @@ function render(pendingId=null){
  el("returnMap").textContent=mode==="learn"?(decisionIndex!==null?"← DECISIONS":trialIndex!==null?"← TRIALS":"← LESSONS"):"← MAP";
  el("toggleGuide").textContent=decisionIndex!==null?"WARD PLAN":mode==="learn"&&trialIndex===null?"✧ LESSON NOTES":"ⓘ GUIDE";
  el("chapterName").textContent=level.chapter;
- el("difficulty").textContent=["INITIATE","ROOKIE","TACTICIAN","EXPERT","MASTERMIND"][level.rank-1];
+ el("difficulty").textContent=physicalPreview&&decisionIndex!==null?"PHYSICAL PREVIEW":["INITIATE","ROOKIE","TACTICIAN","EXPERT","MASTERMIND"][level.rank-1];
  const ritesInGraveyard=state.graveyard.filter(id=>getCard(level,id)?.name==="Rite of Flame").length;
  const opponentInfo=level.opponentTappedLands?"OPPONENT · "+level.opponentTappedLands+" TAPPED LANDS":"";
  const paletteInfo=level.opponentLandColors?.length?"OPPONENT LAND COLORS · "+level.opponentLandColors.join(" / "):"";
@@ -869,7 +872,7 @@ function load(i,enter=false){
  cardInspector.hide({restore:false});
  lastCardId=null;selectedHandId=null;
  landDrag?.cancel();
- if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(mode==="learn"&&!isLearnLevel(i)))return false;
+ if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(mode==="learn"&&decisionIndex===null&&!isLearnLevel(i)))return false;
  document.body.classList.toggle("is-decision-lab",decisionIndex!==null);
  index=i;world=chapterIndex(index);
  level=decisionIndex!==null?decisionBoards[decisionIndex]:trialIndex!==null?BONUS_TRIALS[trialIndex]:mode==="learn"?LEARN_LEVELS[index]:LEVELS[index];state=initial(level);history=[];selectedMessage="";
