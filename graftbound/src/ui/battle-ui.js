@@ -6,6 +6,7 @@ import { TACTICS } from '../data/tactics.js';
 import { getLegalPlayerActions, shouldAutoEnd } from '../engine/legal.js';
 import { describeTile, pathWarning } from '../engine/describe.js';
 import { bossPhaseOf, bossPhaseName } from '../engine/ai.js';
+import { tacticalThreat, slimeEndStepWarning } from './tactical-threats.js';
 import { castBlockReason, spellCost, rangeLabel, formatSpellText } from '../engine/spells.js';
 import { reachable, pathTo, key, unitAt, T, tileAt } from '../core/grid.js';
 import { ENEMIES } from '../data/enemies.js';
@@ -221,8 +222,9 @@ export class BattleUI {
     let intent = '';
     if (it && this.s.phase === 'player') {
       const ic = { attack: ICON.sword, spit: ICON.spit, hex: ICON.stun, harpoon: ICON.hook, aim: ICON.aim, fire: ICON.aim, slam: ICON.slam, summon: ICON.summon, support: ICON.shield, guard: ICON.guard, stunned: ICON.stun, move: ICON.move }[it.kind] || ICON.move;
+      const threat = tacticalThreat(this.s, it);
       const cls = it.kind === 'fire' || it.kind === 'slam' ? 'locked' : (it.damage ? 'threat' : 'calm');
-      intent = `<div class="intent ${cls}" title="${esc(this.intentText(it))}">${ic}${it.damage ? `<b>${it.damage}</b>` : ''}${it.extra ? `<span class="xtra">+${ICON.sword}${it.extra}</span>` : ''}${it.poison ? `<span class="psn">${ICON.poison}${it.poison}</span>` : ''}${it.weaken ? `<span class="wk">−${it.weaken}⚔</span>` : ''}</div>`;
+      intent = `<div class="intent ${cls}" title="${esc(this.intentText(it))}">${ic}${it.damage ? `<b>${it.damage}${threat.hits > 1 ? '×' + threat.hits : ''}</b>` : ''}${it.extra ? `<span class="xtra">+${ICON.sword}${it.extra}</span>` : ''}${it.poison ? `<span class="psn">${ICON.poison}${it.poison}</span>` : ''}${it.weaken ? `<span class="wk">−${it.weaken}⚔</span>` : ''}</div>`;
     }
     const u = this.s.units.find(x => x.uid === uid);
     const armor = u && u.keywords && u.keywords.armor ? `<span class="st ar">▣${u.keywords.armor}</span>` : '';
@@ -236,12 +238,13 @@ export class BattleUI {
   intentText(it) {
     const tgt = it.target && this.s.units.find(u => u.uid === it.target);
     const who = tgt && !tgt.hero ? ' your ' + tgt.name : ' you';
-    return (({ attack: `Will strike${who} for ${it.damage}`, spit: `Will spit for ${it.damage} and poison ${it.poison}`, hex: `Will curse you: ${it.damage} damage and −${it.weaken} power on your next turn`,
+    const threat = tacticalThreat(this.s, it);
+    return (({ attack: `Plans to strike${who} for ${it.damage}${threat.hits > 1 ? ' per hit' : ''}`, spit: `Will spit for ${it.damage} and poison ${it.poison}`, hex: `Will curse you: ${it.damage} damage and −${it.weaken} power on your next turn`,
       harpoon: `Harpoon: ${it.damage} damage${it.ground ? ' and Grounds you (no flying next turn)' : ''}`, aim: 'Will take aim along a line', fire: `Fires ${it.damage} along the red line`,
       slam: `${it.damage} to every red tile${it.extra ? ` (and strikes for ${it.extra} if adjacent)` : ''}`, summon: 'Will summon reinforcements', smash: 'Will smash through the rock (uses its whole turn)', support: 'Will empower its Saprolings', guard: 'Will shield adjacent allies', stunned: 'Stunned — loses its next action' })[it.kind] || 'Will move')
       + (it.quick ? ` · then a quick shot for ${it.quick.damage} at ${(t => !t || t.hero ? 'you' : 'your ' + t.name)(this.s.units.find(u => u.uid === it.quick.target))}` : '')
       + (it.guarded ? ` · Blocks ${it.guarded}` : '') + (it.silence ? ` · Silences your ${getCard(it.silence).name} next turn` : '')
-      + (it.redact ? ` · Redaction: your ${KEYWORDS[it.redact].name} is suppressed during your next turn (it returns after)` : '') + (it.briars ? ' · Briars will sprout around you (fire burns them)' : '') + (it.mirror ? ` · Will copy your ${KEYWORDS[it.mirror].name}` : '');
+      + (it.redact ? ` · Redaction: your ${KEYWORDS[it.redact].name} is suppressed during your next turn (it returns after)` : '') + (it.briars ? ' · Briars will sprout around you (fire burns them)' : '') + (it.mirror ? ` · Will copy your ${KEYWORDS[it.mirror].name}` : '') + (threat.notes.length ? ' · ' + threat.notes.join(' · ') : '');
   }
   renderHUD() {
     const s = this.s; const p = player(s); const d = this.disp.get(p.uid) || { hp: p.hp, maxHp: p.maxHp, shield: 0 };
@@ -272,6 +275,9 @@ export class BattleUI {
     this.renderStances(s);
     const skill=$('graftPowers'), options=comboActiveOptions(s);
     if(skill){skill.hidden=!options.length&&!s.traits?.includes('skeleton');skill.disabled=this.busy||s.phase!=='player'||hasComboChoices(s)||!options.length;skill.textContent='✦';skill.setAttribute('aria-label',`Open ${options.length} available Graft Powers`);skill.title=`Graft Powers (${options.length})`;  if(!options.length&&s.traits?.includes('skeleton'))skill.title=reassembleReason(s)||'Reassemble available';}
+    const slimeWarning = slimeEndStepWarning(s);
+    $('endTurn').title = slimeWarning;
+    $('endTurn').setAttribute('aria-label', slimeWarning ? 'End turn. ' + slimeWarning : 'End turn');
     $('endTurn').disabled = this.busy || s.phase !== 'player';
     $('endTurn').classList.toggle('glow', s.phase === 'player' && !this.busy && !getLegalPlayerActions(s).any);
   }
@@ -459,7 +465,7 @@ export class BattleUI {
     const tiles = [];
     const danger = this.intents.flatMap(i => (i.kind === 'fire' || i.kind === 'slam') ? i.tiles : []);
     this.scene.setDanger(danger); this.scene.setHazard(s.phase === 'player' ? hazardPreview(s) : []);
-    if (danger.length) this.app.hint('danger', 'Red tiles will be struck on the enemy turn. Step out of them — foes standing there get hit too.');
+    if (danger.length) this.app.hint('danger', 'Red tiles indicate incoming attacks. Leave the marked tiles; arrows stop at the first opposing creature, while some area attacks also hit foes.');
     if (hazardPreview(s).length) this.app.hint('rift', 'Violet rifts pulse for 3 damage at the end of this round. Do not end your turn on them.');
     for (const v of this.scene.units.values()) v.outline = 0;
     if (this.busy || s.phase !== 'player') { this.scene.setOverlay(this.cursorTiles([])); return; }
