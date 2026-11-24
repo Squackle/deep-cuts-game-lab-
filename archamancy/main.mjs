@@ -82,6 +82,9 @@ document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&
   if(kind==="beast")return t?.tier>=3&&t.branch==="A"?"Reach: Beast Pack attacks and blocks flyers; its damage remains physical.":"Ground troops cannot hit flyers or physical-immune enemies. Beast Pack gains Reach at Tier III.";
   if(kind==="thorn")return t?.tier>=3&&t.branch==="B"?"Ground only. Venom Thicket poison bypasses physical immunity over time; its initial attack remains physical.":"Ground only. Physical immunity blocks direct damage. Choose Venom Thicket at Tier III for armor-piercing poison.";
   if(kind==="pyre")return "Ground only; physical-immune enemies ignore blasts.";
+  if(kind==="judgment")return t?.tier>=3&&t.branch==="A"?"Hits flyers; full armor penetration, including physical immunity.":"Hits flyers; Titan Slayer at Tier III pierces physical immunity, Crown of Arrows specializes in multiple targets.";
+  if(kind==="hex")return "Hits flyers and reveals shroud; curses increase damage taken.";
+  if(kind==="grove")return "Mana generation only. Invest in road defense before expanding your economy.";
   if(kind==="arcanum")return t?.tier>=3&&t.branch==="A"?"Hits fliers; Deep Freeze reveals shrouded enemies in range.":"Hits fliers; Deep Freeze at Tier III reveals shrouded enemies.";
   if(kind==="mirror")return t?.tier>=3&&t.branch==="A"?"Hits fliers; physical echoes prioritize magic-immune targets.":"Hits fliers; Endless Reflections at Tier III can hit magic-immune enemies.";
   if(kind==="storm")return "Hits flyers; magic-immune enemies resist its lightning.";
@@ -89,7 +92,7 @@ document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&
  }
  function towerPlacementHint(p,d,t=null){
   if(!p||!d)return "";
-  if(d.kind==="troops")return game.map.tunnel.length?"Mountain tunnel: ground enemies cannot be blocked inside; set the rally outside.":"";
+  if(d.kind==="troops"){const hints=[];if(game.map.tunnel.length)hints.push("Mountain tunnel: ground enemies cannot be blocked inside; set the rally outside.");if(game.map.entrances.length>1)hints.push("Use a shared-road rally to cover both approaches.");if(t&&game.state.wave>=Math.max(3,(t.builtWave||0)+2)&&!t.damage&&!(t.blockTicks>0))hints.push("No recorded combat contribution yet; check this rally point against the active road.");return hints.join(" ");}
   if(!AIMED.includes(d.kind))return "";
   const r=d.range+(p.bonus==="height"?30:0)+(t?game.bonus(t,"range"):0);
   let exposed=0,hidden=0;
