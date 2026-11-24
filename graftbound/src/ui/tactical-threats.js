@@ -10,7 +10,9 @@ export function tacticalThreat(s, intent) {
  const hits=intent.kind==='attack'&&foe.keywords?.doubleStrike&&!foe.auras?.includes('mtg:pacifism')?2:1;
  if(hits===2)notes.push('Double Strike: up to two hits; shield is shared across both');
  if(foe.auras?.includes('mtg:pacifism')&&intent.kind==='attack')notes.push('Pacifism prevents this attack');
- if(foe.defId==='alpha')notes.push('May create a Wolf at the enemy end step if its side cast no spell');
+ if(foe.defId==='alpha')notes.push('Nightpack Ambusher may create a Wolf at the enemy end step if its side cast no spell');
+ if(foe.defId==='tortoise')notes.push('Dauntless Escort can sacrifice itself to protect other enemies from lethal damage this turn');
+ if(foe.defId==='hexer'&&!foe.spellUsed)notes.push('Blightcaster can cast One with the Wind on an ally and apply −2/−2 to your hero');
  if(foe.defId==='arasta')notes.push('Your instant or sorcery casts can create enemy Spiders');
  if(foe.defId==='toxrill')notes.push('Slime: −1/−1 at each end step, twice per complete round while Toxrill lives');
  if(foe.boss&&s.phase==='player'){
