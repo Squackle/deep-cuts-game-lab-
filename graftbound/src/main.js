@@ -110,7 +110,8 @@ class App {
       const options = this.graphicsOptions();
       this.fixedGraphicsOverride = !adaptiveEnabled({ ...options, preference: 'auto', hidden: false });
       if (!adaptiveEnabled({ ...options, hidden: false })) { this.autoDowngraded = null; this.fpsS = []; }
-      const quality = this.pickQuality(); if (this.scene.r.qName !== quality) this.scene.setQuality(quality);
+      const quality = this.pickQuality();
+      if (!this.qualityInitialized || this.scene.r.qName !== quality) { this.scene.setQuality(quality); this.qualityInitialized = true; }
       this.scene.speed = this.animFactor(); this.scene.ambientOn = this.meta.settings.ambient !== false;
     }
   }
