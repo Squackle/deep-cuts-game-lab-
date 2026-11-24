@@ -150,17 +150,25 @@ export class BattleUI {
         v.hover = u.defId === 'golemFly' && u.keywords?.flying ? 0.14 : 0;
         v.style = { ...(v.style || {}), flying: !!(u.defId === 'golemFly' && u.keywords?.flying), armored: true };
       }
-      { const key = friend ? tokenKey : ENEMIES[u.defId].sprite, img = this.app.assets.images[key];   // v1.7.0 wolf coats / pack leader
-        const coat = LEADER_KEYS.has(key) ? LEADER_COAT : WOLF_KEYS.has(key) ? wolfCoatFor(this.run?.seed || 0, u.uid, THEME_BIOME[this.scene?.theme] || 'temperate') : null;
-        if (coat && coat.hue != null && img) this.scene.setUnitTexture(u.uid, recoatSheet(img, coat, key)); }
-      if (friend && tokenKey === 'mtg_friendlySoldier') {
-        const src=this.app.assets.images.mtg_friendlySoldier, mask=this.app.assets.images['mtg_friendlySoldier:skinMask'];
-        this.scene.setUnitTexture(u.uid,composeAllyAttachments(recolorSkin(src,mask,skinToneForSeed(this.run.seed,u.uid)),v.fw,u.equipment||[],u.auras||[]));
-      }
+      const base = this.unitAttachmentBase(u.uid, v.key);
+      if (base && (base !== this.app.assets.images[v.key] || u.equipment?.length || u.auras?.length))
+        this.scene.setUnitTexture(u.uid, this.composeUnitAttachments(base, v, u));
     }
     if(u.auras?.length) this.applyAuraLight(u);
     const el = document.createElement('div'); el.className = 'ulabel ' + (u.side === 'player' ? 'player' : 'enemy'); $('labels').appendChild(el); this.labels.set(u.uid, el);
     return v;
+  }
+  // One deterministic source path for initial load and attachment repaint.
+  unitAttachmentBase(uid, key) {
+    const base = this.app.assets.images[key]; if (!base) return null;
+    if (key === 'mtg_friendlySoldier') return recolorSkin(base, this.app.assets.images[key + ':skinMask'], skinToneForSeed(this.run.seed, uid));
+    const coat = LEADER_KEYS.has(key) ? LEADER_COAT : WOLF_KEYS.has(key) ? wolfCoatFor(this.run?.seed || 0, uid, THEME_BIOME[this.scene?.theme] || 'temperate') : null;
+    return coat && coat.hue != null ? recoatSheet(base, coat, key) : base;
+  }
+  composeUnitAttachments(base, v, unit) {
+    const meta = this.app.assets.manifest.sprites[v.key], manifest = this.app.assets.manifest;
+    return composeAllyAttachments(base, v.fw, unit.equipment || [], unit.auras || [], meta.cols || manifest.cols,
+      { height: v.fh, views: meta.views || manifest.views, animations: meta.anims || manifest.anims });
   }
   /** Repaint the exact unit that changed, never silently update only the hero.
    * Cosmetic transitions are derived from saved battle state; no gameplay RNG. */
@@ -171,9 +179,8 @@ export class BattleUI {
       const app=deriveAppearance(this.run.evo,visualForRun(this.run));
       { const bm=this.app.assets.manifest.sprites.blank; this.scene.setUnitTexture(uid,composeEquippedSheet(this.app.assets,app,unit.equipment||[],unit.auras||[]),visualScale('blank',bm,bm.bounds,{heroSize:app.size})); }
     }else{
-      let base=this.app.assets.images[v.key];if(!base)return;
-      if(v.key==='mtg_friendlySoldier')base=recolorSkin(base,this.app.assets.images['mtg_friendlySoldier:skinMask'],skinToneForSeed(this.run.seed,uid));
-      this.scene.setUnitTexture(uid,composeAllyAttachments(base,v.fw,unit.equipment||[],unit.auras||[],this.app.assets.manifest.cols));
+      const base = this.unitAttachmentBase(uid, v.key); if (!base) return;
+      this.scene.setUnitTexture(uid, this.composeUnitAttachments(base, v, unit));
     }
     this.applyAuraLight(unit);
   }
