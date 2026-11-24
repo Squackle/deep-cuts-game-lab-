@@ -6,6 +6,7 @@ import { rewardCards, resolveCard } from '../cards/catalog.js';
 import { graftRating, creatureBudget, spellMaxCost } from './power.js';
 
 export const MAX_SPELL_LEVEL = 3;
+export const maxSpellLevel=id=>resolveCard(id)?.fixedLevel?1:MAX_SPELL_LEVEL;
 /** v0.8 Spell Primer: an affordable, category-diverse, spells-only choice (deterministic per seed). */
 export const PRIMER_CATEGORIES = ['damage', 'protection', 'healing', 'weaken', 'disable', 'enhance', 'area', 'summon'];
 export function primerPack(seed, { spellbook = [] } = {}) {
@@ -21,15 +22,17 @@ export function primerPack(seed, { spellbook = [] } = {}) {
 const NO_EVO = { power: 0, toughness: 0, keywords: {} };
 
 /** Eligible pack contents for a campaign step / tier / build. */
-export function cardPool({ spellbook = [], noRares = false, step = 0, tier = 'battle', evo = NO_EVO } = {}) {
+export function cardPool({ spellbook = [], noRares = false, step = 0, tier = 'battle', evo = NO_EVO, equipmentInventory=[], actualTier=tier } = {}) {
   const budget = creatureBudget(step, tier), maxCost = spellMaxCost(step, tier);
   return rewardCards().filter(c => {
     if (noRares && (c.rarity === 'rare' || c.rarity === 'mythic')) return false;
+    if(c.pilot&&(equipmentInventory.includes(c.id)||(evo.absorbed||[]).some(a=>a.cardId===c.id)))return false;
+    if(c.id==='mtg:verdant-force')return (tier==='boss'&&actualTier==='boss'&&step>=15&&step<16)||(tier==='elite'&&actualTier==='elite'&&step>=20);
     if (c.kind === 'equipment') return step >= 3 && (tier === 'elite' || tier === 'boss' || step >= 9) && c.cost <= maxCost + 1;
     if (c.kind === 'aura') return step >= 2 && c.cost <= maxCost;
     if (c.kind === 'spell') {
       if (c.cost > maxCost) return false;
-      const e = spellbook.find(s => s.id === c.id); if (e && e.level >= MAX_SPELL_LEVEL) return false;
+      const e = spellbook.find(s => s.id === c.id); if (e && e.level >= maxSpellLevel(c.id)) return false;
       return true;
     }
     return graftRating(c, evo) <= budget;
@@ -61,7 +64,7 @@ export function rarityFirstPick(rng,cards,table=RARITY_TABLE.battle,minimum='com
 export function generatePack(seed, { tier = 'battle', forced = [], step = 0, evo = NO_EVO, creaturesOnly = false, only = null, minSpells = 1, ...poolOpts } = {}) {
   const rng = makeRng(seed);
   if (creaturesOnly) only = 'creature';
-  const pool = cardPool({ ...poolOpts, step, tier, evo }).filter(c => !only || c.kind === only);
+  const pool = cardPool({ ...poolOpts, step, tier, evo, actualTier:creaturesOnly||only==='creature'?'exchange':poolOpts.actualTier||tier }).filter(c => !only || c.kind === only);
   const table = rarityWeights(step,tier);
   const picked = forced.map(resolveCard).filter(c => c && c.reference);
   const strong = c => c.kind === 'creature' ? graftRating(c,evo)>=creatureBudget(step,tier)-3 : c.cost>=2;

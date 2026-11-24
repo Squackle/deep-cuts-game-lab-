@@ -1,3 +1,4 @@
+import { maxSpellLevel } from '../engine/rewards.js';
 // Menu, intro, act interludes, map, booster, Wayshrine, sheet, settings and summary screens (DOM).
 import { RARITY } from '../data/cards.js';
 import { resolveCard as getCard, rewardCards } from '../cards/catalog.js';
@@ -494,7 +495,7 @@ export function shrineScreen(app) {
       m.addEventListener('click', ev => { const s = ev.target.closest('[data-sev]'); if (s) { app.closeModal(); res({ choice: c, arg: +s.dataset.sev }); } });
     } else if (c === 'inscribe') {
       const m = app.openModal(`<h2>Inscription Altar</h2><p>Empower one spell by a level.</p>
-        <div class="release">${run.spellbook.filter(s => s.level < 3).map(s => `<button type="button" class="btn" data-sp="${esc(s.id)}">${esc(getCard(s.id).name)} <small>Lv ${s.level} → ${s.level + 1}</small><span class="upgrade-sub">${esc(formatSpellText(s.id, s.level, runStats(run).arcane))} → ${esc(formatSpellText(s.id, s.level + 1, runStats(run).arcane))}</span></button>`).join('')}</div>
+        <div class="release">${run.spellbook.filter(s => s.level < maxSpellLevel(s.id)).map(s => `<button type="button" class="btn" data-sp="${esc(s.id)}">${esc(getCard(s.id).name)} <small>Lv ${s.level} → ${s.level + 1}</small><span class="upgrade-sub">${esc(formatSpellText(s.id, s.level, runStats(run).arcane))} → ${esc(formatSpellText(s.id, s.level + 1, runStats(run).arcane))}</span></button>`).join('')}</div>
         <div class="modal-actions"><button type="button" class="btn" data-close>Back</button></div>`);
       m.addEventListener('click', ev => { const s = ev.target.closest('[data-sp]'); if (s) { app.closeModal(); res({ choice: c, arg: s.dataset.sp }); } });
     } else res({ choice: c });
@@ -678,7 +679,7 @@ export function spellbookModal(app) {
       const entry = pages[page], c = getCard(entry.id);
       m.querySelector('#book-left').innerHTML = `<small>Folio ${page + 1}</small><h3>${esc(c.name)}</h3><div class="book-art">${cardHTML(entry.id, { level:entry.level,arcane:st.arcane,uid:'folio'+page })}</div>`;
       m.querySelector('#book-right').innerHTML = `<small>${esc(c.color)} magic · Level ${entry.level}</small><h3>${esc(c.name)}</h3><p class="book-cost">${ICON.gem}${c.cost} GRAFTBOUND mana · ${esc(rangeLabel(entry.id,entry.level))} · ${esc(TARGET[c.target])}</p>
-        <p class="book-effect">${esc(formatSpellText(entry.id,entry.level,st.arcane))}</p><h4>Inscription level</h4><p>Level ${entry.level} ${entry.level < 3 ? `· Next level: ${esc(formatSpellText(entry.id,entry.level+1,st.arcane))}` : '· Mastered'}</p>
+        <p class="book-effect">${esc(formatSpellText(entry.id,entry.level,st.arcane))}</p><h4>Inscription level</h4><p>Level ${entry.level} ${entry.level < maxSpellLevel(entry.id) ? `· Next level: ${esc(formatSpellText(entry.id,entry.level+1,st.arcane))}` : '· Mastered'}</p>
         <p class="book-rule">${esc(c.adaptationNote || 'GRAFTBOUND adaptation, not official Magic rules.')}</p><p class="small book-equip-message">${c.kind==='aura'?'One-level Aura · expires after the next completed encounter':'Persistent learned spell · shuffled into each encounter deck'}</p><p class="book-equip-message" aria-live="polite"></p>`;
     }
     m.querySelector('#book-loadout-count').textContent = `Combat library: ${run.spellbook.length} cards · maximum hand size ${handCapacity(run)} · draw 3 initially then 1 each turn. Every learned spell enters the encounter library; Auras expire after one encounter.`;
