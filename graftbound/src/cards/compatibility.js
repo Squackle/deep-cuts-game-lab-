@@ -38,10 +38,10 @@ export function isReviewedAbilityWord(name, word) {
  *  v0.5 costs were raised because spells now reach the whole battlefield. */
 const PILOT_NAMES=new Set(['Essence Warden','Bloodthirsty Aerialist','Marauding Blight-Priest','Kessig Flamebreather','Welcoming Vampire','Verdant Force','Opt','Village Rites','Sleep','Harmonize','Skullclamp','Shadowspear']);
 export const SPELL_ADAPTATIONS = {
-  'Opt': {effect:'pilot_scry',template:'page_draw',cost:1,vfx:'divination',target:'self',text:'Scry 1, then draw one card.',note:'Inspect the real top card; keep it or put it on the bottom, then draw. Opt cannot draw itself during resolution.'},
-  'Village Rites': {effect:'pilot_sacrifice',template:'page_draw',cost:1,vfx:'divination',target:'sacrifice',text:'Sacrifice a nonhero ally, then draw two cards.',note:'Choose a living summoned ally as an additional cost.'},
-  'Sleep': {effect:'pilot_sleep',template:'rootsnare',cost:4,vfx:'frost',target:'self',text:'Current enemies skip their next action. Each boss can be affected once per encounter.',note:'All current enemies are stunned; subsequent Sleep casts cannot stun the same boss.'},
-  'Harmonize': {effect:'pilot_draw',template:'page_draw',cost:4,vfx:'divination',target:'self',text:'Draw three cards.',note:'Draw from the encounter library, refilling from graveyard when empty.'},
+  'Opt': {effect:'pilot_scry',template:'page_draw',cost:1,vfx:'pilotOpt',target:'self',text:'Scry 1, then draw one card.',note:'Adapted: Inspect the real top card; keep it or put it on the bottom, then draw. Opt cannot draw itself during resolution.'},
+  'Village Rites': {effect:'pilot_sacrifice',template:'page_draw',cost:1,vfx:'pilotRites',target:'sacrifice',text:'Sacrifice a nonhero ally, then draw two cards.',note:'Adapted: Choose a living summoned ally as an additional cost.'},
+  'Sleep': {effect:'pilot_sleep',template:'rootsnare',cost:4,vfx:'pilotSleep',target:'self',text:'Current enemies skip their next action. Each boss can be affected once per encounter.',note:'Adapted: All current enemies are stunned; subsequent Sleep casts cannot stun the same boss.'},
+  'Harmonize': {effect:'pilot_draw',template:'page_draw',cost:4,vfx:'pilotHarmonize',target:'self',text:'Draw three cards.',note:'Adapted: Draw from the encounter library, refilling from graveyard when empty.'},
   'Shock':              { effect: 'ember_dart', cost: 1, vfx: 'shock',      note: 'Adapted: 2 damage to one foe anywhere on the battlefield.' },
   'Lightning Bolt':     { effect: 'ember_dart', bonus: 1, cost: 2, vfx: 'lightningBolt', note: 'Adapted: 3 damage to one foe anywhere on the battlefield (costs 2 gems here).' },
   'Flame Slash':        { effect: 'ember_dart', bonus: 2, cost: 3, vfx: 'flameSlash',  note: 'Adapted: 4 damage to one foe (costs 3 gems here).' },

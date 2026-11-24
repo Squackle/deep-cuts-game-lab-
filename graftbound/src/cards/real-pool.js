@@ -135,7 +135,7 @@ export const REAL_CREATURES = [
   C('Bronze Sable', '{2}', 2, 'Artifact Creature — Sable', 2, 1, [], [], 'common'),
 ];
 export const REAL_SPELLS = [
-  S('Opt','{U}',1,'Instant',['U'],'common'),
+  {...S('Opt','{U}',1,'Instant',['U'],'common'),keywords:['Scry']},
   S('Village Rites','{B}',1,'Instant',['B'],'common'),
   S('Sleep','{2}{U}{U}',4,'Sorcery',['U'],'uncommon'),
   S('Harmonize','{2}{G}{G}',4,'Sorcery',['G'],'uncommon'),
