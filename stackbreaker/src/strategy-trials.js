@@ -1,8 +1,9 @@
-// Five opt-in, unranked decision workshops selected from tested authored cases.
+// Five adapted workshops and two new controlled comparison boards.
 // This does not edit any of the original 250 Classic IDs or Daily ranked manifest.
 // Reuses the same real stack engine; reference length is NOT a proven minimum.
 import original from '../data/scenarios.json' with {type:'json'};
 import expansion from '../data/campaign-expansion.json' with {type:'json'};
+import {RULES_VERSION} from './cards.js';
 import {commanderScenario} from './commander.js';
 import {createGame,tapLand,activate,autoplay,legalActions,legalTargets} from './engine.js';
 
@@ -25,7 +26,7 @@ const DESIGNS=Object.freeze([
   question:'Lethal damage to the opponent is not enough if your named creature does not survive.',
   lesson:'Track all objective conditions across priority windows; a fast win without the creature is still a loss.'}
 ]);
-export const STRATEGY_TRIALS=Object.freeze(DESIGNS.map((design,i)=>{
+const adapted=DESIGNS.map((design,i)=>{
  const ix=SOURCE.findIndex(p=>p.id===design.source);
  if(ix<0)throw Error('Missing original authored Stackbreaker case '+design.source);
  const source=commanderScenario(SOURCE[ix],ix);
@@ -33,7 +34,23 @@ export const STRATEGY_TRIALS=Object.freeze(DESIGNS.map((design,i)=>{
   title:design.title,intro:design.question,
   strategyFocus:design.focus,strategyLesson:design.lesson,sourceId:design.source,
   unranked:true,trialVersion:STRATEGY_TRIALS_VERSION};
-}));
+});
+function paymentTrial(n,title,mana,lesson){
+ return {id:'st-'+String(n).padStart(2,'0'),version:RULES_VERSION,title,tier:'Investigator',
+  intro:'Keep the Lion alive through Murder and Languish. Which response must answer each threat?',
+  hint:'Languish does not target. Counter it; use hexproof against Murder. Check what mana remains.',
+  explanation:lesson,strategyFocus:'Protect against two different threats',strategyLesson:lesson,
+  life:{player:20,opponent:20},mana,lands:[],units:[{id:'lion',card:'Savannah Lions',controller:'player'}],
+  activeActor:'opponent',opponentPolicy:'alwaysPass',
+  stack:[{id:'sweep',card:'Languish',controller:'opponent'},{id:'removal',card:'Murder',controller:'opponent',targetId:'lion'}],
+  hand:[{id:'counter',card:'Negate'},{id:'shield',card:'Blossoming Defense'}],
+  objective:{type:'keepUnit',unitId:'lion'},solution:[['counter','sweep'],['shield','lion']],
+  sourceId:null,unranked:true,trialVersion:STRATEGY_TRIALS_VERSION};
+}
+export const STRATEGY_TRIALS=Object.freeze([...adapted,
+ paymentTrial(6,'Two threats, spare green',{U:1,G:2},'Negate must counter Languish. Blossoming Defense stops Murder by making its target illegal. The second green mana is available even after paying Negate.'),
+ paymentTrial(7,'Two threats, no spare green',{U:1,G:1,C:1},'The same two responses suffice, but spending green on Negate first strands Blossoming Defense. Spend colorless on the generic cost, or cast the protection first. Hexproof cannot stop a non-targeting toughness reduction.')
+]);
 
 // Exercise all ordered subsets of the supplied reference line, not every
 // possible legal strategy. The result is an upper bound on response count,
