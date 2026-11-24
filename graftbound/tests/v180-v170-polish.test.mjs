@@ -13,7 +13,8 @@ const book = ids => ids.map(id => ({ id: 'mtg:' + id, level: 1 }));
 // #25 Mentor soft-lock
 test('#25 pending-choice modal is locked against backdrop/Escape and closeModal always re-prompts', () => {
   const m = src('src/main.js'), ui = src('src/ui/battle-ui.js');
-  assert.match(m, /if \(this\.modalLocked\(\) && !e\.target\.closest\('\[data-close\]'\)\) return;/);
+  // Mandatory choices cannot be dismissed even by a nested data-close control.
+  assert.match(m, /if \(this\.modalLocked\(\)\) return; if \(e\.target\.id === 'modal' \|\| e\.target\.closest\('\[data-close\]'\)\) this\.closeModal\(\);/);
   assert.match(m, /if \(!this\.modalLocked\(\)\) this\.closeModal\(\)/);
   assert.match(m, /setTimeout\(\(\) => this\.battle\.promptComboChoices\(\), 0\)/);
   assert.match(ui, /role=\\?"alertdialog\\?"[\s\S]{0,4000}?,'',\{locked:true\}\);/);
