@@ -322,3 +322,27 @@ for(const boss of LAIR_BOSSES)test("actual boss power then legal Lair victory: "
  assert.equal(replay.kills,1);
  witness(t,"lair-powered-"+boss.id,replay,best.path);
 });
+
+test("Brood Trail Round 3: one additional bounded full-arena search, no solver victory requirement",t=>{
+ const seed=31676,make=()=>newRun({mode:"classic",seed});
+ const {best,expanded}=search(make,{width:20,budget:1600,evaluate:r=>classicValue(r,{cautious:true}),bucketKey:classicBucket});
+ const {r,events}=replayClassic(make,best.path);
+ assert.equal(serial(r),serial(best.run),"bounded attempt must independently reproduce every legal action");
+ const atBudget={seed,expanded,searchActions:best.path.length,maxBody:r.body.length,orbs:r.brood,evolutions:r.evolutionsChosen,status:r.status,outcome:r.outcome||"search_limit"};
+ t.diagnostic("ROUND3_BOUNDED_SEARCH "+JSON.stringify(atBudget));
+ // If the search budget is exhausted, finish a normal legal trace. A failure
+ // to find a perfect clear is neither a forced game defeat nor a broken test.
+ for(let i=0;i<6500&&![ "won","over" ].includes(r.status);i++){
+  if(r.status==="draft"){
+   const c=r.draftOptions[0];events.push([r.runTicks,"choose",c]);
+   assert.equal(chooseMutation(r,c),true);
+  }else step(r);
+ }
+ assert.ok(["won","over"].includes(r.status),"bounded test must reach a genuine terminal outcome");
+ const expected={score:r.score,kills:r.kills,evolutionsChosen:r.evolutionsChosen,ticks:r.runTicks,outcome:r.outcome};
+ const verified=replayScore(seed,events,expected,"classic");
+ assert.equal(verified.ok,true,JSON.stringify(verified));
+ assert.equal(replayScore(seed,events,{...expected,score:expected.score+1},"classic").ok,false);
+ if(r.status==="won")assert.equal(r.outcome,ENDINGS.PERFECT_CLEAR);
+ t.diagnostic("ROUND3_BOUNDED_TERMINAL "+JSON.stringify({seed,searchBody:atBudget.maxBody,terminalBody:r.body.length,orbs:r.brood,evolutions:r.evolutionsChosen,ticks:r.runTicks,outcome:r.outcome,score:r.score,verified:true}));
+});
