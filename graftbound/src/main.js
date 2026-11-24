@@ -146,7 +146,10 @@ class App {
     $('hint').addEventListener('click', () => $('hint').classList.remove('show'));
     $('bigtext').addEventListener('click', () => { if (this.skipAbsorb) this.skipAbsorb(); });
     document.addEventListener('pointerdown', () => this.audio.unlock());
-    document.addEventListener('visibilitychange', () => { if (document.hidden && this.run) this.save(); });   // keep elapsed time across closes
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { this.battle.cancelAutoEnd(); if (this.run) this.save(); }
+      else if (this.mode === 'battle') this.battle.maybeAutoEnd();
+    });   // keep elapsed time across closes and never advance a hidden battle
     window.addEventListener('pagehide', () => { if (this.run) this.save(); });
     window.addEventListener('keydown', e => {
       const k = e.key.toLowerCase();
@@ -187,6 +190,7 @@ class App {
     }
   }
   openModal(html, cls = '', { locked = false } = {}) {
+    this.battle?.cancelAutoEnd();
     const m = $('modal');
     if (!this.modalOpen()) this.modalReturnFocus = document.activeElement;
     if (locked) m.dataset.locked = '1'; else delete m.dataset.locked;
@@ -205,7 +209,10 @@ class App {
     const opener = this.modalReturnFocus; this.modalReturnFocus = null;
     if (opener?.isConnected) opener.focus({ preventScroll: true });
     // v1.7.0 safety net: whatever closed it, an unresolved graft choice re-opens on the next tick (never a soft-lock).
-    if (this.battle && this.mode === 'battle') setTimeout(() => this.battle.promptComboChoices(), 0); }
+    if (this.battle && this.mode === 'battle') {
+      setTimeout(() => this.battle.promptComboChoices(), 0);
+      setTimeout(() => this.battle.maybeAutoEnd(), 0);
+    } }
   confirm(text, yes, fn) { const m = this.openModal(`<p class="confirm">${esc(text)}</p><div class="modal-actions"><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn danger" data-yes>${esc(yes)}</button></div>`); m.querySelector('[data-yes]').addEventListener('click', () => { this.closeModal(); fn(); }); }
   toast(html, kind = '') { const t = $('toast'); t.innerHTML = html; t.className = 'toast ' + kind; void t.offsetWidth; t.classList.add('show'); }
   status(text) { $('status').textContent = text; $('status').classList.toggle('show', !!text); }
