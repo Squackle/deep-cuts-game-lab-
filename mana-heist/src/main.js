@@ -371,7 +371,7 @@ function renderLearn(){
  });
  trials.append(head,list);root.append(trials);
  const decisions=document.createElement("section");decisions.className="learn-group";
- const heading=document.createElement("h3");heading.textContent="DECISION LAB · FIVE SAMPLE VAULTS";
+ const heading=document.createElement("h3");heading.textContent="DECISION LAB · "+DECISION_LADDER.length+" SAMPLE VAULTS";
  const description=document.createElement("p");description.textContent="From color matching to interlocking resource decisions. Unscored practice; difficulty order awaits player calibration. Your campaign and lesson saves are unchanged.";
  const picks=document.createElement("div");picks.className="learn-exercises";
  DECISION_LADDER.forEach((p,i)=>{
