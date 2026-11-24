@@ -199,7 +199,7 @@ export function resolveComboEvents(s,ev){
   const e=ev[i];if(e[STAMP])continue;
   if(++processed>MAX_EVENTS){ev.push({t:'graftTrigger',name:'Combo surge paused at engine safety limit',uid:player(s)?.uid});break;}
   Object.defineProperty(e,STAMP,{value:true,enumerable:false});
-  const hero=player(s);if(!alive(hero))continue;
+  const hero=player(s);if(!alive(hero)||s.victoryDeclared||s.phase==='lost')continue;
   if(e.t==='summon'){
    const u=s.units.find(x=>x.uid===e.uid);if(!u||u.hero)continue;
    if(owns(s,'soulWarden'))gainLife(s,ev,lv(s,'soulWarden').heal,'Soul Warden');

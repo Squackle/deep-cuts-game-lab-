@@ -159,9 +159,11 @@ export function sacrificeAlly(s,ev,u){
 /** State-based actions: creature with zero Toughness dies even without receiving damage.
  * This is required for printed -1/-1 counter and Aura interactions. */
 export function checkStateBasedDeath(s, ev, u) {
-  if (u && !u.deadResolved && (u.toughness <= 0 || u.hp <= 0)) { u.hp = 0; kill(s, ev, u); return true; }
+  if (u && !u.deadResolved && u.toughness <= 0) { u.hp = 0; kill(s, ev, u); return true; }
   return false;
 }
+/** Attachment modifiers may already have set HP to zero; never revive a dead bearer. */
+export function resolveAttachmentDeath(s,ev,u){if(u&&!u.deadResolved&&(u.hp<=0||u.toughness<=0)){u.hp=0;kill(s,ev,u);return true;}return false;}
 /** Damage pipeline: strike cap (bosses) -> armor (combat only) -> shield -> health.
  *  Only combat damage (strikes/counterblows) triggers Deathtouch and Lifelink; spells bypass armor. */
 export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hit', element = null, cause = null, lifelinkGroup = null } = {}) {

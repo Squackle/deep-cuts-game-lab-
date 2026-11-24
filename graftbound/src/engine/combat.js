@@ -4,7 +4,7 @@ import { reachable, pathTo, manhattan, lineOfSight, tileAt, T, key, DIRS } from 
 import { traitLevelsOf } from '../cards/graft-levels.js';
 import { makeRng } from '../core/rng.js';
 import { resolveCard as getCard } from '../cards/catalog.js';
-import { player, enemies, allies, alive, has, kv, heal, addShield, attackExchange, enterTiles, walkPath, dealDamage, smashRock, checkStateBasedDeath } from './abilities.js';
+import { player, enemies, allies, alive, has, kv, heal, addShield, attackExchange, enterTiles, walkPath, dealDamage, smashRock, resolveAttachmentDeath } from './abilities.js';
 import { spellTargets, castSpellEffect, castBlockReason, spellCost } from './spells.js';
 import { actEnemy, actAlly, spawnEnemy, previewIntent, announcePhase , spawnTokensAround, resolveToxrillEndStep, surgeAfterAct } from './ai.js';
 import { STARTING_NAME } from './evolution.js';
@@ -178,7 +178,7 @@ export function equipBattle(s,id,uid,slot=0) {
   }
   const manaEvent=spendMana(s,choice.cost);s.stats.actions++;s.stats.interactions++;
   const ev=[manaEvent,{t:'equipmentAttach',uid,id,slot,removed:replaced,amount:choice.cost}];
-  for(const u of before)if(u.hp<=0||u.toughness<=0)checkStateBasedDeath(s,ev,u);
+  for(const u of before)if(u.hp<=0||u.toughness<=0)resolveAttachmentDeath(s,ev,u);
   return finish(s,ev);
 }
 // ── v0.8 tactical stances: available to every creature, independent of card rewards ─────────────────────

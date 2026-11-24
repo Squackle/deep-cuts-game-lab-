@@ -27,7 +27,7 @@ export function cardPool({ spellbook = [], noRares = false, step = 0, tier = 'ba
   return rewardCards().filter(c => {
     if (noRares && (c.rarity === 'rare' || c.rarity === 'mythic')) return false;
     if(c.pilot&&(equipmentInventory.includes(c.id)||(evo.absorbed||[]).some(a=>a.cardId===c.id)))return false;
-    if(c.id==='mtg:verdant-force')return (tier==='boss'&&actualTier==='boss'&&step>=15&&step<16)||(tier==='elite'&&actualTier==='elite'&&step>=20);
+    if(c.id==='mtg:verdant-force')return (tier==='boss'&&actualTier==='boss'&&step>=15&&step<16)||(tier==='elite'&&actualTier==='elite'&&step>=18);
     if (c.kind === 'equipment') return step >= 3 && (tier === 'elite' || tier === 'boss' || step >= 9) && c.cost <= maxCost + 1;
     if (c.kind === 'aura') return step >= 2 && c.cost <= maxCost;
     if (c.kind === 'spell') {
