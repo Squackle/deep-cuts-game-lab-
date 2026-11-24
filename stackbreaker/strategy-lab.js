@@ -7,7 +7,7 @@ import {createGame,tapLand,activate,pass,legalActions,legalTargets,labelTarget,
 const $=id=>document.getElementById(id);
 const node=(tag,text,cls='')=>{const e=document.createElement(tag);if(cls)e.className=cls;
  if(text!==undefined)e.textContent=String(text);return e;};
-let index=0,state,notice='Tap your lands, select a response, then PASS to resolve the stack.';
+let index=0,state,history=[],notice='Tap your lands, select a response, then PASS to resolve the stack.';
 const selections=new Map(),payments=new Map();
 function objectiveText(p){
  const o=p.objective;
@@ -28,7 +28,7 @@ function item(title,detail,cls=''){
 }
 function setNotice(text){notice=text;$('notice').textContent=text;}
 function load(n){
- index=n;state=createGame(STRATEGY_TRIALS[index]);selections.clear();payments.clear();
+ index=n;state=createGame(STRATEGY_TRIALS[index]);history=[];selections.clear();payments.clear();
  $('hintText').hidden=true;
  setNotice('Tap mana sources, choose responses, and pass to resolve the stack. Nothing is ranked or saved.');
  render();
@@ -62,7 +62,7 @@ function render(){
  }creatures.append(unitBox);
  const lands=$('lands');lands.replaceChildren();
  const landBox=node('div',undefined,'items');
- if(!state.lands.length)landBox.append(node('p','No mana source needed.'));
+ if(!state.lands.length)landBox.append(node('p','No lands in this exercise. Check the starting mana pool.'));
  for(const l of state.lands){
   const card=LANDS[l.card],box=item(l.card,(l.tapped?'Tapped':'Untapped')+
    ' · Produces '+(card?.mana||'?'));
@@ -107,6 +107,8 @@ function render(){
   .map(([c,n])=>c+' × '+n).join(' · ').replace(/^$/,'empty');
  $('pass').disabled=done;
  $('restart').disabled=false;
+ $('undo').disabled=history.length===0;
+ const log=$('actionLog');log.replaceChildren(...state.log.slice(-8).map(line=>node('li',line)));
  const outcome=$('outcome');outcome.hidden=!done;
  if(done){
   $('outcomeTitle').textContent=state.status==='won'?'TRIAL SOLVED':'TRY ANOTHER LINE';
@@ -115,13 +117,13 @@ function render(){
    ?' Supplied line: '+evidence.referenceResponses+' responses. A legal ordered subset uses '+
      evidence.shortestReferenceSubset+'; this is not a proof of global minimum.':'';
   $('outcomeText').textContent=(state.status==='won'?p.strategyLesson:
-   'The full stack did not meet the objective. Restart and examine another line.')+comparison;
+   'The full stack did not meet the objective. '+p.strategyLesson+' Review the resolution log, then undo or restart.')+comparison;
  }
  $('notice').textContent=notice;
 }
 function act(fn){
  if(state.status!=='playing')return;
- try{const next=fn();if(next)state=next;setNotice(state.status==='playing'?
+ try{const next=fn();if(next){history.push(state);state=next;}setNotice(state.status==='playing'?
   'Action accepted. Reassess the top of the stack before passing.':
   state.status==='won'?'Objective achieved.':'Objective not met.');}
  catch(error){setNotice(error?.message||'That action is not legal.');}
@@ -155,6 +157,7 @@ $('hand').addEventListener('click',e=>{
  act(()=>activate(state,a.id,target,payment));
 });
 $('pass').addEventListener('click',()=>act(()=>pass(state)));
+$('undo').addEventListener('click',()=>{if(!history.length)return;state=history.pop();selections.clear();payments.clear();setNotice('Previous action undone. Reconsider the resources and targets.');render();});
 $('restart').addEventListener('click',()=>load(index));
 $('hint').addEventListener('click',()=>{
  const hint=$('hintText'),show=hint.hidden;hint.hidden=!show;
