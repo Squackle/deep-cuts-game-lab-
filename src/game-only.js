@@ -60,12 +60,23 @@ export function createGameOnlyMode({doc,win,root,button}){
    try{
     await root.requestFullscreen({navigationUI:"hide"});
     nativeWasActive=doc.fullscreenElement===root;
+    // A native request can resolve after the player has already left CSS mode.
+    if(!active&&nativeWasActive){
+     nativeWasActive=false;
+     try{await doc.exitFullscreen?.()}catch{}
+    }
    }catch{nativeWasActive=false}
   }
   return active;
  }
  function onFullscreenChange(){
-  if(doc.fullscreenElement===root){nativeWasActive=true;return}
+  if(doc.fullscreenElement===root){
+   if(!active){
+    try{const result=doc.exitFullscreen?.();result?.catch?.(()=>{})}catch{}
+    return;
+   }
+   nativeWasActive=true;return;
+  }
   // Browser/OS Escape or swipe may dismiss native fullscreen.
   if(active&&nativeWasActive)leave();
  }

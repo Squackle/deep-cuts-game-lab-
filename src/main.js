@@ -684,6 +684,8 @@ $("musicButton").addEventListener("click",()=>{
  announce(state.musicOn?(state.ctx?.state==="running"?TRACKS[soundtrack.trackId].name+" playing.":"Music enabled. Use a game control to allow desktop audio."):"Background music muted.");
 });
 document.addEventListener("keydown",event=>{
+ // Browser/OS shortcuts and IME composition must not become game actions.
+ if(event.ctrlKey||event.metaKey||event.altKey||event.isComposing)return;
  if(victoryVisible()){
   if(event.key==="Tab"){
    const options=[$("victoryPlayAgain"),$("victoryReturn"),$("victoryRewatch")];
@@ -708,6 +710,16 @@ document.addEventListener("keydown",event=>{
  if(["INPUT","TEXTAREA","SELECT"].includes(focus?.tagName))return;
  if(!event.repeat)wakeAudio();
  if(state.run.status==="draft"){
+  if(event.key==="Tab"){
+   const cards=Array.from($("mutationChoices").querySelectorAll("button"));
+   if(cards.length){
+    event.preventDefault();
+    const current=cards.indexOf(document.activeElement);
+    const next=event.shiftKey?(current<=0?cards.length-1:current-1):(current+1)%cards.length;
+    cards[next].focus({preventScroll:true});
+   }
+   return;
+  }
   const index=mutationSelectionIndex(event.key,event.repeat);
   if(index!==null){event.preventDefault();selectMutation(state.run.draftOptions[index]);}
   else if(Object.hasOwn(KEY_DIRECTIONS,event.key))event.preventDefault();
@@ -746,7 +758,7 @@ function swipeDirection(event){
  if(awaitingMutationResume?resumeMutationByKey(SWIPE_RESUME_KEYS[heading]):handleDirection(heading))pointer.triggered=true;
 }
 canvas.addEventListener("pointerdown",event=>{
- if(state.run.status!=="running"||state.pointer)return;
+ if(state.run.status!=="running"||bossGate.blocking||state.pointer||event.isPrimary===false||event.button!==0)return;
  if(event.cancelable&&event.pointerType==="touch")event.preventDefault();
  state.pointer={x:event.clientX,y:event.clientY,id:event.pointerId,triggered:false};
  try{canvas.setPointerCapture(event.pointerId)}catch{}
@@ -760,9 +772,11 @@ canvas.addEventListener("pointerup",event=>{
  swipeDirection(event); // Handles quick flicks without an intermediate move event.
  if(state.pointer?.id===event.pointerId)state.pointer=null;
 });
-canvas.addEventListener("pointercancel",event=>{
+function clearSwipePointer(event){
  if(state.pointer?.id===event.pointerId)state.pointer=null;
-});
+}
+canvas.addEventListener("pointercancel",clearSwipePointer);
+canvas.addEventListener("lostpointercapture",clearSwipePointer);
 document.addEventListener("visibilitychange",()=>{
  if(document.hidden){
   victoryFanfare.stop();

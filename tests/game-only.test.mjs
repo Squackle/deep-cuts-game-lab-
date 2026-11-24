@@ -87,3 +87,20 @@ test("game-only HTML/CSS retain streamlined solo gameplay and touch safeguards",
  assert.match(js,/createGameOnlyMode/);
  assert.match(js,/handleDirection/);
 });
+
+
+test("a delayed native fullscreen request cannot reopen Game Only after exit",async()=>{
+ const {controller:c,doc,root,button}=fakeDOM();
+ let resolveRequest;
+ root.requestFullscreen=()=>new Promise(resolve=>{resolveRequest=()=>{
+  doc.fullscreenElement=root;doc.emit("fullscreenchange");resolve();
+ }});
+ const entering=c.enter();
+ assert.equal(c.isActive(),true);
+ c.leave();resolveRequest();
+ assert.equal(await entering,false);
+ assert.equal(doc.fullscreenElement,null);
+ assert.equal(c.isActive(),false);
+ assert.equal(button["aria-pressed"],"false");
+ assert.equal(doc.body.classList.contains("game-only"),false);
+});
