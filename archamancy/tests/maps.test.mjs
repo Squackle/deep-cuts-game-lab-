@@ -137,7 +137,7 @@ test("Emberfall Caldera: vents erupt every 15 s, scorching ground enemies and tr
 });
 test("each later region ends in its own final boss at wave 25; the Lowlands keep Emrakul",()=>{
  const want={hollow:"tyrant",confluence:"lorthos",frostfen:"isu",pass:"kazuul",caldera:"infernotitan"};
- for(const [id,boss] of Object.entries(want)){const g=createEngine(1,"campaign",id),w=g.waveSpec(25);assert.ok(w.includes(boss+":1"),id);assert.ok(!w.some(x=>x.startsWith(boss==="tyrant"?"lorthos:":"tyrant:")),id);assert.deepEqual(g.waveSpec(24),createEngine(1,"campaign","hollow").waveSpec(24));}
+ for(const [id,boss] of Object.entries(want)){const g=createEngine(1,"campaign",id),w=g.waveSpec(25);assert.ok(w.includes(boss+":1"),id);assert.ok(!w.some(x=>x.startsWith(boss==="tyrant"?"lorthos:":"tyrant:")),id);if(id!=="confluence")assert.deepEqual(g.waveSpec(24),createEngine(1,"campaign","hollow").waveSpec(24));}
  const g=createEngine(1,"campaign","pass");assert.equal(g.types.kazuul.broodKind,"armored");assert.equal(g.types.lorthos.silenceCount,4);
 });
 function bossNear(map,kind,commander){const g=createEngine(1,"sandbox",map);assert.ok(g.command({type:"commander",id:commander}));g.command({type:"sandboxEnemy",enemy:kind,count:1});const e=g.state.enemies[0],cm=g.state.commander;e.speed=0;e.attack=0;e.progress=cm.progress+60;e.abilityAt=g.state.tick+1;return {g,e,cm};}
@@ -149,4 +149,15 @@ test("Inferno Titan scorches the commander for a third of its health but never k
  const {g,e,cm}=bossNear("caldera","infernotitan","talrand");cm.hp=cm.maxHp;for(let i=0;i<3;i++)g.step();assert.ok(e.blastAt>0);const before=cm.hp;
  while(e.blastAt)g.step();assert.ok(cm.hp<=before-Math.ceil(cm.maxHp/3)+Math.ceil(cm.maxHp*.2)&&cm.hp>=1,"scorched");
  cm.hp=2;e.abilityAt=g.state.tick;while(!e.blastAt)g.step();while(e.blastAt)g.step();assert.ok(cm.hp>=1&&!cm.dead);
+});
+test("The Confluence threads Mossbridge Trolls through waves 3, 13 and 24; The Hollow Road keeps the original lineup",()=>{
+ const c=createEngine(1,"campaign","confluence"),h=createEngine(1,"campaign","hollow");
+ const orig={3:"armored:7 raider:12",13:"raider:21 runner:9 armored:6 wing:6 mage:3 regen:2 golem:3",24:"raider:28 runner:15 armored:19 wing:15 mage:6 regen:4 stalker:8 warden:7 golem:6"};
+ const edits={3:"raider:13 armored:5 regen:1",13:"raider:18 runner:8 armored:5 wing:6 mage:3 regen:5 golem:3",24:"raider:28 runner:15 armored:15 wing:15 mage:6 regen:8 stalker:8 warden:7 golem:6"};
+ const hp=spec=>spec.reduce((t,x)=>{const [k,n]=x.split(":");return t+c.types[k].hp*Number(n);},0);
+ for(const n of [3,13,24]){assert.deepEqual(h.waveSpec(n),orig[n].split(" "),"hollow "+n);assert.deepEqual(c.waveSpec(n),edits[n].split(" "),"confluence "+n);
+  assert.ok(Math.abs(hp(c.waveSpec(n))/hp(h.waveSpec(n))-1)<.06,"wave "+n+" stays near its old health");}
+ const trolls=n=>Number(c.waveSpec(n).find(x=>x.startsWith("regen:")).split(":")[1]);assert.ok(trolls(3)<trolls(13)&&trolls(13)<trolls(24));
+ for(let n=1;n<=25;n++)if(![3,13,24].includes(n)&&n!==25)assert.deepEqual(c.waveSpec(n),h.waveSpec(n),"wave "+n+" unchanged");
+ assert.equal(c.waves.length,25);assert.ok(c.waveSpec(4).some(x=>x.startsWith("wing:")));assert.ok(c.waveSpec(25).includes("lorthos:1"));
 });
