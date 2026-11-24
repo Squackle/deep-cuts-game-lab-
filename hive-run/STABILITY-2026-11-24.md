@@ -33,3 +33,7 @@ Starting exact commit `a410e11c9666f7e51934999a89b5b978d720c21a` passed 291/291 
 ### Witness package and accessibility
 
 Captured ten actual legal action sequences from CI: five Lair wins, two full Hunt wins, one compact Classic win, two full-size Classic terminal runs. Added fixed-fixture tests, plus an independent fast replay procedure in [PLAYTESTING.md](PLAYTESTING.md). The original search passed on commit `5594126d2cce4980796c9042c4d3ce1396ddc469`; two static audio assertions failed due to changed statement order, not the simulations. The audio-stop ordering is restored. Shared frame timestamps avoid repeated clock/preference reads; reduced-motion now freezes pickup, hatchling and Red effect decorative motion while preserving real time for transient feedback and all gameplay timing. Exact-head re-verification required.
+
+### Additional gameplay verification
+
+At `325c3734010761f9ac36093fc32e1a13eda79799`, 314/314 Hive tests passed. Two complete Hunt campaigns, all five normal and powered Lair wins, a genuine 8×8 Classic perfect clear, multiple 18×22 terminal traces and a legal 6,000-tick run are now covered by fixed replay witnesses. The visible-state cycle planner reached 170 segments, not a full-size clear. All four cycle seeds reached the step limit without a rescue. No rule changes or balance conclusions based solely on solver choices. Cloudflare preview setting is `none`; exact-head preview verification is blocked by shared configuration, and browser rendering returned HTTP 429.

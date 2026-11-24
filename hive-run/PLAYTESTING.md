@@ -41,3 +41,11 @@ Retain the approved balance unless a reproducible defect warrants a separately v
 The powered-Lair search requires observing the real boss ability in play (executed Burrow Dash, active Brood Seal, Weaver web, active Rift Pulse or hatched Broodmother spider) before accepting a win. It keeps the normal search's capture strategy after satisfying that condition. No cooldowns, spawn locations or enemy positions are prepared.
 
 The separate `node --test tests/hive-classic-cycle.test.mjs` experiment uses a visible-state-only cyclic route planner with safe shortcuts and a free-space fallback for dynamic terrain. It attempts full-size clears on four seeds; it verifies actual terminal replays and reports outcomes and maximum length. Unlike beam search, it does not inspect speculative future seeded randomness. These are algorithm comparisons, not estimates of human difficulty. 
+
+### Powered-encounter and step-limit witnesses
+
+Exact source `325c3734010761f9ac36093fc32e1a13eda79799`, [CI run 45461813755](https://github.com/Squackle/deep-cuts-game-lab-/actions/runs/45461813755), passed 314/314. All five bosses activated a real power before legal capture victories (Stalker tick 77, Warden 83, Weaver 40, Guardian 43, Broodmother hatch 60). Four visible-state cycle runs survived 6,000 ticks without rescue, reaching 169, 153, 151 and 170 segments. The best run (seed 31676, 106 orbs, 21 evolutions, 10,600 score) is a fixed step-limit witness, not a victory. The fixture now includes 16 independent witnesses, including five powered bosses and this terminal run.
+
+### Deployment blocker
+
+Cloudflare Pages project `deep-cuts-game-lab` reports GitHub preview deployment setting `none`. Exact branch-head deployments remain queued/idle; the canonical Lab deployment of main `e7a7a4f8ac1508613136eb7f0f16824410273b83` is successful. Browser Rendering returned HTTP 429 on the attempted mobile inspection. Shared preview configuration requires the responsible infrastructure developer/owner; do not change it from the Hive lane or bypass the release gate. No production promotion.

@@ -8,11 +8,14 @@ const fixture=JSON.parse(readFileSync(new URL("./fixtures/hive-run-witnesses.jso
 const directions={u:"up",r:"right",d:"down",l:"left"};
 const expectedResult=r=>({score:r.score,kills:r.kills,evolutionsChosen:r.evolutionsChosen,ticks:r.runTicks,outcome:r.outcome});
 const allBosses=LAIR_BOSSES.map(b=>b.id).sort();
+const powerObservations={stalker:r=>r.encounter?.lastAbility?.type==="burrow",warden:r=>r.terrain.some(t=>t.kind==="seal"&&t.warningMs<=0),weaver:r=>Boolean(r.encounter?.webs?.length),guardian:r=>r.terrain.some(t=>t.kind==="rift"&&t.warningMs<=0),broodmother:r=>r.hatchlings.length>0};
 test("witness fixture pins the rules version and contains all required independent runs",()=>{
  assert.equal(fixture.format,1);assert.equal(fixture.rules,RULES_VERSION);
- assert.equal(fixture.witnesses.length,10);
- assert.equal(new Set(fixture.witnesses.map(w=>w.label)).size,10);
- assert.deepEqual(fixture.witnesses.filter(w=>w.lairBoss).map(w=>w.lairBoss).sort(),allBosses);
+ assert.equal(fixture.witnesses.length,16);
+ assert.equal(new Set(fixture.witnesses.map(w=>w.label)).size,16);
+ assert.deepEqual(fixture.witnesses.filter(w=>w.lairBoss&&!w.label.startsWith("lair-powered-")).map(w=>w.lairBoss).sort(),allBosses);
+ assert.deepEqual(fixture.witnesses.filter(w=>w.label.startsWith("lair-powered-")).map(w=>w.lairBoss).sort(),allBosses);
+ assert.equal(fixture.witnesses.filter(w=>w.expected.outcome===ENDINGS.STEP_LIMIT).length,1);
  assert.equal(fixture.witnesses.filter(w=>w.expected.outcome===ENDINGS.BROODMOTHER_DEFEATED).length,2);
  assert.equal(fixture.witnesses.filter(w=>w.expected.outcome===ENDINGS.PERFECT_CLEAR).length,1);
 });
@@ -21,7 +24,7 @@ for(const w of fixture.witnesses)test("fixed legal witness: "+w.label,t=>{
  const r=start(w.lairBoss?createLairRun(w.lairBoss):newRun({mode:w.mode,seed:w.seed,cols:w.cols,rows:w.rows}));
  assert.equal(r.seed,w.seed);
  const events=[],defeated=new Set(),started=new Set(),abilities=new Set(),offers={W:0,U:0,B:0,R:0,G:0};
- let maxBody=r.body.length,previousEncounter=null;
+ let maxBody=r.body.length,previousEncounter=null,firstPowerTick=null;
  for(const action of w.actions){
   assert.ok(!["won","over"].includes(r.status),"witness cannot continue after termination");
   if(Object.hasOwn(offers,action)){
@@ -35,6 +38,7 @@ for(const w of fixture.witnesses)test("fixed legal witness: "+w.label,t=>{
    step(r);if(w.lairBoss)completeLairRun(r);
   }
   maxBody=Math.max(maxBody,r.body.length);
+  if(w.lairBoss&&firstPowerTick===null&&powerObservations[w.lairBoss](r))firstPowerTick=r.runTicks;
   if(r.encounter){started.add(r.encounter.kind);if(r.encounter.lastAbility?.type)abilities.add(r.encounter.kind+":"+r.encounter.lastAbility.type)}
   if(r.lastEncounter?.type==="defeat"&&r.lastEncounter!==previousEncounter){defeated.add(r.lastEncounter.kind);previousEncounter=r.lastEncounter}
  }
@@ -46,6 +50,8 @@ for(const w of fixture.witnesses)test("fixed legal witness: "+w.label,t=>{
   assert.equal(r.bossWins,3);assert.equal(r.minibossWins,3);assert.equal(r.body.length,7);
  }
  if(w.lairBoss)assert.equal(r.lastEncounter.kind,w.lairBoss);
+ if(w.label.startsWith("lair-powered-"))assert.ok(firstPowerTick!==null,"real power must occur before victory");
+ if(w.expected.outcome===ENDINGS.STEP_LIMIT){assert.equal(r.runTicks,6000);assert.equal(r.status,"over");assert.equal(r.saves,0);assert.ok(maxBody>=150);assert.notEqual(r.outcome,ENDINGS.PERFECT_CLEAR)}
  if(w.expected.outcome===ENDINGS.PERFECT_CLEAR){
   const rocks=r.terrain.filter(t=>t.kind==="rock"&&t.lifeMs===null).map(t=>t.pos.x+","+t.pos.y);
   assert.equal(new Set([...r.body.map(p=>p.x+","+p.y),...rocks]).size,r.cols*r.rows);
@@ -59,5 +65,5 @@ for(const w of fixture.witnesses)test("fixed legal witness: "+w.label,t=>{
   assert.equal(replayScore(w.seed,events,{...w.expected,outcome:other},w.mode).ok,false);
  }
  const before=JSON.stringify(r);step(r);assert.equal(JSON.stringify(r),before);
- t.diagnostic(JSON.stringify({label:w.label,maxBody,defeated:[...defeated],abilities:[...abilities],offers,selected:r.mutations,saves:r.saves,outcome:r.outcome}));
+ t.diagnostic(JSON.stringify({label:w.label,maxBody,defeated:[...defeated],abilities:[...abilities],offers,selected:r.mutations,saves:r.saves,firstPowerTick,outcome:r.outcome}));
 });
