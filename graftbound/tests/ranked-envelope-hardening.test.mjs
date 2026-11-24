@@ -60,3 +60,35 @@ test('invalid actions cannot advance a run or checkpoint sequence', () => {
   assert.throws(() => applySegment(run, [invalid]), /Malformed or out-of-order/);
   assert.deepEqual(run, before);
 });
+
+test('checkpoint replay rejects mismatched challenge metadata before running an action', () => {
+  const run = startRanked();
+  for (const [key, value] of [
+    ['challengeId', 'missing'], ['revision', run.ranked.revision + 1],
+    ['revision', undefined], ['cardPoolVersion', 'old'],
+    ['scoringVersion', 'old'], ['replay', 999], ['rulesVersion', 'old'],
+  ]) {
+    const checkpoint = structuredClone(run);
+    checkpoint.ranked[key] = value;
+    const before = structuredClone(checkpoint);
+    assert.throws(() => applySegment(checkpoint, [{ seq: 0, type: 'end' }]),
+      /Unknown or retired challenge|Checkpoint metadata mismatch|Rules version mismatch/, key);
+    assert.deepEqual(checkpoint, before);
+  }
+  assert.throws(() => applySegment(null, [{ seq: 0, type: 'end' }]), /Not a ranked checkpoint/);
+  assert.throws(() => applySegment({}, [{ seq: 0, type: 'end' }]), /Not a ranked checkpoint/);
+});
+
+test('checkpoint segments cannot exceed the whole-replay decision budget', () => {
+  const run = startRanked();
+  for (const seq of [-1, 0.5, '0', 4000, 4001, Number.NaN]) {
+    const checkpoint = structuredClone(run);
+    checkpoint.ranked.seq = seq;
+    assert.throws(() => applySegment(checkpoint, [{ seq, type: 'end' }]), /Replay too long or invalid checkpoint sequence/);
+  }
+  run.ranked.seq = 3999;
+  assert.throws(() => applySegment(run, [{ seq: 3999, type: 'end' }, { seq: 4000, type: 'end' }]), /Replay too long or invalid checkpoint sequence/);
+  // At the boundary the ordinary action validation still decides legality.
+  assert.throws(() => applySegment(run, [{ seq: 3999, type: 'end' }]), /not allowed during map/);
+  assert.equal(run.ranked.seq, 3999);
+});
