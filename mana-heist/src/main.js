@@ -12,6 +12,7 @@ import {installFluidWard} from "./fluid-ward.js";
 import {PRELOADED_MIX_COUNT} from "./fluid-palette.js";
 import {chooseAutomaticCast} from "./auto-cast.js";
 import {manualCastOptions,popUndoFrame} from "./cast-controls.js";
+import {reservePresentation} from "./reserve-presentation.js";
 import {landPainting} from "./land-art.js";
 import {installLandDragging} from "./drag-lands.js";
 import {renderCardReferences,referenceFor} from "./card-references.js";
@@ -568,7 +569,7 @@ function tapLand(id){
  const card=getCard(level,id),possible=actions(level,state).filter(a=>(a.type==="tap"||a.type==="fetch"||a.type==="activate")&&a.id===id);
  if(card.kind==="fetch"){
   if(!possible.length)message("This fetch land has no legal target, or you cannot pay the life cost.",true);
-  else choices("SEARCH YOUR RESERVE","Sacrifice this fetch land and pay 1 life to choose a compatible land.",possible);
+  else choices("SEARCH YOUR RESERVE","Sacrifice this fetch land and pay 1 life to choose a compatible land."+(Array.isArray(state.libraryAvailable)?" Only remaining physical cards can be found.":" This legacy puzzle uses a simplified scenario reserve."),possible);
  }else if(possible.length===1)perform(possible[0]);
  else if(possible.length)choices("CHOOSE A MANA ABILITY",card.v2?"Each choice shows the exact output and any input payment.":"Tap "+card.name+" for one mana color.",possible);
  else message("This source is unavailable, or you cannot pay its activation cost or life payment.",true);
@@ -737,8 +738,9 @@ function render(pendingId=null){
  syncLandRows();
  el("handGuide").hidden=state.hand.length===0;
  el("hand").closest(".hand-card").classList.toggle("hand-empty",state.hand.length===0);
- el("libraryPanel").hidden=level.library.length===0;
- el("libraryPanel").textContent=level.library.length?"RESERVE / FETCH TARGETS: "+level.library.map(x=>CARDS[x.card].name).join(" · "):"";
+ const reserve=reservePresentation(level,state);
+ el("libraryPanel").hidden=!reserve.visible;
+ el("libraryPanel").textContent=reserve.visible?reserve.label+": "+(reserve.cards.map(x=>CARDS[x.card].name).join(" · ")||"empty"):"";
 
  chargeWard({pendingId});
  updateCastButton();
