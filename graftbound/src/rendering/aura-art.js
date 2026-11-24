@@ -7,14 +7,15 @@ export const auraColor=(ids)=>ids?.find(id=>COLORS[id])?COLORS[ids.find(id=>COLO
 function pixel(g,x,y,w,h,c){g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),Math.max(1,Math.round(w)),Math.max(1,Math.round(h)));}
 function line(g,x0,y0,x1,y1,c){let n=Math.ceil(Math.max(Math.abs(x1-x0),Math.abs(y1-y0)));for(let i=0;i<=n;i++){let t=i/Math.max(n,1);pixel(g,x0+(x1-x0)*t,y0+(y1-y0)*t,1,1,c);}}
 /** Supports 48,64,96px frames and arbitrary sprite atlas directions/rows. */
-export function composeAuraSheet(source,frame,auras=[],cols=4){
+export function composeAuraSheet(source,frame,auras=[],cols=4,height=frame){
  if(!auras?.some(a=>COLORS[a]))return source;
  const c=document.createElement('canvas');c.width=source.width;c.height=source.height;
  const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(source,0,0);
- const rows=Math.round(source.height/frame),scale=frame/64;
+ const rows=Math.floor(source.height/height),scale=frame/64;
+ cols=Math.min(cols,Math.floor(source.width/frame));
  for(let row=0;row<rows;row++)for(let f=0;f<cols;f++){
-  const x=f*frame,y=row*frame,phase=(f+row)%4;
-  g.save();g.translate(x,y);g.scale(scale,scale);
+  const x=f*frame,y=row*height,phase=(f+row)%4;
+  g.save();g.translate(x,y);g.scale(scale,height/64);
   for(const aura of auras){const col=COLORS[aura];if(!col)continue;
    if(aura==='mtg:gift-of-immortality'){
     for(let i=0;i<5;i++){const px=19+i*6,py=13+((i+phase)%3)*12;pixel(g,px,py,2,3,col);pixel(g,px-1,py+1,4,1,col);}
