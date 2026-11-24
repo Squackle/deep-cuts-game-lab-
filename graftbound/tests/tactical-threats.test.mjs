@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { arena } from './helpers.mjs';
 import { player,enemies,intents } from '../src/engine/combat.js';
-import { tacticalThreat,slimeEndStepWarning } from '../src/ui/tactical-threats.js';
+import { tacticalThreat,slimeEndStepWarning,slimeEndStepRisk } from '../src/ui/tactical-threats.js';
 
 test('multi-hit intent reports the per-hit danger without mutating state',()=>{
  const s=arena(['Pa.','...'],{a:'alpha'}),a=enemies(s)[0];
@@ -36,4 +36,12 @@ test('Gloam Coven uses real-card identities rather than legacy guardian and hexe
  assert.match(tacticalThreat(s,{uid:escort.uid,kind:'move'}).notes.join(' '),/lethal damage/);
  assert.match(tacticalThreat(s,{uid:hexer.uid,kind:'move'}).notes.join(' '),/−2\/−2/);
  hexer.spellUsed=true;assert.ok(!tacticalThreat(s,{uid:hexer.uid,kind:'move'}).notes.some(x=>x.includes('One with the Wind')));
+});
+
+test('slime warning uses post-expiration toughness rather than temporary growth',()=>{
+ const s=arena(['Pt.','...'],{t:'toxrill'}),hero=player(s);
+ hero.toughness=4;hero.statuses.temporaryToughness=3;
+ assert.equal(slimeEndStepRisk(s),1);
+ hero.toughness=5;assert.equal(slimeEndStepRisk(s),2);
+ hero.statuses.temporaryToughness=0;assert.equal(slimeEndStepRisk(s),0);
 });
