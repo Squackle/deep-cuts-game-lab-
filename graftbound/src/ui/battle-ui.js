@@ -86,6 +86,7 @@ export class BattleUI {
   }
   wait(ms) { return new Promise(r => setTimeout(r, ms / this.app.animFactor())); }
   async start(run, s, { fresh }) {
+    this.cancelAutoEnd(); this.autoEnds = 0;
     this.resetTileInspectLock();
     this._comboShowing=false;this.victoryPlayed=false;this.ending=false;this.cardAnimations.stop(); this.concealedDraws.clear();this.initialHandConcealed=!!fresh&&!!s.deck;this.run = run; this.s = s; this.spell = null; this.spellMode = null; this.hover = null; this.pendingTap = null;
     $('labels').innerHTML = ''; this.labels.clear(); this.disp.clear();
@@ -122,7 +123,7 @@ export class BattleUI {
     const duration=this.app.animFactor()>1.5?550:1000;overlay.style.setProperty('--gb-shuffle-ms',duration+'ms');
     try{await new Promise(res=>setTimeout(res,duration+50));}finally{overlay.remove();}
   }
-  stop() { this.resetTileInspectLock();this._comboShowing=false;this.cardAnimations.stop(); this.hideHandPreview(); $('hud').classList.add('hidden'); $('labels').innerHTML = ''; this.labels.clear(); this.s = null; }
+  stop() { this.cancelAutoEnd(); this.resetTileInspectLock();this._comboShowing=false;this.cardAnimations.stop(); this.hideHandPreview(); $('hud').classList.add('hidden'); $('labels').innerHTML = ''; this.labels.clear(); this.s = null; }
   addUnitView(u) {
     let v;
     if (u.hero) {
@@ -714,15 +715,26 @@ export class BattleUI {
       el.setAttribute?.('data-tile-pinned', `${t.x},${t.y}`);
     });
   }
+  cancelAutoEnd() {
+    if (this.autoEndTimer != null) clearTimeout(this.autoEndTimer);
+    this.autoEndTimer = null;
+    if (this.autoEnding) this.app.status('');
+    this.autoEnding = false;
+  }
+  canAutoEnd(s) {
+    return this.s === s && this.app.mode === 'battle' && !this.app.modalOpen() &&
+      !document.hidden && !this.ending &&
+      shouldAutoEnd(s, { busy: this.busy, targeting: !!this.spell, enabled: this.app.meta.settings.autoEnd !== false });
+  }
   maybeAutoEnd() {
     const s = this.s;
-    const enabled = this.app.meta.settings.autoEnd !== false;
-    if (this.autoEnding || !shouldAutoEnd(s, { busy: this.busy, targeting: !!this.spell, enabled })) return;
+    if (this.autoEnding || !this.canAutoEnd(s)) return;
     if ((this.autoEnds || 0) >= 25) return;   // safety valve: a long stun-lock never loops unattended
+    const turn = s.turn;
     this.autoEnding = true; this.app.status('No actions left — your turn ends');
-    setTimeout(async () => {
-      this.autoEnding = false;
-      if (!this.s || !shouldAutoEnd(this.s, { busy: this.busy, targeting: !!this.spell, enabled: this.app.meta.settings.autoEnd !== false })) { this.app.status(''); return; }
+    this.autoEndTimer = setTimeout(async () => {
+      this.autoEndTimer = null; this.autoEnding = false;
+      if (!this.canAutoEnd(s) || s.turn !== turn) { this.app.status(''); return; }
       this.autoEnds = (this.autoEnds || 0) + 1; await this.doEndTurn();
     }, 520 / Math.min(this.app.animFactor(), 10));
   }
@@ -858,7 +870,7 @@ export class BattleUI {
   async act(fn) {
     if (this.busy) return;
     if (this.inputClosed()) { this.audio.play('nope'); return; }
-    this.busy = true; this.pendingTap = null; this.showInspect(null); this.scene.setOverlay([]); this.syncDisp();
+    this.cancelAutoEnd(); this.busy = true; this.pendingTap = null; this.showInspect(null); this.scene.setOverlay([]); this.syncDisp();
     let ev;
     try { ev = await fn(); } catch (err) { this.busy = false; this.reject(err.message || 'Not allowed'); this.refresh(); this.maybeAutoEnd(); return; }
     // Keep newly drawn cards concealed until their flights from the library finish.
