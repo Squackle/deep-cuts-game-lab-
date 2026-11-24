@@ -316,7 +316,7 @@ hintReset.addEventListener("click",()=>resetHintLadder());
 hintReveal.addEventListener("click",()=>{
  syncHintLadder();
  const next=Math.min(3,hintStep+1);
- if(next===1){hintCopy.textContent=(decisionIndex!==null?level.decision.clue+" ":"")+hintConcept(level,state);}
+ if(next===1){hintCopy.textContent=hintConcept(level,state);if(decisionIndex!==null)hintCopy.textContent=level.decision.clue+" "+hintCopy.textContent;}
  else{
   let route={status:"inconclusive",actions:[]};
   try{route=legalContinuation(level,state,proofFor(level.id),{maxStates:12000});}
