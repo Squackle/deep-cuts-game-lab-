@@ -10,7 +10,7 @@ import { installReferenceSet } from '../src/cards/reference-set.js';
 
 installReferenceSet();
 test('seeded encounter and tactical planning matrix is reproducible and legal', () => {
-  let encounters = 0, plans = 0;
+  let encounters = 0, plans = 0, blinks = 0;
   for (let act = 0; act < ACTS.length; act++) {
     for (const tier of ['battle', 'elite', 'boss']) {
       for (let i = 1; i <= 12; i++) {
@@ -29,7 +29,15 @@ test('seeded encounter and tactical planning matrix is reproducible and legal', 
             assert.notEqual(tileAt(s, p.to.x, p.to.y), T.ROCK);
             assert.deepEqual(p.path[0], { x: foe.x, y: foe.y });
             assert.deepEqual(p.path.at(-1), p.to);
-            for (let j = 1; j < p.path.length; j++) assert.equal(manhattan(p.path[j - 1], p.path[j]), 1);
+            // Riftstalkers use an explicitly flagged teleport, not a walking path.
+            if (p.blink) {
+              assert.equal(foe.defId, 'riftstalker');
+              assert.equal(p.path.length, 2);
+              assert.ok(manhattan(p.to, s.units.find(u => u.hero)) === 1);
+              blinks++;
+            } else {
+              for (let j = 1; j < p.path.length; j++) assert.equal(manhattan(p.path[j - 1], p.path[j]), 1);
+            }
           }
           plans++;
         }
@@ -40,4 +48,6 @@ test('seeded encounter and tactical planning matrix is reproducible and legal', 
   }
   assert.equal(encounters, 108);
   assert.ok(plans > encounters);
+  assert.ok(blinks > 0, 'matrix must actually exercise teleport plans');
+  console.log('Encounter matrix:', encounters, 'encounters;', plans, 'plans;', blinks, 'teleports');
 });
