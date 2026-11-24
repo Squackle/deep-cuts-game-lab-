@@ -58,14 +58,35 @@ export function hintConcept(level,state){
  const scarcity=exact?" First identify a source for "+exact+".":" You may already have enough symbols; check whether you can legally pay the spell cost.";
  return "Ward "+(state.stage+1)+" needs "+(needed||"no mana")+"."+scarcity+general+turn;
 }
+// Render the actual verified payment, not just the spell's printed cost.
+function paymentText(state,spend){
+ const counts={};
+ if(Array.isArray(spend)){
+  for(const id of spend){
+   const unit=state.manaUnits?.find(u=>u.id===id);
+   if(!unit)continue;
+   const label=names[unit.color]||unit.color;
+   counts[label]=(counts[label]||0)+1;
+  }
+ }else{
+  for(const c of COLORS)if(spend?.[c])counts[names[c]]=spend[c];
+ }
+ return Object.entries(counts).map(([c,n])=>n+" "+c).join(" + ");
+}
 function line(level,state,a){
+ const payment=paymentText(state,a.spend);
+ const pay=payment?" by spending "+payment:"";
  if(a.type==="end")return "End the turn (untap sources; floating mana clears).";
- if(a.type==="cast")return "Cast “"+(level.stages[state.stage]?.name||"the ward spell")+"” using a legal mana payment.";
+ if(a.type==="cast")return "Cast “"+(level.stages[state.stage]?.name||"the ward spell")+"”"+(pay||" using a legal mana payment")+(a.untapId?"; untap "+getCard(level,a.untapId).name:"")+".";
  if(a.type==="play")return "Play "+getCard(level,a.id).name+(a.shock?" untapped, paying 2 life":a.returnId?" and return "+getCard(level,a.returnId).name:"")+".";
  if(a.type==="fetch")return "Sacrifice the fetch source to find "+getCard(level,a.targetId).name+(a.shock?", paying for its untapped entry":"")+".";
- if(a.type==="tap")return "Tap "+getCard(level,a.id).name+" for "+(a.output?.join(" + ")||a.color||"mana")+".";
- if(a.type==="activate")return "Activate "+getCard(level,a.id).name+" (mode "+(a.mode||"mana")+")"+(a.output?.length?" for "+a.output.join(" + "):"")+".";
- if(a.type==="ritual")return "Cast "+getCard(level,a.id).name+" for "+(a.output?.join(" + ")||"its effect")+".";
+ if(a.type==="tap"){
+  const result=reduce(level,state,a);
+  const produced=result.ok?COLORS.flatMap(c=>Array(Math.max(0,result.state.pool[c]-state.pool[c])).fill(c)):[];
+  return "Tap "+getCard(level,a.id).name+" for "+(produced.join(" + ")||a.color||"mana")+".";
+ }
+ if(a.type==="activate")return "Activate "+getCard(level,a.id).name+" (mode "+(a.mode||"mana")+")"+pay+(a.output?.length?" for "+a.output.join(" + "):"")+(a.untapTarget?"; untap "+getCard(level,a.untapTarget).name:"")+".";
+ if(a.type==="ritual")return "Cast "+getCard(level,a.id).name+pay+" for "+(a.output?.join(" + ")||"its effect")+".";
  return "Take the next legal action.";
 }
 export function hintInstruction(level,state,route,full=false){
