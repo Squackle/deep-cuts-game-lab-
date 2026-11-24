@@ -19,3 +19,9 @@ After rechecking open PRs, integrated ARCHEMANCY-only main commit `e7a7a4f8ac150
 ## Brood Trail growth search and presentation efficiency
 
 The legal-action search also supports Classic's changing body length, reachable free-space evaluation and tail access. Compact-board and default-arena search diagnostics report actual body size, collected orbs, evolutions and terminal outcome. These are bounded algorithms, not proofs that every seed can be cleared. A compact board is an engine test fixture, not a new public mode. The mutation HUD reuses identical badges instead of recreating them for every UI sync, and the reduced-motion media query is reused while remaining live. No simulation constants or shared infrastructure changed.
+
+### Verified evidence (2026-11-24)
+
+- Authentic compact-board seed 7919 reached `perfect_clear` from the initial seven segments with 62 distinct body cells and two permanent rock tiles covering all 64 tiles; 36 orbs, seven evolutions, 3,600 points and 208 legal search actions. Independent clean replay matched the complete game state. This known victory is now mandatory in CI.
+- Full 18×22 seed 7919 reached 154 segments, 97 orbs, 19 evolutions and 9,700 points; the natural terminal run ended in death at tick 1770. The replay verifier accepted the complete recorded input trace and rejected an altered score. This is a long-body stress regression, **not** a full-size victory or a balance sign-off.
+- Exact preceding commit `02b658f0ff608b0c64dd3ae73d08515468256abc`: 291/291 Hive tests passed ([Actions run](https://github.com/Squackle/deep-cuts-game-lab-/actions/runs/45453279155)). The final mandatory assertions require their own CI pass. Physical mobile/desktop acceptance and a successful exact-head deployment remain required before merge.

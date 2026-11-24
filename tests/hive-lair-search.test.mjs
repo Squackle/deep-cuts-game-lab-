@@ -186,24 +186,19 @@ function replayClassic(make,path){
  }
  return {r,events};
 }
-test("Brood Trail compact board: search for genuine board-fill victory",t=>{
- let won=false,maxBody=0;
- for(const seed of [7919,29,42,103]){
-  const make=()=>newRun({mode:"classic",seed,cols:8,rows:8});
-  const {best,expanded}=search(make,{width:64,budget:1100,evaluate:classicValue,bucketKey:classicBucket});
-  const {r}=replayClassic(make,best.path);
-  assert.equal(serial(r),serial(best.run));
-  const rocks=new Set(r.terrain.filter(t=>t.kind==="rock"&&t.lifeMs===null).map(t=>key(t.pos)));
-  const coverage=new Set([...r.body.map(key),...rocks]).size;
-  maxBody=Math.max(maxBody,r.body.length);
-  t.diagnostic(JSON.stringify({seed,board:"8x8",expanded,actions:best.path.length,body:r.body.length,rockTiles:rocks.size,coverage,growthDebt:r.growthDebt,orbs:r.brood,evolutions:r.evolutionsChosen,outcome:r.outcome||"budget_limited",score:r.score}));
-  if(r.status==="won"){
-   assert.equal(r.outcome,ENDINGS.PERFECT_CLEAR);
-   assert.equal(coverage,r.cols*r.rows);
-   won=true;break;
-  }
- }
- assert.ok(won||maxBody>=40,"search must exercise long-body collision and growth");
+test("Brood Trail compact board: genuine board-fill victory from a fresh seed",t=>{
+ const seed=7919,make=()=>newRun({mode:"classic",seed,cols:8,rows:8});
+ const {best,expanded}=search(make,{width:64,budget:1100,evaluate:classicValue,bucketKey:classicBucket});
+ const {r}=replayClassic(make,best.path);
+ assert.equal(serial(r),serial(best.run),"legal-input replay must reproduce the search state");
+ const rocks=new Set(r.terrain.filter(t=>t.kind==="rock"&&t.lifeMs===null).map(t=>key(t.pos)));
+ const coverage=new Set([...r.body.map(key),...rocks]).size;
+ t.diagnostic(JSON.stringify({seed,board:"8x8",expanded,actions:best.path.length,body:r.body.length,rockTiles:rocks.size,coverage,growthDebt:r.growthDebt,orbs:r.brood,evolutions:r.evolutionsChosen,outcome:r.outcome||"budget_limited",score:r.score}));
+ assert.equal(r.status,"won","known compact seed must remain winnable with legal inputs");
+ assert.equal(r.outcome,ENDINGS.PERFECT_CLEAR);
+ assert.equal(coverage,r.cols*r.rows);
+ assert.equal(new Set(r.body.map(key)).size,r.body.length,"body cells must be distinct");
+ const final=serial(r);step(r);assert.equal(serial(r),final,"victory freezes the engine");
 });
 test("Brood Trail full arena: bounded growth and authentic replay",t=>{
  const seed=7919,make=()=>newRun({mode:"classic",seed});
@@ -211,7 +206,7 @@ test("Brood Trail full arena: bounded growth and authentic replay",t=>{
  const {r,events}=replayClassic(make,best.path);
  assert.equal(serial(r),serial(best.run));
  t.diagnostic(JSON.stringify({seed,board:"18x22",expanded,actions:best.path.length,body:r.body.length,orbs:r.brood,evolutions:r.evolutionsChosen,outcome:r.outcome||"budget_limited",score:r.score}));
- assert.ok(r.brood>=10,"search must exceed the opening growth stage");
+ assert.ok(r.brood>=70&&r.body.length>=100,"known full-arena seed must exercise meaningful long-body growth");
  if(r.status==="won")assert.equal(r.outcome,ENDINGS.PERFECT_CLEAR);
  // If the bounded search stops short, finish the actual run through normal
  // inputs so the verifier must accept a real terminal trace, not a snapshot.
