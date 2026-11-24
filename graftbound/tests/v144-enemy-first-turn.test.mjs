@@ -63,8 +63,8 @@ test('ally buffs expire after their own opportunity to act, never before the ene
 });
 test('this battle-rule change increments the replay fingerprint and retires the old challenge revision',()=>{
   assert.equal(BATTLE_VERSION,11);
-  assert.equal(RULES_VERSION,'graftbound-rules-1.8.4-candidate');
-  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,31);
+  assert.equal(RULES_VERSION,'graftbound-rules-1.9.0-candidate');
+  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,32);
   assert.equal(startRanked().ranked.rulesVersion,RULES_VERSION);
   assert.throws(()=>replayRun('gb-expedition-01',[],{revision:18}),/Unknown or retired challenge/);
   assert.throws(()=>replayRun('gb-expedition-01',[],{rulesVersion:'graftbound-rules-1.3.5-beta'}),/Rules version mismatch/);

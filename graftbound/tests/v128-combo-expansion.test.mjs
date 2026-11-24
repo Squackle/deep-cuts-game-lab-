@@ -38,14 +38,14 @@ const closeChoice=(s,prefer)=>{
 };
 
 // None of the 23 may be replaced by an unselected proxy card.
-test('exactly the 23 owner-selected identities are new: 133 total real reward cards, no duplicates',()=>{
+test('exactly the 23 owner-selected identities are new: 145 total real reward cards, no duplicates',()=>{
  const names=REAL_CREATURES.map(c=>c.name);assert.equal(new Set(names).size,names.length);
- assert.equal(names.length,102);assert.deepEqual(names.filter(x=>picks.includes(x)).sort(),picks.slice().sort());
- assert.equal(buildReferenceSet().rejected.length,0);assert.equal(buildReferenceSet().cards.length,133);
+ assert.equal(names.length,108);assert.deepEqual(names.filter(x=>picks.includes(x)).sort(),picks.slice().sort());
+ assert.equal(buildReferenceSet().rejected.length,0);assert.equal(buildReferenceSet().cards.length,145);
  for(const name of picks){const t=GRAFT_TRAITS[name];assert.ok(t&&t.id&&t.trigger&&t.note,name);}
  assert.equal(BATTLE_VERSION,11);assert.equal(RUN_VERSION,9);
- assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,31);
- assert.equal(RULES_VERSION,'graftbound-rules-1.8.4-candidate');assert.equal(CARD_POOL_VERSION,'real-pool-133-v7');
+ assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,32);
+ assert.equal(RULES_VERSION,'graftbound-rules-1.9.0-candidate');assert.equal(CARD_POOL_VERSION,'real-pool-145-v8');
 });
 
 test('Soul Warden + Ajani + Vito: summoning heals/grows/bolts even at full health, across chained events',()=>{
