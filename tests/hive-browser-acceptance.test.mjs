@@ -67,7 +67,9 @@ test("Chromium desktop and emulated touch Hive acceptance",{timeout:60000,skip:!
   };
   const key=async(key,code,n)=>{
    const params={key,code,windowsVirtualKeyCode:n,nativeVirtualKeyCode:n};
-   await call("Input.dispatchKeyEvent",{...params,type:"rawKeyDown"});await call("Input.dispatchKeyEvent",{...params,type:"keyUp"});
+   // Enter needs the native character event as well as keydown for button activation.
+   await call("Input.dispatchKeyEvent",key==="Enter"?{...params,type:"keyDown",text:"\r",unmodifiedText:"\r"}:{...params,type:"rawKeyDown"});
+   await call("Input.dispatchKeyEvent",{...params,type:"keyUp"});
   };
   await call("Page.enable");await call("Runtime.enable");
   for(const mobile of [false,true]){
