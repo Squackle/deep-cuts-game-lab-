@@ -73,7 +73,7 @@ export class Scene {
     const v = { uid: u.uid, side: u.side, key: spriteKey, tex: opts.tex || this.tex[spriteKey], fw: meta.w, fh: meta.h, pivot: an.pivot, cx: an.cx, topPx: (meta.boundsAll || meta.bounds)?.y0 ?? 0, hover: u.keywords?.flying && !u.statuses?.grounded ? (meta.hover ? 0.35 : 0.14) : 0,
       pixelScale: meta.pixelScale || 1, animSet: meta.anims || this.man.anims, views: meta.views || this.man.views,
       pos: this.world(u.x, u.y), dir: u.side === 'enemy' ? [0, 1] : [0, -1], anim: 'idle', animT: Math.random(), scale: opts.scale || 1, flash: 0, flashCold: 0, dissolve: 0, outline: 0,
-      lunge: [0, 0, 0], spawnK: 1, hidden: false, aura: null };
+      lunge: [0, 0, 0], recoil: [0, 0, 0], spawnK: 1, hidden: false, aura: null };
     if (!opts.scale) v.scale = visualScale(spriteKey, meta, meta.bounds);
     if (u.facing) v.dir = [u.facing[0], u.facing[1]];   // v1.7.0: saved last-move direction (engine field)
     this.units.set(u.uid, v); return v;
@@ -103,8 +103,8 @@ export class Scene {
     return this.tween(0.5, k => { v.castLift = Math.sin(Math.PI * k) * 0.09; v.squash = -Math.sin(Math.PI * k) * 0.5; }).then(() => { v.castLift = 0; v.squash = 0; });
   }
   heightOf(v) { return Math.max(0.1, (v.pivot - (v.topPx ?? 0)) * PX * HCOMP * v.scale * (v.pixelScale || 1)); }   // v1.7.0: true visible height
-  headPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) + 0.1, v.pos[2]]; }   // v1.7.0: above the whole model
-  centerPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0] + v.lunge[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) * 0.45, v.pos[2] + v.lunge[2]]; }
+  headPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0] + v.lunge[0] + (v.recoil?.[0] || 0), v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) + 0.1, v.pos[2] + v.lunge[2] + (v.recoil?.[2] || 0)]; }   // v1.7.0: above the whole model
+  centerPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0] + v.lunge[0] + (v.recoil?.[0] || 0), v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) * 0.45, v.pos[2] + v.lunge[2] + (v.recoil?.[2] || 0)]; }
   face(v, to) { if (!v) return; const dx = to[0] - v.pos[0], dz = to[2] - v.pos[2]; if (Math.abs(dx) + Math.abs(dz) > 0.01) v.dir = [dx, dz]; }
   /** Visual-only: turn the acting creature toward the real target or telegraphed tiles.
    * Do not mutate combat units, saved facing or deterministic replay data. */
@@ -137,6 +137,9 @@ export class Scene {
   async lunge(uid, targetUid) {
     const v = this.units.get(uid), t = this.units.get(targetUid); if (!v || !t) return;
     this.face(v, t.pos); v.anim = 'attack'; v.animT = 0;
+    const motion = v.attackMotion = (v.attackMotion || 0) + 1;
+    const current = () => this.units.get(uid) === v && v.attackMotion === motion;
+    const origin = v.lunge.slice();
     const dx = t.pos[0] - v.pos[0], dz = t.pos[2] - v.pos[2], l = Math.hypot(dx, dz) || 1;
     // Attack silhouette follows evolved body mass: armored foes visibly plant, fliers dart.
     // Pure presentation; no attack timings or server/replay decisions depend on this.
@@ -144,17 +147,21 @@ export class Scene {
     const flying = !!v.style?.flying;
     const reach = this.reduced ? 0.16 : heavy ? 0.3 : flying ? 0.54 : 0.42;
     const windup = this.reduced ? 0.045 : heavy ? 0.17 : flying ? 0.075 : 0.11;
-    await this.tween(windup, k => { v.lunge = [-dx / l * 0.1 * k, 0, -dz / l * 0.1 * k]; });
+    await this.tween(windup, k => { if (current()) v.lunge = [origin[0] * (1-k) - dx / l * 0.1 * k, 0, origin[2] * (1-k) - dz / l * 0.1 * k]; });
+    if (!current()) return;
     if (heavy && !this.reduced) this.addRing({ pos: [v.pos[0], 0.035, v.pos[2]], r0: 0.1, r1: 0.35, life: 0.2, col: [0.75, 0.63, 0.42], width: 0.03 });
-    await this.tween(this.reduced ? 0.05 : 0.08, k => { const e = ease(k); v.lunge = [dx / l * (reach * e - 0.1), 0, dz / l * (reach * e - 0.1)]; });
-    const back = v.lunge.slice(); this.tween(this.reduced ? 0.07 : 0.2, k => { v.lunge = back.map(c => c * (1 - k)); });
+    await this.tween(this.reduced ? 0.05 : 0.08, k => { if (!current()) return; const e = ease(k); v.lunge = [dx / l * (reach * e - 0.1), 0, dz / l * (reach * e - 0.1)]; });
+    if (!current()) return;
+    const back = v.lunge.slice(); this.tween(this.reduced ? 0.07 : 0.2, k => { if (current()) v.lunge = back.map(c => c * (1 - k)); });
   }
   hit(uid, color = [1, 0.6, 0.3], big = false, cold = false) {
     const v = this.units.get(uid); if (!v) return;
     v.flash = 1; v.flashCold = cold ? 1 : 0; v.anim = 'hurt'; v.animT = 0; if (!this.reduced) this.shake(big ? 0.1 : 0.04);
     const c = this.centerPos(uid); this.fx.burst(c, color, big ? 36 : 18, { speed: big ? 2.6 : 1.8 }); this.light(c, color, big ? 3.2 : 2.2, 0.25, big ? 2.2 : 1.4);
-    const back = v.lunge.slice(); const d = norm([v.pos[0] - this.focus[0] + 0.001, 0, v.pos[2] - this.focus[2]]);
-    this.tween(0.16, k => { const s = Math.sin(k * Math.PI) * (big ? 0.12 : 0.06); v.lunge = [back[0] + d[0] * s, 0, back[2] + d[2] * s]; });
+    // Recoil is independent of attack motion: a counter-hit cannot preserve an old lunge offset.
+    const motion = v.hitMotion = (v.hitMotion || 0) + 1;
+    const d = norm([v.pos[0] - this.focus[0] + 0.001, 0, v.pos[2] - this.focus[2]]);
+    this.tween(0.16, k => { if (this.units.get(uid) !== v || v.hitMotion !== motion) return; const s = k >= 1 ? 0 : Math.sin(k * Math.PI) * (big ? 0.12 : 0.06); v.recoil = [d[0] * s, 0, d[2] * s]; });
   }
   async death(uid, element = null) {
     const v = this.units.get(uid); if (!v) return;
@@ -304,7 +311,7 @@ export class Scene {
         const wdt = v.fw * PX * s * pixelScale * (1 + sq * 0.06), hgt = v.fh * PX * HCOMP * s * pixelScale * (1 - sq * 0.07);
         const bob = v.hover ? Math.sin(this.time * 3 + v.uid) * 0.06 : 0;
         const ox = -(v.cx || 0) * (flip ? -1 : 1) * PX * s * pixelScale;   // v1.7.0 centre the ART (not the frame) on the tile
-        const c = [v.pos[0] + v.lunge[0] + rH[0] * ox, v.pos[1] + v.hover + (v.castLift || 0) + bob - (v.fh - v.pivot) * PX * HCOMP * s * pixelScale, v.pos[2] + v.lunge[2] + rH[1] * ox];
+        const c = [v.pos[0] + v.lunge[0] + (v.recoil?.[0] || 0) + rH[0] * ox, v.pos[1] + v.hover + (v.castLift || 0) + bob - (v.fh - v.pivot) * PX * HCOMP * s * pixelScale, v.pos[2] + v.lunge[2] + (v.recoil?.[2] || 0) + rH[1] * ox];
         v.flash = Math.max(0, v.flash - dt * 4);
         off = this.pushQuad(this.sprBuf, off, c, wdt, hgt, flip ? [u1, v0, u0, v1] : [u0, v0, u1, v1], [v.flash, v.dissolve, v.outline, v.flashCold]);
       }
