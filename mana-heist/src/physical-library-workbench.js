@@ -31,6 +31,7 @@ export function mountWorkbench(doc){
   el("field").textContent=s.field.map(f=>name(f.id)+(f.tapped?" (tapped)":"")).join(" · ")||"empty";
   el("hand").textContent=s.hand.map(name).join(" · ")||"empty";
   el("graveyard").textContent=s.graveyard.map(name).join(" · ")||"empty";
+  el("consumed").textContent=s.consumed.map(name).join(" · ")||"empty";
   el("state").textContent="Turn "+s.turn+" · life "+s.life+" · mana "+poolLabel(s.pool)+" · "+(game.done?"Ward solved":"Ward requires U + R");
   el("undo").disabled=!game.canUndo;
   el("moves").replaceChildren(...game.choices.map(a=>{
