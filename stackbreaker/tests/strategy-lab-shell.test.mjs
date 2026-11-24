@@ -23,3 +23,9 @@ test('Strategy trials entry is isolated and keyboard-friendly',()=>{
  assert.ok(css.includes('focus-visible'));
  assert.ok(css.includes('@media(max-width:720px)'));
 });
+
+test('unranked trial undo and visible resolution feedback remain isolated',()=>{
+ assert.match(html,/id="undo"/);assert.match(html,/id="actionLog"/);
+ assert.match(js,/history.push\(state\)/);assert.match(js,/state=history.pop\(\)/);
+ assert.match(js,/state.log.slice\(-8\)/);
+});
