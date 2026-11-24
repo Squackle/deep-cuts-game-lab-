@@ -16,7 +16,10 @@ function validEvents(events){
  return true;
 }
 export function replayScore(seed,events,expected,mode="hunt"){
- if(!validEvents(events)||!expected||!Number.isInteger(expected.ticks)||expected.ticks<0||expected.ticks>MAX_TICKS)
+ // A missing seed must never silently select Math.random. Invalid modes
+ // should fail closed rather than throw from newRun. Retain existing integer
+ // seed wrapping and legacy outcome-optional local fixtures.
+ if(!Number.isSafeInteger(seed)||!["hunt","classic"].includes(mode)||!validEvents(events)||!expected||!Number.isInteger(expected.ticks)||expected.ticks<0||expected.ticks>MAX_TICKS)
   return {ok:false,reason:"Invalid replay format."};
  const run=newRun({cols:18,rows:22,seed,mode});
  start(run);

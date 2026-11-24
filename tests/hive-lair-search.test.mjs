@@ -15,6 +15,12 @@ const md=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
 const offset=(p,v)=>({x:p.x+v.x,y:p.y+v.y});
 const serial=r=>JSON.stringify(r,(_k,v)=>typeof v==="function"?undefined:v);
 const headings=Object.keys(DIRECTIONS);
+const actionCodes={".":".",up:"u",right:"r",down:"d",left:"l","choose:W":"W","choose:U":"U","choose:B":"B","choose:R":"R","choose:G":"G"};
+function witness(t,label,run,actions){
+ const expected={score:run.score,kills:run.kills,evolutionsChosen:run.evolutionsChosen,ticks:run.runTicks,outcome:run.outcome};
+ const encoded=actions.map(action=>{assert.ok(Object.hasOwn(actionCodes,action));return actionCodes[action]}).join("");
+ t.diagnostic("WITNESS "+JSON.stringify({label,rules:"hive-1.5.4",mode:run.mode,seed:run.seed,cols:run.cols,rows:run.rows,lairBoss:run.lairBoss||null,actions:encoded,expected}));
+}
 function fork(parent,tape,source){
  const {random,...data}=parent.run;
  const child={run:structuredClone(data),index:parent.index,path:parent.path};
@@ -116,6 +122,7 @@ for(const boss of LAIR_BOSSES)test("legal-action search and clean replay: "+boss
  assert.equal(replay.lastEncounter.type,"defeat");
  assert.equal(replay.lastEncounter.kind,boss.id);
  assert.equal(replay.kills,1);
+ witness(t,"lair-"+boss.id,replay,best.path);
  t.diagnostic(JSON.stringify({boss:boss.id,expanded,steps:best.path.length,captures:phases,required:ABILITIES[boss.id].phases,outcome:replay.outcome||"budget_limited",score:replay.score}));
 });
 
@@ -138,13 +145,14 @@ test("full seeded Predator Hunt campaign and authentic terminal replay",t=>{
  const expected={score:replay.score,kills:replay.kills,evolutionsChosen:replay.evolutionsChosen,ticks:replay.runTicks,outcome:replay.outcome};
  assert.equal(replayScore(seed,events,expected,"hunt").ok,true);
  assert.equal(replayScore(seed,events,{...expected,outcome:ENDINGS.PERFECT_CLEAR},"hunt").ok,false);
+ witness(t,"hunt-campaign",replay,best.path);
 });
 
 /** Evaluate the real snake state using free-space connectivity rather than
  * Manhattan distance alone. A tail that is about to move is traversable
  * for planning; no state modifications are made to the actual engine.
  */
-function classicValue(r){
+function classicValue(r,{cautious=false}={}){
  if(r.status==="won")return 1e12;
  const w=r.cols,h=r.rows,n=w*h,head=r.body[0],tail=r.body.at(-1);
  const id=p=>p.y*w+p.x,blocked=new Uint8Array(n),seen=new Int16Array(n);
@@ -171,10 +179,22 @@ function classicValue(r){
  const free=n-r.body.length;
  // Progress dominates; steer toward reachable food while keeping access
  // to the tail and penalizing fragmentation of the remaining open area.
- return length*10000+covered*800+r.brood*20+r.evolutionsChosen*100+
+ const base=length*10000+covered*800+r.brood*20+r.evolutionsChosen*100+
   r.effects.shield*40+r.effects.greenPickups*30-r.effects.molt*15+
   (tailAdjacent?45:0)+Math.min(count,free)*2-
   (foodDistance>=0?foodDistance*8:100+md(head,r.food||tail)*4);
+ if(!cautious)return base;
+ // Mid/late-game policy: preserve an exit to the tail and large connected
+ // space instead of always taking the shortest next orb. Ease safety
+ // preferences in the final few cells where closing the last space is needed.
+ const room=Math.max(0,n-covered);
+ const safety=Math.min(1,room/16);
+ const exitCount=Object.values(DIRECTIONS).filter(v=>{
+  const q=offset(head,v);return q.x>=0&&q.x<w&&q.y>=0&&q.y<h&&!blocked[id(q)];
+ }).length;
+ return base+safety*(Math.min(count,free)*48+(tailAdjacent?1250:-1500)+exitCount*85)
+  -(foodDistance<0?150:0);
+
 }
 const classicBucket=r=>key(r.body[0])+"|"+r.direction+"|"+key(r.body.at(-1));
 function replayClassic(make,path){
@@ -198,12 +218,13 @@ test("Brood Trail compact board: genuine board-fill victory from a fresh seed",t
  assert.equal(r.outcome,ENDINGS.PERFECT_CLEAR);
  assert.equal(coverage,r.cols*r.rows);
  assert.equal(new Set(r.body.map(key)).size,r.body.length,"body cells must be distinct");
+ witness(t,"classic-compact",r,best.path);
  const final=serial(r);step(r);assert.equal(serial(r),final,"victory freezes the engine");
 });
 test("Brood Trail full arena: bounded growth and authentic replay",t=>{
  const seed=7919,make=()=>newRun({mode:"classic",seed});
  const {best,expanded}=search(make,{width:20,budget:1800,evaluate:classicValue,bucketKey:classicBucket});
- const {r,events}=replayClassic(make,best.path);
+ const {r,events}=replayClassic(make,best.path),actions=[...best.path];
  assert.equal(serial(r),serial(best.run));
  t.diagnostic(JSON.stringify({seed,board:"18x22",expanded,actions:best.path.length,body:r.body.length,orbs:r.brood,evolutions:r.evolutionsChosen,outcome:r.outcome||"budget_limited",score:r.score}));
  assert.ok(r.brood>=70&&r.body.length>=100,"known full-arena seed must exercise meaningful long-body growth");
@@ -213,13 +234,47 @@ test("Brood Trail full arena: bounded growth and authentic replay",t=>{
  for(let i=0;i<6500&&!["won","over"].includes(r.status);i++){
   if(r.status==="draft"){
    const color=r.draftOptions[0];events.push([r.runTicks,"choose",color]);
-   assert.equal(chooseMutation(r,color),true);
-  }else step(r);
+   actions.push("choose:"+color);assert.equal(chooseMutation(r,color),true);
+  }else {actions.push(".");step(r)}
  }
  assert.ok(["won","over"].includes(r.status));
  const expected={score:r.score,kills:r.kills,evolutionsChosen:r.evolutionsChosen,ticks:r.runTicks,outcome:r.outcome};
  const verified=replayScore(seed,events,expected,"classic");
  assert.equal(verified.ok,true,JSON.stringify(verified));
  assert.equal(replayScore(seed,events,{...expected,score:expected.score+1},"classic").ok,false);
+ witness(t,"classic-full-terminal",r,actions);
  t.diagnostic(JSON.stringify({terminal:r.outcome,ticks:r.runTicks,score:r.score,verified:verified.ok}));
+});
+
+test("Brood Trail full arena: alternate safety-aware policy",t=>{
+ const seed=7919,make=()=>newRun({mode:"classic",seed});
+ const {best,expanded}=search(make,{width:28,budget:3000,evaluate:r=>classicValue(r,{cautious:true}),bucketKey:r=>classicBucket(r)+"|"+(r.food?key(r.food):"-")});
+ const {r,events}=replayClassic(make,best.path),actions=[...best.path];
+ assert.equal(serial(r),serial(best.run));
+ t.diagnostic("ALTERNATE "+JSON.stringify({seed,expanded,actions:best.path.length,body:r.body.length,orbs:r.brood,evolutions:r.evolutionsChosen,score:r.score,status:r.status,outcome:r.outcome||"search_limit",saves:r.saves,mutations:r.mutations}));
+ assert.ok(r.brood>=10,"alternate policy must meaningfully exercise growth");
+ if(r.status==="won")assert.equal(r.outcome,ENDINGS.PERFECT_CLEAR);
+ for(let i=0;i<6500&&!["won","over"].includes(r.status);i++){
+  if(r.status==="draft"){const c=r.draftOptions[0];events.push([r.runTicks,"choose",c]);actions.push("choose:"+c);assert.equal(chooseMutation(r,c),true)}
+  else{actions.push(".");step(r)}
+ }
+ const expected={score:r.score,kills:r.kills,evolutionsChosen:r.evolutionsChosen,ticks:r.runTicks,outcome:r.outcome};
+ assert.equal(replayScore(seed,events,expected,"classic").ok,true);
+ witness(t,"classic-safe-terminal",r,actions);
+});
+test("Predator Hunt second seed: independent campaign search and replay",t=>{
+ const seed=15838,make=()=>newRun({mode:"hunt",seed});
+ const {best,expanded}=search(make,{width:24,budget:1400,evaluate:huntValue});
+ const {r,events}=replayClassic(make,best.path),actions=[...best.path];
+ assert.equal(serial(r),serial(best.run));
+ t.diagnostic("ALTERNATE "+JSON.stringify({seed,expanded,actions:best.path.length,body:r.body.length,kills:r.kills,bossWins:r.bossWins,minibossWins:r.minibossWins,evolutions:r.evolutionsChosen,score:r.score,outcome:r.outcome||"search_limit",saves:r.saves,mutations:r.mutations}));
+ assert.ok(r.evolutionsChosen>=2,"second Hunt seed must reach first boss milestone");
+ if(r.status==="won")assert.equal(r.outcome,ENDINGS.BROODMOTHER_DEFEATED);
+ for(let i=0;i<6500&&!["won","over"].includes(r.status);i++){
+  if(r.status==="draft"){const c=r.draftOptions[0];events.push([r.runTicks,"choose",c]);actions.push("choose:"+c);assert.equal(chooseMutation(r,c),true)}
+  else{actions.push(".");step(r)}
+ }
+ const expected={score:r.score,kills:r.kills,evolutionsChosen:r.evolutionsChosen,ticks:r.runTicks,outcome:r.outcome};
+ assert.equal(replayScore(seed,events,expected,"hunt").ok,true);
+ witness(t,"hunt-second-seed",r,actions);
 });

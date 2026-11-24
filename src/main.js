@@ -783,6 +783,7 @@ canvas.addEventListener("pointercancel",clearSwipePointer);
 canvas.addEventListener("lostpointercapture",clearSwipePointer);
 document.addEventListener("visibilitychange",()=>{
  if(document.hidden){
+  state.pointer=null; // A hidden tab cannot retain an unfinished swipe.
   victoryFanfare.stop();
   if(bossGate.blocking)reopenBossBriefing();
    else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
@@ -794,6 +795,7 @@ window.addEventListener("focus",()=>{
  if(!document.hidden){syncSoundtrack();syncUI()}
 });
 window.addEventListener("pagehide",()=>{
+ state.pointer=null;
  victoryFanfare.stop();
  if(bossGate.blocking)reopenBossBriefing();
  else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
@@ -801,6 +803,7 @@ window.addEventListener("pagehide",()=>{
  state.lastFrame=0;state.accumulator=0;
 });
 window.addEventListener("blur",()=>{
+ state.pointer=null;
  victoryFanfare.stop();
  if(bossGate.blocking)reopenBossBriefing();
  else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();

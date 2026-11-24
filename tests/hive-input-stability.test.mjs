@@ -17,3 +17,9 @@ test("entry release badge and game count match Dominion and the current catalog"
  assert.match(html,/2\.0 · DOMINION/);
  assert.match(html,/FIVE GAMES · ONE TEST LAB/);
 });
+
+test("focus-loss paths discard swipes even during a frozen mutation-resume gate",()=>{
+ assert.match(main,/visibilitychange",\(\)=>\{\s*if\(document\.hidden\)\{\s*state\.pointer=null/);
+ for(const event of ["pagehide","blur"])
+  assert.ok(main.includes('window.addEventListener("'+event+'",()=>{\n state.pointer=null;'));
+});
