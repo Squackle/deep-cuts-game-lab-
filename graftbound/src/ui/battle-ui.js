@@ -6,7 +6,7 @@ import { TACTICS } from '../data/tactics.js';
 import { getLegalPlayerActions, shouldAutoEnd } from '../engine/legal.js';
 import { describeTile, pathWarning } from '../engine/describe.js';
 import { bossPhaseOf, bossPhaseName } from '../engine/ai.js';
-import { tacticalThreat, slimeEndStepWarning } from './tactical-threats.js';
+import { tacticalThreat, slimeEndStepWarning, slimeEndStepRisk } from './tactical-threats.js';
 import { castBlockReason, spellCost, rangeLabel, formatSpellText } from '../engine/spells.js';
 import { reachable, pathTo, key, unitAt, T, tileAt } from '../core/grid.js';
 import { ENEMIES } from '../data/enemies.js';
@@ -248,7 +248,7 @@ export class BattleUI {
   renderHUD() {
     const s = this.s; const p = player(s); const d = this.disp.get(p.uid) || { hp: p.hp, maxHp: p.maxHp, shield: 0 };
     const ap = deriveAppearance(this.run.evo, visualForRun(this.run));
-    const slimeWarning = slimeEndStepWarning(s);
+    const slimeWarning = slimeEndStepWarning(s), slimeRisk = slimeEndStepRisk(s);
     d.guardShield = p.statuses.guardShield || 0;
     $('plate').innerHTML = `
       <div class="pl-top"><div><div class="pl-name">${esc(this.run.name)}</div><div class="pl-stage">${STAGE[ap.stage]} · ${this.run.evo.absorbed.length} graft${this.run.evo.absorbed.length === 1 ? '' : 's'}</div></div>
@@ -258,7 +258,7 @@ export class BattleUI {
       <div class="pl-res"><span class="mana" tabindex="0" data-tip="Mana ${this.dispMana}/${s.p.maxMana}. Spells cost gems. You regain ${s.p.regen} each turn${s.p.arcane ? `; Arcane adds +${s.p.arcane} to spell numbers` : ''}.">${Array.from({ length: Math.max(s.p.maxMana, this.dispMana) }, (_, i) => `<i class="${i < this.dispMana ? 'on' : ''}">${ICON.gem}</i>`).join('')}</span>
 </div>
       <div class="pl-act" role="group" aria-label="Movement, attacks and banked mana"></div>
-      <div class="pl-kw">${kwChips(p.keywords)}${slimeWarning && p.toughness <= 2 ? `<span class="chip bad" tabindex="0" data-tip="${esc(slimeWarning)}">☣ ${p.toughness <= 1 ? 'Fatal end step' : 'Fatal slime risk'}</span>` : ''}${d.poison ? `<span class="chip bad" tabindex="0" data-tip="Poison: lose ${d.poison} health at the start of your turn, then it drops by 1.">${ICON.poison}Poison ${d.poison}</span>` : ''}${p.slime ? `<span class="chip bad" tabindex="0" data-tip="Toxrill adds one slime counter at each end step. Each counter gives −1/−1 while Toxrill is alive.">☣ Slime ${p.slime}</span>` : ''}${d.grounded ? `<span class="chip bad" tabindex="0" data-tip="Grounded: no flying and −1 movement this turn.">${ICON.hook}Grounded</span>` : ''}${p.suppressed ? `<span class="chip bad" tabindex="0" data-tip="Redacted by the Unwritten for this turn only. It returns when your turn ends.">✖ ${esc(Object.keys(p.suppressed).map(k => KEYWORDS[k].name).join(', '))}</span>` : ''}</div>`;
+      <div class="pl-kw">${kwChips(p.keywords)}${slimeRisk ? `<span class="chip bad" tabindex="0" data-tip="${esc(slimeWarning)}">☣ ${slimeRisk === 1 ? 'Fatal end step' : 'Fatal slime risk'}</span>` : ''}${d.poison ? `<span class="chip bad" tabindex="0" data-tip="Poison: lose ${d.poison} health at the start of your turn, then it drops by 1.">${ICON.poison}Poison ${d.poison}</span>` : ''}${p.slime ? `<span class="chip bad" tabindex="0" data-tip="Toxrill adds one slime counter at each end step. Each counter gives −1/−1 while Toxrill is alive.">☣ Slime ${p.slime}</span>` : ''}${d.grounded ? `<span class="chip bad" tabindex="0" data-tip="Grounded: no flying and −1 movement this turn.">${ICON.hook}Grounded</span>` : ''}${p.suppressed ? `<span class="chip bad" tabindex="0" data-tip="Redacted by the Unwritten for this turn only. It returns when your turn ends.">✖ ${esc(Object.keys(p.suppressed).map(k => KEYWORDS[k].name).join(', '))}</span>` : ''}</div>`;
     // v1.5.0 compact HUD: movement and attacks live in the hero plate's action strip (one coordinated panel).
     $('gb-action-counters').innerHTML = '';
     const strip = $('plate').querySelector('.pl-act');
