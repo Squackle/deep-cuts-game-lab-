@@ -57,3 +57,17 @@ test('report full trial coverage under fixed declared budgets',()=>{
  assert.ok(rows.every(r=>r.status==='complete'||r.status==='inconclusive'));
  console.log('STACKBREAKER_TRIAL_COVERAGE '+JSON.stringify(rows));
 });
+
+test('canonical search preserves small exact-state reachability and shortest distances',()=>{
+ for(const p of STRATEGY_TRIALS){
+  const a=searchStrategy(p,{maxStates:3000,maxEdges:20000});
+  const b=searchStrategy(p,{maxStates:3000,maxEdges:20000,canonical:false});
+  if(a.status==='complete'&&b.status==='complete')assert.equal(a.metrics.shortestActions,b.metrics.shortestActions,p.id);
+  if(a.witness)assert.equal(replayStrategy(p,a.witness).status,'won',p.id);
+  if(a.status==='complete'){
+   const reversed=searchStrategy(p,{maxStates:3000,maxEdges:20000,reverseActions:true});
+   assert.equal(reversed.status,'complete',p.id);assert.deepEqual(a.metrics,reversed.metrics,p.id);
+  }
+  console.log('STACKBREAKER_PRUNING '+JSON.stringify({id:p.id,canonical:a.status,raw:b.status,canonicalStates:a.states,rawStates:b.states,merged:a.mergedTransitions,metrics:a.metrics}));
+ }
+});
