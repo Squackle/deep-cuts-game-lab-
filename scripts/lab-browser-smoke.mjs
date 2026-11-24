@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import {test,before,after} from "node:test";
 import {createServer} from "node:http";
 import {createReadStream} from "node:fs";
-import {stat,realpath} from "node:fs/promises";
-import {resolve,extname,sep} from "node:path";
+import {stat,realpath,mkdir,writeFile} from "node:fs/promises";
+import {resolve,extname,sep,join} from "node:path";
 import {fileURLToPath,pathToFileURL} from "node:url";
 
 const root=await realpath(fileURLToPath(new URL("../",import.meta.url)));
@@ -18,6 +18,19 @@ const routes=[
 const types={".html":"text/html; charset=utf-8",".js":"text/javascript",".mjs":"text/javascript",".css":"text/css",".svg":"image/svg+xml",".json":"application/json",".png":"image/png",".webp":"image/webp",".jpg":"image/jpeg",".jpeg":"image/jpeg",".avif":"image/avif",".woff2":"font/woff2",".ogg":"audio/ogg",".mp3":"audio/mpeg"};
 const inside=p=>p.startsWith(root+sep);
 let server,browser,origin;
+const artifactDir=process.env.LAB_SMOKE_ARTIFACT_DIR?resolve(process.env.LAB_SMOKE_ARTIFACT_DIR):null;
+const captured=[];
+async function capture(page,label,failed=false){
+ if(!artifactDir)return;
+ const filename=label+(failed?"-failure":"")+".png";
+ try{
+  await mkdir(artifactDir,{recursive:true});
+  if(!failed)await page.waitForLoadState("load",{timeout:10000});
+  await page.screenshot({path:join(artifactDir,filename),animations:"disabled",caret:"hide",scale:"css",timeout:10000});
+  captured.push({file:filename,viewport:page.viewportSize(),route:new URL(page.url()).pathname,failed});
+ }catch(e){if(!failed)throw e;console.warn("Failure screenshot unavailable:",e.name);}
+}
+
 before(async()=>{
  const module=process.env.PLAYWRIGHT_MODULE;
  assert.ok(module,"Set PLAYWRIGHT_MODULE to the pinned playwright-core entry file");
@@ -44,10 +57,12 @@ before(async()=>{
  browser=await chromium.launch({headless:true});
 });
 after(async()=>{
- try{await browser?.close();}finally{if(server)await new Promise(ok=>server.close(ok));}
+ try{if(artifactDir){await mkdir(artifactDir,{recursive:true});await writeFile(join(artifactDir,"manifest.json"),JSON.stringify({revision:process.env.LAB_SMOKE_SHA??"local-unverified",mode:"local-only",screenshots:captured},null,2)+"\n");}}
+ finally{try{await browser?.close();}finally{if(server)await new Promise(ok=>server.close(ok));}}
 });
 async function contextFor(viewport,mobile){
- const c=await browser.newContext({viewport,isMobile:mobile,hasTouch:mobile,serviceWorkers:"block",reducedMotion:"reduce"});
+ const c=await browser.newContext({viewport,isMobile:mobile,hasTouch:mobile,serviceWorkers:"block",reducedMotion:"reduce",locale:"en-US",timezoneId:"UTC"});
+ await c.routeWebSocket("**/*",ws=>ws.close());
  await c.route("**/*",async route=>{
   const req=route.request(),url=new URL(req.url());
   if(url.origin!==origin){await route.abort();return;}
@@ -82,14 +97,17 @@ async function catalog(page,path){
 for(const [name,viewport,mobile] of [["desktop",{width:1280,height:800},false],["mobile",{width:390,height:844},true]]){
  test(name+" catalog: covers, accessible tiles, keyboard and layout",async()=>{
   const c=await contextFor(viewport,mobile);
-  try{const p=await c.newPage();await catalog(p,"/");await catalog(p,"/lab/");}
+  const p=await c.newPage();let label=name+"-catalog-root";
+  try{await catalog(p,"/");await capture(p,label);label=name+"-catalog-legacy";await catalog(p,"/lab/");await capture(p,label);}
+  catch(e){await capture(p,label,true);throw e;}
   finally{await c.close();}
  });
  test(name+" clicks every catalog tile and loads actual game entry scripts",async()=>{
   const c=await contextFor(viewport,mobile);
+  const p=await c.newPage();let label=name+"-entry";
   try{
-   const p=await c.newPage();
    for(const [href,game,title] of routes){
+    label=name+"-"+href.replace(/[^a-z0-9-]/gi,"");
     await p.goto(origin+"/",{waitUntil:"domcontentloaded",timeout:30000});
     const navigation=p.waitForURL(origin+href,{waitUntil:"domcontentloaded",timeout:30000});
     await p.getByRole("link",{name:"Playtest "+game,exact:true}).click();
@@ -106,8 +124,10 @@ for(const [name,viewport,mobile] of [["desktop",{width:1280,height:800},false],[
      assert.equal(result.status,200,game+" missing entry script "+new URL(script).pathname);
      assert.match(result.headers.get("content-type")||"",/javascript/,game+" invalid entry MIME");
     }
+    await capture(p,label);
     console.log(name+" PASS "+game+" "+href+" ("+entries.length+" entry scripts)");
    }
-  }finally{await c.close();}
+  }catch(e){await capture(p,label,true);throw e;}
+  finally{await c.close();}
  });
 }
