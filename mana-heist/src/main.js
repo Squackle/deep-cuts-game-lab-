@@ -158,7 +158,8 @@ function cancelAuto(){
 // stirring postpone the finish, but NEVER let interaction block a puzzle.
 const AUTO_SETTLE_MS=2000,AUTO_STIR_MAX_MS=5100;
 function queueAutoCast(){
- if(!autoCastEnabled||pendingFlights.size||completed(level,state)||choiceActions.some(a=>a.type==="cast"))return;
+ if(!autoCastEnabled||pendingFlights.size||completed(level,state))return;
+ if(choiceActions.some(a=>a.type==="cast"))return;
  if(!chooseAutomaticCast(level,state)||autoTimer!==null)return;
  el("wardTarget").classList.add("auto-primed");
  el("autoCastLabel").textContent="WARD READY · STIR TO MIX";
@@ -416,7 +417,7 @@ function desc(action){
  }
  if(action.type==="ritual")return "Cast "+getCard(level,action.id).name+" · "+action.output.join(" + ")+" mana";
  if(action.type==="play")return (action.shock?"Pay 2 life · enter untapped":getCard(level,action.id).kind==="shock"?"Save 2 life · enter tapped":getCard(level,action.id).kind==="bounce"?"Return "+getCard(level,action.returnId).name+" · enter tapped":"Play "+getCard(level,action.id).name);
- if(action.type==="tap")return "Tap for "+SYMBOL[action.color].name+(getCard(level,action.id).kind==="pain"&&action.color!=="C"?" · lose 1 life":"");
+ if(action.type==="tap")return "Tap for "+(getCard(level,action.id).kind==="bounce"?"blue and green":SYMBOL[action.color].name)+(getCard(level,action.id).kind==="pain"&&action.color!=="C"?" · lose 1 life":"");
  if(action.type==="fetch")return "Find "+getCard(level,action.targetId).name+(action.shock?" · pay 3 life":" · pay 1 life");
  if(action.type==="cast"){
   const payment=COLORS.map(c=>action.spend[c]?action.spend[c]+c:"").filter(Boolean).join(" + ");
@@ -942,11 +943,11 @@ el("castButton").addEventListener("click",()=>{
 });
 el("playSelectedLand").addEventListener("click",()=>{if(selectedHandId)playLand(selectedHandId);});
 el("inspectSelected").addEventListener("click",()=>{if(selectedHandId)inspectById(selectedHandId);});
-el("dismissChoices").addEventListener("click",()=>choices("YOUR NEXT CHOICE","Tap a land or play a land from your hand.",[]));
+el("dismissChoices").addEventListener("click",()=>{choices("YOUR NEXT CHOICE","Tap a land or play a land from your hand.",[]);queueAutoCast();});
 document.addEventListener("keydown",e=>{
  if(e.key!=="Escape")return;
  if(el("gameNotes").open){e.preventDefault();setGuideOpen(false);return;}
- if(!el("actionBox").hidden){choices("YOUR NEXT CHOICE","Selection canceled.",[]);}
+ if(!el("actionBox").hidden){choices("YOUR NEXT CHOICE","Selection canceled.",[]);queueAutoCast();}
 });
 for(const zone of ["hand","battlefield"]){
  el(zone).addEventListener("error",e=>{
@@ -970,7 +971,7 @@ landDrag=installLandDragging({
  onInspect:id=>playLand(id),
  onHint:(text,error=false)=>message(text,error)
 });
-el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a)perform(a);});
+el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a){if(a.type==="cast")fluid.burst();perform(a);}});
 // Mana-choice sheets must remain usable by keyboard and screen readers on
 // small screens, not just visually centered above the battlefield.
 el("actionBox").addEventListener("keydown",e=>{
