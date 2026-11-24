@@ -74,3 +74,8 @@ For each observation capture device/browser, seed/mode, steps or approximate run
 ### Round 3 single additional full-size search attempt
 
 The final bounded attempt is implemented as `Brood Trail Round 3: one additional bounded full-arena search, no solver victory requirement` in `tests/hive-lair-search.test.mjs`: full 18×22 arena, seed 31676, cautious safe-space scoring, width 20, at most 1,600 search actions. It forks RNG only for speculative test branches, then replays the selected legal input path from a fresh run and verifies the eventual unforced terminal score via `replayScore`, including a tamper rejection check. The test emits `ROUND3_BOUNDED_SEARCH` and `ROUND3_BOUNDED_TERMINAL` lines. A search-budget failure is reported as evidence, not as an assertion failure or game defect; no subsequent solver tuning is authorized in this round. Record the actual CI diagnostic before claiming a victory or final body length.
+
+
+### Final acceptance regression: real Chromium
+
+Run `node --test tests/hive-browser-acceptance.test.mjs` using a system Chromium/Chrome (or `HIVE_CHROME` executable). CI requires an available browser. The local-only test exercises desktop keyboard and 390px emulated touch, fullscreen and fallback, audio switches, reduced-motion media preference, all five practice dossiers, countdown/focus, Classic start/pause/restart and overflow. It does not establish physical device, audio quality or hosted artwork approval. The initial Lair focus defect was caused by `begin()` focusing the canvas after `showBossBriefing()` focused its Begin button; the modal now owns focus until the countdown completes. Apply the same small fix to the website's separate main.js during authorized integration. No rules changes.

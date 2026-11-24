@@ -378,8 +378,8 @@ function begin(){
  hideOverlay();hideMutationDraft($("mutationOverlay"));
  setEncounterMusic(musicForRun());syncUI();
  announce(lairActive()?"Unranked boss practice. Face "+lairDetails(selectedLairBoss).name+".":MODES[selectedMode].description);
- if(lairActive())showBossBriefing();
- canvas.focus({preventScroll:true});
+ // The modal owns focus until its countdown finishes.
+ if(!lairActive()||!showBossBriefing())canvas.focus({preventScroll:true});
 }
 function reset(){
  if(startingRun)return;
