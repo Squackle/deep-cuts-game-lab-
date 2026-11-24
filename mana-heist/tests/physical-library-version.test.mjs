@@ -84,3 +84,11 @@ test("all 500 old certificates replay under candidate; affected boards audited f
  assert.equal(counts.unsolvable,0,JSON.stringify(unresolved));
  // Inconclusive is explicitly reported and blocks promotion, not a false pass.
 });
+
+test("candidate rejects resurrected and forged physical reserve identities before action enumeration",()=>{
+ const p=board(),s=initial(p),after=move(p,s,"fetch",{id:"f1",targetId:"blue"});
+ for(const libraryAvailable of [["blue",...after.libraryAvailable],["red","red"],["not-in-library"]])
+  assert.throws(()=>actions(p,{...after,libraryAvailable}),/physical/i);
+ assert.throws(()=>actions(p,{...after,hand:[...after.hand,"blue"]}),/overlapping zones/);
+ assert.ok(actions(p,after).length);
+});

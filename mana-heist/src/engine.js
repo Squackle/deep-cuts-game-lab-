@@ -159,8 +159,18 @@ function enterTapped(level,state,land,shock){
  if(card.kind==="check")return !state.field.some(f=>card.check.some(t=>getCard(level,f.id).types.includes(t)));
  return false;
 }
+// Candidate-only validation; legacy snapshots retain their historical format.
+export function assertPhysicalLibraryState(level,s){
+ if(!Array.isArray(s.libraryAvailable))throw Error("Physical library state required; restart or replay under matching rules");
+ const library=new Set(level.library.map(c=>c.id));
+ const all=new Set([...level.library,...level.hand,...level.field].map(c=>c.id));
+ if(s.libraryAvailable.some(id=>!library.has(id)))throw Error("Unknown physical library instance");
+ const ids=[...s.libraryAvailable,...s.hand,...s.field.map(f=>f.id),...s.graveyard];
+ if(ids.some(id=>!all.has(id))||new Set(ids).size!==ids.length)throw Error("Invalid physical card identity or overlapping zones");
+ return true;
+}
 export function actions(level,s){
- if(physical(level)&&!Array.isArray(s.libraryAvailable))throw Error("Physical library state required; restart or replay under matching rules");
+ if(physical(level))assertPhysicalLibraryState(level,s);
  if(s.stage===level.stages.length)return [];
  const out=[];
  if(!s.played)for(const id of s.hand){

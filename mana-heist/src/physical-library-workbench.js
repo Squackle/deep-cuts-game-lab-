@@ -33,7 +33,7 @@ export function mountWorkbench(doc){
   el("graveyard").textContent=s.graveyard.map(name).join(" · ")||"empty";
   el("state").textContent="Turn "+s.turn+" · life "+s.life+" · mana "+poolLabel(s.pool)+" · "+(game.done?"Ward solved":"Ward requires U + R");
   el("undo").disabled=!game.canUndo;
-  el("moves").replaceChildren(...game.choices.filter(a=>!el("auto").checked||a.type!=="cast").map(a=>{
+  el("moves").replaceChildren(...game.choices.map(a=>{
    const b=doc.createElement("button");b.type="button";b.textContent=actionName(a);
    b.onclick=()=>{const out=game.move(a,el("auto").checked);el("notice").textContent=out.ok?"Action applied"+(out.casts.length?"; automatic ward resolved":"")+".":out.error;render();};
    return b;
