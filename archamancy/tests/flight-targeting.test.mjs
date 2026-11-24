@@ -125,7 +125,7 @@ test("new air/ground targeting button appears on air-capable towers, not ground-
  assert.match(js,/\$\("flightMode"\)\.hidden=!flightCapable/);
  assert.match(js,/type:"flightTarget",pad:selected,mode:m/);
  assert.match(js,/const hasFlight=items\.some\(b=>b\.id==="flightMode"\)/);
- assert.equal(VERSION,"0.1.0-beta.13.51");
+ assert.equal(VERSION,"0.1.0-beta.13.52");
 });
 
 test("different towers can independently choose air and ground without changing one another",()=>{
@@ -137,4 +137,28 @@ test("different towers can independently choose air and ground without changing 
  assert.equal(g.state.towers[9].flightTarget,"ground");
  assert.equal(g.command({type:"flightTarget",pad:8,mode:"both"}),true);
  assert.equal(g.state.towers[9].flightTarget,"ground","changing one tower cannot affect another");
+});
+
+
+test("selected tower explains why it is idle using the firing rules",()=>{
+ const g=arena(),t=g.state.towers[8];
+ assert.equal(g.towerStatus(t),"");
+ assert.ok(g.command({type:"wave"}));
+ assert.equal(g.towerStatus(t),"No visible enemies in range");
+ const ground=enemy(g,"raider",1595);
+ assert.equal(g.towerStatus(t),"");
+ assert.ok(g.command({type:"flightTarget",pad:8,mode:"flying"}));
+ assert.equal(g.towerStatus(t),"Waiting for flyers");
+ const wing=enemy(g,"wing",220);
+ assert.equal(g.towerStatus(t),"");
+ t.silencedUntil=g.state.tick+1;
+ assert.equal(g.towerStatus(t),"Silenced by a boss");
+ t.silencedUntil=g.state.tick;
+ wing.incoming=wing.hp;
+ assert.equal(g.towerStatus(t),"Waiting for shots to land");
+ wing.hp=0;
+ ground.resist=100;
+ const before=g.snapshot().state;
+ assert.equal(g.towerStatus(t),"No eligible targets in range");
+ assert.deepEqual(g.snapshot().state,before);
 });

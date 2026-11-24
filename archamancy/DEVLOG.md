@@ -600,3 +600,10 @@ Logan's iPhone screenshot (Safari landscape with the tab bar, about 858x287 CSS 
 - **Title screen** on very short screens (360px or less) drops the crest so Play Gauntlet is on screen.
 - Portrait phones still show the "Turn your phone sideways" screen. Tablets and desktop are unchanged.
 - Checked with phone-sized browser screenshots at 858x287 (notch), 852x345 (notch), 667x331, 915x380 and 1133x700, with build ring, chosen card and a full 5-card hand. No change to rules or saves. Test: `archamancy/tests/ui-contract.test.mjs`.
+
+
+## 2026-11-24 — v0.1.0-beta.13.52 combat readability
+
+- The early-wave button shows the live number of active waves alongside the bonus. Boss warnings still appear in the forecast.
+- A selected tower explains when it is silenced, waiting for the right enemy type or incoming shots, or has no eligible target in range.
+- Short landscape screens use a scrollable list of spell names and costs in the right gutter. Battle rules and save format stay the same.
