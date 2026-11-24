@@ -157,9 +157,9 @@ test("campaign saves retain legitimate shops but bound and reject malformed inve
  const good=camp.newCampaign(42),cards=createEngine(42).cards;
  good.shop={rerolls:3,fresh:true,items:[
   {kind:"relic",id:"solring",price:6,sold:false},
-  {kind:"spell",id:"meteor",price:3,sold:true}
+  {kind:"spell",id:"twins",price:3,sold:true}
  ],packs:[{kind:"ritual",price:4,sold:false}]};
- good.draft=["flame","meteor"];
+ good.draft=["cascade","prism"];
  const retained=camp.sanitize(JSON.parse(JSON.stringify(good)),cards);
  assert.deepEqual(retained.shop,good.shop,"legitimate existing shop inventory remains unchanged");
  assert.deepEqual(retained.draft,good.draft);
@@ -168,7 +168,7 @@ test("campaign saves retain legitimate shops but bound and reject malformed inve
    {kind:"ritual",id:"solring",price:1,sold:false},
    {kind:"relic",id:"solring",price:-99,sold:false},
    ...Array.from({length:10000},()=>({kind:"relic",id:"solring",price:6,sold:false}))],
-  packs:[{kind:"ritual",price:4,sold:false},{kind:"relic",price:-10,sold:false},...Array.from({length:10000},()=>({kind:"spell",price:4,sold:false}))]},
+  packs:[{kind:"ritual",price:4,sold:false},{kind:"relic",price:-10,sold:false},...Array.from({length:10000},()=>({kind:"bogus",price:4,sold:false}))]},
   deck:[...good.deck,...Array.from({length:10000},()=> "not-a-card")],
   draft:[...good.draft,...Array.from({length:10000},()=> "not-a-card")]};
  const clean=camp.sanitize(bad,cards);
