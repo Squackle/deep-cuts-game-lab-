@@ -3,12 +3,12 @@
 import {STRATEGY_TRIALS,referenceSubsetEvidence} from './src/strategy-trials.js';
 import {CARDS,LANDS} from './src/cards.js';
 import {createGame,tapLand,activate,pass,legalActions,legalTargets,labelTarget,
- creaturePower,creatureToughness} from './src/engine.js';
+ creaturePower,creatureToughness,paymentOptions} from './src/engine.js';
 const $=id=>document.getElementById(id);
 const node=(tag,text,cls='')=>{const e=document.createElement(tag);if(cls)e.className=cls;
  if(text!==undefined)e.textContent=String(text);return e;};
 let index=0,state,notice='Tap your lands, select a response, then PASS to resolve the stack.';
-const selections=new Map();
+const selections=new Map(),payments=new Map();
 function objectiveText(p){
  const o=p.objective;
  if(o.type==='keepUnit'||o.type==='winKeepUnit'){
@@ -28,7 +28,7 @@ function item(title,detail,cls=''){
 }
 function setNotice(text){notice=text;$('notice').textContent=text;}
 function load(n){
- index=n;state=createGame(STRATEGY_TRIALS[index]);selections.clear();
+ index=n;state=createGame(STRATEGY_TRIALS[index]);selections.clear();payments.clear();
  $('hintText').hidden=true;
  setNotice('Tap mana sources, choose responses, and pass to resolve the stack. Nothing is ranked or saved.');
  render();
@@ -74,7 +74,7 @@ function render(){
  const live=state.hand.filter(a=>!state.used.includes(a.id));
  if(!live.length)handBox.append(node('p','No unspent responses remain.'));
  for(const a of live){
-  const box=item(a.card,(a.sourceId?'Activated ability':'Cast spell')+' · '+costText(a.card));
+  const box=item(a.card,a.sourceId?'Activated ability · sacrifice source':'Cast spell · '+costText(a.card));
   const targets=legalTargets(state,a),enabled=actions.has(a.id);
   if(enabled&&targets.length>1){
    const label=node('label','Target');label.htmlFor='target-'+a.id;box.append(label);
@@ -83,6 +83,20 @@ function render(){
     opt.value=t===null?'__null__':t;select.append(opt);});
    const selected=selections.get(a.id);
    if(selected!==undefined&&targets.some(t=>(t===null?'__null__':t)===selected))select.value=selected;
+   box.append(select);
+  }
+  // Generic mana is a strategic choice, not an automatic color deduction.
+  const options=enabled&&!a.sourceId?paymentOptions(state,CARDS[a.card].cost):[];
+  if(options.length>1){
+   const label=node('label','Generic mana payment');label.htmlFor='payment-'+a.id;box.append(label);
+   const select=node('select');select.id='payment-'+a.id;select.dataset.paymentFor=a.id;
+   for(const option of options){
+    const opt=node('option','Spend '+option.label+' · keep '+(Object.entries(option.pool)
+     .filter(([,n])=>n>0).map(([c,n])=>c+' × '+n).join(' · ')||'no mana'));
+    opt.value=JSON.stringify(option.spend);select.append(opt);
+   }
+   const previous=payments.get(a.id);
+   if(previous&&options.some(o=>JSON.stringify(o.spend)===previous))select.value=previous;
    box.append(select);
   }
   const button=node('button',enabled?'Use response':'Unavailable');button.type='button';
@@ -122,6 +136,8 @@ $('lands').addEventListener('click',e=>{
 $('hand').addEventListener('change',e=>{
  const input=e.target.closest('select[data-target-for]');
  if(input)selections.set(input.dataset.targetFor,input.value);
+ const payment=e.target.closest('select[data-payment-for]');
+ if(payment)payments.set(payment.dataset.paymentFor,payment.value);
 });
 $('hand').addEventListener('click',e=>{
  const b=e.target.closest('button[data-cast]');if(!b)return;
@@ -130,7 +146,13 @@ $('hand').addEventListener('click',e=>{
  const value=selections.get(a.id);
  const target=targets.length===1?targets[0]:
   value==='__null__'?null:targets.find(t=>t===value)??targets[0];
- act(()=>activate(state,a.id,target));
+ // Read the current visible selection; never reuse a stale allocation.
+ const options=a.sourceId?[]:paymentOptions(state,CARDS[a.card].cost);
+ const selected=$('payment-'+a.id)?.value;
+ const payment=selected?options.find(o=>JSON.stringify(o.spend)===selected)?.spend:
+  options.length===1?options[0].spend:null;
+ if(selected&&!payment){setNotice('That mana payment is no longer available. Choose again.');render();return;}
+ act(()=>activate(state,a.id,target,payment));
 });
 $('pass').addEventListener('click',()=>act(()=>pass(state)));
 $('restart').addEventListener('click',()=>load(index));
