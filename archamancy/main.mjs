@@ -83,7 +83,7 @@ document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&
   if(kind==="thorn")return t?.tier>=3&&t.branch==="B"?"Ground only. Venom Thicket poison bypasses physical immunity over time; its initial attack remains physical.":"Ground only. Physical immunity blocks direct damage. Choose Venom Thicket at Tier III for armor-piercing poison.";
   if(kind==="pyre")return "Ground only; physical-immune enemies ignore blasts.";
   if(kind==="arcanum")return t?.tier>=3&&t.branch==="A"?"Hits fliers; Deep Freeze reveals shrouded enemies in range.":"Hits fliers; Deep Freeze at Tier III reveals shrouded enemies.";
-  if(kind==="mirror")return t?.tier>=3&&t.branch==="A"?"Hits fliers; physical echoes hit magic-immune targets.":"Hits fliers; Endless Reflections at Tier III can hit magic-immune enemies.";
+  if(kind==="mirror")return t?.tier>=3&&t.branch==="A"?"Hits fliers; physical echoes prioritize magic-immune targets.":"Hits fliers; Endless Reflections at Tier III can hit magic-immune enemies.";
   if(kind==="storm")return "Hits flyers; magic-immune enemies resist its lightning.";
   return ["splash","root","troops"].includes(game.roster[kind]?.kind)?"Ground only.":["arcane","strike","chain","hex","mirror"].includes(game.roster[kind]?.kind)?"Hits fliers.":"";
  }
