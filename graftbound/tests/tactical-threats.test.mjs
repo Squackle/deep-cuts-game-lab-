@@ -27,3 +27,13 @@ test('Arasta and Toxrill communicate non-attack pressure',()=>{
  player(s).toughness=2;assert.match(slimeEndStepWarning(s),/both end steps/);
  enemies(s)[0].hp=0;assert.equal(slimeEndStepWarning(s),'');
 });
+
+test('Gloam Coven uses real-card identities rather than legacy guardian and hexer mechanics',()=>{
+ const s=arena(['P...','ahe.','....'],{a:'alpha',h:'hexer',e:'tortoise'});
+ const alpha=enemies(s).find(u=>u.defId==='alpha'),hexer=enemies(s).find(u=>u.defId==='hexer'),escort=enemies(s).find(u=>u.defId==='tortoise');
+ assert.equal(alpha.name,'Nightpack Ambusher');assert.equal(hexer.name,'Blightcaster');assert.equal(escort.name,'Dauntless Escort');
+ assert.equal(tacticalThreat(s,{uid:alpha.uid,kind:'attack'}).hits,1);
+ assert.match(tacticalThreat(s,{uid:escort.uid,kind:'move'}).notes.join(' '),/lethal damage/);
+ assert.match(tacticalThreat(s,{uid:hexer.uid,kind:'move'}).notes.join(' '),/−2\/−2/);
+ hexer.spellUsed=true;assert.ok(!tacticalThreat(s,{uid:hexer.uid,kind:'move'}).notes.some(x=>x.includes('One with the Wind')));
+});
