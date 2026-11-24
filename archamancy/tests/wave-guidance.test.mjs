@@ -2,7 +2,7 @@ import {test} from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {createEngine} from "../engine.mjs";
-import {firstFlyerWarning,bossOverlapWarning} from "../wave-guidance.mjs";
+import {firstFlyerWarning,bossOverlapWarning,counterplayWarning,troopCardHint,handCycleHint} from "../wave-guidance.mjs";
 
 const start=()=>createEngine(1,"campaign","hollow");
 
@@ -104,4 +104,48 @@ test("boss overlap advice stays visible in collapsed forecast and accessible wav
  assert.match(js,/\|\|!!overlap/);
  assert.match(js,/startText\+\(risk\?" "\+risk:""\)/);
  assert.match(html,/id="waveCounterHint"/);
+});
+
+test("caldera mono-blue forecast warns before the reported Stalker and Warden waves without changing rules",()=>{
+ const g=createEngine(1,"campaign","caldera");
+ assert.ok(g.command({type:"build",pad:0,kind:"arcanum"}));
+ assert.ok(g.command({type:"build",pad:1,kind:"mirror"}));
+ const before=JSON.stringify(g.state);
+ assert.equal(counterplayWarning(g,g.state,5),"");
+ assert.match(counterplayWarning(g,g.state,6),/Mono-Blue: shroud.*Deep Freeze/);
+ assert.match(counterplayWarning(g,g.state,8),/Mono-Blue: magic immunity.*Endless Reflections/);
+ assert.match(counterplayWarning(g,g.state,16),/Mono-Blue: magic immunity.*Endless Reflections.*shroud.*Deep Freeze/);
+ assert.equal(counterplayWarning(g,g.state,26),"");
+ assert.equal(JSON.stringify(g.state),before);
+ g.state.mana=10000;
+ assert.ok(g.command({type:"build",pad:3,kind:"judgment"}));
+ assert.equal(counterplayWarning(g,g.state,16),"","Judgment covers both threats");
+ assert.ok(g.command({type:"flightTarget",pad:3,mode:"flying"}));
+ assert.match(counterplayWarning(g,g.state,16),/No physical tower/,"flying-only physical tower cannot target ground wardens");
+});
+test("counterplay hints respect progression locks and do not invent a missing spell or tower",()=>{
+ const g=createEngine(1,"campaign","caldera");g.state.locked=["judgment","hex"];
+ assert.doesNotMatch(counterplayWarning(g,g.state,16),/Judgment Spire|Hex Sanctum/);
+ assert.ok(g.command({type:"build",pad:0,kind:"legion"}));
+ assert.equal(counterplayWarning(g,g.state,16),"","troop tower provides physical damage and detection");
+ g.state.phase="lost";assert.equal(counterplayWarning(g,g.state,16),"");
+});
+test("reported stalled hand advises free discard but does not mislabel Ward",()=>{
+ const g=createEngine(1,"campaign","caldera");
+ g.state.hand=["funeral","offering","legion","ward","bloom"];
+ assert.equal(handCycleHint(g,g.state),"Discard to draw");
+ for(const id of ["funeral","offering","legion","bloom"])assert.match(troopCardHint(g,g.state,id),/Needs a troop tower.*Discard for free/);
+ assert.equal(troopCardHint(g,g.state,"ward"),"");
+ const mana=g.state.mana;assert.ok(g.command({type:"discard",index:0}));
+ assert.equal(g.state.mana,mana);assert.equal(handCycleHint(g,g.state),"");
+ assert.ok(g.command({type:"build",pad:0,kind:"legion"}));
+ assert.equal(troopCardHint(g,g.state,"legion"),"");
+});
+test("new guidance remains wired to the collapsed forecast, wave button and hand controls",()=>{
+ const js=readFileSync(new URL("../main.mjs",import.meta.url),"utf8");
+ assert.match(js,/counter=counterplayWarning\(game,s,n\)/);
+ assert.match(js,/\|\|!!counter/);
+ assert.match(js,/counterplayWarning\(game,s,s\.wave\+1\)/);
+ assert.match(js,/troopCardHint\(game,s,s\.hand\[selectedCard\]\)/);
+ assert.match(js,/handCycleHint\(game,s\)/);
 });
