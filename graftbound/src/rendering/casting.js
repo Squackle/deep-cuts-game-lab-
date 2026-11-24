@@ -88,6 +88,7 @@ const secs = (sc, ms) => ms / 1000 / Math.max(0.01, sc.speed);
 /** A distinct cast signature for every curated spell. Purely cosmetic: no rules, saves or RNG state read.
  *  Spokes alter the light geometry, while pulse tempo shifts the charging silhouette. */
 export const CAST_SIGNATURES = Object.freeze({
+  pilotOpt:[3,2],pilotRites:[5,-2],pilotSleep:[6,.5],pilotHarmonize:[5,1],
   shock: [3,0.3], lightningBolt: [7,1.0], chain: [5,0.7],
   fire: [5,0.7], fireball: [9,1.1], flameSlash: [2,0.5], pyroclasm: [12,1.3],
   growth: [6,0.7], titanic: [8,1], snakeskin: [4,0.45],
@@ -198,6 +199,7 @@ export function impactAmplifier(sc, P, at, power, manaTier = P.tier + 1, level =
  *  object, no collision state, no rule changes. Reduced motion/instant modes skip it.
  *  Each spell identity has an authored silhouette, not just a recolored explosion. */
 export const AFTERMATH_SIGILS = Object.freeze({
+  pilotOpt:'ward',pilotRites:'void',pilotSleep:'snowflake',pilotHarmonize:'roots',
   shock: 'spark', lightningBolt: 'storm', chain: 'storm',
   fire: 'embers', fireball: 'inferno', flameSlash: 'embers', pyroclasm: 'inferno',
   growth: 'roots', titanic: 'roots', snakeskin: 'roots',
