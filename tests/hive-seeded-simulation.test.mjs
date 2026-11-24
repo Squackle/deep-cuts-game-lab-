@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {newRun,start,step,turn,chooseMutation,DIRECTIONS,RULES_VERSION} from "../src/engine.js";
 import {createLairRun,completeLairRun,LAIR_BOSSES} from "../src/lair.js";
+import {replayScore} from "../src/replay-verification.js";
 
 const key=p=>p.x+","+p.y;
 const same=(a,b)=>a.x===b.x&&a.y===b.y;
@@ -76,4 +77,28 @@ for(const boss of LAIR_BOSSES)test("seeded Lair simulation: "+boss.id+" remains 
  const a=simulate(make,1,boss.id),b=simulate(make,1,boss.id);
  assert.deepEqual(a,b);
  t.diagnostic(JSON.stringify({boss:boss.id,calls:a.calls,moves:a.moves,score:a.score,status:a.status}));
+});
+
+
+for(const mode of ["hunt","classic"])test("recorded legal arcade inputs replay actual terminal score: "+mode,t=>{
+ let scored=0;
+ for(const seed of [7919,15838,23757,31676]){
+  const r=start(newRun({mode,seed})),events=[];
+  for(let calls=0;calls<6500&&!["over","won"].includes(r.status);calls++){
+   if(r.status==="draft"){
+    const choice=r.draftOptions[0];events.push([r.runTicks,"choose",choice]);assert.equal(chooseMutation(r,choice),true);continue;
+   }
+   // Exercise normal movement first, then let a legal run reach a terminal
+   // boundary naturally. Never force death, a score, or a time counter.
+   if(calls<400){const n=r.turnQueue.length;steer(r,seed%2);if(r.turnQueue.length>n)events.push([r.runTicks,"turn",r.turnQueue.at(-1)]);}
+   step(r);
+  }
+  assert.ok(["over","won"].includes(r.status));
+  const expected={score:r.score,kills:r.kills,evolutionsChosen:r.evolutionsChosen,ticks:r.runTicks,outcome:r.outcome};
+  const validated=replayScore(seed,events,expected,mode);
+  assert.equal(validated.ok,true,JSON.stringify(validated));
+  assert.equal(replayScore(seed,events,{...expected,score:expected.score+1},mode).ok,false);
+  if(r.score>0)scored++;
+ }
+ t.diagnostic(JSON.stringify({mode,runs:4,scored}));
 });

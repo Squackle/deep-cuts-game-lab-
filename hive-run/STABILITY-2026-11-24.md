@@ -11,3 +11,7 @@ Baseline: Game Lab main `0867b8d1aa7591a169e8b56b5b711a278a863423`; rules `hive-
 Run: `npm test`, `npm run check`; review unified Lab CI as well. Real mobile/browser validation remains a release gate. Do not promote to the public Arcade or modify historical scores. If gameplay rules need balancing changes, establish a new rules version and a separately approved replay migration/promotion.
 
 Rollback: revert this isolated PR. No data migration.
+
+## Follow-up — full-screen victory and authentic replay search
+
+After rechecking open PRs, integrated ARCHEMANCY-only main commit `e7a7a4f8ac1508613136eb7f0f16824410273b83` without altering its files. The victory dialog now belongs to the native fullscreen root; its Escape action takes priority over the Game Only handler. The covered arena no longer paints every frame during the victory cinematic. Added a bounded Lair search that forks RNG streams in test code only and replays the chosen legal inputs from a fresh boss seed. Diagnostic results distinguish wins from exhausted search budgets, not impossible encounters. Also record real Arcade movement/mutation inputs and validate terminal scores via the existing replay verifier, including rejection of altered scores. No gameplay engine or ranking version change. Physical-device testing remains a separate acceptance gate.

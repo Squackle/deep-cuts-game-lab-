@@ -81,7 +81,7 @@ export function createGameOnlyMode({doc,win,root,button}){
   if(active&&nativeWasActive)leave();
  }
  function handleEscape(event){
-  if(active&&event.key==="Escape"){
+  if(active&&event.key==="Escape"&&!root.querySelector?.("#victoryOverlay:not([hidden])")){
    event.preventDefault();event.stopImmediatePropagation?.();leave();
   }
  }

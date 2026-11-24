@@ -650,8 +650,9 @@ function loop(time){
   if(catchUps===3)state.accumulator=Math.min(state.accumulator,effectiveTickMs(state.run));
  }
  soundtrack.tick(); // tiny lookahead schedules original 8-bit notes on AudioContext clock.
- draw();
- drawVictoryCelebration(time);
+ // The opaque victory layer covers the board; never paint the hidden arena.
+ if(victoryVisible())drawVictoryCelebration(time);
+ else draw();
  requestAnimationFrame(loop);
 }
 // Unlock on direct interaction; an async score request is too late for autoplay rules.

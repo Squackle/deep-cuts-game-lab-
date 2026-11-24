@@ -104,3 +104,25 @@ test("a delayed native fullscreen request cannot reopen Game Only after exit",as
  assert.equal(button["aria-pressed"],"false");
  assert.equal(doc.body.classList.contains("game-only"),false);
 });
+
+
+test("Game Only leaves Escape handling to the visible victory dialog",async()=>{
+ const {controller:c,doc,root}=fakeDOM();
+ root.querySelector=selector=>selector==="#victoryOverlay:not([hidden])"?{}:null;
+ await c.enter();
+ let prevented=false,stopped=false;
+ doc.emit("keydown",{key:"Escape",preventDefault:()=>prevented=true,stopImmediatePropagation:()=>stopped=true});
+ assert.equal(c.isActive(),true);
+ assert.equal(prevented,false);assert.equal(stopped,false);
+});
+test("earned victory dialog is inside native fullscreen root, and hidden arena paint is skipped",()=>{
+ const html=readFileSync(new URL("../hive-run/index.html",import.meta.url),"utf8");
+ const start=html.indexOf('id="game"'),end=html.indexOf('<aside class="mission',start);
+ assert.ok(start>=0&&end>start);
+ const cabinet=html.slice(start,end);
+ assert.match(cabinet,/id="victoryOverlay"/);
+ assert.match(cabinet,/id="victoryPlayAgain"/);
+ assert.equal((html.match(/id="victoryOverlay"/g)||[]).length,1);
+ const js=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
+ assert.match(js,/if\(victoryVisible\(\)\)drawVictoryCelebration\(time\);\s*else draw\(\);/);
+});

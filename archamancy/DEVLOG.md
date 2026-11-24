@@ -607,3 +607,8 @@ Logan's iPhone screenshot (Safari landscape with the tab bar, about 858x287 CSS 
 - The early-wave button shows the live number of active waves alongside the bonus. Boss warnings still appear in the forecast.
 - A selected tower explains when it is silenced, waiting for the right enemy type or incoming shots, or has no eligible target in range.
 - Short landscape screens use a scrollable list of spell names and costs in the right gutter. Battle rules and save format stay the same.
+
+## 2026-11-24 — v0.1.0-beta.13.53 Confluence troll thread
+
+- The Confluence's Gauntlet now has its own threat: a Mossbridge Troll wades in on wave 3, five return on wave 13, and eight reprise on wave 24 just before Lorthos. Each edited wave keeps its total enemy health within about 3% of the old lineup.
+- Wave 4 flyer tutorial, the 25-wave format, Lorthos at wave 25 and every other map's waves are unchanged (maps.test.mjs regression test).
