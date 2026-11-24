@@ -5,7 +5,6 @@ import {replayScore} from "../src/replay-verification.js";
 import {createLairRun,completeLairRun,LAIR_BOSSES} from "../src/lair.js";
 import {ABILITIES} from "../src/miniboss.js";
 import {safePreyTile} from "../src/enemies.js";
-import {terrainBlocks} from "../src/environments.js";
 
 // Test-only search over legal actions. No seeded engine state, enemy position,
 // charge, phase, score, or collision is forced. A random tape allows each
@@ -63,7 +62,11 @@ function huntValue(r){
 }
 function search(make,{width=18,budget=600,evaluate=value,bucketKey=null}={}){
  const initial=start(make()),source=initial.random,tape=[];
- let frontier=[{run:initial,index:0,path:[]}],best=frontier[0];
+ let frontier=[{run:initial,index:0,path:null,value:evaluate(initial)}],best=frontier[0];
+ const result=()=>{
+  const path=[];for(let link=best.path;link;link=link.previous)path.push(link.action);
+  return {best:{...best,path:path.reverse()},expanded};
+ };
  let expanded=0;
  for(let depth=0;depth<budget;depth++){
   const next=[],seen=new Set(),buckets=new Map();
@@ -74,11 +77,11 @@ function search(make,{width=18,budget=600,evaluate=value,bucketKey=null}={}){
    for(const action of actions){
     const c=fork(p,tape,source);
     apply(c.run,action);expanded++;
-    c.path=[...p.path,action];
-    if(c.run.status==="won")return {best:c,expanded};
+    c.path={previous:p.path,action};
+    if(c.run.status==="won"){best=c;return result();}
     if(!["running","draft"].includes(c.run.status))continue;
     c.value=evaluate(c.run);
-    if(c.value>evaluate(best.run))best=c;
+    if(c.value>best.value)best=c;
     const rr=c.run;
     // Keep materially distinct simulation states; do not deduplicate solely
     // by head location (body, enemy clocks and RNG offset affect next steps).
@@ -99,7 +102,7 @@ function search(make,{width=18,budget=600,evaluate=value,bucketKey=null}={}){
   }
   if(!frontier.length)break;
  }
- return {best,expanded};
+ return result();
 }
 for(const boss of LAIR_BOSSES)test("legal-action search and clean replay: "+boss.id,t=>{
  const {best,expanded}=search(()=>createLairRun(boss.id));
@@ -161,12 +164,15 @@ function classicValue(r){
  const tailAdjacent=Object.values(DIRECTIONS).some(v=>{
   const q=offset(tail,v);return q.x>=0&&q.x<w&&q.y>=0&&q.y<h&&seen[id(q)]>=0;
  });
- const length=r.body.length+r.growthDebt;
+ const occupied=new Set(r.body.map(key));
+ const rocks=new Set(r.terrain.filter(t=>t.kind==="rock"&&t.lifeMs===null).map(t=>key(t.pos)));
+ const covered=new Set([...occupied,...rocks]).size;
+ const length=r.body.length+r.growthDebt*.75;
  const free=n-r.body.length;
  // Progress dominates; steer toward reachable food while keeping access
  // to the tail and penalizing fragmentation of the remaining open area.
- return length*10000+r.brood*20+r.evolutionsChosen*100+
-  (r.effects.shield+r.effects.molt)*25+r.effects.greenPickups*8+
+ return length*10000+covered*800+r.brood*20+r.evolutionsChosen*100+
+  r.effects.shield*40+r.effects.greenPickups*30-r.effects.molt*15+
   (tailAdjacent?45:0)+Math.min(count,free)*2-
   (foodDistance>=0?foodDistance*8:100+md(head,r.food||tail)*4);
 }
@@ -181,16 +187,23 @@ function replayClassic(make,path){
  return {r,events};
 }
 test("Brood Trail compact board: search for genuine board-fill victory",t=>{
- const seed=7919,make=()=>newRun({mode:"classic",seed,cols:8,rows:8});
- const {best,expanded}=search(make,{width:48,budget:1600,evaluate:classicValue,bucketKey:classicBucket});
- const {r}=replayClassic(make,best.path);
- assert.equal(serial(r),serial(best.run));
- const rocks=new Set(r.terrain.filter(t=>t.kind==="rock"&&t.lifeMs===null).map(t=>key(t.pos))).size;
- t.diagnostic(JSON.stringify({seed,board:"8x8",expanded,actions:best.path.length,body:r.body.length,rockTiles:rocks,orbs:r.brood,evolutions:r.evolutionsChosen,outcome:r.outcome||"budget_limited",score:r.score}));
- if(r.status==="won"){
-  assert.equal(r.outcome,ENDINGS.PERFECT_CLEAR);
-  assert.equal(r.body.length+rocks,r.cols*r.rows);
- }else assert.ok(r.body.length>=20,"search must meaningfully exercise growth");
+ let won=false,maxBody=0;
+ for(const seed of [7919,29,42,103]){
+  const make=()=>newRun({mode:"classic",seed,cols:8,rows:8});
+  const {best,expanded}=search(make,{width:64,budget:1100,evaluate:classicValue,bucketKey:classicBucket});
+  const {r}=replayClassic(make,best.path);
+  assert.equal(serial(r),serial(best.run));
+  const rocks=new Set(r.terrain.filter(t=>t.kind==="rock"&&t.lifeMs===null).map(t=>key(t.pos)));
+  const coverage=new Set([...r.body.map(key),...rocks]).size;
+  maxBody=Math.max(maxBody,r.body.length);
+  t.diagnostic(JSON.stringify({seed,board:"8x8",expanded,actions:best.path.length,body:r.body.length,rockTiles:rocks.size,coverage,growthDebt:r.growthDebt,orbs:r.brood,evolutions:r.evolutionsChosen,outcome:r.outcome||"budget_limited",score:r.score}));
+  if(r.status==="won"){
+   assert.equal(r.outcome,ENDINGS.PERFECT_CLEAR);
+   assert.equal(coverage,r.cols*r.rows);
+   won=true;break;
+  }
+ }
+ assert.ok(won||maxBody>=40,"search must exercise long-body collision and growth");
 });
 test("Brood Trail full arena: bounded growth and authentic replay",t=>{
  const seed=7919,make=()=>newRun({mode:"classic",seed});
@@ -199,9 +212,19 @@ test("Brood Trail full arena: bounded growth and authentic replay",t=>{
  assert.equal(serial(r),serial(best.run));
  t.diagnostic(JSON.stringify({seed,board:"18x22",expanded,actions:best.path.length,body:r.body.length,orbs:r.brood,evolutions:r.evolutionsChosen,outcome:r.outcome||"budget_limited",score:r.score}));
  assert.ok(r.brood>=10,"search must exceed the opening growth stage");
- if(r.status==="won"){
-  assert.equal(r.outcome,ENDINGS.PERFECT_CLEAR);
-  const expected={score:r.score,kills:r.kills,evolutionsChosen:r.evolutionsChosen,ticks:r.runTicks,outcome:r.outcome};
-  assert.equal(replayScore(seed,events,expected,"classic").ok,true);
+ if(r.status==="won")assert.equal(r.outcome,ENDINGS.PERFECT_CLEAR);
+ // If the bounded search stops short, finish the actual run through normal
+ // inputs so the verifier must accept a real terminal trace, not a snapshot.
+ for(let i=0;i<6500&&!["won","over"].includes(r.status);i++){
+  if(r.status==="draft"){
+   const color=r.draftOptions[0];events.push([r.runTicks,"choose",color]);
+   assert.equal(chooseMutation(r,color),true);
+  }else step(r);
  }
+ assert.ok(["won","over"].includes(r.status));
+ const expected={score:r.score,kills:r.kills,evolutionsChosen:r.evolutionsChosen,ticks:r.runTicks,outcome:r.outcome};
+ const verified=replayScore(seed,events,expected,"classic");
+ assert.equal(verified.ok,true,JSON.stringify(verified));
+ assert.equal(replayScore(seed,events,{...expected,score:expected.score+1},"classic").ok,false);
+ t.diagnostic(JSON.stringify({terminal:r.outcome,ticks:r.runTicks,score:r.score,verified:verified.ok}));
 });
