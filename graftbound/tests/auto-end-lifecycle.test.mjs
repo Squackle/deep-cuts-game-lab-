@@ -52,3 +52,16 @@ test('cancelling auto-end clears pending work and permits exactly one new timer'
   f.battle.maybeAutoEnd(); f.battle.maybeAutoEnd();
   await wait(); assert.equal(f.calls(), 1);
 });
+
+test('mandatory discard blocks auto-end until the player resolves it', async t => {
+  const f = fixture(t);
+  f.s.deck = { hand: [{ id: 'mtg:shock' }], capacity: 7, pendingDiscards: 1 };
+  f.battle.maybeAutoEnd();
+  await wait();
+  assert.equal(f.calls(), 0);
+  f.s.deck.pendingDiscards = 0;
+  f.s.deck.hand = [];
+  f.battle.maybeAutoEnd();
+  await wait();
+  assert.equal(f.calls(), 1);
+});
