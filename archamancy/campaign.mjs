@@ -22,7 +22,9 @@ export const PACK_SLOTS = 2;
 
 export function newCampaign(seed = 1) { return { v: 1, deck: STARTER_DECK.slice(), up: {}, relics: [], boons: [], marks: [], lands: {}, treasure: 4, shop: null, pack: null, draft: null, battles: 0, wins: 0, seed: seed >>> 0 || 1 }; }
 
-const ids = (a, ok) => Array.isArray(a) ? [...new Set(a.filter(x => typeof x === "string" && ok(x)))] : [];
+// Saved collections are browser-controlled data. Inspect a bounded prefix while retaining
+// every ordinary campaign deck, relic slot, boon and shop offer across save upgrades.
+const ids = (a, ok) => Array.isArray(a) ? [...new Set(a.slice(0,256).filter(x => typeof x === "string" && ok(x)))] : [];
 export function sanitize(raw, cards) {
  const c = newCampaign(raw?.seed);
  if (!raw || typeof raw !== "object") return c;
@@ -30,13 +32,13 @@ export function sanitize(raw, cards) {
  if (deck.length >= MIN_DECK) c.deck = deck.slice(0, 40);
  for (const k of c.deck) { const n = raw.up?.[k]; if (Number.isInteger(n) && n > 0) c.up[k] = Math.min(2, n); }
  c.boons = ids(raw.boons, k => BY_ID[k]?.kind === "boon");
- c.marks = Array.isArray(raw.marks) ? raw.marks.filter(k => BY_ID[k]?.kind === "forbidden").slice(0, 6) : [];
+ c.marks = Array.isArray(raw.marks) ? raw.marks.slice(0,64).filter(k => BY_ID[k]?.kind === "forbidden").slice(0, 6) : [];
  c.relics = ids(raw.relics, k => BY_ID[k]?.kind === "relic").slice(0, slots(c));
  for (const k of "WUBRG") { const n = raw.lands?.[k]; if (Number.isInteger(n) && n > 0) c.lands[k] = Math.min(LAND_MAX, n); }
  for (const k of ["treasure", "battles", "wins"]) if (Number.isInteger(raw[k]) && raw[k] >= 0) c[k] = Math.min(raw[k], 1e6);
- if (raw.shop && Array.isArray(raw.shop.items)) c.shop = { rerolls: Number.isInteger(raw.shop.rerolls) ? raw.shop.rerolls : 0, items: raw.shop.items.filter(i => i && typeof i.id === "string" && (i.kind === "spell" ? Object.hasOwn(cards, i.id) : !!BY_ID[i.id])).map(i => ({ kind: i.kind === "spell" ? "spell" : BY_ID[i.id].kind, id: i.id, price: Math.max(0, Math.min(99, Number(i.price) | 0)), sold: !!i.sold })), packs: Array.isArray(raw.shop.packs) ? raw.shop.packs.filter(p => p && Object.hasOwn(PACKS, p.kind)).slice(0, 4).map(p => ({ kind: p.kind, price: Math.max(0, Math.min(99, Number(p.price) | 0)), sold: !!p.sold })) : [], fresh: !!raw.shop.fresh };
- if (raw.pack && Object.hasOwn(PACKS, raw.pack.kind) && Array.isArray(raw.pack.opts)) { const kind = raw.pack.kind, opts = [...new Set(raw.pack.opts.filter(k => typeof k === "string" && (kind === "spell" ? Object.hasOwn(cards, k) : BY_ID[k]?.kind === kind)))].slice(0, 5); if (opts.length) c.pack = { kind, opts }; }
- if (Array.isArray(raw.draft)) { const d = raw.draft.filter(k => Object.hasOwn(cards, k) && !c.deck.includes(k)); c.draft = d.length ? d.slice(0, 5) : null; }
+ if (raw.shop && Array.isArray(raw.shop.items)) c.shop = { rerolls: Number.isInteger(raw.shop.rerolls) ? Math.max(0,Math.min(raw.shop.rerolls,1e6)) : 0, items: raw.shop.items.slice(0,64).filter(i => i && typeof i.id === "string" && (i.kind === "spell" ? Object.hasOwn(cards, i.id) : BY_ID[i.id]?.kind === i.kind) && Number.isInteger(Number(i.price)) && Number(i.price) >= 1 && Number(i.price) <= 99).map(i => ({ kind: i.kind === "spell" ? "spell" : BY_ID[i.id].kind, id: i.id, price: Math.max(0, Math.min(99, Number(i.price) | 0)), sold: !!i.sold })), packs: Array.isArray(raw.shop.packs) ? raw.shop.packs.slice(0,16).filter(p => p && Object.hasOwn(PACKS, p.kind) && Number.isInteger(Number(p.price)) && Number(p.price) >= 1 && Number(p.price) <= 99).slice(0, 4).map(p => ({ kind: p.kind, price: Math.max(0, Math.min(99, Number(p.price) | 0)), sold: !!p.sold })) : [], fresh: !!raw.shop.fresh };
+ if (raw.pack && Object.hasOwn(PACKS, raw.pack.kind) && Array.isArray(raw.pack.opts)) { const kind = raw.pack.kind, opts = [...new Set(raw.pack.opts.slice(0,32).filter(k => typeof k === "string" && (kind === "spell" ? Object.hasOwn(cards, k) : BY_ID[k]?.kind === kind)))].slice(0, 5); if (opts.length) c.pack = { kind, opts }; }
+ if (Array.isArray(raw.draft)) { const d = raw.draft.slice(0,32).filter(k => Object.hasOwn(cards, k) && !c.deck.includes(k)); c.draft = d.length ? d.slice(0, 5) : null; }
  return c;
 }
 
