@@ -40,3 +40,20 @@ test('published trial samples stay read-only and bounded; any witness replays',(
   assert.equal(JSON.stringify(scene),before);
  }
 });
+
+test('matched-length trial pair isolates scarce generic payment rather than click count',()=>{
+ const easy=STRATEGY_TRIALS.find(p=>p.id==='st-06'),hard=STRATEGY_TRIALS.find(p=>p.id==='st-07');
+ const a=searchStrategy(easy),b=searchStrategy(hard),reversed=searchStrategy(hard,{reverseActions:true});
+ assert.equal(a.status,'complete');assert.equal(b.status,'complete');
+ assert.equal(a.metrics.shortestActions,b.metrics.shortestActions);
+ assert.ok(b.metrics.losingFirstSuccessors>a.metrics.losingFirstSuccessors);
+ assert.deepEqual(b.metrics,reversed.metrics);
+ assert.equal(replayStrategy(hard,b.witness).status,'won');
+ assert.ok(b.metrics.shortestDistinctStateRoutes>=1);
+ console.log('STACKBREAKER_MATCHED_PAIR '+JSON.stringify({easy:a.metrics,hard:b.metrics,states:[a.states,b.states]}));
+});
+test('report full trial coverage under fixed declared budgets',()=>{
+ const rows=STRATEGY_TRIALS.map(p=>{const x=searchStrategy(p,{maxStates:3000,maxEdges:20000});if(x.witness)assert.equal(replayStrategy(p,x.witness).status,'won');return {id:p.id,status:x.status,reason:x.reason,states:x.states,edges:x.edges,metrics:x.metrics};});
+ assert.ok(rows.every(r=>r.status==='complete'||r.status==='inconclusive'));
+ console.log('STACKBREAKER_TRIAL_COVERAGE '+JSON.stringify(rows));
+});
