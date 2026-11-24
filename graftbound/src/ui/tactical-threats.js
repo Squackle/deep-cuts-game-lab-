@@ -24,10 +24,16 @@ export function tacticalThreat(s, intent) {
  }
  return {hits,notes};
 }
+// Temporary spell toughness expires before the player end-step slime trigger.
+export function slimeEndStepRisk(s) {
+ if(s.phase!=='player'||!enemies(s).some(u=>u.defId==='toxrill'))return 0;
+ const p=player(s),toughness=p.toughness-(p.statuses?.temporaryToughness||0);
+ return toughness<=1?1:toughness<=2?2:0;
+}
 export function slimeEndStepWarning(s) {
  if(s.phase!=='player'||!enemies(s).some(u=>u.defId==='toxrill'))return '';
- const p=player(s);
- return p.toughness<=1?'Toxrill: ending your turn can be fatal from slime (zero toughness).':
- p.toughness<=2?'Toxrill: both end steps can reduce your toughness to zero this round.':
+ const risk=slimeEndStepRisk(s);
+ return risk===1?'Toxrill: ending your turn can be fatal from slime (zero toughness).':
+ risk===2?'Toxrill: both end steps can reduce your toughness to zero this round.':
  'Toxrill: one −1/−1 slime counter at each end step while it lives.';
 }
