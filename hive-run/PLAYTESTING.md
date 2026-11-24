@@ -49,3 +49,24 @@ Exact source `325c3734010761f9ac36093fc32e1a13eda79799`, [CI run 45461813755](ht
 ### Deployment blocker
 
 Cloudflare Pages project `deep-cuts-game-lab` reports GitHub preview deployment setting `none`. Exact branch-head deployments remain queued/idle; the canonical Lab deployment of main `e7a7a4f8ac1508613136eb7f0f16824410273b83` is successful. Browser Rendering returned HTTP 429 on the attempted mobile inspection. Shared preview configuration requires the responsible infrastructure developer/owner; do not change it from the Hive lane or bypass the release gate. No production promotion.
+
+## Round 3: player acceptance and diagnostic interpretation (2026-11-24)
+
+The 24-seed-per-mode smoke suite now emits one `SEED` JSON line for each deterministic seed, rather than just aggregate scores; each includes a simple policy identifier, survival ticks, orbs/captures, mutations drafted, status and outcome. Five `LAIR_SEED` lines report the corresponding fixed-boss smoke attempts. Treat these bots as *invariant/stability probes*, not human-grade players. Some deaths or stalled evolutions may be due to their simplistic safe-next-cell heuristics rather than unfair game design. Use exact seed and policy to reproduce anomalies and compare with a human recording before changing balance.
+
+### Short human acceptance script
+
+1. **Beginner desktop (both modes, two fresh runs each):** read only in-game instructions, use WASD then arrows; record time to first orb/capture, first mutation, first death, unclear instructions, and whether any collision felt untelegraphed. Do not add debug widgets to the public HUD.
+2. **Expert desktop:** complete at least one Hunt boss sequence and a long Brood Trail run; assess whether trapping is skill-based, whether late biomes produce sudden unavoidable situations, and whether mutation choice/recovery feels meaningful. Record seeds, chosen mutations, survival ticks and final outcomes.
+3. **Physical mobile (iPhone Safari and Android Chrome):** swipe repeatedly at edges and during rapid turns; verify no page scroll, phantom reverse turns, accidental multi-turns, touch loss, covered controls or clipped safe areas. Test rotate/background/return, Game Only entry/exit, fullscreen Escape/fallback, and restore original page scroll position. Simulated viewport checks are not hardware signoff.
+4. **Bosses:** enter all five Lair encounters; allow each power to activate; check telegraph readability, pause/dossier, three-second resume, defeat/victory messages, retry and whether traps remain fair. Rate ability icons/rings without adding additional HUD controls.
+5. **Presentation/performance:** toggle music and sound, test muted autoplay restrictions, listen for overlapping cues on pause/background and victory, test reduced-motion, monitor sustained long-body playback and verify visibility on low-end phones. Test keyboard focus and Tab cycling in mutation dialog, plus screen-reader labels where available.
+
+For each observation capture device/browser, seed/mode, steps or approximate run time, reproduction sequence, expected versus observed behavior, and whether an actual player independently reproduced it. Escalate confirmed unfair deaths, input loss, unresolvable overlays, frame degradation, and incorrect replay/score outcomes. Do not escalate a bounded search failure alone.
+
+### Release-candidate decision
+
+- **Verified at prior exact head `a3dda675620034765cb00d35ad8ac06df70ddfa4`:** dedicated Hive CI 320/320, unified Lab checks and release coordination passed; all fixed replay witnesses included. New changes must receive fresh SHA-specific CI before release.
+- **Not proved:** a full 18×22 perfect clear; a one-off extra solver attempt is not a standing release requirement. The documented bounded beam and visible-state cycle attempts already provide realistic upper-body stress evidence (170 segments maximum reported) without an algorithmic proof of impossibility.
+- **Outstanding gates:** Cloudflare branch previews disabled by shared configuration; exact-head deployed browser inspection and physical device/audio/artwork acceptance not complete. Request configuration repair from the shared infrastructure coordinator and independent QA review; do not bypass preview controls or promote to production.
+- **Compatibility:** Keep rules `hive-1.5.4`, replay input semantics and historic ranked records unchanged; any future rules rebalance requires separate approval and versioned replay migration.
