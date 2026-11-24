@@ -66,9 +66,11 @@ function huntValue(r){
  }));
  return progress+defenses+trap-(r.food?md(head,r.food)*.25:0);
 }
-function search(make,{width=18,budget=600,evaluate=value,bucketKey=null}={}){
+function search(make,{width=18,budget=600,evaluate=value,bucketKey=null,observe=null,warmup=value}={}){
  const initial=start(make()),source=initial.random,tape=[];
- let frontier=[{run:initial,index:0,path:null,value:evaluate(initial)}],best=frontier[0];
+ const rank=(r,observed)=>observe?(observed?1e9+evaluate(r):warmup(r)):evaluate(r);
+ const initialObserved=observe?Boolean(observe(initial)):true;
+ let frontier=[{run:initial,index:0,path:null,value:rank(initial,initialObserved),observed:initialObserved}],best=frontier[0];
  const result=()=>{
   const path=[];for(let link=best.path;link;link=link.previous)path.push(link.action);
   return {best:{...best,path:path.reverse()},expanded};
@@ -84,14 +86,15 @@ function search(make,{width=18,budget=600,evaluate=value,bucketKey=null}={}){
     const c=fork(p,tape,source);
     apply(c.run,action);expanded++;
     c.path={previous:p.path,action};
-    if(c.run.status==="won"){best=c;return result();}
+    c.observed=p.observed||Boolean(observe?.(c.run));
+    if(c.run.status==="won"&&c.observed){best=c;return result();}
     if(!["running","draft"].includes(c.run.status))continue;
-    c.value=evaluate(c.run);
+    c.value=rank(c.run,c.observed);
     if(c.value>best.value)best=c;
     const rr=c.run;
     // Keep materially distinct simulation states; do not deduplicate solely
     // by head location (body, enemy clocks and RNG offset affect next steps).
-    const fingerprint=serial(rr)+"|"+c.index;
+    const fingerprint=serial(rr)+"|"+c.index+(observe?"|"+c.observed:"");
     if(seen.has(fingerprint))continue;
     seen.add(fingerprint);next.push(c);
    }
@@ -277,4 +280,45 @@ test("Predator Hunt second seed: independent campaign search and replay",t=>{
  const expected={score:r.score,kills:r.kills,evolutionsChosen:r.evolutionsChosen,ticks:r.runTicks,outcome:r.outcome};
  assert.equal(replayScore(seed,events,expected,"hunt").ok,true);
  witness(t,"hunt-second-seed",r,actions);
+});
+
+const POWER_OBSERVATIONS={
+ stalker:r=>r.encounter?.lastAbility?.type==="burrow",
+ warden:r=>r.terrain.some(t=>t.kind==="seal"&&t.warningMs<=0),
+ weaver:r=>Boolean(r.encounter?.webs?.length),
+ guardian:r=>r.terrain.some(t=>t.kind==="rift"&&t.warningMs<=0),
+ broodmother:r=>r.hatchlings.length>0
+};
+function surviveUntilPower(r){
+ const e=r.encounter,enemy=r.enemies[0],head=r.body[0];
+ if(!e||!enemy)return -1e9;
+ const exits=headings.filter(d=>{
+  if(d===inverse[r.direction])return false;
+  const p=offset(head,DIRECTIONS[d]);
+  return p.x>=0&&p.y>=0&&p.x<r.cols&&p.y<r.rows&&
+   !r.body.some(b=>key(b)===key(p))&&!r.enemies.some(x=>key(x.pos)===key(p))&&
+   !r.hatchlings.some(h=>key(h.pos)===key(p))&&!r.terrain.some(t=>t.warningMs<=0&&key(t.pos)===key(p));
+ }).length;
+ const pending=r.terrain.filter(t=>["seal","rift","egg"].includes(t.kind));
+ // Stay alive until a real cooldown completes, not just an instantly
+ // captured phase. Prefer the first phase and pending telegraphs/eggs.
+ return e.abilityMs*2+e.clockMs*.05+(e.telegraph?40000:0)+pending.length*30000-
+  pending.reduce((total,t)=>total+t.warningMs,0)*.25-(e.phase-1)*100000+
+  md(head,enemy.pos)*8+exits*12+r.mercy*300;
+}
+for(const boss of LAIR_BOSSES)test("actual boss power then legal Lair victory: "+boss.id,t=>{
+ const make=()=>createLairRun(boss.id),observe=POWER_OBSERVATIONS[boss.id];
+ const {best,expanded}=search(make,{width:24,budget:550,evaluate:value,observe,warmup:surviveUntilPower});
+ const replay=start(make());let observed=false,firstPowerTick=null;
+ for(const action of best.path){
+  apply(replay,action);
+  if(observe(replay)&&!observed){observed=true;firstPowerTick=replay.runTicks}
+ }
+ assert.equal(serial(replay),serial(best.run));
+ t.diagnostic("POWER "+JSON.stringify({boss:boss.id,expanded,actions:best.path.length,observed,firstPowerTick,outcome:replay.outcome||"search_limit",score:replay.score,saves:replay.saves}));
+ assert.equal(observed,true,"real power must activate during legal gameplay");
+ assert.equal(replay.outcome,"lair_practice","power-active encounter must remain winnable");
+ assert.equal(replay.lastEncounter.kind,boss.id);
+ assert.equal(replay.kills,1);
+ witness(t,"lair-powered-"+boss.id,replay,best.path);
 });

@@ -35,3 +35,9 @@ The full-size Classic search found long-body terminal runs, not an 18×22 perfec
 ## Balance and release boundaries
 
 Retain the approved balance unless a reproducible defect warrants a separately versioned simulation change. Do not copy Lab-only Director or test code into production. Use fixed witness logs to compare any proposed rules revision and retain old rules/history; a changed replay result is a migration concern, not permission to overwrite a score. No Lab leaderboard writes or authenticated player identity. Human skill/difficulty, audio, device-specific controls, artwork framing and physical safe-area acceptance remain manual checks. Confirm exact-head CI and Cloudflare deployment before presenting a playtest URL as verified. Public promotion requires separate authorization.
+
+## Additional encounter coverage
+
+The powered-Lair search requires observing the real boss ability in play (executed Burrow Dash, active Brood Seal, Weaver web, active Rift Pulse or hatched Broodmother spider) before accepting a win. It keeps the normal search's capture strategy after satisfying that condition. No cooldowns, spawn locations or enemy positions are prepared.
+
+The separate `node --test tests/hive-classic-cycle.test.mjs` experiment uses a visible-state-only cyclic route planner with safe shortcuts and a free-space fallback for dynamic terrain. It attempts full-size clears on four seeds; it verifies actual terminal replays and reports outcomes and maximum length. Unlike beam search, it does not inspect speculative future seeded randomness. These are algorithm comparisons, not estimates of human difficulty. 
