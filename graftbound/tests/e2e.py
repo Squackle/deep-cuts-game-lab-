@@ -59,6 +59,25 @@ with sync_playwright() as p:
     check("route: /graftbound/ loads the game; title GRAFTBOUND", "GRAFTBOUND" in pg.title() and pg.locator(".title-wrap .logo").count() == 1, pg.title())
     check("assets: every sprite, layer and texture loaded", pg.evaluate("Object.keys(window.__LC.assets.images).length") >= 23 and pg.evaluate("Object.keys(window.__LC.assets.parts).length") >= 19)
     check("settings no longer offer an original-card mode", "Original set" not in pg.inner_text("body"))
+    # Common dialog contract: actual Chromium keyboard navigation, accessible name, and lock behavior.
+    pg.evaluate("""() => {
+        const opener = document.createElement('button');
+        opener.id = 'qa-modal-opener'; opener.textContent = 'QA opener';
+        document.body.append(opener); opener.focus();
+        window.__LC.openModal('<h2>Choose a test action</h2><button id="qa-first">First</button><button disabled>Disabled</button><button id="qa-last" data-close>Close</button>');
+    }""")
+    check("modal: initial focus and accessible heading", pg.evaluate("document.activeElement.id==='qa-first' && document.querySelector('[role=dialog]').getAttribute('aria-labelledby')==='gb-modal-heading'"))
+    pg.keyboard.press("Shift+Tab")
+    check("modal: reverse Tab wraps to last enabled control", pg.evaluate("document.activeElement.id==='qa-last'"))
+    pg.keyboard.press("Tab")
+    check("modal: Tab wraps to first enabled control", pg.evaluate("document.activeElement.id==='qa-first'"))
+    pg.keyboard.press("Escape")
+    check("modal: Escape closes and restores opener focus", pg.evaluate("!window.__LC.modalOpen() && document.activeElement.id==='qa-modal-opener'"))
+    pg.evaluate("""window.__LC.openModal('<h2>Required choice</h2><button id="qa-locked" data-close>Dismiss</button>', '', {locked:true})""")
+    pg.keyboard.press("Escape")
+    pg.locator("#qa-locked").click(force=True)
+    check("modal: locked choices reject Escape and dismiss controls", pg.evaluate("window.__LC.modalOpen() && window.__LC.modalLocked()"))
+    pg.evaluate("window.__LC.closeModal(); document.getElementById('qa-modal-opener').remove()")
     pg.click("text=Begin Adventure"); check("intro shown", pass_intro(pg))
     pg.locator("g.node.avail").first.dispatch_event("click"); time.sleep(1.2); idle(pg)
     info = binfo(pg); check("start: The Blank 1/1, no abilities, 7 health", info['p']['power'] == 1 and info['p']['kw'] == {} and info['p']['maxHp'] == 7, info['p'])
