@@ -58,11 +58,15 @@ export function strikePower(s, u, target) {
   return p;
 }
 export function heal(s, ev, u, amount, kind = 'heal') {
-  if (!alive(u) || amount <= 0) return 0;
-  const h = Math.min(amount, u.maxHp - u.hp);
-  if (h <= 0) return 0;
-  u.hp += h; ev.push({ t: 'heal', uid: u.uid, amount: h, kind });
-  if(u.hero)onHeroHeal(s,ev,h,kind);
+  if (!alive(u) || !Number.isFinite(amount) || amount <= 0 || battleOver(s)) return 0;
+  const h = Math.min(amount, Math.max(0, u.maxHp - u.hp));
+  if (h > 0) { u.hp += h; ev.push({ t: 'heal', uid: u.uid, amount: h, kind }); }
+  // r31: a positive hero gain is one event, independently of the RPG HP cap.
+  // Ally healing is not player life gain; Vito sees the nominal amount.
+  if (u.hero) {
+    ev.push({ t: 'comboLifeGain', uid: u.uid, amount, restored: h, kind });
+    onHeroHeal(s, ev, amount, kind);
+  }
   return h;
 }
 export function addShield(s, ev, u, amount, kind = 'shield') {
@@ -159,7 +163,7 @@ export function checkStateBasedDeath(s, ev, u) {
 }
 /** Damage pipeline: strike cap (bosses) -> armor (combat only) -> shield -> health.
  *  Only combat damage (strikes/counterblows) triggers Deathtouch and Lifelink; spells bypass armor. */
-export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hit', element = null, cause = null } = {}) {
+export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hit', element = null, cause = null, lifelinkGroup = null } = {}) {
   if (!alive(tgt) || amount <= 0) return 0;
   let a = amount;
   // Explicit per-enemy affinity only. Never grant automatic same-color resistance to all foes.
@@ -240,7 +244,10 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
       return 0;
     }
   }
-  if (combat && src && has(src, 'lifelink') && lost > 0) heal(s, ev, src, lost, 'lifelink');
+  if (combat && src && has(src, 'lifelink') && lost > 0) {
+    if (lifelinkGroup) lifelinkGroup.amount += lost;
+    else heal(s, ev, src, lost, 'lifelink');
+  }
   // Fallen Shinobi: combat damage to the player exiles their top two library cards (printed trigger).
   // Only when the Shinobi is the attacker; striking back as a blocker ('counter') is not damage to a player.
   if (combat && src?.side === 'enemy' && src.defId === 'riftstalker' && kind !== 'counter' && tgt.hero && lost > 0 && s.phase !== 'lost') resolveShinobiHit(s, ev, src, tgt);
@@ -276,12 +283,28 @@ export function strike(s, ev, src, tgt, dir, kind = 'strike') {
   const lethal = armor + shield + (has(src, 'deathtouch') && !tgt.legendary && !tgt.boss && !tgt.hero ? 1 : tgt.hp);
   const excess = Math.min(amt, cap || Infinity) - lethal;
   const tx = tgt.x, ty = tgt.y;
-  dealDamage(s, ev, src, tgt, amt, { combat: true, kind });
-  if (has(src, 'trample') && excess > 0 && tgt.hp <= 0 && dir && alive(src)) {
-    const behind = unitAt(s, tx + dir[0], ty + dir[1]);
-    if (behind && behind.side !== src.side) {
-      ev.push({ t: 'trample', uid: src.uid, target: behind.uid, amount: excess });
-      dealDamage(s, ev, src, behind, excess, { combat: true, kind: 'trample' });
+  const trample = has(src, 'trample') && excess > 0 && dir;
+  const next = trample ? unitAt(s, tx + dir[0], ty + dir[1]) : null;
+  // One strike, including its overflow, is one hero lifelink transaction.
+  // Delay death resolution only for this simultaneous damage transaction so the
+  // gain occurs before terminal victory and cannot be duplicated by overflow.
+  const group = src.hero && has(src, 'lifelink') && next && next.side !== src.side ? { amount: 0 } : null;
+  if (group) { s.batchDepth = (s.batchDepth || 0) + 1; s.deferredDeaths ||= []; }
+  try {
+    dealDamage(s, ev, src, tgt, amt, { combat: true, kind, lifelinkGroup: group });
+    if (trample && tgt.hp <= 0 && alive(src)) {
+      const behind = unitAt(s, tx + dir[0], ty + dir[1]);
+      if (behind && behind.side !== src.side) {
+        ev.push({ t: 'trample', uid: src.uid, target: behind.uid, amount: excess });
+        dealDamage(s, ev, src, behind, excess, { combat: true, kind: 'trample', lifelinkGroup: group });
+      }
+    }
+    if (group?.amount) heal(s, ev, src, group.amount, 'lifelink');
+  } finally {
+    if (group && --s.batchDepth === 0) {
+      const due = s.deferredDeaths.splice(0);
+      for (const [u, el] of due) if (u.hp <= 0 && !u.deadResolved) kill(s, ev, u, el);
+      if (s.victoryPending) declareVictory(s, ev);
     }
   }
 }
