@@ -1,5 +1,6 @@
 // GRAFTBOUND app controller: loading -> screens <-> run lifecycle <-> battle UI <-> saves. No game rules here.
 import { Scene } from './rendering/scene.js';
+import { graphicsQuality, adaptiveEnabled, lowerQuality } from './rendering/quality-policy.js';
 import { cameraFacingDirection } from './rendering/hd2d-art-pack.js';
 import { duplicatePreview } from './cards/graft-levels.js';
 import { loadAssets } from './rendering/sprites.js';
@@ -96,16 +97,22 @@ class App {
   save() { this.store.saveRun(this.run); }
   saveMeta() { this.store.saveMeta(this.meta); }
   animFactor() { const f = new URLSearchParams(location.search).get('anim'); return { cinematic: 0.65, normal: 1, fast: 2.2, instant: 100 }[f || this.meta.settings.animSpeed] || 1; }
-  pickQuality() {
-    const forced = new URLSearchParams(location.search).get('gfx'); if (['high', 'balanced', 'performance'].includes(forced)) return forced;
-    const g = this.meta.settings.graphics; if (g !== 'auto') return g;
-    const coarse = matchMedia('(pointer: coarse)').matches, small = Math.min(innerWidth, innerHeight) < 600;
-    return coarse || small || (navigator.deviceMemory && navigator.deviceMemory < 4) ? 'balanced' : 'high';
+  graphicsOptions() {
+    return { forced: new URLSearchParams(location.search).get('gfx'), preference: this.meta.settings.graphics,
+      adaptive: this.autoDowngraded, coarse: matchMedia('(pointer: coarse)').matches,
+      small: Math.min(innerWidth, innerHeight) < 600, deviceMemory: navigator.deviceMemory, hidden: document.hidden };
   }
+  pickQuality() { return graphicsQuality(this.graphicsOptions()); }
   applySettings() {
     this.audio.setSfx(this.meta.settings.sound); this.audio.setMusic(this.meta.settings.music);
     document.documentElement.dataset.cardMotion=this.meta.settings.cardMotion||'auto';
-    if (this.scene) { this.scene.setQuality(this.autoDowngraded || this.pickQuality()); this.scene.speed = this.animFactor(); this.scene.ambientOn = this.meta.settings.ambient !== false; }
+    if (this.scene) {
+      const options = this.graphicsOptions();
+      this.fixedGraphicsOverride = !adaptiveEnabled({ ...options, preference: 'auto', hidden: false });
+      if (!adaptiveEnabled({ ...options, hidden: false })) { this.autoDowngraded = null; this.fpsS = []; }
+      const quality = this.pickQuality(); if (this.scene.r.qName !== quality) this.scene.setQuality(quality);
+      this.scene.speed = this.animFactor(); this.scene.ambientOn = this.meta.settings.ambient !== false;
+    }
   }
   /** Ranked replay recorder: called only AFTER the engine accepted a decision. Adventure runs record nothing. */
   record(d) {
@@ -126,11 +133,12 @@ class App {
     this.saveMeta(); return better && t.total > 0;
   }
   autoQuality(dt) {
-    if (this.meta.settings.graphics !== 'auto' || !dt) return;
+    // Never count a background tab or override an explicit player/QA setting.
+    if (document.hidden || this.meta.settings.graphics !== 'auto' || this.fixedGraphicsOverride || !dt) return;
     this.fpsS.push(dt); if (this.fpsS.length < 120) return;
     const avg = this.fpsS.reduce((a, b) => a + b, 0) / this.fpsS.length; this.fpsS = [];
-    const order = ['high', 'balanced', 'performance'], cur = this.scene.r.qName;
-    if (1 / avg < 32 && cur !== 'performance') { this.autoDowngraded = order[order.indexOf(cur) + 1]; this.scene.setQuality(this.autoDowngraded); }
+    const cur = this.scene.r.qName, next = lowerQuality(cur, avg);
+    if (next !== cur) { this.autoDowngraded = next; this.scene.setQuality(next); }
   }
   wipe() { for (const k of Object.keys(localStorage)) if (k.startsWith('deepcutsedh.livingcard.')) localStorage.removeItem(k); location.reload(); }
   bindGlobal() {
@@ -147,6 +155,7 @@ class App {
     $('bigtext').addEventListener('click', () => { if (this.skipAbsorb) this.skipAbsorb(); });
     document.addEventListener('pointerdown', () => this.audio.unlock());
     document.addEventListener('visibilitychange', () => {
+      this.fpsS = [];
       if (document.hidden) { this.battle.cancelAutoEnd(); if (this.run) this.save(); }
       else if (this.mode === 'battle') this.battle.maybeAutoEnd();
     });   // keep elapsed time across closes and never advance a hidden battle
