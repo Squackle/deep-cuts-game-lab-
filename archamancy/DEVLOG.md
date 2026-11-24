@@ -568,3 +568,14 @@ Beta 13.47 Confluence Normal playtest finished 25/25, 6/20 fortress health, 12 l
 - Onslaught mode is worded appropriately for automatic waves (prepare defenses), rather than telling players to stop an automatic call.
 - No change to early-call availability, bonus mana, enemy strength, boss behavior, unlocks, save format, ranking or deployment scope. Existing first-flyer tutorial behavior stays intact.
 - Tests: `archamancy/tests/wave-guidance.test.mjs` covers boss wave 5/20/25 identification, concurrent-wave count, Onslaught/manual differences, hiding the hint outside eligible encounters, and UI visibility.
+
+## 2026-11-23 — v0.1.0-beta.13.49 Balatro-style booster packs
+
+Logan asked for the Shop's booster packs to feel artistic and fun to open, like Balatro's.
+- **Pack art** (new `archamancy/packfx.mjs`): every pack kind has its own foil wrapper with crimped edges, a sunburst pattern, a holo tint, a moving foil sheen and an original emblem (bolt for Spell, moon for Ritual, mountains for Land, gem for Relic, eye for Forbidden). Shop tiles show the pack floating; sold packs go grey.
+- **Opening show**: the pack drops in and can be tilted with the mouse; tap it (or wait 1.5 s) and it shakes harder and harder, the top tears off with a flash and a spark burst, the cards fly out face down, then flip one by one with a rising harp note per card. Tapping again skips to the finished reveal.
+- **Rarity flair** using MTG rarity colors: uncommon (silver glint), rare (gold glow, sweeping shine, sparks, harp arpeggio and choir) and mythic (orange-red glow, pop and quake, brass fanfare). Relics use their own rarity, Forbidden cards are mythic, spells tier by mana cost (65+ rare, 45+ uncommon); rituals and lands are common.
+- **Pick**: the chosen card lifts and flies up while the others fall away, then you return to the Shop. Skip appears once the reveal finishes.
+- New sounds in `sfx.mjs`: packShake, packTear, cardDeal, cardFlip, revealUncommon, revealRare, revealMythic, packPick.
+- Performance: only transforms and opacity animate; sparks are a fixed set of spans. Reduced-motion players see the cards face up straight away. Reloading with a pack open shows it already revealed; card art arriving mid-show repaints in place without restarting it.
+- No change to pack prices, contents, weights, save format or battle rules. Tests: `archamancy/tests/packfx.test.mjs`.

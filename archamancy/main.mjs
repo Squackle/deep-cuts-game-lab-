@@ -14,6 +14,7 @@ import {animationLoop} from './loop.mjs';
 import * as daily from './daily.mjs';
 import * as campaignLib from './campaign.mjs';
 import {BY_ID,LAND_MAX} from './pool.mjs';
+import {packEl,openShow,rarityOf,RARITY_LABEL,sparks} from './packfx.mjs';
 import {cardData,drawRunCard,shareText,CARD_W,CARD_H} from './runcard.mjs';
 function boot(createEngine){
  const $=id=>document.getElementById(id), canvas=$("field"), ctx=canvas.getContext("2d"),art=createArt(ctx,{portrait:k=>enemyPortrait(k)}),fx=createFx(ctx);let bannerTimer=0;
@@ -451,7 +452,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  const SUB_NAMES={chips:"Flat damage",mult:"Percent damage",xmult:"Multiplier",econ:"Economy",retrigger:"Double up",utility:"Utility"};
  const tColor=x=>x.kind==="spell"?game.cards[x.id].color:(BY_ID[x.id]?.ci||"C")[0]||"C";
  function campTile({kind,id},extra){const spell=kind==="spell",d=spell?game.cards[id]:BY_ID[id],el=document.createElement("div"),pic=document.createElement("span"),info=document.createElement("div"),n=document.createElement("strong"),t=document.createElement("em"),p=document.createElement("small"),foot=document.createElement("div");
-  el.className="camp-card";el.style.setProperty("--school",colors[tColor({kind,id})]||colors.C);pic.className="camp-art";paintArt(pic,d.name);foot.className="camp-foot";
+  el.className="camp-card";el.style.setProperty("--school",colors[tColor({kind,id})]||colors.C);pic.className="camp-art";pic.dataset.art=d.name;paintArt(pic,d.name);foot.className="camp-foot";
   n.textContent=d.name+(spell&&camp.up[id]?" "+"+".repeat(camp.up[id]):"");t.textContent=spell?(d.type||"Spell")+" · "+game.castCost(id)+" ◈"+(camp.up[id]?" · Level "+(camp.up[id]+1):""):KIND_NAMES[d.kind]+(d.sub?" · "+SUB_NAMES[d.sub]:"")+(d.kind==="relic"?" · "+d.rarity:"");
   p.textContent=spell?d.desc+(camp.up[id]?" Upgraded: "+camp.up[id]*25+"% stronger, "+camp.up[id]*15+"% cheaper.":""):d.text;info.append(n,t,p);el.append(pic,info,foot);if(extra)extra(foot);return el;}
  function btn(label,fn,disabled=false,title=""){const b=document.createElement("button");b.type="button";b.textContent=label;b.disabled=disabled;if(title)b.title=title;b.addEventListener("click",fn);return b;}
@@ -473,17 +474,40 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  function buyItem(i){const it=camp.shop.items[i];if(it.kind==="ritual"&&campaignLib.needsTarget(it.id)){pickTarget(it,i);return;}const line=campaignLib.buy(camp,i,game.cards);if(line){saveCamp();sfx.play("coin");notice(line,true);renderCampShop();renderWorld();}}
  function pickTarget(it,i,fromPack=false){const d=BY_ID[it.id],ids=campaignLib.ritualTargets(camp,it.id,game.cards);text($("pickTitle"),d.name);text($("pickStatus"),d.text+" Pick a spell.");
   $("pickList").replaceChildren(...ids.map(id=>campTile({kind:"spell",id},f=>f.append(btn("Choose",()=>{const line=fromPack?campaignLib.choosePack(camp,it.id,game.cards,id):campaignLib.buy(camp,i,game.cards,id);if(line){saveCamp();sfx.play("coin");notice(line,true);}showDialog("campShopDialog");renderCampShop();renderWorld();})))));showDialog("pickDialog");}
- // Booster packs (campaign.mjs PACKS): a sealed tile in the Shop; opening one shows the few cards inside, keep one for free.
- function packTile(kind,extra){const P=campaignLib.PACKS[kind],el=document.createElement("div"),pic=document.createElement("span"),info=document.createElement("div"),n=document.createElement("strong"),t=document.createElement("em"),p=document.createElement("small"),foot=document.createElement("div");
-  el.className="camp-card camp-pack";el.dataset.pack=kind;pic.className="camp-art pack-art";pic.innerHTML='<span class="pack-crimp"></span><span class="pack-name">'+P.name.replace(" Pack","")+'</span><span class="pack-crimp"></span>';foot.className="camp-foot";
+ // Booster packs (campaign.mjs PACKS, look and opening show in packfx.mjs): a foil pack in the Shop; opening one tears it open,
+ // deals the cards face down and flips them one by one (rarity flair and sound), then you keep one for free.
+ function packTile(kind,extra,sold=false){const P=campaignLib.PACKS[kind],el=document.createElement("div"),pic=document.createElement("span"),info=document.createElement("div"),n=document.createElement("strong"),t=document.createElement("em"),p=document.createElement("small"),foot=document.createElement("div");
+  el.className="camp-card camp-pack"+(sold?" is-sold":"");el.dataset.pack=kind;pic.className="camp-art pack-art";pic.append(packEl(kind,P));foot.className="camp-foot";
   n.textContent=P.name;t.textContent="Booster pack · "+KIND_NAMES[kind];p.textContent=P.text;info.append(n,t,p);el.append(pic,info,foot);extra(foot);return el;}
  function packTiles(){const packs=camp.shop.packs||[];if(!packs.length)return [];const h=document.createElement("h3");h.className="camp-head camp-span";h.textContent="Booster packs";
-  return [h,...packs.map((pk,i)=>packTile(pk.kind,f=>{const why=campaignLib.packBlocker(camp,i,game.cards);f.append(btn(pk.sold?"Opened":"Open · "+pk.price+" ◆",()=>openPack(i),!!why,why||""));if(why&&!pk.sold){const s=document.createElement("small");s.className="camp-why";s.textContent=why;f.append(s);}}))];}
- function openPack(i){if(!campaignLib.openPack(camp,i,game.cards))return;saveCamp();sfx.play("upgrade");renderWorld();renderPack();showDialog("packDialog");}
- function renderPack(){if(!camp.pack){showDialog("campShopDialog");renderCampShop();return;}const P=campaignLib.PACKS[camp.pack.kind];text($("packTitle"),P.name);text($("packStatus"),P.text+" It's free; skip to keep nothing.");
-  $("packList").replaceChildren(...camp.pack.opts.map((id,n)=>{const el=campTile({kind:camp.pack.kind,id},f=>{const why=campaignLib.packCardBlocker(camp,id,game.cards);f.append(btn("Take",()=>takePack(id),!!why,why||""));if(why){const s=document.createElement("small");s.className="camp-why";s.textContent=why;f.append(s);}});el.classList.add("pack-reveal");el.style.animationDelay=n*.12+"s";return el;}));}
- function takePack(id){if(camp.pack.kind==="ritual"&&campaignLib.needsTarget(id)){pickTarget({kind:"ritual",id},-1,true);return;}const line=campaignLib.choosePack(camp,id,game.cards);if(line){saveCamp();sfx.play("star");notice(line,true);renderWorld();showDialog("campShopDialog");renderCampShop();}}
- $("packSkip").addEventListener("click",()=>{if(campaignLib.skipPack(camp)){saveCamp();showDialog("campShopDialog");renderCampShop();}});
+  return [h,...packs.map((pk,i)=>packTile(pk.kind,f=>{const why=campaignLib.packBlocker(camp,i,game.cards);f.append(btn(pk.sold?"Opened":"Open · "+pk.price+" ◆",()=>openPack(i),!!why,why||""));if(why&&!pk.sold){const s=document.createElement("small");s.className="camp-why";s.textContent=why;f.append(s);}},pk.sold))];}
+ let packView=null,packFresh=false;const reducedMotion=()=>!!globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+ function openPack(i){if(!campaignLib.openPack(camp,i,game.cards))return;saveCamp();sfx.play("coin");packFresh=true;renderWorld();renderPack();showDialog("packDialog");}
+ function dropPackView(){packView?.show.cancel();packView=null;}
+ function renderPack(){if(!camp.pack){dropPackView();showDialog("campShopDialog");renderCampShop();return;}
+  const kind=camp.pack.kind,P=campaignLib.PACKS[kind],key=kind+":"+camp.pack.opts.join(","),stage=$("packStage");
+  // Same pack already on screen (card art arrived, or the dialog was reopened): just repaint art, don't restart the show.
+  if(packView&&packView.key===key){for(const el of stage.querySelectorAll(".camp-art[data-art]"))paintArt(el,el.dataset.art);return;}
+  dropPackView();const animate=packFresh&&!reducedMotion();packFresh=false;
+  text($("packTitle"),P.name);const done=P.text+" It's free; skip to keep nothing.";text($("packStatus"),animate?"Tap the pack to tear it open.":done);
+  stage.className="pk-stage pk-on-"+kind;stage.querySelector(".pk-hold")?.remove();
+  const slots=camp.pack.opts.map(id=>{const d=kind==="spell"?game.cards[id]:BY_ID[id],r=rarityOf(kind,d),slot=document.createElement("div"),flip=document.createElement("div"),back=document.createElement("div"),tag=document.createElement("span");
+   const front=campTile({kind,id},f=>{const why=campaignLib.packCardBlocker(camp,id,game.cards);f.append(btn("Take",()=>takePack(id,slot),!!why,why||""));if(why){const s=document.createElement("small");s.className="camp-why";s.textContent=why;f.append(s);}});
+   slot.className="pk-slot r-"+r;slot.dataset.rarity=r;flip.className="pk-flip";front.classList.add("pk-front");back.className="pk-back";tag.className="pk-rarity";tag.textContent=RARITY_LABEL[r];front.append(tag);flip.append(front,back);slot.append(flip);
+   if(r==="rare"||r==="mythic")slot.append(sparks(document,12,"pk-rare-sparks"));return slot;});
+  $("packList").replaceChildren(...slots);
+  if(animate){const hold=document.createElement("div"),tilt=document.createElement("div"),flash=document.createElement("div"),hint=document.createElement("p");hold.className="pk-hold";tilt.className="pk-tilt";flash.className="pk-flash";hint.className="pk-hint";hint.textContent="Tap to tear open";
+   tilt.append(packEl(kind,P,{big:true,split:true}),sparks(document,18,"pk-burst"));hold.append(tilt,flash,hint);stage.append(hold);}
+  $("packSkip").hidden=animate;
+  const show=openShow({stage,slots,sfx,reduced:!animate,onOpen:()=>text($("packStatus"),"Tearing it open…"),onReady:()=>{$("packSkip").hidden=false;text($("packStatus"),done);}});
+  packView={key,show,busy:false};}
+ {const st=$("packStage");st.addEventListener("click",e=>{if(!packView||packView.busy||st.classList.contains("pk-done"))return;sfx.unlock();packView.show.open();e.stopPropagation();});
+  st.addEventListener("pointermove",e=>{const t=st.querySelector(".pk-sealed .pk-tilt");if(!t||e.pointerType==="touch")return;const r=st.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;t.style.setProperty("--ry",(x*24).toFixed(1)+"deg");t.style.setProperty("--rx",(-y*18).toFixed(1)+"deg");});}
+ function takePack(id,slot){if(!camp.pack||packView?.busy)return;if(camp.pack.kind==="ritual"&&campaignLib.needsTarget(id)){pickTarget({kind:"ritual",id},-1,true);return;}if(campaignLib.packCardBlocker(camp,id,game.cards))return;
+  const finish=()=>{const line=campaignLib.choosePack(camp,id,game.cards);dropPackView();if(line){saveCamp();sfx.play("star");notice(line,true);renderWorld();showDialog("campShopDialog");renderCampShop();}else renderPack();};
+  if(!packView||!slot||reducedMotion()){finish();return;}
+  packView.busy=true;$("packStage").classList.add("pk-picking");slot.classList.add("pk-picked");sfx.play("packPick");setTimeout(finish,560);}
+ $("packSkip").addEventListener("click",()=>{if(packView?.busy)return;if(campaignLib.skipPack(camp)){dropPackView();saveCamp();showDialog("campShopDialog");renderCampShop();}});
  function renderDraft(swapFor=null){if(!camp.draft){closeDialogs();return;}const full=camp.deck.length>=campaignLib.deckCap(camp);
   const take=(id,out=null)=>{if(campaignLib.pickDraft(camp,id,out)){saveCamp();sfx.play("star");notice(game.cards[id].name+" joins your deck"+(out?", replacing "+game.cards[out].name:"")+".");closeDialogs();renderWorld();}};
   // Full deck: Swap in shows your deck so you choose which spell leaves (its upgrades go with it).
