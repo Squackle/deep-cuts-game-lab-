@@ -24,3 +24,14 @@ Current compatibility: GRAFTBOUND 1.8.3-beta, rules `graftbound-rules-1.8.3-beta
 ## Rollback and evidence
 
 Revert only this PR on its feature branch if regressions appear; no migration is needed for legitimate save data. Existing main and other developer branches are unchanged. See the PR checks and preview deployment for current evidence; pending or missing checks are not passes.
+
+
+## Continuation pass — checkpoint, save and battle lifecycle
+
+- The first patch passed 729/729 GRAFTBOUND tests and shared Lab checks. Its release-coordination failure was a malformed PR workstream label; PR #339 metadata now uses the required `Workstream: Game Lab` value.
+- Main advanced to `e7a7a4f8ac1508613136eb7f0f16824410273b83` solely in `archamancy/**`. This branch deliberately retains its original base; compare shows no competing GRAFTBOUND path changes. No other developer branch was modified.
+- Checkpoint continuation now enforces the same overall 4,000-decision budget as whole replay; requires the exact challenge revision, rules, card pool, scoring and replay metadata. This validates compatibility, not checkpoint authenticity: only trusted server-owned checkpoints are supported.
+- Corrupt-primary recovery writes a validated backup to the primary key before returning success; immediate refresh preserves recovery. Intentional deletion still cannot resurrect a backup. The corrupt copy remains set aside.
+- Auto-end is cancelled on actions, encounter start/stop, dialog opening and hidden tabs; execution checks the captured encounter and turn, active mode, visibility and modal state. Closing the dialog or returning to a visible battle re-evaluates legal actions. The unattended-turn cap resets per encounter.
+- Added two checkpoint, three recovery and three real scheduler regression tests. All of these are compatibility fixes; valid action/scoring rules, challenge revision and save schema remain unchanged. Browser and device acceptance are separate; do not represent CI as a physical playthrough.
+- No card expansion, aesthetic redesign, unreviewed balance tuning, shared workflow edits, production promotion or database activity in this patch. The card-pilot design and visual direction are tracked in #204/#205; do not infer approval of the remaining 55-card proposal.
