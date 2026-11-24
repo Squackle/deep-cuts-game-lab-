@@ -36,7 +36,7 @@ const adapted=DESIGNS.map((design,i)=>{
  return {...source,id:'st-'+String(i+1).padStart(2,'0'),
   title:design.title,intro:design.question,
   strategyFocus:design.focus,strategyLesson:design.lesson,sourceId:design.source,
-  unranked:true,trialVersion:STRATEGY_TRIALS_VERSION};
+  retryPrompt:["Replay using only Selfless Spirit; leave every other response unused.","Try swapping which creature receives each protection spell. Compare the damage and legality on resolution.","Try countering Wrath first versus boosting the Bear first. Compare legal timing and remaining resources.","Try an alternate counter target and compare the final life total.","Try a different order of the three responses; all objectives must still hold."][i],unranked:true,trialVersion:STRATEGY_TRIALS_VERSION};
 });
 function paymentTrial(n,title,mana,lesson){
  return {id:'st-'+String(n).padStart(2,'0'),version:RULES_VERSION,title,tier:'Investigator',
@@ -48,7 +48,7 @@ function paymentTrial(n,title,mana,lesson){
   stack:[{id:'sweep',card:'Languish',controller:'opponent'},{id:'removal',card:'Murder',controller:'opponent',targetId:'lion'}],
   hand:[{id:'counter',card:'Negate'},{id:'shield',card:'Blossoming Defense'}],
   objective:{type:'keepUnit',unitId:'lion'},solution:[['counter','sweep'],['shield','lion']],
-  sourceId:null,unranked:true,trialVersion:STRATEGY_TRIALS_VERSION};
+  sourceId:null,retryPrompt:["Try both orders of the two responses, and compare remaining green mana.","Try protecting first, then countering; alternatively spend colorless on Negate first."][n-6],unranked:true,trialVersion:STRATEGY_TRIALS_VERSION};
 }
 export const STRATEGY_TRIALS=Object.freeze([...adapted,
  paymentTrial(6,'Two threats, spare green',{U:1,G:2},'Negate must counter Languish. Blossoming Defense stops Murder by making its target illegal. The second green mana is available even after paying Negate.'),

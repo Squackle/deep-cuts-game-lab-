@@ -29,7 +29,7 @@
   <div class="panel-heading">
    <div>
     <p class="eyebrow" id="trialIndex"></p>
-    <h2 id="currentTrial"></h2>
+    <h2 id="currentTrial" tabindex="-1"></h2>
     <p id="trialPrompt"></p>
    </div>
    <div class="panel-actions"><button id="undo" type="button" disabled>Undo action</button><button id="restart" type="button">Restart trial</button><button id="hint" type="button">Reveal hint</button></div>
@@ -45,7 +45,7 @@
   </div>
   <div class="footer-actions"><button id="pass" type="button" class="primary">PASS / RESOLVE TOP</button><span id="pool" aria-live="polite"></span></div>
   <section class="zone" aria-labelledby="actionLogHeading"><h3 id="actionLogHeading">Recent actions &amp; resolutions</h3><ol id="actionLog"></ol></section>
-  <section id="outcome" class="outcome" hidden><h3 id="outcomeTitle"></h3><p id="outcomeText"></p></section>
+  <section id="outcome" class="outcome" hidden><h3 id="outcomeTitle"></h3><p id="outcomeText"></p><div class="panel-actions"><button id="retryTrial" type="button">Try another line</button><button id="nextTrial" type="button">Next trial</button></div></section>
  </section>
  <p class="fine">Educational fan-made practice game; a simplified rules subset, not an official Magic judge. The exercise examines only authored reference lines and possible alternatives. Do not read a suggested solution length as the minimum. No game data is submitted.</p>
 </main>

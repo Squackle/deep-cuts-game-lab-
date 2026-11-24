@@ -36,3 +36,6 @@ button.primary{font-weight:900;background:#d6ad61;border-color:#f1d99f;color:#1b
 .fine{padding-bottom:2rem}
 @media(max-width:720px){.arena{grid-template-columns:1fr}.zone.wide{grid-column:auto}.panel-heading{flex-direction:column}.item{min-width:min(100%,170px)}.masthead{padding:.8rem 1rem}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+/* Practice-only mobile controls; keep response text and resolve control readable. */
+button,.item select{min-height:44px;max-width:100%}.card-rule{font-size:.9rem;line-height:1.45;margin:.45rem 0;white-space:normal}.card-note{display:block;margin:.3rem 0}.footer-actions{background:#14272c;padding:.65rem 0;position:sticky;bottom:0;z-index:2;border-top:1px solid #405953}.outcome{scroll-margin-bottom:6rem}#actionLog{padding-left:1.5rem;line-height:1.5}
+@media(max-width:420px){.wrap{padding:.65rem}.panel{padding:.75rem}.zone{padding:.65rem}.items{display:grid;grid-template-columns:minmax(0,1fr)}.item{width:100%;min-width:0}.trial-nav button{flex:1 1 100%}.panel-actions button{flex:1}.footer-actions{padding-bottom:max(.6rem,env(safe-area-inset-bottom))}.footer-actions .primary{width:100%}.item select{font-size:1rem}}
