@@ -1,0 +1,177 @@
+{
+  "format": 1,
+  "rules": "hive-1.5.4",
+  "sourceCommit": "5594126d2cce4980796c9042c4d3ce1396ddc469",
+  "witnesses": [
+    {
+      "label": "lair-stalker",
+      "rules": "hive-1.5.4",
+      "mode": "hunt",
+      "seed": 401821,
+      "cols": 18,
+      "rows": 22,
+      "lairBoss": "stalker",
+      "actions": "......u...l....d.l.dlulu.r........d...l.d...r.u.",
+      "expected": {
+        "score": 750,
+        "kills": 1,
+        "evolutionsChosen": 2,
+        "ticks": 48,
+        "outcome": "lair_practice"
+      }
+    },
+    {
+      "label": "lair-warden",
+      "rules": "hive-1.5.4",
+      "mode": "hunt",
+      "seed": 401822,
+      "cols": 18,
+      "rows": 22,
+      "lairBoss": "warden",
+      "actions": ".......u..r.d.rdr..u.l...............u.l..d..r.u......r.d.....r.d..l.u",
+      "expected": {
+        "score": 1500,
+        "kills": 1,
+        "evolutionsChosen": 4,
+        "ticks": 70,
+        "outcome": "lair_practice"
+      }
+    },
+    {
+      "label": "lair-weaver",
+      "rules": "hive-1.5.4",
+      "mode": "hunt",
+      "seed": 401823,
+      "cols": 18,
+      "rows": 22,
+      "lairBoss": "weaver",
+      "actions": "......d....r.d..l..u..r.d.......l....dl..u.r",
+      "expected": {
+        "score": 750,
+        "kills": 1,
+        "evolutionsChosen": 6,
+        "ticks": 44,
+        "outcome": "lair_practice"
+      }
+    },
+    {
+      "label": "lair-guardian",
+      "rules": "hive-1.5.4",
+      "mode": "hunt",
+      "seed": 401824,
+      "cols": 18,
+      "rows": 22,
+      "lairBoss": "guardian",
+      "actions": "......u...ldl..u.r......drd..l..dld..r.u......r..d....r.d..l.u",
+      "expected": {
+        "score": 1500,
+        "kills": 1,
+        "evolutionsChosen": 8,
+        "ticks": 62,
+        "outcome": "lair_practice"
+      }
+    },
+    {
+      "label": "lair-broodmother",
+      "rules": "hive-1.5.4",
+      "mode": "hunt",
+      "seed": 401825,
+      "cols": 18,
+      "rows": 22,
+      "lairBoss": "broodmother",
+      "actions": ".........u......r.u.l..d.r.......dl.....u.l..dr.......d........rd.l",
+      "expected": {
+        "score": 1500,
+        "kills": 1,
+        "evolutionsChosen": 12,
+        "ticks": 67,
+        "outcome": "lair_practice"
+      }
+    },
+    {
+      "label": "hunt-campaign",
+      "rules": "hive-1.5.4",
+      "mode": "hunt",
+      "seed": 7919,
+      "cols": 18,
+      "rows": 22,
+      "lairBoss": null,
+      "actions": "..d..ldrd.r.u.......r..d....ldrd.l.u.rU..u....l...u...ru.r.d.......rdl.u...lu.l.d.W.......l...ul..d.r......d....l..d...r.u.Bldr............d...rd........l.d.l.uB.......l......uru..l.d......rdr....u.r.u..l..d.r.......d..ru..r...d.l.B..............u...........r.........d.........r.u.r.d..l.d.r.uW.......lduldul...d..r.u.........r...dld..r.uW...r........d....l.d.l......d.rB........d...ld..r.u...................r..d.......rd...l..d...r.u.Bldrd...l..u.....r................d...l.....ul.d..r.u.rB.......d.......r.dldrdr..u..l.d...........ld.lu.l..d.rW......u......l.......dlul.dB.......rdr......dr.ur.......d....l...d.l.u....................lu.l.d..",
+      "expected": {
+        "score": 9650,
+        "kills": 15,
+        "evolutionsChosen": 12,
+        "ticks": 634,
+        "outcome": "broodmother_defeated"
+      }
+    },
+    {
+      "label": "classic-compact",
+      "rules": "hive-1.5.4",
+      "mode": "classic",
+      "seed": 7919,
+      "cols": 8,
+      "rows": 8,
+      "lairBoss": null,
+      "actions": "dru..l..d..l.u....r.U..d....l.dlu....ld....ldr..G.u....rd....ru......l....dluld.rGd...rdr....u.....l.drd...lG..ulur..ulu..l...dr..d.Glul.drdld..rurdr....u....ld...l..u.r.u..r.ul.G.....dr...d.luld..lu..ld..G..",
+      "expected": {
+        "score": 3600,
+        "kills": 0,
+        "evolutionsChosen": 7,
+        "ticks": 201,
+        "outcome": "perfect_clear"
+      }
+    },
+    {
+      "label": "classic-full-terminal",
+      "rules": "hive-1.5.4",
+      "mode": "classic",
+      "seed": 7919,
+      "cols": 18,
+      "rows": 22,
+      "lairBoss": null,
+      "actions": "d...l.....u......ld......r.......u.............Uld..............r....u.............l.d.................l..Gu............r.....d.............l.............u...................r....ul.....d...G.............r....d..ru..................r.......d.................G.l......u..ru................l.....d......r.d....l..dGr.........u.........r.....dl....d...............l.........u...................Gr........d.................l.....uld.r.......u....rdrd.ld..l.........u.................Gr...........d..........rd....ru.......lu........l.............d.r..........drd.l........d......l.uru.....luWld..rd..ldldrdr...u.r..d.......l.......ur......uluru.l......ulu..ru......r..........d.rdGld..........ldrdl.u...rulurulu.ldl.dr.d....l.....ur....u..l....u.....r......Uu.l....dl.u..r...........d...ru....l.....Wu..r......d...........l......d......r...d.l...........u...........r.W........dru.rd.ru...ldluld.lu..rur.ururd.ldrd............l....u.....lu.ld.....ldrdl......u..........G....r...d.........ldr.u...........l.....d................r...........u.lu.........Grd.......r.d...ru.................l....uld..lu..l........dr.....dl.....d........r.d.....ld.rdru.....r...Gur.dldrdl.drdld.lulurul.d..rdr..u.ru.ru....l.uldldluldlu.r..ul...ur...ul...ur....d..r.dr.d.rdldrdld.ldr.u.r..u.l.u..lu.l.ul.u..l......d....rd..r.dld....r....dr.....u.r..u................l.............dldlu.rur........ul..........d....r..ur..dr..d..........l.u...l....dld.......rGu..r.........u..........rululur...dru...l..dr.dl....dluldlul....dlu..rdrurdrurdrurdr..ul.u.u.........d......r.........d.........l.uW..l.....u..r.dldr.u..l...d.....rdl.dr...ulu.r...d...ruGr......u........rd.........l...dlul.dl..u..ld.l..dr..dr.......ur...u...........l...d...l...ur..u...r....ul.....d...l..G..u.......lululdldr.drdl.d.r.......................",
+      "expected": {
+        "score": 9700,
+        "kills": 0,
+        "evolutionsChosen": 19,
+        "ticks": 1770,
+        "outcome": "death"
+      }
+    },
+    {
+      "label": "classic-safe-terminal",
+      "rules": "hive-1.5.4",
+      "mode": "classic",
+      "seed": 7919,
+      "cols": 18,
+      "rows": 22,
+      "lairBoss": null,
+      "actions": "d...l....u......l.d......r.......u.............Ul.d........r...d.....r.u.............l.d.................l..Gu............r.....d............l........dl.u..l..u................r..dr.u.rd...l...Gd............l.d..r....u................l..u.r............d..........rd.l.d...ldGl....dl.u..ru...............l.....uld......r...d....ldG.r........u.......r..u..l....dl.ul.d..rd.l...d.....r.....d.....l.......u...................Gr.d..r...d............ld.r..d.l........u.rulu..r....u.l..u.....lu....r.........Gd..ld..............l.........u..ru.lu..lurulur..u.lu....r.............d.........l......dlu.......Wl.d......lul.d..r..dr.....ur.dldl.d....l........u.r....ulur.drdldr.u...l....ul..u......r........G.....d.........rdl....u......l....u.lul..d...rurd.r....d..l..dldl...u...lu.......ru.rur............d....rdl...U....u...l.uld.r.d....r...d..r..d.....ldl.ul.......u..Wl..u.......ru.......r....dr.urur..dld..ld..ld.r..u.r.d..rd.l.ul.......d..rd..r..d.l..dl.dlu..lulu.....r.u.lu.r..dr.u..lu.r.u.r...d.ld.l.d...ru.rd.rurur.u.....ld..rlu...r..d........ld...l.........u.l.dl..u.rur..Gu..l.u.l.u..r.dr.ur.d..r.u..r.d....ld.rd..r.urulu.r.u....ldlu.r..d............l..............u....lur....d...r...ululurulurul.u.r.u.r.d.rd.ld.rd..r..Gul.u.r.ul.u..rulu.r...d.............rdl.u.l............u..lu.r.u.lu.....r...dl..d.rurdrdr.u...r.d.....l..d.r..d..r.u..........r...d.......rd.lul.drdrd.....l......d..lu.G....lu.ru.l..d..l.dld...r.urdrdl....u.....ru.lu.r.u.r.dr..ur.d..r.u....l..u.r.ur..ur.d.......ld...rd...rd..l.ul.ul.d.l.u.....ru.l..urul..dldrd.r.dldrd..lul.dlu.lu...lu.ruGlu.ru.r.d.r.urdrur.drdldr..u...lulu...rdr.u.r.d.......ld.rd..l.ul.d....rd.l..u..lu.ru.l.u.ldl..d.r.d..l.dr..drdl.....u..luru.......r.ur.d..ruru.....rul...dl...drd.l.d...rdld......Grdld.r..............u..............ru..l.....d............rd.lul..u..ru.l...u.rul.d...r.dldld...rurdrurdrurdr..urd...u..l.u.........ru.",
+      "expected": {
+        "score": 8400,
+        "kills": 0,
+        "evolutionsChosen": 16,
+        "ticks": 1861,
+        "outcome": "death"
+      }
+    },
+    {
+      "label": "hunt-second-seed",
+      "rules": "hive-1.5.4",
+      "mode": "hunt",
+      "seed": 15838,
+      "cols": 18,
+      "rows": 22,
+      "lairBoss": null,
+      "actions": "d.....l...d.l.u..r.d....r..ul...u..............ru.l.B...ur......d..........rur.d..rW.........d..r.dl...d.r......uru..l.dl...u.r.B.......u.......ld.......l..d.l..u.ru.r.u.lu.B........l...dlulu..r.d......r.urd.......l.d..r.u...............l.ul.uldld..r.uWB.......lul.d..rd...l.u........r.....d.....r.u.B..............l..d......ld.l.u........rd...........ldrdrdB.......l.u..ru..l.d.......l.urd....dldl.......u.r....d......r.d..l..u..r.dWB..........r....d....l..ul.u............rdruru..l.dW............ru...lu......rulu.r....d..l..d...rdruW.............l..d.l.u........l...u.l..d.r........u....ru..l.d..",
+      "expected": {
+        "score": 9750,
+        "kills": 15,
+        "evolutionsChosen": 12,
+        "ticks": 587,
+        "outcome": "broodmother_defeated"
+      }
+    }
+  ]
+}

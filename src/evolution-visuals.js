@@ -24,7 +24,7 @@ export function renderMutationEffects(ctx,run,cell,time=0,burst=null,reducedMoti
  if(e.redTicks>0){
   ctx.strokeStyle=EFFECT_TINTS.R;ctx.lineWidth=2;
   for(let i=0;i<4;i++){
-   const phase=(time/240+i*.7)%(Math.PI*2);
+   const phase=((reducedMotion?0:time)/240+i*.7)%(Math.PI*2);
    const sx=hx+Math.cos(phase)*cell*.8,sy=hy+Math.sin(phase)*cell*.8;
    ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx+2.8,sy-2.8);ctx.stroke();
   }

@@ -19,7 +19,17 @@ test("entry release badge and game count match Dominion and the current catalog"
 });
 
 test("focus-loss paths discard swipes even during a frozen mutation-resume gate",()=>{
- assert.match(main,/visibilitychange",\(\)=>\{\s*if\(document\.hidden\)\{\s*state\.pointer=null/);
+ assert.match(main,/visibilitychange",\(\)=>\{\s*if\(document\.hidden\)\{\s*victoryFanfare\.stop\(\);\s*state\.pointer=null/);
  for(const event of ["pagehide","blur"])
-  assert.ok(main.includes('window.addEventListener("'+event+'",()=>{\n state.pointer=null;'));
+  assert.ok(main.includes('window.addEventListener("'+event+'",()=>{\n victoryFanfare.stop();\n state.pointer=null;'));
+});
+
+test("all arena draws use a shared frame clock and stop decorative pulses with reduced motion",()=>{
+ const block=main.slice(main.indexOf("function draw(){"),main.indexOf("function loop(time){"));
+ assert.equal((block.match(/performance\.now\(\)/g)||[]).length,1);
+ assert.equal((block.match(/prefersReducedMotion\(\)/g)||[]).length,1);
+ assert.match(block,/const animationTime=reduced\?0:now/);
+ assert.match(block,/drawBroodPickup\(context,run\.food,CELLS,animationTime\)/);
+ assert.match(block,/drawBroodmotherHatchlings\(context,run,CELLS,animationTime\)/);
+ assert.match(block,/renderMutationEffects\(context,run,CELLS,now,visualBurst,reduced\)/);
 });

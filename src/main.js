@@ -509,16 +509,18 @@ function drawArtCreature(part,kind,id,heading){
 function draw(){
  if(!context)return;
  const run=state.run;
+ const now=performance.now(),reduced=prefersReducedMotion();
+ const animationTime=reduced?0:now;
  paintBackdrop(context,canvas,arenaBackground,COLS,ROWS,CELLS,run.biome);
  const body=run.status==="running"?smoothBody(state.visualBefore,run.body,
-  motionPhase(state.accumulator,effectiveTickMs(run)),{enabled:!prefersReducedMotion()}):run.body;
+  motionPhase(state.accumulator,effectiveTickMs(run)),{enabled:!reduced}):run.body;
  drawTerrain(context,run,CELLS);
  drawHatchlingWards(context,run,CELLS);
  // The brood is a gameplay target; keep it conspicuous over busy art.
- if(run.food)drawBroodPickup(context,run.food,CELLS,performance.now());
+ if(run.food)drawBroodPickup(context,run.food,CELLS,animationTime);
  if(run.encounter)drawWebs(context,run.encounter.webs,CELLS);
- drawPrey(context,run.enemies,CELLS,performance.now(),prefersReducedMotion());
- drawBroodmotherHatchlings(context,run,CELLS,performance.now());
+ drawPrey(context,run.enemies,CELLS,now,reduced);
+ drawBroodmotherHatchlings(context,run,CELLS,animationTime);
  drawTrapHints(context,run,CELLS);
  if(run.encounter){
   drawMiniboss(context,run.enemies,CELLS,run.encounter.phase);
@@ -539,10 +541,10 @@ function draw(){
  }
  drawPlayerLocator(context,body[0],run.turnQueue[0]??run.direction,CELLS,"above");
  drawQueuedTurn(context,run.body[0],run.turnQueue[0],COLS,ROWS,CELLS);
- renderMutationEffects(context,run,CELLS,performance.now(),visualBurst,prefersReducedMotion());
- drawLairEffects(context,run,CELLS,performance.now(),lairBurst,prefersReducedMotion());
- if(lastCapture)drawCapture(context,lastCapture.pos,CELLS,performance.now(),lastCapture.until,prefersReducedMotion());
- drawCaptureFlash(context,beaconCapture,CELLS,performance.now(),prefersReducedMotion());
+ renderMutationEffects(context,run,CELLS,now,visualBurst,reduced);
+ drawLairEffects(context,run,CELLS,now,lairBurst,reduced);
+ if(lastCapture)drawCapture(context,lastCapture.pos,CELLS,now,lastCapture.until,reduced);
+ drawCaptureFlash(context,beaconCapture,CELLS,now,reduced);
  if(run.status==="over"){
   context.fillStyle="#dcb78b";
   const head=run.body[0];context.fillRect(head.x*CELLS+5,head.y*CELLS+5,10,10);
@@ -783,8 +785,8 @@ canvas.addEventListener("pointercancel",clearSwipePointer);
 canvas.addEventListener("lostpointercapture",clearSwipePointer);
 document.addEventListener("visibilitychange",()=>{
  if(document.hidden){
-  state.pointer=null; // A hidden tab cannot retain an unfinished swipe.
   victoryFanfare.stop();
+  state.pointer=null; // A hidden tab cannot retain an unfinished swipe.
   if(bossGate.blocking)reopenBossBriefing();
    else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
   soundtrack.stop(); // Also silence title-screen music in hidden tabs.
@@ -795,16 +797,16 @@ window.addEventListener("focus",()=>{
  if(!document.hidden){syncSoundtrack();syncUI()}
 });
 window.addEventListener("pagehide",()=>{
- state.pointer=null;
  victoryFanfare.stop();
+ state.pointer=null;
  if(bossGate.blocking)reopenBossBriefing();
  else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
  soundtrack.stop();
  state.lastFrame=0;state.accumulator=0;
 });
 window.addEventListener("blur",()=>{
- state.pointer=null;
  victoryFanfare.stop();
+ state.pointer=null;
  if(bossGate.blocking)reopenBossBriefing();
  else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
  soundtrack.stop();
