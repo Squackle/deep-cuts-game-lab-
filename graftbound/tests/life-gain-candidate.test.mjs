@@ -39,3 +39,9 @@ test('r31 rejects historical revision 30 rather than reinterpreting its decision
  const s=startRanked();s.ranked.revision=30;s.ranked.rulesVersion='graftbound-rules-1.8.3-beta';
  assert.throws(()=>applySegment(s,[]),/Rules version mismatch|Unknown or retired/);
 });
+
+test('r31 Nemata base encounter health is 19 without changing printed stats',()=>{
+ const s=arena(['P...','...n'],{n:'nemata'}),n=enemies(s)[0];
+ assert.equal(n.power,4);assert.equal(n.toughness,5);
+ assert.equal(n.hp,19);assert.equal(n.legendaryVitality,14);
+});
