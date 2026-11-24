@@ -92,7 +92,13 @@ test("matched-action generic payment comparison separates deferred risk from cli
  assert.equal(a.metrics.shortestActions,b.metrics.shortestActions);
  assert.equal(a.metrics.shortestActions,4);
  assert.equal(a.metrics.minimumDeferredCommitments,0);
- assert.ok(b.metrics.minimumDeferredCommitments>0);
+ // There is an optimal safe ordering: red first, cast, then blue.
+ assert.equal(b.metrics.minimumDeferredCommitments,0);
+ assert.ok(b.metrics.shortestDeferredCommitments.max>a.metrics.shortestDeferredCommitments.max);
+ const charged=actions(hard,initial(hard)).find(a=>a.type==="tap"&&a.id==="blue");
+ const point=reduce(hard,initial(hard),charged).state;
+ const risk=analyzeDecision(hard,point,actions(hard,point));
+ assert.equal(risk.status,"complete");assert.ok(risk.deferredTraps>=1);
  for(const k of ["shortestActions","minimumCriticalCommitments","minimumDeferredCommitments","shortestCriticalCommitments","shortestDeferredCommitments","firstDistinctCommitments","winningFirstCommitments"])assert.deepEqual(b.metrics[k],rev.metrics[k],k);
  assert.equal(b.states,rev.states);assert.equal(b.edges,rev.edges);
  assert.ok(replay(hard,b.route).ok);assert.ok(replay(hard,rev.route).ok);
