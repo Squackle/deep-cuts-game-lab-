@@ -90,6 +90,16 @@ function saproling(g,p,c,state,frame){
     const x=capX-18+(i*7)%36,y=capY-4+(i*3)%9;
     ell(g,x,y,2+(i%3)*.5,1.5+i%2,i%3?light:CREAM,null);
   }
+  if(c.verdant){
+    // Verdant Force's green token: three leaflets grow out of the cap, not a recolored generic sprout.
+    const root=[capX+1,capY-14];
+    for(const side of [-1,1]){
+      const tip=[root[0]+side*16,root[1]-7+p.capSway*.12];
+      poly(g,[root,[root[0]+side*5,root[1]-9],tip,[root[0]+side*10,root[1]+1]],side<0?'#a6c961':'#76a94c','#38513a',1);
+      line(g,[root,tip],'#e1e8a2',.8);
+    }
+    poly(g,[root,[root[0]-4,root[1]-9],[root[0]+2,root[1]-15],[root[0]+7,root[1]-8]],'#b6d779','#38513a',1);
+  }
   if(!p.back){
     ell(g,43,56+sink,2.4,2.3,INK,null);ell(g,55,56+sink,2.4,2.3,INK,null);
     ell(g,43.5,55.3+sink,.7,.8,CREAM,null);

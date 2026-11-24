@@ -139,7 +139,7 @@ export class BattleUI {
       v.castAt = ap.slots.head ? 'head' : 'chest';
     } else {
       const friend = u.side === 'player' && u.defId === 'sproutling';
-      const comboModels={spider:'mtg_friendlySpider',birdIllusion:'mtg_friendlyBirdIllusion',tentacle:'mtg_friendlyTentacle',skeleton:'mtg_friendlySkeleton',snake:'mtg_friendlySnake',goblin:'mtg_friendlyGoblin',hornet:'mtg_friendlyHornet',squirrel:'mtg_friendlySquirrel'};
+      const comboModels={saproling:'mtg_friendlySaproling',spider:'mtg_friendlySpider',birdIllusion:'mtg_friendlyBirdIllusion',tentacle:'mtg_friendlyTentacle',skeleton:'mtg_friendlySkeleton',snake:'mtg_friendlySnake',goblin:'mtg_friendlyGoblin',hornet:'mtg_friendlyHornet',squirrel:'mtg_friendlySquirrel'};
       const tokenKey = comboModels[u.traitToken] || (u.traitToken === 'elemental' ? 'mtg_friendlyElemental' :
         u.traitToken === 'drake' ? 'mtg_friendlyDrake' :
         u.traitToken === 'catsoldier' ? 'mtg_friendlyCatSoldier' :

@@ -229,7 +229,20 @@ const want=kind=>!PART_FILTER||PART_FILTER===kind;
 // Six original lineage accents, attached to the current native pose.
 function pilotMark(g,A,mark,view,frame){
  const [nx,ny]=A.neck,[x,y]=A.chest,[bx,by]=A.back;
- if(mark==='leafCollar'){
+ if(mark==='goldFeathers'){
+  for(const side of [-1,1])for(let i=0;i<3;i++){const u=bx+side*(13+i*4),v=by-12+i*5;shape(g,[[u,v],[u+side*13,v-10],[u+side*7,v+9]],'#eed9a3','#997e50',1);}
+ }else if(mark==='cloudCrest'){
+  for(let i=-1;i<=1;i++)oval(g,nx+i*7,ny-5-Math.abs(i)*2,6,3,'#bfdce8','#5e869e',1);
+ }else if(mark==='pirateRidge'){
+  for(const side of [-1,1])shape(g,[[x+side*8,y-14],[x+side*18,y-6],[x+side*14,y+5],[x+side*9,y+4]],'#716047','#3d3936',1.2);
+  oval(g,x,y+3,4,3,'#d0aa66','#594a33',1);
+ }else if(mark==='bloodMantle'){
+  for(const side of [-1,1])shape(g,[[x+side*4,y-13],[x+side*20,y-9],[x+side*16,y+7],[x+side*6,y+4]],'#732c43','#3b2635',1.3);
+ }else if(mark==='swiftBands'){
+  for(const [u,v] of [A.leftHand,A.rightHand]){line(g,[[u-4,v-6],[u+4,v-6]],'#b86738',4);line(g,[[u-4,v-7],[u+4,v-7]],'#f3c384',1.1);}
+ }else if(mark==='goblinCrest'){
+  const [u,v]=A.head;for(let i=-1;i<=1;i++)shape(g,[[u+i*5,v-5],[u+i*6,v-18+Math.abs(i)*3],[u+i*5+4,v-5]],'#a8844e','#584633',1);
+ }else if(mark==='leafCollar'){
   for(const side of [-1,1])for(let i=0;i<3;i++){const u=nx+side*(4+i*4),v=ny+5+i*2;shape(g,[[u,v],[u+side*7,v-7],[u+side*9,v+2],[u+side*3,v+5]],i===1?'#9cbd70':'#466f47',c.deep,1);}
  }else if(mark==='batRibs'){
   for(const side of [-1,1]){const root=[bx+side*11,by-8],tip=[bx+side*(29+frame%2*2),by-25];line(g,[root,tip,[bx+side*36,by+2]],'#75445f',2.7);line(g,[root,[bx+side*23,by+9]],'#c88ca5',1.7);}
