@@ -40,8 +40,9 @@ test("sideways phones reserve side gutters so the HUD, hand and menus never cove
  assert.match(block,/\.map-stage\{padding:var\(--st\) calc\(var\(--sr\) \+ var\(--gut\)\) var\(--sb\) calc\(var\(--sl\) \+ var\(--gut\)\)\}/);
  // Panels start after the notch inset, not at the screen edge.
  assert.match(block,/--edge-l:calc\(var\(--sl\) \+ 6px\)/);assert.match(block,/\.hud\{[^}]*left:var\(--edge-l\)/);assert.match(block,/\.spell-tray\{[^}]*right:var\(--edge-r\)/);
- // The hand is a small grid inside the gutter that scrolls instead of spilling over the map.
- assert.match(block,/\.hand\{[^}]*overflow-y:auto/);
+ // The hand is a scrollable list of named spell buttons inside the gutter.
+ assert.match(block,/\.hand\{[^}]*grid-template-columns:minmax\(0,1fr\)[^}]*overflow-y:auto/);
+ assert.doesNotMatch(block,/\.hand \.spell strong\{display:none/);
  // Card details and the build ring's info box sit in the left gutter instead of over the battlefield.
  assert.match(block,/\.card-tip,\.ring \.ring-info\{position:fixed;left:var\(--edge-l\)!important/);
  assert.doesNotMatch(css,/min-aspect-ratio:21\/10/,"the old wide-only layout that ignored notch insets is gone");

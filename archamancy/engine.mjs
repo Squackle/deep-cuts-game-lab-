@@ -2,7 +2,7 @@
 // Bump only when the saved run format changes, so saves survive ordinary updates.
 import {BY_ID as POOL_BY_ID,LAND_STEP} from "./pool.mjs";
 export const SAVE_FORMAT=1;
-export const VERSION="0.1.0-beta.13.51";
+export const VERSION="0.1.0-beta.13.52";
 // Status effects from towers (ticks are 100 ms): Pyre blasts burn, Thornheart poisons (stacking), Arcanum freezes (slow), Hex curses (+35% damage taken).
 export const BURN=10,POISON=30,POISON_STACKS=3,SPREAD_HIT=.5,SPREAD_MAX=8,BROOD_REVEAL=30,SPLASH_EDGE=.75,TOWER_BURN=9;
 // Enemy health multiplier per difficulty. Gauntlet stars: 3 at 18+ fortress left, 2 at 10+, otherwise 1.
@@ -380,6 +380,25 @@ function commanderPos(){return pointAt(state.commander.progress);}
  // Targeting modes a player can pick per tower. Ties fall back to First.
  const TARGET_ORDERS={first:()=>firstOrder,last:()=>(a,b)=>remaining(b.progress)-remaining(a.progress)||a.id-b.id,strong:()=>(a,b)=>b.hp-a.hp||firstOrder(a,b),close:o=>(a,b)=>d2(enemyPos(a),o)-d2(enemyPos(b),o)||firstOrder(a,b)};
  function firstEnemy(origin,range,groundOnly=false,damage=null,mode="first",spare=false,flightMode="both"){let best=null;const order=Object.hasOwn(TARGET_ORDERS,mode)?TARGET_ORDERS[mode](origin):firstOrder;for(const e of state.enemies){if(e.hp<=0||e.escaped||!e.revealed||inTunnel(e)||(groundOnly&&e.flying)||(flightMode==="ground"&&e.flying)||(flightMode==="flying"&&!e.flying)||(damage==="magic"&&e.resist>=100)||(damage==="physical"&&e.armor>=100)||d2(enemyPos(e),origin)>range*range||(spare&&(e.incoming||0)>=e.hp))continue;if(!best||order(e,best)<0)best=e;}return best;}
+ function aimedTarget(t,range,flight=t.flightTarget||"both",spare=SPARE.has(roster[t.kind].kind)){
+  const k=roster[t.kind].kind,groundOnly=k==="splash"||k==="root";
+  const piercesImmunity=k==="strike"&&bonus(t,"pierce")||k==="root"&&bonus(t,"toxic");
+  const damage=piercesImmunity?null:groundOnly||k==="strike"?"physical":"magic";
+  return firstEnemy(pads[t.id],range,groundOnly,damage,t.target,spare,flight);
+ }
+ // Inspect the same target rules used to fire, without changing the tower or battle state.
+ function towerStatus(t){
+  if(state.phase!=="active")return "";
+  if(t.silencedUntil>state.tick)return "Silenced by a boss";
+  const def=roster[t.kind];
+  if(!AIMED.includes(def.kind))return "";
+  const pad=pads[t.id],range=def.range+(pad.bonus==="height"?30:0)+bonus(t,"range"),flight=t.flightTarget||"both";
+  if(aimedTarget(t,range,flight))return "";
+  if(SPARE.has(def.kind)&&aimedTarget(t,range,flight,false))return "Waiting for shots to land";
+  if(flight!=="both"&&aimedTarget(t,range,"both",false))return flight==="flying"?"Waiting for flyers":"Waiting for ground enemies";
+  return firstEnemy(pad,range)?"No eligible targets in range":"No visible enemies in range";
+ }
+
  function scale(w){return Math.min(1e8,Math.round((1+Math.max(0,w-5)*.24)*Math.pow(1.12,Math.max(0,Math.min(w,25)-10))*Math.pow(1.18,Math.max(0,w-25))*100)/100);}
  function spawnEnemy(kind,w){if(types[kind].boss)state.bossSpawns=(state.bossSpawns||0)+1;const def=types[kind],hp=Math.ceil(def.hp*scale(w)*(DIFFICULTY[state.difficulty]||1)*(def.flying?M.airScale||1:1)*(1+ANTE_STEP*(state.kit?.ante||0)));state.enemies.push({id:state.nextId++,wave:w,kind,...def,hp,maxHp:hp,attack:Math.ceil(def.attack*Math.sqrt(scale(w))),progress:segs[M.entrances[(state.spawned=(state.spawned||0)+1)%M.entrances.length]].off,slowUntil:0,rootUntil:0,curseUntil:0,markUntil:0,hasteUntil:0,revealed:!def.shroud,abilityAt:0,phase:def.ability==="phase"?"iron":null,phaseAt:0,baseArmor:def.armor,baseResist:def.resist,burnUntil:0,burnSource:null,poisonUntil:0,poisonStacks:0,poisonSource:null,nextAttack:0});}
  // At most three waves can be on the road at once, so early calls cannot stack a whole campaign into one fight.
@@ -535,7 +554,7 @@ function makeTroop(t,opts={}){if(state.troops.length>=220)return false;const def
  else if(k==="heal"){for(const u of state.troops)if(u.hp>0&&d2(pointAt(u.progress),p)<=range**2){const h=Math.min(Math.round(power*(1+bonus(t,"heal"))),u.maxHp-u.hp);u.hp+=h;u.ward=Math.max(u.ward,tier*4+2+Math.floor(bonus(t,"ward")));stats.healing+=h;t.healing+=h;if(h>0)shot("heal",{x:p.x,y:p.y-21},pointAt(u.progress));}const cm=state.commander;if(cm&&!cm.dead&&cm.hp>0&&cm.hp<cm.maxHp&&d2(pointAt(cm.progress),p)<=range**2){const h=Math.min(Math.round(power*(1+bonus(t,"heal"))*.5),cm.maxHp-cm.hp);cm.hp+=h;stats.healing+=h;t.healing+=h;if(h>0)shot("heal",{x:p.x,y:p.y-21},pointAt(cm.progress));}if(bonus(t,"smite")){const e=firstEnemy(p,range);if(e){hurt(e,bonus(t,"smite"),true,t);shot("strike",{x:p.x,y:p.y-20},enemyPos(e),e);}}}
  else if(k==="soul"){const u=state.troops.filter(u=>u.hp>0&&d2(pointAt(u.progress),p)<=range**2&&u.hp<=u.maxHp*.55).sort((a,b)=>a.hp-b.hp||a.id-b.id)[0];if(u){const q=pointAt(u.progress);die(u,true);if(bonus(t,"altar")){for(const e of area(q,100))hurt(e,bonus(t,"altar"),true,t,false,"death");effect(q.x,q.y,"#ba8ad8",100);}}}
  else {
- const e=firstEnemy(p,range,k==="splash"||k==="root",["arcane","chain","hex","mirror"].includes(k)?"magic":(k==="strike"&&bonus(t,"pierce")||k==="root"&&bonus(t,"toxic"))?null:["strike","splash","root"].includes(k)?"physical":null,t.target,SPARE.has(k),t.flightTarget||"both");if(!e){t.idle=(t.idle||0)+1;continue;}t.shots=(t.shots||0)+1;const q=enemyPos(e);
+ const e=aimedTarget(t,range);if(!e){t.idle=(t.idle||0)+1;continue;}t.shots=(t.shots||0)+1;const q=enemyPos(e);
  const rec={at:state.tick+(k==="chain"?CHAIN_FLIGHT:FLIGHT),tower:t.id,uid:t.uid,target:e.id,x:q.x,y:q.y};
  if(k==="chain"){let n=0,from={x:p.x,y:p.y-28};rec.chain=[];for(const x of [e,...area(q,110+bonus(t,"radius")).filter(x=>x.id!==e.id&&(t.flightTarget!=="ground"||!x.flying)&&(t.flightTarget!=="flying"||x.flying)).sort(firstOrder)]){if(n++>=tier+2+Math.floor(bonus(t,"chains")))break;const pos=enemyPos(x),to={x:pos.x,y:pos.y-(x.flying?21:8)};shot("chain",from,to,x);from=to;rec.chain.push(x.id);}}
  const reflect=t.reflectUntil>state.tick?1:0;if(extraShots(t)||reflect){const more=state.enemies.filter(x=>x.hp>0&&x.id!==e.id&&!x.escaped&&!inTunnel(x)&&(t.flightTarget!=="ground"||!x.flying)&&(t.flightTarget!=="flying"||x.flying)&&d2(enemyPos(x),p)<=range**2).sort(firstOrder).slice(0,extraShots(t)+reflect);rec.extra=more.map(x=>x.id);for(const x of more)shot(k,{x:p.x,y:p.y-28},enemyPos(x),x);}
@@ -596,5 +615,5 @@ function makeTroop(t,opts={}){if(state.troops.length>=220)return false;const def
  // A boss's record is shared by the boss and the boss log, so later updates (outcome, stalls, crack) show in the report.
  // A save stores them as two separate copies; reconnect each boss to its own log entry so a resumed run reports them.
  function relinkBossRecords(){const log=state.bossLog||[],used=new Set();for(const e of state.enemies){if(!e.bossRec)continue;const want=JSON.stringify(e.bossRec),i=log.findIndex((b,j)=>!used.has(j)&&JSON.stringify(b)===want);if(i>=0){used.add(i);e.bossRec=log[i];}}}
- return {onslaughtLeft,abilityReady:()=>!!state.commander&&!state.commander.dead&&state.tick>=(state.commander.abilityAt||0),snapshot,restore,commanders,commanderAlive,castCost,commanderRespawn,branchOptions,branchName,bonus,playtestReport,canCallEarly,earlyBonus,earlySeconds,farmLimit,farmBudget,scale,state,map:{id:mapId,get season(){return SEASONS.includes(state.season)?state.season:"summer";},name:M.name,width:W,height:H,path,segments:segs.map(s=>s.pts),spans:segs.map(s=>[s.off,s.off+s.len]),entrances:M.entrances.map(i=>segs[i].pts[0]),keep:{x:exitSeg.pts.at(-1)[0],y:exitSeg.pts.at(-1)[1]},labels:M.labels,seasons:M.seasons||SEASONS,ice:(M.ice||[]).map(r=>({x:r[0],y:r[1],w:r[2]-r[0],h:r[3]-r[1]})),palette:M.palette||null,vents:(M.vents||[]).map(v=>({x:v[0],y:v[1],r:v[2]})),tunnel:(M.tunnel||[]).map(r=>({x:r[0],y:r[1],w:r[2]-r[0],h:r[3]-r[1]})),pads,distance},roster,types,waves,waveSpec,cards,pointAt,nearestPath,inTunnel,upgradeCost,command,step,tickMs};
+ return {towerStatus,onslaughtLeft,abilityReady:()=>!!state.commander&&!state.commander.dead&&state.tick>=(state.commander.abilityAt||0),snapshot,restore,commanders,commanderAlive,castCost,commanderRespawn,branchOptions,branchName,bonus,playtestReport,canCallEarly,earlyBonus,earlySeconds,farmLimit,farmBudget,scale,state,map:{id:mapId,get season(){return SEASONS.includes(state.season)?state.season:"summer";},name:M.name,width:W,height:H,path,segments:segs.map(s=>s.pts),spans:segs.map(s=>[s.off,s.off+s.len]),entrances:M.entrances.map(i=>segs[i].pts[0]),keep:{x:exitSeg.pts.at(-1)[0],y:exitSeg.pts.at(-1)[1]},labels:M.labels,seasons:M.seasons||SEASONS,ice:(M.ice||[]).map(r=>({x:r[0],y:r[1],w:r[2]-r[0],h:r[3]-r[1]})),palette:M.palette||null,vents:(M.vents||[]).map(v=>({x:v[0],y:v[1],r:v[2]})),tunnel:(M.tunnel||[]).map(r=>({x:r[0],y:r[1],w:r[2]-r[0],h:r[3]-r[1]})),pads,distance},roster,types,waves,waveSpec,cards,pointAt,nearestPath,inTunnel,upgradeCost,command,step,tickMs};
 }
