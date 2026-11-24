@@ -25,5 +25,11 @@ export const DECISION_LADDER=Object.freeze([
   "The check land must precede the pain land. Cascade Bluffs supplies two blue on turn one and two red on turn two. Reserve both black sources and Wastes for the final ward; the single life payment belongs to black, not blue.",2,2,
   [["blue1","island"],["blue2","island"],["red","mountain"],["filter","bluffs"],["wastes","relic"]],
   [["check","checkUB"],["pain","painUB"],["shock","shockUR"]],
-  [["The Fourfold Azure",{U:4,R:1}],["The Reversed Filter",{U:1,R:2}],["The Final Ledger",{B:2,C:1,R:1}]])
+  [["The Fourfold Azure",{U:4,R:1}],["The Reversed Filter",{U:1,R:2}],["The Final Ledger",{B:2,C:1,R:1}]]),
+ puzzle(6,"Any Key Will Do","Two sources, two generic wards. Either mana can pay the first ward.",
+  "Generic mana accepts either color. Spending blue or red first leaves the other legal for the second ward. No future color reservation is needed.",1,20,
+  [["blue","island"],["red","mountain"]],[],[["First generic seal",{N:1}],["Second generic seal",{N:1}]]),
+ puzzle(7,"Reserve the Blue Key","Same sources and same number of wards. The final ward requires a particular color.",
+  "Pay the generic ward with red, then use blue for the final ward. Tapping both is safe only if you choose the correct manual payment; tapping blue first with automatic casting can force a losing payment. This is a puzzle abstraction, not an additional Magic cost rule.",1,20,
+  [["blue","island"],["red","mountain"]],[],[["First generic seal",{N:1}],["Final blue seal",{U:1}]])
 ]);
