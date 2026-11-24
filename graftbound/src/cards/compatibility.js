@@ -26,7 +26,9 @@ const COLOR_MAP = { W: 'radiant', U: 'tide', B: 'umbral', R: 'ember', G: 'verdan
 // Permit only specifically reviewed, implemented traits; never grant a generic keyword.
 export function isReviewedAbilityWord(name, word) {
   const t=traitOf(name);
-  return (name === 'Archmage Emeritus' && String(word).toLowerCase() === 'magecraft' && t?.id === 'archmage')
+  return (name === 'Pitiless Plunderer' && String(word).toLowerCase()==='treasure' && t?.id==='plunderer')
+    || (name === 'Monastery Swiftspear' && String(word).toLowerCase()==='prowess' && t?.id==='prowess')
+    || (name === 'Archmage Emeritus' && String(word).toLowerCase() === 'magecraft' && t?.id === 'archmage')
     || (name === 'Storm-Kiln Artist' && ['magecraft','treasure'].includes(String(word).toLowerCase()) && t?.id === 'stormkiln')
     || (name === 'Mulldrifter' && String(word).toLowerCase() === 'evoke' && t?.id === 'mulldrifter')
     || (name === 'Electrostatic Field' && String(word).toLowerCase() === 'defender' && t?.id === 'electrofield')
@@ -36,7 +38,7 @@ export function isReviewedAbilityWord(name, word) {
 
 /** Explicit, reviewed spell adaptations: { effect template, number bonus, gem cost, vfx id, honest note }.
  *  v0.5 costs were raised because spells now reach the whole battlefield. */
-const PILOT_NAMES=new Set(['Essence Warden','Bloodthirsty Aerialist','Marauding Blight-Priest','Kessig Flamebreather','Welcoming Vampire','Verdant Force','Opt','Village Rites','Sleep','Harmonize','Skullclamp','Shadowspear']);
+const PILOT_NAMES=new Set(['Inspiring Overseer','Cloudkin Seer','Pitiless Plunderer','Vindictive Vampire','Monastery Swiftspear','Krenko, Tin Street Kingpin','Essence Warden','Bloodthirsty Aerialist','Marauding Blight-Priest','Kessig Flamebreather','Welcoming Vampire','Verdant Force','Opt','Village Rites','Sleep','Harmonize','Skullclamp','Shadowspear']);
 export const SPELL_ADAPTATIONS = {
   'Opt': {effect:'pilot_scry',template:'page_draw',cost:1,vfx:'pilotOpt',target:'self',text:'Scry 1, then draw one card.',note:'Adapted: Inspect the real top card; keep it or put it on the bottom, then draw. Opt cannot draw itself during resolution.'},
   'Village Rites': {effect:'pilot_sacrifice',template:'page_draw',cost:1,vfx:'pilotRites',target:'sacrifice',text:'Sacrifice a nonhero ally, then draw two cards.',note:'Adapted: Choose a living summoned ally as an additional cost.'},

@@ -14,6 +14,12 @@ const S = (name, mana_cost, cmc, type_line, color_identity, rarity) => ({ name, 
 
 // Owner-approved r32 development pilot. Live printing verification remains a release gate.
 export const REAL_CREATURES = [
+  C('Inspiring Overseer','{2}{W}',3,'Creature — Angel Cleric',2,1,['Flying'],['W'],'common'),
+  C('Cloudkin Seer','{2}{U}',3,'Creature — Elemental Wizard',2,1,['Flying'],['U'],'common'),
+  C('Pitiless Plunderer','{3}{B}',4,'Creature — Human Pirate',1,4,['Treasure'],['B'],'uncommon'),
+  C('Vindictive Vampire','{3}{B}',4,'Creature — Vampire',2,3,[],['B'],'uncommon'),
+  C('Monastery Swiftspear','{R}',1,'Creature — Human Monk',1,2,['Haste','Prowess'],['R'],'uncommon'),
+  C('Krenko, Tin Street Kingpin','{2}{R}',3,'Legendary Creature — Goblin',1,2,[],['R'],'rare'),
   C('Essence Warden','{G}',1,'Creature — Elf Shaman',1,1,[],['G'],'common'),
   C('Bloodthirsty Aerialist','{1}{B}{B}',3,'Creature — Vampire Rogue',2,3,['Flying'],['B'],'uncommon'),
   C('Marauding Blight-Priest','{2}{B}',3,'Creature — Vampire Cleric',3,2,[],['B'],'common'),

@@ -14,6 +14,12 @@ export const GRAFT_LEVEL_CAP = 3;
 const L = (max, levels, text) => Object.freeze({ max, levels: Object.freeze(levels.map(Object.freeze)), text });
 /** levels[i] = parameters at level i+1. `text(p)` renders those parameters for the UI. */
 export const GRAFT_LEVELS = Object.freeze({
+  overseer:L(1,[{heal:1,draw:1}],()=> 'Encounter entry: gain 1 life and draw 1'),
+  cloudkin:L(1,[{draw:1}],()=> 'Encounter entry: draw 1'),
+  plunderer:L(1,[{treasure:1}],()=> 'Other ally dies: 1 Treasure'),
+  vindictive:L(1,[{damage:1,heal:1}],()=> 'Other ally dies: deal 1 damage and gain 1 life'),
+  prowess:L(1,[{buff:1}],()=> 'Noncreature cast: +1/+1 this turn'),
+  tinStreet:L(1,[{counter:1}],()=> 'Attack: +1/+1 counter, then Goblins equal to power'),
   ophiomancer: L(3, [{ token: [1, 1] }, { token: [2, 2] }, { token: [2, 3] }], p => `Snake ${p.token.join('/')} with Deathtouch`),
   rabblemaster: L(3, [{ token: [1, 1], bonus: 1 }, { token: [2, 1], bonus: 1 }, { token: [2, 2], bonus: 1 }], p => `Goblin ${p.token.join('/')} with Haste; attacking Goblins +${p.bonus} hero attack`),
   brimaz: L(3, [{ token: [1, 1] }, { token: [2, 2] }, { token: [2, 3] }], p => `Cat Soldier ${p.token.join('/')} on hero attack`),
