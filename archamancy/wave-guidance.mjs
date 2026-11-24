@@ -35,12 +35,15 @@ export function counterplayWarning(game,state,nextWave){
  if(!["campaign","endless"].includes(state.mode)||!["ready","active"].includes(state.phase)||nextWave<1||state.mode==="campaign"&&nextWave>25)return "";
  const threats=game.waveSpec(nextWave).map(spec=>game.types[spec.split(":")[0]]);
  const towers=Object.values(state.towers),kind=t=>game.roster[t.kind]?.kind;
- const physical=towers.some(t=>["strike","splash","root","troops"].includes(kind(t))&&t.flightTarget!=="flying");
- const detection=towers.some(t=>["strike","hex","troops"].includes(kind(t)));
+ const physical=towers.some(t=>(["strike","splash","root","troops"].includes(kind(t))||game.bonus(t,"physicalEcho"))&&t.flightTarget!=="flying");
+ const detection=towers.some(t=>["strike","hex","troops"].includes(kind(t))||game.bonus(t,"reveal"));
  const magic=threats.some(e=>e?.resist>=100)&&!physical;
  const shroud=threats.some(e=>e?.shroud)&&!detection;
  if(!magic&&!shroud)return "";
  const unlocked=k=>!state.locked?.includes(k);
+ const history=[...towers,...(state.towerHistory||[])];
+ const blue=history.length>0&&history.every(t=>game.roster[t.kind]?.color==="U");
+ if(blue){const mirror=unlocked("mirror")?"Endless Reflections (Mirrorworks III)":"Urza Constructs or other physical allies",freeze=unlocked("arcanum")?"Deep Freeze (Arcanum III)":"nearby allies or damage";return "Mono-Blue: "+[magic?"magic immunity — "+mirror+" provides physical counterplay":"",shroud?"shroud — "+freeze+" reveals enemies":""].filter(Boolean).join("; ")+". Other tower colors invalidate the trial.";}
  if(magic&&shroud)return "Magic-immune and shrouded ahead. No physical or detection tower."+(unlocked("judgment")?" Judgment Spire covers both.":" Use physical allies and reveal enemies.");
  if(magic)return "Magic-immune enemies ahead. No physical tower; "+(unlocked("judgment")?"build Judgment Spire or other physical damage.":"use physical troops or unlocked physical towers.");
  return "Shrouded enemies ahead. No detection tower; "+(unlocked("judgment")?"Judgment Spire reveals them.":unlocked("hex")?"Hex Sanctum reveals them.":"nearby allies or damage reveal them.");

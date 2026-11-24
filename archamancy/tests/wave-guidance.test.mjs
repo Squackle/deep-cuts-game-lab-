@@ -112,9 +112,9 @@ test("caldera mono-blue forecast warns before the reported Stalker and Warden wa
  assert.ok(g.command({type:"build",pad:1,kind:"mirror"}));
  const before=JSON.stringify(g.state);
  assert.equal(counterplayWarning(g,g.state,5),"");
- assert.match(counterplayWarning(g,g.state,6),/Shrouded enemies ahead/);
- assert.match(counterplayWarning(g,g.state,8),/Magic-immune enemies ahead/);
- assert.match(counterplayWarning(g,g.state,16),/Magic-immune and shrouded ahead/);
+ assert.match(counterplayWarning(g,g.state,6),/Mono-Blue: shroud.*Deep Freeze/);
+ assert.match(counterplayWarning(g,g.state,8),/Mono-Blue: magic immunity.*Endless Reflections/);
+ assert.match(counterplayWarning(g,g.state,16),/Mono-Blue: magic immunity.*Endless Reflections.*shroud.*Deep Freeze/);
  assert.equal(counterplayWarning(g,g.state,26),"");
  assert.equal(JSON.stringify(g.state),before);
  g.state.mana=10000;

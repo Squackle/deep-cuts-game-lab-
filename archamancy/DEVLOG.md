@@ -612,3 +612,7 @@ Logan's iPhone screenshot (Safari landscape with the tab bar, about 858x287 CSS 
 
 - The Confluence's Gauntlet now has its own threat: a Mossbridge Troll wades in on wave 3, five return on wave 13, and eight reprise on wave 24 just before Lorthos. Each edited wave keeps its total enemy health within about 3% of the old lineup.
 - Wave 4 flyer tutorial, the 25-wave format, Lorthos at wave 25 and every other map's waves are unchanged (maps.test.mjs regression test).
+
+
+## 2026-11-24 — beta 13.54 Mono-Blue Trial counterplay candidate
+Owner confirmed wave-17 Hard Onslaught Caldera loss was a deliberate mono-blue badge attempt. Deep Freeze detects shroud from tier III, Endless Reflections deals physical echoes to magic-immune foes (normal armor still applies; other targets remain magic), and Arcane Library pulse interval is reduced from 95 to 75 ticks. Mirrorworks copied damage cannot fall below its own power and primary incoming-hit estimates use the actual copied attack. Forecast distinguishes blue-only counterplay from mixed-color builds; no trial eligibility changes. Urza is unchanged pending comparative simulations. SAVE_FORMAT remains 1; older saves load under the updated rules, while reproducibility of old combat belongs to its original engine revision. No production promotion.
