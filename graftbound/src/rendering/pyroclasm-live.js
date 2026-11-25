@@ -1,5 +1,5 @@
 // Presentation-only adapter for the approved Cinematic Inferno Animation Lab.
-import { SmokeField, computeImpactTime } from './pyroclasm/smoke-fluid.js';
+import { SmokeField, computeImpactTime, flameColor } from './pyroclasm/smoke-fluid.js';
 import { createPixelAtlas } from './pyroclasm/pixel-art.js';
 import { ashSmokePuffs } from './pyroclasm/ash-smoke.js';
 import { drawSmokeOnArena, clipToArena } from './pyroclasm/arena-projection.js';
@@ -10,7 +10,7 @@ const rnd=n=>{const f=Math.sin(n*127.1+18.73)*43758.5453;return f-Math.floor(f);
 export const gridFor=(width,reduced,low)=>reduced||low?44:width<820?64:80;
 export const impactFor=field=>computeImpactTime(field.arrivals,PRESET.spreadSpeed,3.16);
 export class PyroclasmVisual {
- constructor(sc){this.sc=sc;this.ash=new Map();this.scorch=new Float32Array(256);this.clock=0;this.active=null;}
+ constructor(sc){this.sc=sc;this.ash=new Map();this.scorch=new Float32Array(256);this.clock=0;this.active=null;this.lastLightingPulse=-1;}
  mount(){
   if(this.canvas)return;
   const gl=this.sc.canvas,doc=gl.ownerDocument,canvas=doc.createElement('canvas');
@@ -24,7 +24,7 @@ export class PyroclasmVisual {
   Object.assign(this,{canvas,ctx,atlas,texture,textureCtx,scorchSurface,scorchCtx});
  }
  start(from){
-  this.mount();this.finish();
+  this.mount();if(this.active)this.mergeScorch(this.active.field);this.finish();
   const sc=this.sc,cells=gridFor(sc.canvas.clientWidth,sc.reduced,sc.fx?.density<.55);
   const field=new SmokeField(cells,cells,PRESET),origin={x:clamp((from[0]+sc.w/2)/sc.w),y:clamp((from[2]+sc.h/2)/sc.h)};
   field.trackTargets([...sc.units.values()].filter(v=>!v.hidden).map(v=>({x:clamp((v.pos[0]+sc.w/2)/sc.w)*(cells-1),y:clamp((v.pos[2]+sc.h/2)/sc.h)*(cells-1)})));
@@ -32,7 +32,7 @@ export class PyroclasmVisual {
   return new Promise(resolve=>{this.active={field,origin,elapsed:0,resolve,impacted:false,lastPaint:-1};});
  }
  finish(){if(this.active){this.active.resolve();this.active=null;}}
- reset(){this.finish();this.ash.clear();this.scorch.fill(0);this.clock=0;this.canvas?.remove();this.canvas=null;this.ctx=null;this.atlas=null;this.texture=null;this.textureCtx=null;this.scorchSurface=null;this.scorchCtx=null;}
+ reset(){this.finish();this.ash.clear();this.scorch.fill(0);this.clock=0;this.lastLightingPulse=-1;this.canvas?.remove();this.canvas=null;this.ctx=null;this.atlas=null;this.texture=null;this.textureCtx=null;this.scorchSurface=null;this.scorchCtx=null;}
  addAsh(uid,pos){if(this.canvas)this.ash.set(pos[0]+','+pos[2],{uid,pos:[pos[0],0,pos[2]],born:this.clock});}
  mergeScorch(field){
   if(!field.scorchDirty)return;
@@ -47,8 +47,20 @@ export class PyroclasmVisual {
   try{
    const sc=this.sc,a=this.active;
    if(a){
+    if(sc.speed>=50){this.finish();return;}
     a.elapsed=Math.min(6,a.elapsed+dt*Math.min(2,Math.max(.5,sc.speed||1)));a.field.advanceTo(a.elapsed,a.origin,sc.reduced);
     if(!a.impacted&&(a.field.time>=impactFor(a.field)||a.elapsed>=4.1)){a.impacted=true;a.resolve();sc.light?.([a.origin.x*sc.w-sc.w/2,.6,a.origin.y*sc.h-sc.h/2],[1,.41,.1],7,.6,3);if(!sc.reduced)sc.shake?.(.12);}
+    if(this.clock-this.lastLightingPulse>.1){
+     this.lastLightingPulse=this.clock;
+     const field=a.field,lights=[];
+     for(const v of sc.units.values()){
+      const gx=clamp((v.pos[0]+sc.w/2)/sc.w)*(field.w-1),gy=clamp((v.pos[2]+sc.h/2)/sc.h)*(field.h-1);
+      const intensity=clamp((field.sample(field.flame,gx,gy)*.6+field.sample(field.flame,gx-.8,gy)*.2+field.sample(field.flame,gx+.8,gy)*.2)/2.8)*PRESET.fire*(sc.reduced?.5:1);
+      if(intensity>.12)lights.push({v,intensity,col:flameColor(clamp(field.sample(field.heat,gx,gy)/5)).map(n=>n/255)});
+     }
+     lights.sort((x,y)=>y.intensity-x.intensity);
+     for(const l of lights.slice(0,3))sc.light?.(sc.centerPos(l.v.uid),l.col,Math.min(3.5,l.intensity*2.2),.12,1.2);
+    }
     if(a.field.time-a.lastPaint>=.18){this.mergeScorch(a.field);a.lastPaint=a.field.time;}
     if(a.elapsed>=5.95||a.field.time>=5.2+a.field.visualDelay){this.mergeScorch(a.field);this.finish();}
    }
@@ -210,7 +222,28 @@ function drawAshSmoke(unit,timeSinceDeath,reduced) {
   ctx.restore();
 }
 
-   if(this.active){const field=this.active.field;this.textureCtx.clearRect(0,0,this.texture.width,this.texture.height);
+   function drawTileFirelight(target,smoke){
+  if(!smoke)return;
+  const reduced=sc.reduced;
+  target.save();clipToArena(target,sc,0.04);
+  target.globalCompositeOperation='lighter';
+  for(let y=0;y<sc.h;y++)for(let x=0;x<sc.w;x++){
+    const fx=(x+.5)/sc.w*(smoke.w-1),fy=(y+.5)/sc.h*(smoke.h-1);
+    const reaction=smoke.sample(smoke.flame,fx,fy);
+    const flicker=reduced?1:.94+.06*rnd(x*31+y*17+Math.floor(smoke.time*12));
+    const alpha=clamp(reaction/3)*.22*flicker*(reduced?.5:1);
+    if(alpha<.008)continue;
+    const corners=[sc.world(x-.5,y-.5),sc.world(x+.5,y-.5),
+      sc.world(x+.5,y+.5),sc.world(x-.5,y+.5)];
+    target.beginPath();
+    corners.forEach((w,i)=>{const p=sc.project(w);if(i===0)target.moveTo(p.x,p.y);else target.lineTo(p.x,p.y);});
+    target.closePath();target.fillStyle=`rgba(255,142,56,${alpha})`;target.fill();
+  }
+  target.restore();
+}
+
+   if(this.active){const field=this.active.field;
+    drawTileFirelight(ctx,field);this.textureCtx.clearRect(0,0,this.texture.width,this.texture.height);
     field.render(this.textureCtx,this.texture.width,this.texture.height,{smoke:PRESET.smoke,fire:PRESET.fire,reduced:sc.reduced,cheapBloom:w<820,skipBloom:sc.fx?.density<.55});
     drawSmokeOnArena(ctx,this.texture,sc,{elevation:.15,steps:w<820?4:6,opacity:.94});
     if(!sc.reduced&&sc.fx?.density>=.55)drawSmokeOnArena(ctx,this.texture,sc,{elevation:.65,steps:w<820?3:5,opacity:.35});

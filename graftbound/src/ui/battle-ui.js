@@ -999,7 +999,7 @@ export class BattleUI {
     const tgtView = e.target != null && sc.units.get(e.target) ? e.target : null;
     const tiles = []; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const w = this.tile(e.x + dx, e.y + dy); tiles.push([w[0], 0, w[2]]); }
     if (kind === 'lightningBolt' || kind === 'chain') setTimeout(() => this.audio.play('crackle'), 120 / this.app.animFactor());
-    await withTimeout(castSpellVisual(sc, { kind, uid: e.uid, to, target: tgtView, tiles, audio: this.audio, magnitude: e.magnitude, level: e.level || 1, manaCost: e.manaCost ?? c.cost }), 9000 / Math.min(this.app.animFactor(), 6));
+    await withTimeout(castSpellVisual(sc, { kind, uid: e.uid, to, target: tgtView, tiles, audio: this.audio, magnitude: e.magnitude, level: e.level || 1, manaCost: e.manaCost ?? c.cost }), kind==='pyroclasm' ? Math.max(6000,9000 / Math.min(this.app.animFactor(),6)) : 9000 / Math.min(this.app.animFactor(), 6));
     this.audio.play(SPELL_SFX[kind] || 'spell');
   }
   async play(events) {
@@ -1037,12 +1037,12 @@ export class BattleUI {
         case 'armored': au.play('armor'); this.float(e.uid, `▣ −${e.amount}`, 'blocked'); break;
         case 'damage': {
           const pyroHit=pyroBatch&&e.kind==='spell'&&e.src===pyroSource;
-          if(pyroHit&&e.amount>0)pyroHits.set(e.uid,e.element);
+          if(pyroHit&&e.amount>0&&d&&d.hp-e.amount<=0)pyroHits.set(e.uid,e.element);
           if (e.kind === 'strike2') { const atk = events.slice(0, idx).reverse().find(x => x.t === 'attack'); if (atk) { this.float(atk.uid, 'Double Strike!', 'note'); await sc.lunge(atk.uid, e.uid); } }
           if (d) { d.hp = e.deathtouch ? 0 : Math.max(0, d.hp - e.amount); d.shield = Math.max(0, d.shield - e.blocked); }
           const big = e.amount >= 4 || e.deathtouch;
           const already = e.kind === 'spell' && events[idx - 1] && (events[idx - 1].t === 'spell' || events[idx - 1].t === 'chain');
-          if (e.amount > 0 && !already) sc.hit(e.uid, e.kind === 'poison' ? [0.6, 1, 0.3] : e.kind === 'spell' ? [0.8, 0.6, 1] : e.kind === 'lava' || e.kind === 'burst' ? [1, 0.5, 0.15] : e.kind === 'rift' ? [0.75, 0.4, 1] : e.deathtouch ? [0.75, 0.4, 1] : [1, 0.55, 0.3], big);
+          if (e.amount > 0 && (!already||pyroHit)) sc.hit(e.uid, e.kind === 'poison' ? [0.6, 1, 0.3] : pyroHit ? [1,0.4,0.12] : e.kind === 'spell' ? [0.8, 0.6, 1] : e.kind === 'lava' || e.kind === 'burst' ? [1, 0.5, 0.15] : e.kind === 'rift' ? [0.75, 0.4, 1] : e.deathtouch ? [0.75, 0.4, 1] : [1, 0.55, 0.3], big);
           if (e.deathtouch) sc.screenFlash([0.55, 0.3, 0.8], 0.25);
           au.play(e.deathtouch ? 'deathtouch' : e.amount > 0 ? (big ? 'bigHit' : 'hit') : 'block');
           if (e.blocked) this.float(e.uid, `${ICON.shield}${e.blocked}`, 'blocked');
