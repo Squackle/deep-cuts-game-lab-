@@ -1,0 +1,25 @@
+name: Game Lab safe source security
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '19 14 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: lab-security-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  source-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - run: node --test tests/lab-security-scan.test.mjs
+      - run: node scripts/lab-security-scan.mjs

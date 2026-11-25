@@ -1,0 +1,53 @@
+name: Game Lab browser smoke
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'lab/**'
+      - 'hive-run/**'
+      - 'src/**'
+      - 'assets/**'
+      - 'styles.css'
+      - 'stackbreaker/**'
+      - 'mana-heist/**'
+      - 'graftbound/**'
+      - 'archemancy/**'
+      - 'archamancy/**'
+      - 'scripts/lab-browser-smoke.mjs'
+      - '.github/workflows/lab-browser-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: lab-browser-smoke-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  navigation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Install pinned isolated browser driver
+        run: |
+          npm install --prefix "$RUNNER_TEMP/lab-smoke" --no-save --no-package-lock --ignore-scripts playwright-core@1.56.1
+          node "$RUNNER_TEMP/lab-smoke/node_modules/playwright-core/cli.js" install --with-deps chromium
+      - name: Verify local catalog, game boot and controls at desktop and mobile sizes
+        run: |
+          export PLAYWRIGHT_MODULE="$RUNNER_TEMP/lab-smoke/node_modules/playwright-core/index.mjs"
+          export LAB_SMOKE_ARTIFACT_DIR="$RUNNER_TEMP/lab-smoke-evidence"
+          export LAB_SMOKE_SHA="$(git rev-parse HEAD)"
+          node --test scripts/lab-browser-smoke.mjs
+      - name: Upload exact-head screenshots and failure evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lab-browser-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/lab-smoke-evidence
+          if-no-files-found: ignore
+          retention-days: 7
