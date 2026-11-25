@@ -3,8 +3,12 @@ import assert from "node:assert/strict";
 import {checkRoute,run,routes,summarize} from "../scripts/lab-live-health.mjs";
 const html=(title,links="")=>new Response("<title>"+title+"</title>"+links,{headers:{"content-type":"text/html; charset=utf-8"}});
 test("200 fallback with incorrect page title fails",async()=>{
- const r=await checkRoute("/hive-run/","Game Lab | Hive Run",async()=>html("Game Lab | Deep Cuts EDH"));
- assert.equal(r.ok,false);
+ for(const title of ["Game Lab | Deep Cuts EDH","Unavailable — Game Lab | Hive Run"]){
+  const r=await checkRoute("/hive-run/","Game Lab | Hive Run",async()=>html(title));
+  assert.equal(r.ok,false);
+  assert.equal(r.reason,"unexpected page title");
+  assert.equal(r.retryable,undefined);
+ }
 });
 test("redirect, outage, and incorrect content type fail",async()=>{
  for(const f of [async()=>new Response(null,{status:302,headers:{location:"https://other.example"}}),async()=>new Response(null,{status:503}),async()=>new Response("Game Lab | Hive Run"),async()=>{throw Error("offline");}]){

@@ -8,7 +8,7 @@ export const routes=[
  ["/hive-run/","Game Lab | Hive Run"],
  ["/stackbreaker/","Game Lab | Stackbreaker"],
  ["/mana-heist/","Game Lab | Mana Heist"],
- ["/graftbound/","GRAFTBOUND"],
+ ["/graftbound/","GRAFTBOUND — Begin as nothing. Become everything."],
  ["/archemancy/","ARCHEMANCY | Deep Cuts Game Lab"]
 ];
 export async function checkRoute(path,marker,request=fetch){
@@ -18,7 +18,7 @@ export async function checkRoute(path,marker,request=fetch){
   if(!/^text\/html(?:;|$)/i.test(response.headers.get("content-type")??"")){await response.body?.cancel();return {path,ok:false,reason:"unexpected content type"};}
   const html=await response.text();
   const title=html.match(/<title\b[^>]*>([^<]*)<\/title>/i)?.[1]??"";
-  if(!title.includes(marker))return {path,ok:false,reason:"missing expected game title"};
+  if(title.trim()!==marker)return {path,ok:false,reason:"unexpected page title"};
   if(path==="/"||path==="/lab/"){
    for(const [game] of routes.slice(2))if(!html.includes('href="'+game+'"'))return {path,ok:false,reason:"missing catalog link "+game};
   }

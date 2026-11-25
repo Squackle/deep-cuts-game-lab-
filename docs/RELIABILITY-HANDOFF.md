@@ -10,6 +10,8 @@ Snapshot 2026-11-24; current source and GitHub Actions take precedence. Main at 
 
 ## CI contract (proposed in coordination PR)
 Required release-coordination calls unified Lab suite plus the existing GRAFTBOUND verifier (complete npm test and integration manifest validation); any failed/cancelled/skipped prerequisite fails the required job. Unified and GRAFTBOUND PR invocations now go through this one reusable path, avoiding duplicated runs; standalone main push and manual workflows remain. Existing game assertions and syntax checks unchanged.
+
+The unified suite tests the candidate merge ref. The separate coordination job runs the PR base policy before using its read-only API token. Review workflow changes themselves during release acceptance.
 - Local: node --test tests/*.test.mjs stackbreaker/tests/*.test.mjs mana-heist/tests/*.test.mjs archamancy/tests/*.test.mjs ; (cd graftbound && npm test && node tools/integration-manifest.mjs). Use Node 24 for unified suites and existing verifier Node 22 to match CI.
 - Daily deployed route health: seven anonymous static GETs (both catalogs and five games); exact expected title, HTTP 200, HTML content type and catalog links. No game scripts, account APIs, third-party calls or data writes; synthetic tests cover fallback, redirect and outage. This is HTTP smoke, not interactive mobile or browser QA.
 - Do not interpret a successful export bundle as passed tests. Inspect the actual verifier job and exact head. For gameplay, run game-specific browser/manual tests as appropriate, preserve deterministic replay and test-server-first policies.
