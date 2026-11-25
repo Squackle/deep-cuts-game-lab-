@@ -2,8 +2,8 @@
 // board STRUCTURE, legal winning-route REPLAY, and unmeasured human quality.
 // No network calls, browser storage, score writes, art assets, or player analytics.
 import {LEVELS,BASE_LEVELS,GALAXIES,CHAPTERS} from "./levels.js";
-import {CARDS,VERSION,validate} from "./engine.js";
-import {solve,replay} from "./solver.js";
+import {CARDS,COLORS,VERSION,validate,initial,reduce,completed} from "./engine.js";
+import {solve} from "./solver.js";
 import {certifyCapstone} from "./capstone-certificates.js";
 import {certifyMastery} from "./mastery-certificates.js";
 import {certifyDiverse} from "./mana-variety-certificates.js";
@@ -124,6 +124,36 @@ export function createReferenceCache({maxStates=200000}={}){
  }
  return cache;
 }
+// Independent physical-card and resource invariants for release evidence.
+// The legacy reducer is still authoritative for play; this stricter audit
+// refuses false proof from duplicated physical sources or mana drift.
+export function replayPhysicalReference(level,trace){
+ let state=initial(level);
+ const fetched=new Set();
+ const fail=(error,step)=>({ok:false,error:step===undefined?error:"Move "+step+": "+error,state});
+ if(!Array.isArray(trace))return fail("Expected a reference trace");
+ function invariant(s){
+  const ids=[...s.hand,...s.field.map(f=>f.id),...s.graveyard];
+  if(new Set(ids).size!==ids.length)return "A physical card appears in more than one zone or twice in a zone";
+  const units=s.manaUnits||[];
+  if(new Set(units.map(u=>u.id)).size!==units.length)return "Duplicate mana unit";
+  for(const c of COLORS)if(s.pool[c]!==units.filter(u=>u.color===c).length)return "Mana pool/unit mismatch for "+c;
+  return null;
+ }
+ const startError=invariant(state);
+ if(startError)return fail(startError);
+ for(let i=0;i<trace.length;i++){
+  const action=trace[i];
+  if(action?.type==="fetch"&&fetched.has(action.targetId))return fail("Library card already fetched: "+action.targetId,i+1);
+  const result=reduce(level,state,action);
+  if(!result.ok)return fail(result.error||"Illegal engine action",i+1);
+  state=result.state;
+  if(action.type==="fetch")fetched.add(action.targetId);
+  const error=invariant(state);
+  if(error)return fail(error,i+1);
+ }
+ return completed(level,state)?{ok:true,state}:fail("Reference did not complete all wards");
+}
 export function auditLegalRoutes(puzzles=LEVELS,{maxStates=200000}={}){
  const data=structuralAudit(puzzles),cache=createReferenceCache({maxStates});
  for(let i=0;i<puzzles.length;i++){
@@ -135,7 +165,7 @@ export function auditLegalRoutes(puzzles=LEVELS,{maxStates=200000}={}){
    if(!proof||proof.status!=="solved"||!Array.isArray(proof.actions)){
     r.proofStatus="inconclusive";r.proofError=String(proof?.reason||"No solved legal reference route");
    }else{
-    const route=replay(p,proof.actions);
+    const route=replayPhysicalReference(p,proof.actions);
     if(!route.ok){r.proofStatus="failed";r.proofError=String(route.error||"Reference did not complete all wards");}
     else if(route.state.turn>p.turnLimit||route.state.life<=0){
      r.proofStatus="failed";r.proofError="Reference violates turn/life budget";

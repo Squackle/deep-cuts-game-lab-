@@ -1,9 +1,18 @@
 // Optional unscored calibration boards. Campaign boards and save IDs stay intact.
 import {VERSION} from "./engine.js";
 const cards=list=>list.map(([id,card])=>({id,card}));
+const clues=[
+ "Which source can produce only blue, and which is your only red source?",
+ "Identify the source needed for the later red ward before opening the blue ward.",
+ "Reserve the mana used to activate Cascade Bluffs separately from its output.",
+ "A painful colored tap spends life that will not return at the next turn.",
+ "Count both turns, then track the life payment, filter fuel and true colorless requirement.",
+ "Try the opposite color ordering after a win; both generic wards accept either color.",
+ "Find a safe order for auto-cast, then compare both legal manual payments after charging both sources."
+];
 function puzzle(n,title,focus,why,turnLimit,life,field,hand,stages){
  return {id:`mh-decision-${n}`,version:VERSION,chapter:"DECISION LAB · SAMPLE PROGRESSION",
-  rank:n,title,briefing:focus,decision:{focus,why},turnLimit,life,
+  rank:n,title,briefing:focus,decision:{focus,why,clue:clues[n-1],retry:["Try opening with the flexible land's red mode, then the fixed blue source. Reverse that tap order and compare.","Try producing red before opening the blue seal. Keep the red mana until the second ward; compare with using both blue modes.","Try using the second Island as filter fuel instead of the first. Confirm which output must remain for the red ward.","Try a different safe tap order within each turn. Check whether playing the shock land instead can still finish.","Try swapping the two Island roles on turn one; trace both filter outputs and the final life budget.","Try red first, then blue; reset and try blue first, then red. Both should finish.","In manual mode charge both sources, then select red for the generic seal. In automatic mode try red first; contrast with blue first."][n-1]},turnLimit,life,
   field:cards(field),hand:cards(hand),library:[],stages:stages.map(([name,cost])=>({name,cost}))};
 }
 export const DECISION_LADDER=Object.freeze([
@@ -25,5 +34,11 @@ export const DECISION_LADDER=Object.freeze([
   "The check land must precede the pain land. Cascade Bluffs supplies two blue on turn one and two red on turn two. Reserve both black sources and Wastes for the final ward; the single life payment belongs to black, not blue.",2,2,
   [["blue1","island"],["blue2","island"],["red","mountain"],["filter","bluffs"],["wastes","relic"]],
   [["check","checkUB"],["pain","painUB"],["shock","shockUR"]],
-  [["The Fourfold Azure",{U:4,R:1}],["The Reversed Filter",{U:1,R:2}],["The Final Ledger",{B:2,C:1,R:1}]])
+  [["The Fourfold Azure",{U:4,R:1}],["The Reversed Filter",{U:1,R:2}],["The Final Ledger",{B:2,C:1,R:1}]]),
+ puzzle(6,"Any Key Will Do","Two sources, two generic wards. Either mana can pay the first ward.",
+  "Generic mana accepts either color. Spending blue or red first leaves the other legal for the second ward. No future color reservation is needed.",1,20,
+  [["blue","island"],["red","mountain"]],[],[["First generic seal",{N:1}],["Second generic seal",{N:1}]]),
+ puzzle(7,"Reserve the Blue Key","Same sources and same number of wards. The final ward requires a particular color.",
+  "Pay the generic ward with red, then use blue for the final ward. Tapping both is safe only if you choose the correct manual payment; tapping blue first with automatic casting can force a losing payment. This is a puzzle abstraction, not an additional Magic cost rule.",1,20,
+  [["blue","island"],["red","mountain"]],[],[["First generic seal",{N:1}],["Final blue seal",{U:1}]])
 ]);
