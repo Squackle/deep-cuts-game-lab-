@@ -33,3 +33,9 @@ test("regional frost overlay has access to the combat canvas, not an undefined t
  assert.ok(main.includes("if(u.frozenUntil>s.tick)drawFrost(x,y)"));
  assert.ok(main.includes("if(cm.frozenUntil>s.tick)drawFrost(q.x,q.y)"));
 });
+
+test("rejected saved-run data is retained and never used to replace a live engine",()=>{
+ assert.match(main,/function loadRun\(\)\{try\{const raw=storage\?\.getItem\(RUN_KEY\);if\(!raw\|\|raw\.length>4\*1024\*1024\)return null/);
+ const load=main.slice(main.indexOf("function loadRun()"),main.indexOf("function loadRun()")+450);
+ assert.doesNotMatch(load,/clearRun\(\)/);assert.match(main,/if\(!resumed\.restore\(save\)\)/);
+});

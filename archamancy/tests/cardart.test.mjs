@@ -66,3 +66,11 @@ test("cached artwork count is bounded without clearing progress or valid recent 
  assert.equal(art.get("Card359"),null,"excess cache rows are discarded at load");
  assert.equal(s.getItem("archemancy.progress.v1"),"keep-player-progression");
 });
+
+test("disposable cache strips extra persisted fields and keeps valid old entries",async()=>{
+ const s=store(),valid={art:"https://cards.scryfall.io/art_crop/front/a.jpg",artist:"Artist"};
+ s.setItem("archemancy.cardart.v1",JSON.stringify({Old:{...valid,unexpected:"x".repeat(200000)}}));
+ const art=createCardArt({storage:s,delay:0,fetchFn:async()=>card("new")});
+ assert.deepEqual(art.get("Old"),valid);art.get("New");await settle();
+ const raw=s.getItem("archemancy.cardart.v1");assert.ok(raw.length<256*1024);assert.deepEqual(JSON.parse(raw).Old,valid);
+});

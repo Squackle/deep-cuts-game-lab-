@@ -2,7 +2,7 @@
 // A reproducible strategy is not a proof of optimal play. All scenarios use progressed campaign perks/relics.
 import {createEngine} from "../engine.mjs";
 import {STARTER_DECK} from "../campaign.mjs";
-import {playMonoBlue,OPTIMIZED_DECK,REPORTED_DECK} from "./mono-blue-balance.mjs";
+import {playMonoBlue,OPTIMIZED_DECK} from "./mono-blue-balance.mjs";
 const CONFIG={
  W:{commander:"heliod",kinds:["judgment","legion","chapel"],ratio:[.68,.2,.12],deck:["legion","ward","twins","rally","valor","prism","resonance","matrix","blade","forge"],branch:{judgment:["A","B"],legion:["A","B"],chapel:["B","A"]}},
  B:{commander:"toxrill",kinds:["hex","necropolis","foundry"],ratio:[.58,.29,.13],deck:["raise","offering","recall","funeral","deathmark","prism","resonance","matrix","blade","forge"],branch:{hex:["A","B"],necropolis:["B","A"],foundry:["A","B"]}},
@@ -10,7 +10,7 @@ const CONFIG={
  G:{commander:"omnath",kinds:["thorn","beast","grove"],ratio:[.32,.42,.26],deck:["wild","root","verdant","awaken","bloom","prism","resonance","matrix","blade","forge"],branch:{thorn:["B","A"],beast:["A","B"],grove:["A","B"]}}
 };
 export function playMono({color="G",map="hollow",seed=1,difficulty="hard",onslaught=true,optimized=true,resumeEvery=0,engine=createEngine}={}){
- if(color==="U"){const r=playMonoBlue({map,seed,difficulty,onslaught,engine,commander:optimized?"atraxa":"urza",deck:optimized?OPTIMIZED_DECK:STARTER_DECK,resumeEvery});return {...r,color,optimized,eligible:r.monoBlue};}
+ if(color==="U"){const r=playMonoBlue({map,seed,difficulty,onslaught,engine,commander:optimized?"atraxa":"urza",deck:optimized?OPTIMIZED_DECK:STARTER_DECK,resumeEvery,includeReport:true});return {...r,color,optimized,eligible:r.monoBlue};}
  const cf=CONFIG[color];if(!cf)throw Error("Unknown color");let g=engine(seed,"campaign",map),s=g.state;const cmd=c=>g.command(c);
  const deck=optimized?cf.deck:STARTER_DECK;
  for(const c of [{type:"difficulty",level:difficulty},{type:"perks",perks:{[color]:1,command:1}},{type:"commander",id:cf.commander},{type:"onslaught",on:onslaught},{type:"kit",deck,relics:["signet","boots","rhystic"],lands:{W:1,U:1,B:1,R:1,G:1,[color]:3}}])if(!cmd(c))throw Error("Invalid setup "+c.type);

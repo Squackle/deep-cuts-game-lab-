@@ -3,8 +3,8 @@
 import { createEngine } from "../engine.mjs";
 export const REPORTED_DECK=Object.freeze(["meteor","flame","legion","ward","inquiry","freeze","root","offering","deathmark","funeral","prism","bloom","awaken","matrix","lightning"]);
 export const OPTIMIZED_DECK=Object.freeze(["meteor","lightning","deathmark","flame","freeze","root","matrix","awaken","wild","inquiry","prism","echo","reflection","reset","recall"]);
-export function playMonoBlue({seed=1,map="caldera",onslaught=true,difficulty="hard",mirrorRatio=.65,mirrorTier4=26,engine=createEngine,commander="urza",deck=REPORTED_DECK}={}){
- const g=engine(seed,"campaign",map),s=g.state,cmd=c=>g.command(c);
+export function playMonoBlue({seed=1,map="caldera",onslaught=true,difficulty="hard",mirrorRatio=.65,mirrorTier4=26,engine=createEngine,commander="urza",deck=REPORTED_DECK,resumeEvery=0,includeReport=false}={}){
+ let g=engine(seed,"campaign",map),s=g.state;const cmd=c=>g.command(c);
  const setup=[{type:"difficulty",level:difficulty},{type:"perks",perks:{W:1,U:1,command:1}},{type:"commander",id:commander},{type:"onslaught",on:onslaught},{type:"kit",relics:["signet","boots","rhystic"],lands:{W:1,U:3,B:1,R:1,G:1},deck}];
  for(const c of setup)if(!cmd(c))throw Error("Invalid benchmark setup: "+c.type);
  const points=g.map.spans.flatMap(([a,b])=>Array.from({length:Math.ceil((b-a)/25)},(_,i)=>g.pointAt(a+i*25)));
@@ -51,9 +51,10 @@ export function playMonoBlue({seed=1,map="caldera",onslaught=true,difficulty="ha
   if(s.phase==="ready"){for(let n=0;n<20&&invest();n++);cmd({type:"wave"});}
   if(tick%20===0){for(let n=0;n<4&&invest();n++);if(g.abilityReady()&&!s.freeCast)cmd({type:"ability"});spell();}
   g.step();
+  if(resumeEvery&&g.state.tick%resumeEvery===0&&["ready","active"].includes(g.state.phase)){const save=JSON.parse(JSON.stringify(g.snapshot())),next=engine(1,s.initialMode,s.mapId);if(!next.restore(save))throw Error("Blue restore failed at "+s.tick);g=next;s=g.state;}
  }
  const colors=[...Object.values(s.towers),...s.towerHistory].map(t=>g.roster[t.kind].color);
- return {seed,map,onslaught,difficulty,commander,phase:s.phase,won:s.phase==="won"&&s.wave===25,monoBlue:colors.length>0&&colors.every(c=>c==="U"),wave:s.wave,completed:s.waveHistory.length,health:s.health,kills:s.stats.kills,leaks:s.stats.leaks,wardenLeaks:s.enemyLeaks.warden||0,stalkerLeaks:s.enemyLeaks.stalker||0,casts:s.stats.casts,towers:Object.values(s.towers).map(t=>[t.kind,t.tier,t.branch]),tick:s.tick};
+ return {seed,map,onslaught,difficulty,commander,phase:s.phase,won:s.phase==="won"&&s.wave===25,monoBlue:colors.length>0&&colors.every(c=>c==="U"),wave:s.wave,completed:s.waveHistory.length,health:s.health,kills:s.stats.kills,leaks:s.stats.leaks,wardenLeaks:s.enemyLeaks.warden||0,stalkerLeaks:s.enemyLeaks.stalker||0,casts:s.stats.casts,towers:Object.values(s.towers).map(t=>[t.kind,t.tier,t.branch]),tick:s.tick,...(includeReport?{report:g.playtestReport()}:{})};
 }
 if(import.meta.url==="file://"+process.argv[1]){
  const n=Math.max(1,Math.min(20,Number(process.argv[2])||3)),map=process.argv[3]||"caldera",difficulty=process.argv[4]||"hard";
