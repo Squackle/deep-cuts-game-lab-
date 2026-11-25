@@ -6,15 +6,16 @@ import {validateScenario,createGame,tapLand,activate,autoplay,legalActions,legal
 import core from '../data/scenarios.json' with {type:'json'};
 import expansion from '../data/campaign-expansion.json' with {type:'json'};
 
-test('five curated unranked decision trials preserve every published original case',()=>{
+test('seven curated unranked decision trials preserve every published original case',()=>{
  const source=[...core,...expansion];
- assert.equal(STRATEGY_TRIALS.length,5);
- assert.equal(new Set(STRATEGY_TRIALS.map(x=>x.id)).size,5);
+ assert.equal(STRATEGY_TRIALS.length,7);
+ assert.equal(new Set(STRATEGY_TRIALS.map(x=>x.id)).size,7);
  for(const p of STRATEGY_TRIALS){
   assert.ok(p.unranked);assert.equal(p.trialVersion,STRATEGY_TRIALS_VERSION);
   assert.deepEqual(validateScenario(p),{valid:true,errors:[]},p.id);
   assert.ok(p.strategyFocus&&p.strategyLesson&&p.intro);
-  assert.ok(source.some(x=>x.id===p.sourceId));
+  if(p.sourceId!==null)assert.ok(source.some(x=>x.id===p.sourceId));
+  else assert.ok(['st-06','st-07'].includes(p.id));
   assert.ok(!source.some(x=>x.id===p.id));
   assert.ok(Array.isArray(p.solution)&&p.solution.length>=2);
  }
