@@ -1,0 +1,16 @@
+:root { color-scheme: dark; font: 1rem/1.55 system-ui, sans-serif; }
+body { margin: 0; color: #f0f6f2; background: #111d19; }
+main { box-sizing: border-box; max-width: 50rem; margin: auto; padding: 1.25rem; }
+a { color: #a6e7d9; }
+h1, h2 { line-height: 1.2; margin-block-end: .4em; }
+section { padding: .75rem 1rem; border: 1px solid #698f80; border-radius: .6rem; background: #192b24; }
+section h2 { margin-block-start: 0; }
+dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: .6rem; margin: 0; }
+dt { color: #b8ddd0; font-weight: 650; }
+dd { margin: 0; }
+button, select { min-height: 44px; max-width: 100%; box-sizing: border-box; padding: .45rem .75rem; font: inherit; color: inherit; border: 1px solid #80ad9c; border-radius: .4rem; background: #26463b; }
+button { text-align: left; }
+button:disabled { opacity: .58; }
+:focus-visible { outline: 3px solid #ffdd87; outline-offset: 2px; }
+#moves, .controls { display: flex; flex-wrap: wrap; gap: .5rem; }
+#notice:empty, #lesson:empty, #hint-text:empty { display: none; }

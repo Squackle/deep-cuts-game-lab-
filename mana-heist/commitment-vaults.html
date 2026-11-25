@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Commitment Vaults | Mana Heist</title>
+  <link rel="stylesheet" href="./commitment-vaults.css">
+</head>
+<body>
+<main>
+  <a href="./">‹ Mana Heist</a>
+  <h1>Commitment Vaults</h1>
+  <p>Unranked practice with a two-turn limit and a fixed, visible reserve. Unspent mana empties at the end of each turn.</p>
+  <label for="vault">Choose a vault</label>
+  <select id="vault"></select>
+  <p id="objective"></p>
+  <section aria-label="Vault state">
+    <h2 id="ward"></h2>
+    <p id="run"></p>
+    <dl>
+      <div><dt>Battlefield</dt><dd id="field"></dd></div>
+      <div><dt>Hand</dt><dd id="hand"></dd></div>
+      <div><dt>Reserve</dt><dd id="reserve"></dd></div>
+      <div><dt>Graveyard</dt><dd id="graveyard"></dd></div>
+    </dl>
+  </section>
+  <h2>Legal actions</h2>
+  <div id="moves"></div>
+  <p id="notice" role="status" tabindex="-1"></p>
+  <p id="lesson"></p>
+  <div class="controls">
+    <button type="button" id="undo">Undo</button>
+    <button type="button" id="reset">Restart</button>
+    <button type="button" id="hint">Reveal a hint</button>
+  </div>
+  <p id="hint-text" role="status" tabindex="-1"></p>
+</main>
+<script type="module">
+  import {mountCommitmentVaults} from './src/commitment-vaults.js';
+  mountCommitmentVaults(document);
+</script>
+</body>
+</html>
