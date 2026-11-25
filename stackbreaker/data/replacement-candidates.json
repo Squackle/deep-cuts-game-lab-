@@ -1,0 +1,210 @@
+[
+  {
+    "id": "review-sb-08",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Investigator",
+    "title": "Three Different Answers",
+    "intro": "Keep the Giant and stay alive through a destroy effect, targeted exile and incoming burn.",
+    "life": {
+      "player": 2,
+      "opponent": 17
+    },
+    "mana": {},
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-3",
+        "card": "Plains",
+        "controller": "player"
+      },
+      {
+        "id": "land-4",
+        "card": "Forest",
+        "controller": "player"
+      }
+    ],
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "murder",
+        "card": "Swords to Plowshares",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "bolt",
+        "card": "Lightning Bolt",
+        "controller": "opponent",
+        "targetId": "player"
+      },
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "counter",
+        "card": "Counterspell"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Indestructible does not prevent exile. Reserve a counterspell for exile and account for incoming damage.",
+    "explanation": "Spirit answers the destroy effect, life gain answers the burn, and Counterspell answers targeted exile. Indestructible cannot stop exile.",
+    "par": 3,
+    "sourceId": "sb-08",
+    "solution": [
+      [
+        "ward",
+        null
+      ],
+      [
+        "salve",
+        "player"
+      ],
+      [
+        "counter",
+        "murder"
+      ]
+    ],
+    "strategyFocus": "Separate destruction, exile and damage",
+    "strategyLesson": "Spirit answers the destroy effect, life gain answers the burn, and Counterspell answers targeted exile. Indestructible cannot stop exile.",
+    "retryPrompt": "Try a different response order while preserving all three effects.",
+    "unranked": true,
+    "trialVersion": "sb-unranked-replacement-review-1"
+  },
+  {
+    "id": "review-sb-27",
+    "version": "sb-mtg-training-0.3.0",
+    "tier": "Mastermind",
+    "title": "Three Doors, Three Costs",
+    "intro": "Keep the Giant and stay alive through a destroy effect, targeted exile and incoming burn.",
+    "life": {
+      "player": 1,
+      "opponent": 18
+    },
+    "mana": {},
+    "units": [
+      {
+        "id": "spirit",
+        "card": "Selfless Spirit",
+        "controller": "player"
+      },
+      {
+        "id": "giant",
+        "card": "Hill Giant",
+        "controller": "player"
+      }
+    ],
+    "stack": [
+      {
+        "id": "wrath",
+        "card": "Wrath of God",
+        "controller": "opponent"
+      },
+      {
+        "id": "murder",
+        "card": "Swords to Plowshares",
+        "controller": "opponent",
+        "targetId": "giant"
+      },
+      {
+        "id": "shock",
+        "card": "Shock",
+        "controller": "opponent",
+        "targetId": "player"
+      }
+    ],
+    "hand": [
+      {
+        "id": "ward",
+        "card": "Selfless Spirit",
+        "sourceId": "spirit"
+      },
+      {
+        "id": "dive",
+        "card": "Dive Down"
+      },
+      {
+        "id": "salve",
+        "card": "Healing Salve"
+      }
+    ],
+    "objective": {
+      "type": "keepUnit",
+      "unitId": "giant"
+    },
+    "activeActor": "opponent",
+    "opponentPolicy": "alwaysPass",
+    "hint": "Hexproof stops the opposing target, indestructible stops the destroy effect, and neither protects your life total.",
+    "explanation": "Spirit stops the destroy effect, Dive Down makes the opposing exile target illegal, and Healing Salve preserves your life. None replaces either of the other two.",
+    "lands": [
+      {
+        "id": "land-1",
+        "card": "Island",
+        "controller": "player"
+      },
+      {
+        "id": "land-2",
+        "card": "Plains",
+        "controller": "player"
+      }
+    ],
+    "par": 3,
+    "sourceId": "sb-27",
+    "solution": [
+      [
+        "ward",
+        null
+      ],
+      [
+        "dive",
+        "giant"
+      ],
+      [
+        "salve",
+        "player"
+      ]
+    ],
+    "strategyFocus": "Combine hexproof, indestructible and life",
+    "strategyLesson": "Spirit stops the destroy effect, Dive Down makes the opposing exile target illegal, and Healing Salve preserves your life. None replaces either of the other two.",
+    "retryPrompt": "Try a different response order while preserving all three effects.",
+    "unranked": true,
+    "trialVersion": "sb-unranked-replacement-review-1"
+  }
+]

@@ -5,7 +5,10 @@
 import {actions,reduce,key,completed,COLORS} from "./engine.js";
 import {solve} from "./solver.js";
 
-const memo=new Map();
+// A stage ID deliberately survives puzzle revisions. Cache by the actual
+// level definition, not just its stable save ID, so a changed ward cannot
+// inherit a legal but strategically losing payment. Keep the global budget.
+let memo=new WeakMap(), memoEntries=0;
 function nextWardBias(level,s,action){
  const future=level.stages[s.stage+1]?.cost||{};
  const n=reduce(level,s,action).state;
@@ -17,8 +20,10 @@ export function chooseAutomaticCast(level,state){
  const options=actions(level,state).filter(a=>a.type==="cast");
  if(!options.length)return null;
  if(options.length===1)return options[0];
- const memoKey=level.id+"|"+key(state);
- const prior=memo.get(memoKey);
+ let levelMemo=memo.get(level);
+ if(!levelMemo){levelMemo=new Map();memo.set(level,levelMemo);}
+ const memoKey=key(state);
+ const prior=levelMemo.get(memoKey);
  if(prior)return options.find(a=>JSON.stringify(a)===prior)||options[0];
  const candidates=options.map(action=>{
   const next=reduce(level,state,action).state;
@@ -34,8 +39,8 @@ export function chooseAutomaticCast(level,state){
   }
   return b.bias-a.bias;
  });
- memo.set(memoKey,JSON.stringify(candidates[0].action));
- if(memo.size>1200)memo.clear();
+ levelMemo.set(memoKey,JSON.stringify(candidates[0].action));
+ if(++memoEntries>1200){memo=new WeakMap();memoEntries=0;}
  return candidates[0].action;
 }
 export function resolveAutomaticCasts(level,start){

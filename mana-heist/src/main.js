@@ -11,6 +11,9 @@ import {renderWardCharge} from "./ward-charge.js";
 import {installFluidWard} from "./fluid-ward.js";
 import {PRELOADED_MIX_COUNT} from "./fluid-palette.js";
 import {chooseAutomaticCast} from "./auto-cast.js";
+import {manualCastOptions,popUndoFrame} from "./cast-controls.js";
+import {reservePresentation} from "./reserve-presentation.js";
+import {reviewPlan,wardPaymentRecap} from "./decision-feedback.js";
 import {landPainting} from "./land-art.js";
 import {installLandDragging} from "./drag-lands.js";
 import {renderCardReferences,referenceFor} from "./card-references.js";
@@ -158,6 +161,7 @@ function cancelAuto(){
 const AUTO_SETTLE_MS=2000,AUTO_STIR_MAX_MS=5100;
 function queueAutoCast(){
  if(!autoCastEnabled||pendingFlights.size||completed(level,state))return;
+ if(choiceActions.some(a=>a.type==="cast"))return;
  if(!chooseAutomaticCast(level,state)||autoTimer!==null)return;
  el("wardTarget").classList.add("auto-primed");
  el("autoCastLabel").textContent="WARD READY · STIR TO MIX";
@@ -177,7 +181,7 @@ function queueAutoCast(){
    autoTimer=null;
    if(epoch!==viewEpoch||pendingFlights.size||completed(level,state))return;
    const stillLegal=chooseAutomaticCast(level,state);
-   if(stillLegal)perform(stillLegal);
+   if(stillLegal)perform(stillLegal,{automatic:true});
   },250);
  }
  autoTimer=setTimeout(tryCast,140);
@@ -293,6 +297,9 @@ hintReveal.textContent="REVEAL HINT 1";
 const hintReset=document.createElement("button");hintReset.type="button";hintReset.id="hintReset";
 hintReset.textContent="HIDE HINTS";hintReset.hidden=true;
 hintActions.append(hintReveal,hintReset);hintPanel.append(hintHeading,hintCopy,hintActions);
+const decisionRetry=document.createElement("button");decisionRetry.type="button";decisionRetry.id="decisionRetry";decisionRetry.textContent="TRY ANOTHER LINE";decisionRetry.hidden=true;
+el("winCopy").after(decisionRetry);
+decisionRetry.addEventListener("click",()=>{if(decisionIndex!==null)load(decisionIndex,true);});
 const decisionPlan=document.createElement("section");decisionPlan.id="decisionPlan";decisionPlan.hidden=true;
  decisionPlan.setAttribute("aria-label","Complete ward plan");
  el("wardDescription").after(decisionPlan);
@@ -312,7 +319,7 @@ hintReset.addEventListener("click",()=>resetHintLadder());
 hintReveal.addEventListener("click",()=>{
  syncHintLadder();
  const next=Math.min(3,hintStep+1);
- if(next===1){hintCopy.textContent=hintConcept(level,state);}
+ if(next===1){hintCopy.textContent=hintConcept(level,state);if(decisionIndex!==null)hintCopy.textContent=level.decision.clue+" "+hintCopy.textContent;}
  else{
   let route={status:"inconclusive",actions:[]};
   try{route=legalContinuation(level,state,proofFor(level.id),{maxStates:12000});}
@@ -371,7 +378,7 @@ function renderLearn(){
  });
  trials.append(head,list);root.append(trials);
  const decisions=document.createElement("section");decisions.className="learn-group";
- const heading=document.createElement("h3");heading.textContent="DECISION LAB · FIVE SAMPLE VAULTS";
+ const heading=document.createElement("h3");heading.textContent="DECISION LAB · "+DECISION_LADDER.length+" SAMPLE VAULTS";
  const description=document.createElement("p");description.textContent="From color matching to interlocking resource decisions. Unscored practice; difficulty order awaits player calibration. Your campaign and lesson saves are unchanged.";
  const picks=document.createElement("div");picks.className="learn-exercises";
  DECISION_LADDER.forEach((p,i)=>{
@@ -415,7 +422,7 @@ function desc(action){
  }
  if(action.type==="ritual")return "Cast "+getCard(level,action.id).name+" · "+action.output.join(" + ")+" mana";
  if(action.type==="play")return (action.shock?"Pay 2 life · enter untapped":getCard(level,action.id).kind==="shock"?"Save 2 life · enter tapped":getCard(level,action.id).kind==="bounce"?"Return "+getCard(level,action.returnId).name+" · enter tapped":"Play "+getCard(level,action.id).name);
- if(action.type==="tap")return "Tap for "+SYMBOL[action.color].name+(getCard(level,action.id).kind==="pain"&&action.color!=="C"?" · lose 1 life":"");
+ if(action.type==="tap")return "Tap for "+(getCard(level,action.id).kind==="bounce"?"blue and green":SYMBOL[action.color].name)+(getCard(level,action.id).kind==="pain"&&action.color!=="C"?" · lose 1 life":"");
  if(action.type==="fetch")return "Find "+getCard(level,action.targetId).name+(action.shock?" · pay 3 life":" · pay 1 life");
  if(action.type==="cast"){
   const payment=COLORS.map(c=>action.spend[c]?action.spend[c]+c:"").filter(Boolean).join(" + ");
@@ -459,13 +466,13 @@ function rejectCast(){
  flashWard({vault:el("heist").querySelector(".vault-card"),ward:el("lockGlyph"),costRow:el("wardCost"),button:null,pool:null,missing,reduced:reducedFx});
  message(failureText(missing),true);
 }
-function perform(action){
+function perform(action,{automatic=false}={}){
  const sourceRect=(action.type==="tap"||action.type==="activate")?el("battlefield").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():action.type==="ritual"?el("hand").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():null;
  const out=reduce(level,state,action);
  if(!out.ok){if(action?.type==="cast")rejectCast();else message(out.error,true);return;}
  cancelAuto();
  if(action.type!=="tap"){viewEpoch++;pendingFlights.clear();cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();}
- history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type});
+ history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type,action,automatic:automatic&&action.type==="cast"});
  notePlaytest("action");
  state=out.state;
  manaOrbs=(action.type==="ritual"||action.type==="activate"||action.type==="tap"&&(getCard(level,action.id).kind==="bounce"||state.highTide))?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
@@ -566,7 +573,7 @@ function tapLand(id){
  const card=getCard(level,id),possible=actions(level,state).filter(a=>(a.type==="tap"||a.type==="fetch"||a.type==="activate")&&a.id===id);
  if(card.kind==="fetch"){
   if(!possible.length)message("This fetch land has no legal target, or you cannot pay the life cost.",true);
-  else choices("SEARCH YOUR RESERVE","Sacrifice this fetch land and pay 1 life to choose a compatible land.",possible);
+  else choices("SEARCH YOUR RESERVE","Sacrifice this fetch land and pay 1 life to choose a compatible land."+(Array.isArray(state.libraryAvailable)?" Only remaining physical cards can be found.":" This legacy puzzle uses a simplified scenario reserve."),possible);
  }else if(possible.length===1)perform(possible[0]);
  else if(possible.length)choices("CHOOSE A MANA ABILITY",card.v2?"Each choice shows the exact output and any input payment.":"Tap "+card.name+" for one mana color.",possible);
  else message("This source is unavailable, or you cannot pay its activation cost or life payment.",true);
@@ -659,7 +666,7 @@ function selectHand(id){
  message(selectedHandId?"Selected "+getCard(level,id).name+" · play it or inspect it.":"Selection cleared.");
 }
 function updateCastButton(){
- const ready=!completed(level,state)&&!pendingFlights.size&&!!chooseAutomaticCast(level,state);
+ const ready=!completed(level,state)&&!pendingFlights.size&&manualCastOptions(level,state).length>0;
  const button=el("castButton");
  button.disabled=!ready;
  button.textContent=ready?"CAST SPELL ✦":state.manaUnits?.some(u=>u.restriction)&&COLORS.every(c=>(state.pool[c]||0)>=(level.stages[state.stage]?.cost?.[c]||0))?"MANA RESTRICTED":"NEED MORE MANA";
@@ -669,7 +676,7 @@ function updateCastButton(){
 function teachingCue(){
  if(completed(level,state))return "Vault opened. Nice work!";
  if(state.manaUnits?.some(u=>u.restriction)&&!actions(level,state).some(a=>a.type==="cast"))return "Some mana can only pay for creature spells. This vault may need a different mana source.";
- if(chooseAutomaticCast(level,state))return "Your mana matches the cost. Cast to spend it.";
+ if(manualCastOptions(level,state).length)return "Your mana matches the cost. Cast to spend it.";
  if(decisionIndex!==null)return level.decision.focus;
  if(index===0)return "Tap your Island. Turning a land sideways makes mana.";
  if(index===1)return state.hand.length?"Play your Mountain from your hand.":"Tap your Mountain for red mana.";
@@ -698,14 +705,22 @@ function render(pendingId=null){
  el("vaultName").textContent=level.title;
  el("briefing").textContent=level.briefing;
  decisionPlan.hidden=decisionIndex===null;
+ decisionRetry.hidden=decisionIndex===null||!isWin;
+ const planHadFocus=decisionPlan.contains(document.activeElement);
  decisionPlan.replaceChildren();
  if(decisionIndex!==null){
   const heading=document.createElement("h3");heading.textContent="PLAN EVERY WARD";decisionPlan.append(heading);
   level.stages.forEach((spell,i)=>{
    const row=document.createElement("p"),name=document.createElement("strong"),cost=document.createElement("span");
-   name.textContent=(i+1)+". "+spell.name+" · ";
+   name.textContent=(i<state.stage?"OPEN · ":i===state.stage?"CURRENT · ":"LATER · ")+(i+1)+". "+spell.name+" · ";
    cost.innerHTML=costHtml(spell.cost);row.append(name,cost);decisionPlan.append(row);
   });
+  if(!isWin){const check=document.createElement("button");check.type="button";check.textContent="CHECK MY PLAN (MANUAL)";
+   const result=document.createElement("p");result.setAttribute("role","status");
+   check.onclick=()=>{try{result.textContent=reviewPlan(level,state).text;}catch{result.textContent="The plan could not be verified; no loss is established.";}};
+   decisionPlan.append(check,result);
+   if(planHadFocus&&el("gameNotes").open)check.focus({preventScroll:true});
+  }
  }
  const archived=level.revision===4?varietyBests[level.id]:null;
  if(archived){
@@ -735,8 +750,9 @@ function render(pendingId=null){
  syncLandRows();
  el("handGuide").hidden=state.hand.length===0;
  el("hand").closest(".hand-card").classList.toggle("hand-empty",state.hand.length===0);
- el("libraryPanel").hidden=level.library.length===0;
- el("libraryPanel").textContent=level.library.length?"RESERVE / FETCH TARGETS: "+level.library.map(x=>CARDS[x.card].name).join(" · "):"";
+ const reserve=reservePresentation(level,state);
+ el("libraryPanel").hidden=!reserve.visible;
+ el("libraryPanel").textContent=reserve.visible?reserve.label+": "+(reserve.cards.map(x=>CARDS[x.card].name).join(" · ")||"empty"):"";
 
  chargeWard({pendingId});
  updateCastButton();
@@ -763,7 +779,7 @@ function render(pendingId=null){
    "T"+proof.turn+" / "+proof.spentLife:"LEGAL ROUTE";
   if(decisionIndex!==null){
    el("winTitle").textContent="DECISION VAULT OPEN";
-   el("winCopy").textContent=level.decision.why;
+   el("winCopy").textContent=level.decision.why+" Your ward payments: "+wardPaymentRecap(level,history).join("; ")+". Life spent: "+state.spentLife+". This practice result is not scored. Try another line: "+level.decision.retry;
   }else if(trialIndex!==null){
    const best=trialBests[level.id],stars=medal(level,state,proof);
    el("winTitle").textContent="★".repeat(stars)+" BONUS VAULT OPEN";
@@ -933,16 +949,19 @@ el("autoCastToggle").addEventListener("change",e=>{
 });
 el("castButton").addEventListener("click",()=>{
  if(pendingFlights.size)return;
- const cast=chooseAutomaticCast(level,state);
- if(cast){cancelAuto();fluid.burst();perform(cast);}else rejectCast();
+ const options=manualCastOptions(level,state);
+ if(!options.length){rejectCast();return;}
+ cancelAuto();
+ if(options.length===1){fluid.burst();perform(options[0]);}
+ else choices("CHOOSE SPELL PAYMENT","Choose the actual mana to spend and any untap target. Consider what the next ward needs.",options);
 });
 el("playSelectedLand").addEventListener("click",()=>{if(selectedHandId)playLand(selectedHandId);});
 el("inspectSelected").addEventListener("click",()=>{if(selectedHandId)inspectById(selectedHandId);});
-el("dismissChoices").addEventListener("click",()=>choices("YOUR NEXT CHOICE","Tap a land or play a land from your hand.",[]));
+el("dismissChoices").addEventListener("click",()=>{choices("YOUR NEXT CHOICE","Tap a land or play a land from your hand.",[]);queueAutoCast();});
 document.addEventListener("keydown",e=>{
  if(e.key!=="Escape")return;
  if(el("gameNotes").open){e.preventDefault();setGuideOpen(false);return;}
- if(!el("actionBox").hidden){choices("YOUR NEXT CHOICE","Selection canceled.",[]);}
+ if(!el("actionBox").hidden){choices("YOUR NEXT CHOICE","Selection canceled.",[]);queueAutoCast();}
 });
 for(const zone of ["hand","battlefield"]){
  el(zone).addEventListener("error",e=>{
@@ -966,7 +985,7 @@ landDrag=installLandDragging({
  onInspect:id=>playLand(id),
  onHint:(text,error=false)=>message(text,error)
 });
-el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a)perform(a);});
+el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a){if(a.type==="cast")fluid.burst();perform(a);}});
 // Mana-choice sheets must remain usable by keyboard and screen readers on
 // small screens, not just visually centered above the battlefield.
 el("actionBox").addEventListener("keydown",e=>{
@@ -1020,13 +1039,10 @@ el("undo").addEventListener("click",()=>{
  if(!history.length)return;
  notePlaytest("undo");
  cancelAuto();viewEpoch++;pendingFlights.clear();
- let prev=history.pop();
- // An automatic cast is a consequence of the previous manual move.
- // Undo that move and every automatically resolved ward after it together.
- while(prev.actionType==="cast"&&history.length)prev=history.pop();
+ const prev=popUndoFrame(history);
  state=prev.state;manaOrbs=prev.orbs;
  cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();render();
- message("Previous move undone, including any automatically cast wards.");
+ message("Previous move undone. Automatic casts undo with their triggering move; manual casts undo separately.");
 });
 window.addEventListener("resize",()=>{if(document.body.classList.contains("in-heist"))syncLandRows();},{passive:true});
 el("reset").addEventListener("click",()=>{closePlaytest("restart");sage.onRestart(level);load(index);startPlaytest();});

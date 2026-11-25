@@ -36,3 +36,8 @@ body.is-decision-lab.in-heist #heist .vault-card>h2{width:auto!important}
 body.is-decision-lab.in-heist .shell,
 body.is-decision-lab.in-heist #gameScreen,
 body.is-decision-lab.in-heist #heist{overflow:clip!important}
+
+/* Decision Lab only: visible, touch-sized retry/plan/payment controls. */
+body.is-decision-lab #decisionPlan button,body.is-decision-lab #decisionRetry,body.is-decision-lab #actionBox .choice-button,body.is-decision-lab #actionBox #dismissChoices{min-height:44px;min-width:44px;max-width:100%;white-space:normal;overflow-wrap:anywhere;touch-action:manipulation}
+body.is-decision-lab #decisionPlan p{line-height:1.5;overflow-wrap:anywhere}body.is-decision-lab #decisionPlan [role="status"]{display:block;line-height:1.5}body.is-decision-lab #decisionRetry{margin:.5rem 0}body.is-decision-lab #decisionPlan button:focus-visible,body.is-decision-lab #decisionRetry:focus-visible,body.is-decision-lab #actionBox .choice-button:focus-visible{outline:3px solid #ffd98a;outline-offset:2px}
+@media(max-width:650px){body.is-decision-lab #decisionPlan{padding:10px}body.is-decision-lab #actionBox .choice-button{width:100%;text-align:left;font-size:1rem}body.is-decision-lab #decisionPlan button,body.is-decision-lab #decisionRetry{width:100%;font-size:1rem}}
