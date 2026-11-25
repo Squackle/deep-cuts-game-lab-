@@ -58,10 +58,11 @@ test("Chromium desktop and emulated touch Hive acceptance",{timeout:60000,skip:!
   const dom=id=>"document.getElementById("+JSON.stringify(id)+")";
   const visible=id=>"!"+dom(id)+".hidden";
   const select=(id,value)=>ev("(()=>{const e="+dom(id)+";e.value="+JSON.stringify(value)+";e.dispatchEvent(new Event('change',{bubbles:true}));return true})()");
-  const box=selector=>ev("(()=>{const e=document.querySelector("+JSON.stringify(selector)+");e.scrollIntoView({block:'center',inline:'center',behavior:'instant'});const b=e.getBoundingClientRect();return {x:b.x+b.width/2,y:b.y+b.height/2,h:b.height}})()");
+  const box=selector=>ev("(()=>{const e=document.querySelector("+JSON.stringify(selector)+");e.scrollIntoView({block:'center',inline:'center',behavior:'instant'});const b=e.getBoundingClientRect(),x=b.x+b.width/2,y=b.y+b.height/2,hit=document.elementFromPoint(x,y);return {x,y,h:b.height,hit:hit?.id||hit?.tagName,reachable:!!hit&&e.contains(hit),disabled:!!e.disabled}})()");
   const touch=(type,points)=>call("Input.dispatchTouchEvent",{type,touchPoints:points});
   const click=async(selector,mobile=false)=>{
-   const {x,y}=await box(selector);
+   const target=await box(selector),{x,y}=target;
+   assert.ok(target.reachable&&!target.disabled,"unreachable control "+selector+" "+JSON.stringify(target));
    if(mobile){await touch("touchStart",[{x,y}]);await touch("touchEnd",[])}
    else{await call("Input.dispatchMouseEvent",{type:"mousePressed",x,y,button:"left",clickCount:1});await call("Input.dispatchMouseEvent",{type:"mouseReleased",x,y,button:"left",clickCount:1})}
   };
@@ -72,6 +73,25 @@ test("Chromium desktop and emulated touch Hive acceptance",{timeout:60000,skip:!
    await call("Input.dispatchKeyEvent",{...params,type:"keyUp"});
   };
   await call("Page.enable");await call("Runtime.enable");
+  // Test-only frame hold excludes runner delay while navigating live controls.
+  // Real input, rendering, audio and simulation remain the actual game modules.
+  await call("Page.addScriptToEvaluateOnNewDocument",{source:`
+   window.__hiveHoldFrames=false;
+   window.__hiveInputEvidence=[];
+   const raf=window.requestAnimationFrame.bind(window);
+   window.requestAnimationFrame=callback=>raf(function frame(time){
+    if(window.__hiveHoldFrames){raf(frame);return}
+    callback(time);
+   });
+   for(const type of ["pointerdown","pointermove","pointerup","pointercancel","click"]){
+    document.addEventListener(type,event=>{
+     const history=window.__hiveInputEvidence;
+     history.push({type,id:event.target?.id||event.target?.tagName,pointer:event.pointerType,
+      x:Math.round(event.clientX||0),y:Math.round(event.clientY||0),status:document.getElementById("stateLabel")?.textContent});
+     if(history.length>40)history.shift();
+    },true);
+   }
+  `});
   for(const mobile of [false,true]){
    await call("Emulation.setDeviceMetricsOverride",{width:mobile?390:1280,height:mobile?844:800,deviceScaleFactor:1,mobile});
    await call("Emulation.setTouchEmulationEnabled",{enabled:mobile,maxTouchPoints:mobile?2:1});
@@ -99,9 +119,13 @@ test("Chromium desktop and emulated touch Hive acceptance",{timeout:60000,skip:!
     assert.equal(await ev("document.activeElement.id"),"bossBriefingResume",boss+" initial dialog focus");
     assert.ok(await ev(dom("bossBriefingMechanics")+".children.length>=3"));
     assert.match(await ev(dom("rankedNotice")+".textContent"),/UNRANKED/);
-    if(boss==="stalker"){
-     await key("Tab","Tab",9);assert.equal(await ev("document.activeElement.id"),"bossBriefingResume");
-     await key("Enter","Enter",13);await wait(visible("bossCountdown"),"keyboard starts regroup");
+    if(boss==="stalker"||mobile){
+     if(mobile)await click("#bossBriefingResume",true);
+     else{
+      await key("Tab","Tab",9);assert.equal(await ev("document.activeElement.id"),"bossBriefingResume");
+      await key("Enter","Enter",13);
+     }
+     await wait(visible("bossCountdown"),"input starts regroup");
      await wait(dom("bossCountdown")+".hidden&&"+dom("stateLabel")+".textContent==='IN MOTION'","regroup completes",8000);
      assert.equal(await ev("document.activeElement.id"),"gameCanvas");
      assert.equal(await ev(dom("abilityPanel")+".hidden"),false);
@@ -110,14 +134,26 @@ test("Chromium desktop and emulated touch Hive acceptance",{timeout:60000,skip:!
    }
    await select("gameMode","classic");
    assert.equal(await ev(dom("gameChallenge")+".hidden"),true);
+   await ev("window.__hiveHoldFrames=true");
    await click("#primaryButton",mobile);await wait(dom("stateLabel")+".textContent==='IN MOTION'","Classic starts");
-   if(mobile){
-    const {x,y,h}=await box("#gameCanvas"),scroll=await ev("scrollY");
-    await touch("touchStart",[{x,y}]);await touch("touchMove",[{x,y:y-Math.min(55,h/4)}]);await touch("touchEnd",[]);
-    assert.equal(await ev("scrollY"),scroll,"swipe does not scroll document");
-    await click("#pauseButton",true);
-   }else{await key("ArrowUp","ArrowUp",38);await key("Escape","Escape",27)}
-   await wait(dom("stateLabel")+".textContent==='PAUSED'","pause accepted");
+   // Initial Classic head (9,11), accepted up turn marker center (9,10).
+   const marker="Array.from(document.getElementById('gameCanvas').getContext('2d').getImageData(189,209,1,1).data)";
+   assert.notDeepEqual(await ev(marker),[255,226,160,255],"no queued turn before input");
+   try{
+    if(mobile){
+     const {x,y,h,reachable}=await box("#gameCanvas"),scroll=await ev("scrollY");
+     assert.ok(reachable,"arena receives actual touch");
+     await touch("touchStart",[{x,y}]);await touch("touchMove",[{x,y:y-Math.min(55,h/4)}]);await touch("touchEnd",[]);
+     assert.equal(await ev("scrollY"),scroll,"swipe does not scroll document");
+    }else await key("ArrowUp","ArrowUp",38);
+    assert.deepEqual(await ev(marker),[255,226,160,255],"actual input painted queued up turn");
+    if(mobile){await sleep(100);await click("#pauseButton",true)}
+    else await key("Escape","Escape",27);
+    await wait(dom("stateLabel")+".textContent==='PAUSED'","pause accepted",4000);
+   }catch(error){
+    t.diagnostic(JSON.stringify(await ev("({status:document.getElementById('stateLabel').textContent,description:document.getElementById('overlayDescription').textContent,scroll:scrollY,events:window.__hiveInputEvidence.slice(-24)})")));
+    throw error;
+   }finally{await ev("window.__hiveHoldFrames=false")}
    await click("#restartButton",mobile);await wait(visible("gameOverlay"),"Classic reset");
    t.diagnostic((mobile?"mobile 390×844 touch/reduced-motion":"desktop 1280×800 keyboard")+" PASS");
   }

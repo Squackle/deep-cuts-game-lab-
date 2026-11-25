@@ -8,11 +8,15 @@ on:
     paths:
       - "mana-heist/**"
       - ".github/workflows/mana-heist.yml"
+permissions:
+  contents: read
 jobs:
   mana-heist:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: "24"
