@@ -1,0 +1,19 @@
+:root { color-scheme: dark; font: 1rem/1.5 system-ui, sans-serif; }
+body { margin: 0; color: #fff1df; background: #211b1e; }
+main { box-sizing: border-box; max-width: 52rem; margin: auto; padding: 1rem; }
+a { color: #fbd5a4; }
+h1, h2 { line-height: 1.2; margin-block-end: .4em; }
+button, select { box-sizing: border-box; min-height: 44px; max-width: 100%; font: inherit; padding: .35rem .65rem; color: inherit; border: 1px solid #c3a28e; border-radius: .4rem; background: #49373b; }
+button:disabled { opacity: .65; }
+:focus-visible { outline: 3px solid #ffd791; outline-offset: 2px; }
+#offers { display: flex; flex-wrap: wrap; gap: .5rem; }
+#offers button { flex: 1 1 13rem; min-width: 0; text-align: left; }
+#offers strong, #offers span { display: block; }
+#offers span { font-size: .92rem; }
+#board { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .2rem; max-width: 35rem; }
+#board button { padding: 0 .1rem; font-size: .95rem; }
+#board button[data-kind="hero"] { background: #315243; }
+#board button[data-kind="enemy"] { background: #733b35; }
+#board button[data-kind="rock"] { background: #383641; }
+#board button[data-kind="bramble"] { background: #4e512d; }
+#board button:enabled { border-color: #ffcf89; }
