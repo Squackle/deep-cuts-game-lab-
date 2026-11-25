@@ -2,7 +2,7 @@
 // Bump only when the saved run format changes, so saves survive ordinary updates.
 import {BY_ID as POOL_BY_ID,LAND_STEP} from "./pool.mjs";
 export const SAVE_FORMAT=1;
-export const VERSION="0.1.0-beta.13.52";
+export const VERSION="0.1.0-beta.13.53";
 // Status effects from towers (ticks are 100 ms): Pyre blasts burn, Thornheart poisons (stacking), Arcanum freezes (slow), Hex curses (+35% damage taken).
 export const BURN=10,POISON=30,POISON_STACKS=3,SPREAD_HIT=.5,SPREAD_MAX=8,BROOD_REVEAL=30,SPLASH_EDGE=.75,TOWER_BURN=9;
 // Enemy health multiplier per difficulty. Gauntlet stars: 3 at 18+ fortress left, 2 at 10+, otherwise 1.
@@ -28,7 +28,9 @@ export const KIT_DRAW_TICKS=120,KIT_WAVE_DRAW=1,KIT_SPELL=2,ANTE_STEP=.1,ANTE_MA
 const hollowPads=[];for(const y of [47,175,235,365,425,553])for(const x of [220,400,580,760])hollowPads.push([x,y,hollowPads.length===20?"spring":hollowPads.length===7?"height":null]);
 export const MAPS={
  hollow:{name:"The Hollow Road",blurb:"One long winding road.",segments:[{pts:[[0,110],[875,110],[875,300],[125,300],[125,490],[1000,490]],next:null}],entrances:[0],commander:[0,.42],pads:hollowPads,rubble:{7:120,13:70,18:70},labels:[["THE HOLLOW ROAD",12,82],["VERDANT KEEP",885,548]]},
- confluence:{finalBoss:"lorthos",name:"The Confluence",blurb:"Two roads enter and merge into one before the keep. Shorter roads, so fliers here are a little lighter.",airScale:.85,segments:[{pts:[[0,80],[740,80],[740,200],[210,200],[210,300]],next:2},{pts:[[0,520],[740,520],[740,400],[210,400],[210,300]],next:2},{pts:[[210,300],[1000,300]],next:null}],entrances:[0,1],commander:[2,.3],rubble:{1:120,10:80,13:80},
+ confluence:{finalBoss:"lorthos",
+  // River troll thread: Mossbridge Trolls wade in early (3), return in force midgame (13) and reprise before Lorthos (24). Each swap keeps the wave's total health within ~5%.
+  waveEdits:{3:"raider:13 armored:5 regen:1",13:"raider:18 runner:8 armored:5 wing:6 mage:3 regen:5 golem:3",24:"raider:28 runner:15 armored:15 wing:15 mage:6 regen:8 stalker:8 warden:7 golem:6"},name:"The Confluence",blurb:"Two roads enter and merge into one before the keep. Shorter roads, so fliers here are a little lighter.",airScale:.85,segments:[{pts:[[0,80],[740,80],[740,200],[210,200],[210,300]],next:2},{pts:[[0,520],[740,520],[740,400],[210,400],[210,300]],next:2},{pts:[[210,300],[1000,300]],next:null}],entrances:[0,1],commander:[2,.3],rubble:{1:120,10:80,13:80},
   pads:[[300,140],[440,140,"height"],[580,140],[320,250],[460,250],[600,250],[860,150],[860,235],[955,140],[300,460],[440,460],[580,460],[320,350],[460,350],[600,350],[860,450],[860,365],[955,460],[105,190],[105,300,"spring"],[105,410]],
   labels:[["NORTH FORD",110,45],["SOUTH FORD",110,570],["THE CONFLUENCE",226,288],["VERDANT KEEP",890,402]]},
  // Winter-only map. The middle leg crosses a frozen lake: ground enemies slow down on the ice, fliers ignore it and are a little tougher here.
@@ -175,7 +177,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
   "raider:28 runner:13 armored:16 wing:13 mage:5 regen:4 stalker:7 golem:5","raider:28 runner:14 armored:17 wing:14 mage:5 regen:4 warden:6 golem:5","raider:28 runner:14 armored:18 wing:14 mage:5 regen:4 stalker:8 warden:6 golem:5","raider:28 runner:15 armored:19 wing:15 mage:6 regen:4 stalker:8 warden:7 golem:6","raider:28 runner:15 armored:20 wing:16 mage:6 regen:5 titan:3 stalker:6 warden:6 golem:6 tyrant:1"
  ].map(w=>w.split(" "));
  const bossCycle=["grimgut","matron","colossus","hierophant","tyrant"];
- function waveSpec(n){if(!(n>=1))return [];if(n===25&&M.finalBoss)return campaign[24].map(x=>x.startsWith("tyrant:")?M.finalBoss+x.slice(6):x);if(n<=25)return campaign[n-1].slice();const a=["raider:28","runner:"+Math.min(20,3+Math.floor(n/2)),"armored:"+Math.min(30,Math.floor(n*.8)),"wing:"+Math.min(28,Math.floor(n*.65)),"mage:"+Math.min(12,Math.floor(n/4)),"regen:"+Math.min(12,Math.floor(n/5)),"stalker:"+Math.min(14,Math.floor(n/3)),"warden:"+Math.min(12,Math.floor(n/4)),"golem:"+Math.min(12,Math.floor(n/4))];if(n%5===0)a.push("titan:"+Math.min(8,Math.floor(n/7)+1),bossCycle[(n/5-1)%5]+":1");return a;}
+ function waveSpec(n){if(!(n>=1))return [];if(n===25&&M.finalBoss)return campaign[24].map(x=>x.startsWith("tyrant:")?M.finalBoss+x.slice(6):x);if(n<=25)return M.waveEdits?.[n]?.split(" ")||campaign[n-1].slice();const a=["raider:28","runner:"+Math.min(20,3+Math.floor(n/2)),"armored:"+Math.min(30,Math.floor(n*.8)),"wing:"+Math.min(28,Math.floor(n*.65)),"mage:"+Math.min(12,Math.floor(n/4)),"regen:"+Math.min(12,Math.floor(n/5)),"stalker:"+Math.min(14,Math.floor(n/3)),"warden:"+Math.min(12,Math.floor(n/4)),"golem:"+Math.min(12,Math.floor(n/4))];if(n%5===0)a.push("titan:"+Math.min(8,Math.floor(n/7)+1),bossCycle[(n/5-1)%5]+":1");return a;}
  const waves=Array.from({length:25},(_,i)=>waveSpec(i+1));
  const cards={};
  function card(id,name,color,cost,target,desc){cards[id]={name,color,cost,target,desc};}
