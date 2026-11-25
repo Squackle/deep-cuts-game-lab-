@@ -7,6 +7,7 @@ import { onBattleGrafts,onHeroAttack } from '../src/engine/trait-triggers.js';
 import { comboToken,resolveComboEvents } from '../src/engine/combo-triggers.js';
 import { sacrificeAlly,effectivePower,heal } from '../src/engine/abilities.js';
 import { cardPool } from '../src/engine/rewards.js';
+import { BattleUI } from '../src/ui/battle-ui.js';
 const card=id=>({id:'mtg:'+id,level:1});
 const make=(ids=[],spells=[])=>{const s=arena(['P....','.....','....g'],{g:'grub'},{evo:evoWith(...ids.map(x=>'mtg:'+x)),spellbook:spells.map(card)});s.deck={library:[],hand:spells.map(card),graveyard:[],exile:[],capacity:7};s.spellbook=s.deck.hand;s.p.mana=20;const e=enemies(s)[0];e.hp=e.maxHp=60;return s;};
 const ids=['inspiring-overseer','cloudkin-seer','pitiless-plunderer','vindictive-vampire','monastery-swiftspear','krenko-tin-street-kingpin'];
@@ -52,4 +53,40 @@ test('terminal gain retains both earned counters exactly once; no new turn or ga
  const s=make(['vito-thorn-of-the-dusk-rose','ajani-s-pridemate','bloodthirsty-aerialist']);const h=player(s),f=enemies(s)[0];f.hp=1;const p=h.power,ev=[];heal(s,ev,h,1,'test');assert.equal(s.victoryDeclared,true);
  resolveComboEvents(s,ev);assert.equal(h.power,p+2);resolveComboEvents(s,ev);assert.equal(h.power,p+2);
  const turn=s.turn;assert.deepEqual(startPlayerTurn(s),[]);assert.equal(s.turn,turn);const after=[];heal(s,after,h,1,'test');assert.deepEqual(after,[]);
+});
+
+test('battle shortcuts leave Enter and Space available to focused controls', t=>{
+ const previousDocument=globalThis.document,previousWindow=globalThis.window;
+ t.after(()=>{
+  if(previousDocument===undefined)delete globalThis.document;else globalThis.document=previousDocument;
+  if(previousWindow===undefined)delete globalThis.window;else globalThis.window=previousWindow;
+ });
+ const window=new EventTarget();
+ const board={closest:()=>null},button={closest:selector=>selector.split(', ').includes('button')?button:null};
+ const document={getElementById:()=>new EventTarget(),activeElement:board};
+ Object.assign(globalThis,{window,document});
+
+ const ui=Object.create(BattleUI.prototype);
+ ui.app={mode:'battle',modalOpen:()=>false};
+ ui.s={spellbook:[]};
+ ui.cursor={x:1,y:2};
+ ui.bindDiscardDrag=()=>{};
+ const actions=[];
+ ui.onTile=(tile,touch)=>actions.push({tile,touch});
+ ui.doEndTurn=()=>actions.push('end turn');
+ ui.bindInput();
+
+ function press(key,target){
+  document.activeElement=target;
+  const event=new Event('keydown',{cancelable:true});
+  Object.defineProperties(event,{key:{value:key},target:{value:target}});
+  window.dispatchEvent(event);
+  return event.defaultPrevented;
+ }
+ assert.equal(press('Enter',button),false);
+ assert.equal(press(' ',button),false);
+ assert.deepEqual(actions,[]);
+ assert.equal(press('Enter',board),true);
+ assert.equal(press(' ',board),true);
+ assert.deepEqual(actions,[{tile:{x:1,y:2},touch:false},'end turn']);
 });

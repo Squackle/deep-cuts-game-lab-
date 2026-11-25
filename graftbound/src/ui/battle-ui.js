@@ -651,7 +651,10 @@ export class BattleUI {
     $('endTurn').addEventListener('click', () => this.doEndTurn());
     $('plate').addEventListener('click', () => this.app.openSheet());
     window.addEventListener('keydown', e => {
-      if (!this.s || this.app.modalOpen() || this.app.mode !== 'battle') return;
+      if (e.defaultPrevented || !this.s || this.app.modalOpen() || this.app.mode !== 'battle') return;
+      const k = e.key.toLowerCase();
+      // Focused controls need their native activation before board shortcuts.
+      if ((k === 'enter' || k === ' ') && e.target?.closest?.('button, a[href], summary')) return;
       const focusedHand = document.activeElement?.closest?.('#tray');
       if (focusedHand && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
         e.preventDefault();
@@ -661,7 +664,6 @@ export class BattleUI {
         return;
       }
       if (document.activeElement?.matches?.('input,textarea,select,[contenteditable="true"]')) return;
-      const k = e.key.toLowerCase();
       if (this.tileInspectLatch?.locked && /^(arrowup|arrowdown|arrowleft|arrowright|w|a|s|d|enter| |g|h|[1-9])$/.test(k))
         this.releasePinnedTileForAction();
       const mv = { arrowup: [0, -1], w: [0, -1], arrowdown: [0, 1], s: [0, 1], arrowleft: [-1, 0], a: [-1, 0], arrowright: [1, 0], d: [1, 0] }[k];
