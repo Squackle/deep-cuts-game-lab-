@@ -182,3 +182,22 @@ test("campaign saves retain legitimate shops but bound and reject malformed inve
  const high=camp.sanitize({...good,shop:{...good.shop,rerolls:Number.MAX_SAFE_INTEGER}},cards);
  assert.equal(high.shop.rerolls,1e6,"large reroll counters cannot overflow later costs");
 });
+
+
+test("stale offers and draft choices never charge Treasure or create duplicate singleton inventory",()=>{
+ const c=camp.newCampaign(12);c.treasure=100;c.relics=["solring"];c.boons=["gallery"];c.lands.R=5;
+ c.shop={items:[{kind:"spell",id:"meteor",price:3},{kind:"relic",id:"solring",price:6},{kind:"boon",id:"gallery",price:10},{kind:"land",id:"landR",price:3},{kind:"relic",id:"__proto__",price:1}],packs:[]};
+ c.draft=["meteor","twins"];const before=JSON.stringify(c);
+ for(let i=0;i<c.shop.items.length;i++)assert.equal(camp.buy(c,i,cards),null);
+ assert.equal(camp.pickDraft(c,"meteor"),false);
+ assert.equal(JSON.stringify(c),before);
+ c.pack={kind:"spell",opts:["meteor","twins"]};assert.equal(camp.choosePack(c,"meteor",cards),null);
+ assert.ok(camp.choosePack(c,"twins",cards));assert.equal(c.treasure,100);assert.equal(new Set(c.deck).size,c.deck.length);
+});
+test("shop rolls terminate and retain unique offers with exhausted land and relic pools",()=>{
+ for(let seed=1;seed<=30;seed++){
+  const c=camp.newCampaign(seed);c.relics=RELICS.map(r=>r.id);c.lands={W:5,U:5,B:5,R:5,G:5};
+  const shop=camp.rollShop(c,cards);assert.ok(shop.items.length<=8);assert.equal(new Set(shop.items.map(i=>i.id)).size,shop.items.length);
+  assert.ok(shop.items.every(i=>i.kind!=="land"&&i.kind!=="relic"));
+ }
+});

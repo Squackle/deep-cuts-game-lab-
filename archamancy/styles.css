@@ -616,8 +616,8 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .wave-peek{position:fixed;top:calc(var(--edge-t) + 72px)!important;left:auto!important;right:var(--edge-r);max-width:var(--side);max-height:calc(100dvh - var(--edge-t) - var(--edge-b) - 80px);font-size:.7rem;z-index:7}
 .wave-peek-head{font-size:.6rem;padding:4px 7px}.wave-peek li{grid-template-columns:18px 1fr auto;column-gap:4px}.wave-peek li img{width:18px;height:18px}
 .spell-tray{right:var(--edge-r);bottom:var(--edge-b);width:var(--side);max-width:none;align-items:stretch;gap:2px}
-.wave-peek.closed:has(.wave-counter-hint:not([hidden])){max-height:80px}
-.game-shell:has(.wave-peek.closed:not([hidden]) .wave-counter-hint:not([hidden])){--hand-top:168px}
+.wave-peek.closed:has(.wave-counter-hint:not([hidden])){max-height:min(132px,calc(100dvh - var(--edge-t) - var(--edge-b) - 80px));overflow-y:auto;overscroll-behavior:contain}.wave-counter-hint{overflow-wrap:anywhere}
+.game-shell:has(.wave-peek.closed:not([hidden]) .wave-counter-hint:not([hidden])){--hand-top:min(220px,calc(100dvh - 128px))}
 .hand{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;
  max-height:calc(100dvh - var(--edge-t) - var(--edge-b) - var(--hand-top,104px));overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:3px}
 .hand .spell{width:100%;aspect-ratio:auto;min-height:31px;flex-direction:row;align-items:center;gap:3px;padding:3px 4px;border-radius:6px}

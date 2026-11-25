@@ -12,7 +12,7 @@ export function createCardArt({ fetchFn = globalThis.fetch?.bind(globalThis), st
    const parsed = JSON.parse(raw);
    if (parsed && typeof parsed === "object" && !Array.isArray(parsed))
     for (const [name, entry] of Object.entries(parsed).slice(0, MAX_CACHED_ART))
-     if (name.length <= 160 && valid(entry)) cache[name] = entry;
+     if (name.length <= 160 && valid(entry)) cache[name] = {art:entry.art,artist:entry.artist,link:entry.link};
   }
  } catch { cache = Object.create(null); }
  const queue = [], pending = new Set(), failed = new Set();
@@ -28,7 +28,7 @@ export function createCardArt({ fetchFn = globalThis.fetch?.bind(globalThis), st
  }
  function persist() {
   while (Object.keys(cache).length > MAX_CACHED_ART) delete cache[Object.keys(cache)[0]];
-  try { storage?.setItem(KEY, JSON.stringify(cache)); } catch {}
+  try { let raw=JSON.stringify(cache);while(raw.length>MAX_CACHE_CHARS&&Object.keys(cache).length){delete cache[Object.keys(cache)[0]];raw=JSON.stringify(cache);}storage?.setItem(KEY,raw); } catch {}
  }
  async function pump() {
   if (running) return; running = true;

@@ -56,13 +56,13 @@ export const priceOf = (c, base) => Math.max(1, base - off(c));
 // A shop visit: card slots (relic / ritual / land / forbidden by Balatro weights), one spell, one boon you don't own and two packs.
 export function rollShop(c, cards, keepPacks = false) {
  const items = [], taken = new Set(), n = 2 + (metaFx(c).shopSlots || 0);
- for (let i = 0; i < n; i++) {
+ for (let attempts = 0; items.length < n && attempts < 64; attempts++) {
   const kind = weighted(c, Object.keys(SHOP_WEIGHTS), k => SHOP_WEIGHTS[k]);
   let pick = null;
   if (kind === "relic") pick = weighted(c, RELICS.filter(r => !c.relics.includes(r.id) && !taken.has(r.id)), r => RARITY[r.rarity].weight);
   else if (kind === "land") pick = weighted(c, LANDS.filter(l => (c.lands[l.color] || 0) < LAND_MAX && !taken.has(l.id)), () => 1);
   else pick = weighted(c, (kind === "ritual" ? RITUALS : FORBIDDEN).filter(r => !taken.has(r.id) && !(r.fx.cloneRelic && c.marks.includes(r.id))), () => 1);
-  if (!pick) { i--; if (items.length + i > 20) break; continue; }
+  if (!pick) continue;
   taken.add(pick.id); items.push({ kind: pick.kind, id: pick.id, price: priceOf(c, pick.kind === "relic" ? RARITY[pick.rarity].cost : PRICE[pick.kind]), sold: false });
  }
  const spell = weighted(c, Object.keys(cards).filter(k => !c.deck.includes(k)), () => 1);
@@ -127,7 +127,12 @@ export const needsTarget = id => { const fx = BY_ID[id]?.fx || {}; return !!(fx.
 
 // Why an item can't be bought right now, or null.
 export function blocker(c, item, cards) {
+ if (!item || (item.kind === "spell" ? !Object.hasOwn(cards,item.id) : !Object.hasOwn(BY_ID,item.id) || BY_ID[item.id].kind !== item.kind)) return "Invalid offer";
  if (item.sold) return "Sold";
+ if (item.kind === "spell" && c.deck.includes(item.id)) return "Already in your deck";
+ if (item.kind === "relic" && c.relics.includes(item.id)) return "Already owned";
+ if (item.kind === "boon" && c.boons.includes(item.id)) return "Already owned";
+ if (item.kind === "land" && (c.lands[BY_ID[item.id].color] || 0) >= LAND_MAX) return "Color already at max level";
  if (c.treasure < item.price) return "Not enough Treasure";
  if (item.kind === "relic" && c.relics.length >= slots(c)) return "Relic slots full: sell one in your Deck";
  if (item.kind === "spell" && c.deck.length >= deckCap(c)) return "Deck full: exile a spell first";
@@ -196,5 +201,5 @@ export function finishBattle(c, run, cards) {
 }
 export function draftOffer(c, cards) { const pool = Object.keys(cards).filter(k => !c.deck.includes(k)), out = [], n = 3 + (metaFx(c).draftChoices || 0); while (out.length < n && pool.length) out.push(pool.splice(Math.floor(rnd(c) * pool.length), 1)[0]); return out.length ? out : null; }
 // Take a drafted spell. With a full deck, name a deck spell to swap out (it leaves with its upgrades); null skips for +2 Treasure.
-export function pickDraft(c, id, swapOut = null) { if (!c.draft) return false; if (id === null) { c.draft = null; c.treasure += 2; return true; } if (!c.draft.includes(id)) return false; if (c.deck.length >= deckCap(c)) { if (!c.deck.includes(swapOut)) return false; exile(c, swapOut); } c.deck.push(id); c.draft = null; return true; }
+export function pickDraft(c, id, swapOut = null) { if (!c.draft) return false; if (id === null) { c.draft = null; c.treasure += 2; return true; } if (!c.draft.includes(id) || c.deck.includes(id) || typeof id !== "string") return false; if (c.deck.length >= deckCap(c)) { if (!c.deck.includes(swapOut)) return false; exile(c, swapOut); } c.deck.push(id); c.draft = null; return true; }
 export { POOL };
