@@ -1,15 +1,18 @@
-name: Game Lab browser navigation smoke
+name: Game Lab browser smoke
 on:
   pull_request:
     paths:
       - 'index.html'
       - 'lab/**'
-      - 'hive-run/index.html'
-      - 'stackbreaker/index.html'
-      - 'mana-heist/index.html'
-      - 'graftbound/index.html'
-      - 'archemancy/index.html'
-      - 'archamancy/index.html'
+      - 'hive-run/**'
+      - 'src/**'
+      - 'assets/**'
+      - 'styles.css'
+      - 'stackbreaker/**'
+      - 'mana-heist/**'
+      - 'graftbound/**'
+      - 'archemancy/**'
+      - 'archamancy/**'
       - 'scripts/lab-browser-smoke.mjs'
       - '.github/workflows/lab-browser-smoke.yml'
   workflow_dispatch:
@@ -34,7 +37,7 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/lab-smoke" --no-save --no-package-lock --ignore-scripts playwright-core@1.56.1
           node "$RUNNER_TEMP/lab-smoke/node_modules/playwright-core/cli.js" install --with-deps chromium
-      - name: Run local-only catalog navigation at desktop and mobile sizes
+      - name: Verify local catalog, game boot and controls at desktop and mobile sizes
         run: |
           export PLAYWRIGHT_MODULE="$RUNNER_TEMP/lab-smoke/node_modules/playwright-core/index.mjs"
           export LAB_SMOKE_ARTIFACT_DIR="$RUNNER_TEMP/lab-smoke-evidence"
