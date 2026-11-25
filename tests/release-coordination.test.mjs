@@ -55,8 +55,14 @@ test("Protected release coordination fails closed when unified game tests fail",
  assert.ok(catalog.includes("  workflow_call:"),"Unified suite must be reusable");
  assert.ok(coordination.includes("  game-lab-suite:"),"Suite prerequisite job must exist");
  assert.ok(coordination.includes("uses: ./.github/workflows/lab-catalog.yml"),"Use actual unified suite");
- assert.ok(coordination.includes("needs: game-lab-suite"),"Required job must wait on suite");
+ assert.ok(coordination.includes("needs: [game-lab-suite, graftbound-verifier]"),"Required job must wait on both suites");
+ assert.ok(coordination.includes("uses: ./.github/workflows/graftbound-verifier.yml"),"Use actual GRAFTBOUND verifier");
+ const verifier=readFileSync(new URL("../.github/workflows/graftbound-verifier.yml",import.meta.url),"utf8");
+ assert.ok(verifier.includes("  workflow_call:"),"GRAFTBOUND verifier must be reusable");
+ assert.ok(verifier.includes("run: npm test")&&verifier.includes("node tools/integration-manifest.mjs"),"Retain complete verifier and manifest");
  assert.ok(coordination.includes("if: ${{ always() }}"),"Required job must not skip when suite fails");
  assert.ok(coordination.includes("SUITE_RESULT: ${{ needs.game-lab-suite.result }}"),"Propagate suite result");
- assert.ok(coordination.includes('run: test "$SUITE_RESULT" = "success"'),"Fail required job unless suite passes");
+ assert.ok(coordination.includes('test "$SUITE_RESULT" = "success"'),"Fail required job unless unified suite passes");
+ assert.ok(coordination.includes("GRAFTBOUND_RESULT: ${{ needs.graftbound-verifier.result }}"),"Propagate verifier result");
+ assert.ok(coordination.includes('test "$GRAFTBOUND_RESULT" = "success"'),"Fail required job unless GRAFTBOUND verifier passes");
 });

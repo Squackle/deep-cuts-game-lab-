@@ -6,7 +6,8 @@ import {analyzeDecision} from "../src/decision-analysis.js";
 import {LEVELS} from "../src/levels.js";
 import {initial,actions,reduce,completed,validate} from "../src/engine.js";
 import {solve,replay} from "../src/solver.js";
-import {chooseAutomaticCast} from "../src/auto-cast.js";
+import {chooseAutomaticCast,resolveAutomaticCasts} from "../src/auto-cast.js";
+import {analyzeStrategy} from "../src/strategy-graph.js";
 
 for(const level of DECISION_LADDER){
  test(`${level.id}: valid, solver-proven and playable through automatic payment`,()=>{
@@ -23,7 +24,7 @@ for(const level of DECISION_LADDER){
 }
 test("practice IDs stay separate from all 500 saved campaign identities",()=>{
  assert.equal(LEVELS.length,500);
- assert.equal(new Set(DECISION_LADDER.map(l=>l.id)).size,5);
+ assert.equal(new Set(DECISION_LADDER.map(l=>l.id)).size,7);
  for(const p of DECISION_LADDER)assert.ok(!LEVELS.some(l=>l.id===p.id));
 });
 for(const probe of DECISION_CHECKPOINTS){
@@ -82,4 +83,35 @@ for(const turn of [1,2])test(`final sample requires ${turn===1?"blue":"red"} fil
  const winning=result.outcomes.find(o=>o.finish==="solved");
  assert.deepEqual(winning.action.output,turn===1?["U","U"]:["R","R"]);
  if(turn===2)assert.ok(result.deferredTraps>=1,"a mixed output can open ward two but loses the last red requirement");
+});
+
+test("matched-action generic payment comparison separates deferred risk from click count",()=>{
+ const easy=DECISION_LADDER[5],hard=DECISION_LADDER[6];
+ const a=analyzeStrategy(easy),b=analyzeStrategy(hard),rev=analyzeStrategy(hard,{reverseActions:true});
+ assert.equal(a.status,"complete");assert.equal(b.status,"complete");
+ assert.equal(a.metrics.shortestActions,b.metrics.shortestActions);
+ assert.equal(a.metrics.shortestActions,4);
+ assert.equal(a.metrics.minimumDeferredCommitments,0);
+ // There is an optimal safe ordering: red first, cast, then blue.
+ assert.equal(b.metrics.minimumDeferredCommitments,0);
+ assert.ok(b.metrics.shortestDeferredCommitments.max>a.metrics.shortestDeferredCommitments.max);
+ const charged=actions(hard,initial(hard)).find(a=>a.type==="tap"&&a.id==="blue");
+ const point=reduce(hard,initial(hard),charged).state;
+ const risk=analyzeDecision(hard,point,actions(hard,point));
+ assert.equal(risk.status,"complete");assert.ok(risk.deferredTraps>=1);
+ for(const k of ["shortestActions","minimumCriticalCommitments","minimumDeferredCommitments","shortestCriticalCommitments","shortestDeferredCommitments","firstDistinctCommitments","winningFirstCommitments"])assert.deepEqual(b.metrics[k],rev.metrics[k],k);
+ assert.equal(b.states,rev.states);assert.equal(b.edges,rev.edges);
+ assert.ok(replay(hard,b.route).ok);assert.ok(replay(hard,rev.route).ok);
+ // The optional automatic mode makes timing a resource commitment too.
+ let s=initial(hard);s=reduce(hard,s,actions(hard,s).find(x=>x.id==="blue")).state;
+ const bad=resolveAutomaticCasts(hard,s).state;
+ assert.equal(solve(hard,{startState:bad}).status,"unsolvable");
+ s=initial(hard);s=reduce(hard,s,actions(hard,s).find(x=>x.id==="red")).state;
+ const good=resolveAutomaticCasts(hard,s).state;assert.equal(solve(hard,{startState:good}).status,"solved");
+ console.log("MANA_HEIST_MATCHED_PAIR "+JSON.stringify({easy:a.metrics,hard:b.metrics,states:[a.states,b.states]}));
+});
+test("report bounded graph coverage for all seven unranked trials",()=>{
+ const rows=DECISION_LADDER.map(p=>{const r=analyzeStrategy(p,{maxStates:3000,maxEdges:60000});if(r.route)assert.ok(replay(p,r.route).ok);return {id:p.id,status:r.status,reason:r.reason||null,states:r.states,edges:r.edges,metrics:r.metrics};});
+ assert.ok(rows.every(r=>r.status==="complete"||r.status==="inconclusive"));
+ console.log("MANA_HEIST_TRIAL_COVERAGE "+JSON.stringify(rows));
 });

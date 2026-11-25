@@ -135,7 +135,7 @@ export function spellManaCost(card,level=0,spellcraft=0,off={}){
  const type=card?.type||"";
  return Math.round((card?.cost??0)*(1-.05*spellcraft)*(1-SPELL_COST_STEP*level)*(1-(/^(Instant|Sorcery)$/.test(type)?off.instant||0:0))*(1-(/Artifact/.test(type)?off.artifact||0:0)));
 }
-export const DAMAGE_UPGRADE_SPELLS=Object.freeze(["meteor","cascade","lightning","flame"]);
+export const DAMAGE_UPGRADE_SPELLS=Object.freeze(["meteor","cascade","lightning"]);
 
 // Share of each category in the pool, for the in-game breakdown and the tests.
 export function poolShares(pool = POOL) { const out = {}; for (const x of pool) out[x.kind] = (out[x.kind] || 0) + 1; for (const k of Object.keys(out)) out[k] = { count: out[k], pct: Math.round(out[k] / pool.length * 1000) / 10 }; return out; }

@@ -1,11 +1,8 @@
 name: GRAFTBOUND verifier readiness
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'graftbound/**'
-      - '.github/workflows/graftbound-verifier.yml'
+  # Required by release-coordination for all main PRs, not just game edits.
+  workflow_call:
   push:
     branches: [main]
     paths:
@@ -22,6 +19,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
