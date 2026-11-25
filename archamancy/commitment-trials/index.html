@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Commitment Trials | ARCHEMANCY</title>
+  <link rel="stylesheet" href="./trials.css">
+  <script type="module" src="./play.mjs"></script>
+</head>
+<body>
+<main>
+  <a href="../">‹ ARCHEMANCY</a>
+  <h1>Commitment Trials</h1>
+  <p>Unranked Hard trials on The Hollow Road with fixed spellbooks and opening budgets.</p>
+  <label for="trial">Trial</label>
+  <select id="trial"></select>
+  <button id="restart" type="button">Restart</button>
+  <p id="objective"></p>
+  <h2 id="wave"></h2>
+  <p id="status"></p>
+  <div class="buttons">
+    <button id="start" type="button">Call wave</button>
+    <button id="pause" type="button">Pause</button>
+    <button id="step" type="button">Advance one second</button>
+  </div>
+  <p id="forecast"></p>
+  <canvas id="map" width="1000" height="600" aria-label="Tactical map of pads and enemies. Use the pad selector and spell controls below for keyboard play."></canvas>
+  <p id="report" role="status"></p>
+  <label for="pad">Selected pad</label>
+  <select id="pad"></select>
+  <div id="tower" class="buttons" aria-label="Tower actions"></div>
+  <h2>Hand</h2>
+  <p>Select a pad to aim at a tower or the closest point on the road.</p>
+  <div id="hand" class="buttons"></div>
+</main>
+</body>
+</html>
