@@ -11,7 +11,7 @@ const pack=new URLSearchParams(location.search).get('pack');
 const replacementPreview=pack==='replacement-review',rulesPreview=pack==='rules-preview';
 const trials=rulesPreview?RULES_PREVIEW_BOARDS:replacementPreview?replacementBoards:STRATEGY_TRIALS;
 const {createGame,tapLand,activate,pass,legalActions,legalTargets,labelTarget,creaturePower,creatureToughness,paymentOptions}=rulesPreview?preview:legacy;
-if(rulesPreview){$('packHeading').textContent='RULES PREVIEW';$('packIntro').textContent='Versioned, unranked rules rehearsal: spell/trigger distinction, damage prevention and declared one-blocker combat. The opponent always passes. No full Magic combat system or saved scores.';}
+if(rulesPreview){$('packHeading').textContent='RULES PREVIEW';$('packIntro').textContent='Four unranked workshops on triggered abilities, damage prevention, trample and mana commitments. The opponent always passes.';}
 if(replacementPreview){$('packHeading').textContent='REPLACEMENT REVIEW';$('packIntro').textContent='Two unranked proposals only. Original campaign boards and scores are unchanged.';}
 const node=(tag,text,cls='')=>{const e=document.createElement(tag);if(cls)e.className=cls;
  if(text!==undefined)e.textContent=String(text);return e;};
@@ -35,6 +35,26 @@ function item(title,detail,cls=''){
  if(detail)e.append(node('small',detail));return e;
 }
 function cardDetail(box,name){const c=CARDS[name];if(!c)return; if(c.oracle)box.append(node('p',c.oracle,'card-rule'));if(c.note)box.append(node('small',c.note,'card-note'));}
+function displayTarget(s,id){
+ const spell=s.stack.find(item=>item.id===id);
+ if(!spell)return labelTarget(s,id);
+ const controller=spell.controller==='player'?'yours':'opponent’s';
+ const target=spell.targetId?' → '+labelTarget(s,spell.targetId):'';
+ return spell.card+' ('+controller+')'+target;
+}
+function decisionWindow(p){
+ if(!p.reviewResponse)return -1;
+ return history.findIndex((before,i)=>!before.used.includes(p.reviewResponse)&&
+  (history[i+1]??state).used.includes(p.reviewResponse));
+}
+function reviewDecision(p,window){
+ if(window<0)return '';
+ const before=history[window],after=history[window+1]??state;
+ const spell=after.stack.find(item=>item.id===p.reviewResponse);
+ const left=Object.entries(after.mana).filter(([,qty])=>qty>0).map(([color,qty])=>qty+' '+color).join(', ');
+ const bear=state.units.find(unit=>unit.id==='bear');
+ return `You targeted ${displayTarget(before,spell.targetId)}, leaving ${left||'no mana'} after the cast. Final life ${state.life.player}; opponent ${state.life.opponent}. Grizzly Bears ${bear.zone==='battlefield'?'survived':'went to the graveyard'}.`;
+}
 function setNotice(text){notice=text;$('notice').textContent=text;}
 function load(n){
  index=n;state=createGame(trials[index]);history=[];selections.clear();payments.clear();
@@ -95,7 +115,7 @@ function render(){
    const label=node('label','Target');label.htmlFor='target-'+a.id;box.append(label);
    const select=node('select');select.id='target-'+a.id;select.dataset.targetFor=a.id;
    const prompt=node('option','Choose a target');prompt.value='';prompt.disabled=true;prompt.selected=true;select.append(prompt);
-   targets.forEach(t=>{const opt=node('option',t===null?'No target':labelTarget(state,t));
+   targets.forEach(t=>{const opt=node('option',t===null?'No target':displayTarget(state,t));
     opt.value=t===null?'__null__':t;select.append(opt);});
    const selected=selections.get(a.id);
    if(selected!==undefined&&targets.some(t=>(t===null?'__null__':t)===selected))select.value=selected;
@@ -130,6 +150,10 @@ function render(){
  const outcome=$('outcome');outcome.hidden=!done;
  $('nextTrial').hidden=state.status!=='won'||index===trials.length-1;
  $('retryTrial').hidden=state.status==='playing';
+ const window=done?decisionWindow(p):-1;
+ $('retryWindow').hidden=window<0;
+ $('decisionReview').hidden=window<0;
+ $('decisionReview').textContent=reviewDecision(p,window);
  if(done){
   $('outcomeTitle').textContent=state.status==='won'?'TRIAL SOLVED':'TRY ANOTHER LINE';
   const evidence=rulesPreview?{status:'not-applicable'}:referenceSubsetEvidence(p);
@@ -183,6 +207,13 @@ $('pass').addEventListener('click',()=>act(()=>pass(state)));
 $('undo').addEventListener('click',()=>{if(!history.length)return;state=history.pop();selections.clear();payments.clear();setNotice('Previous action undone. Reconsider the resources and targets.');render();});
 $('restart').addEventListener('click',()=>load(index));
 $('retryTrial').addEventListener('click',()=>{load(index);$('currentTrial').focus();});
+$('retryWindow').addEventListener('click',()=>{
+ const window=decisionWindow(trials[index]);
+ if(window<0)return;
+ state=history[window];history=history.slice(0,window);selections.clear();payments.clear();
+ $('hintText').hidden=true;setNotice('Priority restored before your counterspell. Choose your target and payment.');
+ render();$('currentTrial').focus();
+});
 $('nextTrial').addEventListener('click',()=>{if(index+1<trials.length){load(index+1);$('currentTrial').focus();}});
 $('hint').addEventListener('click',()=>{
  const hint=$('hintText'),show=hint.hidden;hint.hidden=!show;

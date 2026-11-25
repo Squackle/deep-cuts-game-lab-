@@ -11,5 +11,24 @@ export const RULES_PREVIEW_BOARDS=Object.freeze([
  life:{player:1,opponent:10},mana:{W:1},units:[{id:"bear",card:"Grizzly Bears",controller:"player"},{id:"lion",card:"Savannah Lions",controller:"player"}],stack:[{id:"bolt",card:"Lightning Bolt",controller:"opponent",targetId:"player"},{id:"sweep",card:"Pyroclasm",controller:"opponent"}],hand:[{id:"hallow",card:"Hallow"}],objective:{type:"keepN",count:2},solution:[["hallow","sweep"]]},
  {...base,id:"sb-preview-combat",title:"Hold the Line",tier:"Mastermind",strategyFocus:"Preserve a blocker against trample",intro:"A 3/3 trampling War Mammoth attacks. Savannah Lions is already blocking it. You are at two life. Survive combat.",
  hint:"Returning your own blocker leaves the trampler free to assign all its damage to you. Can you grow the blocker or remove the attacker?",explanation:"Pump the blocker to absorb all damage, or return the attacking creature before combat damage. Returning the blocker is a losing choice against trample.",strategyLesson:"Combat damage is simultaneous. A blocked attacker with trample may assign excess damage to the defending player. This one-blocker preview uses maximum legal spillover.",retryPrompt:"Win using the other response: Unsummon the attacker, or grow the blocker.",
- life:{player:2,opponent:10},mana:{U:1,G:1},units:[{id:"mammoth",card:"War Mammoth",controller:"opponent"},{id:"lion",card:"Savannah Lions",controller:"player"}],combat:{attackerId:"mammoth",blockerId:"lion"},phase:"combat",stack:[],hand:[{id:"growth",card:"Giant Growth"},{id:"bounce",card:"Unsummon"}],objective:{type:"survive"},solution:[["growth","lion"]]}
+ life:{player:2,opponent:10},mana:{U:1,G:1},units:[{id:"mammoth",card:"War Mammoth",controller:"opponent"},{id:"lion",card:"Savannah Lions",controller:"player"}],combat:{attackerId:"mammoth",blockerId:"lion"},phase:"combat",stack:[],hand:[{id:"growth",card:"Giant Growth"},{id:"bounce",card:"Unsummon"}],objective:{type:"survive"},solution:[["growth","lion"]]},
+ {
+  ...base,id:"sb-preview-colors",title:"Which Fire to Fight?",tier:"Mastermind",
+  strategyFocus:"Choose which mana survives the response",
+  intro:"Your Lightning Bolt is already on the stack. The opponent follows with a lethal Bolt at you and a Shock at your Grizzly Bears. Survive this exchange. Can you also keep your creature or finish the opponent?",
+  hint:"Work backward from the spell that ends the game. The second mana for Negate can be paid with either red or green.",
+  explanation:"The top spell resolves first. Countering the Shock saves the Bears, but the opponent's Bolt can still finish you before yours resolves.",
+  strategyLesson:"Your Negate target determines whether you survive. Its generic payment determines whether you can still protect the Bears or deal the last two damage.",
+  retryPrompt:"Try the other color of generic mana at the same priority window.",
+  life:{player:3,opponent:5},mana:{U:1,R:1,G:1},
+  units:[{id:"bear",card:"Grizzly Bears",controller:"player"}],
+  stack:[
+   {id:"our-bolt",card:"Lightning Bolt",controller:"player",targetId:"opponent"},
+   {id:"their-bolt",card:"Lightning Bolt",controller:"opponent",targetId:"player"},
+   {id:"their-shock",card:"Shock",controller:"opponent",targetId:"bear"}
+  ],
+  hand:[{id:"negate",card:"Negate"},{id:"growth",card:"Giant Growth"},{id:"our-shock",card:"Shock"}],
+  objective:{type:"survive"},reviewResponse:"negate",
+  solution:[["negate","their-bolt",{R:1}],["growth","bear"]]
+ }
 ]);
