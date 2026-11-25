@@ -23,6 +23,10 @@ test("workflow guard flags elevated triggers and all-write permissions only in w
  assert.equal(scanText(".github/workflows/example.yml",yml).length,2);
  assert.equal(scanText("docs/workflow.md",yml).length,0);
  assert.deepEqual(scanText(".github/workflows/example.yml","on:\n  pull_request:\npermissions:\n  contents: read"),[]);
+ for(const quote of ["'",'"']){
+  const configuration="permissions: "+quote+"write-all"+quote+" # workflow default";
+  assert.equal(scanText(".github/workflows/example.yml",configuration)[0]?.rule,"unrestricted workflow token permissions");
+ }
 });
 test("tracked scan ignores untracked files and records omissions without exposing file contents",()=>{
  const root=mkdtempSync(join(tmpdir(),"dc-lab-scan-"));
@@ -31,14 +35,14 @@ test("tracked scan ignores untracked files and records omissions without exposin
   mkdirSync(join(root,"functions"));
   writeFileSync(join(root,"a.js"),"let x=1;");
   writeFileSync(join(root,"b.txt"),"x".repeat(30));
+  writeFileSync(join(root,"archive.PEM"),"x".repeat(30));
   writeFileSync(join(root,"functions","api.js"),"x".repeat(30));
   writeFileSync(join(root,"untracked.js"),"gh"+"p_"+"x".repeat(36));
-  execFileSync("git",["add","a.js","b.txt","functions/api.js"],{cwd:root});
+  execFileSync("git",["add","a.js","b.txt","archive.PEM","functions/api.js"],{cwd:root});
   const result=scanRepository(root,{maxFileBytes:20,maxTotalBytes:100});
   assert.equal(result.scanned,1);
-  assert.equal(result.omitted,2);
-  assert.equal(result.findings.length,1);
-  assert.equal(result.findings[0].path,"functions/api.js");
+  assert.equal(result.omitted,3);
+  assert.deepEqual(result.findings.map(f=>f.path),["archive.PEM","functions/api.js"]);
   assert.ok(!report(result).includes("x".repeat(30)));
   const capped=scanRepository(root,{maxFileBytes:100,maxTotalBytes:10});
   assert.ok(capped.findings.some(f=>f.rule.includes("total byte budget")));

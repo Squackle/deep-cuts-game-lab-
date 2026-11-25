@@ -17,7 +17,7 @@ export function scanText(path,text){
  for(const [rule,pattern] of rules)if(pattern.test(text))findings.push({path,rule,severity:"high"});
  if(path.startsWith(".github/workflows/")){
   if(/^\s*pull_request_target\s*:/m.test(text))findings.push({path,rule:"privileged pull_request_target trigger requires separate review",severity:"high"});
-  if(/^\s*permissions\s*:\s*write-all\s*(?:#.*)?$/m.test(text))findings.push({path,rule:"unrestricted workflow token permissions",severity:"high"});
+  if(/^\s*permissions\s*:\s*(?:write-all|'write-all'|"write-all")\s*(?:#.*)?$/m.test(text))findings.push({path,rule:"unrestricted workflow token permissions",severity:"high"});
  }
  return findings;
 }
@@ -28,7 +28,7 @@ export function scanRepository(root=defaultRoot,{maxFileBytes=8_000_000,maxTotal
  const omit=(path,reason)=>{
   result.omitted++;
   if(result.omittedSample.length<25)result.omittedSample.push({path,reason});
-  if(reason==="total byte budget"||path.startsWith(".github/workflows/")||path.startsWith("functions/")||basename(path).startsWith(".env")||[".pem",".key"].includes(extname(path)))
+  if(reason==="total byte budget"||path.startsWith(".github/workflows/")||path.startsWith("functions/")||basename(path).startsWith(".env")||[".pem",".key"].includes(extname(path).toLowerCase()))
    result.findings.push({path,rule:"required security scan coverage incomplete: "+reason,severity:"high"});
  };
  for(const path of tracked){
