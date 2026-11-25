@@ -39,3 +39,7 @@ test("rejected saved-run data is retained and never used to replace a live engin
  const load=main.slice(main.indexOf("function loadRun()"),main.indexOf("function loadRun()")+450);
  assert.doesNotMatch(load,/clearRun\(\)/);assert.match(main,/if\(!resumed\.restore\(save\)\)/);
 });
+
+test("ritual and paid upgrade selectors expose next-battle values and all five lands",()=>{
+ assert.match(main,/upgradePreview:upgrading/);assert.match(main,/fromPack\?"Upgrade for free":"Upgrade/);assert.match(main,/spellUpgradePreview\(camp,id,game.cards,profile.perks.spellcraft/);assert.match(main,/Land bonuses · this battle/);assert.match(main,/Lands · color damage & troop health/);assert.match(main,/landPreview\(camp,d.color\)/);
+});
