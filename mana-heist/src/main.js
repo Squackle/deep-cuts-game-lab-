@@ -1,6 +1,6 @@
 import {LEVELS,CHAPTERS,GALAXIES,BASE_LEVELS} from "./levels.js";
 import {COLORS,CARDS,initial,actions,reduce,completed,getCard,lookup,medal,key} from "./engine.js";
-import {solve} from "./solver.js";
+import {solve,replay} from "./solver.js";
 import {chapterIndex,stageCode,normalizedBests,validBest} from "./campaign.js";
 import {LEARN_GROUPS,LEARN_COUNT,isLearnLevel,normalizedLearnProgress,nextLearnIndex} from "./learn-track.js";
 import {renderOverworld} from "./overworld.js";
@@ -34,6 +34,14 @@ import {certifyDiverse} from "./mana-variety-certificates.js";
 import {diverseFor} from "./mana-variety-puzzles.js";
 import {certifyRemix,REMIX_KEY,REMIXED_IDS,validateRemixBests} from "./certified-remixes.js";
 import {DECISION_LADDER} from "./decision-ladder.js";
+import replacementBoards from "./replacement-candidates.js";
+import {PHYSICAL_PREVIEW_BOARDS,CANDIDATE_SAVE_KEY,readCandidateProgress,recordCandidateWin} from "./physical-campaign-preview.js";
+const pack=new URLSearchParams(location.search).get("pack");
+const replacementReview=pack==="replacement-review",physicalPreview=pack==="physical-campaign";
+const decisionBoards=physicalPreview?PHYSICAL_PREVIEW_BOARDS:replacementReview?replacementBoards:DECISION_LADDER;
+const decisionOrder=physicalPreview||replacementReview?decisionBoards.map((_,i)=>i):[0,5,6,1,2,3,4];
+const nextDecision=i=>decisionOrder[decisionOrder.indexOf(i)+1]??null;
+let candidateProgress={};if(physicalPreview){try{candidateProgress=readCandidateProgress(localStorage.getItem(CANDIDATE_SAVE_KEY));}catch{}}
 import {evaluateVault} from "./difficulty-metrics.js";
 import {mountSage} from "./sage-ui.js";
 import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
@@ -99,7 +107,7 @@ try{
 el("playtestOptIn").checked=playtestEnabled;
 function savePlaytest(){try{localStorage.setItem(PLAYTEST_KEY,JSON.stringify(playtestData));}catch{}}
 function startPlaytest(){
- if(!playtestEnabled||playtestAttempt||completed(level,state))return;
+ if(!playtestEnabled||playtestAttempt||completed(level,state)||physicalPreview&&decisionIndex!==null)return;
  playtestAttempt=beginPlaytest(level,performance.now());
 }
 function notePlaytest(event){if(playtestEnabled&&playtestAttempt)playtestAttempt=countPlaytestEvent(playtestAttempt,event);}
@@ -264,8 +272,9 @@ const proofCache=new Map();
 const sourceProofCache=new Map();
 function proofFor(id){
  if(proofCache.has(id))return proofCache.get(id);
- const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id)||BONUS_TRIALS.find(v=>v.id===id)||DECISION_LADDER.find(v=>v.id===id);
+ const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id)||BONUS_TRIALS.find(v=>v.id===id)||decisionBoards.find(v=>v.id===id);
  if(!puzzle)return null;
+ if(puzzle.sourceVersion&&puzzle.sourceId){const reference=proofFor(puzzle.sourceId);const proof=reference?.status==="solved"&&replay(puzzle,reference.actions).ok?reference:solve(puzzle,{maxStates:65000});if(proof.status==="solved")proofCache.set(id,proof);return proof;}
  const exact=puzzle.revision===4?certifyRemix(puzzle):puzzle.revision===3?certifyDiverse(puzzle):puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
  let proof=exact;
  if(exact.status!=="solved"&&puzzle.templateId){
@@ -378,18 +387,18 @@ function renderLearn(){
  });
  trials.append(head,list);root.append(trials);
  const decisions=document.createElement("section");decisions.className="learn-group";
- const heading=document.createElement("h3");heading.textContent="DECISION LAB · "+DECISION_LADDER.length+" SAMPLE VAULTS";
- const description=document.createElement("p");description.textContent="From color matching to interlocking resource decisions. Unscored practice; difficulty order awaits player calibration. Your campaign and lesson saves are unchanged.";
+ const heading=document.createElement("h3");heading.textContent=physicalPreview?"PHYSICAL LIBRARY · "+decisionBoards.length+" AFFECTED BOARDS":replacementReview?"REPLACEMENT REVIEW · "+decisionBoards.length+" PROPOSALS":"DECISION LAB · "+decisionBoards.length+" SAMPLE VAULTS";
+ const description=document.createElement("p");description.textContent=physicalPreview?"Versioned rehearsal. New practice results use a separate local record; historical medals remain unchanged.":replacementReview?"Unscored proposals for repetitive campaign boards. No historical level, score or progress is replaced.":"From color matching to interlocking resource decisions. Unscored practice; difficulty order awaits player calibration. Your campaign and lesson saves are unchanged.";
  const picks=document.createElement("div");picks.className="learn-exercises";
- DECISION_LADDER.forEach((p,i)=>{
+ decisionOrder.forEach(i=>{const p=decisionBoards[i];
   const button=document.createElement("button");button.type="button";button.className="learn-exercise";button.dataset.decisionIndex=String(i);
   const number=document.createElement("span");number.className="learn-number";number.textContent="D"+(i+1);
   const copy=document.createElement("span");copy.className="learn-exercise-copy";
-  const name=document.createElement("strong");name.textContent=p.title;
+  const name=document.createElement("strong");name.textContent=p.title+(physicalPreview&&candidateProgress[p.sourceId]?" · Preview completed":"");
   const detail=document.createElement("small");detail.textContent=p.decision.focus;
   copy.append(name,detail);button.append(number,copy);picks.append(button);
  });
- decisions.append(heading,description,picks);root.append(decisions);
+ const packLink=document.createElement("a");packLink.href=replacementReview||physicalPreview?"./":"./?pack=replacement-review";packLink.textContent=replacementReview||physicalPreview?"Return to seven strategy trials":"Review proposed campaign replacements (unscored)";const physicalLink=document.createElement("a");physicalLink.href="./?pack=physical-campaign";physicalLink.textContent="Rehearse all affected physical-library boards";decisions.append(heading,description,picks,packLink,physicalLink);root.append(decisions);
 }
 function showModePanels(){
  const learn=mode==="learn",heist=mode==="heist";
@@ -503,7 +512,7 @@ function perform(action,{automatic=false}={}){
   closePlaytest("win");
   magnifier.hide();
   if(decisionIndex!==null){
-   message("Decision vault opened. Unscored practice; no campaign or lesson save was changed.");
+   if(physicalPreview){try{candidateProgress=recordCandidateWin(candidateProgress,level,history.map(frame=>frame.action));localStorage.setItem(CANDIDATE_SAVE_KEY,JSON.stringify(candidateProgress));message("Physical preview completed. Separate rehearsal result saved.");}catch{message("Physical preview completed; rehearsal result not saved.");}}else message("Decision vault opened. Unscored practice; no campaign or lesson save was changed.");
   }else if(trialIndex!==null){
    const proof=proofs.get(level.id),record={turn:state.turn,spentLife:state.spentLife,actions:state.actions,
     stars:medal(level,state,proof)};
@@ -688,11 +697,11 @@ function teachingCue(){
 function render(pendingId=null){
  syncHintLadder();
  const isWin=completed(level,state),proof=mode==="learn"&&trialIndex===null&&decisionIndex===null?{turn:level.turnLimit,spentLife:0}:proofs.get(level.id),stage=level.stages[state.stage];
- el("stageLabel").textContent=decisionIndex!==null?"D"+(decisionIndex+1)+" / "+DECISION_LADDER.length:trialIndex!==null?"BONUS TRIAL "+(trialIndex+1)+" / "+BONUS_TRIALS.length:mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
+ el("stageLabel").textContent=decisionIndex!==null?"D"+(decisionIndex+1)+" / "+decisionBoards.length:trialIndex!==null?"BONUS TRIAL "+(trialIndex+1)+" / "+BONUS_TRIALS.length:mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
  el("returnMap").textContent=mode==="learn"?(decisionIndex!==null?"← DECISIONS":trialIndex!==null?"← TRIALS":"← LESSONS"):"← MAP";
  el("toggleGuide").textContent=decisionIndex!==null?"WARD PLAN":mode==="learn"&&trialIndex===null?"✧ LESSON NOTES":"ⓘ GUIDE";
  el("chapterName").textContent=level.chapter;
- el("difficulty").textContent=["INITIATE","ROOKIE","TACTICIAN","EXPERT","MASTERMIND"][level.rank-1];
+ el("difficulty").textContent=physicalPreview&&decisionIndex!==null?"PHYSICAL PREVIEW":["INITIATE","ROOKIE","TACTICIAN","EXPERT","MASTERMIND"][level.rank-1];
  const ritesInGraveyard=state.graveyard.filter(id=>getCard(level,id)?.name==="Rite of Flame").length;
  const opponentInfo=level.opponentTappedLands?"OPPONENT · "+level.opponentTappedLands+" TAPPED LANDS":"";
  const paletteInfo=level.opponentLandColors?.length?"OPPONENT LAND COLORS · "+level.opponentLandColors.join(" / "):"";
@@ -779,7 +788,7 @@ function render(pendingId=null){
    "T"+proof.turn+" / "+proof.spentLife:"LEGAL ROUTE";
   if(decisionIndex!==null){
    el("winTitle").textContent="DECISION VAULT OPEN";
-   el("winCopy").textContent=level.decision.why+" Your ward payments: "+wardPaymentRecap(level,history).join("; ")+". Life spent: "+state.spentLife+". This practice result is not scored. Try another line: "+level.decision.retry;
+   el("winCopy").textContent=(physicalPreview?"Versioned rehearsal · separate local result. ":"")+level.decision.why+" Your ward payments: "+wardPaymentRecap(level,history).join("; ")+". Life spent: "+state.spentLife+". This practice result is not scored. Try another line: "+level.decision.retry;
   }else if(trialIndex!==null){
    const best=trialBests[level.id],stars=medal(level,state,proof);
    el("winTitle").textContent="★".repeat(stars)+" BONUS VAULT OPEN";
@@ -794,7 +803,7 @@ function render(pendingId=null){
   }
  }
  el("skip").textContent="← MAP";
- el("winNext").textContent=decisionIndex!==null?(decisionIndex+1<DECISION_LADDER.length?"NEXT DECISION →":"BACK TO DECISIONS →"):trialIndex!==null?"BACK TO BONUS TRIALS →":mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
+ el("winNext").textContent=decisionIndex!==null?(nextDecision(decisionIndex)!==null?"NEXT DECISION →":"BACK TO DECISIONS →"):trialIndex!==null?"BACK TO BONUS TRIALS →":mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
  returnFromResult.hidden=!isWin;returnFromResult.textContent=decisionIndex!==null?"← DECISIONS":trialIndex!==null?"← BONUS TRIALS":mode==="learn"?"← LESSONS":"← VAULT MAP";
  if(isWin&&!wasWin)el("winNext").focus({preventScroll:true});
  sage.render({mode:decisionIndex!==null?"decision":trialIndex!==null?"bonus":mode,index,level,state,finished:isWin});
@@ -866,10 +875,10 @@ function load(i,enter=false){
  cardInspector.hide({restore:false});
  lastCardId=null;selectedHandId=null;
  landDrag?.cancel();
- if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(mode==="learn"&&!isLearnLevel(i)))return false;
+ if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(mode==="learn"&&decisionIndex===null&&!isLearnLevel(i)))return false;
  document.body.classList.toggle("is-decision-lab",decisionIndex!==null);
  index=i;world=chapterIndex(index);
- level=decisionIndex!==null?DECISION_LADDER[decisionIndex]:trialIndex!==null?BONUS_TRIALS[trialIndex]:mode==="learn"?LEARN_LEVELS[index]:LEVELS[index];state=initial(level);history=[];selectedMessage="";
+ level=decisionIndex!==null?decisionBoards[decisionIndex]:trialIndex!==null?BONUS_TRIALS[trialIndex]:mode==="learn"?LEARN_LEVELS[index]:LEVELS[index];state=initial(level);history=[];selectedMessage="";
  startStagePrintings(level);
  el("battlefield").replaceChildren();el("hand").replaceChildren();
  manaOrbs=reconstruct(state.pool);cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();
@@ -910,7 +919,7 @@ el("campaignScreen").addEventListener("click",e=>{
  const decision=e.target.closest("[data-decision-index]");
  if(decision&&mode==="learn"){
   const n=Number(decision.dataset.decisionIndex);
-  if(Number.isInteger(n)&&n>=0&&n<DECISION_LADDER.length){decisionIndex=n;trialIndex=null;load(n,true);}
+  if(Number.isInteger(n)&&n>=0&&n<decisionBoards.length){decisionIndex=n;trialIndex=null;load(n,true);}
   return;
  }
  const bonus=e.target.closest("[data-trial-index]");
@@ -1048,7 +1057,7 @@ window.addEventListener("resize",()=>{if(document.body.classList.contains("in-he
 el("reset").addEventListener("click",()=>{closePlaytest("restart");sage.onRestart(level);load(index);startPlaytest();});
 el("skip").addEventListener("click",showMap);
 el("winNext").addEventListener("click",()=>{
- if(decisionIndex!==null){if(decisionIndex+1<DECISION_LADDER.length){decisionIndex++;load(decisionIndex,true);}else showMap();return;}
+ if(decisionIndex!==null){const next=nextDecision(decisionIndex);if(next!==null){decisionIndex=next;load(decisionIndex,true);}else showMap();return;}
  if(trialIndex!==null){showMap();return;}
  if(mode==="learn"){const next=nextLearnIndex(index);if(next!==null)load(next,true);else showMap();return;}
  if(index+1<LEVELS.length)load(index+1,true);else showMap();

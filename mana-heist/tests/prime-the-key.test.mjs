@@ -1,0 +1,7 @@
+import test from "node:test";import assert from "node:assert/strict";import boards from "../src/replacement-candidates.js";import {initial,actions,reduce,completed} from "../src/engine.js";import {solve} from "../src/solver.js";import {resolveAutomaticCasts} from "../src/auto-cast.js";
+const p=boards.find(x=>x.id==="mh-review-035");
+function move(s,pred,auto=false){const a=actions(p,s).find(pred);assert.ok(a);const out=reduce(p,s,a);assert.ok(out.ok);return auto?resolveAutomaticCasts(p,out.state).state:out.state;}
+const ring=a=>a.type==="activate"&&a.id==="ring";const key=a=>a.type==="activate"&&a.id==="key"&&a.untapTarget==="ring";const tap=id=>a=>a.type==="tap"&&a.id===id;
+test("replacement requires funding the untap before committing the first ward; alternate routes win",()=>{let bad=initial(p);bad=move(bad,ring,true);bad=move(bad,tap("blue"),true);assert.equal(bad.stage,1);assert.equal(solve(p,{startState:bad}).status,"unsolvable");
+ for(const auto of [false,true]){let s=initial(p);if(!auto)s=move(s,tap("red"));s=move(s,ring,auto);s=move(s,a=>key(a)&&a.spend.every(id=>s.manaUnits.find(u=>u.id===id)?.color==="C"),auto);s=move(s,ring,auto);s=move(s,tap("blue"),auto);if(auto)s=move(s,tap("red"),true);else{while(!completed(p,s))s=move(s,a=>a.type==="cast");}assert.ok(completed(p,s));}
+});
