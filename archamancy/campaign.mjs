@@ -1,7 +1,7 @@
 // Campaign deck, shop and drafts (pure data; main.mjs draws it, engine.mjs plays the kit). Saved in the profile as profile.camp.
 // You start with a small singleton deck. Each Gauntlet battle pays Treasure and offers a spell draft; between battles the world map
 // has a Shop (relics, boons, rituals, lands, forbidden cards and spells) and a Deck view (upgrade or exile spells).
-import { POOL, BY_ID, RELICS, BOONS, RITUALS, FORBIDDEN, LANDS, RARITY, spellKind, LAND_MAX } from "./pool.mjs";
+import { POOL, BY_ID, RELICS, BOONS, RITUALS, FORBIDDEN, LANDS, RARITY, spellKind, LAND_MAX, LAND_STEP, SPELL_DAMAGE_STEP, spellManaCost, DAMAGE_UPGRADE_SPELLS } from "./pool.mjs";
 
 export const STARTER_DECK = ["meteor", "flame", "legion", "ward", "inquiry", "freeze", "root", "offering"];
 export const DECK_CAP = 15, MIN_DECK = 5, BASE_SLOTS = 5, UPGRADE_COST = [4, 6], EXILE_COST = 3, SPELL_COST = 3, BOON_COST = 10;
@@ -22,7 +22,9 @@ export const PACK_SLOTS = 2;
 
 export function newCampaign(seed = 1) { return { v: 1, deck: STARTER_DECK.slice(), up: {}, relics: [], boons: [], marks: [], lands: {}, treasure: 4, shop: null, pack: null, draft: null, battles: 0, wins: 0, seed: seed >>> 0 || 1 }; }
 
-const ids = (a, ok) => Array.isArray(a) ? [...new Set(a.filter(x => typeof x === "string" && ok(x)))] : [];
+// Saved collections are browser-controlled data. Inspect a bounded prefix while retaining
+// every ordinary campaign deck, relic slot, boon and shop offer across save upgrades.
+const ids = (a, ok) => Array.isArray(a) ? [...new Set(a.slice(0,256).filter(x => typeof x === "string" && ok(x)))] : [];
 export function sanitize(raw, cards) {
  const c = newCampaign(raw?.seed);
  if (!raw || typeof raw !== "object") return c;
@@ -30,13 +32,13 @@ export function sanitize(raw, cards) {
  if (deck.length >= MIN_DECK) c.deck = deck.slice(0, 40);
  for (const k of c.deck) { const n = raw.up?.[k]; if (Number.isInteger(n) && n > 0) c.up[k] = Math.min(2, n); }
  c.boons = ids(raw.boons, k => BY_ID[k]?.kind === "boon");
- c.marks = Array.isArray(raw.marks) ? raw.marks.filter(k => BY_ID[k]?.kind === "forbidden").slice(0, 6) : [];
+ c.marks = Array.isArray(raw.marks) ? raw.marks.slice(0,64).filter(k => BY_ID[k]?.kind === "forbidden").slice(0, 6) : [];
  c.relics = ids(raw.relics, k => BY_ID[k]?.kind === "relic").slice(0, slots(c));
  for (const k of "WUBRG") { const n = raw.lands?.[k]; if (Number.isInteger(n) && n > 0) c.lands[k] = Math.min(LAND_MAX, n); }
  for (const k of ["treasure", "battles", "wins"]) if (Number.isInteger(raw[k]) && raw[k] >= 0) c[k] = Math.min(raw[k], 1e6);
- if (raw.shop && Array.isArray(raw.shop.items)) c.shop = { rerolls: Number.isInteger(raw.shop.rerolls) ? raw.shop.rerolls : 0, items: raw.shop.items.filter(i => i && typeof i.id === "string" && (i.kind === "spell" ? Object.hasOwn(cards, i.id) : !!BY_ID[i.id])).map(i => ({ kind: i.kind === "spell" ? "spell" : BY_ID[i.id].kind, id: i.id, price: Math.max(0, Math.min(99, Number(i.price) | 0)), sold: !!i.sold })), packs: Array.isArray(raw.shop.packs) ? raw.shop.packs.filter(p => p && Object.hasOwn(PACKS, p.kind)).slice(0, 4).map(p => ({ kind: p.kind, price: Math.max(0, Math.min(99, Number(p.price) | 0)), sold: !!p.sold })) : [], fresh: !!raw.shop.fresh };
- if (raw.pack && Object.hasOwn(PACKS, raw.pack.kind) && Array.isArray(raw.pack.opts)) { const kind = raw.pack.kind, opts = [...new Set(raw.pack.opts.filter(k => typeof k === "string" && (kind === "spell" ? Object.hasOwn(cards, k) : BY_ID[k]?.kind === kind)))].slice(0, 5); if (opts.length) c.pack = { kind, opts }; }
- if (Array.isArray(raw.draft)) { const d = raw.draft.filter(k => Object.hasOwn(cards, k) && !c.deck.includes(k)); c.draft = d.length ? d.slice(0, 5) : null; }
+ if (raw.shop && Array.isArray(raw.shop.items)) c.shop = { rerolls: Number.isInteger(raw.shop.rerolls) ? Math.max(0,Math.min(raw.shop.rerolls,1e6)) : 0, items: raw.shop.items.slice(0,64).filter(i => i && typeof i.id === "string" && (i.kind === "spell" ? Object.hasOwn(cards, i.id) : BY_ID[i.id]?.kind === i.kind) && Number.isInteger(Number(i.price)) && Number(i.price) >= 1 && Number(i.price) <= 99).map(i => ({ kind: i.kind === "spell" ? "spell" : BY_ID[i.id].kind, id: i.id, price: Math.max(0, Math.min(99, Number(i.price) | 0)), sold: !!i.sold })), packs: Array.isArray(raw.shop.packs) ? raw.shop.packs.slice(0,16).filter(p => p && Object.hasOwn(PACKS, p.kind) && Number.isInteger(Number(p.price)) && Number(p.price) >= 1 && Number(p.price) <= 99).slice(0, 4).map(p => ({ kind: p.kind, price: Math.max(0, Math.min(99, Number(p.price) | 0)), sold: !!p.sold })) : [], fresh: !!raw.shop.fresh };
+ if (raw.pack && Object.hasOwn(PACKS, raw.pack.kind) && Array.isArray(raw.pack.opts)) { const kind = raw.pack.kind, opts = [...new Set(raw.pack.opts.slice(0,32).filter(k => typeof k === "string" && (kind === "spell" ? Object.hasOwn(cards, k) : BY_ID[k]?.kind === kind)))].slice(0, 5); if (opts.length) c.pack = { kind, opts }; }
+ if (Array.isArray(raw.draft)) { const d = raw.draft.slice(0,32).filter(k => Object.hasOwn(cards, k) && !c.deck.includes(k)); c.draft = d.length ? d.slice(0, 5) : null; }
  return c;
 }
 
@@ -46,6 +48,20 @@ export const slots = c => BASE_SLOTS + (metaFx(c).slots || 0);
 export const deckCap = c => DECK_CAP + (metaFx(c).deckCap || 0);
 export const kitFor = c => ({ deck: c.deck.slice(), up: { ...c.up }, relics: c.marks.includes("spark") && c.relics.length ? [...c.relics, c.relics[0]] : c.relics.slice(), boons: [...c.boons, ...c.marks], lands: { ...c.lands }, ante: Math.min(8, c.wins) }); // ante: each Gauntlet win makes battles tougher (engine ANTE_STEP, max 8)
 
+// Preview the next run, not the current battle's free-cast state or stale kit.
+export function spellUpgradePreview(c,id,cards,spellcraft=0){
+ const card=cards[id];if(!card)return null;
+ const current=Math.max(0,Math.min(2,c.up[id]||0)),next=Math.min(2,current+1);
+ const kit=kitFor(c),off={};for(const k of [...kit.relics,...kit.boons])for(const [type,v] of Object.entries(BY_ID[k]?.fx?.castOff||{}))off[type]=(off[type]||0)+v;
+ const damage=DAMAGE_UPGRADE_SPELLS.includes(id);
+ return {level:current+1,nextLevel:next+1,cost:spellManaCost(card,current,spellcraft,off),nextCost:spellManaCost(card,next,spellcraft,off),damageBonus:damage?Math.round(current*SPELL_DAMAGE_STEP*100):0,nextDamageBonus:damage?Math.round(next*SPELL_DAMAGE_STEP*100):0,damage,max:current===2};
+}
+export function landPreview(c,color){
+ if(!"WUBRG".includes(color)||typeof color!=="string"||color.length!==1)return null;
+ const level=Math.max(0,Math.min(LAND_MAX,c.lands[color]||0)),nextLevel=Math.min(LAND_MAX,level+1);
+ return {level,nextLevel,bonus:Math.round(level*LAND_STEP*100),nextBonus:Math.round(nextLevel*LAND_STEP*100),max:level===LAND_MAX};
+}
+
 function rnd(c) { let t = c.seed = (c.seed + 0x6D2B79F5) >>> 0; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }
 function weighted(c, list, w) { const total = list.reduce((a, x) => a + w(x), 0); if (!total) return null; let r = rnd(c) * total; for (const x of list) { r -= w(x); if (r < 0) return x; } return list.at(-1); }
 const off = c => metaFx(c).shopOff || 0;
@@ -54,13 +70,13 @@ export const priceOf = (c, base) => Math.max(1, base - off(c));
 // A shop visit: card slots (relic / ritual / land / forbidden by Balatro weights), one spell, one boon you don't own and two packs.
 export function rollShop(c, cards, keepPacks = false) {
  const items = [], taken = new Set(), n = 2 + (metaFx(c).shopSlots || 0);
- for (let i = 0; i < n; i++) {
+ for (let attempts = 0; items.length < n && attempts < 64; attempts++) {
   const kind = weighted(c, Object.keys(SHOP_WEIGHTS), k => SHOP_WEIGHTS[k]);
   let pick = null;
   if (kind === "relic") pick = weighted(c, RELICS.filter(r => !c.relics.includes(r.id) && !taken.has(r.id)), r => RARITY[r.rarity].weight);
   else if (kind === "land") pick = weighted(c, LANDS.filter(l => (c.lands[l.color] || 0) < LAND_MAX && !taken.has(l.id)), () => 1);
   else pick = weighted(c, (kind === "ritual" ? RITUALS : FORBIDDEN).filter(r => !taken.has(r.id) && !(r.fx.cloneRelic && c.marks.includes(r.id))), () => 1);
-  if (!pick) { i--; if (items.length + i > 20) break; continue; }
+  if (!pick) continue;
   taken.add(pick.id); items.push({ kind: pick.kind, id: pick.id, price: priceOf(c, pick.kind === "relic" ? RARITY[pick.rarity].cost : PRICE[pick.kind]), sold: false });
  }
  const spell = weighted(c, Object.keys(cards).filter(k => !c.deck.includes(k)), () => 1);
@@ -125,7 +141,12 @@ export const needsTarget = id => { const fx = BY_ID[id]?.fx || {}; return !!(fx.
 
 // Why an item can't be bought right now, or null.
 export function blocker(c, item, cards) {
+ if (!item || (item.kind === "spell" ? !Object.hasOwn(cards,item.id) : !Object.hasOwn(BY_ID,item.id) || BY_ID[item.id].kind !== item.kind)) return "Invalid offer";
  if (item.sold) return "Sold";
+ if (item.kind === "spell" && c.deck.includes(item.id)) return "Already in your deck";
+ if (item.kind === "relic" && c.relics.includes(item.id)) return "Already owned";
+ if (item.kind === "boon" && c.boons.includes(item.id)) return "Already owned";
+ if (item.kind === "land" && (c.lands[BY_ID[item.id].color] || 0) >= LAND_MAX) return "Color already at max level";
  if (c.treasure < item.price) return "Not enough Treasure";
  if (item.kind === "relic" && c.relics.length >= slots(c)) return "Relic slots full: sell one in your Deck";
  if (item.kind === "spell" && c.deck.length >= deckCap(c)) return "Deck full: exile a spell first";
@@ -194,5 +215,5 @@ export function finishBattle(c, run, cards) {
 }
 export function draftOffer(c, cards) { const pool = Object.keys(cards).filter(k => !c.deck.includes(k)), out = [], n = 3 + (metaFx(c).draftChoices || 0); while (out.length < n && pool.length) out.push(pool.splice(Math.floor(rnd(c) * pool.length), 1)[0]); return out.length ? out : null; }
 // Take a drafted spell. With a full deck, name a deck spell to swap out (it leaves with its upgrades); null skips for +2 Treasure.
-export function pickDraft(c, id, swapOut = null) { if (!c.draft) return false; if (id === null) { c.draft = null; c.treasure += 2; return true; } if (!c.draft.includes(id)) return false; if (c.deck.length >= deckCap(c)) { if (!c.deck.includes(swapOut)) return false; exile(c, swapOut); } c.deck.push(id); c.draft = null; return true; }
+export function pickDraft(c, id, swapOut = null) { if (!c.draft) return false; if (id === null) { c.draft = null; c.treasure += 2; return true; } if (!c.draft.includes(id) || c.deck.includes(id) || typeof id !== "string") return false; if (c.deck.length >= deckCap(c)) { if (!c.deck.includes(swapOut)) return false; exile(c, swapOut); } c.deck.push(id); c.draft = null; return true; }
 export { POOL };
