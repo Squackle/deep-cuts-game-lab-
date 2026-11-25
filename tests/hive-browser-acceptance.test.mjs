@@ -63,7 +63,7 @@ test("Chromium desktop and emulated touch Hive acceptance",{timeout:60000,skip:!
   const click=async(selector,mobile=false)=>{
    const target=await box(selector),{x,y}=target;
    assert.ok(target.reachable&&!target.disabled,"unreachable control "+selector+" "+JSON.stringify(target));
-   if(mobile){await touch("touchStart",[{x,y}]);await touch("touchEnd",[])}
+   if(mobile){await touch("touchStart",[{x,y}]);await sleep(80);await touch("touchEnd",[])}
    else{await call("Input.dispatchMouseEvent",{type:"mousePressed",x,y,button:"left",clickCount:1});await call("Input.dispatchMouseEvent",{type:"mouseReleased",x,y,button:"left",clickCount:1})}
   };
   const key=async(key,code,n)=>{
@@ -143,7 +143,10 @@ test("Chromium desktop and emulated touch Hive acceptance",{timeout:60000,skip:!
     if(mobile){
      const {x,y,h,reachable}=await box("#gameCanvas"),scroll=await ev("scrollY");
      assert.ok(reachable,"arena receives actual touch");
-     await touch("touchStart",[{x,y}]);await touch("touchMove",[{x,y:y-Math.min(55,h/4)}]);await touch("touchEnd",[]);
+     // Chromium raw dispatchTouchEvent move/end can suppress the next tap even
+    // on a standalone canvas/button fixture. Use its complete native touch
+    // gesture sequence; real pointer movement and the canvas marker remain required.
+    await call("Input.synthesizeScrollGesture",{x,y,yDistance:-Math.min(55,h/4),speed:400,gestureSourceType:"touch",preventFling:true});
      assert.equal(await ev("scrollY"),scroll,"swipe does not scroll document");
     }else await key("ArrowUp","ArrowUp",38);
     assert.deepEqual(await ev(marker),[255,226,160,255],"actual input painted queued up turn");
