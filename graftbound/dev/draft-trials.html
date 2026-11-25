@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Draft Trials | GRAFTBOUND</title>
+  <link rel="stylesheet" href="./draft-trials.css">
+  <script type="module" src="./draft-trials-ui.mjs"></script>
+</head>
+<body>
+<main>
+  <a href="../">‹ GRAFTBOUND</a>
+  <h1>Draft Trials</h1>
+  <p>Unranked creature-graft playtest. Draft one card for the chosen arena, then fight with that build.</p>
+  <label for="draft">Draft</label>
+  <select id="draft"></select>
+  <p id="build"></p>
+  <div id="offers"></div>
+  <section id="arena" hidden aria-labelledby="arena-title">
+    <h2 id="arena-title" tabindex="-1"></h2>
+    <p id="stats"></p>
+    <p id="parts"></p>
+    <div id="board" aria-label="Tactical board"></div>
+    <p id="foes"></p>
+    <button id="guard" type="button">Guard</button>
+    <button id="end" type="button">End turn</button>
+    <p id="result" role="status"></p>
+  </section>
+</main>
+</body>
+</html>
