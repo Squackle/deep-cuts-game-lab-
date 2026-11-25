@@ -1004,6 +1004,7 @@ export class BattleUI {
   }
   async play(events) {
     const sc = this.scene, au = this.audio; let actor = null;
+    let pyroSource=null, pyroBatch=false; const pyroHits=new Map();
     for (let idx = 0; idx < events.length; idx++) {
       const e = events[idx];
       const d = e.uid != null ? this.disp.get(e.uid) : null;
@@ -1035,6 +1036,8 @@ export class BattleUI {
         case 'deathtouchResisted': this.float(e.uid, this.s && this.s.units.find(u => u.uid === e.uid && u.hero) ? 'Deathtouch: +2 damage' : 'Legendary: resists Deathtouch', 'blocked'); au.play('armor'); break;
         case 'armored': au.play('armor'); this.float(e.uid, `▣ −${e.amount}`, 'blocked'); break;
         case 'damage': {
+          const pyroHit=pyroBatch&&e.kind==='spell'&&e.src===pyroSource;
+          if(pyroHit&&e.amount>0)pyroHits.set(e.uid,e.element);
           if (e.kind === 'strike2') { const atk = events.slice(0, idx).reverse().find(x => x.t === 'attack'); if (atk) { this.float(atk.uid, 'Double Strike!', 'note'); await sc.lunge(atk.uid, e.uid); } }
           if (d) { d.hp = e.deathtouch ? 0 : Math.max(0, d.hp - e.amount); d.shield = Math.max(0, d.shield - e.blocked); }
           const big = e.amount >= 4 || e.deathtouch;
@@ -1046,7 +1049,7 @@ export class BattleUI {
           if (e.amount > 0 || !e.blocked) this.float(e.uid, e.deathtouch ? '☠ Deathtouch' : `−${e.amount}`, e.deathtouch ? 'dt' : e.kind === 'poison' ? 'poison' : 'dmg');
           const lbl = { bramble: 'Brambles', spines: 'Spines', lava: 'Lava', rift: 'Rift', burst: 'Burst', harpoon: 'Harpoon' }[e.kind]; if (lbl) this.float(e.uid, lbl, 'note');
           this.renderLabel(e.uid); if (this.isHero(e.uid)) this.renderHUD();
-          await this.wait(big ? 230 : 140); break;
+          if(!pyroHit)await this.wait(big ? 230 : 140); break;
         }
         case 'lifeLoss': if (d) d.hp = Math.max(0, d.hp - e.amount); this.float(e.uid, `−${e.amount} life (${e.kind==='blightPriest'?'Blight-Priest':'Vito'})`, 'dmg'); this.renderLabel(e.uid); this.renderHUD(); await this.wait(110); break;
         case 'heal': if (d) d.hp += e.amount; au.play('heal'); if (e.kind === 'lifelink') { const atk = events.slice(0, idx).reverse().find(x => x.t === 'attack' && x.uid === e.uid); if (atk && sc.units.get(atk.target)) sc.fx.swirl(sc.centerPos(atk.target), () => sc.centerPos(e.uid), [1, 0.45, 0.5], 22, 0.6); } this.float(e.uid, `+${e.amount}${e.kind === 'lifelink' ? ' Lifelink' : e.kind === 'regenerate' ? ' Regenerate' : ''}`, 'heal'); sc.fx.burst(sc.centerPos(e.uid), [0.5, 1, 0.5], 14, { speed: 0.8, up: 1.5, grav: 1 }); this.renderLabel(e.uid); this.renderHUD(); await this.wait(140); break;
@@ -1057,11 +1060,13 @@ export class BattleUI {
           if (e.value && lbl) this.float(e.uid, lbl, e.status === 'empowered' ? 'heal' : 'poison');
           this.renderLabel(e.uid); this.renderHUD(); await this.wait(120); break;
         }
-        case 'death': au.play('death'); { const lb = this.labels.get(e.uid); if (lb) { lb.remove(); this.labels.delete(e.uid); } } await sc.death(e.uid, e.element); break;
+        case 'death': au.play('death'); { const lb = this.labels.get(e.uid); if (lb) { lb.remove(); this.labels.delete(e.uid); } } await sc.death(e.uid, e.element, pyroBatch&&e.kind!=='gift'&&pyroHits.has(e.uid)&&pyroHits.get(e.uid)===e.element); break;
         case 'burst': { const w = this.tile(e.x, e.y); sc.fx.burst([w[0], 0.3, w[2]], [1, 0.55, 0.15], 40, { speed: 2.8, up: 2 }); sc.addRing({ pos: [w[0], 0.03, w[2]], r0: 0.1, r1: 1.3, life: 0.35, col: [1, 0.5, 0.1], width: 0.12 }); sc.light([w[0], 0.4, w[2]], [1, 0.5, 0.15], 3, 0.4, 2.4); au.play('fireboom'); if (!sc.reduced) sc.shake(0.1); await this.wait(160); break; }
         case 'mana': this.dispMana = e.to; this.renderHUD(); break;
-        case 'spell': await this.playSpell(e); break;
-        case 'area': break;
+        case 'spell': pyroSource=e.id==='mtg:pyroclasm'&&e.vfx==='pyroclasm'?e.uid:null; pyroBatch=false; pyroHits.clear(); await this.playSpell(e); break;
+        case 'area': if(e.kind!=='firestorm')pyroSource=null; break;
+        case 'batch': pyroBatch=pyroSource!==null&&e.kind==='spell'; break;
+        case 'batchEnd': pyroBatch=false; pyroSource=null; pyroHits.clear(); break;
         case 'chain': { const a = [...this.tile(e.from.x, e.from.y)], b = e.target != null && sc.units.get(e.target) ? sc.centerPos(e.target) : [...this.tile(e.x, e.y)]; a[1] = 0.4; au.play('zap'); await chainHop(sc, a, b, e.target); break; }
         case 'trample': this.float(e.uid, 'Trample!', 'note'); await this.wait(100); break;
         case 'spines': break;
