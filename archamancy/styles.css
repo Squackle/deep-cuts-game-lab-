@@ -645,3 +645,5 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
  .title-card{align-items:start}.title-crest{display:none}#titleName{font-size:1.7rem}.title-ribbon{margin-top:0}
  .player-level{font-size:.7rem}.title-actions button.big{min-height:40px;font-size:.95rem}
 }
+
+.camp-card .camp-upgrade-preview{display:block;margin-top:7px;padding:6px 7px;border-left:2px solid var(--school);background:#0003;color:#f6d77e;font-size:.76rem;line-height:1.35;overflow-wrap:anywhere}

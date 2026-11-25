@@ -2,7 +2,7 @@ import {test} from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {createEngine} from "../engine.mjs";
-import {firstFlyerWarning,bossOverlapWarning,counterplayWarning,troopCardHint,handCycleHint} from "../wave-guidance.mjs";
+import {firstFlyerWarning,bossOverlapWarning,earlyOverlapWarning,counterplayWarning,troopCardHint,handCycleHint} from "../wave-guidance.mjs";
 
 const start=()=>createEngine(1,"campaign","hollow");
 
@@ -168,4 +168,10 @@ test("green forecast recommends Reach before flyers and poison before physical i
  assert.match(counterplayWarning(g,g.state,11),/physical immunity.*Venom Thicket/);
  assert.ok(g.command({type:"build",pad:1,kind:"thorn"}));assert.ok(g.command({type:"upgrade",pad:1}));assert.ok(g.command({type:"upgrade",pad:1,branch:"B"}));
  assert.equal(counterplayWarning(g,g.state,11),"");
+});
+
+test("rapid ordinary wave calls warn without changing Onslaught or early-call rules",()=>{
+ const g=start();g.state.phase="active";g.state.wave=3;g.state.pendingWaves=[3];g.state.onslaught=true;const before=JSON.stringify(g.state);
+ assert.match(earlyOverlapWarning(g,g.state,4),/1 unfinished wave.*Let the timer run/);g.state.pendingWaves=[3,4];assert.match(earlyOverlapWarning(g,g.state,5),/2 unfinished waves/);g.state.pendingWaves=[3];assert.equal(JSON.stringify(g.state),before);
+ g.state.wave=9;g.state.pendingWaves=[9];assert.equal(earlyOverlapWarning(g,g.state,10),"");g.state.phase="ready";assert.equal(earlyOverlapWarning(g,g.state,10),"");
 });

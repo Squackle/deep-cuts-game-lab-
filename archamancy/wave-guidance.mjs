@@ -34,6 +34,13 @@ export function bossOverlapWarning(game,state,nextWave){
  return "Boss ahead — "+name+" (wave "+nextWave+"). Calling early overlaps "+unfinished+" unfinished wave"+(unfinished===1?"":"s")+". Clear earlier enemies first if you need breathing room.";
 }
 
+// The owner's Black Confluence run lost 16 HP before wave 5 cleared after rapid early calls.
+// Warn rather than restrict ordinary wave calls; Onslaught retains its automatic cadence.
+export function earlyOverlapWarning(game,state,nextWave){
+ if(state.phase!=="active"||!["campaign","endless"].includes(state.mode)||state.mode==="campaign"&&nextWave>25)return "";
+ const n=state.pendingWaves?.length||0;if(!n||nextWave>5&&n<2)return "";
+ return "Wave "+nextWave+" overlaps "+n+" unfinished wave"+(n===1?"":"s")+". "+(state.onslaught?"Let the timer run unless your defenses are ready.":"Wait for the road to clear if your defenses are struggling.");
+}
 // The forecast diagnoses missing persistent counters, not a guaranteed loss. Commander,
 // temporary troops, area effects and caldera vents may still handle isolated enemies.
 export function counterplayWarning(game,state,nextWave){

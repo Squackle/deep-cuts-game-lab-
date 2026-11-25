@@ -1,6 +1,6 @@
 // ARCHAMANCY beta simulation: fixed ticks, original data-driven rules, DOM independent.
 // Bump only when the saved run format changes, so saves survive ordinary updates.
-import {BY_ID as POOL_BY_ID,LAND_STEP} from "./pool.mjs";
+import {BY_ID as POOL_BY_ID,LAND_STEP,SPELL_DAMAGE_STEP,spellManaCost} from "./pool.mjs";
 export const SAVE_FORMAT=1;
 export const VERSION="0.1.0-beta.13.54";
 // Status effects from towers (ticks are 100 ms): Pyre blasts burn, Thornheart poisons (stacking), Arcanum freezes (slow), Hex curses (+35% damage taken).
@@ -246,18 +246,18 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  const K=(k,d=0)=>state.kit?.fx?.[k]??d;
  const landLv=c=>Math.min(5,state.kit?.lands?.[c]||0);
  const upLv=id=>Math.min(2,state.kit?.up?.[id]||0);
- function kitDamage(e,raw,t,source){if(!state.kit||source==="hazard")return raw;
-  const army=source==="troop"&&t===state.cmdOwner,tw=t&&t!==state.cmdOwner&&roster[t.kind]?t:null,color=source==="spell"?cards[state.casting]?.color:(source==="tower"||source==="troop"||source==="death")&&tw?roster[tw.kind].color:null;
+ function kitDamage(e,raw,t,source,spellId=state.casting){if(!state.kit||source==="hazard")return raw;
+  const army=source==="troop"&&t===state.cmdOwner,tw=t&&t!==state.cmdOwner&&roster[t.kind]?t:null,color=source==="spell"?cards[spellId]?.color:(source==="tower"||source==="troop"||source==="death")&&tw?roster[tw.kind].color:null;
   // Flat bonuses grow the way their source does: towers by tier, troops and spells with the late-game curve.
-  const flat=source==="tower"&&tw?(K("towerFlat",{})[color]||0)*[1,1.8,3.3,8][tw.tier-1]:source==="troop"?K("troopFlat")*late(TROOP_LATE):source==="spell"&&state.casting?(K("spellFlat",{})[color]||0)*late():0;
+  const flat=source==="tower"&&tw?(K("towerFlat",{})[color]||0)*[1,1.8,3.3,8][tw.tier-1]:source==="troop"?K("troopFlat")*late(TROOP_LATE):source==="spell"&&spellId?(K("spellFlat",{})[color]||0)*late():0;
   let pct=1+(color?(K("color",{})[color]||0)+landLv(color)*LAND_STEP:0);
   if(source==="tower"&&tw){pct+=Math.min(.2,K("sameKind")*Object.values(state.towers).filter(o=>o!==tw&&o.kind===tw.kind).length)+Math.min(.25,K("perCast")*stats.casts);}
   if(source==="troop"){pct+=K("troopPct")+Math.min(.3,K("perKill")*stats.kills);}
-  if(source==="spell"&&state.casting)pct+=.25*upLv(state.casting);
+  if(source==="spell"&&spellId)pct+=SPELL_DAMAGE_STEP*upLv(spellId);
   // Kit spells keep pace with enemy health: the full wave curve (not late()'s 0.8 power) and the campaign ante.
   if(source==="spell")pct*=KIT_SPELL*Math.pow(scale(Math.max(1,state.wave)),.2)*(1+ANTE_STEP*(state.kit.ante||0));
   let x=K("xAll",1)*(color?K("xColor",{})[color]||1:1)*(state.wave%5===0?K("xBossWave",1):1)*(e.boss?K("xBoss",1):1)*(e.flying?K("xFlier",1):1)*(e.armor>0?K("xArmor",1):1)*(state.health<=10?K("xLow",1):1);
-  if(source==="troop")x*=K("xTroop",1);if(source==="commander")x*=K("xCommander",1);if(source==="spell"&&state.casting&&K("stormX"))x*=Math.min(2,1+K("stormX")*Math.max(0,state.storm-1));
+  if(source==="troop")x*=K("xTroop",1);if(source==="commander")x*=K("xCommander",1);if(source==="spell"&&spellId&&K("stormX"))x*=Math.min(2,1+K("stormX")*Math.max(0,state.storm-1));
   void army;const v=(raw+flat)*pct*x;return v>raw?Math.max(Math.floor(raw)+1,v):v;}
  // Economy relics pay more as waves get bigger, on the same curve as troop health, so they stay worth a slot late.
  const kitEcon=()=>late(.6);
@@ -299,7 +299,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  if(k==="strike"&&e)hurt(e,hitPower(e),false,t,bonus(t,"pierce")?2:true);
  if(k==="splash")for(const x of area(q,60+8*tier+bonus(t,"radius")))if(!x.flying){hurt(x,x===e?hitPower(x):Math.round(hitPower(x)*SPLASH_EDGE),false,t);const burn=BURN+Math.floor(bonus(t,"burn"));if(state.tick+burn>=x.burnUntil){x.burnUntil=state.tick+burn;x.burnSource=t.uid;}}
  if(k==="chain")for(const [n,id] of (rec.chain||[]).entries()){const x=alive(id);if(x)hurt(x,Math.max(1,Math.round(hitPower(x)*Math.pow(.78,n))),true,t);}
- if(k==="hex"){for(const x of bonus(t,"spread")?area(q,bonus(t,"spread")):e?[e]:[]){x.curseUntil=state.tick+35+Math.floor(bonus(t,"curse"));hurt(x,hitPower(x),true,t);}}
+ if(k==="hex"){for(const x of bonus(t,"spread")?area(q,bonus(t,"spread")):e?[e]:[]){const until=state.tick+35+Math.floor(bonus(t,"curse"));if(until>=(x.curseUntil||0)){x.curseUntil=until;x.curseSource=t.uid;}hurt(x,hitPower(x),true,t);}}
  if(k==="root"){for(const x of bonus(t,"spread")?area(q,bonus(t,"spread")).filter(x=>!x.flying).sort((a,b)=>(a===e?-1:b===e?1:0)||d2(enemyPos(a),q)-d2(enemyPos(b),q)||a.id-b.id).slice(0,SPREAD_MAX):e?[e]:[]){x.rootUntil=Math.max(x.rootUntil||0,state.tick+7+tier*2+Math.floor(bonus(t,"root")));hurt(x,x===e?power:Math.round(power*SPREAD_HIT),false,t);const venom=bonus(t,"burn")?1:0;const live=x.poisonUntil>state.tick?x.poisonStacks:0;x.poisonStacks=x===e||!bonus(t,"spread")?Math.max(live,Math.min(POISON_STACKS+3*venom,live+1)):Math.max(live,1);x.poisonUntil=Math.max(x.poisonUntil||0,state.tick+POISON+20*venom);x.poisonSource=t.uid;stats.control++;t.control++;}}
  if(k==="mirror"&&e){const copy=mirrorPower(t,power);hurt(e,copy.power,mirrorMagic(t,e),t);if(copy.copied)stats.triggers++;}
  if(rec.extra){const nx=extraShots(t);for(const [j,id] of rec.extra.entries()){const x=alive(id);if(x)hurt(x,power*(j<nx?bonus(t,"extraPower"):.6),k==="mirror"&&mirrorMagic(t,x),t);}}
@@ -316,7 +316,7 @@ export function createEngine(seed=1,mode="campaign",mapId="hollow"){
  function scaleCommander(){const cm=state.commander;if(!cm)return;const base=commanders[cm.id].hp*(1+.1*perk("command"))*(1+K("cmdHp")),want=Math.round(base*late(.4)),had=cm.baseHp||Math.round(base);if(want>had){cm.maxHp+=want-had;if(!cm.dead)cm.hp+=want-had;cm.baseHp=want;}}
  function late(k=.8){return Math.pow(scale(Math.max(1,state.wave)),k);}
  function commanderAlive(id){const c=state.commander;return !!c&&!c.dead&&(!id||c.id===id);}
- function castCost(id){if(state.freeCast)return 0;const c=cards[id]?.cost??0,off=K("castOff",{}),type=cards[id]?.type||"";return Math.round(c*(1-.05*perk("spellcraft"))*(1-.15*upLv(id))*(1-(isInstantOrSorcery(id)?off.instant||0:0))*(1-(/Artifact/.test(type)?off.artifact||0:0)));}
+ function castCost(id){return state.freeCast?0:spellManaCost(cards[id],upLv(id),perk("spellcraft"),K("castOff",{}));}
  function makeToken(...a){const ok=makeToken1(...a);if(ok&&K("tokenTwice"))makeToken1(...a);return ok;}
  function makeToken1(model,hp,damage,flier=false){hp=Math.round(hp*late(.6));damage=Math.round(damage*late(.8));const c=state.commander;if(!c||state.troops.length>=220||state.troops.filter(u=>u.source==="cmd"&&u.model===model&&u.hp>0).length>=TOKEN_CAP[model])return false;state.troops.push({id:state.nextId++,source:"cmd",sourceUid:0,hp,maxHp:hp,progress:c.progress,next:state.tick+5,damage,revived:false,model,ward:0,flier});stats.summoned++;state.cmdOwner.summons++;emit("summon",{source:"cmd"});return true;}
  // Toxrill: each slime counter (up to 5) takes 10% off the enemy's attack and 4% of its full health.
@@ -426,7 +426,8 @@ function commanderPos(){return pointAt(state.commander.progress);}
  draw();emit("waveStart",{wave:state.wave,early,bonus});
  if(state.commander){const c=state.commander,max=Math.round((commanders[c.id].hp+40*(c.voltron||0))*late(.6)*(1+.1*perk("command"))*(1+K("cmdHp")));c.hp=Math.min(max,c.hp+Math.max(0,max-c.maxHp));c.maxHp=max;}
  }
- function hurt(e,raw,magic,t,pierce=false,source=t?"tower":"spell"){if(e.hp<=0)return;raw=kitDamage(e,raw,t,source);if(t&&t!==state.cmdOwner&&roster[t.kind]?.color==="R"&&commanderAlive("torbran"))raw+=Math.round(TORBRAN_BONUS*late()*(state.commander.furyUntil>state.tick?3:1));e.exposedUntil=state.tick+30;const resistance=magic?e.resist:e.armor*(pierce===2?0:pierce?.5:1);if(resistance>=100){stats.immuneHits=(stats.immuneHits||0)+1;stats.immuneDamage=(stats.immuneDamage||0)+Math.round(raw);if(t){t.immuneHits=(t.immuneHits||0)+1;}return;}if(resistance>0){const lost=Math.round(raw*Math.min(resistance,100)/100);stats.resistedDamage=(stats.resistedDamage||0)+lost;if(t)t.resisted=(t.resisted||0)+lost;}const n=Math.min(e.hp,Math.max(1,Math.floor(raw*(100-resistance)/100*(e.curseUntil>state.tick||e.markUntil>state.tick?1.35:1))));e.hp-=n;stats.damage+=n;stats[source+"Damage"]+=n;if(t&&t===state.cmdOwner)stats.commanderArmyDamage+=n;if(t){t.damage+=n;t[source+"Damage"]=(t[source+"Damage"]||0)+n;}if(e.hp===0){stats.kills++;if(K("killMana")&&state.kitWave&&state.kitWave.kill<Math.round(40*kitEcon())){const m=Math.min(Math.round(40*kitEcon())-state.kitWave.kill,Math.round(K("killMana")*kitEcon()));state.kitWave.kill+=m;earn(m,"spell");}state.enemyKills[e.kind]=(state.enemyKills[e.kind]||0)+1;earn(e.reward,"kill");if(e.markUntil>state.tick)earn(6,"spell");if(e.slime&&commanderAlive("toxrill"))makeToken("slug",24,6);emit("enemyKilled",{id:e.id,source:t?.id??null});}}
+ function hurt(e,raw,magic,t,pierce=false,source=t?"tower":"spell",spellId=state.casting){if(e.hp<=0)return;raw=kitDamage(e,raw,t,source,spellId);if(t&&t!==state.cmdOwner&&roster[t.kind]?.color==="R"&&commanderAlive("torbran"))raw+=Math.round(TORBRAN_BONUS*late()*(state.commander.furyUntil>state.tick?3:1));e.exposedUntil=state.tick+30;const resistance=magic?e.resist:e.armor*(pierce===2?0:pierce?.5:1);if(resistance>=100){stats.immuneHits=(stats.immuneHits||0)+1;stats.immuneDamage=(stats.immuneDamage||0)+Math.round(raw);if(t){t.immuneHits=(t.immuneHits||0)+1;}return;}if(resistance>0){const lost=Math.round(raw*Math.min(resistance,100)/100);stats.resistedDamage=(stats.resistedDamage||0)+lost;if(t)t.resisted=(t.resisted||0)+lost;}const n=Math.min(e.hp,Math.max(1,Math.floor(raw*(100-resistance)/100*(e.curseUntil>state.tick||e.markUntil>state.tick?1.35:1))));
+ if(e.curseUntil>state.tick&&e.markUntil<=state.tick&&e.curseSource!=null){const owner=Object.values(state.towers).find(t=>t.uid===e.curseSource)||state.towerHistory.find(t=>t.uid===e.curseSource);const extra=Math.max(0,n-Math.min(e.hp,Math.max(1,Math.floor(raw*(100-resistance)/100))));if(owner&&extra){owner.curseAmplified=(owner.curseAmplified||0)+extra;stats.curseAmplified=(stats.curseAmplified||0)+extra;}}e.hp-=n;stats.damage+=n;stats[source+"Damage"]+=n;if(t&&t===state.cmdOwner)stats.commanderArmyDamage+=n;if(t){t.damage+=n;t[source+"Damage"]=(t[source+"Damage"]||0)+n;}if(e.hp===0){stats.kills++;if(K("killMana")&&state.kitWave&&state.kitWave.kill<Math.round(40*kitEcon())){const m=Math.min(Math.round(40*kitEcon())-state.kitWave.kill,Math.round(K("killMana")*kitEcon()));state.kitWave.kill+=m;earn(m,"spell");}state.enemyKills[e.kind]=(state.enemyKills[e.kind]||0)+1;earn(e.reward,"kill");if(e.markUntil>state.tick)earn(6,"spell");if(e.slime&&commanderAlive("toxrill"))makeToken("slug",24,6);emit("enemyKilled",{id:e.id,source:t?.id??null});}}
  function area(q,r){return state.enemies.filter(e=>e.hp>0&&!inTunnel(e)&&d2(enemyPos(e),q)<=r*r);}
  function troopCap(t){const d=roster[t.kind];return (d.cap+t.tier-1+Math.floor(bonus(t,"cap")))*(t.twins?2:1);}
  // Barracks are fully manned the moment they are built or upgraded between waves, so their fighters are always visible.
@@ -532,7 +533,7 @@ function makeTroop(t,opts={}){if(state.troops.length>=220)return false;const def
   for(const u of state.troops)if(u.hp>0&&!u.dead&&!u.flier&&d2(pointAt(u.progress),at)<=vr*vr){u.hp=Math.max(0,u.hp-Math.ceil(u.maxHp*VENT_TROOP));if(!u.hp)die(u);}}
  if(state.kit&&(state.tick-(state.groupStart||0))%KIT_DRAW_TICKS===0)draw(1);
  for(let n=0;n<8&&state.queue.length&&state.queue[0].due<=state.tick;n++){const v=state.queue.shift();spawnEnemy(v.kind,v.wave);if(v.wave===state.wave)state.lastWaveSpawned=true;}
- for(const e of state.enemies){if(e.hp<=0)continue;if(e.regen&&state.tick%10===0)e.hp=Math.min(e.maxHp,e.hp+e.regen);if(e.burnUntil>state.tick&&state.tick%5===0){const source=e.burnSource,owner=source===null?null:Object.values(state.towers).find(t=>t.uid===source)||state.towerHistory.find(t=>t.uid===source);hurt(e,Math.round((source===null?12:TOWER_BURN)*late()),true,owner||null,false,source===null?"spell":"tower");}
+ for(const e of state.enemies){if(e.hp<=0)continue;if(e.regen&&state.tick%10===0)e.hp=Math.min(e.maxHp,e.hp+e.regen);if(e.burnUntil>state.tick&&state.tick%5===0){const source=e.burnSource,owner=source===null?null:Object.values(state.towers).find(t=>t.uid===source)||state.towerHistory.find(t=>t.uid===source);hurt(e,Math.round((source===null?12:TOWER_BURN)*late()),true,owner||null,false,source===null?"spell":"tower",source===null?"flame":undefined);}
   // Poison stacks, ignores armor, and wears off all at once.
   if(e.poisonUntil>state.tick){if(state.tick%5===2&&e.hp>0){const owner=Object.values(state.towers).find(t=>t.uid===e.poisonSource)||state.towerHistory.find(t=>t.uid===e.poisonSource);hurt(e,Math.round(4*e.poisonStacks*late()),false,owner||null,2,"tower");}}else e.poisonStacks=0;}
  const revealers=Object.values(state.towers).filter(t=>["strike","hex"].includes(roster[t.kind].kind)||bonus(t,"reveal")),allies=[...state.troops.filter(u=>u.hp>0).map(u=>pointAt(u.progress)),...(state.commander&&!state.commander.dead?[pointAt(state.commander.progress)]:[])];
@@ -608,7 +609,7 @@ function makeTroop(t,opts={}){if(state.troops.length>=220)return false;const def
  if(!state.queue.length&&!state.enemies.length){harvestRest();for(const wave of state.pendingWaves||[])finishWave(wave);state.pendingWaves=[];state.phase=state.mode==="campaign"&&state.wave>=25?"won":"ready";if(state.phase==="ready")for(const t of Object.values(state.towers))muster(t);if(state.phase==="won"&&!state.stars){state.stars=state.health>=18?3:state.health>=10?2:1;emit("gameOver",{won:true,stars:state.stars});}}
  }
  function playtestReport(){
- const s=state;const tl=t=>({upgrades:t.upgrades?.length?t.upgrades:undefined,soldWave:t.soldWave,shots:t.shots||0,idleChecks:t.idle||0,immuneHits:t.immuneHits||undefined,resisted:t.resisted||undefined,blockTicks:t.blockTicks||0,bossBlockTicks:t.bossBlockTicks||0});
+ const s=state;const tl=t=>({upgrades:t.upgrades?.length?t.upgrades:undefined,soldWave:t.soldWave,shots:t.shots||0,idleChecks:t.idle||0,immuneHits:t.immuneHits||undefined,resisted:t.resisted||undefined,curseAmplified:t.curseAmplified||undefined,blockTicks:t.blockTicks||0,bossBlockTicks:t.bossBlockTicks||0});
  const counts=arr=>arr.reduce((acc,k)=>(acc[k]=(acc[k]||0)+1,acc),{});
  const tower=t=>({pad:t.id+1,kind:roster[t.kind].name,builtWave:t.builtWave,...tl(t),branch:t.branch,specialization:branchName(t),tier:t.tier,sold:!!t.sold,invested:t.paid,damage:t.damage,towerDamage:t.towerDamage||0,troopDamage:t.troopDamage||0,deathDamage:t.deathDamage||0,mana:t.mana,summons:t.summons,blockedSeconds:(t.blockTicks||0)/10,bossBlockedSeconds:(t.bossBlockTicks||0)/10,healing:t.healing,control:t.control,draws:t.draws,growth:t.growth,enchantments:["twins","funeral","resonance","construct","blade"].filter(k=>t[k]),rally:roster[t.kind].kind==="troops"?Math.round(t.rally):undefined,target:t.target||undefined,flightTarget:FLIGHT_CAPABLE.includes(roster[t.kind].kind)?t.flightTarget||"both":undefined});
  const towerColors=[...new Set([...Object.values(s.towers),...s.towerHistory].map(t=>roster[t.kind].color))].sort();

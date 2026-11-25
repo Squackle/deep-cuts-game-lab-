@@ -129,6 +129,13 @@ export const LANDS = [L("W", "Plains"), L("U", "Island"), L("B", "Swamp"), L("R"
 export const POOL = [...RELICS, ...BOONS, ...RITUALS, ...FORBIDDEN, ...LANDS];
 export const BY_ID = Object.fromEntries(POOL.map(x => [x.id, x]));
 export const LAND_STEP = .08, LAND_MAX = 5;
+export const SPELL_COST_STEP=.15, SPELL_DAMAGE_STEP=.25;
+// Shared by campaign previews and the combat engine. Free casts are handled by the engine.
+export function spellManaCost(card,level=0,spellcraft=0,off={}){
+ const type=card?.type||"";
+ return Math.round((card?.cost??0)*(1-.05*spellcraft)*(1-SPELL_COST_STEP*level)*(1-(/^(Instant|Sorcery)$/.test(type)?off.instant||0:0))*(1-(/Artifact/.test(type)?off.artifact||0:0)));
+}
+export const DAMAGE_UPGRADE_SPELLS=Object.freeze(["meteor","cascade","lightning","flame"]);
 
 // Share of each category in the pool, for the in-game breakdown and the tests.
 export function poolShares(pool = POOL) { const out = {}; for (const x of pool) out[x.kind] = (out[x.kind] || 0) + 1; for (const k of Object.keys(out)) out[k] = { count: out[k], pct: Math.round(out[k] / pool.length * 1000) / 10 }; return out; }

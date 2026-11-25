@@ -1,7 +1,7 @@
 // Campaign deck, shop and drafts (pure data; main.mjs draws it, engine.mjs plays the kit). Saved in the profile as profile.camp.
 // You start with a small singleton deck. Each Gauntlet battle pays Treasure and offers a spell draft; between battles the world map
 // has a Shop (relics, boons, rituals, lands, forbidden cards and spells) and a Deck view (upgrade or exile spells).
-import { POOL, BY_ID, RELICS, BOONS, RITUALS, FORBIDDEN, LANDS, RARITY, spellKind, LAND_MAX } from "./pool.mjs";
+import { POOL, BY_ID, RELICS, BOONS, RITUALS, FORBIDDEN, LANDS, RARITY, spellKind, LAND_MAX, LAND_STEP, SPELL_DAMAGE_STEP, spellManaCost, DAMAGE_UPGRADE_SPELLS } from "./pool.mjs";
 
 export const STARTER_DECK = ["meteor", "flame", "legion", "ward", "inquiry", "freeze", "root", "offering"];
 export const DECK_CAP = 15, MIN_DECK = 5, BASE_SLOTS = 5, UPGRADE_COST = [4, 6], EXILE_COST = 3, SPELL_COST = 3, BOON_COST = 10;
@@ -47,6 +47,20 @@ export function metaFx(c) { const fx = {}; for (const k of [...c.boons, ...c.mar
 export const slots = c => BASE_SLOTS + (metaFx(c).slots || 0);
 export const deckCap = c => DECK_CAP + (metaFx(c).deckCap || 0);
 export const kitFor = c => ({ deck: c.deck.slice(), up: { ...c.up }, relics: c.marks.includes("spark") && c.relics.length ? [...c.relics, c.relics[0]] : c.relics.slice(), boons: [...c.boons, ...c.marks], lands: { ...c.lands }, ante: Math.min(8, c.wins) }); // ante: each Gauntlet win makes battles tougher (engine ANTE_STEP, max 8)
+
+// Preview the next run, not the current battle's free-cast state or stale kit.
+export function spellUpgradePreview(c,id,cards,spellcraft=0){
+ const card=cards[id];if(!card)return null;
+ const current=Math.max(0,Math.min(2,c.up[id]||0)),next=Math.min(2,current+1);
+ const kit=kitFor(c),off={};for(const k of [...kit.relics,...kit.boons])for(const [type,v] of Object.entries(BY_ID[k]?.fx?.castOff||{}))off[type]=(off[type]||0)+v;
+ const damage=DAMAGE_UPGRADE_SPELLS.includes(id);
+ return {level:current+1,nextLevel:next+1,cost:spellManaCost(card,current,spellcraft,off),nextCost:spellManaCost(card,next,spellcraft,off),damageBonus:damage?Math.round(current*SPELL_DAMAGE_STEP*100):0,nextDamageBonus:damage?Math.round(next*SPELL_DAMAGE_STEP*100):0,damage,max:current===2};
+}
+export function landPreview(c,color){
+ if(!"WUBRG".includes(color)||typeof color!=="string"||color.length!==1)return null;
+ const level=Math.max(0,Math.min(LAND_MAX,c.lands[color]||0)),nextLevel=Math.min(LAND_MAX,level+1);
+ return {level,nextLevel,bonus:Math.round(level*LAND_STEP*100),nextBonus:Math.round(nextLevel*LAND_STEP*100),max:level===LAND_MAX};
+}
 
 function rnd(c) { let t = c.seed = (c.seed + 0x6D2B79F5) >>> 0; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }
 function weighted(c, list, w) { const total = list.reduce((a, x) => a + w(x), 0); if (!total) return null; let r = rnd(c) * total; for (const x of list) { r -= w(x); if (r < 0) return x; } return list.at(-1); }
