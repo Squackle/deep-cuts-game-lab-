@@ -66,5 +66,5 @@ test("no autosave can recreate the just-deleted run during reload, and in-game r
 
 test("title screen never re-discovers the starter hand after full progression reset",()=>{
  assert.match(main,/function noteSeen\(s\)\{if\(!\$\("titleScreen"\)\.hidden\)return;/);
- assert.match(main,/if\(s\.mode!=="sandbox"\)noteSeen\(s\)/,"gameplay still records discoveries after entering a run");
+ assert.match(main,/if\(s\.mode!=="sandbox"&&!game\.mission\)noteSeen\(s\)/,"gameplay still records discoveries after entering a run");
 });

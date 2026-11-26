@@ -61,7 +61,7 @@ test("new blue attacks and shroud visibility remain deterministic across JSON sa
  foe(g,"warden");foe(g,"stalker",240);tick(g,12);
  const h=createEngine(1,"sandbox","hollow");assert.ok(h.restore(JSON.parse(JSON.stringify(g.snapshot()))));
  tick(g,80);tick(h,80);assert.deepEqual(h.playtestReport(),g.playtestReport());
- assert.equal(SAVE_FORMAT,1);assert.equal(VERSION,"0.1.0-beta.13.55");
+ assert.equal(SAVE_FORMAT,1);assert.equal(VERSION,"0.1.0-beta.13.56");
 });
 test("faster Library pulse and bounded single-Construct scaling are defined",()=>{
  const g=createEngine(1,"sandbox","hollow");

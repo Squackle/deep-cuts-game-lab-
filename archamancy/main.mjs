@@ -1,3 +1,4 @@
+import {CONFLUENCE_PILOT} from "./missions.mjs";
 import {createEngine,VERSION,MAPS,PERKS,PERK_COSTS,TARGET_MODES,AIMED,FLIGHT_TARGET_MODES,FLIGHT_CAPABLE,ABILITIES,IMMUNE_BOSS_HOLD_TICKS,IMMUNE_BOSS_WARN_TICKS,BOSS_BLAST,ANTE_STEP,ANTE_MAX} from './engine.mjs';
 import {createArt} from './art.mjs';
 import {firstFlyerWarning,bossOverlapWarning,earlyOverlapWarning,counterplayWarning,troopCardHint,handCycleHint} from './wave-guidance.mjs';
@@ -59,7 +60,7 @@ function boot(createEngine){
   text($("commanderStatus"),starter?"Pick a starter. It leads every run from now on, and you unlock more legends by playing Gauntlet or Endless.":pick?"Choose a commander before wave 1. Commanders fight on the road, block one ground enemy and return 20 seconds after falling. Passives work only while your commander is alive. Best wave: "+profile.bestWave+".":c?game.commanders[c.id].name+" · "+(c.dead?"Fallen, returns in "+Math.max(0,Math.ceil((c.respawnAt-s.tick)/10))+"s":"Health "+c.hp+"/"+c.maxHp)+" · Attack "+(c.attack+c.growth)+" · Kills "+c.kills+". "+game.commanders[c.id].desc:"No commander this run. Commanders are chosen before wave 1.");
   if(!pick)return;const ids=starter?progress.STARTERS:allCommanders;for(const id of [...ids,...(starter?[]:[null])]){const d=id?game.commanders[id]:{name:"No commander",archetype:"",desc:"Fight without a hero.",color:"C",hp:0,damage:0},locked=!!id&&!starter&&!open.includes(id),b=document.createElement("button"),name=document.createElement("strong"),desc=document.createElement("span"),tag=document.createElement("small");b.type="button";b.style.borderColor=colors[d.color];b.disabled=locked;b.setAttribute("aria-pressed",String(!starter&&(c?.id??null)===id));name.textContent=(locked?"🔒 ":"")+d.name;desc.textContent=d.desc;tag.textContent=locked?progress.requirement(profile,id):id?d.colors+" · "+d.archetype+" · "+d.hp+" health · "+(id==="urdragon"?"flying":d.damage+" attack"):"";if(id){const a=paintArt(b,d.name);if(a){const credit=document.createElement("small");credit.className="credit";credit.textContent="Art: "+a.artist;b.append(name,desc,tag,credit);}else b.append(name,desc,tag);}else b.append(name,desc,tag);
    b.addEventListener("click",()=>{if(starter){if(!progress.chooseStarter(profile,id))return;progress.save(storage,profile);if(s.wave===0&&s.phase==="ready")game.command({type:"commander",id});closeDialogs();notice(d.name+" is your first commander. Play to unlock more legends.");renderHud();return;}if(game.command({type:"commander",id})){if(s.mode!=="sandbox"){profile.last=id;progress.save(storage,profile);}notice(id?d.name+" leads your defense.":"No commander selected.");renderCommanders();renderHud();}});pane.append(b);}}
- function checkUnlocks(){const s=game.state;if(s.waveHistory.length===seenWaves)return;const lastWave=s.waveHistory.at(-1);if(!lastWave){seenWaves=0;return;}const cleared=s.waveHistory.slice(seenWaves).map(w=>w.wave);seenWaves=s.waveHistory.length;if(s.mode!=="sandbox"&&s.mana>=500&&Object.values(s.towers).some(t=>{const c=game.upgradeCost(t);return c!==null&&c<=s.mana;}))notice("Spare mana: towers with a gold ▲ can be upgraded. Tap one.");const xp0=profile.xp,ups=progress.gainXp(profile,cleared,s.mode),gained=profile.xp-xp0;if(gained>0){runXp+=gained;xpPop(gained);}if(!s.daily)for(const u of ups)for(const k of u.towers||[])game.command({type:"unlock",kind:k});if(ups.length){const top=ups.at(-1),opened=ups.flatMap(u=>[...(u.towers||[]).map(k=>game.roster[k].name),...(u.maps||[]).map(m=>MAPS[m].name),...(u.modes||[]).map(m=>({endless:"Endless Siege",onslaught:"Onslaught"})[m])]);setTimeout(()=>{banner("Level "+top.level+"!",opened.length?"Unlocked: "+opened.join(", "):"","win");notice("Level "+top.level+"! "+(opened.length?"Unlocked: "+opened.join(", ")+".":""),true);$("hudLevel").classList.add("leveled");setTimeout(()=>$("hudLevel").classList.remove("leveled"),2600);},900);sfx.play("star");}const fresh=progress.recordRun(profile,{wave:lastWave.wave,mode:s.mode,difficulty:s.difficulty,fallen:s.stats.fallen,returns:s.stats.returns,sacrifices:s.stats.sacrifices,won:s.phase==="won",colors:Object.values(s.towers).map(t=>game.roster[t.kind].color)});progress.save(storage,profile);if(fresh.length)notice("New commander unlocked: "+fresh.map(id=>game.commanders[id].name).join(", ")+". Choose them before wave 1 of your next run.");}
+ function checkUnlocks(){if(game.mission)return;const s=game.state;if(s.waveHistory.length===seenWaves)return;const lastWave=s.waveHistory.at(-1);if(!lastWave){seenWaves=0;return;}const cleared=s.waveHistory.slice(seenWaves).map(w=>w.wave);seenWaves=s.waveHistory.length;if(s.mode!=="sandbox"&&s.mana>=500&&Object.values(s.towers).some(t=>{const c=game.upgradeCost(t);return c!==null&&c<=s.mana;}))notice("Spare mana: towers with a gold ▲ can be upgraded. Tap one.");const xp0=profile.xp,ups=progress.gainXp(profile,cleared,s.mode),gained=profile.xp-xp0;if(gained>0){runXp+=gained;xpPop(gained);}if(!s.daily)for(const u of ups)for(const k of u.towers||[])game.command({type:"unlock",kind:k});if(ups.length){const top=ups.at(-1),opened=ups.flatMap(u=>[...(u.towers||[]).map(k=>game.roster[k].name),...(u.maps||[]).map(m=>MAPS[m].name),...(u.modes||[]).map(m=>({endless:"Endless Siege",onslaught:"Onslaught"})[m])]);setTimeout(()=>{banner("Level "+top.level+"!",opened.length?"Unlocked: "+opened.join(", "):"","win");notice("Level "+top.level+"! "+(opened.length?"Unlocked: "+opened.join(", ")+".":""),true);$("hudLevel").classList.add("leveled");setTimeout(()=>$("hudLevel").classList.remove("leveled"),2600);},900);sfx.play("star");}const fresh=progress.recordRun(profile,{wave:lastWave.wave,mode:s.mode,difficulty:s.difficulty,fallen:s.stats.fallen,returns:s.stats.returns,sacrifices:s.stats.sacrifices,won:s.phase==="won",colors:Object.values(s.towers).map(t=>game.roster[t.kind].color)});progress.save(storage,profile);if(fresh.length)notice("New commander unlocked: "+fresh.map(id=>game.commanders[id].name).join(", ")+". Choose them before wave 1 of your next run.");}
  $("commanderOpen").addEventListener("click",()=>{const c=game.state.commander;if(!c||c.dead||moving){moving=false;renderCommanders();showDialog("commanderDialog");renderHud();return;}selectCommander();});
 // Voice barks: towers speak in their school's voice (deeper as they rank up); commanders have their own.
  function towerSay(pad,kind){const t=game.state.towers[pad],p=game.map.pads[pad];if(!t||!p)return;sfx.say({color:game.roster[t.kind]?.color,tier:t.tier},kind,{pan:(p.x/game.map.width*2-1)*.7});}
@@ -165,9 +166,9 @@ document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&
  const mapLook=()=>game.map.id+":"+game.map.season;
  let mapKey=mapLook();
  function useMap(){if(mapLook()===mapKey)return;mapKey=mapLook();buildPads();paintTerrain();placeStart();}
- function restart(mode,dc=null,from=null){
-  clearRun();
-  game=dc?createEngine(dc.seed,"campaign",dc.map):createEngine(from?.seed??1,mode,from?.mapId||mapPick());
+ function restart(mode,dc=null,from=null,mission=null){
+  if(!mission)clearRun();
+  game=dc?createEngine(dc.seed,"campaign",dc.map):createEngine(from?.seed??1,mode,mission?.mapId||from?.mapId||mapPick(),mission?.id);
   if(dc){mode="campaign";game.state.daily={date:dc.date,commander:dc.commander,twist:dc.twist};}
   game.command({type:"season",season:dc?dc.season:from?.season||seasonPick()});
   useMap();fx.reset();$("waveBanner").hidden=true;$("endScreen").hidden=true;
@@ -180,7 +181,7 @@ document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&
   }else if(mode!=="sandbox"){
    game.command({type:"difficulty",level:from?.difficulty||profile.difficulty});
    game.command({type:"perks",perks:from?.perks||profile.perks});
-   if(mode==="campaign"&&(from?!!from.onslaught:profile.onslaught&&progress.isOpen(profile,"modes","onslaught")))game.command({type:"onslaught",on:true});
+   if(!mission&&mode==="campaign"&&(from?!!from.onslaught:profile.onslaught&&progress.isOpen(profile,"modes","onslaught")))game.command({type:"onslaught",on:true});
    game.command({type:"locks",towers:Array.isArray(from?.locked)?from.locked:progress.lockedTowers(profile)});
   }
   if(!dc){
@@ -202,8 +203,9 @@ document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&
   const run=source==="title"?loadRun()?.state:game.state;
   if(!run)return;
   restartSource=source;
-  const mapName=MAPS[run.mapId]?.name||"this battlefield";
-  text($("restartConfirmText"),"Restart "+mapName+" from wave 1? This permanently replaces the current run at wave "+run.wave+". Permanent unlocks and campaign rewards remain.");
+  const mission=source==="menu"?game.mission:null;
+  const mapName=mission?.name||MAPS[run.mapId]?.name||"this battlefield";
+  text($("restartConfirmText"),"Restart "+mapName+" from wave 1? "+(mission?"Your saved Gauntlet will still be available.":"This permanently replaces the current run at wave "+run.wave+". Permanent unlocks and campaign rewards remain."));
   showDialog("restartConfirmDialog");
   $("restartCancel").focus();
  }
@@ -221,12 +223,13 @@ document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&
   restartSource=null;
   if(!run){$("restartConfirmDialog").close();return;}
   const challenge=run.daily?daily.dailyFor(run.daily.date,MAPS):null;
-  restart(run.mode,challenge,run);
+  const mission=source==="menu"?game.mission:null;
+  restart(run.mode,challenge,run,mission);
   if(source==="title"){$("titleScreen").hidden=true;sfx.unlock();sfx.music(true);}
-  notice("Run restarted at wave 1. Your previous run was replaced.",true);
+  notice(mission?"Troll Ford restarted at wave 1.":"Run restarted at wave 1. Your previous run was replaced.",true);
  });
  $("restart").addEventListener("click",()=>askRestart("menu"));
- $("newMode").addEventListener("click",()=>restart($("mode").value));
+ $("newMode").addEventListener("click",()=>{if(!game.mission)restart($("mode").value);});
  function waveText(n){return game.waveSpec(n).map(x=>{const [k,c]=x.split(":"),d=game.types[k];return (d.boss&&k!=="titan"?"BOSS ":"")+d.name+" × "+c;}).join(" · ");}
  function traitText(n){const seen=new Set();return game.waveSpec(n).map(x=>x.split(":")[0]).filter(k=>game.types[k].trait&&!seen.has(k)&&seen.add(k)).map(k=>game.types[k].name+": "+game.types[k].trait).join(" ");}
  function ringLabel(b,icon,price,label){const k=icon+"|"+price;if(b.dataset.k!==k){b.dataset.k=k;const i=document.createElement("span"),c=document.createElement("span");i.className="ring-icon";i.textContent=icon;c.className="price";c.textContent=price;b.replaceChildren(i,c);}b.setAttribute("aria-label",label);b.title=label;}
@@ -270,7 +273,7 @@ document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&
  const BREAKTHROUGH_HINT="Physical-immune bosses warn after 4 seconds of being held and shove past blockers after 6 seconds for a brief window. This is their existing movement behavior.";
  function bossHint(e){const hint=e.shroud?HIDDEN_HINT:e.cracked?"Cracked below 40% health: every tower and troop can hurt it now.":e.armor>=100?"Only magic hurts it: "+towerNames(true).join(", ")+". Below 40% health it cracks and everything can hurt it.":e.resist>=100?"Only physical hurts it: "+towerNames(false).join(", ")+", troops, Endless Reflections Mirrorworks. Below 40% health it cracks and everything can hurt it.":"";return [hint,e.boss&&e.baseArmor>=100?BREAKTHROUGH_HINT:""].filter(Boolean).join(" ");}
  function enemyTags(d){const tags=[];if(d.boss)tags.push(["Boss","boss"]);if(d.flying)tags.push(["Flying","fly"]);if(d.armor>=100)tags.push(["Physical immune","armor"]);else if(d.armor>=40)tags.push(["Armored","armor"]);if(d.resist>=100)tags.push(["Magic immune","magic"]);else if(d.resist>=40)tags.push(["Magic resist","magic"]);if(d.shroud)tags.push(["Shrouded","shroud"]);if(d.regen)tags.push(["Regenerates","regen"]);return tags;}
- function renderPeek(s,early){const peek=$("wavePeek"),n=s.wave+1,overlap=bossOverlapWarning(game,s,n),counter=counterplayWarning(game,s,n),show=$("titleScreen").hidden&&selected===null&&selectedCard===null&&(s.phase==="ready"||(s.phase==="active"&&(early||s.mode==="campaign"&&n===4||!!overlap||!!counter)))&&(s.mode!=="campaign"||n<=25);peek.hidden=!show;if(!show)return;
+ function renderPeek(s,early){const peek=$("wavePeek"),n=s.wave+1,overlap=bossOverlapWarning(game,s,n),counter=counterplayWarning(game,s,n),show=$("titleScreen").hidden&&selected===null&&selectedCard===null&&(s.phase==="ready"||(s.phase==="active"&&(early||s.mode==="campaign"&&n===4||!!overlap||!!counter)))&&(s.mode!=="campaign"||n<=game.waveLimit);peek.hidden=!show;if(!show)return;
   peek.classList.toggle("closed",!peekOpen);$("wavePeekToggle").setAttribute("aria-expanded",String(peekOpen));const hint=[firstFlyerWarning(game,s,n)||overlap,counter,overlap?"":earlyOverlapWarning(game,s,n)].filter(Boolean).join(" "),key=n+"|"+s.phase+"|"+peekOpen+"|"+hint;if(key===peekKey)return;peekKey=key;
   text($("waveCounterHint"),hint);$("waveCounterHint").hidden=!hint;
   text($("wavePeekTitle"),(s.phase==="active"?"Next: wave ":"Wave ")+n);
@@ -286,12 +289,14 @@ document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&
  $("abilityBtn").addEventListener("click",useAbility);addEventListener("keydown",e=>{if(!portrait.matches&&(e.key==="q"||e.key==="Q")&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName||"")&&$("titleScreen").hidden&&!document.querySelector("dialog[open]"))useAbility();});
  function renderHud(){
   const s=game.state,terminal=s.phase==="won"||s.phase==="lost";
-  text($("health"),s.health);text($("traitInfo"),traitText(s.phase==="active"?s.wave:s.wave+1)||"No special traits in this wave.");text($("mana"),s.mana.toLocaleString("en-US"));text($("wave"),s.wave+(s.mode==="campaign"?" / 25":" / ∞"));text($("enemies"),s.enemies.length+s.queue.length);text($("time"),Math.floor(s.tick/10)+"s");text($("phase"),s.phase==="won"?"VICTORY":s.phase==="lost"?"DEFEAT":s.phase==="ready"?"PREPARE":"IN COMBAT");
+  text($("health"),s.health);text($("traitInfo"),traitText(s.phase==="active"?s.wave:s.wave+1)||"No special traits in this wave.");text($("mana"),s.mana.toLocaleString("en-US"));text($("wave"),s.wave+(s.mode==="campaign"?" / "+game.waveLimit:" / ∞"));text($("enemies"),s.enemies.length+s.queue.length);text($("time"),Math.floor(s.tick/10)+"s");text($("phase"),s.phase==="won"?"VICTORY":s.phase==="lost"?"DEFEAT":s.phase==="ready"?"PREPARE":"IN COMBAT");
   const boss=s.enemies.find(e=>e.hp>0&&game.types[e.kind].boss&&e.kind!=="titan");$("bossBar").hidden=!boss;if(boss){$("bossBar").classList.toggle("crackable",!!(boss.baseArmor>=100||boss.baseResist>=100||boss.ability==="phase"));{const nm=game.types[boss.kind].name,el=$("bossName"),k=nm+(cardArt.get(nm)?"a":"");if(bossArtKey!==k){bossArtKey=k;const art=cardArt.get(nm);el.classList.toggle("with-art",!!art);if(art)el.style.setProperty("--art",'url("'+art.art+'")');}}text($("bossName"),game.types[boss.kind].name+(boss.phase?(boss.phase==="iron"?" · immune to physical":" · immune to magic"):""));$("bossFill").style.width=(100*boss.hp/boss.maxHp).toFixed(1)+"%";if(boss.shroud&&warnedBoss!==boss.id){warnedBoss=boss.id;notice(game.types[boss.kind].name+": "+HIDDEN_HINT,true);}const tag=bossTag(boss);$("bossHint").hidden=!tag;if(tag){text($("bossHint"),"ⓘ "+tag);$("bossHint").dataset.kind=boss.kind;$("bossHint").setAttribute("aria-label",bossHint(boss));}}
   const early=game.canCallEarly(),bonus=game.earlyBonus(),active=s.pendingWaves?.length||0;
-  text($("preview"),terminal?(s.phase==="won"?"The passage is secure. Continue to Endless Siege.":"The fortress has fallen."):s.phase==="active"?"Remaining: "+(s.enemies.length+s.queue.length)+(early?" | Next wave "+(s.wave+1)+" · "+waveText(s.wave+1)+" | Early bonus +"+bonus+" mana ("+game.earlySeconds()+"s remaining)":""):waveText(s.wave+1)+" | Enemy health ×"+game.scale(s.wave+1).toFixed(2));
-  const startText=s.phase==="won"?"Continue to endless":s.phase==="lost"?"Run finished":s.phase==="active"?(early?"Call wave "+(s.wave+1)+" early · +"+bonus+" mana · "+active+" active wave"+(active===1?"":"s"):s.mode==="campaign"&&s.wave>=25?"Final wave in progress":"Battlefield at capacity"):"Start wave "+(s.wave+1);
-  $("start").disabled=s.phase==="lost"||(s.phase==="active"&&!early);$("start").hidden=$("start").disabled;renderPeek(s,early);renderAbility(s);if(s.mode!=="sandbox")noteSeen(s);const risk=[bossOverlapWarning(game,s,s.wave+1)||earlyOverlapWarning(game,s,s.wave+1),counterplayWarning(game,s,s.wave+1)].filter(Boolean).join(" ");$("start").setAttribute("aria-label",startText+(risk?" "+risk:""));$("start").title=startText+(risk?" "+risk:"");$("start").classList.toggle("early",s.phase==="active");{const ol=game.onslaughtLeft();text($("startLabel"),s.phase==="won"?"Continue":ol!==null?(ol===0&&s.phase==="active"?"Wave "+(s.wave+1)+" waits: 3 on the road":"Wave "+(s.wave+1)+" in "+Math.ceil(ol/10)+"s"):s.phase==="active"?"+"+bonus+" ◈ · "+active+" active":"Wave "+(s.wave+1));}
+  text($("preview"),terminal?(s.phase==="won"?(game.mission?"Mission complete.":"The passage is secure. Continue to Endless Siege."):"The fortress has fallen."):s.phase==="active"?"Remaining: "+(s.enemies.length+s.queue.length)+(early?" | Next wave "+(s.wave+1)+" · "+waveText(s.wave+1)+" | Early bonus +"+bonus+" mana ("+game.earlySeconds()+"s remaining)":""):waveText(s.wave+1)+" | Enemy health ×"+game.scale(s.wave+1).toFixed(2));
+  const startText=s.phase==="won"?"Continue to endless":s.phase==="lost"?"Run finished":s.phase==="active"?(early?"Call wave "+(s.wave+1)+" early · +"+bonus+" mana · "+active+" active wave"+(active===1?"":"s"):s.mode==="campaign"&&s.wave>=game.waveLimit?"Final wave in progress":"Battlefield at capacity"):"Start wave "+(s.wave+1);
+  $("start").disabled=s.phase==="lost"||(s.phase==="won"&&!!game.mission)||(s.phase==="active"&&!early);$("start").hidden=$("start").disabled;renderPeek(s,early);renderAbility(s);if(s.mode!=="sandbox"&&!game.mission)noteSeen(s);const risk=[bossOverlapWarning(game,s,s.wave+1)||earlyOverlapWarning(game,s,s.wave+1),counterplayWarning(game,s,s.wave+1)].filter(Boolean).join(" ");$("start").setAttribute("aria-label",startText+(risk?" "+risk:""));$("start").title=startText+(risk?" "+risk:"");$("start").classList.toggle("early",s.phase==="active");{const ol=game.onslaughtLeft();text($("startLabel"),s.phase==="won"?"Continue":ol!==null?(ol===0&&s.phase==="active"?"Wave "+(s.wave+1)+" waits: 3 on the road":"Wave "+(s.wave+1)+" in "+Math.ceil(ol/10)+"s"):s.phase==="active"?"+"+bonus+" ◈ · "+active+" active":"Wave "+(s.wave+1));}
+  $("mode").disabled=$("newMode").disabled=$("replayTutorial").disabled=!!game.mission;
+  text($("mode").options[0],game.mission?game.mission.name+" · "+game.waveLimit+" waves":"Gauntlet · 25 waves");
   $("sandbox").hidden=s.mode!=="sandbox";$("sandboxOpen").hidden=s.mode!=="sandbox";$("deckToggle").disabled=s.wave!==0||s.phase!=="ready";
   const cycle=handCycleHint(game,s);text($("zones"),"Library "+s.library.length+" · Graveyard "+s.discard.length+(s.echo?" · Twincast armed":"")+(s.prism?" · Lithoform "+s.prism:"")+(cycle?" · "+cycle:""));
   const activeCard=selectedCard===null?null:game.cards[s.hand[selectedCard]];
@@ -407,7 +412,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
   const lift=-26-c.tier*4,side=(Math.random()-.5)*30;
   const a=g.animate([{transform:"translate(-50%,-50%) translate(0,0) scale(.3) rotate(45deg)",opacity:0},{offset:.22,transform:"translate(-50%,-50%) translate("+side+"px,"+lift+"px) scale(1.15) rotate(45deg)",opacity:1},{offset:.38,transform:"translate(-50%,-50%) translate("+side*1.2+"px,"+(lift-6)+"px) scale(1) rotate(45deg)",opacity:1},{transform:"translate(-50%,-50%) translate("+dx+"px,"+dy+"px) scale(.45) rotate(45deg)",opacity:.9}],{duration:900+Math.min(400,Math.hypot(dx,dy)*.25),easing:"cubic-bezier(.45,0,.4,1)"});
   a.onfinish=a.oncancel=()=>{g.remove();gemsInFlight--;manaBump(c.tier);};}
- function handleCues(cues){for(const c of cues){if(c.type==="sound"){sfx.play(c.name,c.x!=null?{pan:(c.x/game.map.width*2-1)*.7}:undefined);if(c.name.startsWith("shot_")&&c.x!=null&&sfx.attackDue()){const pad=game.map.pads.findIndex((p,i)=>p.x===c.x&&game.state.towers[i]);if(pad>=0)towerSay(pad,"attack");}}else if(c.type==="harvest")flyGem(c);else if(c.type==="gameOver"){clearRun();}if(c.type==="gameOver")setTimeout(()=>showEnd(c.won,c.stars),c.won?900:600);else if(c.type==="banner")banner(c.title,c.sub,c.tone);else if(c.type==="toast")notice(c.text);else if(c.type==="leak"){const el=$("health").parentElement;el.classList.remove("hit");void el.offsetWidth;el.classList.add("hit");}}}
+ function handleCues(cues){for(const c of cues){if(c.type==="sound"){sfx.play(c.name,c.x!=null?{pan:(c.x/game.map.width*2-1)*.7}:undefined);if(c.name.startsWith("shot_")&&c.x!=null&&sfx.attackDue()){const pad=game.map.pads.findIndex((p,i)=>p.x===c.x&&game.state.towers[i]);if(pad>=0)towerSay(pad,"attack");}}else if(c.type==="harvest")flyGem(c);else if(c.type==="gameOver"&&!game.mission){clearRun();}if(c.type==="gameOver")setTimeout(()=>showEnd(c.won,c.stars),c.won?900:600);else if(c.type==="banner")banner(c.title,c.sub,c.tone);else if(c.type==="toast")notice(c.text);else if(c.type==="leak"){const el=$("health").parentElement;el.classList.remove("hit");void el.offsetWidth;el.classList.add("hit");}}}
  // Copied battle stats: the engine report plus the device, game speed and pause time, and any errors this session.
  const noteError=m=>{if(session.errors.length<12)session.errors.push(String(m).slice(0,240));};
  addEventListener("error",e=>noteError((e.message||"error")+" @"+(e.filename||"").split("/").pop()+":"+(e.lineno||0)));
@@ -419,7 +424,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
   const elapsed=last===null?0:Math.min(250,Math.max(0,now-last));last=now;
   if(game.state.phase==="active"&&$("titleScreen").hidden){const k=document.querySelector("dialog[open]")?"menu":speed?"x"+speed:"paused";session.time[k]=(session.time[k]||0)+elapsed;}
   // Between Onslaught waves the clock keeps running too (clock.mjs), so the next wave arrives on time.
-  if(speed&&clockRunning(game)&&!document.querySelector("dialog[open]")){accumulator=advance(game,accumulator+elapsed*speed);if(!clockRunning(game)){notice(game.state.phase==="won"?"Victory! All 25 Gauntlet waves completed. Continue into endless survival.":game.state.phase==="lost"?"Defeat. Open the menu to restart.":"Wave complete. Prepare your next defense.",game.state.phase!=="ready");}}
+  if(speed&&clockRunning(game)&&!document.querySelector("dialog[open]")){accumulator=advance(game,accumulator+elapsed*speed);if(!clockRunning(game)){notice(game.state.phase==="won"?game.mission?"Victory! "+game.mission.name+" is clear.":"Victory! All 25 Gauntlet waves completed. Continue into endless survival.":game.state.phase==="lost"?"Defeat. Open the menu to restart.":"Wave complete. Prepare your next defense.",game.state.phase!=="ready");}}
   else accumulator=0;
   handleCues(fx.update(game,now));const sh=fx.offset(now);$("map").style.transform=sh.x||sh.y?"translate("+sh.x.toFixed(1)+"px,"+sh.y.toFixed(1)+"px)":"";
   checkUnlocks();renderField();renderHud();renderTutorial();musicMood();if(now-lastSave>4000&&$("titleScreen").hidden)saveRun();
@@ -429,7 +434,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  document.addEventListener("visibilitychange",()=>{last=null;accumulator=0;if(document.hidden)saveRun();});
  // Continue: the current run is saved in this browser every few seconds, when the tab is hidden or closed, and when leaving to the menu.
  const RUN_KEY="archemancy.run.v1";let lastSave=0,resettingGame=false;
- function runLive(){const s=game.state;return s.mode!=="sandbox"&&(s.phase==="ready"||s.phase==="active")&&(s.wave>0||Object.keys(s.towers).length>0);}
+ function runLive(){const s=game.state;return !game.mission&&s.mode!=="sandbox"&&(s.phase==="ready"||s.phase==="active")&&(s.wave>0||Object.keys(s.towers).length>0);}
  function saveRun(){if(resettingGame||!runLive())return;try{storage?.setItem(RUN_KEY,JSON.stringify(game.snapshot()));lastSave=performance.now();}catch{}}
  function clearRun(){try{storage?.removeItem(RUN_KEY);}catch{}}
  function loadRun(){try{const raw=storage?.getItem(RUN_KEY);if(!raw||raw.length>4*1024*1024)return null;const save=JSON.parse(raw);if(!save||!createEngine(1,save.state?.initialMode,save.state?.mapId).restore(save))return null;return save;}catch{return null;}}
@@ -549,8 +554,8 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  campBar.querySelector(".camp-draft").addEventListener("click",()=>{sfx.unlock();sfx.play("click");renderDraft();showDialog("draftDialog");});
  function renderCampBar(){campBar.querySelector(".camp-gold").textContent="◆ "+camp.treasure;campBar.querySelector(".camp-deck").textContent="🂠 Deck · "+camp.deck.length;campBar.querySelector(".camp-draft").hidden=!camp.draft;const shop=campBar.querySelector(".camp-shop"),fresh=!!(camp.shop?.fresh||camp.pack);shop.classList.toggle("camp-new",fresh);shop.textContent=camp.pack?"⚖ Shop · open pack":fresh?"⚖ Shop · new stock":"⚖ Shop";}
  // After a Gauntlet battle with the campaign deck: pay Treasure once, restock the Shop and offer a draft.
- function campaignPayout(won,stars){const s=game.state;if(!s.kit||s.daily||s.mode!=="campaign"&&s.initialMode!=="campaign"||s.campPaid)return null;s.campPaid=true;const r=campaignLib.finishBattle(camp,{won,stars,wave:s.wave},game.cards);saveCamp();return r;}
- function renderWorld(){renderCampBar();progress.REGIONS.forEach((r,i)=>{const b=worldNodes[i],open=!!r.map&&progress.mapOpen(profile,r.map),st=r.map?progress.mapStars(profile,r.map):0;b.classList.toggle("locked",!open);b.classList.toggle("soon",!r.map);b.setAttribute("aria-pressed",String(!!r.map&&r.map===mapPick()));
+ function campaignPayout(won,stars){const s=game.state;if(game.mission||!s.kit||s.daily||s.mode!=="campaign"&&s.initialMode!=="campaign"||s.campPaid)return null;s.campPaid=true;const r=campaignLib.finishBattle(camp,{won,stars,wave:s.wave},game.cards);saveCamp();return r;}
+ function renderWorld(){pilotButton.hidden=mapPick()!==CONFLUENCE_PILOT.mapId;renderCampBar();progress.REGIONS.forEach((r,i)=>{const b=worldNodes[i],open=!!r.map&&progress.mapOpen(profile,r.map),st=r.map?progress.mapStars(profile,r.map):0;b.classList.toggle("locked",!open);b.classList.toggle("soon",!r.map);b.setAttribute("aria-pressed",String(!!r.map&&r.map===mapPick()));
   b.querySelector(".node-stars").textContent=r.map?"★".repeat(st)+"☆".repeat(3-st):"Soon";b.setAttribute("aria-label",r.name+(r.map?(open?", "+st+" of 3 stars":", locked"):", coming soon"));});}
  const thumbDone={},thumbScratch=document.createElement("canvas");thumbScratch.width=1000;thumbScratch.height=600;
  function thumbSeason(id){const ss=MAPS[id].seasons||["summer","autumn","winter"];const want=profile.season||"summer";return ss.includes(want)?want:ss[0];}
@@ -602,6 +607,20 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  function todayDaily(){return daily.dailyFor(daily.dateKey(),MAPS);}
  function startDaily(){const dc=todayDaily();sfx.unlock();restart("campaign",dc);$("titleScreen").hidden=true;sfx.music(true);notice("Daily Challenge · "+game.commanders[dc.commander].name.split(",")[0]+" leads today. "+dc.detail,true);}
  function renderDaily(){const dc=todayDaily(),book=daily.load(storage),day=book.days[dc.date],st=daily.streak(book,dc.date),best=day?.best;text($("dailyLabel"),daily.prettyDate(dc.date)+" · "+MAPS[dc.map].name+" · "+game.commanders[dc.commander].name.split(",")[0]+" · "+dc.twistName+(best?" · Best: "+(best.won?"★".repeat(best.stars):"wave "+best.wave):"")+(st>1?" · "+st+"-day streak":""));}
+ const pilotButton=document.createElement("button");
+ pilotButton.type="button";
+ pilotButton.className="stone-btn";
+ pilotButton.textContent=CONFLUENCE_PILOT.name+" · "+CONFLUENCE_PILOT.waves.length+" waves";
+ $("playGauntlet").after(pilotButton);
+ function startPilot(){
+  saveRun();
+  sfx.unlock();
+  restart("campaign",null,null,CONFLUENCE_PILOT);
+  $("titleScreen").hidden=true;
+  sfx.music(true);
+  notice(CONFLUENCE_PILOT.briefing,true);
+ }
+ pilotButton.addEventListener("click",startPilot);
  function startRun(mode){sfx.unlock();restart(mode);$("titleScreen").hidden=true;sfx.music(true);if(!profile.starter&&mode!=="sandbox"){renderCommanders();showDialog("commanderDialog");}else notice(mode==="sandbox"?"Proving Grounds: open the menu for sandbox tools.":"Tap a stone to build your first tower.");}
  for(const b of document.querySelectorAll("[data-season]"))b.addEventListener("click",()=>{profile.season=b.dataset.season;progress.save(storage,profile);sfx.unlock();sfx.play("click");renderTitle();});
  for(const b of document.querySelectorAll("[data-difficulty]"))b.addEventListener("click",()=>{profile.difficulty=b.dataset.difficulty;progress.save(storage,profile);sfx.unlock();sfx.play("click");renderTitle();});
@@ -618,7 +637,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  });
  $("continueRun").addEventListener("click",continueRun);$("playDaily").addEventListener("click",startDaily);$("playGauntlet").addEventListener("click",()=>startRun("campaign"));$("playEndless").addEventListener("click",()=>startRun("endless"));$("playSandbox").addEventListener("click",()=>startRun("sandbox"));
  $("mainMenu").addEventListener("click",showTitle);$("endMenu").addEventListener("click",showTitle);
- $("endRetry").addEventListener("click",()=>{if(game.state.daily){const dc=todayDaily();if(dc.date===game.state.daily.date){restart("campaign",dc);return;}}startRun(game.state.daily?"campaign":game.state.mode);});
+ $("endRetry").addEventListener("click",()=>{if(game.mission){startPilot();return;}if(game.state.daily){const dc=todayDaily();if(dc.date===game.state.daily.date){restart("campaign",dc);return;}}startRun(game.state.daily?"campaign":game.state.mode);});
  $("endContinue").addEventListener("click",()=>{if(game.command({type:"continue"})){$("endScreen").hidden=true;notice("Endless continues. Start the next wave when ready.");renderHud();}});
  $("endCopy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(JSON.stringify(fullReport()));text($("endCopy"),"Copied ✓");sfx.play("coin");}catch{$("endScreen").hidden=true;$("statsOpen").click();$("copyStats").click();}});
  const toggleSound=()=>{sfx.setSound(!sfx.prefs.sound);if(sfx.prefs.sound){sfx.play("click");if(!$("titleScreen").hidden||game.state.wave>0)sfx.music(true);}renderSound();};
@@ -636,14 +655,14 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  $("voiceToggle").addEventListener("click",()=>{sfx.setVoice(!sfx.prefs.voice);renderSound();});
  function showEnd(won,stars){const s=game.state;if(s.phase!=="won"&&s.phase!=="lost")return;const campaign=s.mode==="campaign";
   text($("endTitle"),won?"Victory!":campaign?"Defeat":"The siege broke through");$("endScreen").dataset.result=won?"win":"loss";
-  text($("endSummary"),won?(levelName[s.difficulty]||"Normal")+" Gauntlet cleared with "+s.health+" fortress left.":campaign?"The fortress fell on wave "+s.wave+" of 25 ("+(levelName[s.difficulty]||"Normal")+").":"You held until wave "+s.wave+".");
-  const spans=[...$("endStars").children];$("endStars").hidden=!won;spans.forEach(sp=>sp.classList.remove("on"));if(won){spans.forEach((sp,i)=>{if(i<stars)setTimeout(()=>{sp.classList.add("on");sfx.play("star");},500+i*350);});if(progress.recordStars(profile,s.difficulty,stars,game.map.id)){progress.save(storage,profile);}{const colors=[...s.towerHistory,...Object.values(s.towers)].map(t=>game.roster[t.kind].color),fresh=progress.trialBadges({won,mode:s.mode,onslaught:s.onslaught,map:game.map.id,colors}).filter(k=>progress.awardBadge(profile,k));if(fresh.length){progress.save(storage,profile);const names=Object.fromEntries(trialRows().map(r=>[r[0],r[1]]));setTimeout(()=>notice("Trial complete: "+fresh.map(k=>names[k]).join(", ")+"!",true),1800);}}}
+  text($("endSummary"),game.mission?(won?game.mission.name+" cleared with "+s.health+" fortress left.":"The fortress fell on wave "+s.wave+" of "+game.waveLimit+"."):won?(levelName[s.difficulty]||"Normal")+" Gauntlet cleared with "+s.health+" fortress left.":campaign?"The fortress fell on wave "+s.wave+" of 25 ("+(levelName[s.difficulty]||"Normal")+").":"You held until wave "+s.wave+".");
+  const spans=[...$("endStars").children];$("endStars").hidden=!won;spans.forEach(sp=>sp.classList.remove("on"));if(won){spans.forEach((sp,i)=>{if(i<stars)setTimeout(()=>{sp.classList.add("on");sfx.play("star");},500+i*350);});if(!game.mission&&progress.recordStars(profile,s.difficulty,stars,game.map.id)){progress.save(storage,profile);}{const colors=[...s.towerHistory,...Object.values(s.towers)].map(t=>game.roster[t.kind].color),fresh=game.mission?[]:progress.trialBadges({won,mode:s.mode,onslaught:s.onslaught,map:game.map.id,colors}).filter(k=>progress.awardBadge(profile,k));if(fresh.length){progress.save(storage,profile);const names=Object.fromEntries(trialRows().map(r=>[r[0],r[1]]));setTimeout(()=>notice("Trial complete: "+fresh.map(k=>names[k]).join(", ")+"!",true),1800);}}}
   const towers=[...s.towerHistory,...Object.values(s.towers)].sort((a,b)=>b.damage-a.damage),best=towers[0];
   const rows=[["Wave reached",s.wave],["Enemies defeated",s.stats.kills.toLocaleString("en-US")],["Damage",s.stats.damage.toLocaleString("en-US")],["Mana earned",s.stats.manaEarned.toLocaleString("en-US")],["Time",Math.floor(s.tick/600)+"m "+Math.floor(s.tick/10)%60+"s"],["Best tower",best?game.branchName(best):"—"]];
   if(s.commander)rows.push([game.commanders[s.commander.id].name.split(",")[0],(s.commander.damage+(s.stats.commanderArmyDamage||0)).toLocaleString("en-US")+" damage"]);
   $("endStats").replaceChildren(...rows.map(([k,v])=>{const d=document.createElement("div"),a=document.createElement("span"),b=document.createElement("strong");a.textContent=k;b.textContent=v;d.append(a,b);return d;}));
-  {const i=levelInfo(),x=$("endXp");x.hidden=s.mode==="sandbox";if(!x.hidden){text($("endXpLine"),"+"+runXp+" XP this run · Level "+i.lv);$("endXpFill").style.width=i.pct.toFixed(1)+"%";text($("endXpNext"),i.max?"Max level: everything is open.":(i.need-i.have)+" XP to level "+(i.lv+1)+(i.names.length?": "+i.names.join(", "):""));}}
-  $("endContinue").hidden=!won;text($("endCopy"),"Copy battle stats");text($("endKicker"),game.map.name+" · "+(campaign?(s.onslaught?"Onslaught ":"")+"Gauntlet":"Endless Siege")+" · "+(levelName[s.difficulty]||"Normal"));lastStars=won?stars:0;$("endShare").hidden=s.mode==="sandbox";$("endDaily").hidden=true;
+  {const i=levelInfo(),x=$("endXp");x.hidden=s.mode==="sandbox"||!!game.mission;if(!x.hidden){text($("endXpLine"),"+"+runXp+" XP this run · Level "+i.lv);$("endXpFill").style.width=i.pct.toFixed(1)+"%";text($("endXpNext"),i.max?"Max level: everything is open.":(i.need-i.have)+" XP to level "+(i.lv+1)+(i.names.length?": "+i.names.join(", "):""));}}
+  $("endContinue").hidden=!won||!!game.mission;text($("endCopy"),"Copy battle stats");text($("endKicker"),game.map.name+" · "+(game.mission?game.mission.name:campaign?(s.onslaught?"Onslaught ":"")+"Gauntlet":"Endless Siege")+" · "+(levelName[s.difficulty]||"Normal"));lastStars=won?stars:0;$("endShare").hidden=s.mode==="sandbox"||!!game.mission;$("endDaily").hidden=true;
   if(s.daily&&campaign){const dc=daily.dailyFor(s.daily.date,MAPS),book=daily.load(storage),r=daily.record(book,s.daily.date,{won,stars:won?stars:0,health:s.health,wave:s.wave,kills:s.stats.kills});daily.save(storage,book);text($("endKicker"),"Daily Challenge · "+daily.prettyDate(dc.date)+" · "+dc.twistName);const st=daily.streak(book,dc.date);text($("endDaily"),(r.improved&&r.tries>1?"New best for today! ":r.improved?"":"Today's best: "+(r.best.won?"★".repeat(r.best.stars)+" with "+r.best.health+" fortress left":"wave "+r.best.wave)+". ")+(st>1?st+"-day streak. ":"")+"A new challenge arrives tomorrow.");$("endDaily").hidden=false;}
   {const pay=campaignPayout(won,stars),el=$("endCamp");el.hidden=!pay;text($("endMenu"),s.kit&&!s.daily?"World map":"Main menu");if(pay){text(el,"◆ +"+pay.gold+" Treasure for the Shop"+(pay.draft?" · choose a spell for your deck":"")+". You have "+camp.treasure+".");renderCampBar();if(pay.draft)setTimeout(()=>{if(!$("endScreen").hidden&&!document.querySelector("dialog[open]")){renderDraft();showDialog("draftDialog");}},1600);}}
   $("endScreen").hidden=false;}
@@ -660,7 +679,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
   for(const ev of s.events){if(ev.seq<=tut.seq)continue;if(ev.type==="build")tut.done.add("build");else if(ev.type==="upgrade")tut.done.add("upgrade");else if(ev.type==="spellCast")tut.done.add("spell");else if(ev.type==="commanderAbility")tut.done.add("power");else if(ev.type==="waveStart"){tut.done.add("wave");if(ev.early)tut.done.add("early");}}
   tut.seq=s.sequence;if(Object.keys(s.towers).length)tut.done.add("build");if(s.wave>0)tut.done.add("wave");if(movedOnce)tut.done.add("move");
   const c=s.commander,can={build:true,wave:s.phase==="ready",move:!!c&&!c.dead,power:!!c&&!c.dead&&s.phase==="active"&&!!ABILITIES[c.id]&&(c.abilityAt||0)<=s.tick,
-   spell:s.hand?.length>0,upgrade:Object.values(s.towers).some(t=>{const u=game.upgradeCost(t);return u!==null&&u<=s.mana;}),early:s.phase==="active"&&s.wave<25&&!$("start").hidden};
+   spell:s.hand?.length>0,upgrade:Object.values(s.towers).some(t=>{const u=game.upgradeCost(t);return u!==null&&u<=s.mana;}),early:s.phase==="active"&&s.wave<game.waveLimit&&!$("start").hidden};
   return TUT_STEPS.find(k=>!tut.done.has(k)&&can[k])||null;}
  let tutorialTarget=null;
  function highlightTutorial(target){
@@ -689,7 +708,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
   box.style.left=bx+"px";
   box.style.top=by+"px";
  }
- function renderTutorial(){const s=game.state,box=$("tutorial");if(!tipsOn||s.mode!=="campaign"||s.daily||!$("titleScreen").hidden||!$("endScreen").hidden||document.querySelector("dialog[open]")){highlightTutorial(null);box.hidden=true;return;}
+ function renderTutorial(){const s=game.state,box=$("tutorial");if(!tipsOn||game.mission||s.mode!=="campaign"||s.daily||!$("titleScreen").hidden||!$("endScreen").hidden||document.querySelector("dialog[open]")){highlightTutorial(null);box.hidden=true;return;}
   const step=tutStep(s);if(TUT_STEPS.every(k=>tut.done.has(k))){endTips(true);return;}if(s.wave>=6){endTips(false);return;}
   if(!step){highlightTutorial(null);box.hidden=true;return;}
   let msg,target;const firstTower=Object.values(s.towers)[0],upTower=Object.values(s.towers).find(t=>{const u=game.upgradeCost(t);return u!==null&&u<=s.mana;});
