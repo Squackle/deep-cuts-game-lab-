@@ -681,7 +681,7 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
  display:flex;flex-direction:column;align-items:center;gap:3px;padding:0;min-width:48px;
  border:0;background:none!important;color:#fff1d2!important;-webkit-tap-highlight-color:transparent
 }
-.atlas-region-pin{--marker:50px}
+.atlas-region-pin{--marker:50px;width:18%}
 .atlas-medallion{
  width:var(--marker);height:var(--marker);display:grid;place-items:center;border-radius:50%;border:2px solid #f6dfad;
  background:radial-gradient(circle at 34% 24%,#ffe6a5,#b18138);color:#30220e;
@@ -737,11 +737,11 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .atlas-footer{margin-top:10px;text-align:right}
 .atlas-resume{min-height:37px;border-color:#8f7950;background:#2e3d2c;color:#fff0c9;font-weight:650}
 @media (max-width:700px),(max-height:450px){
- .atlas-region-pin{--marker:34px}
+ .atlas-region-pin{--marker:32px;gap:2px}
  .atlas-mission-pin{--marker:32px;gap:2px}
- .atlas-region-label{max-width:clamp(64px,15vw,120px)}
+ .atlas-region-label{max-width:100%;font-size:clamp(.7rem,1.4vw,1rem);padding:2px 4px}
  .atlas-region-progress,.atlas-mission-status{font-size:.65rem}
- .atlas-world{height:clamp(156px,63dvh,290px)}
+ .atlas-world{height:clamp(176px,63dvh,290px)}
  .atlas-road{height:clamp(164px,53dvh,255px)}
  .atlas-header{margin-bottom:7px}
  .atlas-heading h2{font-size:clamp(1.12rem,3.2vw,1.75rem)}
