@@ -647,3 +647,11 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 }
 
 .camp-card .camp-upgrade-preview{display:block;margin-top:7px;padding:6px 7px;border-left:2px solid var(--school);background:#0003;color:#f6d77e;font-size:.76rem;line-height:1.35;overflow-wrap:anywhere}
+
+/* Regional mission browser */
+.campaign-missions{width:min(38rem,calc(100vw - 2rem));max-height:calc(100dvh - 2rem);overflow:auto}
+.campaign-missions h3{margin:1rem 0 .4rem;color:var(--gold);font-size:.9rem}
+.mission-list{display:grid;gap:.4rem}
+.mission-list button{width:100%;text-align:left;padding:.65rem .8rem}
+.mission-list button strong,.mission-list button small{display:block}
+.mission-list button small{margin-top:.2rem;line-height:1.4}

@@ -208,7 +208,7 @@ export function sellRelic(c, id) { if (!c.relics.includes(id)) return false; c.r
 export function finishBattle(c, run, cards) {
  const won = !!run.won, stars = won ? Math.max(1, Math.min(3, run.stars | 0)) : 0, waves = Math.max(0, run.wave | 0);
  const gold = (won ? 8 + 2 * stars : Math.floor(waves / 5)) + (metaFx(c).payout || 0);
- c.treasure += gold; c.battles++; if (won) c.wins++;
+ c.treasure += gold; c.battles++; if (won && run.advanceAnte !== false) c.wins++;
  rollShop(c, cards); c.shop.fresh = true; c.pack = null;
  c.draft = won || waves >= 5 ? draftOffer(c, cards) : null;
  return { gold, draft: c.draft };

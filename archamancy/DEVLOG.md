@@ -635,3 +635,9 @@ Owner requested range upgrades and richer telemetry while preserving challenge. 
 ## 2026-11-26 — 13.56 Confluence chapter pilot
 
 Troll Ford is a six-wave playtest mission available when The Confluence is selected. One Mossbridge Troll introduces regeneration, then mixed waves test concentrated fire around the merge and air coverage. The pilot tracks combat time in Battle statistics and does not write to the regular campaign save or award Gauntlet progression. Seed 1 Normal cleared in about three minutes of combat with 20 fortress health in a deterministic scripted playtest. Human first-clear time is unmeasured.
+
+## 2026-11-26 — 13.57 regional campaign expansion
+
+The Regional missions browser adds chapter progression across all five battlefields. The catalog includes 24 campaign missions (19 chapter battles and five existing regional Gauntlets), 18 regional challenges and 12 commander trials. Split Current sends armored enemies north and trolls south. Challenges use fixed spellbooks, tower limits, lean opening mana or Onslaught. Commander trials loan their named commander and spellbook.
+
+Regional missions have their own resumable slot and best stars. First chapter wins grant XP, Treasure and a draft; existing Gauntlet victories still determine the campaign ante. Earlier Gauntlet stars count toward the appropriate regional finale. The 17-hour target calls for human playtime measurements; scripted combat benchmarks exclude deliberation and loadout planning.
