@@ -10,7 +10,7 @@ const html=readFileSync(new URL("../../archemancy/index.html",import.meta.url),"
 
 test("coordinated Archemancy release includes the latest rules and all intended features",()=>{
  const g=createEngine(1,"sandbox","hollow");
- assert.equal(VERSION,"0.1.0-beta.13.61");
+ assert.equal(VERSION,"0.1.0-beta.13.62");
  assert.equal(SAVE_FORMAT,1,"ordinary balance releases do not invalidate saved runs");
  assert.equal(g.roster.chapel.damage,16);
  assert.equal(g.roster.chapel.range,190);
