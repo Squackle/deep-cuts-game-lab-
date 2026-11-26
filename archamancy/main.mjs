@@ -78,7 +78,24 @@ document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&
  $("clearSelection").addEventListener("click",()=>{if(schoolOpen&&!game.state.towers[selected]){schoolOpen=false;preview=null;renderHud();}else selectPad(null);});
  for(const b of document.querySelectorAll("[data-school]"))b.addEventListener("click",()=>{$("colorFilter").value=b.dataset.school;schoolOpen=true;preview=null;renderHud();});
  $("castInstant").addEventListener("click",()=>{if(selectedCard!==null)cast(selectedCard);});
- function cast(index,target={}){const id=game.state.hand[index];if(!id)return false;moving=false;if(game.command({type:"cast",index,...target})){selectedCard=null;notice(game.cards[id].name+" resolved.");renderHud();return true;}notice("Invalid spell target or insufficient mana. No mana spent.");return false;}
+ function cast(index,target={}){
+  const id=game.state.hand[index],spell=game.cards[id];
+  if(!spell)return false;
+  moving=false;
+  if(game.command({type:"cast",index,...target})){
+   const cmd=game.state.commander,{keep,width,height}=game.map;
+   const home={x:Math.max(45,Math.min(width-45,keep.x)),y:Math.max(45,Math.min(height-45,keep.y))};
+   const point=spell.target==="ground"?target:spell.target==="tower"?game.map.pads[target.pad]
+    :cmd&&!cmd.dead?game.pointAt(cmd.progress):home;
+   fx.spell(id,spell.color,point,performance.now());
+   selectedCard=null;
+   notice(spell.name+" resolved.");
+   renderHud();
+   return true;
+  }
+  notice("Invalid spell target or insufficient mana. No mana spent.");
+  return false;
+ }
 
  // Keep mono-color weaknesses and position traps visible before spending mana.
  function towerTargetHint(kind,t=null){

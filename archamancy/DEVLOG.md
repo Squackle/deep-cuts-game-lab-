@@ -653,3 +653,7 @@ Redrew all fifteen tower families from tiers I to IV, including both upgrade pat
 ## 2026-11-26 — 13.60 battlefield characters and motion
 
 Redrew all 19 enemies and bosses, 13 allied troop models and 16 commanders. The renderer interpolates movement along the road between simulation ticks. Attack poses stay in step with the underlying timers, commander abilities now have a visible casting pose, and defeated allies and enemies briefly collapse where they fell. The renderer reuses contact shadows and hit sprites, composites the terrain separately, and bounds damage labels in crowded battles. Combat rules, deterministic simulation and save format are unchanged.
+
+## 2026-11-26 — 13.61 spell and ultimate effects
+
+Added localized cast animations for all 30 spells, all 16 commander abilities, and the 30 ultimate upgrade paths. Ice shards, forks of lightning, spectral gates, and school-themed crests match their cast sources. Commander abilities have individual emblems, including Heliod's sun and Dragon Tempest's wings. Same-tick damage labels combine when targets are close. Cast geometry is bounded and provides a still outline under reduced motion. Engine rules, difficulty, achievements, and save format are unchanged.
