@@ -1,10 +1,11 @@
-import {CHAPTERS,CHALLENGES,COMMANDER_TRIALS,MISSIONS,MISSION_RUN_KEY} from "./missions.mjs";
+import {MISSIONS,MISSION_RUN_KEY} from "./missions.mjs";
 import {createEngine,VERSION,MAPS,PERKS,PERK_COSTS,TARGET_MODES,AIMED,FLIGHT_TARGET_MODES,FLIGHT_CAPABLE,ABILITIES,IMMUNE_BOSS_HOLD_TICKS,IMMUNE_BOSS_WARN_TICKS,BOSS_BLAST,ANTE_STEP,ANTE_MAX} from './engine.mjs';
 import {createArt} from './art.mjs';
 import {firstFlyerWarning,bossOverlapWarning,earlyOverlapWarning,counterplayWarning,troopCardHint,handCycleHint} from './wave-guidance.mjs';
 import {paintTerrain as paintMapArt} from './terrain.mjs';
 import * as progress from './progress.mjs';
 import {resetGameProgress} from './game-reset.mjs';
+import {createCampaignAtlas} from "./campaign-atlas.mjs";
 import {paintWorld,NODES} from './worldmap.mjs';
 import {createCardArt} from './cardart.mjs';
 import {createFx} from './fx.mjs';
@@ -170,7 +171,7 @@ document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&
   clearRun(mission?MISSION_RUN_KEY:RUN_KEY);
   game=dc?createEngine(dc.seed,"campaign",dc.map):createEngine(from?.seed??1,mode,mission?.mapId||from?.mapId||mapPick(),mission?.id);
   if(dc){mode="campaign";game.state.daily={date:dc.date,commander:dc.commander,twist:dc.twist};}
-  game.command({type:"season",season:dc?dc.season:from?.season||seasonPick()});
+  game.command({type:"season",season:dc?dc.season:from?.season||(mission?thumbSeason(mission.mapId):seasonPick())});
   useMap();fx.reset();$("waveBanner").hidden=true;$("endScreen").hidden=true;
   seenWaves=0;runXp=0;renderHudLevel();session.time={};
   if(dc){
@@ -459,7 +460,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  const world=document.createElement("div");world.className="world-map";world.innerHTML='<canvas width="1000" height="300" aria-hidden="true"></canvas>';
  const worldNodes=progress.REGIONS.map((r,i)=>{const b=document.createElement("button");b.type="button";b.className="world-node";b.style.left=NODES[i][0]*100+"%";b.style.top=NODES[i][1]*100+"%";
   b.innerHTML='<span class="node-num">'+(i+1)+'</span><span class="node-name"></span><span class="node-stars" aria-hidden="true"></span>';b.querySelector(".node-name").textContent=r.name;
-  b.addEventListener("click",()=>{if(!r.map){sfx.unlock();sfx.play("click");notice(r.name+": a volcanic battlefield is on its way.");return;}document.querySelector('.map-card[data-map="'+r.map+'"]')?.click();});world.append(b);return b;});
+  b.addEventListener("click",()=>openAtlas(r.map));world.append(b);return b;});
  $("mapChoices").before(world);try{paintWorld(world.querySelector("canvas").getContext("2d"),1000,300);}catch{}
  // Campaign deckbuilding (campaign.mjs): Treasure, Shop and Deck on the world map; a spell draft after each Gauntlet battle.
  // Gauntlet runs (not the Daily) play the campaign deck; Endless, Daily and the Proving Grounds keep the 30-spell list.
@@ -555,8 +556,8 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  function renderCampBar(){campBar.querySelector(".camp-gold").textContent="◆ "+camp.treasure;campBar.querySelector(".camp-deck").textContent="🂠 Deck · "+camp.deck.length;campBar.querySelector(".camp-draft").hidden=!camp.draft;const shop=campBar.querySelector(".camp-shop"),fresh=!!(camp.shop?.fresh||camp.pack);shop.classList.toggle("camp-new",fresh);shop.textContent=camp.pack?"⚖ Shop · open pack":fresh?"⚖ Shop · new stock":"⚖ Shop";}
  // After a Gauntlet battle with the campaign deck: pay Treasure once, restock the Shop and offer a draft.
  function campaignPayout(won,stars,firstMissionWin){const s=game.state;if((game.mission&&(!firstMissionWin||game.mission.category))||!s.kit||s.daily||s.mode!=="campaign"&&s.initialMode!=="campaign"||s.campPaid)return null;s.campPaid=true;const r=campaignLib.finishBattle(camp,{won,stars,wave:s.wave,advanceAnte:!game.mission},game.cards);saveCamp();return r;}
- function renderWorld(){renderCampBar();progress.REGIONS.forEach((r,i)=>{const b=worldNodes[i],open=!!r.map&&progress.mapOpen(profile,r.map),st=r.map?progress.mapStars(profile,r.map):0;b.classList.toggle("locked",!open);b.classList.toggle("soon",!r.map);b.setAttribute("aria-pressed",String(!!r.map&&r.map===mapPick()));
-  b.querySelector(".node-stars").textContent=r.map?"★".repeat(st)+"☆".repeat(3-st):"Soon";b.setAttribute("aria-label",r.name+(r.map?(open?", "+st+" of 3 stars":", locked"):", coming soon"));});}
+ function renderWorld(){renderCampBar();progress.REGIONS.forEach((r,i)=>{const b=worldNodes[i],open=!!r.map&&progress.mapOpen(profile,r.map),st=r.map?progress.mapStars(profile,r.map):0;b.classList.toggle("locked",!open);b.classList.toggle("current",r.map===mapPick());
+  b.querySelector(".node-stars").textContent=r.map?"★".repeat(st)+"☆".repeat(3-st):"Soon";b.setAttribute("aria-label","Explore "+r.name+(open?"":", locked"));});}
  const thumbDone={},thumbScratch=document.createElement("canvas");thumbScratch.width=1000;thumbScratch.height=600;
  function thumbSeason(id){const ss=MAPS[id].seasons||["summer","autumn","winter"];const want=profile.season||"summer";return ss.includes(want)?want:ss[0];}
  function paintThumbs(){for(const b of document.querySelectorAll(".map-card")){const id=b.dataset.map,season=thumbSeason(id),key=id+":"+season;if(b.dataset.thumb===key)continue;b.dataset.thumb=key;
@@ -607,42 +608,24 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  function todayDaily(){return daily.dailyFor(daily.dateKey(),MAPS);}
  function startDaily(){const dc=todayDaily();sfx.unlock();restart("campaign",dc);$("titleScreen").hidden=true;sfx.music(true);notice("Daily Challenge · "+game.commanders[dc.commander].name.split(",")[0]+" leads today. "+dc.detail,true);}
  function renderDaily(){const dc=todayDaily(),book=daily.load(storage),day=book.days[dc.date],st=daily.streak(book,dc.date),best=day?.best;text($("dailyLabel"),daily.prettyDate(dc.date)+" · "+MAPS[dc.map].name+" · "+game.commanders[dc.commander].name.split(",")[0]+" · "+dc.twistName+(best?" · Best: "+(best.won?"★".repeat(best.stars):"wave "+best.wave):"")+(st>1?" · "+st+"-day streak":""));}
- const chapterDialog=document.createElement("dialog");
- chapterDialog.className="campaign-missions";
- chapterDialog.setAttribute("aria-label","Regional missions");
- document.body.querySelector(".game-shell").append(chapterDialog);
- const chapterButton=btn("Regional missions",openChapter);
- chapterButton.className="stone-btn";
- $("playGauntlet").after(chapterButton);
+ const atlas=createCampaignAtlas({
+  profile,
+  paintRegion:(ctx,map)=>{const region=createEngine(1,"campaign",map);region.state.season=thumbSeason(map);paintMapArt(ctx,region,{still:true});},
+  lockReason:map=>"Reach level "+progress.unlockLevel("maps",map)+lockHint(map)+" to unlock.",
+  savedMission:()=>{const saved=loadRun(MISSION_RUN_KEY);return saved?{name:MISSIONS[saved.missionId].name,wave:Math.max(1,saved.state.wave)}:null;},
+  onResume:()=>continueRun(MISSION_RUN_KEY),
+  onLaunch:selectMission,
+  onNavigate:()=>{sfx.unlock();sfx.play("click");}
+ });
+ document.querySelector(".game-shell").append(atlas.dialog);
+ const atlasButton=btn("Campaign Map",()=>openAtlas());
+ atlasButton.className="stone-btn campaign-map-btn";
+ $("playGauntlet").before(atlasButton);
 
- function openChapter(){
-  const map=mapPick(), chapter=CHAPTERS[map];
-  const header=document.createElement("div"),title=document.createElement("h2");
-  header.className="dialog-head";
-  title.textContent=MAPS[map].name;
-  header.append(title,btn("Close",()=>chapterDialog.close()));
-  chapterDialog.replaceChildren(header);
-  const saved=loadRun(MISSION_RUN_KEY);
-  if(saved)chapterDialog.append(btn("Continue "+MISSIONS[saved.missionId].name+" · Wave "+Math.max(1,saved.state.wave),()=>continueRun(MISSION_RUN_KEY)));
-  const groups=[["Campaign",chapter],["Regional challenges",CHALLENGES.filter(m=>m.mapId===map)],["Commander trials",COMMANDER_TRIALS.filter(m=>m.mapId===map)]];
-  for(const [label,entries] of groups){
-   const heading=document.createElement("h3"),list=document.createElement("div");
-   const completed=entries.filter(m=>progress.missionStars(profile,m)).length;
-   heading.textContent=label+" · "+completed+"/"+entries.length;
-   list.className="mission-list";
-   for(const [index,mission] of entries.entries()){
-    const open=progress.missionOpen(profile,mission),stars=progress.missionStars(profile,mission);
-    const row=btn("",()=>selectMission(mission),!open);
-    const name=document.createElement("strong"),summary=document.createElement("small");
-    name.textContent=mission.name+(stars?" · "+"★".repeat(stars):"");
-    const waves=mission.finale?25:mission.waves.length;
-    const prerequisite=mission.category==="challenge"?"Complete the Regional Gauntlet to unlock.":"Complete "+(chapter[index-1]?.name||"the preceding mission")+" to unlock.";
-    summary.textContent=waves+" waves · "+(open?mission.briefing:prerequisite);
-    row.append(name,summary);list.append(row);
-   }
-   chapterDialog.append(heading,list);
-  }
-  closeDialogs();chapterDialog.showModal();
+ function openAtlas(map){
+  closeDialogs();
+  if(!map){sfx.unlock();sfx.play("click");}
+  atlas.open(map);
  }
 
  function selectMission(mission){
@@ -650,6 +633,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
    const saved=loadRun();
    if(saved?.state.mapId===mission.mapId&&saved.state.mode==="campaign"&&!saved.state.daily){continueRun();return;}
    if(saved&&!window.confirm("Replace your saved battle and start this Regional Gauntlet?"))return;
+   profile.map=mission.mapId;progress.save(storage,profile);
    startRun("campaign");return;
   }
   const save=loadRun(MISSION_RUN_KEY);
@@ -686,7 +670,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
   const mission=game.mission;
   if(mission)profile.map=mission.mapId;
   showTitle();
-  if(mission&&!updateSeen)openChapter();
+  if(mission&&!updateSeen)openAtlas(mission.mapId);
  });
  $("endRetry").addEventListener("click",()=>{if(game.mission){startMission(game.mission);return;}if(game.state.daily){const dc=todayDaily();if(dc.date===game.state.daily.date){restart("campaign",dc);return;}}startRun(game.state.daily?"campaign":game.state.mode);});
  $("endContinue").addEventListener("click",()=>{if(game.command({type:"continue"})){$("endScreen").hidden=true;notice("Endless continues. Start the next wave when ready.");renderHud();}});
@@ -726,7 +710,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
   {const i=levelInfo(),x=$("endXp");x.hidden=s.mode==="sandbox"||!!game.mission?.category;if(!x.hidden){text($("endXpLine"),"+"+runXp+" XP this run · Level "+i.lv);$("endXpFill").style.width=i.pct.toFixed(1)+"%";text($("endXpNext"),i.max?"Max level: everything is open.":(i.need-i.have)+" XP to level "+(i.lv+1)+(i.names.length?": "+i.names.join(", "):""));}}
   $("endContinue").hidden=!won||!!game.mission;text($("endCopy"),"Copy battle stats");text($("endKicker"),game.map.name+" · "+(game.mission?game.mission.name:campaign?(s.onslaught?"Onslaught ":"")+"Gauntlet":"Endless Siege")+" · "+(levelName[s.difficulty]||"Normal"));lastStars=won?stars:0;$("endShare").hidden=s.mode==="sandbox"||!!game.mission;$("endDaily").hidden=true;
   if(s.daily&&campaign){const dc=daily.dailyFor(s.daily.date,MAPS),book=daily.load(storage),r=daily.record(book,s.daily.date,{won,stars:won?stars:0,health:s.health,wave:s.wave,kills:s.stats.kills});daily.save(storage,book);text($("endKicker"),"Daily Challenge · "+daily.prettyDate(dc.date)+" · "+dc.twistName);const st=daily.streak(book,dc.date);text($("endDaily"),(r.improved&&r.tries>1?"New best for today! ":r.improved?"":"Today's best: "+(r.best.won?"★".repeat(r.best.stars)+" with "+r.best.health+" fortress left":"wave "+r.best.wave)+". ")+(st>1?st+"-day streak. ":"")+"A new challenge arrives tomorrow.");$("endDaily").hidden=false;}
-  {const pay=campaignPayout(won,stars,firstMissionWin),el=$("endCamp");el.hidden=!pay;text($("endMenu"),mission?"Regional missions":s.kit&&!s.daily?"World map":"Main menu");if(pay){text(el,"◆ +"+pay.gold+" Treasure for the Shop"+(pay.draft?" · choose a spell for your deck":"")+". You have "+camp.treasure+".");renderCampBar();if(pay.draft)setTimeout(()=>{if(!$("endScreen").hidden&&!document.querySelector("dialog[open]")){renderDraft();showDialog("draftDialog");}},1600);}}
+  {const pay=campaignPayout(won,stars,firstMissionWin),el=$("endCamp");el.hidden=!pay;text($("endMenu"),mission?"Mission road":s.kit&&!s.daily?"World map":"Main menu");if(pay){text(el,"◆ +"+pay.gold+" Treasure for the Shop"+(pay.draft?" · choose a spell for your deck":"")+". You have "+camp.treasure+".");renderCampBar();if(pay.draft)setTimeout(()=>{if(!$("endScreen").hidden&&!document.querySelector("dialog[open]")){renderDraft();showDialog("draftDialog");}},1600);}}
   $("endScreen").hidden=false;}
  // Guided first battle (Gauntlet only, first time): seven short steps that wait for you to do each thing for real.
  // Build, send a wave, move the commander, use the commander's power, cast a spell, upgrade, and call a wave early.

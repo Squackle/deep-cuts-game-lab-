@@ -641,3 +641,7 @@ Troll Ford is a six-wave playtest mission available when The Confluence is selec
 The Regional missions browser adds chapter progression across all five battlefields. The catalog includes 24 campaign missions (19 chapter battles and five existing regional Gauntlets), 18 regional challenges and 12 commander trials. Split Current sends armored enemies north and trolls south. Challenges use fixed spellbooks, tower limits, lean opening mana or Onslaught. Commander trials loan their named commander and spellbook.
 
 Regional missions have their own resumable slot and best stars. First chapter wins grant XP, Treasure and a draft; existing Gauntlet victories still determine the campaign ante. Earlier Gauntlet stars count toward the appropriate regional finale. The 17-hour target calls for human playtime measurements; scripted combat benchmarks exclude deliberation and loadout planning.
+
+## 2026-11-26 — 13.58 campaign map
+
+The Campaign Map opens a larger atlas of all five regions. Region pins zoom into illustrated mission roads with completion stars and unlock requirements. Select a mission to read its briefing before deploying. Challenges and commander trials sit alongside each road. Saved regional missions can be resumed from the atlas, and returning from a chapter battle opens that region again.
