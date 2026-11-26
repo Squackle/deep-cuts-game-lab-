@@ -125,7 +125,7 @@ test("new air/ground targeting button appears on air-capable towers, not ground-
  assert.match(js,/\$\("flightMode"\)\.hidden=!flightCapable/);
  assert.match(js,/type:"flightTarget",pad:selected,mode:m/);
  assert.match(js,/const hasFlight=items\.some\(b=>b\.id==="flightMode"\)/);
- assert.equal(VERSION,"0.1.0-beta.13.58");
+ assert.equal(VERSION,"0.1.0-beta.13.59");
 });
 
 test("different towers can independently choose air and ground without changing one another",()=>{

@@ -1,8 +1,8 @@
+import {paintTowerModel,towerArtSchools as towerSchools} from "./tower-art.mjs";
+
 // Original cached procedural sprites and purely cosmetic combat illustrations.
 export function createArt(ctx,{res:startRes=1,portrait=null}={}){
- const ink="#172722",metal="#7d8e85",stone="#aab0a0",gold="#ead49a",ice="#8ee5fb",violet="#ca9be9",fire="#ffb267",leaf="#a0d481";
- const school={W:gold,U:ice,B:violet,R:fire,G:leaf};
- const towerSchools={legion:"W",chapel:"W",judgment:"W",arcanum:"U",library:"U",mirror:"U",necropolis:"B",foundry:"B",hex:"B",pyre:"R",goblin:"R",storm:"R",grove:"G",beast:"G",thorn:"G"};
+ const ink="#172722",gold="#ead49a",ice="#8ee5fb",violet="#ca9be9",fire="#ffb267",leaf="#a0d481";
  const enemyKeys=["raider","runner","armored","wing","mage","regen","titan","stalker","warden","golem","grimgut","matron","colossus","hierophant","tyrant","lorthos","isu","kazuul","infernotitan"],allyKeys=["legion","necropolis","goblin","beast","construct","bloom","drake","vampire","slug","toxrill","torbran","urza","zombie","angel","demon","dragon","heliod","wilhelt","kaalia","krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon"];
  const commanderKeys=["krenko","talrand","omnath","edgar","lightpaws","meren","teysa","korvold","atraxa","urdragon","toxrill","torbran","urza","heliod","wilhelt","kaalia"];
  function crown(a,y,c){poly(a,[[-7,y],[-7,y-7],[-3,y-3],[0,y-9],[3,y-3],[7,y-7],[7,y]],c);}
@@ -11,9 +11,6 @@ export function createArt(ctx,{res:startRes=1,portrait=null}={}){
  function rect(a,x,y,w,h,fill,stroke=ink){a.fillStyle=fill;a.fillRect(x,y,w,h);if(stroke){a.strokeStyle=stroke;a.lineWidth=1.5;a.strokeRect(x,y,w,h);}}
  function line(a,points,color,width=2){a.beginPath();points.forEach(([x,y],i)=>i?a.lineTo(x,y):a.moveTo(x,y));a.strokeStyle=color;a.lineWidth=width;a.lineCap="round";a.lineJoin="round";a.stroke();}
  function crystal(a,x,y,s,c){poly(a,[[x,y-s],[x+s*.58,y],[x,y+s],[x-s*.58,y]],c);poly(a,[[x,y-s],[x+s*.58,y],[x,y+s]],"#ffffff44",null);}
- function roof(a,y,c){poly(a,[[-25,y], [0,y-24],[25,y]],c);poly(a,[[0,y-24],[25,y],[6,y]],"#00000033",null);}
- function keep(a,top=-34,body=stone){rect(a,-19,top,38,-top+7,body);poly(a,[[10,top],[19,top],[19,7],[10,7]],"#00000033",null);rect(a,-7,-9,14,16,ink,null);for(let i=0;i<3;i++)line(a,[[-17,top+7+i*9],[-10,top+7+i*9]],"#ffffff55",1.5);}
- function flag(a,x,y,c){line(a,[[x,y],[x,y-24]],"#b6a486",2);poly(a,[[x,y-24],[x+15,y-20],[x,y-14]],c);}
  const cache=new Map();
  let res=startRes;
  // Sprites are drawn at res× their layout size so they stay sharp on high-density and large screens.
@@ -32,30 +29,6 @@ export function createArt(ctx,{res:startRes=1,portrait=null}={}){
   for(const [dx,dy] of [[o,0],[-o,0],[0,o],[0,-o],[o*.7,o*.7],[-o*.7,o*.7],[o*.7,-o*.7],[-o*.7,-o*.7]]){b.shadowOffsetX=dx;b.shadowOffsetY=dy;b.drawImage(c,0,0);}
   b.restore();b.save();b.filter="saturate(1.18) contrast(1.06)";b.drawImage(c,0,0);b.restore();
   a.save();a.setTransform(1,0,0,1,0,0);a.clearRect(0,0,W,H);a.drawImage(s,0,0);a.restore();
- }
- function towerModel(a,k,tier,branch){
-  const c=school[towerSchools[k]];poly(a,[[-27,1],[-18,-8],[18,-8],[27,1],[24,10],[-24,10]],"#637263");
-  a.save();a.scale(1+(tier-1)*.065,1+(tier-1)*.09);
-  switch(k){
-   case "legion":keep(a,-25);for(const x of [-18,-5,8])rect(a,x,-31,10,9,stone);flag(a,13,-30,c);poly(a,[[-17,-15],[-4,-15],[-4,-3],[-10,4],[-17,-3]],gold);line(a,[[-10,-13],[-10,0]],"#fff4cb");break;
-   case "chapel":keep(a,-34,"#d0c8ab");roof(a,-34,"#bc9a59");rect(a,-5,-28,10,17,"#ffe7a6");line(a,[[0,-59],[0,-41]],gold,4);line(a,[[-6,-52],[6,-52]],gold,4);break;
-   case "judgment":poly(a,[[-13,7],[-10,-39],[0,-50],[10,-39],[13,7]],"#c6c4ad");line(a,[[0,-45],[0,-1]],"#fff2bd",3);poly(a,[[-7,-41],[0,-62],[7,-41]],gold);oval(a,0,-26,13,6,"#ead49a88");break;
-   case "arcanum":keep(a,-22,"#658c9b");poly(a,[[-21,-23],[-15,-42],[-5,-33],[-10,-21]],"#b0d6dc");poly(a,[[21,-23],[15,-42],[5,-33],[10,-21]],"#b0d6dc");crystal(a,0,-39,18,c);break;
-   case "library":rect(a,-23,-31,46,36,"#6b8593");roof(a,-32,"#324f69");for(let x=-18;x<19;x+=9)rect(a,x,-26,6,17,["#bc9177",ice,"#d4b46d"][(x+18)/9%3]);poly(a,[[-15,-35],[0,-29],[15,-35],[15,-23],[0,-17],[-15,-23]],"#f1e7c4");line(a,[[0,-29],[0,-17]],"#465c72");break;
-   case "mirror":rect(a,-18,-31,36,36,"#4d697b");oval(a,0,-29,20,28,"#d3c9ae",ink);oval(a,0,-29,15,22,"#75bdd6","#314d67");line(a,[[-9,-17],[10,-40]],"#d3f9ff",3);crystal(a,0,-59,7,ice);break;
-   case "necropolis":poly(a,[[-22,7],[-19,-29],[-10,-38],[0,-29],[10,-38],[19,-29],[22,7]],"#77728c");oval(a,0,-18,11,10,"#e0d7c3",ink);oval(a,-4,-19,3,3,ink);oval(a,4,-19,3,3,ink);rect(a,-4,-9,8,4,"#cfc6b0");crystal(a,0,-44,10,violet);break;
-   case "foundry":rect(a,-22,-25,44,30,"#62616b");oval(a,0,-25,22,10,"#323745",ink);oval(a,0,-26,15,5,"#d7a0f5");rect(a,10,-48,10,23,"#797183");poly(a,[[-12,4],[-12,-10],[0,-17],[12,-10],[12,4]],"#352739");oval(a,0,-5,7,7,violet);break;
-   case "hex":poly(a,[[-15,6],[-11,-38],[0,-53],[12,-36],[15,6]],"#65516d");poly(a,[[-20,-28],[0,-37],[20,-28],[11,-19],[-11,-19]],"#42374e");oval(a,0,-28,11,6,violet);oval(a,0,-28,3,6,ink);line(a,[[-10,-5],[0,-16],[10,-5]],violet,3);break;
-   case "pyre":rect(a,-24,-15,48,20,"#82685b");oval(a,-10,-15,12,10,"#343b38",ink);poly(a,[[-15,-18],[-15,-33],[21,-33],[27,-26],[21,-18]],"#8d9691");oval(a,22,-25,6,9,"#332d28",ink);oval(a,22,-25,3,5,fire);poly(a,[[-15,-33],[-21,-45],[-10,-38],[-4,-52],[4,-33]],fire);break;
-   case "goblin":poly(a,[[-25,5],[-19,-21],[0,-39],[19,-21],[25,5]],"#915d4b");poly(a,[[-25,5],[0,-39],[7,5]],"#b9835d");poly(a,[[-9,5],[0,-17],[10,5]],ink);flag(a,17,-24,fire);line(a,[[-22,4],[-28,-8]],"#bda788",3);break;
-   case "storm":rect(a,-18,-15,36,20,"#79695c");poly(a,[[-15,-15],[-7,-42],[7,-42],[15,-15]],"#777c78");for(let y=-35;y<-12;y+=7)oval(a,0,y,12,3,"#e6b873",ink);crystal(a,0,-49,10,"#f8db83");line(a,[[-8,-55],[1,-65],[-1,-56],[10,-64]],"#fff5c9",3);break;
-   case "grove":poly(a,[[-9,6],[-5,-30],[6,-30],[10,6]],"#927654");for(const [x,y,r] of [[-14,-24,15],[14,-24,15],[0,-40,17],[0,-22,21]])oval(a,x,y,r,r*.75,"#4e8251",ink);for(const [x,y] of [[-14,-28],[5,-42],[15,-19]])crystal(a,x,y,7,leaf);break;
-   case "beast":poly(a,[[-27,6],[-21,-19],[0,-34],[20,-22],[27,6]],"#82775f");oval(a,0,-5,15,16,"#27372e",ink);poly(a,[[-20,-17],[-13,-33],[-8,-21],[8,-22],[15,-34],[21,-17]],"#a8b592");line(a,[[-8,4],[-13,-5]],"#d3cfb2",3);line(a,[[8,4],[13,-5]],"#d3cfb2",3);break;
-   case "thorn":line(a,[[-18,6],[-10,-18],[3,-32],[0,-47]],"#61794f",9);line(a,[[13,7],[4,-12],[-7,-28],[0,-47]],"#9bad66",7);for(const [x,y] of [[-10,-18],[9,-9],[-6,-32],[5,-38]])poly(a,[[x-3,y+5],[x+13,y-12],[x+5,y+5]],leaf);crystal(a,0,-49,8,"#c5ef9b");break;
-  }
-  a.restore();
-  if(branch==="A"){for(const x of [-23,23]){poly(a,[[x-5,6],[x-5,-18],[x,-26],[x+5,-18],[x+5,6]],c);if(tier===4)crystal(a,x,-28,5,"#f7e7ba");}}else if(branch==="B"){oval(a,0,-38,tier===4?26:22,8,c+"55",c);for(const x of [-17,17])crystal(a,x,-38,tier===4?9:6,c);}
-  for(let i=0;i<tier;i++)oval(a,(i-(tier-1)/2)*6,12,2.6,2.6,c,ink);
  }
  function humanoid(a,c,skin,opts={}){
   const sw=opts.bulk?13:9;line(a,[[-4,-2],[-6,5]],"#242e2b",5);line(a,[[4,-2],[7,5]],"#242e2b",5);
@@ -222,19 +195,18 @@ export function createArt(ctx,{res:startRes=1,portrait=null}={}){
    case "urdragon":for(const [x,c] of [[-26,gold],[-14,ice],[14,fire],[26,leaf]])poly(a,[[0,-18],[x,-34],[x*.8,-10]],c);oval(a,0,-14,9,14,"#5a3f63",ink);poly(a,[[-5,-26],[0,-40],[5,-26]],"#7a4c6e");oval(a,-3,-24,2,2,fire);oval(a,3,-24,2,2,fire);break;
   }
  }
- // Towers draw about 10% larger than before so they sit proud of their pads; a soft contact shadow grounds them.
- function tower(t,p){const s=makeSprite("tower:"+t.kind+":"+t.tier+":"+(t.branch||"-"),a=>towerModel(a,t.kind,t.tier,t.branch),96,120);const scale=Math.max(.82,Math.min(1,p.y/78.75));softShadow(p.x+3,p.y+9,32*scale,12*scale,.55);ctx.drawImage(s,p.x-42*scale,p.y-78.75*scale,84*scale,105*scale);idle(t,p,scale);}
+ // Leave headroom on pads at the top of the map so taller upgrades keep their silhouettes.
+ function tower(t,p){const s=makeSprite("tower:"+t.kind+":"+t.tier+":"+(t.branch||"-"),a=>paintTowerModel(a,t.kind,t.tier,t.branch),96,120);const scale=Math.max(.55,Math.min(1,(p.y-3)/70));softShadow(p.x+3,p.y+9,32*scale,12*scale,.55);ctx.drawImage(s,p.x-42*scale,p.y-78.75*scale,84*scale,105*scale);idle(t,p,scale);}
  // Idle life on built towers: glowing crystals and eyes, forge smoke, flame flicker, crackling storm coils.
- // Anchors are model coordinates from towerModel(); the sprite maps them at 0.875 × scale (plus tier growth).
- const IDLE={legion:[["glint",-10,-10,gold]],chapel:[["glow",0,-52,gold]],judgment:[["glow",0,-56,gold]],arcanum:[["glow",0,-39,ice],["orbit",0,-39,ice]],library:[["rune",0,-46,ice]],mirror:[["glow",0,-59,ice],["glint",6,-34,"#e6fbff"]],
-  necropolis:[["glow",0,-44,violet],["eyes",0,-19,"#c9a6ff"]],foundry:[["smoke",15,-50,"#d9d4e6"],["glow",0,-5,violet]],hex:[["glow",0,-28,violet]],pyre:[["flame",-6,-44,fire],["smoke",-6,-52,"#d8d0c8"]],goblin:[["smoke",-3,-42,"#e0d8cc"]],
+ // Anchors are model coordinates from paintTowerModel(); the sprite maps them at 0.875 × scale (plus tier growth).
+ const IDLE={legion:[["glint",-10,-10,gold]],chapel:[["glow",0,-54,gold]],judgment:[["glow",0,-59,gold]],arcanum:[["glow",0,-39,ice],["orbit",0,-39,ice]],library:[["glow",0,-38,ice]],mirror:[["glow",0,-59,ice],["glint",-5,-38,"#e6fbff"]],
+  necropolis:[["glow",0,-44,violet],["eyes",0,-21,"#c9a6ff"]],foundry:[["smoke",15,-46,"#d9d4e6"],["glow",0,-4,violet]],hex:[["glow",0,-29,violet]],pyre:[["flame",-6,-44,fire],["smoke",-6,-52,"#d8d0c8"]],goblin:[["smoke",-3,-42,"#e0d8cc"]],
   storm:[["glow",0,-49,"#f8db83"],["zap",0,-49,"#fff5c9"]],grove:[["glow",-14,-28,leaf],["glow",5,-42,leaf],["glow",15,-19,leaf]],beast:[["eyes",0,-6,"#ffd86b"]],thorn:[["glow",0,-49,"#c5ef9b"]]};
  function idle(t,p,scale){const list=IDLE[t.kind];if(!list)return;const now=(typeof performance!=="undefined"?performance.now():0)/1000,sx=.875*scale*(1+(t.tier-1)*.065),sy=.875*scale*(1+(t.tier-1)*.09),seed=(p.x*7+p.y*3)%10;
   ctx.save();
   list.forEach(([kind,mx,my,c],i)=>{const x=p.x+mx*sx,y=p.y+my*sy,ph=now*2+seed+i*1.7,k=Math.sin(ph)*.5+.5;
    if(kind==="glow")glow(x,y,10+k*6,c,.35+k*.45);
    else if(kind==="orbit"){const a=now*2.4+seed;oval(ctx,x+Math.cos(a)*14,y+Math.sin(a)*5,1.8,1.8,"#f2fdff");glow(x+Math.cos(a)*14,y+Math.sin(a)*5,6,c,.6);}
-   else if(kind==="rune"){const yy=y-Math.sin(now*1.6+seed)*4;glow(x,yy,10,c,.5);ctx.globalAlpha=.9;ctx.fillStyle="#f1e7c4";ctx.strokeStyle=ink;ctx.lineWidth=1;ctx.fillRect(x-5,yy-4,10,7);ctx.strokeRect(x-5,yy-4,10,7);ctx.globalAlpha=1;}
    else if(kind==="glint"){const g=(now*.5+seed*.1)%1;if(g<.12){const v=g/.12,r=6*Math.sin(v*Math.PI);ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=c;ctx.globalAlpha=.9;ctx.beginPath();for(let j=0;j<8;j++){const an=j*Math.PI/4,rr=j%2?r*.25:r;j?ctx.lineTo(x+Math.cos(an)*rr,y+Math.sin(an)*rr):ctx.moveTo(x+rr,y);}ctx.closePath();ctx.fill();ctx.restore();}}
    else if(kind==="eyes"){const blink=(now*.4+seed*.13)%1>.96;if(!blink)for(const sd of [-1,1]){glow(x+sd*3.5*sx,y,5,c,.6);oval(ctx,x+sd*3.5*sx,y,1.3,1.3,c);}}
    else if(kind==="smoke"){for(let j=0;j<3;j++){const u=(now*.45+j/3+seed*.07)%1;ctx.globalAlpha=.45*(1-u);oval(ctx,x+Math.sin(now+j*2)*3*u+u*6,y-u*26,2.5+u*5,2.5+u*5,c);}ctx.globalAlpha=1;}
