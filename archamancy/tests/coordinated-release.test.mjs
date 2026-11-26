@@ -10,7 +10,7 @@ const html=readFileSync(new URL("../../archemancy/index.html",import.meta.url),"
 
 test("coordinated Archemancy release includes the latest rules and all intended features",()=>{
  const g=createEngine(1,"sandbox","hollow");
- assert.equal(VERSION,"0.1.0-beta.13.56");
+ assert.equal(VERSION,"0.1.0-beta.13.57");
  assert.equal(SAVE_FORMAT,1,"ordinary balance releases do not invalidate saved runs");
  assert.equal(g.roster.chapel.damage,16);
  assert.equal(g.roster.chapel.range,190);
@@ -35,8 +35,8 @@ test("regional frost overlay has access to the combat canvas, not an undefined t
 });
 
 test("rejected saved-run data is retained and never used to replace a live engine",()=>{
- assert.match(main,/function loadRun\(\)\{try\{const raw=storage\?\.getItem\(RUN_KEY\);if\(!raw\|\|raw\.length>4\*1024\*1024\)return null/);
- const load=main.slice(main.indexOf("function loadRun()"),main.indexOf("function loadRun()")+450);
+ assert.match(main,/function loadRun\(key=RUN_KEY\)\{try\{const raw=storage\?\.getItem\(key\);if\(!raw\|\|raw\.length>4\*1024\*1024\)return null/);
+ const load=main.slice(main.indexOf("function loadRun(key=RUN_KEY)"),main.indexOf("function loadRun(key=RUN_KEY)")+450);
  assert.doesNotMatch(load,/clearRun\(\)/);assert.match(main,/if\(!resumed\.restore\(save\)\)/);
 });
 
