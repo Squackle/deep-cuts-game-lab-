@@ -645,3 +645,7 @@ Regional missions have their own resumable slot and best stars. First chapter wi
 ## 2026-11-26 — 13.58 campaign map
 
 The Campaign Map opens a larger atlas of all five regions. Region pins zoom into illustrated mission roads with completion stars and unlock requirements. Select a mission to read its briefing before deploying. Challenges and commander trials sit alongside each road. Saved regional missions can be resumed from the atlas, and returning from a chapter battle opens that region again.
+
+## 2026-11-26 — 13.59 tower artwork
+
+Redrew all fifteen tower families from tiers I to IV, including both upgrade paths. White uses carved limestone and brass, Blue enameled stone and glass, Black basalt and amethyst, Red iron and embers, and Green living wood and mossed stone. Upgrade silhouettes reflect their roles, including multi-bolt lances, clockwork, a heavier siege barrel, larger tusks, and poison pods. Detailed paint stays in the existing cached sprites. Tower statistics, save format, and engine rules are unchanged.
