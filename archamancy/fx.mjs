@@ -24,6 +24,7 @@ export function createFx(ctx,{maxParticles=260}={}){
  // Call once per frame before drawing. Returns UI cues for the HUD (banners, flashes).
  function update(game,now){
   clock=now;const s=game.state,cues=[];
+  if(s.tick===lastTick&&s.sequence===lastSeq)return cues;
   // Hit sparks and damage numbers where health dropped since the last frame.
   const live=new Set();
   for(const e of s.enemies){live.add(e.id);const q=game.pointAt(e.progress),y=q.y-(e.flying?21:10);lastPos.set(e.id,{x:q.x,y,kind:e.kind});const prev=seenHp.get(e.id);
@@ -31,7 +32,7 @@ export function createFx(ctx,{maxParticles=260}={}){
     // Damage numbers on every enemy: hits inside 300 ms add up into one number so a crowd stays readable.
     // A big hit (a fifth of a normal enemy's health, or 5% of a boss) gets a larger orange number, a flash and a small shake.
     const big=dmg>=Math.max(30,e.maxHp*(def.boss?.05:.2)),key="dmg"+e.id,t=texts.find(t=>t.key===key&&now-t.born<300&&!t.big);
-    if(big){texts.push({x:q.x+(rnd()-.5)*12,y:y-30,text:dmg.toLocaleString("en-US")+"!",color:"#ffb04a",size:def.boss?17:15,born:now,life:850,big:1,pop:1});flash(q.x,y,"#ffd08a",def.boss?30:20,180);if(now-lastBigShake>650){lastBigShake=now;shake(def.boss?3.2:2.2,160);}}
+    if(big){if(texts.length>=48)texts.shift();texts.push({x:q.x+(rnd()-.5)*12,y:y-30,text:dmg.toLocaleString("en-US")+"!",color:"#ffb04a",size:def.boss?17:15,born:now,life:850,big:1,pop:1});flash(q.x,y,"#ffd08a",def.boss?30:20,180);if(now-lastBigShake>650){lastBigShake=now;shake(def.boss?3.2:2.2,160);}}
     else if(t){t.amount+=dmg;t.text=t.amount.toLocaleString("en-US");}
     else{if(texts.length>=48)texts.splice(texts.findIndex(t=>t.key),1);texts.push({x:q.x+(rnd()-.5)*16,y:y-(def.boss?30:22),text:dmg.toLocaleString("en-US"),color:def.boss?"#fff1cf":"#f4f1e8",size:def.boss?13:12,born:now,life:def.boss?700:650,key,amount:dmg});}}
    seenHp.set(e.id,e.hp);}
