@@ -649,3 +649,7 @@ The Campaign Map opens a larger atlas of all five regions. Region pins zoom into
 ## 2026-11-26 — 13.59 tower artwork
 
 Redrew all fifteen tower families from tiers I to IV, including both upgrade paths. White uses carved limestone and brass, Blue enameled stone and glass, Black basalt and amethyst, Red iron and embers, and Green living wood and mossed stone. Upgrade silhouettes reflect their roles, including multi-bolt lances, clockwork, a heavier siege barrel, larger tusks, and poison pods. Detailed paint stays in the existing cached sprites. Tower statistics, save format, and engine rules are unchanged.
+
+## 2026-11-26 — 13.60 battlefield characters and motion
+
+Redrew all 19 enemies and bosses, 13 allied troop models and 16 commanders. The renderer interpolates movement along the road between simulation ticks. Attack poses stay in step with the underlying timers, commander abilities now have a visible casting pose, and defeated allies and enemies briefly collapse where they fell. The renderer reuses contact shadows and hit sprites, composites the terrain separately, and bounds damage labels in crowded battles. Combat rules, deterministic simulation and save format are unchanged.

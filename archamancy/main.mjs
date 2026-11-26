@@ -12,6 +12,7 @@ import {createFx} from './fx.mjs';
 import {createSfx,pickMood,intensityFor} from './sfx.mjs';
 import {hubFor} from './hub.mjs';
 import {advance,clockRunning} from './clock.mjs';
+import {createRoadMotion} from "./road-motion.mjs";
 import {animationLoop} from './loop.mjs';
 import * as daily from './daily.mjs';
 import * as campaignLib from './campaign.mjs';
@@ -68,8 +69,8 @@ function boot(createEngine){
  function commanderSay(kind){const c=game.state.commander;if(c&&!c.dead)sfx.say({commander:c.id},kind);}
 function selectCommander(){commanderSay("select");selectedCard=null;rallying=false;preview=null;schoolOpen=false;selected=null;moving=true;$("padSelect").value="";notice("Tap the road to move your commander. Tap the portrait for details.");renderHud();}
 function cancelMove(){if(!moving)return false;moving=false;$("notice").classList.remove("show");renderHud();return true;}
-let moveMark=null,movedOnce=false;const heroWalk={id:null,p:null,at:0};
-function commanderAt(x,y){const c=game.state.commander;if(!c||c.dead)return false;const q=game.pointAt(heroWalk.id===c.id&&heroWalk.p!==null?heroWalk.p:c.progress);return Math.hypot(x-q.x,y-(q.y-10))<=30;}
+let moveMark=null,movedOnce=false;const heroWalk={actor:null,p:0,casts:0,castAt:-Infinity};
+function commanderAt(x,y){const c=game.state.commander;if(!c||c.dead)return false;const q=game.pointAt(heroWalk.actor===c?heroWalk.p:c.progress);return Math.hypot(x-q.x,y-(q.y-10))<=30;}
 function onRoad(x,y){const q=game.pointAt(game.nearestPath(x,y));return Math.hypot(x-q.x,y-q.y)<=46;}
 document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&cancelMove())e.preventDefault();});
  $("commanderMove").addEventListener("click",()=>{closeDialogs();selectedCard=null;rallying=false;moving=true;notice("Tap a road location to move your commander.");renderHud();});
@@ -352,7 +353,11 @@ document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&
   ctx.save();ctx.globalAlpha=(1-r)*.8;ctx.strokeStyle="#fff1cf";ctx.lineWidth=2;for(let i=0;i<6;i++){const ang=i/6*Math.PI*2+r*2,d=26+r*26;ctx.beginPath();ctx.moveTo(p.x+Math.cos(ang)*d,p.y-40+Math.sin(ang)*d*.6);ctx.lineTo(p.x+Math.cos(ang)*(d+8),p.y-40+Math.sin(ang)*(d+8)*.6);ctx.stroke();}ctx.restore();}
  // Sold towers shake and sink into the ground.
  function drawSold(a,p){const k=Math.min(1,(performance.now()-a.at)/ANIM.sell),shake=Math.sin(performance.now()/22)*2.5*(1-k);ctx.save();ctx.beginPath();ctx.rect(p.x-70,p.y-150,140,156);ctx.clip();ctx.globalAlpha=1-k*.5;ctx.translate(shake,k*k*100);around(p,1+k*.08,1-k*.1);art.tower(a.from,p);ctx.restore();}
- const terrain=document.createElement("canvas");terrain.width=1000;terrain.height=600;let viewScale=1;
+ const terrain=document.createElement("canvas");
+ terrain.className="map-terrain";terrain.setAttribute("aria-hidden","true");
+ terrain.width=1000;terrain.height=600;
+ canvas.before(terrain);
+ let viewScale=1;
  function paintTerrain(){const a=terrain.getContext("2d");a.setTransform(viewScale,0,0,viewScale,0,0);paintMapArt(a,game);}
  paintTerrain();
  // Render at the real screen resolution: the battlefield keeps 1000×600 logical units but the canvas backing store
@@ -361,10 +366,10 @@ document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&
  fitCanvas();try{new ResizeObserver(()=>requestAnimationFrame(fitCanvas)).observe(canvas);}catch{addEventListener("resize",fitCanvas);}
  matchMedia?.("(resolution: 1dppx)")?.addEventListener?.("change",fitCanvas);
  function placeStart(){const q=game.pointAt(60);for(const id of ["start","wavePeek"]){$(id).style.left=q.x/game.map.width*100+"%";$(id).style.top=q.y/game.map.height*100+"%";}$("wavePeek").classList.toggle("below",q.y>game.map.height/2);peekKey="";}placeStart();
- let gaitTrack=new Map(),dying=[],gaitState=null;
+ const actorMotion=createRoadMotion(),unitVisuals=new Map(),dying=[];
+ let actorState=null,actorFrame=0;
  function renderField(){
-  const s=game.state,{width:w,height:h,path,pads}=game.map;ctx.clearRect(0,0,w,h);
-  ctx.drawImage(terrain,0,0,w,h);
+  const s=game.state,{width:w,height:h,pads}=game.map;ctx.clearRect(0,0,w,h);
   const t=selected===null?null:s.towers[selected],p=selected===null?null:pads[selected];
   const tower=t?game.roster[t.kind]:game.roster[preview];
   const selectedTower=t||(tower?{id:p?.id,kind:preview,tier:1,branch:null,growth:0}:null);
@@ -381,24 +386,146 @@ document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&
   }
   for(const t of Object.values(s.towers)){const p=pads[t.id],def=game.roster[t.kind];if(def.kind==="troops"&&selected===t.id){const r=game.pointAt(t.rally);ctx.strokeStyle=colors[def.color];ctx.lineWidth=2;ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(r.x,r.y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=colors[def.color];ctx.fillRect(r.x-1,r.y-18,3,18);ctx.beginPath();ctx.moveTo(r.x,r.y-18);ctx.lineTo(r.x+14,r.y-13);ctx.lineTo(r.x,r.y-8);ctx.fill();}}
   const actors=[];
-  const clock=s.tick+Math.min(.99,accumulator/game.tickMs),animate=s.phase==="active"&&speed>0&&!document.querySelector("dialog[open]");
+  const animate=s.phase==="active"&&speed>0&&!document.querySelector("dialog[open]");
+  const elapsedTick=Math.min(.99,accumulator/game.tickMs);
+  const fraction=animate?elapsedTick:1,clock=s.tick+elapsedTick;
   const facing=(progress)=>{const here=game.pointAt(progress),ahead=game.pointAt(progress+12);return ahead.x<here.x?-1:1;};
   for(const [id,cost] of Object.entries(s.rubble||{})){const p=pads[id];if(p)actors.push({y:p.y,draw:()=>art.rubble(p.x,p.y)});}
   watchTowers(s);for(const [id,a] of padAnim)if(a.type==="sell"&&!s.towers[id]&&pads[id])actors.push({y:pads[id].y,draw:()=>drawSold(a,pads[id])});
   for(const t of Object.values(s.towers)){const p=pads[t.id];actors.push({y:p.y,draw:()=>{drawTower(t,p);if(t.kind==="grove"&&s.phase==="active")drawHarvest(t,p);const silenced=t.silencedUntil>s.tick,warn=t.silenceWarnUntil>s.tick;if(silenced||warn){ctx.strokeStyle=silenced?"#c48df0":"#c48df099";ctx.lineWidth=silenced?4:2;ctx.setLineDash(warn&&!silenced?[4,4]:[]);ctx.beginPath();ctx.ellipse(p.x,p.y,32,20,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}}});}
-  for(const u of s.troops){const q=game.pointAt(u.progress),t=s.towers[u.source];if(!t&&u.source!=="cmd")continue;let x=q.x+(u.id%5-2)*5,y=q.y+((u.id%3)-1)*8;const out=t&&u.leave>s.tick?Math.min(1,(u.leave-s.tick)/4):0;if(out){const p=game.map.pads[u.source];x+=(p.x-x)*out;y+=(p.y+10-y)*out;}actors.push({y,draw:()=>{art.unit(u.model||t.kind,x,y+(u.flier?-12:0),{ally:true,hp:u.hp/u.maxHp,ward:u.ward,dir:facing(u.progress),time:clock,id:u.id,animate,...art.pose("u"+u.id,u.next,u.hp)});if(u.frozenUntil>s.tick)drawFrost(x,y);}});}
-  // Enemy walk and death animations (visual only): track whether each enemy moved this tick, and keep a body for half a second after a kill.
-  const nowMs=performance.now(),liveIds=new Set();if(gaitState!==s){gaitTrack=new Map();dying=[];gaitState=s;}
-  for(const e of s.enemies){let r=gaitTrack.get(e.id);if(!r){r={p:e.progress,tick:s.tick,moving:true};gaitTrack.set(e.id,r);}else if(r.tick!==s.tick){r.moving=e.progress!==r.p;r.p=e.progress;r.tick=s.tick;}liveIds.add(e.id);const q=game.pointAt(e.progress);r.kind=e.kind;r.x=q.x;r.y=q.y;r.flying=e.flying;r.dir=facing(e.progress);r.revealed=e.revealed;r.tunnel=game.inTunnel(e);}
-  for(const [id,r] of gaitTrack)if(!liveIds.has(id)){gaitTrack.delete(id);if(!r.tunnel&&s.events.some(ev=>ev.type==="enemyKilled"&&ev.id===id)&&dying.length<40)dying.push({...r,id,at:nowMs});}
-  for(let i=dying.length-1;i>=0;i--){const d=dying[i],k=(nowMs-d.at)/520;if(k>=1||k<0){dying.splice(i,1);continue;}actors.push({y:d.y,draw:()=>{if(!d.revealed)ctx.globalAlpha=.35;art.unit(d.kind,d.x,d.y,{flying:d.flying,dir:d.dir,time:clock,id:d.id,die:k});ctx.globalAlpha=1;}});}
-  for(const e of s.enemies){if(game.inTunnel(e))continue;const q=game.pointAt(e.progress),x=q.x,y=q.y,def=game.types[e.kind],gait={speed:def.speed,moving:gaitTrack.get(e.id).moving};actors.push({y,draw:()=>{if(!e.revealed)ctx.globalAlpha=.35;if(def.boss&&e.kind!=="titan"){ctx.strokeStyle=e.phase==="iron"?"#c9ccd1":e.phase?"#b58df0":"#e0573f";ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y+4,20,9,0,0,Math.PI*2);ctx.stroke();}if(e.blastAt>s.tick){const r=BOSS_BLAST*(1-.15*((e.blastAt-s.tick)%10)/10);ctx.save();ctx.setLineDash([8,6]);ctx.strokeStyle=e.ability==="frost"?"#bfe8ffcc":"#ff7a2ecc";ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(x,y,r,r*.6,0,0,Math.PI*2);ctx.stroke();ctx.restore();}art.unit(e.kind,x,y,{hp:e.hp/e.maxHp,flying:e.flying,dir:facing(e.progress),time:clock,id:e.id,animate,gait,...art.pose("e"+e.id,e.nextAttack,e.hp)});ctx.globalAlpha=1;if(e.rootUntil>s.tick){ctx.strokeStyle="#8fc96faa";ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y+3,14,7,0,0,Math.PI*2);ctx.stroke();}{const st={burn:e.burnUntil>s.tick,poison:e.poisonUntil>s.tick?e.poisonStacks:0,freeze:e.slowUntil>s.tick,curse:e.curseUntil>s.tick||e.markUntil>s.tick};if(st.burn||st.poison||st.freeze||st.curse){if(!e.revealed)ctx.globalAlpha=.35;art.status(e.kind,x,y,st,{flying:e.flying,t:performance.now(),id:e.id});ctx.globalAlpha=1;}}}});}
-  const cm=s.commander;if(!cm||cm.dead)heroWalk.p=null;if(cm&&!cm.dead){const now=performance.now(),dt=Math.min(100,now-(heroWalk.at||now));heroWalk.at=now;if(heroWalk.id!==cm.id||heroWalk.p===null)heroWalk.p=cm.progress;else{const d=cm.progress-heroWalk.p,stepLen=dt*.18*Math.max(1,speed);heroWalk.p+=Math.abs(d)<=stepLen?d:Math.sign(d)*stepLen;}heroWalk.id=cm.id;const q=game.pointAt(heroWalk.p);actors.push({y:q.y,draw:()=>{if(moving){const t=performance.now()/1000,r=22+Math.sin(t*6)*2.5;ctx.strokeStyle="#ffe9a8";ctx.lineWidth=2.5;ctx.setLineDash([6,4]);ctx.lineDashOffset=-t*20;ctx.beginPath();ctx.ellipse(q.x,q.y+3,r,r*.45,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.lineDashOffset=0;}ctx.strokeStyle=colors[game.commanders[cm.id].color];ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(q.x,q.y+3,17,7,0,0,Math.PI*2);ctx.stroke();art.unit(cm.id,q.x,q.y,{ally:true,flying:cm.id==="urdragon",hp:cm.hp/cm.maxHp,dir:facing(cm.progress),time:clock,id:0,animate,...art.pose("c"+cm.id,cm.next,cm.hp)});if(cm.frozenUntil>s.tick)drawFrost(q.x,q.y);}});if(cm.target!==cm.progress){const r=game.pointAt(cm.target);ctx.fillStyle=colors[game.commanders[cm.id].color];ctx.fillRect(r.x-1,r.y-14,3,14);}}
+  const nowMs=performance.now(),frameId=++actorFrame;
+  if(actorState!==s){
+   actorState=s;
+   unitVisuals.clear();
+   dying.length=0;
+   heroWalk.actor=null;
+  }
+  function recordActor(id,kind,x,y,dir,flying,ally,revealed,tunnel=false){
+   let visual=unitVisuals.get(id);
+   if(!visual){visual={};unitVisuals.set(id,visual);}
+   visual.frame=frameId;visual.kind=kind;visual.x=x;visual.y=y;
+   visual.dir=dir;visual.flying=flying;visual.ally=ally;visual.revealed=revealed;visual.tunnel=tunnel;
+   return visual;
+  }
+  for(const u of s.troops){
+   const t=s.towers[u.source];
+   if(u.hp<=0||!t&&u.source!=="cmd")continue;
+   const motion=actorMotion.sample(u,s.tick,fraction);
+   const q=game.pointAt(motion.progress);
+   let x=q.x+(u.id%5-2)*5,y=q.y+((u.id%3)-1)*8;
+   const out=t&&u.leave>s.tick?Math.max(0,Math.min(1,(u.leave-clock)/4)):0;
+   if(out){
+    const p=pads[u.source];
+    x+=(p.x-x)*out;
+    y+=(p.y+10-y)*out;
+   }
+   const gait={speed:Math.abs(motion.travel),moving:motion.travel!==0||out>0};
+   const kind=u.model||t.kind,dir=facing(motion.progress);
+   recordActor(u.id,kind,x,y,dir,u.flier,true,true);
+   actors.push({y,draw:()=>{
+    art.unit(kind,x,y,{ally:true,flying:u.flier,hp:u.hp/u.maxHp,ward:u.ward,dir,time:clock,id:u.id,animate:animate&&!calmMotion,gait,...art.pose("u"+u.id,u.next,u.hp)});
+    if(u.frozenUntil>s.tick)drawFrost(x,y);
+   }});
+  }
+
+  for(const e of s.enemies){
+   const motion=actorMotion.sample(e,s.tick,fraction);
+   const q=game.pointAt(motion.progress);
+   const visual=recordActor(e.id,e.kind,q.x,q.y,facing(motion.progress),e.flying,false,e.revealed,game.inTunnel(e));
+   if(visual.tunnel)continue;
+   const def=game.types[e.kind];
+   const gait={speed:def.speed,moving:motion.travel!==0};
+   actors.push({y:visual.y,draw:()=>drawEnemy(e,visual,def,gait,animate,clock,nowMs)});
+  }
+
+  const cm=s.commander;
+  if(!cm||cm.dead)heroWalk.actor=null;
+  else {
+   const motion=actorMotion.sample(cm,s.tick,fraction);
+   const casts=cm.abilities||0;
+   if(heroWalk.actor!==cm)heroWalk.castAt=-Infinity;
+   else if(casts>heroWalk.casts)heroWalk.castAt=nowMs;
+   heroWalk.actor=cm;
+   heroWalk.casts=casts;
+   heroWalk.p=motion.progress;
+   const q=game.pointAt(motion.progress),dir=facing(motion.progress),flying=cm.id==="urdragon";
+   recordActor(cm.id,cm.id,q.x,q.y,dir,flying,true,true);
+   const gait={speed:Math.abs(motion.travel),moving:!!motion.travel};
+   actors.push({y:q.y,draw:()=>{
+    if(moving){
+     const t=nowMs/1000,r=22+Math.sin(t*6)*2.5;
+     ctx.strokeStyle="#ffe9a8";ctx.lineWidth=2.5;ctx.setLineDash([6,4]);ctx.lineDashOffset=-t*20;
+     ctx.beginPath();ctx.ellipse(q.x,q.y+3,r,r*.45,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.lineDashOffset=0;
+    }
+    ctx.strokeStyle=colors[game.commanders[cm.id].color];ctx.lineWidth=2;
+    ctx.beginPath();ctx.ellipse(q.x,q.y+3,17,7,0,0,Math.PI*2);ctx.stroke();
+    const cast=(nowMs-heroWalk.castAt)/650;
+    art.unit(cm.id,q.x,q.y,{ally:true,flying,hp:cm.hp/cm.maxHp,dir,time:clock,id:0,animate:animate&&!calmMotion,gait,
+     casting:!calmMotion&&cast<1?cast:0,castColor:colors[game.commanders[cm.id].color],...art.pose("c"+cm.id,cm.next,cm.hp,nowMs)});
+    if(cm.frozenUntil>s.tick)drawFrost(q.x,q.y);
+   }});
+   if(cm.target!==cm.progress){
+    const r=game.pointAt(cm.target);
+    ctx.fillStyle=colors[game.commanders[cm.id].color];
+    ctx.fillRect(r.x-1,r.y-14,3,14);
+   }
+  }
+  // Deaths leave a brief visual body, while sold or escaped actors clear immediately.
+  let fallen;
+  for(const [id,visual] of unitVisuals){
+   if(visual.frame===frameId)continue;
+   unitVisuals.delete(id);
+   if(visual.tunnel||dying.length>=40)continue;
+   fallen??=new Set(s.events.filter(event=>["enemyKilled","creatureDeath","sacrifice","commanderFall"].includes(event.type)).map(event=>event.id));
+   if(fallen.has(id))dying.push({...visual,id,at:nowMs});
+  }
+  for(let i=dying.length-1;i>=0;i--){
+   const d=dying[i],die=(nowMs-d.at)/520;
+   if(die>=1){dying.splice(i,1);continue;}
+   actors.push({y:d.y,draw:()=>{
+    if(!d.revealed)ctx.globalAlpha=.35;
+    art.unit(d.kind,d.x,d.y,{ally:d.ally,flying:d.flying,dir:d.dir,time:clock,die:Math.max(.001,die)});
+    ctx.globalAlpha=1;
+   }});
+  }
+
   actors.sort((a,b)=>a.y-b.y);for(const actor of actors)actor.draw();if(moveMark){const k=(performance.now()-moveMark.at)/900;if(k>=1)moveMark=null;else{const {x,y}=moveMark;ctx.globalAlpha=1-k;ctx.strokeStyle="#ffe9a8";ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(x,y,10+k*14,(10+k*14)*.45,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#ffe9a8";ctx.beginPath();ctx.moveTo(x-7,y-16+k*4);ctx.lineTo(x+7,y-16+k*4);ctx.lineTo(x,y-4+k*4);ctx.fill();ctx.globalAlpha=1;}}
-  const liveTargets=new Map(s.enemies.map(e=>[e.id,e]));
-  for(const fx of s.projectiles)if(clock<fx.start+fx.duration){const target=liveTargets.get(fx.targetId);if(target&&fx.kind!=="chain"&&fx.kind!=="splash"){const q=game.pointAt(target.progress);art.projectile({...fx,tx:q.x,ty:q.y-(target.flying?21:8)},clock);}else art.projectile(fx,clock);}
+  for(const image of s.projectiles){
+   if(clock>=image.start+image.duration)continue;
+   const target=unitVisuals.get(image.targetId);
+   const follows=target&&image.kind!=="chain"&&image.kind!=="splash";
+   art.projectile(follows?{...image,tx:target.x,ty:target.y-(target.flying?21:8)}:image,clock);
+  }
   fx.draw(performance.now());fx.ambient(performance.now());
   for(const fx of s.effects){if(fx.until<=s.tick)continue;const alpha=(fx.until-s.tick)/7;ctx.globalAlpha=Math.min(1,alpha*.6);ctx.strokeStyle=fx.color;ctx.lineWidth=4;ctx.beginPath();ctx.arc(fx.x,fx.y,fx.r*(1.2-alpha*.4),0,Math.PI*2);ctx.stroke();ctx.globalAlpha=alpha*.14;ctx.fillStyle=fx.color;ctx.fill();ctx.globalAlpha=1;}
+ }
+ function drawEnemy(enemy,visual,definition,gait,animate,clock,now){
+  const {x,y,dir}=visual,state=game.state;
+  if(!enemy.revealed)ctx.globalAlpha=.35;
+  if(definition.boss&&enemy.kind!=="titan"){
+   ctx.strokeStyle=enemy.phase==="iron"?"#c9ccd1":enemy.phase?"#b58df0":"#e0573f";
+   ctx.lineWidth=2;
+   ctx.beginPath();ctx.ellipse(x,y+4,20,9,0,0,Math.PI*2);ctx.stroke();
+  }
+  if(enemy.blastAt>state.tick){
+   const radius=BOSS_BLAST*(1-.15*((enemy.blastAt-state.tick)%10)/10);
+   ctx.save();
+   ctx.setLineDash([8,6]);ctx.strokeStyle=enemy.ability==="frost"?"#bfe8ffcc":"#ff7a2ecc";ctx.lineWidth=3;
+   ctx.beginPath();ctx.ellipse(x,y,radius,radius*.6,0,0,Math.PI*2);ctx.stroke();
+   ctx.restore();
+  }
+  art.unit(enemy.kind,x,y,{hp:enemy.hp/enemy.maxHp,flying:enemy.flying,dir,time:clock,id:enemy.id,animate:animate&&!calmMotion,gait,...art.pose("e"+enemy.id,enemy.nextAttack,enemy.hp,now)});
+  ctx.globalAlpha=1;
+  if(enemy.rootUntil>state.tick){
+   ctx.strokeStyle="#8fc96faa";ctx.lineWidth=2;
+   ctx.beginPath();ctx.ellipse(x,y+3,14,7,0,0,Math.PI*2);ctx.stroke();
+  }
+  const status={burn:enemy.burnUntil>state.tick,poison:enemy.poisonUntil>state.tick?enemy.poisonStacks:0,freeze:enemy.slowUntil>state.tick,curse:enemy.curseUntil>state.tick||enemy.markUntil>state.tick};
+  if(status.burn||status.poison||status.freeze||status.curse){
+   if(!enemy.revealed)ctx.globalAlpha=.35;
+   art.status(enemy.kind,x,y,status,{flying:enemy.flying,t:now,id:enemy.id});
+   ctx.globalAlpha=1;
+  }
  }
  function banner(title,sub,tone){text($("bannerTitle"),title);text($("bannerSub"),sub||"");$("bannerSub").hidden=!sub;const b=$("waveBanner");b.dataset.tone=tone||"wave";b.hidden=false;b.classList.remove("play");void b.offsetWidth;b.classList.add("play");clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>{b.hidden=true;},2300);}
  // Mana Grove payouts: a green gem rises from the grove and flies into the mana counter, which pops and chimes on arrival.
@@ -420,6 +547,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  addEventListener("unhandledrejection",e=>noteError("promise: "+(e.reason?.message||e.reason)));
  function fullReport(){const r=game.playtestReport();const secs=o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k,Math.round(v/1000)]));
   r.client={screen:innerWidth+"x"+innerHeight,dpr:Math.round((devicePixelRatio||1)*100)/100,orientation:innerWidth>innerHeight?"landscape":"portrait",touch:"ontouchstart" in window||navigator.maxTouchPoints>0,ua:navigator.userAgent.slice(0,160),realSecondsInBattle:secs(session.time),sessionMinutes:Math.round((Date.now()-session.started)/60000),errors:session.errors.slice()};return r;}
+ let hudPaintAt=-Infinity,hudPaintState=null,hudPaintTick=-1,hudPaintSeq=-1;
  function frame(now){
   if(portrait.matches)return;
   const elapsed=last===null?0:Math.min(250,Math.max(0,now-last));last=now;
@@ -428,7 +556,13 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
   if(speed&&clockRunning(game)&&!document.querySelector("dialog[open]")){accumulator=advance(game,accumulator+elapsed*speed);if(!clockRunning(game)){notice(game.state.phase==="won"?game.mission?"Victory! "+game.mission.name+" is clear.":"Victory! All 25 Gauntlet waves completed. Continue into endless survival.":game.state.phase==="lost"?"Defeat. Open the menu to restart.":"Wave complete. Prepare your next defense.",game.state.phase!=="ready");}}
   else accumulator=0;
   handleCues(fx.update(game,now));const sh=fx.offset(now);$("map").style.transform=sh.x||sh.y?"translate("+sh.x.toFixed(1)+"px,"+sh.y.toFixed(1)+"px)":"";
-  checkUnlocks();renderField();renderHud();renderTutorial();musicMood();if(now-lastSave>4000&&$("titleScreen").hidden)saveRun();
+  checkUnlocks();renderField();
+  const state=game.state;
+  if(hudPaintState!==state||hudPaintTick!==state.tick||hudPaintSeq!==state.sequence||now-hudPaintAt>=80){
+   hudPaintState=state;hudPaintTick=state.tick;hudPaintSeq=state.sequence;hudPaintAt=now;
+   renderHud();renderTutorial();musicMood();
+  }
+  if(now-lastSave>4000&&$("titleScreen").hidden)saveRun();
  }
  // Music follows the game: menu, building, battle (louder from waves 10 and 20), boss, then quiet for the fanfare.
  function musicMood(){const s=game.state;sfx.mood(pickMood({title:!$("titleScreen").hidden,phase:s.phase,boss:s.enemies.some(e=>e.hp>0&&game.types[e.kind].boss&&e.kind!=="titan")}),intensityFor(s.wave));}
@@ -679,7 +813,17 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  $("soundToggle").addEventListener("click",toggleSound);$("titleSound").addEventListener("click",toggleSound);
  $("musicToggle").addEventListener("click",()=>{sfx.setMusic(!sfx.prefs.music);sfx.music(sfx.prefs.music);renderSound();});
  let lastStars=0,cardBlob=null,cardUrl="";
- function battlefieldImage(){const field=$("field");try{field.getContext("2d").getImageData(0,0,1,1);return field;}catch{}try{const c=document.createElement("canvas");c.width=1000;c.height=600;paintMapArt(c.getContext("2d"),game,{still:true});return c;}catch{return null;}}
+ function battlefieldImage(){
+  const picture=document.createElement("canvas");
+  picture.width=canvas.width;picture.height=canvas.height;
+  const capture=picture.getContext("2d");
+  capture.drawImage(terrain,0,0);
+  try{
+   canvas.getContext("2d").getImageData(0,0,1,1);
+   capture.drawImage(canvas,0,0);
+  }catch{}
+  return picture;
+ }
  function cardInfo(){const s=game.state,dc=s.daily?daily.dailyFor(s.daily.date,MAPS):null;return cardData(game,{daily:dc&&{...dc,pretty:daily.prettyDate(dc.date)},levelName,stars:lastStars,url:location.origin+"/archemancy/"});}
  function openRunCard(){const c=document.createElement("canvas");c.width=CARD_W;c.height=CARD_H;const d=cardInfo();drawRunCard(c.getContext("2d"),d,battlefieldImage());$("cardStatus").textContent="";if(cardUrl)URL.revokeObjectURL(cardUrl);cardBlob=null;cardUrl="";
   c.toBlob(b=>{if(!b){$("cardStatus").textContent="This browser could not make the picture.";return;}cardBlob=b;cardUrl=URL.createObjectURL(b);$("runCardImg").src=cardUrl;},"image/png");$("runCardImg").alt=shareText(d);showDialog("cardDialog");}
