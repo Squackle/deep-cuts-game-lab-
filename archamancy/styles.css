@@ -765,3 +765,78 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 @media (prefers-reduced-motion:reduce){
  .atlas-medallion{transition:none}
 }
+
+/* 13.62 — the Dawnwatch front end. Artwork is local, decorative and independent of the battle renderer. */
+.title-screen{background:linear-gradient(90deg,#081510ee 0%,#081510b0 36%,#08151034 68%,#08151065),linear-gradient(0deg,#081510c0,transparent 50%),url("./title-landscape.svg") center/cover no-repeat;background-attachment:local}
+.title-motes{opacity:.28}
+.title-card{width:min(1280px,100%);grid-template-columns:minmax(280px,370px) minmax(0,1fr);gap:12px clamp(18px,4vw,60px)}
+.title-brand{align-items:stretch;text-align:left;gap:10px}
+.title-logo{align-items:flex-start}
+.title-crest{margin-left:clamp(70px,9vw,118px)}
+#titleName{font-size:clamp(2.05rem,3.5vw,3.5rem);letter-spacing:.035em;-webkit-text-stroke:.65px #382818}
+.title-ribbon span{background:linear-gradient(90deg,#243c34,#3a5140);border-color:#b8a16a;letter-spacing:.22em;box-shadow:none}
+.title-tag{max-width:38ch;text-align:left;line-height:1.5;color:#f0e9d7}
+.title-actions,.title-icons,.title-reset-progress,.player-level{width:100%;max-width:340px}
+.title-actions .big,.title-actions .stone-btn,.title-actions .campaign-map-btn{border-radius:7px;border-width:1px;box-shadow:0 4px 0 #07100c,0 8px 20px #0007}
+.title-actions .campaign-map-btn{background:linear-gradient(110deg,#f4dd9e,#b9904b);border-color:#f1d698;color:#211d10;min-height:46px}
+.title-actions .play-btn{background:linear-gradient(110deg,#395a42,#21392e);border-color:#a5c693;color:#fff7dc;text-shadow:none}
+.title-actions .continue-run{background:linear-gradient(110deg,#ffe3a0,#c69c4e)}
+.title-actions .stone-btn:not(.campaign-map-btn){background:linear-gradient(110deg,#243a30,#172820);border-color:#b39b675f}
+.title-icons{gap:5px}
+.icon-tile{border-radius:6px;border-width:1px;background:linear-gradient(#263c32,#16241e);box-shadow:0 3px 0 #09140e}
+.title-reset-progress{background:transparent;border-color:transparent;box-shadow:none;text-decoration:underline;text-underline-offset:3px;opacity:.85}
+.title-maps{border:1px solid #c0a16f;background:linear-gradient(150deg,#14251eea,#0c1814f5);border-radius:10px;box-shadow:0 0 0 4px #111f18a0,0 16px 45px #0008;padding:clamp(10px,1.5vw,22px)}
+.title-head{font-size:1.18rem;text-transform:uppercase;letter-spacing:.12em}
+.camp-bar{padding:6px 0;border-bottom:1px solid #c0a16f38;margin:0 0 6px}
+.camp-bar .stone-btn{border-radius:6px;background:#293c31;border-color:#ad9862}
+.title-maps .world-map,.map-card{border-radius:7px;border-width:1px}
+.title-foot{border-top:1px solid #c0a16f36;padding-top:8px}
+:is(#codexDialog,#trialsDialog,#perksDialog,#commanderDialog,#deckDialog,.camp-dialog):not(.pack-dialog){background:radial-gradient(ellipse at 20% 0,#344b3e,#17271f 65%);border:1px solid #b99a61;border-radius:10px;box-shadow:0 0 0 4px #101c17,0 20px 65px #000b}
+:is(#codexDialog,#trialsDialog,#perksDialog,#commanderDialog,#deckDialog,.camp-dialog) .dialog-head{background:#1b2e25;border-bottom:1px solid #b99a6166}
+:is(#codexDialog,#trialsDialog,#perksDialog,#commanderDialog,#deckDialog,.camp-dialog) .dialog-head h2{font:700 clamp(1.25rem,3vw,1.8rem)/1.15 Georgia,serif;letter-spacing:.03em;color:#ffebba}
+#codexDialog,#commanderDialog,#deckDialog{width:min(96vw,920px)}
+.codex-tabs{border-radius:5px;border-width:1px;flex-wrap:wrap}
+.codex-tabs button{min-width:90px;min-height:40px}
+.codex-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:8px}
+.codex-entry{grid-template-columns:72px minmax(0,1fr);align-items:start;border:1px solid #8f8057;border-left:3px solid var(--school);border-radius:6px;padding:8px;background:#15261e}
+.codex-pic{width:72px;height:82px;border-radius:4px;background:#0c1b17}
+.codex-pic img{max-width:72px;max-height:82px;image-rendering:auto}
+.codex-entry strong{color:#fae7b6;font-family:Georgia,serif;font-size:1rem}
+.codex-entry small{color:#d2d8ca;overflow-wrap:anywhere}
+.legend-library{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px}
+.legend-entry{display:flex;flex-direction:column;min-width:0;overflow:hidden;border:1px solid var(--school);border-radius:7px;background:#10231c;box-shadow:0 5px 14px #0006}
+.legend-art{position:relative;display:grid;place-items:center;aspect-ratio:16/9;background:radial-gradient(ellipse,var(--school),#10231c 80%);font-size:2.5rem;color:#f9e8ba}
+.legend-art.has-art{background-image:linear-gradient(0deg,#091710b8,transparent 60%),var(--art)!important}
+.legend-art .legend-credit{position:absolute;bottom:3px;right:5px;color:#fff4dd;background:#101b17ce;padding:2px 4px;font:600 .66rem system-ui}
+.legend-entry>div{padding:10px;display:grid;gap:5px}
+.legend-entry strong{font:700 1.1rem Georgia,serif;color:#ffebba}
+.legend-entry small{font-size:.78rem;line-height:1.4;color:#d4d9cb}
+.legend-entry .legend-status{color:#f0d493;border-top:1px solid #b99a6144;padding-top:5px}
+.legend-locked .legend-art{filter:saturate(.55)}
+#commanderChoices{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+#commanderChoices button{border-radius:7px;min-height:155px;padding:11px;background:#182920;justify-content:flex-end}
+#commanderChoices button.has-art{background-image:linear-gradient(0deg,#0c1713 10%,#0c1713e6 50%,#0c171340),var(--art)!important}
+#commanderChoices button strong{font-family:Georgia,serif;font-size:1.1rem}
+#commanderChoices button:disabled{opacity:.8}
+#deckList{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:7px}
+#deckList .spellbook-entry{display:grid;grid-template-columns:56px minmax(0,1fr) 48px;gap:8px;padding:6px;border:1px solid #92825d;border-left:3px solid var(--school);border-radius:5px;background:#14261e}
+.spellbook-art{display:grid;place-items:center;width:56px;aspect-ratio:4/5;background:linear-gradient(145deg,var(--school),#0e1d17);border-radius:3px;color:#fff1d0;font-size:1.4rem}
+.spellbook-art.has-art{background-image:var(--art)!important}
+.spellbook-entry strong,.spellbook-entry small{display:block;overflow-wrap:anywhere}
+.spellbook-entry strong{font:700 .92rem Georgia,serif;color:#fff0ce}
+.spellbook-entry small{font-size:.67rem;color:#cbd2c3;line-height:1.35}
+.camp-card{border-radius:7px;border-width:1px;background:linear-gradient(#23362b,#14251e);box-shadow:0 4px 12px #0005}
+.camp-art.has-art{background-image:var(--art)!important}
+.camp-card strong{font:700 1.05rem Georgia,serif;color:#ffe7b0}
+.camp-card small{color:#d6ddce}
+.camp-foot{border-top:1px solid #a18f5b33}
+.perk{border-radius:6px;background:linear-gradient(110deg,#293e31,#13251d);border-color:#93835c;border-left-color:var(--school)}
+.perk strong{font:700 1.02rem Georgia,serif;color:#ffebba}
+.trial.earned{box-shadow:inset 0 0 16px #e2bd6230}
+.end-screen{overflow:auto;background:linear-gradient(#11271db8,#0a1510f2),url("./title-landscape.svg") center/cover no-repeat}
+.end-screen[data-result=loss]{background:linear-gradient(#3a1715c9,#0a0809f2),url("./title-landscape.svg") center/cover no-repeat}
+.end-card{border-radius:8px;background:#12271eee}
+:is(.title-screen,dialog) button:focus-visible{outline:3px solid #ffe5a0;outline-offset:2px}
+@media(max-width:760px){.title-card{grid-template-columns:minmax(0,1fr);}.title-logo,.title-brand{align-items:center}.title-tag{text-align:center}.title-crest{margin-left:0}.title-actions,.title-icons,.title-reset-progress,.player-level{max-width:360px}.title-maps{padding:10px}.codex-tabs button{min-width:72px}}
+@media(orientation:landscape) and (max-height:500px){.title-card{grid-template-columns:minmax(220px,290px) minmax(0,1fr);gap:8px 14px}.title-brand{gap:6px}.title-logo{align-items:flex-start}.title-crest{margin-left:65px}.title-maps{padding:8px;gap:7px}.title-head{font-size:.86rem}.title-actions .campaign-map-btn{min-height:35px;font-size:.95rem}.title-actions .stone-btn{min-height:32px}.title-reset-progress{min-height:25px}.title-motes{display:none}.title-foot{padding-top:4px}.legend-library{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}}
+@media(prefers-reduced-motion:reduce){.title-screen *, .end-screen *{animation:none!important;transition:none!important}}
