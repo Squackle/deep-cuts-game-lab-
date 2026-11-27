@@ -33,7 +33,7 @@ const SCENE=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1648 928" aria
   <g class="ambience-river" stroke="#c9e9e8" stroke-width="1.6" opacity=".24">
    <path d="M901 468 Q940 463 969 457 M846 518 Q868 511 892 509 M908 545 Q940 551 978 552 M1003 572 Q985 580 969 580 M924 616 Q905 622 887 633 M857 664 Q873 659 887 655"/>
   </g>
-  <g class="ambience-waterfall" stroke="url(#ambience-stream)" stroke-width="3.5" opacity=".52">
+  <g class="ambience-waterfall" stroke="url(#ambience-stream)" stroke-width="2.8" opacity=".31">
    <path d="M932 803 Q949 816 967 820 T1015 829 M974 823 Q996 834 1012 836 T1042 849 M1040 853 Q1067 866 1089 866 T1135 878 M1117 870 Q1147 880 1172 889 T1234 913 M1051 897 Q1079 906 1100 917 T1134 928"/>
   </g>
  </g>

@@ -12,7 +12,7 @@ test("title ambience is decorative, locally sourced, cover-aligned and respects 
  assert.match(mod,/new URL\("\.\/assets\/river-keep\.webp",import\.meta\.url\)/);
  assert.doesNotMatch(mod,/requestAnimationFrame|setInterval|setTimeout|<script|foreignObject/i);
  assert.match(mod,/layer\.setAttribute\("aria-hidden","true"\)/);
- assert.match(css,/\.title-ambience\{[^}]*pointer-events:none/);
+ assert.match(css,/\.title-ambience\{[^}]*position:fixed[^}]*pointer-events:none/);
  assert.match(css,/\.title-ambience svg\{[^}]*left:65%;top:50%/);
  assert.match(css,/prefers-reduced-motion:reduce\)\{\.title-ambience\{display:none/);
  assert.match(menu,/mountTitleAmbience\(title\)/);
@@ -25,15 +25,15 @@ function tower(kind,branch){
 }
 test("balance pilot improves Deep Freeze control and limits Grasping Forest root duration without changing damage branches",()=>{
  const blue=tower("arcanum","A"),archmage=tower("arcanum","B"),green=tower("thorn","A"),venom=tower("thorn","B");
- assert.equal(blue.g.towerStats(blue.t).slowSeconds,2.6);
- assert.equal(blue.g.towerStats(blue.t).rootSeconds,.5);
+ assert.equal(blue.g.towerStats(blue.t).slowSeconds,2.4);
+ assert.equal(blue.g.towerStats(blue.t).rootSeconds,.4);
  assert.equal(archmage.g.towerStats(archmage.t).slowSeconds,1.2);
  assert.equal(archmage.g.towerStats(archmage.t).rootSeconds,0);
  assert.equal(green.g.towerStats(green.t).rootSeconds,1.5);
  assert.equal(green.g.towerStats(green.t).rootRadius,65);
  assert.equal(venom.g.towerStats(venom.t).rootSeconds,1.3);
  assert.equal(venom.g.towerStats(venom.t).poisonStacks,6);
- for(const [pair,ticks] of [[blue,5],[green,15]]){
+ for(const [pair,ticks] of [[blue,4],[green,15]]){
   const {g,t}=pair;assert.ok(g.command({type:"sandboxEnemy",enemy:"raider",count:1}));
   const foe=g.state.enemies.at(-1);foe.progress=230;foe.speed=0;foe.attack=0;foe.hp=foe.maxHp=100000;
   for(let i=0;i<20&&!foe.rootUntil;i++)g.step();

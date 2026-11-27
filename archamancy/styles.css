@@ -1046,10 +1046,10 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 
 
 /* Quiet title-only ambient motion. Match the cover image's 65% / 50% anchor
-   at all aspect ratios, including landscape phones; all effects are decorative. */
+   at all aspect ratios, including landscape phones that scroll the title controls. */
 .illustrated-title{isolation:isolate}
 .illustrated-title .title-card{position:relative;z-index:1}
-.title-ambience{position:absolute;inset:0;overflow:hidden;pointer-events:none;container-type:size;z-index:0}
+.title-ambience{position:fixed;inset:0;overflow:hidden;pointer-events:none;container-type:size;z-index:0}
 .title-ambience svg{position:absolute;left:65%;top:50%;width:max(100cqw,177.68cqh);height:max(56.28cqw,100cqh);max-width:none;transform:translate(-65%,-50%);pointer-events:none}
 .ambience-flag{transform-box:view-box;animation:ambient-flag 6.8s ease-in-out infinite}
 .flag-main{transform-origin:1302px 48px}
