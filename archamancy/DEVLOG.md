@@ -675,3 +675,7 @@ Flying First and Ground First fall back to the other altitude when the preferred
 ## 2026-11-27 — 13.67 visible title motion
 
 Increased the banner's fabric movement and made the watchtower beacon flicker and emit rising sparks. Fog and water move at a clearer pace. The decorative overlay uses viewport sizing, stays aligned when the title scrolls, and disappears under reduced motion. This release updates presentation only.
+
+## 2026-11-27 — 13.68 painted title motion
+
+Animate the original painting in the valley river, foreground rapids, fog and watchtower flame. Feathered masks keep the banks, trees and stonework fixed, and the existing flags continue to wave. The scene respects reduced motion and stays aligned when the menu scrolls. This release updates presentation only.
