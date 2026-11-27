@@ -5,6 +5,7 @@ import {firstFlyerWarning,bossOverlapWarning,earlyOverlapWarning,counterplayWarn
 import {paintTerrain as paintMapArt} from './terrain.mjs';
 import * as progress from './progress.mjs';
 import {resetGameProgress} from './game-reset.mjs';
+import {createTitleMenu} from "./title-menu.mjs";
 import {createCampaignAtlas} from "./campaign-atlas.mjs";
 import {mountLegendGallery} from "./legend-gallery.mjs";
 import {paintWorld,NODES} from './worldmap.mjs';
@@ -631,8 +632,25 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
   el.append(pic,info,foot);if(extra)extra(foot);return el;}
  function btn(label,fn,disabled=false,title=""){const b=document.createElement("button");b.type="button";b.textContent=label;b.disabled=disabled;if(title)b.title=title;b.addEventListener("click",fn);return b;}
  function section(title,items){const h=document.createElement("h3");h.className="camp-head";h.textContent=title;const g=document.createElement("div");g.className="camp-grid";g.append(...items);return [h,g];}
- function campStatus(){const ante=Math.min(ANTE_MAX,camp.wins);return "◆ "+camp.treasure+" Treasure · Deck "+camp.deck.length+"/"+campaignLib.deckCap(camp)+" · Relics "+camp.relics.length+"/"+campaignLib.slots(camp)+(ante?" · Ante "+ante+" (enemies +"+Math.round(ante*ANTE_STEP*100)+"% health)":"");}
- function renderCampDeck(){text($("campDeckStatus"),campStatus()+". Spell upgrades reduce base mana cost by 15% per level; direct-damage spells gain +25% damage per level. Utility and delayed burn effects stay unchanged. Lands give matching-color damage and troop health (not delayed spell burn). Exiling keeps at least "+campaignLib.MIN_DECK+" spells.");
+ function renderCampInventory(statusId,description){
+  const status=$(statusId),dialog=status.parentNode;
+  let inventory=dialog.querySelector(".camp-inventory");
+  if(!inventory){
+   inventory=document.createElement("dl");
+   inventory.className="camp-inventory";
+   status.before(inventory);
+  }
+  const ante=Math.min(ANTE_MAX,camp.wins);
+  const values=[["Treasure","◆ "+camp.treasure],["Spells",camp.deck.length+" / "+campaignLib.deckCap(camp)],["Relics",camp.relics.length+" / "+campaignLib.slots(camp)]];
+  if(ante)values.push(["Ante "+ante,"+"+Math.round(ante*ANTE_STEP*100)+"% enemy health"]);
+  inventory.replaceChildren(...values.map(([label,value])=>{
+   const pair=document.createElement("div"),term=document.createElement("dt"),amount=document.createElement("dd");
+   term.textContent=label;amount.textContent=value;pair.append(term,amount);return pair;
+  }));
+  text(status,description);
+ }
+ function renderCampDeck(){
+  renderCampInventory("campDeckStatus","Spell upgrades cut base mana by 15% per level and increase direct damage by 25% per level. Utility and delayed burn effects stay unchanged. Lands strengthen matching-color damage and troops, excluding delayed burn. Keep at least "+campaignLib.MIN_DECK+" spells.");
   const spells=camp.deck.map(id=>campTile({kind:"spell",id,upgradePreview:true},f=>{const cost=campaignLib.upgradeCost(camp,id);f.append(btn(cost===null?"Max level":"Upgrade · "+cost+" ◆",()=>{if(campaignLib.upgrade(camp,id)){saveCamp();sfx.play("upgrade");renderCampDeck();renderWorld();}},cost===null||camp.treasure<cost),btn("Exile · "+campaignLib.EXILE_COST+" ◆",()=>{if(campaignLib.remove(camp,id)){saveCamp();sfx.play("sell");renderCampDeck();renderWorld();}},camp.deck.length<=campaignLib.MIN_DECK||camp.treasure<campaignLib.EXILE_COST));}));
   const relics=camp.relics.map(id=>campTile({kind:"relic",id},f=>f.append(btn("Sell · +"+campaignLib.sellValue(id)+" ◆",()=>{if(campaignLib.sellRelic(camp,id)){saveCamp();sfx.play("sell");renderCampDeck();renderWorld();}}))));
   // Relic slots read like Balatro's Joker row: every slot is drawn, empty ones as dashed sockets.
@@ -642,7 +660,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
   const empty=s=>{const p=document.createElement("p");p.className="camp-empty";p.textContent=s;return p;};
   $("campDeckList").replaceChildren(...section("Spells · "+camp.deck.length+" of "+campaignLib.deckCap(camp),spells),...section("Relics · "+camp.relics.length+" of "+campaignLib.slots(camp)+" slots"+(camp.relics.length?"":" · buy them in the Shop"),relics),...section("Lands · color damage & troop health (next battle)",lands),...section("Boons",boons.length?boons:[empty("Boons are permanent upgrades. One appears in each Shop.")]));}
  function renderCampShop(){if(!camp.shop){campaignLib.rollShop(camp,game.cards);saveCamp();}if(camp.shop.fresh){campaignLib.seenShop(camp);saveCamp();renderCampBar();}
-  text($("campShopStatus"),campStatus()+". Win or survive Gauntlet battles for more Treasure; the Shop restocks after every battle.");
+  renderCampInventory("campShopStatus","The shop restocks after each Gauntlet battle.");
   $("campShopList").replaceChildren(...camp.shop.items.map((it,i)=>campTile(it,f=>{const why=campaignLib.blocker(camp,it,game.cards);f.append(btn(it.sold?"Sold":"Buy · "+it.price+" ◆",()=>buyItem(i),!!why,why||""));if(why&&!it.sold){const s=document.createElement("small");s.className="camp-why";s.textContent=why;f.append(s);}})),...packTiles());
   const r=campaignLib.rerollCost(camp);$("campReroll").textContent="Reroll · "+r+" ◆";$("campReroll").disabled=camp.treasure<r;}
  function buyItem(i){const it=camp.shop.items[i];if(it.kind==="ritual"&&campaignLib.needsTarget(it.id)){pickTarget(it,i);return;}const line=campaignLib.buy(camp,i,game.cards);if(line){saveCamp();sfx.play("coin");notice(line,true);renderCampShop();renderWorld();}}
@@ -683,7 +701,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
   packView.busy=true;$("packStage").classList.add("pk-picking");slot.classList.add("pk-picked");sfx.play("packPick");setTimeout(finish,560);}
  $("packSkip").addEventListener("click",()=>{if(packView?.busy)return;if(campaignLib.skipPack(camp)){dropPackView();saveCamp();showDialog("campShopDialog");renderCampShop();}});
  function renderDraft(swapFor=null){if(!camp.draft){closeDialogs();return;}const full=camp.deck.length>=campaignLib.deckCap(camp);
-  const take=(id,out=null)=>{if(campaignLib.pickDraft(camp,id,out)){saveCamp();sfx.play("star");notice(game.cards[id].name+" joins your deck"+(out?", replacing "+game.cards[out].name:"")+".");closeDialogs();renderWorld();}};
+  const take=(id,out=null)=>{if(campaignLib.pickDraft(camp,id,out)){saveCamp();sfx.play("star");notice(game.cards[id].name+" joins your deck"+(out?", replacing "+game.cards[out].name:"")+".");closeDialogs();renderWorld();$("endCamp").querySelector(".reward-draft")?.remove();}};
   // Full deck: Swap in shows your deck so you choose which spell leaves (its upgrades go with it).
   if(swapFor){text($("draftStatus"),"Swap "+game.cards[swapFor].name+" in for which spell? The spell you pick leaves your deck along with its upgrades.");
    $("draftList").replaceChildren(...camp.deck.map(out=>campTile({kind:"spell",id:out},f=>f.append(btn("Swap out",()=>take(swapFor,out))))),btn("Back",()=>{sfx.play("click");renderDraft();}));return;}
@@ -697,7 +715,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
   if(k){const kit=[...k.relics,...k.boons].map(id=>{const d=BY_ID[id],el=document.createElement("div"),pic=document.createElement("span"),nm=document.createElement("strong");el.className="peek-chip";el.style.setProperty("--school",colors[(d.ci||"C")[0]]||colors.C);pic.className="camp-art";paintArt(pic,d.name);nm.textContent=d.name;el.title=d.text;el.append(pic,nm);return el;});const lands=[..."WUBRG"].map(c=>{const p=campaignLib.landPreview({lands:k.lands||{}},c);return BY_ID["land"+c].name+" Lv "+p.level+" (+"+p.bonus+"%)";});const h=document.createElement("h3");h.className="camp-head";h.textContent="Relics and Boons";const g=document.createElement("div");g.className="peek-grid";if(kit.length)g.append(...kit);else{const p=document.createElement("p");p.className="camp-empty";p.textContent="None equipped.";g.append(p);}const lh=document.createElement("h3"),lp=document.createElement("p");lh.className="camp-head";lh.textContent="Land bonuses · this battle";lp.className="camp-empty";lp.textContent=lands.join(" · ")+". Matching-color damage and troop health.";out.push(h,g,lh,lp);}
   $("battleDeckList").replaceChildren(...out);}
  {const z=$("zones");z.setAttribute("role","button");z.tabIndex=0;z.title="See your deck";const open=()=>{sfx.unlock();sfx.play("click");renderBattleDeck();showDialog("battleDeckDialog");};z.addEventListener("click",open);z.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});}
- $("draftSkip").addEventListener("click",()=>{if(campaignLib.pickDraft(camp,null)){saveCamp();sfx.play("coin");notice("+2 Treasure.");closeDialogs();renderWorld();}});
+ $("draftSkip").addEventListener("click",()=>{if(campaignLib.pickDraft(camp,null)){saveCamp();sfx.play("coin");notice("+2 Treasure.");closeDialogs();renderWorld();$("endCamp").querySelector(".reward-draft")?.remove();}});
  $("campReroll").addEventListener("click",()=>{if(campaignLib.reroll(camp,game.cards)){saveCamp();sfx.play("coin");renderCampShop();renderWorld();}});
  $("pickCancel").addEventListener("click",()=>{if(camp.pack){renderPack();showDialog("packDialog");return;}showDialog("campShopDialog");renderCampShop();});
  const campBar=document.createElement("div");campBar.className="camp-bar";campBar.innerHTML='<span class="camp-gold" aria-label="Treasure"></span><button type="button" class="stone-btn camp-deck">🂠 Deck</button><button type="button" class="stone-btn camp-shop">⚖ Shop</button><button type="button" class="stone-btn camp-draft" hidden>✦ Pick a spell</button>';
@@ -754,7 +772,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
    const n=progress.bestStars(profile,profile.difficulty||"normal",id),st=b.querySelector(".map-stars");st.textContent="★".repeat(n)+"☆".repeat(3-n);st.title=n+" of 3 stars on "+(levelName[profile.difficulty]||"Normal");}
   const eOpen=progress.isOpen(profile,"modes","endless");$("playEndless").disabled=!eOpen;$("playEndless").textContent=eOpen?"Endless Siege":"Endless · Level "+progress.unlockLevel("modes","endless");
   const oOpen=progress.isOpen(profile,"modes","onslaught");$("onslaughtToggle").disabled=!oOpen;$("onslaughtToggle").lastChild.textContent=oOpen?ONS_TEXT:"Opens at level "+progress.unlockLevel("modes","onslaught");}
- function renderTitle(){renderLevel();renderWorld();renderDaily();legendGallery?.updateBadge();{const b=$("onslaughtToggle");b.setAttribute("aria-pressed",String(!!profile.onslaught));b.firstChild.textContent="Onslaught: "+(profile.onslaught&&progress.isOpen(profile,"modes","onslaught")?"on":"off");b.setAttribute("aria-pressed",String(!!profile.onslaught&&progress.isOpen(profile,"modes","onslaught")));const got=trialRows().filter(r=>profile.badges[r[0]]).length;text($("trialsBadge"),got+" of "+trialRows().length);{const all=Object.keys(game.types).length+Object.keys(game.roster).length+Object.keys(game.cards).length,seen=profile.seen.e.length+profile.seen.t.length+profile.seen.c.length;text($("codexBadge"),Math.min(seen,all)+" of "+all);}}{const free=progress.freeStars(profile);text($("perksBadge"),free>0?free+" to spend":"");}for(const b of document.querySelectorAll("[data-map]"))b.setAttribute("aria-pressed",String(b.dataset.map===mapPick()));for(const b of document.querySelectorAll("[data-difficulty]"))b.setAttribute("aria-pressed",String(b.dataset.difficulty===profile.difficulty));{const row=$("seasonChoices");const ok=mapSeasons();row.hidden=ok.length<2;for(const b of row.children){b.hidden=!ok.includes(b.dataset.season);b.setAttribute("aria-pressed",String(b.dataset.season===seasonPick()));}}text($("titleStars"),"Best Gauntlet on "+MAPS[mapPick()].name+": "+["easy","normal","hard"].map(l=>{const n=progress.bestStars(profile,l,mapPick());return levelName[l]+" "+(n?"★".repeat(n)+"☆".repeat(3-n):"—");}).join(" · "));text($("titleVersion"),label(VERSION));{const save=loadRun(),b=$("continueRun");b.hidden=!save;$("titleRestart").hidden=!save;if(save){const st=save.state;text($("continueLabel"),(MAPS[st.mapId]&&st.mapId!=="hollow"?MAPS[st.mapId].name+" · ":"")+(st.mode==="endless"?"Endless Siege":"Gauntlet")+" · Wave "+Math.max(1,st.phase==="active"?st.wave:st.wave+1)+(st.mode==="endless"?"":" of 25")+" · "+(levelName[st.difficulty]||"Normal"));}$("playGauntlet").classList.toggle("primary",!save);}renderSound();paintThumbs();{const row=$("mapChoices"),c=row.querySelector(".map-card[aria-pressed=true]");if(c&&row.scrollWidth>row.clientWidth){const cr=c.getBoundingClientRect(),rr=row.getBoundingClientRect();row.scrollLeft+=cr.left-rr.left-(rr.width-cr.width)/2;}}}
+ function renderTitle(){renderLevel();renderWorld();renderDaily();titleMenu.render();legendGallery?.updateBadge();{const b=$("onslaughtToggle");b.setAttribute("aria-pressed",String(!!profile.onslaught));b.firstChild.textContent="Onslaught: "+(profile.onslaught&&progress.isOpen(profile,"modes","onslaught")?"on":"off");b.setAttribute("aria-pressed",String(!!profile.onslaught&&progress.isOpen(profile,"modes","onslaught")));const got=trialRows().filter(r=>profile.badges[r[0]]).length;text($("trialsBadge"),got+" of "+trialRows().length);{const all=Object.keys(game.types).length+Object.keys(game.roster).length+Object.keys(game.cards).length,seen=profile.seen.e.length+profile.seen.t.length+profile.seen.c.length;text($("codexBadge"),Math.min(seen,all)+" of "+all);}}{const free=progress.freeStars(profile);text($("perksBadge"),free>0?free+" to spend":"");}for(const b of document.querySelectorAll("[data-map]"))b.setAttribute("aria-pressed",String(b.dataset.map===mapPick()));for(const b of document.querySelectorAll("[data-difficulty]"))b.setAttribute("aria-pressed",String(b.dataset.difficulty===profile.difficulty));{const row=$("seasonChoices");const ok=mapSeasons();row.hidden=ok.length<2;for(const b of row.children){b.hidden=!ok.includes(b.dataset.season);b.setAttribute("aria-pressed",String(b.dataset.season===seasonPick()));}}text($("titleStars"),"Best Gauntlet on "+MAPS[mapPick()].name+": "+["easy","normal","hard"].map(l=>{const n=progress.bestStars(profile,l,mapPick());return levelName[l]+" "+(n?"★".repeat(n)+"☆".repeat(3-n):"—");}).join(" · "));text($("titleVersion"),label(VERSION));{const save=loadRun(),b=$("continueRun");b.hidden=!save;$("titleRestart").hidden=!save;if(save){const st=save.state;text($("continueLabel"),(MAPS[st.mapId]&&st.mapId!=="hollow"?MAPS[st.mapId].name+" · ":"")+(st.mode==="endless"?"Endless Siege":"Gauntlet")+" · Wave "+Math.max(1,st.phase==="active"?st.wave:st.wave+1)+(st.mode==="endless"?"":" of 25")+" · "+(levelName[st.difficulty]||"Normal"));}$("playGauntlet").classList.toggle("primary",!save);}renderSound();paintThumbs();{const row=$("mapChoices"),c=row.querySelector(".map-card[aria-pressed=true]");if(c&&row.scrollWidth>row.clientWidth){const cr=c.getBoundingClientRect(),rr=row.getBoundingClientRect();row.scrollLeft+=cr.left-rr.left-(rr.width-cr.width)/2;}}}
  function renderSound(){const p=sfx.prefs;$("soundToggle").innerHTML=p.sound?ICONS.sound:ICONS.mute;$("soundToggle").setAttribute("aria-label",p.sound?"Sound on":"Sound off");text($("titleSound").querySelector(".tile-label"),"Sound: "+(p.sound?"on":"off"));text($("musicToggle"),"Music: "+(p.music?"on":"off"));text($("voiceToggle"),"Voices: "+(p.voice?"on":"off"));}
  function showTitle(){saveRun();if(updateSeen){location.reload();return;}closeDialogs();$("endScreen").hidden=true;$("titleScreen").hidden=false;setSpeed(0);renderTitle();}
  function todayDaily(){return daily.dailyFor(daily.dateKey(),MAPS);}
@@ -773,6 +791,29 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  const atlasButton=btn("Campaign Map",()=>openAtlas());
  atlasButton.className="stone-btn campaign-map-btn";
  $("playGauntlet").before(atlasButton);
+ const titleMenu=createTitleMenu({
+  title:$("titleScreen"),
+  campaignBar:campBar,
+  openBattlefields:()=>{
+   sfx.unlock();sfx.play("click");
+   showDialog("battlefieldDialog");titleMenu.revealSelected();
+  },
+  orders:()=>({
+   name:MAPS[mapPick()].name,
+   difficulty:levelName[profile.difficulty],
+   season:({summer:"Summer",autumn:"Autumn",winter:"Winter"})[seasonPick()],
+   onslaught:profile.onslaught&&progress.isOpen(profile,"modes","onslaught")
+  })
+ });
+
+ $("endScreen").classList.add("end-illustrated");
+ $("draftTitle").tabIndex=-1;
+ $("draftTitle").setAttribute("autofocus","");
+ for(const [dialogId,actionId] of [["campShopDialog","campReroll"],["draftDialog","draftSkip"]]){
+  const action=$(actionId),oldRow=action.parentNode;
+  $(dialogId).querySelector(".dialog-head").append(action);
+  if(!oldRow.children.length)oldRow.remove();
+ }
 
  function openAtlas(map){
   closeDialogs();
@@ -862,6 +903,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
    }
    progress.save(storage,profile);
   }
+  $("endScreen").scrollTop=0;
   text($("endTitle"),won?"Victory!":campaign?"Defeat":"The siege broke through");$("endScreen").dataset.result=won?"win":"loss";
   text($("endSummary"),game.mission?(won?game.mission.name+" cleared with "+s.health+" fortress left.":"The fortress fell on wave "+s.wave+" of "+game.waveLimit+"."):won?(levelName[s.difficulty]||"Normal")+" Gauntlet cleared with "+s.health+" fortress left.":campaign?"The fortress fell on wave "+s.wave+" of 25 ("+(levelName[s.difficulty]||"Normal")+").":"You held until wave "+s.wave+".");
   const spans=[...$("endStars").children];$("endStars").hidden=!won;spans.forEach(sp=>sp.classList.remove("on"));if(won){spans.forEach((sp,i)=>{if(i<stars)setTimeout(()=>{sp.classList.add("on");sfx.play("star");},500+i*350);});if(!game.mission&&progress.recordStars(profile,s.difficulty,stars,game.map.id)){progress.save(storage,profile);}{const colors=[...s.towerHistory,...Object.values(s.towers)].map(t=>game.roster[t.kind].color),fresh=game.mission?[]:progress.trialBadges({won,mode:s.mode,onslaught:s.onslaught,map:game.map.id,colors}).filter(k=>progress.awardBadge(profile,k));if(fresh.length){progress.save(storage,profile);const names=Object.fromEntries(trialRows().map(r=>[r[0],r[1]]));setTimeout(()=>notice("Trial complete: "+fresh.map(k=>names[k]).join(", ")+"!",true),1800);}}}
@@ -872,7 +914,23 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
   {const i=levelInfo(),x=$("endXp");x.hidden=s.mode==="sandbox"||!!game.mission?.category;if(!x.hidden){text($("endXpLine"),"+"+runXp+" XP this run · Level "+i.lv);$("endXpFill").style.width=i.pct.toFixed(1)+"%";text($("endXpNext"),i.max?"Max level: everything is open.":(i.need-i.have)+" XP to level "+(i.lv+1)+(i.names.length?": "+i.names.join(", "):""));}}
   $("endContinue").hidden=!won||!!game.mission;text($("endCopy"),"Copy battle stats");text($("endKicker"),game.map.name+" · "+(game.mission?game.mission.name:campaign?(s.onslaught?"Onslaught ":"")+"Gauntlet":"Endless Siege")+" · "+(levelName[s.difficulty]||"Normal"));lastStars=won?stars:0;$("endShare").hidden=s.mode==="sandbox"||!!game.mission;$("endDaily").hidden=true;
   if(s.daily&&campaign){const dc=daily.dailyFor(s.daily.date,MAPS),book=daily.load(storage),r=daily.record(book,s.daily.date,{won,stars:won?stars:0,health:s.health,wave:s.wave,kills:s.stats.kills});daily.save(storage,book);text($("endKicker"),"Daily Challenge · "+daily.prettyDate(dc.date)+" · "+dc.twistName);const st=daily.streak(book,dc.date);text($("endDaily"),(r.improved&&r.tries>1?"New best for today! ":r.improved?"":"Today's best: "+(r.best.won?"★".repeat(r.best.stars)+" with "+r.best.health+" fortress left":"wave "+r.best.wave)+". ")+(st>1?st+"-day streak. ":"")+"A new challenge arrives tomorrow.");$("endDaily").hidden=false;}
-  {const pay=campaignPayout(won,stars,firstMissionWin),el=$("endCamp");el.hidden=!pay;text($("endMenu"),mission?"Mission road":s.kit&&!s.daily?"World map":"Main menu");if(pay){text(el,"◆ +"+pay.gold+" Treasure for the Shop"+(pay.draft?" · choose a spell for your deck":"")+". You have "+camp.treasure+".");renderCampBar();if(pay.draft)setTimeout(()=>{if(!$("endScreen").hidden&&!document.querySelector("dialog[open]")){renderDraft();showDialog("draftDialog");}},1600);}}
+  const pay=campaignPayout(won,stars,firstMissionWin),reward=$("endCamp");
+  reward.hidden=!pay;
+  text($("endMenu"),mission?"Mission road":s.kit&&!s.daily?"World map":"Main menu");
+  if(pay){
+   const earned=document.createElement("strong"),balance=document.createElement("span");
+   earned.textContent="◆ +"+pay.gold+" Treasure";
+   balance.textContent=camp.treasure+" available in the Shop";
+   reward.replaceChildren(earned,balance);
+   renderCampBar();
+   if(pay.draft){
+    const openDraft=()=>{renderDraft();showDialog("draftDialog");};
+    const choose=btn("Choose a spell",openDraft);
+    choose.className="reward-draft";
+    reward.append(choose);
+    setTimeout(()=>{if(camp.draft&&!$("endScreen").hidden&&!document.querySelector("dialog[open]"))openDraft();},1600);
+   }
+  }
   $("endScreen").hidden=false;}
  // Guided first battle (Gauntlet only, first time): seven short steps that wait for you to do each thing for real.
  // Build, send a wave, move the commander, use the commander's power, cast a spell, upgrade, and call a wave early.
