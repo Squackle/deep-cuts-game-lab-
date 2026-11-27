@@ -663,3 +663,7 @@ Follow-up to the recovered Codex 13.61 spellcraft release. Added a read-only Hal
 
 ## 2026-11-26 — 13.63 Dawnwatch scenic title and spellbook
 Built on #368's Hall of Legends and menu improvements. The original full-resolution Codex illustration was not committed and remains unavailable; a new self-contained vector landscape depicts a mountain valley, river, bridge and watchtower, with no remote title-art dependencies. Title and results screens use it with legibility overlays and reduced-motion behavior. The existing 30-card editor now displays card art where cached, type, mana cost, artist attribution and accessible copy-count labels. Campaign shop/deck/draft tiles credit available art. Existing handlers, rules, save format, collection ownership and orientation behavior unchanged. No public Arcade or other game modifications. Manual visual review beyond automated smoke remains outstanding.
+
+## 2026-11-26 — 13.64 painted title and campaign navigation
+
+The title and result screens feature the painted river keep as a local WebP. Campaign Map stays the first title action. Battlefield, difficulty, season and Onslaught controls live together in Gauntlet setup, with current choices and the Deck and Shop visible from the cover. The atlas shows overall chapter progress. Deck and shop inventory counters show Treasure, spell and relic capacity, and ante. The victory recap shows Treasure and a direct route to the existing spell draft. The Hall of Legends, Codex, spellbook, star upgrades, battle rules and format 1 saves are retained.
