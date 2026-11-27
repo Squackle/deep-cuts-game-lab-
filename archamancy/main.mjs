@@ -723,7 +723,7 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  campBar.querySelector(".camp-deck").addEventListener("click",()=>{sfx.unlock();sfx.play("click");renderCampDeck();showDialog("campDeckDialog");});
  campBar.querySelector(".camp-shop").addEventListener("click",()=>{sfx.unlock();sfx.play("click");if(camp.pack){renderPack();showDialog("packDialog");return;}renderCampShop();showDialog("campShopDialog");});
  campBar.querySelector(".camp-draft").addEventListener("click",()=>{sfx.unlock();sfx.play("click");renderDraft();showDialog("draftDialog");});
- function renderCampBar(){campBar.querySelector(".camp-gold").textContent="◆ "+camp.treasure;campBar.querySelector(".camp-deck").textContent="🂠 Deck · "+camp.deck.length;campBar.querySelector(".camp-draft").hidden=!camp.draft;const shop=campBar.querySelector(".camp-shop"),fresh=!!(camp.shop?.fresh||camp.pack);shop.classList.toggle("camp-new",fresh);shop.textContent=camp.pack?"⚖ Shop · open pack":fresh?"⚖ Shop · new stock":"⚖ Shop";}
+ function renderCampBar(){campBar.querySelector(".camp-gold").textContent="◆ "+camp.treasure;campBar.querySelector(".camp-deck").textContent="🂠 Deck · "+camp.deck.length;campBar.querySelector(".camp-draft").hidden=!camp.draft;const shop=campBar.querySelector(".camp-shop"),fresh=!!(camp.shop?.fresh||camp.pack);shop.classList.toggle("camp-new",fresh);shop.textContent=camp.pack?"⚖ Shop · open pack":fresh?"⚖ Shop · new stock":"⚖ Shop";const balance=$("endCamp").querySelector(".reward-balance");if(balance)text(balance,camp.treasure+" available in the Shop");}
  // After a Gauntlet battle with the campaign deck: pay Treasure once, restock the Shop and offer a draft.
  function campaignPayout(won,stars,firstMissionWin){const s=game.state;if((game.mission&&(!firstMissionWin||game.mission.category))||!s.kit||s.daily||s.mode!=="campaign"&&s.initialMode!=="campaign"||s.campPaid)return null;s.campPaid=true;const r=campaignLib.finishBattle(camp,{won,stars,wave:s.wave,advanceAnte:!game.mission},game.cards);saveCamp();return r;}
  function renderWorld(){renderCampBar();progress.REGIONS.forEach((r,i)=>{const b=worldNodes[i],open=!!r.map&&progress.mapOpen(profile,r.map),st=r.map?progress.mapStars(profile,r.map):0;b.classList.toggle("locked",!open);b.classList.toggle("current",r.map===mapPick());
@@ -920,15 +920,16 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
   if(pay){
    const earned=document.createElement("strong"),balance=document.createElement("span");
    earned.textContent="◆ +"+pay.gold+" Treasure";
-   balance.textContent=camp.treasure+" available in the Shop";
+   balance.className="reward-balance";
    reward.replaceChildren(earned,balance);
    renderCampBar();
    if(pay.draft){
-    const openDraft=()=>{renderDraft();showDialog("draftDialog");};
+    let opened=false;
+    const openDraft=()=>{opened=true;renderDraft();showDialog("draftDialog");};
     const choose=btn("Choose a spell",openDraft);
     choose.className="reward-draft";
     reward.append(choose);
-    setTimeout(()=>{if(camp.draft&&!$("endScreen").hidden&&!document.querySelector("dialog[open]"))openDraft();},1600);
+    setTimeout(()=>{if(!opened&&camp.draft&&!$("endScreen").hidden&&!document.querySelector("dialog[open]"))openDraft();},1600);
    }
   }
   $("endScreen").hidden=false;}
