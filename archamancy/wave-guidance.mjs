@@ -12,7 +12,7 @@ export function firstFlyerWarning(game,state,nextWave){
  const ready=towers.filter(t=>airReady(game,t));
  if(ready.length)return "Wave 4 brings flying enemies. "+ready.length+" tower"+(ready.length===1?" can":"s can")+" hit flyers. Check their road coverage before calling.";
  if(towers.some(t=>FLIGHT_CAPABLE.includes(game.roster[t.kind]?.kind)&&t.flightTarget==="ground"))
-  return "Wave 4 brings flying enemies! Your anti-air tower targeting is set to Ground. Switch it to Both or Flying before calling.";
+  return "Wave 4 brings flying enemies! Your anti-air towers prioritize ground enemies but can still hit flyers. Switch to Both or Flying first for stronger air coverage.";
  const color=monoTowerColor(game,state);
  if(color)return "Wave 4 brings flying enemies! Mono-"+COLOR_NAMES[color]+": use "+airAdvice(game,state,color)+". Other tower colors invalidate the trial.";
  const unlocked=k=>!state.locked?.includes(k);
@@ -47,12 +47,12 @@ export function counterplayWarning(game,state,nextWave){
  if(!["campaign","endless"].includes(state.mode)||!["ready","active"].includes(state.phase)||nextWave<1||state.mode==="campaign"&&nextWave>25)return "";
  const threats=game.waveSpec(nextWave).map(spec=>game.types[spec.split(":")[0]]);
  const towers=Object.values(state.towers),kind=t=>game.roster[t.kind]?.kind;
- const physical=towers.some(t=>(["strike","splash","root","troops"].includes(kind(t))||game.bonus(t,"physicalEcho"))&&t.flightTarget!=="flying");
+ const physical=towers.some(t=>(["strike","splash","root","troops"].includes(kind(t))||game.bonus(t,"physicalEcho")) );
  const detection=towers.some(t=>["strike","hex","troops"].includes(kind(t))||game.bonus(t,"reveal"));
  const magic=threats.some(e=>e?.resist>=100)&&!physical;
  const shroud=threats.some(e=>e?.shroud)&&!detection;
  const color=monoTowerColor(game,state);
- const armorCounter=towers.some(t=>(["arcane","mirror","chain","hex"].includes(kind(t))||game.bonus(t,"pierce")||game.bonus(t,"toxic")||game.bonus(t,"smite"))&&t.flightTarget!=="flying");
+ const armorCounter=towers.some(t=>(["arcane","mirror","chain","hex"].includes(kind(t))||game.bonus(t,"pierce")||game.bonus(t,"toxic")||game.bonus(t,"smite")) );
  const armor=!!color&&threats.some(e=>e?.armor>=100)&&!armorCounter;
  const flyers=!!color&&nextWave!==4&&threats.some(e=>e?.flying)&&!towers.some(t=>airReady(game,t));
  if(!magic&&!shroud&&!armor&&!flyers)return "";

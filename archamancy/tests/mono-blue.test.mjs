@@ -53,7 +53,7 @@ test("mono-blue guidance recognizes both unlocked specializations and never sugg
  }
  assert.equal(counterplayWarning(g,g.state,16),"");
  assert.ok(g.command({type:"flightTarget",pad:1,mode:"flying"}));
- assert.match(counterplayWarning(g,g.state,16),/Endless Reflections/);
+ assert.equal(counterplayWarning(g,g.state,16),"","Flying first retains physical echo fallback");
 });
 test("new blue attacks and shroud visibility remain deterministic across JSON save and restore",()=>{
  const g=arena("mirror","A");assert.ok(g.command({type:"build",pad:9,kind:"arcanum"}));
@@ -61,7 +61,7 @@ test("new blue attacks and shroud visibility remain deterministic across JSON sa
  foe(g,"warden");foe(g,"stalker",240);tick(g,12);
  const h=createEngine(1,"sandbox","hollow");assert.ok(h.restore(JSON.parse(JSON.stringify(g.snapshot()))));
  tick(g,80);tick(h,80);assert.deepEqual(h.playtestReport(),g.playtestReport());
- assert.equal(SAVE_FORMAT,1);assert.equal(VERSION,"0.1.0-beta.13.63");
+ assert.equal(SAVE_FORMAT,1);assert.equal(VERSION,"0.1.0-beta.13.65");
 });
 test("faster Library pulse and bounded single-Construct scaling are defined",()=>{
  const g=createEngine(1,"sandbox","hollow");

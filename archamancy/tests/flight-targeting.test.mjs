@@ -17,7 +17,7 @@ function enemy(g,kind,progress){
 }
 function fire(g){const before=g.state.events.filter(e=>e.type==="towerAttack").length;g.step();return g.state.events.filter(e=>e.type==="towerAttack")[before];}
 
-test("air-capable tower types independently support Both, Flying only and Ground only",()=>{
+test("air-capable tower types independently support Both, Flying first and Ground first",()=>{
  assert.deepEqual(FLIGHT_TARGET_MODES,["both","flying","ground"]);
  assert.deepEqual(TARGET_MODES,["first","last","strong","close"]);
  for(const kind of ["arcanum","judgment","storm","hex","mirror"]){
@@ -28,16 +28,16 @@ test("air-capable tower types independently support Both, Flying only and Ground
   assert.equal(fire(g)?.target,ground.id,kind+" default selects foremost target regardless of altitude");
   assert.equal(g.command({type:"flightTarget",pad:8,mode:"flying"}),true);
   t.next=g.state.tick;
-  assert.equal(fire(g)?.target,wing.id,kind+" selects flyer only");
+  assert.equal(fire(g)?.target,wing.id,kind+" prioritizes flyer");
   assert.equal(g.command({type:"flightTarget",pad:8,mode:"ground"}),true);
   t.next=g.state.tick;
-  assert.equal(fire(g)?.target,ground.id,kind+" selects ground only");
+  assert.equal(fire(g)?.target,ground.id,kind+" prioritizes ground");
   assert.equal(g.command({type:"flightTarget",pad:8,mode:"both"}),true);
   assert.equal(t.flightTarget,"both");
  }
 });
 
-test("existing First/Last targeting survives switching air filter; empty air band holds fire",()=>{
+test("existing First/Last targeting survives switching altitude priority; empty arena holds fire",()=>{
  const g=arena();
  const ground=enemy(g,"raider",230),wing=enemy(g,"wing",1595);
  assert.equal(g.command({type:"target",pad:8,mode:"last"}),true);
@@ -76,11 +76,12 @@ test("secondary chain bolts obey tower flight targeting preference too",()=>{
   const chain=g.state.inFlight.find(r=>r.tower===8)?.chain;
   assert.ok(chain?.includes(primary.id));
   assert.ok(chain?.includes(ally.id));
-  assert.ok(!chain?.includes(other.id),"chain secondary cannot cross the selected altitude preference");
+  assert.ok(chain?.includes(other.id),"unused chain slot falls back to opposite altitude");
+  assert.ok(chain.indexOf(ally.id)<chain.indexOf(other.id),"preferred altitude is used first");
  }
 });
 
-test("extra shots respect altitude filter on a multishot Judgment Spire",()=>{
+test("extra shots respect altitude priority on a multishot Judgment Spire",()=>{
  const g=arena("judgment");
  assert.equal(g.command({type:"upgrade",pad:8}),true);
  assert.equal(g.command({type:"upgrade",pad:8,branch:"B"}),true);
@@ -89,7 +90,7 @@ test("extra shots respect altitude filter on a multishot Judgment Spire",()=>{
  assert.equal(fire(g)?.target,wing.id);
  const rec=g.state.inFlight.find(r=>r.tower===8);
  assert.ok(rec?.extra?.includes(otherWing.id),"secondary shot should target another eligible flyer");
- assert.ok(!rec.extra.includes(ground.id),"secondary shot must exclude ground units");
+ assert.ok(!rec.extra.includes(ground.id),"secondary shot prioritizes an available flyer");
 });
 
 test("saved runs retain air preference and deterministic targeting; legacy saves default to Both",()=>{
@@ -125,7 +126,7 @@ test("new air/ground targeting button appears on air-capable towers, not ground-
  assert.match(js,/\$\("flightMode"\)\.hidden=!flightCapable/);
  assert.match(js,/type:"flightTarget",pad:selected,mode:m/);
  assert.match(js,/const hasFlight=items\.some\(b=>b\.id==="flightMode"\)/);
- assert.equal(VERSION,"0.1.0-beta.13.63");
+ assert.equal(VERSION,"0.1.0-beta.13.65");
 });
 
 test("different towers can independently choose air and ground without changing one another",()=>{
@@ -148,17 +149,50 @@ test("selected tower explains why it is idle using the firing rules",()=>{
  const ground=enemy(g,"raider",1595);
  assert.equal(g.towerStatus(t),"");
  assert.ok(g.command({type:"flightTarget",pad:8,mode:"flying"}));
- assert.equal(g.towerStatus(t),"Waiting for flyers");
+ assert.equal(g.towerStatus(t),"","ground fallback is eligible");
  const wing=enemy(g,"wing",220);
  assert.equal(g.towerStatus(t),"");
  t.silencedUntil=g.state.tick+1;
  assert.equal(g.towerStatus(t),"Silenced by a boss");
  t.silencedUntil=g.state.tick;
  wing.incoming=wing.hp;
+ assert.equal(g.towerStatus(t),"","ground fallback remains eligible");
+ ground.incoming=ground.hp;
  assert.equal(g.towerStatus(t),"Waiting for shots to land");
+ ground.incoming=0;
  wing.hp=0;
  ground.resist=100;
  const before=g.snapshot().state;
  assert.equal(g.towerStatus(t),"No eligible targets in range");
  assert.deepEqual(g.snapshot().state,before);
+});
+
+
+test("all air-capable towers fall back in both directions and resume preference when targets arrive",()=>{
+ for(const kind of ["arcanum","judgment","storm","hex","mirror"]){
+  for(const mode of ["flying","ground"]){
+   const g=arena(kind),t=g.state.towers[8];
+   const other=enemy(g,mode==="flying"?"raider":"wing",1595);
+   assert.ok(g.command({type:"flightTarget",pad:8,mode}));
+   assert.equal(fire(g)?.target,other.id,kind+" "+mode+" fallback");
+   const preferred=enemy(g,mode==="flying"?"wing":"raider",220);
+   t.next=g.state.tick;
+   assert.equal(fire(g)?.target,preferred.id,kind+" "+mode+" resumes priority");
+  }
+ }
+});
+
+test("a preferred but immune enemy cannot prevent a valid fallback",()=>{
+ const g=arena(),ground=enemy(g,"raider",1595),wing=enemy(g,"wing",220);
+ wing.resist=100;wing.baseResist=100;
+ assert.ok(g.command({type:"flightTarget",pad:8,mode:"flying"}));
+ assert.equal(fire(g)?.target,ground.id);
+});
+
+test("extra shots fill unused preferred slots with the opposite altitude",()=>{
+ const g=arena("judgment");assert.ok(g.command({type:"upgrade",pad:8}));assert.ok(g.command({type:"upgrade",pad:8,branch:"B"}));
+ const wing=enemy(g,"wing",240),ground=enemy(g,"raider",225);
+ assert.ok(g.command({type:"flightTarget",pad:8,mode:"flying"}));
+ assert.equal(fire(g)?.target,wing.id);
+ assert.ok(g.state.inFlight.find(r=>r.tower===8)?.extra?.includes(ground.id));
 });

@@ -3,7 +3,7 @@ import {MISSIONS} from "./missions.mjs";
 // Bump only when the saved run format changes, so saves survive ordinary updates.
 import {BY_ID as POOL_BY_ID,LAND_STEP,SPELL_DAMAGE_STEP,spellManaCost} from "./pool.mjs";
 export const SAVE_FORMAT=1;
-export const VERSION="0.1.0-beta.13.63";
+export const VERSION="0.1.0-beta.13.65";
 // Status effects from towers (ticks are 100 ms): Pyre blasts burn, Thornheart poisons (stacking), Arcanum freezes (slow), Hex curses (+35% damage taken).
 export const BURN=10,POISON=30,POISON_STACKS=3,SPREAD_HIT=.5,SPREAD_MAX=8,BROOD_REVEAL=30,SPLASH_EDGE=.75,TOWER_BURN=9;
 // Enemy health multiplier per difficulty. Gauntlet stars: 3 at 18+ fortress left, 2 at 10+, otherwise 1.
@@ -405,7 +405,12 @@ function commanderPos(){return pointAt(state.commander.progress);}
  // Targeting modes a player can pick per tower. Ties fall back to First.
  const TARGET_ORDERS={first:()=>firstOrder,last:()=>(a,b)=>remaining(b.progress)-remaining(a.progress)||a.id-b.id,strong:()=>(a,b)=>b.hp-a.hp||firstOrder(a,b),close:o=>(a,b)=>d2(enemyPos(a),o)-d2(enemyPos(b),o)||firstOrder(a,b)};
  function firstEnemy(origin,range,groundOnly=false,damage=null,mode="first",spare=false,flightMode="both"){let best=null;const order=Object.hasOwn(TARGET_ORDERS,mode)?TARGET_ORDERS[mode](origin):firstOrder;for(const e of state.enemies){if(e.hp<=0||e.escaped||!e.revealed||inTunnel(e)||(groundOnly&&e.flying)||(flightMode==="ground"&&e.flying)||(flightMode==="flying"&&!e.flying)||(damage==="magic"&&e.resist>=100)||(damage==="physical"&&e.armor>=100)||(damage==="echo"&&(e.resist<100||e.armor>=100))||d2(enemyPos(e),origin)>range*range||(spare&&(e.incoming||0)>=e.hp))continue;if(!best||order(e,best)<0)best=e;}return best;}
+ // Altitude is a priority, not an exclusion: try the preferred band first.
  function aimedTarget(t,range,flight=t.flightTarget||"both",spare=SPARE.has(roster[t.kind].kind)){
+  return aimedTargetInBand(t,range,flight,spare)||(flight==="both"?null:aimedTargetInBand(t,range,flight==="flying"?"ground":"flying",spare));
+ }
+ function altitudeOrder(mode,a,b){return mode==="flying"?Number(!!b.flying)-Number(!!a.flying):mode==="ground"?Number(!!a.flying)-Number(!!b.flying):0;}
+ function aimedTargetInBand(t,range,flight,spare){
   const k=roster[t.kind].kind,groundOnly=k==="splash"||k==="root";
   if(k==="mirror"&&bonus(t,"physicalEcho")){const echo=firstEnemy(pads[t.id],range,false,"echo",t.target,spare,flight);if(echo)return echo;}
   const piercesImmunity=k==="strike"&&bonus(t,"pierce")||k==="root"&&bonus(t,"toxic");
@@ -421,7 +426,6 @@ function commanderPos(){return pointAt(state.commander.progress);}
   const pad=pads[t.id],range=towerRange(t),flight=t.flightTarget||"both";
   if(aimedTarget(t,range,flight))return "";
   if(SPARE.has(def.kind)&&aimedTarget(t,range,flight,false))return "Waiting for shots to land";
-  if(flight!=="both"&&aimedTarget(t,range,"both",false))return flight==="flying"?"Waiting for flyers":"Waiting for ground enemies";
   return firstEnemy(pad,range)?"No eligible targets in range":"No visible enemies in range";
  }
 
@@ -587,8 +591,8 @@ function makeTroop(t,opts={}){if(state.troops.length>=220)return false;const def
  else {
  const e=aimedTarget(t,range);if(!e){t.idle=(t.idle||0)+1;continue;}t.shots=(t.shots||0)+1;const q=enemyPos(e);
  const rec={at:state.tick+(k==="chain"?CHAIN_FLIGHT:FLIGHT),tower:t.id,uid:t.uid,target:e.id,x:q.x,y:q.y};
- if(k==="chain"){let n=0,from={x:p.x,y:p.y-28};rec.chain=[];for(const x of [e,...area(q,110+bonus(t,"radius")).filter(x=>x.id!==e.id&&(t.flightTarget!=="ground"||!x.flying)&&(t.flightTarget!=="flying"||x.flying)).sort(firstOrder)]){if(n++>=tier+2+Math.floor(bonus(t,"chains")))break;const pos=enemyPos(x),to={x:pos.x,y:pos.y-(x.flying?21:8)};shot("chain",from,to,x);from=to;rec.chain.push(x.id);}}
- const reflect=t.reflectUntil>state.tick?1:0;if(extraShots(t)||reflect){const more=state.enemies.filter(x=>x.hp>0&&x.id!==e.id&&!x.escaped&&!inTunnel(x)&&(t.flightTarget!=="ground"||!x.flying)&&(t.flightTarget!=="flying"||x.flying)&&d2(enemyPos(x),p)<=range**2&&(k!=="mirror"||x.revealed&&(echoTarget(t,x)||x.resist<100))).sort((a,b)=>(k==="mirror"?Number(echoTarget(t,b))-Number(echoTarget(t,a)):0)||firstOrder(a,b)).slice(0,extraShots(t)+reflect);rec.extra=more.map(x=>x.id);for(const x of more)shot(k,{x:p.x,y:p.y-28},enemyPos(x),x);}
+ if(k==="chain"){let n=0,from={x:p.x,y:p.y-28};rec.chain=[];for(const x of [e,...area(q,110+bonus(t,"radius")).filter(x=>x.id!==e.id).sort((a,b)=>altitudeOrder(t.flightTarget,a,b)||firstOrder(a,b))]){if(n++>=tier+2+Math.floor(bonus(t,"chains")))break;const pos=enemyPos(x),to={x:pos.x,y:pos.y-(x.flying?21:8)};shot("chain",from,to,x);from=to;rec.chain.push(x.id);}}
+ const reflect=t.reflectUntil>state.tick?1:0;if(extraShots(t)||reflect){const more=state.enemies.filter(x=>x.hp>0&&x.id!==e.id&&!x.escaped&&!inTunnel(x)&&d2(enemyPos(x),p)<=range**2&&(k!=="mirror"||x.revealed&&(echoTarget(t,x)||x.resist<100))).sort((a,b)=>altitudeOrder(t.flightTarget,a,b)||(k==="mirror"?Number(echoTarget(t,b))-Number(echoTarget(t,a)):0)||firstOrder(a,b)).slice(0,extraShots(t)+reflect);rec.extra=more.map(x=>x.id);for(const x of more)shot(k,{x:p.x,y:p.y-28},enemyPos(x),x);}
  if(SPARE.has(k)){rec.inc=expectHit(e,k==="mirror"?mirrorPower(t,power).power:hitPower(e),k==="mirror"?mirrorMagic(t,e):k!=="strike",k==="strike"?(bonus(t,"pierce")?2:true):false);e.incoming=(e.incoming||0)+rec.inc;}
  state.inFlight.push(rec);
  if(k!=="chain")shot(k,{x:p.x,y:p.y-28},{x:q.x,y:q.y-(e.flying?21:8)},e);emit("towerAttack",{source:t.id,target:e.id,progress:e.progress});
