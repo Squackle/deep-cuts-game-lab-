@@ -5,7 +5,7 @@ import {createEngine,SAVE_FORMAT} from "../engine.mjs";
 const read=name=>readFileSync(new URL("../"+name,import.meta.url),"utf8");
 test("title ambience is decorative, locally sourced, cover-aligned and respects reduced motion",()=>{
  const mod=read("title-ambience.mjs"),css=read("styles.css"),menu=read("title-menu.mjs");
- for(const name of ["ambience-flag","ambience-fire","ambience-fog","ambience-river","ambience-waterfall"]){
+ for(const name of ["ambience-flag","ambience-fire","ambience-sparks","ambience-fog","ambience-river","ambience-waterfall"]){
   assert.ok(mod.includes(name),name);
   assert.ok(css.includes(name),name);
  }
@@ -14,6 +14,8 @@ test("title ambience is decorative, locally sourced, cover-aligned and respects 
  assert.match(mod,/layer\.setAttribute\("aria-hidden","true"\)/);
  assert.match(css,/\.title-ambience\{[^}]*position:fixed[^}]*pointer-events:none/);
  assert.match(css,/\.title-ambience svg\{[^}]*left:65%;top:50%/);
+ assert.match(css,/background-position:0 0,0 0,65% 27%/);
+ assert.match(css,/\.title-ambience svg\{top:27%;transform:translate\(-65%,-27%\)/);
  assert.match(css,/prefers-reduced-motion:reduce\)\{\.title-ambience\{display:none/);
  assert.match(menu,/mountTitleAmbience\(title\)/);
 });

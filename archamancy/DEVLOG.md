@@ -671,3 +671,7 @@ The title and result screens feature the painted river keep as a local WebP. Cam
 ## 2026-11-26 — 13.65 altitude priority and 13.66 title ambience and balance
 
 Flying First and Ground First fall back to the other altitude when the preferred targets are unavailable. Both remains the default. Title flags, beacon, fog and water animate over the painted scene, with alignment retained when title controls scroll and still art under reduced motion. The targeted pilot adjusts Deep Freeze slow to 2.4 seconds, Grasping Forest root to 1.5 seconds and Tier II–IV Soul Foundry base payouts to 22/27/32 per death within the existing caps. The larger Deep Freeze adjustment failed the fixed Easy Mono-Blue win and was replaced with the smaller slow increase. See AMBIENT-BALANCE-13.66.md for paired runs.
+
+## 2026-11-27 — 13.67 visible title motion
+
+Increased the banner's fabric movement and made the watchtower beacon flicker and emit rising sparks. Fog and water move at a clearer pace. The decorative overlay uses viewport sizing, stays aligned when the title scrolls, and disappears under reduced motion. This release updates presentation only.
