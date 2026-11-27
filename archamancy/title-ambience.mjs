@@ -1,5 +1,18 @@
 // Decorative motion aligned to the original painted title art.
 // Coordinates are in the reference composition, 1648 x 928 (the WebP is the same aspect ratio).
+// Feather the edges so the moving paint blends into the cover at the banks, trees and window.
+const WATER=[
+ ["river","M894 453 Q934 458 961 453 L969 466 Q939 478 912 470 Q879 478 877 492 L859 508 Q881 521 916 526 Q952 532 983 549 L1020 563 Q1000 586 947 591 Q914 596 901 617 Q913 628 937 626 L930 644 Q900 655 861 665 L827 665 L826 656 Q857 645 875 633 L881 615 Q887 594 921 583 L961 568 Q938 556 908 550 Q875 544 843 530 Q817 520 835 506 Q857 490 872 477Z",802,435,245,255],
+ ["waterfall","M939 789 Q974 791 1008 805 Q1032 810 1061 826 Q1090 835 1119 853 L1166 868 Q1186 879 1217 881 Q1250 890 1325 928 L1151 928 Q1105 913 1083 894 Q1060 876 1033 873 Q1004 855 982 846 Q963 829 931 825 L922 815Z",900,770,445,162]
+];
+const FOG=[
+ ["mist-one",785,407,98,19],["mist-two",952,412,109,20],
+ ["mist-three",578,632,86,28],["mist-four",1515,306,96,22]
+];
+const painting='<use href="#ambience-paint"/>';
+function flowingPaint(id,classes){
+ return `<g class="${classes}" mask="url(#ambience-${id})">${painting}${painting}</g>`;
+}
 const SCENE=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1648 928" aria-hidden="true" focusable="false">
  <defs>
   <image id="ambience-paint" width="1648" height="928"/>
@@ -10,10 +23,13 @@ const SCENE=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1648 928" aria
   <linearGradient id="ambience-cloth-light">
    <stop stop-color="#ffe0a0" stop-opacity="0"/><stop offset=".5" stop-color="#ffe7ae" stop-opacity=".48"/><stop offset="1" stop-color="#ffe0a0" stop-opacity="0"/>
   </linearGradient>
-  <radialGradient id="ambience-glow"><stop stop-color="#fff1ab" stop-opacity=".8"/><stop offset=".42" stop-color="#ffb24d" stop-opacity=".32"/><stop offset="1" stop-color="#ff9c3a" stop-opacity="0"/></radialGradient>
-  <radialGradient id="ambience-mist"><stop stop-color="#d9e7e4" stop-opacity=".28"/><stop offset=".48" stop-color="#c4d8dd" stop-opacity=".13"/><stop offset="1" stop-color="#bbcdd0" stop-opacity="0"/></radialGradient>
-  <linearGradient id="ambience-stream" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#eaf9f4" stop-opacity=".08"/><stop offset=".6" stop-color="#eef9f3" stop-opacity=".65"/><stop offset="1" stop-color="#ccf0ee" stop-opacity=".12"/></linearGradient>
-  <clipPath id="ambience-water"><path d="M868 448 L1005 448 980 480 933 500 854 520 907 542 995 553 1041 572 995 592 943 609 883 632 930 645 839 675 823 659 888 624 935 599 975 571 902 559 822 529 823 509 890 488 946 470Z M924 774 L1087 778 1099 806 1164 818 1180 849 1240 880 1390 928 965 928 963 901 1036 868 1017 844 916 830 907 810Z"/></clipPath>
+  <radialGradient id="ambience-feather">
+   <stop offset=".37" stop-color="white"/><stop offset=".75" stop-color="white" stop-opacity=".53"/><stop offset="1" stop-color="white" stop-opacity="0"/>
+  </radialGradient>
+  <filter id="ambience-water-feather"><feGaussianBlur stdDeviation="5"/></filter>
+  ${WATER.map(([id,path,x,y,w,h])=>`<mask id="ambience-${id}" maskUnits="userSpaceOnUse" x="${x}" y="${y}" width="${w}" height="${h}"><path d="${path}" fill="white" filter="url(#ambience-water-feather)"/></mask>`).join("")}
+  ${FOG.map(([id,x,y,rx,ry])=>`<mask id="ambience-${id}" maskUnits="userSpaceOnUse" x="${x-rx}" y="${y-ry}" width="${2*rx}" height="${2*ry}"><ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="url(#ambience-feather)"/></mask>`).join("")}
+  <mask id="ambience-flame" maskUnits="userSpaceOnUse" x="1275" y="183" width="46" height="54"><ellipse cx="1298" cy="210" rx="23" ry="27" fill="url(#ambience-feather)"/></mask>
  </defs>
  <g class="ambience-flags" opacity=".82">
   <g clip-path="url(#ambience-flag-main)">
@@ -24,31 +40,9 @@ const SCENE=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1648 928" aria
   <g clip-path="url(#ambience-flag-right)"><use class="ambience-flag flag-right" href="#ambience-paint"/></g>
   <g clip-path="url(#ambience-flag-low)"><use class="ambience-flag flag-low" href="#ambience-paint"/></g>
  </g>
- <g class="ambience-fire">
-  <ellipse cx="1297" cy="218" rx="37" ry="43" fill="url(#ambience-glow)" opacity=".79"/>
-  <path d="M1287 231 Q1280 222 1289 211 Q1299 200 1296 187 Q1311 201 1306 213 Q1316 221 1307 231Z" fill="#ffb246" opacity=".72"/>
-  <path d="M1292 231 Q1288 224 1295 217 Q1301 211 1300 204 Q1309 216 1302 231Z" fill="#fff1af" opacity=".85"/>
- </g>
- <g class="ambience-sparks" fill="#ffda82">
-  <ellipse cx="1295" cy="212" rx="2.2" ry="3.1"/>
-  <ellipse cx="1303" cy="213" rx="1.6" ry="2.4"/>
-  <ellipse cx="1298" cy="222" rx="2.5" ry="3.3"/>
-  <ellipse cx="1289" cy="218" rx="1.4" ry="2.1"/>
- </g>
- <g fill="url(#ambience-mist)" class="ambience-fog">
-  <ellipse class="mist-one" cx="786" cy="409" rx="85" ry="20" opacity=".42"/>
-  <ellipse class="mist-two" cx="971" cy="413" rx="106" ry="25" opacity=".48"/>
-  <ellipse class="mist-three" cx="566" cy="624" rx="90" ry="36" opacity=".42"/>
-  <ellipse class="mist-four" cx="1538" cy="308" rx="91" ry="27" opacity=".40"/>
- </g>
- <g clip-path="url(#ambience-water)" fill="none" stroke-linecap="round">
-  <g class="ambience-river" stroke="#c9e9e8" stroke-width="2.4" opacity=".38">
-   <path d="M901 468 Q940 463 969 457 M846 518 Q868 511 892 509 M908 545 Q940 551 978 552 M1003 572 Q985 580 969 580 M924 616 Q905 622 887 633 M857 664 Q873 659 887 655"/>
-  </g>
-  <g class="ambience-waterfall" stroke="url(#ambience-stream)" stroke-width="3.5" opacity=".38">
-   <path d="M932 803 Q949 816 967 820 T1015 829 M974 823 Q996 834 1012 836 T1042 849 M1040 853 Q1067 866 1089 866 T1135 878 M1117 870 Q1147 880 1172 889 T1234 913 M1051 897 Q1079 906 1100 917 T1134 928"/>
-  </g>
- </g>
+ <g mask="url(#ambience-flame)"><use class="ambience-fire" href="#ambience-paint"/></g>
+ ${FOG.map(([id])=>flowingPaint(id,"ambience-fog "+id)).join("")}
+ ${WATER.map(([id])=>flowingPaint(id,"ambience-water ambience-"+id)).join("")}
 </svg>`;
 export function mountTitleAmbience(title){
  if(title.querySelector(".title-ambience"))return;

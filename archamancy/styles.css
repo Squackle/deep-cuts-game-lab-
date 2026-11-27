@@ -853,8 +853,7 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 /* The title cover leaves the painted river and keep visible beside the player's orders. */
 .title-screen.illustrated-title{
  display:block;padding:clamp(14px,2.6vw,42px) clamp(14px,5vw,92px);
- background:linear-gradient(90deg,#0b1412f2 0%,#0e1813bc 34%,#10191136 67%,#0d171523 100%),
-  linear-gradient(0deg,#0b1511c9,#0b151100 55%),url("./assets/river-keep.webp") 65% 50%/cover no-repeat #13251b;
+ background:url("./assets/river-keep.webp") 65% 50%/cover no-repeat #13251b;
  backdrop-filter:none;overscroll-behavior:contain
 }
 .illustrated-title .title-motes{display:none}
@@ -1047,7 +1046,13 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 
 /* Keep the decorative motion fixed to the painted cover while the title controls scroll. */
 .illustrated-title{isolation:isolate}
-.illustrated-title .title-card{position:relative;z-index:1}
+/* Shade the still cover and its moving paint together so patches blend into the artwork. */
+.illustrated-title::before{
+ content:"";position:fixed;inset:0;z-index:1;pointer-events:none;
+ background:linear-gradient(90deg,#0b1412f2 0%,#0e1813bc 34%,#10191136 67%,#0d171523 100%),
+  linear-gradient(0deg,#0b1511c9,#0b151100 55%);
+}
+.illustrated-title .title-card{position:relative;z-index:2}
 .title-ambience{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
 .title-ambience svg{
  position:absolute;left:65%;top:50%;
@@ -1055,7 +1060,7 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
  max-width:none;transform:translate(-65%,-50%);pointer-events:none
 }
 @media (orientation:landscape) and (max-height:450px){
- .title-screen.illustrated-title{background-position:0 0,0 0,65% 27%}
+ .title-screen.illustrated-title{background-position:65% 27%}
  .title-ambience svg{top:27%;transform:translate(-65%,-27%)}
 }
 .ambience-flag{transform-box:view-box;animation:ambient-flag 3.4s ease-in-out infinite}
@@ -1074,30 +1079,25 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
  20%,75%{opacity:.94}
  100%{transform:translateX(167px);opacity:0}
 }
-.ambience-fire{transform-origin:1297px 231px;transform-box:view-box;animation:ambient-fire 2s ease-in-out infinite}
+/* Two samples travel in the same direction and fade in turn, hiding each loop's reset. */
+:is(.ambience-water,.ambience-fog) use{animation:ambient-paint var(--paint-duration) linear infinite}
+:is(.ambience-water,.ambience-fog) use+use{animation-delay:calc(var(--paint-duration) / -2)}
+@keyframes ambient-paint{
+ 0%{opacity:0;transform:translate(0,0)}
+ 50%{opacity:var(--paint-opacity,.94)}
+ 100%{opacity:0;transform:translate(var(--paint-x),var(--paint-y))}
+}
+.ambience-river{--paint-duration:2.4s;--paint-x:10px;--paint-y:9px}
+.ambience-waterfall{--paint-duration:1.8s;--paint-x:36px;--paint-y:23px}
+.ambience-fog{--paint-duration:9s;--paint-x:34px;--paint-y:-3px;--paint-opacity:.6}
+.ambience-fog.mist-two{--paint-duration:11s;--paint-x:29px}
+.ambience-fog.mist-three{--paint-duration:12s;--paint-x:37px;--paint-y:-7px}
+.ambience-fog.mist-four{--paint-duration:13s;--paint-x:24px}
+.ambience-fire{transform-origin:1298px 229px;transform-box:view-box;animation:ambient-fire 2.3s ease-in-out infinite}
 @keyframes ambient-fire{
- 0%,100%{opacity:.46;transform:scale(.9,.82)}
- 26%{opacity:.96;transform:scale(1,1.15)}
- 57%{opacity:.61;transform:scale(1.04,.92)}
- 78%{opacity:.88;transform:scale(.93,1.06)}
+ 0%,100%{transform:scale(.94,.94);filter:brightness(.91)}
+ 24%{transform:skewX(-5deg) scale(1.02,1.17);filter:brightness(1.27)}
+ 49%{transform:skewX(2deg) scale(.98,.9);filter:brightness(1.02)}
+ 76%{transform:skewX(5deg) scale(1.04,1.1);filter:brightness(1.22)}
 }
-.ambience-sparks ellipse{animation:ambient-spark 1.9s linear infinite}
-.ambience-sparks ellipse:nth-child(2){animation-delay:-.85s;animation-duration:1.6s}
-.ambience-sparks ellipse:nth-child(3){animation-delay:-1.3s;animation-duration:2.2s}
-.ambience-sparks ellipse:nth-child(4){animation-delay:-.4s;animation-duration:1.7s}
-@keyframes ambient-spark{
- 0%{opacity:0;transform:translate(0,6px)}
- 15%{opacity:.86}
- 72%{opacity:.54}
- 100%{opacity:0;transform:translate(16px,-49px)}
-}
-.ambience-fog ellipse{animation:ambient-fog 15s ease-in-out infinite}
-.ambience-fog .mist-two{animation-delay:-7s;animation-duration:19s}
-.ambience-fog .mist-three{animation-delay:-4s;animation-duration:21s}
-.ambience-fog .mist-four{animation-delay:-10s;animation-duration:17s}
-@keyframes ambient-fog{0%,100%{transform:translate(-21px,2px);opacity:.28}50%{transform:translate(31px,-4px);opacity:.64}}
-.ambience-river{stroke-dasharray:18 30;animation:ambient-river 3.5s linear infinite}
-@keyframes ambient-river{to{stroke-dashoffset:-48}}
-.ambience-waterfall{stroke-dasharray:15 23;animation:ambient-waterfall 1.9s linear infinite}
-@keyframes ambient-waterfall{to{stroke-dashoffset:-38}}
 @media(prefers-reduced-motion:reduce){.title-ambience{display:none}.title-ambience *{animation:none!important}}
