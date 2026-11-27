@@ -1,4 +1,5 @@
 // Assemble the title screen around the existing controls and battlefield selector.
+import {mountTitleAmbience} from "./title-ambience.mjs";
 export function createTitleMenu({title, campaignBar, openBattlefields, orders}) {
  const cover=title.querySelector(".title-card");
  const mapChoices=title.querySelector(".title-maps");
@@ -27,6 +28,7 @@ export function createTitleMenu({title, campaignBar, openBattlefields, orders}) 
  footer.append(title.querySelector("#resetGameProgress"));
  title.querySelector(".title-tag").textContent="Defend the roads of five realms. Build towers, lead a commander, and grow your spellbook.";
  title.classList.add("illustrated-title");
+ mountTitleAmbience(title);
 
  function render(){
   const current=orders();

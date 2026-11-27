@@ -1043,3 +1043,30 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
  .end-illustrated .end-camp{padding:5px}
  .end-illustrated .reward-draft{min-height:29px;padding:3px 7px}
 }
+
+
+/* Quiet title-only ambient motion. Match the cover image's 65% / 50% anchor
+   at all aspect ratios, including landscape phones that scroll the title controls. */
+.illustrated-title{isolation:isolate}
+.illustrated-title .title-card{position:relative;z-index:1}
+.title-ambience{position:fixed;inset:0;overflow:hidden;pointer-events:none;container-type:size;z-index:0}
+.title-ambience svg{position:absolute;left:65%;top:50%;width:max(100cqw,177.68cqh);height:max(56.28cqw,100cqh);max-width:none;transform:translate(-65%,-50%);pointer-events:none}
+.ambience-flag{transform-box:view-box;animation:ambient-flag 6.8s ease-in-out infinite}
+.flag-main{transform-origin:1302px 48px}
+.flag-upper{transform-origin:1181px 220px;animation-delay:-2.2s;animation-duration:5.8s}
+.flag-right{transform-origin:1420px 342px;animation-delay:-3.8s;animation-duration:7.7s}
+.flag-low{transform-origin:1116px 414px;animation-delay:-1.3s;animation-duration:6.2s}
+@keyframes ambient-flag{0%,100%{transform:translate(0,0) skewY(0deg)}40%{transform:translate(.7px,-1px) skewY(.55deg)}72%{transform:translate(-.6px,.8px) skewY(-.38deg)}}
+.ambience-fire{transform-origin:1297px 228px;transform-box:view-box;animation:ambient-fire 2.9s ease-in-out infinite}
+@keyframes ambient-fire{0%,100%{opacity:.62;transform:scale(1,.95)}28%{opacity:.94;transform:scale(.96,1.04)}55%{opacity:.68;transform:scale(1.03,.92)}80%{opacity:.85;transform:scale(.99,1.02)}}
+.ambience-fog ellipse{animation:ambient-fog 28s ease-in-out infinite}
+.ambience-fog .mist-two{animation-delay:-14s;animation-duration:33s}
+.ambience-fog .mist-three{animation-delay:-7s;animation-duration:38s}
+.ambience-fog .mist-four{animation-delay:-21s;animation-duration:35s}
+@keyframes ambient-fog{0%,100%{transform:translate(-8px,0);opacity:.24}50%{transform:translate(11px,-2px);opacity:.47}}
+.ambience-river{stroke-dasharray:18 30;animation:ambient-river 9s linear infinite}
+@keyframes ambient-river{to{stroke-dashoffset:-48}}
+.ambience-waterfall{stroke-dasharray:15 23;animation:ambient-waterfall 2.8s linear infinite}
+@keyframes ambient-waterfall{to{stroke-dashoffset:-38}}
+@media(prefers-reduced-motion:reduce){.title-ambience{display:none}.title-ambience *{animation:none!important}}
+@supports not (width:1cqw){.title-ambience{display:none}}
