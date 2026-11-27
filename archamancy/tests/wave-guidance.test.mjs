@@ -22,7 +22,7 @@ test("already-built anti-air is acknowledged, and Ground-only targeting is calle
  assert.ok(g.command({type:"build",pad:0,kind:"arcanum"}));
  assert.match(firstFlyerWarning(g,g.state,4),/1 tower can hit flyers/);
  assert.ok(g.command({type:"flightTarget",pad:0,mode:"ground"}));
- assert.match(firstFlyerWarning(g,g.state,4),/Switch it to Both or Flying/);
+ assert.match(firstFlyerWarning(g,g.state,4),/Switch to Both or Flying first/);
  assert.ok(g.command({type:"flightTarget",pad:0,mode:"both"}));
  assert.match(firstFlyerWarning(g,g.state,4),/1 tower can hit flyers/);
 });
@@ -121,7 +121,7 @@ test("caldera mono-blue forecast warns before the reported Stalker and Warden wa
  assert.ok(g.command({type:"build",pad:3,kind:"judgment"}));
  assert.equal(counterplayWarning(g,g.state,16),"","Judgment covers both threats");
  assert.ok(g.command({type:"flightTarget",pad:3,mode:"flying"}));
- assert.match(counterplayWarning(g,g.state,16),/No physical tower/,"flying-only physical tower cannot target ground wardens");
+ assert.doesNotMatch(counterplayWarning(g,g.state,16),/No physical tower/,"Flying first retains physical ground fallback");
 });
 test("counterplay hints respect progression locks and do not invent a missing spell or tower",()=>{
  const g=createEngine(1,"campaign","caldera");g.state.locked=["judgment","hex"];
