@@ -96,7 +96,9 @@ export function createCampaignAtlas({profile, paintRegion, lockReason, savedMiss
   regionIndex = null;
   back.hidden = true;
   title.textContent = "Campaign Map";
-  subtitle.textContent = "Choose a region to explore its mission road.";
+  const missions = Object.values(CHAPTERS).flat();
+  const cleared = missions.filter(mission => missionStars(profile, mission)).length;
+  subtitle.textContent = cleared + " of " + missions.length + " campaign missions cleared";
   const frame = element("div", "atlas-world");
   const scene = element("div", "atlas-world-scene");
   scene.append(worldArt);

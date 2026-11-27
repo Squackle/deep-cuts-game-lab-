@@ -850,3 +850,196 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 :is(.title-screen,dialog) button:focus-visible{outline:3px solid #ffe5a0;outline-offset:2px}
 @media(orientation:landscape) and (max-height:500px){.title-motes{display:none}.spellbook-art{width:45px}#deckList .spellbook-entry{grid-template-columns:45px minmax(0,1fr) 44px}}
 @media(prefers-reduced-motion:reduce){.title-motes,.end-rays,.end-card{animation:none!important;transition:none!important}}
+/* The title cover leaves the painted river and keep visible beside the player's orders. */
+.title-screen.illustrated-title{
+ display:block;padding:clamp(14px,2.6vw,42px) clamp(14px,5vw,92px);
+ background:linear-gradient(90deg,#0b1412f2 0%,#0e1813bc 34%,#10191136 67%,#0d171523 100%),
+  linear-gradient(0deg,#0b1511c9,#0b151100 55%),url("./assets/river-keep.webp") 65% 50%/cover no-repeat #13251b;
+ backdrop-filter:none;overscroll-behavior:contain
+}
+.illustrated-title .title-motes{display:none}
+.illustrated-title .title-card{
+ max-width:1380px;width:100%;min-height:100%;display:grid;
+ grid-template-columns:minmax(0,1fr) minmax(250px,390px);
+ grid-template-areas:"brand orders" "foot foot";grid-template-rows:1fr auto;
+ gap:clamp(12px,3vw,38px);text-align:left
+}
+.illustrated-title .title-brand{display:flex;align-items:flex-start;gap:13px;min-width:0;width:min(100%,430px)}
+.illustrated-title .title-logo{align-items:flex-start;max-width:100%;animation:none}
+.illustrated-title .title-crest{width:74px;margin:0 0 5px;align-self:flex-start}
+.illustrated-title #titleName{
+ font:700 clamp(2.35rem,5vw,5.85rem)/1.06 Georgia,serif;letter-spacing:.022em;
+ color:#fff0c9;background:none;text-shadow:0 3px 0 #241b13,0 7px 24px #080b08a6;
+ -webkit-text-stroke:0;filter:none
+}
+.illustrated-title .title-ribbon{margin:6px 0 0}
+.illustrated-title .title-ribbon span{
+ padding:0;color:#e9c686;background:none;border:0;box-shadow:none;clip-path:none;
+ font:700 .75rem/1.1 system-ui;letter-spacing:.24em
+}
+.illustrated-title .title-tag{margin:1px 0 2px;max-width:36ch;text-align:left;color:#f1e3c3;font-size:.96rem}
+.illustrated-title .player-level{width:min(100%,345px);margin:1px 0 3px}
+.illustrated-title .player-level small{text-align:left}
+.illustrated-title .title-actions{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+ width:min(100%,390px);margin:0;padding:0;background:none;position:static
+}
+.illustrated-title .title-actions :is(.stone-btn,.play-btn,.continue-run){
+ border:1px solid #96784d;border-radius:9px;min-width:0;
+ box-shadow:0 3px 0 #0b120e,0 6px 12px #050a08a6;
+ text-shadow:none;transition:filter .15s,transform .12s
+}
+.illustrated-title .title-actions :is(.stone-btn,.play-btn){background:#14251dee;color:#f8ebcd}
+.illustrated-title .title-actions :is(.stone-btn,.play-btn,.continue-run):hover{filter:brightness(1.14)}
+.illustrated-title .title-actions .campaign-map-btn{
+ grid-column:1/-1;min-height:54px;font:700 1.4rem Georgia,serif;
+ background:linear-gradient(#f6de9e,#d9ab5e);border-color:#f8e2a9;color:#291d11;
+ box-shadow:inset 0 0 0 3px #9e73452b,0 3px 0 #684722,0 8px 16px #000a
+}
+.illustrated-title .title-actions .continue-run{
+ grid-column:1/-1;min-height:46px;background:linear-gradient(#d8e7c1,#a8c18d);color:#1c2e1d;
+ border-color:#d0e3b2;font-size:1.07rem
+}
+.illustrated-title .title-actions #titleRestart{grid-column:1/-1;min-height:32px;font-size:.75rem}
+.illustrated-title .title-actions .play-btn{min-height:44px;font:750 .98rem system-ui}
+.illustrated-title .title-actions .title-row{grid-column:1/-1;gap:8px}
+.illustrated-title .title-actions .daily-btn span{display:block;font-size:.85rem}
+.illustrated-title .title-actions .daily-btn small{line-height:1.22;margin-top:2px}
+.illustrated-title .title-icons{width:min(100%,390px);gap:8px}
+.illustrated-title .icon-tile{
+ min-height:58px;border:1px solid #876d48;border-radius:9px;background:#13231eea;box-shadow:0 3px 0 #08130e;
+ color:#f7e9ca
+}
+.field-orders{
+ grid-area:orders;align-self:end;position:relative;min-width:0;max-width:390px;width:100%;
+ color:#faeccd;padding:16px 17px 13px;border:1px solid #b69262;border-radius:12px;
+ box-shadow:inset 0 0 0 3px #c6a16c16,0 12px 28px #080d09ba;
+ background:linear-gradient(135deg,#25382bea,#101e17f8)
+}
+.field-orders-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.field-orders-label{display:block;color:#e5c286;font:750 .65rem/1.2 system-ui;letter-spacing:.14em;text-transform:uppercase}
+.field-orders h3{margin:5px 0 0;font:700 clamp(1.12rem,2.55vw,1.83rem)/1.13 Georgia,serif}
+.field-orders-change{border:1px solid #a98958;border-radius:7px;background:#17271e;color:#f4e4c4;font-weight:700;min-height:35px}
+.field-conditions{color:#dfd1ae;margin:6px 0 12px;font-size:.82rem}
+.field-orders .camp-bar{margin:0;gap:6px;justify-content:flex-start;padding-top:10px;border-top:1px solid #ab91524f}
+.field-orders .camp-gold{border:0;border-radius:6px;padding:5px 8px;color:#ffe1a2}
+.field-orders .camp-bar .stone-btn{background:#18291e;border:1px solid #84724e;border-radius:7px;color:#faedcc;min-height:34px;padding:4px 9px}
+.illustrated-title .title-foot{
+ display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px 14px;color:#e2d3ad;font-size:.72rem
+}
+.illustrated-title .title-foot .title-reset-progress{
+ margin-left:auto;width:auto;padding:4px 9px;min-height:29px;border:1px solid #7c6b4b;border-radius:7px;
+ background:#16251c;color:#dfd2b4
+}
+.field-dialog{width:min(55rem,calc(100vw - 20px))}
+.field-dialog .title-maps{background:none;box-shadow:none;border:0;border-radius:0;padding:12px 0 0}
+.field-dialog .map-choices{padding:5px 4px 10px;gap:10px}
+.field-dialog .map-card{border-width:2px;border-radius:10px;transform:none;box-shadow:0 4px 8px #0006}
+.field-dialog .map-card[aria-pressed=true]{box-shadow:0 0 0 2px #f6d77e64}
+.field-dialog .world-map{margin:0;border-radius:9px}
+@media (max-height:510px) and (orientation:landscape){
+ .title-screen.illustrated-title{padding:9px max(12px,env(safe-area-inset-right)) 8px max(12px,env(safe-area-inset-left))}
+ .illustrated-title .title-card{gap:8px 15px;grid-template-columns:minmax(0,1fr) minmax(170px,32%);align-items:center}
+ .illustrated-title .title-brand{gap:6px}
+ .illustrated-title #titleName{font-size:clamp(1.68rem,4.5vw,3rem)}
+ .illustrated-title .title-ribbon span{font-size:.59rem}
+ .illustrated-title .title-actions{gap:5px}
+ .illustrated-title .title-actions .title-row,.illustrated-title .title-icons{gap:5px}
+ .illustrated-title .title-actions :is(.stone-btn,.play-btn,.continue-run){min-height:30px;font-size:.76rem;padding:3px 6px}
+ .illustrated-title .title-actions .campaign-map-btn{min-height:37px;font-size:1.02rem}
+ .illustrated-title .title-actions .daily-btn span{font-size:.75rem}
+ .illustrated-title .icon-tile{min-height:35px;padding:3px;font-size:.66rem}
+ .illustrated-title .icon-tile .tile-ico{font-size:.8rem}
+ .illustrated-title .icon-tile small{font-size:.55rem}
+ .field-orders{padding:9px 10px 8px}
+ .field-orders h3{margin-top:3px}
+ .field-orders-label,.field-conditions{font-size:.65rem}
+ .field-conditions{margin:3px 0 7px}
+ .field-orders .camp-bar{padding-top:6px;gap:4px}
+ .field-orders .camp-gold,.field-orders .camp-bar .stone-btn{font-size:.68rem}
+ .field-orders .camp-bar .stone-btn{min-height:29px;padding:3px 6px}
+ .field-dialog .world-map{max-height:125px}
+}
+@media (max-width:540px){
+ .illustrated-title .title-card{grid-template-columns:minmax(0,1fr);grid-template-areas:"brand" "orders" "foot";grid-template-rows:auto}
+ .field-orders{justify-self:start}
+ .field-dialog .map-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}
+}
+
+/* Campaign rewards, progress and inventory use the same carved-gold treatment. */
+.field-dialog.illustrated-dialog{
+ border:1px solid #b79a65;box-shadow:0 18px 60px #000b,inset 0 0 0 3px #c7a26b15;
+ background:linear-gradient(145deg,#2a4031,#15251d 75%)
+}
+.field-dialog .dialog-head{background:#273b2e;border-color:#a58c5b88}
+.field-dialog .dialog-head h2{font:700 1.4rem Georgia,serif;color:#ffe7b0}
+.camp-inventory{
+ display:grid;grid-template-columns:repeat(auto-fit,minmax(106px,1fr));gap:7px;margin:12px 0 7px
+}
+.camp-inventory div{
+ padding:7px 10px;border:1px solid #b89b644f;border-radius:7px;background:#101f17;min-width:0
+}
+.camp-inventory dt{color:#d2bd93;font-size:.71rem;font-weight:700}
+.camp-inventory dd{
+ margin:2px 0 0;color:#ffe8b5;font:700 1.14rem/1.13 Georgia,serif;overflow-wrap:anywhere
+}
+.camp-card .camp-art[data-sigil]:not(.has-art){
+ display:grid;place-items:center;
+ background:radial-gradient(ellipse at 50% 48%,color-mix(in srgb,var(--school) 30%,#15261e),#0d1813 82%);
+}
+.camp-card .camp-art[data-sigil]:not(.has-art)::before{
+ content:attr(data-sigil);display:grid;place-items:center;width:1.44em;height:1.44em;
+ font:700 clamp(1.5rem,4vw,2.5rem)/1 Georgia,serif;color:var(--school);
+ border:1px solid color-mix(in srgb,var(--school) 58%,transparent);border-radius:50%;
+ box-shadow:0 0 0 4px #b2966422,inset 0 0 7px #0d17119f
+}
+.camp-card .camp-foot button:not(:disabled){
+ border-color:#b9995e;background:linear-gradient(#324638,#203026);color:#fff1d0
+}
+.camp-card .camp-foot button:hover:not(:disabled){background:#3c5141}
+.camp-card .camp-foot button:disabled{opacity:.64}
+.camp-dialog .dialog-head{display:flex;align-items:center;gap:7px}
+.camp-dialog .dialog-head h2{flex:1;min-width:0}
+.camp-dialog .dialog-head button{flex:0 0 auto}
+.camp-dialog #campReroll,.camp-dialog #draftSkip{border-color:#b3915d;color:#ffe5ab;background:#172a20;font-weight:750}
+#draftDialog #draftList>.camp-card:not(.camp-pack){box-shadow:0 6px 20px #060e0ab0}
+#draftDialog #draftList>.camp-card .camp-foot button:not(:disabled){
+ background:linear-gradient(#e9cf94,#c99651);color:#2b2117;border-color:#f3dfae;font-weight:800
+}
+.end-screen.end-illustrated{
+ align-items:safe center;
+ background:linear-gradient(115deg,#0914117d,#111a16bf 50%,#091411ed),url("./assets/river-keep.webp") 65% 50%/cover no-repeat #101a11
+}
+.end-screen.end-illustrated[data-result=loss]{
+ background:linear-gradient(125deg,#291612a8,#180c0bc9 58%,#130d0cf0),url("./assets/river-keep.webp") 65% 50%/cover no-repeat #1a1110
+}
+.end-illustrated .end-card{
+ width:min(625px,100%);padding:clamp(14px,3vw,28px);
+ border:1px solid #b99c65;border-radius:12px;background:#14261ef0;
+ box-shadow:0 18px 40px #0a100cbf,inset 0 0 0 4px #bfa06721
+}
+.end-illustrated #endTitle{font-size:clamp(2.1rem,5.8vw,3.6rem);letter-spacing:.015em}
+.end-illustrated .end-stats>div{background:#1f3329;border-color:#a48c6266}
+.end-illustrated .end-camp{
+ display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 10px;
+ width:100%;padding:9px;border:1px solid #ab8c51;border-radius:8px;background:#0e1e16;color:#ffe7ad
+}
+.end-illustrated .end-camp span{font-size:.73rem;color:#d8cdb2;font-weight:600}
+.end-illustrated .reward-draft{background:#e2bb75;color:#2d2213;border:1px solid #ffe4a6;font-weight:800}
+.campaign-atlas .atlas-briefing{
+ background:radial-gradient(ellipse at top right,#385040,#20332a 72%);box-shadow:inset 0 0 0 3px #ad935220
+}
+.campaign-atlas .atlas-category:hover,.campaign-atlas .atlas-back:hover{border-color:#d4b57a}
+@media(orientation:landscape) and (max-height:450px){
+ .illustrated-title .title-icons .icon-tile{min-height:35px;padding:3px 2px}
+ .illustrated-title .title-icons .icon-tile small{font-size:.52rem}
+ .camp-inventory{margin:8px 0 5px;gap:5px}
+ .camp-inventory div{padding:5px 7px}
+ .camp-inventory dd{font-size:1rem}
+ :is(#campDeckDialog,#campShopDialog,#draftDialog) .camp-card:not(.camp-pack) .camp-art{aspect-ratio:3.1/1}
+ :is(#campDeckDialog,#campShopDialog,#draftDialog) .dialog-head button{min-height:30px;padding:3px 7px;font-size:.73rem}
+ .end-illustrated .end-card{width:min(590px,100%);gap:5px;padding:9px 12px}
+ .end-illustrated #endTitle{font-size:1.95rem}
+ .end-illustrated .end-camp{padding:5px}
+ .end-illustrated .reward-draft{min-height:29px;padding:3px 7px}
+}
