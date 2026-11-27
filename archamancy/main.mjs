@@ -623,7 +623,10 @@ function manaBump(tier){const el=$("mana").parentElement;el.classList.remove("ga
  const SUB_NAMES={chips:"Flat damage",mult:"Percent damage",xmult:"Multiplier",econ:"Economy",retrigger:"Double up",utility:"Utility"};
  const tColor=x=>x.kind==="spell"?game.cards[x.id].color:(BY_ID[x.id]?.ci||"C")[0]||"C";
  function campTile({kind,id,upgradePreview=false,landNext=true},extra){const spell=kind==="spell",d=spell?game.cards[id]:BY_ID[id],el=document.createElement("div"),pic=document.createElement("span"),info=document.createElement("div"),n=document.createElement("strong"),t=document.createElement("em"),p=document.createElement("small"),foot=document.createElement("div");
-  el.className="camp-card";el.style.setProperty("--school",colors[tColor({kind,id})]||colors.C);pic.className="camp-art";pic.dataset.art=d.name;const artwork=paintArt(pic,d.name);foot.className="camp-foot";
+  const school=tColor({kind,id});
+  el.className="camp-card";el.style.setProperty("--school",colors[school]||colors.C);
+  pic.className="camp-art";pic.dataset.art=d.name;pic.dataset.sigil=({W:"☼",U:"≈",B:"◈",R:"✷",G:"❧",C:"✦"})[school]||"✦";
+  const artwork=paintArt(pic,d.name);foot.className="camp-foot";
   const sp=spell?campaignLib.spellUpgradePreview(camp,id,game.cards,profile.perks.spellcraft||0):null;
   n.textContent=d.name+(spell&&camp.up[id]?" "+"+".repeat(camp.up[id]):"");t.textContent=spell?(d.type||"Spell")+" · "+sp.cost+" ◈ · Level "+sp.level:KIND_NAMES[d.kind]+(d.sub?" · "+SUB_NAMES[d.sub]:"")+(d.kind==="relic"?" · "+d.rarity:"");
   p.textContent=spell?d.desc:d.text;info.append(n,t,p);if(artwork){const credit=document.createElement("small");credit.className="camp-art-credit";credit.textContent="Art: "+artwork.artist;pic.append(credit);}

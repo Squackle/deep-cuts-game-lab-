@@ -983,6 +983,16 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .camp-inventory dd{
  margin:2px 0 0;color:#ffe8b5;font:700 1.14rem/1.13 Georgia,serif;overflow-wrap:anywhere
 }
+.camp-card .camp-art[data-sigil]:not(.has-art){
+ display:grid;place-items:center;
+ background:radial-gradient(ellipse at 50% 48%,color-mix(in srgb,var(--school) 30%,#15261e),#0d1813 82%);
+}
+.camp-card .camp-art[data-sigil]:not(.has-art)::before{
+ content:attr(data-sigil);display:grid;place-items:center;width:1.44em;height:1.44em;
+ font:700 clamp(1.5rem,4vw,2.5rem)/1 Georgia,serif;color:var(--school);
+ border:1px solid color-mix(in srgb,var(--school) 58%,transparent);border-radius:50%;
+ box-shadow:0 0 0 4px #b2966422,inset 0 0 7px #0d17119f
+}
 .camp-card .camp-foot button:not(:disabled){
  border-color:#b9995e;background:linear-gradient(#324638,#203026);color:#fff1d0
 }
