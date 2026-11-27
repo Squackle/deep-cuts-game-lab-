@@ -88,7 +88,7 @@ test('Crown of Arrows gets its third projectile at tier IV, not tier III', () =>
 });
 
 test('game exports a new rules version and the UI exposes blocking / immunity telemetry', () => {
-  assert.equal(VERSION, '0.1.0-beta.13.66');
+  assert.equal(VERSION, '0.1.0-beta.13.67');
   const ui = readFileSync(new URL('../main.mjs', import.meta.url), 'utf8');
   for (const fragment of ['Enemy delay', 'immune hits', 'bossBlockedTicks', 'BREAKTHROUGH_HINT', 'Breaking soon']) {
     assert.ok(ui.includes(fragment), fragment + ' should be visible in the game UI');
