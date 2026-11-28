@@ -8,7 +8,7 @@ const roadHeights = {
  hollow: [.55,.32,.52,.28,.51],
  confluence: [.38,.55,.38,.27,.48],
  frostfen: [.55,.44,.28,.38,.55],
- pass: [.54,.40,.23,.33,.55],
+ pass: [.48,.40,.23,.33,.55],
  caldera: [.41,.55,.34,.55,.40]
 };
 const categoryNames = ["Mission road", "Challenges", "Commander trials"];
