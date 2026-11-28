@@ -1,7 +1,10 @@
 // Offline analysis of the existing reducer. A complete graph proves engine
 // reachability, not human difficulty or full Magic rules fidelity.
 import {initial,actions,reduce,key,completed,validate,lookup} from "./engine.js";
-export const STRATEGY_GRAPH_VERSION="mh-strategy-graph-1";
+export const STRATEGY_GRAPH_VERSION="mh-strategy-graph-2";
+// Graveyard identity affects Rite of Flame. Preserve it in offline analysis
+// without changing the historical campaign solver/replay key.
+const analysisKey=s=>JSON.stringify([key(s),[...(s.graveyard||[])].sort()]);
 const cardKey=(level,id)=>lookup(level,id)?{card:lookup(level,id).card,charge:level.charges?.[id]||0}:null;
 const costEntries=cost=>Object.entries(cost||{}).filter(([,n])=>n!==0).sort(([a],[b])=>a.localeCompare(b));
 export function commitmentSignature(level,state,action){
@@ -43,19 +46,21 @@ function minimumCommitments(nodes,winning,cost){
  }
  return distance[0];
 }
-export function analyzeStrategy(level,{maxStates=3000,maxEdges=60000}={}){
+export function analyzeStrategy(level,{maxStates=3000,maxEdges=60000,reverseActions=false}={}){
  validate(level);
  for(const [name,value] of Object.entries({maxStates,maxEdges}))if(!Number.isSafeInteger(value)||value<1)throw new RangeError("Invalid "+name);
- const start=initial(level),nodes=[{state:start,next:[],prev:[],parent:-1,move:null,win:false}],seen=new Map([[key(start),0]]);
+ const start=initial(level),nodes=[{state:start,next:[],prev:[],parent:-1,move:null,win:false}],seen=new Map([[analysisKey(start),0]]);
  let edges=0;
  const bounded=reason=>({version:STRATEGY_GRAPH_VERSION,status:"inconclusive",reason,states:nodes.length,edges,metrics:null,route:null});
  for(let at=0;at<nodes.length;at++){
   const node=nodes[at];node.win=completed(level,node.state);
   if(node.win)continue;
   const successors=new Set();
-  for(const action of actions(level,node.state)){
+  const moves=actions(level,node.state);
+  if(reverseActions)moves.reverse();
+  for(const action of moves){
    const out=reduce(level,node.state,action);if(!out.ok)throw new Error("Engine action parity failed");
-   const signature=key(out.state);let to=seen.get(signature);
+   const signature=analysisKey(out.state);let to=seen.get(signature);
    if(to===undefined){
     if(nodes.length>=maxStates)return bounded("state-budget");
     to=nodes.length;seen.set(signature,to);
@@ -93,10 +98,30 @@ export function analyzeStrategy(level,{maxStates=3000,maxEdges=60000}={}){
   at=p;
  }
  route.reverse();
+ // All-shortest-route ranges are invariant to the BFS witness selected.
+ // The reference fields below still describe that ONE witness, not a rating.
+ const distance=Array(nodes.length).fill(Infinity),back=[...targets];
+ for(const i of targets)distance[i]=0;
+ for(let i=0;i<back.length;i++)for(const prev of nodes[back[i]].prev)if(distance[prev]===Infinity){
+  distance[prev]=distance[back[i]]+1;back.push(prev);
+ }
+ const ranges=cost=>{
+  const lo=Array(nodes.length).fill(0),hi=Array(nodes.length).fill(0);
+  for(const i of back){
+   if(distance[i]===0)continue;
+   const optimal=nodes[i].next.filter(e=>distance[e.to]===distance[i]-1);
+   lo[i]=Math.min(...optimal.map(e=>lo[e.to]+(e.action.type==="end"?0:cost[i])));
+   hi[i]=Math.max(...optimal.map(e=>hi[e.to]+(e.action.type==="end"?0:cost[i])));
+  }
+  return {min:lo[0],max:hi[0]};
+ };
+ const root=nodes[0].next.filter(e=>e.action.type!=="end");
  return {version:STRATEGY_GRAPH_VERSION,status:"complete",states:nodes.length,edges,route,
   metrics:{shortestActions:route.length,
    minimumCriticalCommitments:minimumCommitments(nodes,winning,critical),
    minimumDeferredCommitments:minimumCommitments(nodes,winning,deferred),
+   shortestCriticalCommitments:ranges(critical),shortestDeferredCommitments:ranges(deferred),
+   firstDistinctCommitments:root.length,winningFirstCommitments:root.filter(e=>winning[e.to]).length,
    referenceCriticalCommitments:referenceCritical,referenceDeferredCommitments:referenceDeferred,
    referenceDecisionPatterns:patterns.size,referencePrematureEndOpportunities:prematureEnds}};
 }

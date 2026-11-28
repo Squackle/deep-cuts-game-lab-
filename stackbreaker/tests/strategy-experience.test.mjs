@@ -1,0 +1,10 @@
+import test from "node:test";import assert from "node:assert/strict";import {readFileSync} from "node:fs";
+import {STRATEGY_TRIALS} from "../src/strategy-trials.js";
+import {createGame,tapLand,activate,autoplay} from "../src/engine.js";
+const trial=n=>STRATEGY_TRIALS[n-1];
+function line(p,moves){let s=createGame(p);for(const l of s.lands)s=tapLand(s,l.id);for(const [id,target,spend] of moves)s=activate(s,id,target,spend??null);return autoplay(s);}
+test("all seven workshops offer a concrete retry challenge and retained reference",()=>{assert.equal(new Set(STRATEGY_TRIALS.map(p=>p.retryPrompt)).size,7);for(const p of STRATEGY_TRIALS)assert.equal(line(p,p.solution).status,"won",p.id);});
+test("short and longer legal routes both win Spirit exercise; no response loses",()=>{const p=trial(1);assert.equal(line(p,[["ward",null]]).status,"won");assert.equal(line(p,p.solution).status,"won");assert.equal(line(p,[]).status,"lost");});
+test("two protection allocations are legitimate; concentrating both on one creature loses",()=>{const p=trial(2);assert.equal(line(p,[["titan","bear"],["blossom","lion"]]).status,"won");assert.equal(line(p,[["titan","lion"],["blossom","bear"]]).status,"won");assert.equal(line(p,[["titan","bear"],["blossom","bear"]]).status,"lost");});
+test("scarce mana has two winning orders and one tempting losing allocation",()=>{const p=trial(7);assert.equal(line(p,[["counter","sweep",{C:1}],["shield","lion"]]).status,"won");assert.equal(line(p,[["shield","lion"],["counter","sweep",{C:1}]]).status,"won");assert.equal(line(p,[["counter","sweep",{G:1}]]).status,"lost");});
+test("practice UI explicitly requests target/payment and exposes card text, next, retry and 44px controls",()=>{const read=p=>readFileSync(new URL("../"+p,import.meta.url),"utf8");const js=read("strategy-lab.js");assert.match(js,/Choose the target before/);assert.match(js,/Choose the mana payment before/);assert.match(js,/cardDetail\(box,a.card\)/);assert.match(read("strategy-lab.html"),/id="nextTrial"/);assert.match(read("strategy-lab.css"),/min-height:44px/);});

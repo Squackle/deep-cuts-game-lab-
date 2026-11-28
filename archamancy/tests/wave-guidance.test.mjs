@@ -2,7 +2,7 @@ import {test} from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {createEngine} from "../engine.mjs";
-import {firstFlyerWarning,bossOverlapWarning,counterplayWarning,troopCardHint,handCycleHint} from "../wave-guidance.mjs";
+import {firstFlyerWarning,bossOverlapWarning,earlyOverlapWarning,counterplayWarning,troopCardHint,handCycleHint} from "../wave-guidance.mjs";
 
 const start=()=>createEngine(1,"campaign","hollow");
 
@@ -22,7 +22,7 @@ test("already-built anti-air is acknowledged, and Ground-only targeting is calle
  assert.ok(g.command({type:"build",pad:0,kind:"arcanum"}));
  assert.match(firstFlyerWarning(g,g.state,4),/1 tower can hit flyers/);
  assert.ok(g.command({type:"flightTarget",pad:0,mode:"ground"}));
- assert.match(firstFlyerWarning(g,g.state,4),/Switch it to Both or Flying/);
+ assert.match(firstFlyerWarning(g,g.state,4),/Switch to Both or Flying first/);
  assert.ok(g.command({type:"flightTarget",pad:0,mode:"both"}));
  assert.match(firstFlyerWarning(g,g.state,4),/1 tower can hit flyers/);
 });
@@ -121,7 +121,7 @@ test("caldera mono-blue forecast warns before the reported Stalker and Warden wa
  assert.ok(g.command({type:"build",pad:3,kind:"judgment"}));
  assert.equal(counterplayWarning(g,g.state,16),"","Judgment covers both threats");
  assert.ok(g.command({type:"flightTarget",pad:3,mode:"flying"}));
- assert.match(counterplayWarning(g,g.state,16),/No physical tower/,"flying-only physical tower cannot target ground wardens");
+ assert.doesNotMatch(counterplayWarning(g,g.state,16),/No physical tower/,"Flying first retains physical ground fallback");
 });
 test("counterplay hints respect progression locks and do not invent a missing spell or tower",()=>{
  const g=createEngine(1,"campaign","caldera");g.state.locked=["judgment","hex"];
@@ -168,4 +168,10 @@ test("green forecast recommends Reach before flyers and poison before physical i
  assert.match(counterplayWarning(g,g.state,11),/physical immunity.*Venom Thicket/);
  assert.ok(g.command({type:"build",pad:1,kind:"thorn"}));assert.ok(g.command({type:"upgrade",pad:1}));assert.ok(g.command({type:"upgrade",pad:1,branch:"B"}));
  assert.equal(counterplayWarning(g,g.state,11),"");
+});
+
+test("rapid ordinary wave calls warn without changing Onslaught or early-call rules",()=>{
+ const g=start();g.state.phase="active";g.state.wave=3;g.state.pendingWaves=[3];g.state.onslaught=true;const before=JSON.stringify(g.state);
+ assert.match(earlyOverlapWarning(g,g.state,4),/1 unfinished wave.*Let the timer run/);g.state.pendingWaves=[3,4];assert.match(earlyOverlapWarning(g,g.state,5),/2 unfinished waves/);g.state.pendingWaves=[3];assert.equal(JSON.stringify(g.state),before);
+ g.state.wave=9;g.state.pendingWaves=[9];assert.equal(earlyOverlapWarning(g,g.state,10),"");g.state.phase="ready";assert.equal(earlyOverlapWarning(g,g.state,10),"");
 });

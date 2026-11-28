@@ -11,11 +11,21 @@ test('Strategy trials entry is isolated and keyboard-friendly',()=>{
  assert.ok(html.includes('src="./strategy-lab.js"'));
  assert.ok(!html.includes('src="https://'));
  assert.ok(!js.includes('localStorage')&&!js.includes('fetch(')&&!js.includes('/api/'));
- assert.ok(js.includes('activate(state,a.id,target)'));
+ // The isolated practice UI must still use the authoritative reducer and
+ // must pass the selected, legal generic allocation rather than discard it.
+ assert.ok(js.includes('activate(state,a.id,target,payment)'));
+ assert.ok(js.includes("label.htmlFor='payment-'+a.id"));
+ assert.ok(js.includes('dataset.paymentFor=a.id'));
  assert.ok(js.includes('tapLand(state,b.dataset.land)'));
  assert.ok(js.includes('pass(state)'));
  assert.ok(js.includes('referenceSubsetEvidence(p)'));
  assert.ok(css.includes('prefers-reduced-motion'));
  assert.ok(css.includes('focus-visible'));
  assert.ok(css.includes('@media(max-width:720px)'));
+});
+
+test('unranked trial undo and visible resolution feedback remain isolated',()=>{
+ assert.match(html,/id="undo"/);assert.match(html,/id="actionLog"/);
+ assert.match(js,/history.push\(state\)/);assert.match(js,/state=history.pop\(\)/);
+ assert.match(js,/state.log.slice\(-8\)/);
 });

@@ -1,4 +1,5 @@
 import {animateMap} from './terrain.mjs';
+import {drawCast,spellStyles,commanderStyles,towerStyles} from "./spell-fx.mjs";
 // Tier IV visual accent identity only: the combat engine remains authoritative.
 // Each direct-fire tower gets a brief color-school flourish at its OWN pad.
 const CAST_PALETTE=Object.freeze({W:"#f7dfa4",U:"#92defb",B:"#cca6f3",R:"#ff9b57",G:"#9bd77c"});
@@ -11,8 +12,21 @@ export function tierFourCastSignature(tower,definition){
 // Visual feedback layer: reads engine events and health changes, draws short-lived effects.
 // Purely cosmetic. It never changes the simulation.
 export function createFx(ctx,{maxParticles=260}={}){
- const parts=[],texts=[],seenHp=new Map(),lastPos=new Map();let clock=0,lastSeq=0,shakeUntil=0,shakePower=0,flashUntil=0,lastBigShake=-1e9,lastTick=-1;const timers=new Map(),castMarks=new Map();
+ const parts=[],texts=[],casts=[],seenHp=new Map(),lastPos=new Map();let clock=0,lastSeq=0,shakeUntil=0,shakePower=0,flashUntil=0,lastBigShake=-1e9,lastTick=-1;const timers=new Map(),castMarks=new Map();
  const rnd=()=>Math.random();
+ function castEffect(style,school,point,now,major=false,seed=0,emblem=null){
+  if(!style||!point)return;
+  if(casts.length>=10){
+   const low=casts.findIndex(cast=>!cast.major);
+   if(low<0&&!major)return;
+   casts.splice(Math.max(0,low),1);
+  }
+  const [kind,radius]=style;
+  casts.push({kind,school,x:point.x,y:point.y,radius,born:now,life:major?880:650,major,seed,emblem});
+ }
+ function spell(id,school,point,now){
+  castEffect(spellStyles[id],school,point,now,false,id.length*.43);
+ }
  function burst(x,y,color,n=8,speed=1.6,life=420,size=2.6){for(let i=0;i<n&&parts.length<maxParticles;i++){const a=rnd()*Math.PI*2,v=speed*(.4+rnd());parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-.6,g:.05,born:clock,life:life*(.6+rnd()*.6),color,size:size*(.6+rnd()*.7)});}}
  function ring(x,y,color,r=30,life=380){parts.push({x,y,ring:r,born:clock,life,color});}
  // Art pass: additive glow flashes, rising smoke puffs and star-shaped sparks give hits and deaths more punch.
@@ -24,17 +38,45 @@ export function createFx(ctx,{maxParticles=260}={}){
  // Call once per frame before drawing. Returns UI cues for the HUD (banners, flashes).
  function update(game,now){
   clock=now;const s=game.state,cues=[];
-  // Hit sparks and damage numbers where health dropped since the last frame.
-  const live=new Set();
-  for(const e of s.enemies){live.add(e.id);const q=game.pointAt(e.progress),y=q.y-(e.flying?21:10);lastPos.set(e.id,{x:q.x,y,kind:e.kind});const prev=seenHp.get(e.id);
-   if(prev!==undefined&&e.hp<prev){const def=game.types[e.kind],dmg=prev-e.hp;if(parts.length<maxParticles*.7){const hx=q.x+(rnd()-.5)*8;burst(hx,y,"#ffe3a3",2,1.1,220,2);spark(hx,y,"#fff4d0",def.boss?10:6);}cues.push({type:"sound",name:"hit"});
-    // Damage numbers on every enemy: hits inside 300 ms add up into one number so a crowd stays readable.
-    // A big hit (a fifth of a normal enemy's health, or 5% of a boss) gets a larger orange number, a flash and a small shake.
-    const big=dmg>=Math.max(30,e.maxHp*(def.boss?.05:.2)),key="dmg"+e.id,t=texts.find(t=>t.key===key&&now-t.born<300&&!t.big);
-    if(big){texts.push({x:q.x+(rnd()-.5)*12,y:y-30,text:dmg.toLocaleString("en-US")+"!",color:"#ffb04a",size:def.boss?17:15,born:now,life:850,big:1,pop:1});flash(q.x,y,"#ffd08a",def.boss?30:20,180);if(now-lastBigShake>650){lastBigShake=now;shake(def.boss?3.2:2.2,160);}}
-    else if(t){t.amount+=dmg;t.text=t.amount.toLocaleString("en-US");}
-    else{if(texts.length>=48)texts.splice(texts.findIndex(t=>t.key),1);texts.push({x:q.x+(rnd()-.5)*16,y:y-(def.boss?30:22),text:dmg.toLocaleString("en-US"),color:def.boss?"#fff1cf":"#f4f1e8",size:def.boss?13:12,born:now,life:def.boss?700:650,key,amount:dmg});}}
-   seenHp.set(e.id,e.hp);}
+  if(s.tick===lastTick&&s.sequence===lastSeq)return cues;
+  // Close hits from the same tick share a damage label. Isolated hits still identify their enemy.
+  const live=new Set(),hitLabels=[];
+  for(const e of s.enemies){
+   live.add(e.id);
+   const q=game.pointAt(e.progress),y=q.y-(e.flying?21:10);
+   lastPos.set(e.id,{x:q.x,y,kind:e.kind});
+   const previous=seenHp.get(e.id);
+   if(previous!==undefined&&e.hp<previous){
+    const def=game.types[e.kind],damage=previous-e.hp;
+    if(parts.length<maxParticles*.7){
+     burst(q.x+(rnd()-.5)*8,y,"#ffe3a3",2,1.1,220,2);
+     spark(q.x,y,"#fff4d0",def.boss?10:6);
+    }
+    cues.push({type:"sound",name:"hit"});
+    const big=damage>=Math.max(30,e.maxHp*(def.boss?.05:.2)),key="dmg"+e.id;
+    const labelY=y-(big||def.boss?30:22);
+    const nearby=!def.boss&&hitLabels.find(label=>Math.abs(label.x-q.x)<28&&Math.abs(label.y-labelY)<12);
+    const previousLabel=!big&&texts.find(label=>label.key===key&&now-label.born<300);
+    const hit=nearby||previousLabel;
+    if(hit){
+     hit.amount+=damage;
+     hit.text=hit.amount.toLocaleString("en-US")+(hit.big?"!":"");
+    }else{
+     if(texts.length>=48)texts.shift();
+     const label={x:q.x,y:labelY,text:damage.toLocaleString("en-US")+(big?"!":""),
+      color:big?"#ffb04a":def.boss?"#fff1cf":"#f4f1e8",
+      size:big?(def.boss?17:15):def.boss?13:12,born:now,life:big?850:650,
+      key:big?null:key,amount:damage,big,pop:big};
+     texts.push(label);
+     if(!def.boss)hitLabels.push(label);
+    }
+    if(big){
+     flash(q.x,y,"#ffd08a",def.boss?30:20,180);
+     if(now-lastBigShake>650){lastBigShake=now;shake(def.boss?3.2:2.2,160);}
+    }
+   }
+   seenHp.set(e.id,e.hp);
+  }
   for(const id of seenHp.keys())if(!live.has(id))seenHp.delete(id);
   // Each barracks sounds different when its fighters strike (steel, bone, goblin squeals, beast snarls), as does the commander.
   // A strike shows as a jump in the fighter's attack timer, the same signal art.mjs uses for the lunge.
@@ -47,7 +89,10 @@ export function createFx(ctx,{maxParticles=260}={}){
    if(ev.type==="enemyKilled"){const p=lastPos.get(ev.id);if(p){const def=game.types[p.kind];burst(p.x,p.y,def.boss?"#f6c45b":"#d9d2bf",def.boss?26:9,def.boss?2.6:1.5,def.boss?800:450,def.boss?3.6:2.4);flash(p.x,p.y,def.boss?"#ffd77a":"#fff1d0",def.boss?46:20,def.boss?420:220);smoke(p.x,p.y+6,def.boss?10:4,def.boss?1100:650,def.boss?11:6);float(p.x,p.y-14,"+"+def.reward,"#f2cf6b",def.boss?16:11,800);cues.push({type:"sound",name:def.boss&&p.kind!=="titan"?"bossDown":"kill"});if(def.boss&&p.kind!=="titan"){shake(7,450);cues.push({type:"banner",title:def.name+" falls!",sub:"",tone:"win"});}}}
    else if(ev.type==="leak"){const p=lastPos.get(ev.id),boss=p&&game.types[p.kind].boss;shake(boss?9:4,boss?420:220);flashUntil=now+260;cues.push({type:"leak",amount:ev.cost||(boss?3:1)},{type:"sound",name:"leak"});if(p){const k=game.map.keep||{x:1000,y:490};ring(k.x-50,k.y-7,"#f06b5b",44,500);}}
    else if(ev.type==="waveStart"){const spec=game.waveSpec(ev.wave),boss=spec.map(x=>x.split(":")[0]).find(k=>game.types[k].boss&&k!=="titan");const fliers=spec.some(x=>game.types[x.split(":")[0]]?.flying);cues.push({type:"banner",title:"Wave "+ev.wave,sub:boss?"Boss: "+game.types[boss].name:fliers?"Flyers incoming · ground-only towers can’t hit them":ev.early?"Called early · +"+ev.bonus+" mana":"",tone:boss?"boss":"wave"},{type:"sound",name:boss?"boss":"wave"});if(boss)shake(5,500);}
-   else if(ev.type==="build"||ev.type==="upgrade"){const p=game.map.pads[ev.pad];if(p){ring(p.x,p.y,"#f2db9e",ev.type==="upgrade"?40:32,450);burst(p.x,p.y+4,"#b7a17b",12,1.8,500,3);if(ev.type==="upgrade"){burst(p.x,p.y-30,"#fff1cf",10,1.4,600,2.4);flash(p.x,p.y-34,"#fff1cf",44,420);}smoke(p.x,p.y+6,5,800,7);}cues.push({type:"sound",name:ev.type});}
+   else if(ev.type==="build"||ev.type==="upgrade"){const p=game.map.pads[ev.pad];if(p){ring(p.x,p.y,"#f2db9e",ev.type==="upgrade"?40:32,450);burst(p.x,p.y+4,"#b7a17b",12,1.8,500,3);if(ev.type==="upgrade"){burst(p.x,p.y-30,"#fff1cf",10,1.4,600,2.4);
+    const tower=s.towers[ev.pad],style=towerStyles[tower?.kind]?.[tower?.branch==="B"?1:0];
+    if(ev.tier===4&&tower&&style)castEffect([style,59],game.roster[tower.kind].color,p,now,true,tower.uid*.43,tower.kind);
+    flash(p.x,p.y-34,"#fff1cf",44,420);}smoke(p.x,p.y+6,5,800,7);}cues.push({type:"sound",name:ev.type});}
    else if(ev.type==="bossSmash"){const p=lastPos.get(ev.id);if(p){ring(p.x,p.y+8,"#e0573f",36,320);smoke(p.x,p.y+8,6,700,8);spark(p.x,p.y-6,"#ffd0a8",14,220);}shake(2.5,140);cues.push({type:"sound",name:"smash",x:p?.x});}
    else if(ev.type==="towerAttack"){const t=s.towers[ev.source],def=t&&game.roster[t.kind],k=def?.kind,p=game.map.pads[ev.source];if(k)cues.push({type:"sound",name:"shot_"+k,x:p?.x});
      const mark=tierFourCastSignature(t,def),last=t&&castMarks.get(t.uid);
@@ -67,6 +112,10 @@ export function createFx(ctx,{maxParticles=260}={}){
     float(p.x,top-14,"+"+ev.amount,big?"#f6e27a":"#a6f08c",10+tier,big?1100:900);
     cues.push({type:"harvest",x:p.x,y:top,amount:ev.amount,tier});}}
    else if(ev.type==="spellCast")cues.push({type:"sound",name:"cast"});
+   else if(ev.type==="commanderAbility"){
+    const commander=s.commander;
+    if(commander?.id===ev.id)castEffect(commanderStyles[ev.id],game.commanders[ev.id].color,game.pointAt(commander.progress),now,true,ev.id.length*.53,ev.id);
+   }
    else if(ev.type==="gameOver")cues.push({type:"gameOver",won:!!ev.won,stars:ev.stars||0},{type:"sound",name:ev.won?"victory":"defeat"});
    else if(ev.type==="deathExplosion"){/* drawn by engine effects already */}
    else if(ev.type==="bossAbility"){const T=game.types,nm=k=>T[k].short||T[k].name,b=T[ev.boss]?ev.boss:null,names={warcry:nm("grimgut")+"'s war cry! Nearby enemies speed up",brood:nm(b||"matron")+" brings "+T[(b&&T[b].broodKind)||"stalker"].name+"s",silenceWarning:nm(b||"hierophant")+" marks "+(b&&T[b].silenceCount===4?"four":"two")+" towers",frostWarning:nm("isu")+" draws a freezing breath! Pull troops back",frost:"Troops frozen!",infernoWarning:nm("infernotitan")+" is gathering fire! Pull troops back",inferno:"Troops scorched!",silence:"Towers silenced!",phaseWarning:nm("tyrant")+" is shifting",cracked:"Boss cracked! Every tower can hurt it now",phase:nm("tyrant")+" becomes "+(ev.phase==="iron"?"immune to physical damage":"immune to magic")};if(names[ev.ability])cues.push({type:"toast",text:names[ev.ability]},{type:"sound",name:"ability"});if(["silence","phase","cracked","frost","inferno"].includes(ev.ability))shake(4,260);}
@@ -83,6 +132,11 @@ export function createFx(ctx,{maxParticles=260}={}){
  const motes=Array.from({length:22},(_,i)=>({x:(i*397)%1000,y:(i*233)%600,p:i*1.7,s:.6+(i%5)*.15}));
  function ambient(now){animateMap(ctx,now);const t=now/1000;for(const m of motes){const x=(m.x+Math.sin(t*.3*m.s+m.p)*40+t*6*m.s)%1000,y=m.y+Math.cos(t*.4*m.s+m.p)*25,a=.25+.35*Math.max(0,Math.sin(t*1.3+m.p));ctx.globalAlpha=a;ctx.fillStyle="#f6f0a8";ctx.beginPath();ctx.arc(x,y,1.8,0,Math.PI*2);ctx.fill();ctx.globalAlpha=a*.25;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;}
  function draw(now){
+  for(let i=casts.length-1;i>=0;i--){
+   const effect=casts[i],age=(now-effect.born)/effect.life;
+   if(age>=1)casts.splice(i,1);
+   else drawCast(ctx,effect,age,calm);
+  }
   for(let i=parts.length-1;i>=0;i--){const p=parts[i],t=(now-p.born)/p.life;if(t>=1){parts.splice(i,1);continue;}
    if(p.signature){
      // Transient, non-circular W/U/B/R/G shapes around an attacking T4 tower.
@@ -109,6 +163,6 @@ export function createFx(ctx,{maxParticles=260}={}){
   ctx.textAlign="start";ctx.globalAlpha=1;
   if(now<flashUntil){ctx.globalAlpha=(flashUntil-now)/260*.25;ctx.fillStyle="#c0392b";ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);ctx.globalAlpha=1;}
  }
- function reset(){parts.length=0;texts.length=0;seenHp.clear();lastPos.clear();timers.clear();castMarks.clear();lastSeq=0;lastTick=-1;shakeUntil=0;flashUntil=0;}
- return {update,draw,ambient,offset,reset,sync:game=>{lastSeq=game.state.sequence;}};
+ function reset(){parts.length=0;texts.length=0;casts.length=0;seenHp.clear();lastPos.clear();timers.clear();castMarks.clear();lastSeq=0;lastTick=-1;shakeUntil=0;flashUntil=0;}
+ return {update,draw,ambient,offset,reset,spell,sync:game=>{lastSeq=game.state.sequence;}};
 }

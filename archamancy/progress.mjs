@@ -1,3 +1,4 @@
+import {CHAPTERS,MISSIONS} from "./missions.mjs";
 import { PERKS, PERK_COSTS } from "./engine.mjs";
 // Commander collection: pick one starter, unlock the rest through play in Gauntlet or Endless.
 // Saved only in this browser. Proving Grounds shows every commander and never unlocks anything.
@@ -22,7 +23,7 @@ export const UNLOCKS = [
 const KEY = "archemancy.progress.v1";
 
 export const LEVELS = ["easy", "normal", "hard"];
-export function newProfile() { return { version: 1, starter: null, unlocked: [], last: null, bestWave: 0, stars: {}, difficulty: "normal", season: "summer", map: "hollow", perks: {}, badges: {}, onslaught: false, xp: 0, seen: { e: [], t: [], c: [] } }; }
+export function newProfile() { return { version: 1, starter: null, unlocked: [], last: null, bestWave: 0, stars: {}, difficulty: "normal", season: "summer", map: "hollow", perks: {}, badges: {}, missionStars: {}, onslaught: false, xp: 0, seen: { e: [], t: [], c: [] } }; }
 
 export function sanitize(raw, all) {
  const p = newProfile();
@@ -33,6 +34,8 @@ export function sanitize(raw, all) {
  if (raw.perks && typeof raw.perks === "object") for (const k of Object.keys(PERKS)) { const n = raw.perks[k]; if (Number.isInteger(n) && n >= 1 && n <= 3) p.perks[k] = n; }
  if (spentStars(p) > totalStars(p)) p.perks = {};
  if (raw.badges && typeof raw.badges === "object") for (const k of Object.keys(raw.badges)) if (BADGE.test(k) && raw.badges[k] === true) p.badges[k] = true;
+ for (const [id, stars] of Object.entries(raw.missionStars || {}))
+  if (Object.hasOwn(MISSIONS,id) && Number.isInteger(stars) && stars >= 1 && stars <= 3) p.missionStars[id]=stars;
  p.onslaught = raw.onslaught === true;
  // Campaign deck, Treasure and shop (campaign.mjs sanitizes it against the live card list).
  if (raw.camp && typeof raw.camp === "object") p.camp = raw.camp;
@@ -151,3 +154,18 @@ export const REGIONS = [
 export const mapStars = (p, map) => Math.max(0, ...LEVELS.map(l => bestStars(p, l, map)));
 export function regionOf(map) { return REGIONS.findIndex(r => r.map === map); }
 export function mapOpen(p, map) { if (isOpen(p, "maps", map)) return true; const i = regionOf(map); return i > 0 && mapStars(p, REGIONS[i - 1].map) > 0; }
+
+
+export function missionStars(profile,mission){
+ return mission.finale?mapStars(profile,mission.mapId):profile.missionStars?.[mission.id]||0;
+}
+
+export function missionOpen(profile,mission){
+ if(!mapOpen(profile,mission.mapId))return false;
+ if(missionStars(profile,mission))return true;
+ if(mission.category==="challenge")return mapStars(profile,mission.mapId)>0;
+ if(mission.category==="commander")return true;
+ const chapter=CHAPTERS[mission.mapId];
+ const index=chapter.indexOf(mission);
+ return index===0||index>0&&missionStars(profile,chapter[index-1])>0;
+}

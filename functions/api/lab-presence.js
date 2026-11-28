@@ -3,7 +3,8 @@
  * of focus or activity. Expiry handles closed/crashed/suspended connections.
  */
 const TTL_SECONDS=180;
-const PAGES=new Set(["Game Lab","Hive Run","Stackbreaker","Stackbreaker: Final Turn","Mana Heist","Command Center"]);
+const MAX_BODY_BYTES=4096;
+const PAGES=new Set(["Game Lab","Hive Run","Stackbreaker","Stackbreaker: Final Turn","Mana Heist","Command Center","GRAFTBOUND","ARCHEMANCY"]);
 const ID=/^[a-f0-9]{8}-[a-f0-9]{4}-[47][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const reply=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{
  "Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Robots-Tag":"noindex","Access-Control-Allow-Origin":"null"
@@ -38,14 +39,31 @@ export async function onRequestGet({env}){
 export async function onRequestPost({request,env}){
  if(!dataStore(env))return reply({error:"Lab presence is not configured.",labOnly:true},503);
  if(!sameOrigin(request))return reply({error:"Same-origin Lab requests only."},403);
- if(Number(request.headers.get("Content-Length")||0)>4096)return reply({error:"Payload too large."},413);
+ if(Number(request.headers.get("Content-Length")||0)>MAX_BODY_BYTES)return reply({error:"Payload too large."},413);
  let payload;
- try{payload=await request.json()}catch{return reply({error:"Invalid JSON."},400)}
+ try{
+  // Content-Length may be absent or incorrect. Bound bytes actually consumed.
+  const reader=request.body?.getReader();
+  if(!reader)return reply({error:"Invalid JSON."},400);
+  const chunks=[];let bytes=0;
+  try{
+   while(true){
+    const {done,value}=await reader.read();
+    if(done)break;
+    bytes+=value.byteLength;
+    if(bytes>MAX_BODY_BYTES){void reader.cancel().catch(()=>{});return reply({error:"Payload too large."},413);}
+    chunks.push(value);
+   }
+  }finally{reader.releaseLock();}
+  const buffer=new Uint8Array(bytes);let offset=0;
+  for(const chunk of chunks){buffer.set(chunk,offset);offset+=chunk.byteLength;}
+  payload=JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(buffer));
+ }catch{return reply({error:"Invalid JSON."},400)}
  const session=payload?.session,page=payload?.page;
  if(typeof session!=="string"||!ID.test(session)||!PAGES.has(page))
   return reply({error:"Invalid anonymous browser session or Lab page."},400);
  try{
-  await env.LAB_PRESENCE.put("lab-browser:"+session,"1",{
+  await env.LAB_PRESENCE.put("lab-browser:"+session.toLowerCase(),"1",{
    expirationTtl:TTL_SECONDS,metadata:{page}
   });
   return reply({ok:true,labOnly:true,leaseSeconds:TTL_SECONDS});

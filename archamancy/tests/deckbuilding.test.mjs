@@ -201,3 +201,16 @@ test("shop rolls terminate and retain unique offers with exhausted land and reli
   assert.ok(shop.items.every(i=>i.kind!=="land"&&i.kind!=="relic"));
  }
 });
+
+
+test("ritual and ordinary upgrade previews use the next battle's actual mana discounts and show only real damage effects",()=>{
+ const c=camp.newCampaign(8);c.relics=["baral"];c.up.meteor=1;c.up.inquiry=1;c.up.flame=1;
+ for(const id of ["meteor","inquiry","flame","offering"]){
+  const p=camp.spellUpgradePreview(c,id,cards,1),g=createEngine(8);
+  g.command({type:"perks",perks:{spellcraft:1}});assert.ok(g.command({type:"kit",...camp.kitFor(c)}));assert.equal(p.cost,g.castCost(id));
+  const next=camp.sanitize({...c,up:{...c.up,[id]:Math.min(2,(c.up[id]||0)+1)}},cards),h=createEngine(8);h.command({type:"perks",perks:{spellcraft:1}});assert.ok(h.command({type:"kit",...camp.kitFor(next)}));assert.equal(p.nextCost,h.castCost(id));
+ }
+ assert.equal(camp.spellUpgradePreview(c,"meteor",cards).nextDamageBonus,50);assert.equal(camp.spellUpgradePreview(c,"flame",cards).nextDamageBonus,0);
+ assert.equal(camp.spellUpgradePreview(c,"inquiry",cards).damage,false);assert.equal(camp.spellUpgradePreview(c,"offering",cards).nextCost,0);
+ const p=camp.landPreview(c,"B");assert.deepEqual(p,{level:0,nextLevel:1,bonus:0,nextBonus:8,max:false});c.lands.B=4;assert.equal(camp.landPreview(c,"B").nextBonus,40);c.lands.B=5;assert.equal(camp.landPreview(c,"B").max,true);
+});
