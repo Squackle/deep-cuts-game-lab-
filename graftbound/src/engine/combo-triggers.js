@@ -5,7 +5,7 @@ import { player, enemies, allies, alive, heal, dealDamage, effectivePower, check
 import { tileAt, unitAt, T, manhattan } from '../core/grid.js';
 import { drawCards, refillFromGraveyard } from './deck.js';
 import { availableMana, spendMana } from './mana.js';
-import { onHeroDraw, onHeroHeal } from './trait-triggers.js';
+import { onHeroDraw } from './trait-triggers.js';
 import { lv } from '../cards/graft-levels.js';
 
 const STAMP=Symbol('comboEventHandled');
@@ -61,10 +61,8 @@ function comboDraw(s,ev,n=1){
 }
 function gainLife(s,ev,n,source){
  const h=player(s);if(!alive(h)||n<=0)return;
- const actual=heal(s,ev,h,n,source);
- // GRAFTBOUND keeps MTG life-gain triggers at full RPG HP even when health is capped.
- if(!actual){ev.push({t:'graftTrigger',name:`${source}: gained ${n} life (health already full)`,uid:h.uid});onHeroHeal(s,ev,n,source);}
- ev.push({t:'comboLifeGain',uid:h.uid,amount:n,kind:source});
+ // heal is the single source of the canonical event, including at full HP.
+ heal(s,ev,h,n,source);
 }
 function drain(s,ev,source,n,healN=n){
  const foe=nearest(s);if(!foe)return;

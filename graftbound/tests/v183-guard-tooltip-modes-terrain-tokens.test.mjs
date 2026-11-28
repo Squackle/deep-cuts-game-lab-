@@ -154,7 +154,7 @@ test('angel atlas scrub removes only stray detached pieces while preserving 7 au
 });
 
 test('v1.8.3 game and isolated replay fingerprint make old ranked decisions ineligible',()=>{
-  assert.equal(GAME.version,'1.8.3-beta');
-  assert.equal(RULES_VERSION,'graftbound-rules-1.8.3-beta');
-  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,30);
+  assert.equal(GAME.version,'1.8.4-candidate');
+  assert.equal(RULES_VERSION,'graftbound-rules-1.8.4-candidate');
+  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,31);
 });

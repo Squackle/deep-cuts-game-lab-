@@ -2,7 +2,7 @@
  * Original M:TG power and toughness are NEVER replaced by encounter HP. */
 export const LEGENDARY_BOSSES = Object.freeze([
   [
-    { id: 'nemata', tribe:'Treefolk', name: 'Nemata, Grove Guardian', power:4,toughness:5, vitality:22, sprite:'thornmother', ai:'legendary', theme:'hollow', ability:'{2}{G}: Create a 1/1 green Saproling. Sacrifice a Saproling: Saprolings you control get +1/+1 until end of turn.' },
+    { id: 'nemata', tribe:'Treefolk', name: 'Nemata, Grove Guardian', power:4,toughness:5, vitality:19, sprite:'thornmother', ai:'legendary', theme:'hollow', ability:'{2}{G}: Create a 1/1 green Saproling. Sacrifice a Saproling: Saprolings you control get +1/+1 until end of turn.' },
     { id: 'arasta', tribe:'Spider', name:'Arasta of the Endless Web', power:3,toughness:5,vitality:20,sprite:'thornmother',ai:'legendary',theme:'hollow',keywords:{reach:1},ability:'Whenever an opponent casts an instant or sorcery, create a 1/2 green Spider with reach.' },
   ],
   [

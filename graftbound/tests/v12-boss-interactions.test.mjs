@@ -7,7 +7,7 @@ import { ENEMIES } from '../src/data/enemies.js';
 const enemy=(s,id)=>enemies(s).find(u=>u.defId===id);
 const board=(id)=>arena(['.........','.........','....B....','....P....','.........','.........'],{B:id});
 test('all six legendary bosses retain exact printed P/T distinct from encounter vitality',()=>{
-  const specs={nemata:[4,5,22],arasta:[3,5,20],drakuseth:[7,7,32],krenko:[3,3,26],scarab:[5,5,38],toxrill:[7,7,40]};
+  const specs={nemata:[4,5,19],arasta:[3,5,20],drakuseth:[7,7,32],krenko:[3,3,26],scarab:[5,5,38],toxrill:[7,7,40]};
   for(const [id,[power,toughness,hp]] of Object.entries(specs)){
     const u=enemy(board(id),id);
     assert.equal(u.power,power,id);
