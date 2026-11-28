@@ -679,3 +679,7 @@ Increased the banner's fabric movement and made the watchtower beacon flicker an
 ## 2026-11-27 — 13.68 painted title motion
 
 Animate the original painting in the valley river, foreground rapids, fog and watchtower flame. Feathered masks keep the banks, trees and stonework fixed, and the existing flags continue to wave. The scene respects reduced motion and stays aligned when the menu scrolls. This release updates presentation only.
+
+## Full-screen battlefield environments (review)
+
+Extended the five battlefields with map-specific woodland, wetlands, frozen banks, foothills, and basalt scenery. The existing seasonal paints, shoreline geometry, and brushwork carry across the edge. The environment is a cached, pointer-transparent layer beneath the playable terrain and combat. Compact HUD labels and card art use localized contrast treatments. The gameplay engine and save format are unchanged.

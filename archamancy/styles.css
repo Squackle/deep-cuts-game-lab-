@@ -53,8 +53,8 @@ details{margin:10px 0;color:var(--muted);font-size:.8rem}
 .update-banner[hidden]{display:none}
 .update-banner button{font-size:.75rem;padding:3px 10px}
 /* Beta 12 layout: the battlefield fills the screen; small controls sit in the corners and menus open where you tap. */
-:root{--hud:#0f1c16e0;--rim:#c9b07a;--rs:clamp(38px,5.2cqw,52px)}
-.game-shell{position:relative;height:100vh;height:100dvh;width:100%;overflow:hidden;background:#0b1510}
+:root{--hud:#0f1c16e8;--rim:#c9b07a;--rs:clamp(38px,5.2cqw,52px)}
+.game-shell{position:relative;height:100vh;height:100dvh;width:100%;overflow:hidden;background:#334b35}
 .orientation-gate{display:none}
 @media (orientation:portrait){
  .game-shell{display:none}
@@ -76,8 +76,9 @@ details{margin:10px 0;color:var(--muted);font-size:.8rem}
 .game-shell>h1{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 .map-stage{position:absolute;inset:0;display:grid;place-items:center;container-type:size;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 .map{position:relative;width:min(100cqw,calc(100cqh * 5 / 3));aspect-ratio:5/3}
-.map canvas{display:block;width:100%;height:100%;touch-action:manipulation;border-radius:4px}
-.map .map-terrain{position:absolute;inset:0;pointer-events:none}
+.map canvas{display:block;width:100%;height:100%;touch-action:manipulation}
+.map .map-environment,.map .map-terrain{position:absolute;pointer-events:none}
+.map .map-terrain{inset:0}
 .map #field{position:relative}
 .pads{position:absolute;inset:0;pointer-events:none}
 .pad{position:absolute;transform:translate(-50%,-50%);width:clamp(30px,6cqw,62px);height:clamp(22px,3.8cqw,40px);padding:0;min-height:0;line-height:1;font-size:clamp(.6rem,1.4cqw,.9rem);background:transparent;border:2px solid transparent;border-radius:50%;pointer-events:auto;color:#f3e3b4cc;box-shadow:none}
@@ -143,9 +144,10 @@ details{margin:10px 0;color:var(--muted);font-size:.8rem}
 .spell strong{font-size:clamp(.5rem,1.1vw,.66rem);line-height:1.1;overflow-wrap:anywhere;text-shadow:0 1px 2px #000}
 .spell em{align-self:flex-start;color:#f2cf6b;font:800 .64rem system-ui;font-style:normal;background:#0f1c16d9;border-radius:999px;padding:0 5px}
 .spell small{display:none}
-.spell[aria-pressed=true]{transform:translateY(-10px);border-color:#fff3d2;box-shadow:0 0 0 2px #f2cf6b,0 6px 12px #000c;background-color:#3b3a22}
+.spell[aria-pressed=true]{transform:translateY(-10px);color:var(--ink);border-color:#fff3d2;box-shadow:0 0 0 2px #f2cf6b,0 6px 12px #000c;background-color:#3b3a22}
 .spell.unaffordable{filter:grayscale(.7) brightness(.8)}
-.spell.has-art{background-image:linear-gradient(#0d1a1422,#0d1a14e6),var(--art)!important}
+.spell.has-art{background-image:linear-gradient(#0d1a14a3,#0d1a1420 48%,#0d1a14e6),var(--art)!important}
+.spell.has-art strong{border-radius:3px;background:#0d1a14d9;padding:1px 2px}
 #zones{font-size:.6rem;color:#d9dccd;background:var(--hud);border-radius:999px;padding:0 8px}
 .card-tip{width:min(300px,calc(100vw - 110px));background:#0f1c16f2;border:1px solid var(--rim);border-radius:9px;padding:7px 9px;box-shadow:0 3px 10px #000b}
 .card-tip strong{color:var(--gold);font-size:.82rem}
@@ -624,7 +626,7 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
 .hand{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;
  max-height:calc(100dvh - var(--edge-t) - var(--edge-b) - var(--hand-top,104px));overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:3px}
 .hand .spell{width:100%;aspect-ratio:auto;min-height:31px;flex-direction:row;align-items:center;gap:3px;padding:3px 4px;border-radius:6px}
-.hand .spell.has-art{background-image:linear-gradient(90deg,#0d1a14f7,#0d1a14b3),var(--art)!important}
+.hand .spell.has-art{background-image:linear-gradient(90deg,#0d1a14a3,#0d1a1420 65%,#0d1a14ba),var(--art)!important}
 .hand .spell strong{min-width:0;font-size:.65rem;line-height:1.15}
 .hand .spell em{align-self:center;flex:none;font-size:.58rem;padding:0 3px;white-space:nowrap}
 .hand .spell[aria-pressed=true]{transform:none;box-shadow:0 0 0 2px #f2cf6b,0 0 10px #f2cf6b99}
@@ -1101,3 +1103,9 @@ button.big{font-size:1.15rem;min-height:52px;border-radius:999px;box-shadow:0 0 
  76%{transform:skewX(5deg) scale(1.04,1.1);filter:brightness(1.22)}
 }
 @media(prefers-reduced-motion:reduce){.title-ambience{display:none}.title-ambience *{animation:none!important}}
+
+/* Soft, local backdrops beneath the corner controls keep bright snow and water away from labels. */
+:is(.hud,.top-right,.bottom-left,.spell-tray)::before{
+ content:"";position:absolute;inset:-16px -20px;z-index:-1;pointer-events:none;
+ background:radial-gradient(ellipse at center,#0c1a14a6 18%,#0c1a1459 51%,#0c1a1400 74%);
+}
