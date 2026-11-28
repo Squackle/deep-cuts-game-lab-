@@ -52,6 +52,7 @@ export function hazardPreview(s) {
   return out;
 }
 export function startPlayerTurn(s) {
+  if(s.victoryDeclared||s.phase==='won'||s.phase==='lost')return [];
   const ev = []; const p = player(s);
   s.turn++; s.phase = 'player'; s.stats.turns = s.turn;
   pilotPhaseStart(s,ev);
@@ -293,7 +294,7 @@ export function endTurn(s) {
   // The player end step is also an end step for Toxrill's printed trigger.
   resolveToxrillEndStep(s,ev);
   resolveScarabEndStep(s,ev);
-  if(s.phase === 'lost')return finish(s,ev);
+  if(s.phase !== 'player')return finish(s,ev);
   s.phase = 'enemy'; ev.push({ t: 'turn', phase: 'enemy', turn: s.turn });
   pilotPhaseStart(s,ev);
   if(s.phase!=='enemy')return finish(s,ev);

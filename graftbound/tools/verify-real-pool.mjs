@@ -16,10 +16,19 @@ const headers = {
   Accept: 'application/json;q=0.9,*/*;q=0.8',
   'Content-Type': 'application/json',
 };
+// Pin owner-approved pilot printings and the first follow-on batch. Rarity is a
+// printing fact, never inferred from the latest reprint or an Oracle identity.
+const printings=Object.freeze({
+ 'Essence Warden':'plc','Bloodthirsty Aerialist':'m20','Marauding Blight-Priest':'znr',
+ 'Kessig Flamebreather':'vow','Welcoming Vampire':'vow','Verdant Force':'dom',
+ 'Opt':'xln','Village Rites':'m21','Sleep':'m19','Harmonize':'plc','Skullclamp':'dst','Shadowspear':'thb',
+ 'Inspiring Overseer':'snc','Cloudkin Seer':'m20','Pitiless Plunderer':'rix','Vindictive Vampire':'rna',
+ 'Monastery Swiftspear':'ktk','Krenko, Tin Street Kingpin':'war'
+});
 const results = [];
 for (let i=0;i<cards.length;i+=75) {
   // Scryfall limits /cards/collection to 75 identifiers. No automatic rate-limit retries.
-  const identifiers = cards.slice(i,i+75).map(({name})=>({name}));
+  const identifiers = cards.slice(i,i+75).map(({name})=>printings[name]?{name,set:printings[name]}:{name});
   let response;
   try {
     response=await fetch('https://api.scryfall.com/cards/collection', {
@@ -49,6 +58,12 @@ for (const entry of cards) {
     continue;
   }
   const issues = [];
+  if(printings[entry.name]){
+    if(live.set!==printings[entry.name])issues.push('printing '+live.set+' ≠ '+printings[entry.name]);
+    if(live.rarity!==entry.rarity)issues.push('printing rarity '+live.rarity+' ≠ '+entry.rarity);
+    if(live.cmc!==entry.cmc)issues.push('mana value '+live.cmc+' ≠ '+entry.cmc);
+    if(live.colors.slice().sort().join()!==entry.color_identity.slice().sort().join())issues.push('color identity mismatch');
+  }
   if (entry.mana_cost && live.manaCost !== entry.mana_cost) issues.push('printed mana cost ' + live.manaCost + ' ≠ ' + entry.mana_cost);
   if (entry.type_line && live.typeLine !== entry.type_line) issues.push('printed type ' + live.typeLine + ' ≠ ' + entry.type_line);
   if (!entry.spell && !entry.kind && (live.power !== entry.power || live.toughness !== entry.toughness))
@@ -67,4 +82,5 @@ for (const entry of cards) {
 const notFound = results.flatMap(r=>r.not_found||[]);
 if (notFound.length) console.error('Scryfall did not find ' + notFound.length + ' requested identifiers.');
 console.log(cards.length + ' curated cards checked, ' + bad + ' problems.');
+console.log('Exact printing/MV/rarity/color identity gates: '+Object.keys(printings).length+' named cards.');
 process.exit(bad ? 1 : 0);

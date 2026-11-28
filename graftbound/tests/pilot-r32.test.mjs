@@ -10,9 +10,9 @@ import { traitDraw } from '../src/engine/trait-triggers.js';
 const card=id=>({id:'mtg:'+id,level:1});
 const make=(ids=[],traits=[])=>{const s=arena(['P....','.....','....g'],{g:'grub'},{evo:evoWith(...traits.map(x=>'mtg:'+x)),spellbook:ids.map(card)});s.deck={library:[],hand:ids.map(card),graveyard:[],exile:[],capacity:7};s.spellbook=s.deck.hand;s.p.mana=20;const e=enemies(s)[0];e.hp=e.maxHp=30;return s;};
 const use=(s,id,target=player(s))=>cast(s,'mtg:'+id,target.x,target.y);
-test('approved pilot catalog: exactly 145, costs, rarity and fixed levels',()=>{
+test('approved pilot catalog: pilot preserved in 151-card catalog; costs, rarity and fixed levels',()=>{
  const ids=['essence-warden','bloodthirsty-aerialist','marauding-blight-priest','kessig-flamebreather','welcoming-vampire','verdant-force','opt','village-rites','sleep','harmonize','skullclamp','shadowspear'];
- assert.equal(rewardCards().length,145);for(const id of ids){const c=resolveCard('mtg:'+id);assert.ok(c.pilot,id);assert.equal(maxSpellLevel(c.id),1);}
+ assert.equal(rewardCards().length,151);for(const id of ids){const c=resolveCard('mtg:'+id);assert.ok(c.pilot,id);assert.equal(maxSpellLevel(c.id),1);}
  assert.deepEqual(ids.slice(0,6).map(id=>resolveCard('mtg:'+id).rating),[4.5,10.5,8,6.5,11,19]);
  assert.deepEqual(ids.slice(6,10).map(id=>resolveCard('mtg:'+id).cost),[1,1,4,4]);
  assert.deepEqual(ids.slice(10).map(id=>resolveCard('mtg:'+id).equipCost),[1,2]);

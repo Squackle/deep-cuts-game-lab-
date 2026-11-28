@@ -6,6 +6,7 @@ export const REAL_CREATURE_MODELS = Object.freeze({
   friendlyElemental: C('emberseer','#57241b','#db5a29','#ffdb82','friendlyElemental',true),
   friendlyDrake: C('moth','#18394a','#377e9f','#b9e8f1','friendlyDrake',true),
   friendlyCatSoldier: C('archer','#54442c','#bd9762','#f4dbb1','friendlyCatSoldier',true),
+  friendlySaproling: {...C('grub','#284928','#76a956','#e2ec96','saproling',true), verdant:true},
   friendlySproutling: C('grub','#20542b','#5cbd63','#d5f2a4','saproling',true),
   friendlyBirdIllusion: C('moth','#142e51','#7191db','#d9f5ff','friendlyBirdIllusion',true),
   friendlyTentacle: C('grub','#173d65','#3697bb','#caecff','friendlyTentacle',true),

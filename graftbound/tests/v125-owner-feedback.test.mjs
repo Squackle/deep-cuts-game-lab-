@@ -86,6 +86,6 @@ test('source contains visible equipment artwork and new ruleset version, without
   assert.match(src,/class="gb-equip-card"/);
   assert.match(src,/cardHTML\(id,\{small:true/);
   assert.match(achievements,/id: 'thornmother'.*name: 'Grove Guardian Fallen'/);
-  assert.equal(RULES_VERSION,'graftbound-rules-1.9.0-candidate');
-  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,32);
+  assert.equal(RULES_VERSION,'graftbound-rules-1.9.1-candidate');
+  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,33);
 });

@@ -128,8 +128,8 @@ test('same run/seed produces byte-identical pressure and enemy starting lineup',
   assert.deepEqual(run.worldThreat,clone.worldThreat);
 });
 test('ranked replays are isolated from old Global Threat difficulty',()=>{
-  assert.equal(RULES_VERSION,'graftbound-rules-1.9.0-candidate');
-  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,32);
+  assert.equal(RULES_VERSION,'graftbound-rules-1.9.1-candidate');
+  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,33);
   assert.equal(startRanked().ranked.rulesVersion,RULES_VERSION);
   assert.throws(()=>replayRun('gb-expedition-01',[],{revision:20}),/retired challenge/);
   assert.throws(()=>replayRun('gb-expedition-01',[],{rulesVersion:'graftbound-rules-1.3.6-beta'}),/Rules version mismatch/);

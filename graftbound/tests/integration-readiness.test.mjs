@@ -61,7 +61,9 @@ test('release metadata requires a real source SHA and cannot silently change ran
 
 test('renderer and DOM-free rules consume one identical creature model registry', () => {
   assert.strictEqual(RULE_MODELS, RENDER_MODELS, 'render must reuse the exact registry object');
-  assert.equal(Object.keys(RULE_MODELS).length, 45);
+  assert.equal(Object.keys(RULE_MODELS).length, 46);
+  assert.equal(RULE_MODELS.friendlySaproling.feature,'saproling');
+  assert.equal(RULE_MODELS.friendlySaproling.verdant,true);
   for (const id of Object.keys(RULE_MODELS)) {
     if (ENEMIES[id]) assert.equal(ENEMIES[id].sprite, 'mtg_' + id, id + ' sprite mapping must remain unchanged');
   }

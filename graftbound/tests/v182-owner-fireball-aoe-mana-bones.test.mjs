@@ -167,6 +167,6 @@ test('skeleton bone-pile art is an original 2-frame 48px atlas derived from the 
 });
 
 test('v1.8.2 rules revision retires previous ranked replays while retaining saved progress',()=>{
-  assert.equal(GAME.version,'1.9.0-candidate');assert.equal(RULES_VERSION,'graftbound-rules-1.9.0-candidate');
-  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,32);
+  assert.equal(GAME.version,'1.9.1-candidate');assert.equal(RULES_VERSION,'graftbound-rules-1.9.1-candidate');
+  assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,33);
 });

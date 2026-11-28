@@ -1,6 +1,6 @@
 // Reviewed, bounded printed-creature adaptations for permanent hero grafts.
 // Authoritative DOM-free triggers; every effect uses explicit battle events and board state.
-import { player, enemies, alive, heal, dealDamage, loseLife } from './abilities.js';
+import { player, enemies, alive, heal, dealDamage, loseLife, effectivePower } from './abilities.js';
 import { tileAt, unitAt, T, manhattan } from '../core/grid.js';
 import { drawCards, refillFromGraveyard } from './deck.js';
 import { lv } from '../cards/graft-levels.js';
@@ -17,7 +17,7 @@ function spawnAlly(s,ev,name,power,toughness,keywords={}){
  }
  spots.sort((a,b)=>a.d-b.d||a.y-b.y||a.x-b.x);
  const pos=spots[0];if(!pos)return null;
- const cardIdentity=name==='Elemental'?{colors:['R'],types:['Elemental']} : name==='Drake'?{colors:['U'],types:['Drake']} : name==='Cat Soldier'?{colors:['W'],types:['Cat','Soldier']} : {colors:[],types:[name]};
+ const cardIdentity=name==='Elemental'?{colors:['R'],types:['Elemental']} : name==='Drake'?{colors:['U'],types:['Drake']} : name==='Cat Soldier'?{colors:['W'],types:['Cat','Soldier']} : name==='Goblin'?{colors:['R'],types:['Goblin']} : {colors:[],types:[name]};
  const u={uid:s.nextUid++,side:'player',hero:false,defId:'sproutling',traitToken:type,name,
   ...cardIdentity,creatureTypes:cardIdentity.types.join(' '),
   x:pos.x,y:pos.y,power,toughness,hp:toughness,maxHp:toughness,move:2,keywords:{...keywords},statuses:{},token:true};
@@ -49,9 +49,19 @@ export function onBattleGrafts(s,ev){
   ev.push({t:'graftTrigger',name:`Serra Ascendant · +${b}/+${b} and Flying at 30+ life`,uid:hero.uid});
  }
  if(owns(s,'visionary'))traitDraw(s,ev,lv(s,'visionary').draw);
+ if(owns(s,'overseer')){heal(s,ev,hero,1,'overseer');traitDraw(s,ev,1);}
+ if(owns(s,'cloudkin'))traitDraw(s,ev,1);
 }
 export function onHeroAttack(s,ev){
   /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return;
+ if(owns(s,'tinStreet')){
+  const h=player(s);h.power++;h.toughness++;h.maxHp++;h.hp++;
+  (h.comboCounters||={}).tinStreet=(h.comboCounters.tinStreet||0)+1;
+  ev.push({t:'status',uid:h.uid,status:'tinStreet +1/+1',value:1,total:h.comboCounters.tinStreet});
+  // Never loop in proportion to unbounded hero power; each success occupies one tile.
+  const count=Math.min(s.w*s.h,effectivePower(h));
+  for(let i=0;i<count;i++)if(!spawnAlly(s,ev,'Goblin',1,1))break;
+ }
  if(owns(s,'brimaz')){
   const token=spawnAlly(s,ev,'Cat Soldier',...lv(s,'brimaz').token);
   if(token)ev.push({t:'graftTrigger',name:'Brimaz · Cat Soldier',uid:player(s).uid});
@@ -76,7 +86,7 @@ export function onHeroHeal(s,ev,amount,kind){
   /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return;
  if(!owns(s,'vito')||kind==='vito'||amount<=0)return;
  const target=nearestFoe(s);if(!target)return;
- const dmg=amount+lv(s,'vito').bonus;
+ const dmg=amount+lv(s,'vito').bonus; // Capped level 1 has zero bonus, even for legacy duplicate grafts.
  ev.push({t:'graftTrigger',name:`Vito · ${dmg} life loss to ${target.name}`,uid:player(s).uid});
  loseLife(s,ev,player(s),target,dmg,'vito');
 }

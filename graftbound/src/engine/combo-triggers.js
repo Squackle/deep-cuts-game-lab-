@@ -192,7 +192,8 @@ export function comboActivate(s,kind,arg){
 // Appended events (e.g. lifegain -> damage -> death -> draws -> new summons) are processed
 // in stable FIFO order. The normal mana/board/deck rules naturally constrain combos.
 export function resolveComboEvents(s,ev){
-  /* v1.5.0: no new gameplay after a finalized victory */ if(s&&s.victoryDeclared)return ev;
+  /* Only finish already-emitted life-gain counters after victory; never initiate new triggers. */
+  if(s&&s.victoryDeclared&&!ev.some(e=>e.t==='comboLifeGain'&&!e[STAMP]))return ev;
  if(!s?.traits?.length)return ev;
  const co=state(s);let processed=0;
  for(let i=0;i<ev.length;i++){
@@ -220,10 +221,13 @@ export function resolveComboEvents(s,ev){
    if(owns(s,'nadir')&&s.deck)queue(s,'nadir',{card:e.id});
   } else if(e.t==='death'){
    const u=s.units.find(x=>x.uid===e.uid);if(!u||u.hero)continue;
+   if(u.side==='player'&&owns(s,'plunderer')){co.treasure=(co.treasure||0)+1;ev.push({t:'graftTrigger',name:'Pitiless Plunderer · Treasure',uid:hero.uid});}
+   if(u.side==='player'&&owns(s,'vindictive')){const foe=nearest(s);if(foe){heal(s,ev,hero,1,'vindictive');if(alive(foe))dealDamage(s,ev,hero,foe,1,{kind:'vindictive',element:'umbral'});}}
    if(owns(s,'zulaport')&&u.side==='player'){const p=lv(s,'zulaport');drain(s,ev,'Zulaport Cutthroat',p.drain,p.heal??p.drain);}
    const turnKey=`${e.turn??s.turn}:${e.phase||s.phase}`;
    if(owns(s,'morbid')&&co.actions.morbidTurn!==turnKey){co.actions.morbidTurn=turnKey;comboDraw(s,ev,1);}
   } else if(e.t==='noncreatureSpellCast'){
+   if(owns(s,'prowess')){hero.statuses.empowered=(hero.statuses.empowered||0)+1;hero.statuses.temporaryToughness=(hero.statuses.temporaryToughness||0)+1;hero.toughness++;hero.maxHp++;hero.hp++;ev.push({t:'status',uid:hero.uid,status:'Prowess +1/+1',value:1,total:hero.statuses.temporaryToughness});}
    if(owns(s,'flamebreather')){const foe=nearest(s);if(foe)dealDamage(s,ev,hero,foe,1,{kind:'flamebreather',element:'ember'});}
   } else if(e.t==='comboSpellCast'){
    if(owns(s,'mystic'))comboToken(s,ev,'Bird Illusion',...lv(s,'mystic').token,'mystic');

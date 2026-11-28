@@ -33,10 +33,11 @@ test('r31 trample overflow is one hero lifelink event per strike',()=>{
  assert.ok(ev.some(e=>e.t==='trample'));resolveComboEvents(s,ev);assert.equal(h.power,power+1);
 });
 test('r31 rejects historical revision 30 rather than reinterpreting its decisions',()=>{
- assert.equal(RULES_VERSION,'graftbound-rules-1.9.0-candidate');
- assert.equal(challengeFor(ACTIVE_CHALLENGE).revision,32);
+ assert.equal(RULES_VERSION,'graftbound-rules-1.9.1-candidate');
+ assert.equal(challengeFor(ACTIVE_CHALLENGE).revision,33);
  assert.throws(()=>challengeFor(ACTIVE_CHALLENGE,30),/Unknown or retired/);
  assert.throws(()=>challengeFor(ACTIVE_CHALLENGE,31),/Unknown or retired/);
+ assert.throws(()=>challengeFor(ACTIVE_CHALLENGE,32),/Unknown or retired/);
  const s=startRanked();s.ranked.revision=30;s.ranked.rulesVersion='graftbound-rules-1.8.3-beta';
  assert.throws(()=>applySegment(s,[{seq:0,type:'end'}]),/Rules version mismatch|Unknown or retired/);
 });

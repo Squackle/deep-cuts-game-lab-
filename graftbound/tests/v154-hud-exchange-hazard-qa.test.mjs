@@ -72,7 +72,7 @@ test('lethal mandatory lava crossing is still rejected',()=>{
  assert.equal(planEnemy(s,enemies(s)[0]).to,null);
 });
 test('AI rule changes have their own ranked replay fingerprint',()=>{
- assert.equal(RULES_VERSION,'graftbound-rules-1.9.0-candidate');
- assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,32);
+ assert.equal(RULES_VERSION,'graftbound-rules-1.9.1-candidate');
+ assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision,33);
  assert.throws(()=>replayRun('gb-expedition-01',[],{revision:21}),/retired challenge/);
 });

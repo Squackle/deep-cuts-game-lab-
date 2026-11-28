@@ -13,7 +13,7 @@ export const SIZE_CLASS = Object.freeze({
   mtg_friendlySquirrel: 'tiny',
   mtg_friendlySpider: 'small', mtg_spider: 'small', mtg_friendlyTentacle: 'small', mtg_friendlyBirdIllusion: 'small', mtg_friendlyHornet: 'small', mtg_moth: 'small', mtg_shardling: 'small',
   mtg_friendlySnake: 'low', mtg_grub: 'low',
-  mtg_friendlySproutling: 'medium', mtg_saproling: 'medium', mtg_slug: 'medium', mtg_friendlyElemental: 'medium', mtg_friendlyGoblin: 'medium', mtg_goblin: 'medium', mtg_cinderling: 'medium', mtg_harpooner: 'medium', mtg_friendlyDrake: 'medium',
+  mtg_friendlySaproling: 'medium', mtg_friendlySproutling: 'medium', mtg_saproling: 'medium', mtg_slug: 'medium', mtg_friendlyElemental: 'medium', mtg_friendlyGoblin: 'medium', mtg_goblin: 'medium', mtg_cinderling: 'medium', mtg_harpooner: 'medium', mtg_friendlyDrake: 'medium',
   mtg_hound: 'quad', mtg_wolf: 'quad', mtg_tortoise: 'quad',
   mtg_alpha: 'leader', mtg_champion: 'leader', mtg_nullwarden: 'leader',
   mtg_friendlyCatSoldier: 'humanoid', mtg_friendlySoldier: 'humanoid', mtg_archer: 'humanoid', mtg_hexer: 'humanoid', mtg_emberseer: 'humanoid', mtg_riftstalker: 'humanoid', mtg_zombie: 'humanoid', mtg_friendlySkeleton: 'humanoid', blank: 'humanoid',

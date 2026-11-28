@@ -19,7 +19,7 @@ export function dominantColor(evo) {
   for (const c of ['verdant', 'umbral', 'ember', 'tide', 'radiant']) if ((evo.colors[c] || 0) > n) { n = evo.colors[c]; best = c; }
   return best;
 }
-export const PILOT_GRAFT_MARKS=Object.freeze({'mtg:essence-warden':'leafCollar','mtg:bloodthirsty-aerialist':'batRibs','mtg:marauding-blight-priest':'obsidianMantle','mtg:kessig-flamebreather':'emberThroat','mtg:welcoming-vampire':'palePlume','mtg:verdant-force':'rootArmor'});
+export const PILOT_GRAFT_MARKS=Object.freeze({'mtg:inspiring-overseer':'goldFeathers','mtg:cloudkin-seer':'cloudCrest','mtg:pitiless-plunderer':'pirateRidge','mtg:vindictive-vampire':'bloodMantle','mtg:monastery-swiftspear':'swiftBands','mtg:krenko-tin-street-kingpin':'goblinCrest','mtg:essence-warden':'leafCollar','mtg:bloodthirsty-aerialist':'batRibs','mtg:marauding-blight-priest':'obsidianMantle','mtg:kessig-flamebreather':'emberThroat','mtg:welcoming-vampire':'palePlume','mtg:verdant-force':'rootArmor'});
 export function deriveAppearance(evo, visual = null) {
   const total = evo.absorbed.length;
   const dom = dominantColor(evo);
