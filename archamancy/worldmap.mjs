@@ -1,9 +1,11 @@
+import {atlasIllustration, drawAtlasIllustration, paintAtlasFrame, paintCompass} from "./atlas-art.mjs";
+
 // Campaign world map backdrop (cosmetic). Five regions run left to right along a trail:
 // meadow lowlands, river country, frozen marsh, grey mountains and the volcanic Ember Wastes.
 // NODES are the trail stops in 0..1 map units; main.mjs places a button on each.
 export const NODES = [[.1, .62], [.3, .4], [.5, .64], [.7, .38], [.89, .58]];
 const INK = "#15241c";
-export function paintWorld(a, W, H) {
+function paintFallback(a, W, H) {
  let seed = 7741; const rnd = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
  const ell = (x, y, rx, ry, c, r = 0) => { a.beginPath(); a.ellipse(x, y, rx, ry, r, 0, Math.PI * 2); a.fillStyle = c; a.fill(); };
  // Sea, then one long landmass with a ragged coast.
@@ -29,10 +31,40 @@ export function paintWorld(a, W, H) {
  for (let i = 0; i < 4; i++) { a.beginPath(); a.moveTo(vx + (i - 1.5) * 6, vy - H * .23); a.quadraticCurveTo(vx + (i - 1.5) * 18, vy - H * .05, vx + (i - 1.5) * 26 + rnd() * 10, vy + H * .55); a.strokeStyle = "#ff7a2e"; a.lineWidth = 2.4; a.stroke(); }
  for (let i = 0; i < 10; i++) { const x = W * (.84 + rnd() * .15), y = H * (.5 + rnd() * .4); peak(x, y, H * (.05 + rnd() * .05), "#5a3e34", "#2e1e1a", null); }
  a.restore();
- // The trail between regions: a dashed road with a shadow.
+}
+
+function paintWorldRoute(a, W, H) {
  const pts = NODES.map(([x, y]) => [x * W, y * H]);
- const trail = (c, w, dash) => { a.save(); a.setLineDash(dash); a.strokeStyle = c; a.lineWidth = w; a.beginPath(); pts.forEach(([x, y], i) => { if (!i) { a.moveTo(x, y); return; } const [px, py] = pts[i - 1]; a.quadraticCurveTo((px + x) / 2, py, x, y); }); a.stroke(); a.restore(); };
- trail("#13241a88", 7, []); trail("#f1e2b4", 4, [10, 7]);
- // Soft vignette.
- const v = a.createRadialGradient(W / 2, H / 2, H * .3, W / 2, H / 2, W * .6); v.addColorStop(0, "#0a140f00"); v.addColorStop(1, "#0a140f66"); a.fillStyle = v; a.fillRect(0, 0, W, H);
+ a.save();
+ a.lineCap = "round";
+ a.beginPath();
+ pts.forEach(([x, y], i) => {
+  if (!i) {a.moveTo(x, y);return;}
+  const [px, py] = pts[i - 1], span = x - px;
+  a.bezierCurveTo(px + span * .38, py, x - span * .38, y, x, y);
+ });
+ const unit = H / 460;
+ for (const [ink, width, dash] of [["#13211db3", 10, []], ["#6d5337b8", 6, []], ["#f2dba0", 3.7, [8, 9]]]) {
+  a.strokeStyle = ink;
+  a.lineWidth = width * unit;
+  a.setLineDash(dash.map(length => length * unit));
+  a.stroke();
+ }
+ a.restore();
+}
+
+export function paintWorld(a, W, H) {
+ const art = atlasIllustration("world");
+ const draw = image => {
+  a.clearRect(0, 0, W, H);
+  if (image) {
+   drawAtlasIllustration(a, image, W, H, true);
+   a.canvas.dataset.atlasArt = "world";
+  } else paintFallback(a, W, H);
+  paintWorldRoute(a, W, H);
+  paintAtlasFrame(a, W, H);
+  paintCompass(a, W * .077, H * .18, H * .077);
+ };
+ draw(art.image);
+ if (!art.image) art.ready.then(image => {if (image) draw(image);});
 }
