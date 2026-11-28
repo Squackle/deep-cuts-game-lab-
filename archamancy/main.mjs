@@ -3,6 +3,7 @@ import {createEngine,VERSION,MAPS,PERKS,PERK_COSTS,TARGET_MODES,AIMED,FLIGHT_TAR
 import {createArt} from './art.mjs';
 import {firstFlyerWarning,bossOverlapWarning,earlyOverlapWarning,counterplayWarning,troopCardHint,handCycleHint} from './wave-guidance.mjs';
 import {paintTerrain as paintMapArt} from './terrain.mjs';
+import {mountEnvironment} from './environment.mjs';
 import * as progress from './progress.mjs';
 import {resetGameProgress} from './game-reset.mjs';
 import {createTitleMenu} from "./title-menu.mjs";
@@ -376,13 +377,20 @@ document.addEventListener("keydown",e=>{if(!portrait.matches&&e.key==="Escape"&&
  terrain.className="map-terrain";terrain.setAttribute("aria-hidden","true");
  terrain.width=1000;terrain.height=600;
  canvas.before(terrain);
- let viewScale=1;
- function paintTerrain(){const a=terrain.getContext("2d");a.setTransform(viewScale,0,0,viewScale,0,0);paintMapArt(a,game);}
- paintTerrain();
+ const paintEnvironment=mountEnvironment(canvas.parentElement);
+ let viewScale=1,terrainReady=false;
+ function paintTerrain(){const a=terrain.getContext("2d");a.setTransform(viewScale,0,0,viewScale,0,0);paintMapArt(a,game);terrainReady=true;paintEnvironment(game,viewScale);}
  // Render at the real screen resolution: the battlefield keeps 1000×600 logical units but the canvas backing store
  // matches its on-screen size × devicePixelRatio, so terrain, sprites and text stay crisp at any size.
- function fitCanvas(){const rect=canvas.getBoundingClientRect();if(!rect.width)return;const dpr=Math.min(3,window.devicePixelRatio||1),k=Math.max(.5,Math.min(4,rect.width*dpr/game.map.width));const w=Math.round(game.map.width*k),h=Math.round(game.map.height*k);if(canvas.width===w&&canvas.height===h)return;viewScale=k;canvas.width=w;canvas.height=h;ctx.setTransform(k,0,0,k,0,0);ctx.imageSmoothingQuality="high";terrain.width=w;terrain.height=h;paintTerrain();art.setRes(Math.ceil(k*.85*2)/2);}
- fitCanvas();try{new ResizeObserver(()=>requestAnimationFrame(fitCanvas)).observe(canvas);}catch{addEventListener("resize",fitCanvas);}
+ function fitCanvas(){
+  const rect=canvas.getBoundingClientRect();if(!rect.width)return;
+  const dpr=Math.min(3,window.devicePixelRatio||1),k=Math.max(.5,Math.min(4,rect.width*dpr/game.map.width));
+  const w=Math.round(game.map.width*k),h=Math.round(game.map.height*k);
+  if(canvas.width===w&&canvas.height===h){if(terrainReady)paintEnvironment(game,k);else paintTerrain();return;}
+  viewScale=k;canvas.width=w;canvas.height=h;ctx.setTransform(k,0,0,k,0,0);ctx.imageSmoothingQuality="high";
+  terrain.width=w;terrain.height=h;paintTerrain();art.setRes(Math.ceil(k*.85*2)/2);
+ }
+ fitCanvas();try{const observer=new ResizeObserver(fitCanvas);observer.observe(canvas);observer.observe(canvas.closest(".map-stage"));}catch{addEventListener("resize",fitCanvas);}
  matchMedia?.("(resolution: 1dppx)")?.addEventListener?.("change",fitCanvas);
  function placeStart(){const q=game.pointAt(60);for(const id of ["start","wavePeek"]){$(id).style.left=q.x/game.map.width*100+"%";$(id).style.top=q.y/game.map.height*100+"%";}$("wavePeek").classList.toggle("below",q.y>game.map.height/2);peekKey="";}placeStart();
  const actorMotion=createRoadMotion(),unitVisuals=new Map(),dying=[];

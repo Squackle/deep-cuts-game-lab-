@@ -1,4 +1,5 @@
 import {VENT_EVERY,VENT_WARN} from './engine.mjs';
+import {extendCreek,paintOutskirts} from './environment-art.mjs';
 // Painted battlefield backdrop (cosmetic only, drawn once per map and resize into an offscreen canvas).
 // Art direction, from studying top tower defense games such as Kingdom Rush:
 // - Keep the ground mid-value and low-contrast so towers, troops and enemies always pop on top of it.
@@ -39,6 +40,14 @@ export function paintTerrain(a,game,opts={}){
  living=[];
  const season=seasonOf(game),S=PALETTES[season];
  const {segments,spans,pads,keep,labels,entrances}=game.map,W=game.map.width||1000,H=game.map.height||600;
+ const outside=opts.outside;
+ // The backing store rounds to device pixels. Bleed the ground into its last pixel.
+ const {left,top,right,bottom}=outside||{left:-1,top:-1,right:W+1,bottom:H+1};
+ const fillGround=()=>a.fillRect(left,top,right-left,bottom-top);
+ if(outside){
+  // Underpaint a few units under the board so fractional CSS pixels do not leave a hairline.
+  a.save();a.beginPath();a.rect(left,top,right-left,bottom-top);a.rect(4,4,W-8,H-8);a.clip("evenodd");
+ }
  let seed=23921;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
  const roadDist=(x,y)=>{const q=game.pointAt(game.nearestPath(x,y));return Math.hypot(q.x-x,q.y-y);};
  const padDist=(x,y)=>Math.min(...pads.map(p=>Math.hypot((p.x-x)*.85,p.y-y)));
@@ -46,10 +55,12 @@ export function paintTerrain(a,game,opts={}){
  const taken=(x,y,r=0)=>occ.some(o=>Math.hypot(o.x-x,o.y-y)<o.r+r);
  const clear=(x,y,road=44,pad=40)=>roadDist(x,y)<road||padDist(x,y)<pad||taken(x,y);
  const ell=(x,y,rx,ry,fill,rot=0)=>{a.beginPath();a.ellipse(x,y,rx,ry,rot,0,Math.PI*2);a.fillStyle=fill;a.fill();};
+ const poly=(pts,fill,stroke=INK,lw=1.6)=>{a.beginPath();pts.forEach(([x,y],i)=>i?a.lineTo(x,y):a.moveTo(x,y));a.closePath();a.fillStyle=fill;a.fill();if(stroke){a.strokeStyle=stroke;a.lineWidth=lw;a.stroke();}};
+ const rect=(x,y,w,h,fill)=>{a.fillStyle=INK;a.fillRect(x-1,y-1,w+2,h+2);a.fillStyle=fill;a.fillRect(x,y,w,h);};
  const roadPath=()=>{a.beginPath();for(const path of segments)path.forEach(([x,y],i)=>i?a.lineTo(x,y):a.moveTo(x,y));};
 
  // 1. Ground: a mid-green meadow, warmer where the light falls.
- const g=a.createLinearGradient(0,0,W*.6,H);g.addColorStop(0,S.ground[0]);g.addColorStop(.55,S.ground[1]);g.addColorStop(1,S.ground[2]);a.fillStyle=g;a.fillRect(0,0,W,H);
+ const g=a.createLinearGradient(0,0,W*.6,H);g.addColorStop(0,S.ground[0]);g.addColorStop(.55,S.ground[1]);g.addColorStop(1,S.ground[2]);a.fillStyle=g;fillGround();
  // Large soft meadow patches break up the flat colour.
  for(let i=0;i<46;i++){const x=random()*W,y=random()*H,r=40+random()*110,c=random()<.55?S.patch[0]:S.patch[1],p=a.createRadialGradient(x,y,0,x,y,r);p.addColorStop(0,c+"33");p.addColorStop(1,c+"00");a.fillStyle=p;a.fillRect(x-r,y-r,r*2,r*2);}
  // Grass texture: short strokes, lighter on top so the field feels lit from above.
@@ -58,11 +69,14 @@ export function paintTerrain(a,game,opts={}){
  a.globalAlpha=1;
  // Bare earth patches.
  for(let i=0;i<14;i++){const x=random()*W,y=random()*H;if(clear(x,y,60,50))continue;const r=10+random()*18;ell(x,y,r*1.4,r*.6,S.earth[0],random()*.4);ell(x-2,y-1,r*1.1,r*.42,S.earth[1],random()*.4);}
+ if(outside){
+  const originalSeed=seed,liveCount=living.length;
+  paintOutskirts(a,{map:game.map,bounds:outside,pigments:S,brushes:{tree:roundTree,pine:pineTree,bush,rock,landmark,seed:value=>{seed=value;}}});
+  seed=originalSeed;living.length=liveCount;
+ }
 
  // 1b. Creek: carved into the ground before the road is laid, entering and leaving off the map edges.
  // The road and plank bridges are painted over it afterwards, so it reads as passing under the road.
- const poly=(pts,fill,stroke=INK,lw=1.6)=>{a.beginPath();pts.forEach(([x,y],i)=>i?a.lineTo(x,y):a.moveTo(x,y));a.closePath();a.fillStyle=fill;a.fill();if(stroke){a.strokeStyle=stroke;a.lineWidth=lw;a.stroke();}};
- const rect=(x,y,w,h,fill)=>{a.fillStyle=INK;a.fillRect(x-1,y-1,w+2,h+2);a.fillStyle=fill;a.fillRect(x,y,w,h);};
  let creek=null;
  // Frozen lakes (map.ice, e.g. Frostfen): the lake is the map's water, so no generic creek is carved.
  const ice=game.map.ice||[],inIce=(x,y,m=0)=>ice.some(r=>x>r.x-m&&x<r.x+r.w+m&&y>r.y-m&&y<r.y+r.h+m);
@@ -101,7 +115,7 @@ export function paintTerrain(a,game,opts={}){
     if(len>=11&&(!best||len>best.len)){const end=pts.at(-1);if(roadDist(end[0],end[1])>48&&padDist(end[0],end[1])>60)best={len,pts};}}
    if(best){const pts=best.pts.slice(0,Math.min(best.pts.length,40)),[sx,sy]=pts.at(-1);creek={pts,bridges:[],spring:{x:sx,y:sy}};}}}
  const creekDist=(x,y)=>creek?Math.min(...creek.pts.map(([px,py])=>Math.hypot(px-x,py-y))):1e9;
- if(creek){const pts=creek.pts,line=(w,c,dx=0,dy=0,alpha=1)=>{a.globalAlpha=alpha;a.strokeStyle=c;a.lineWidth=w;a.lineJoin="round";a.lineCap="round";a.beginPath();pts.forEach(([x,y],k)=>k?a.lineTo(x+dx,y+dy):a.moveTo(x+dx,y+dy));a.stroke();a.globalAlpha=1;};
+ if(creek){const pts=creek.pts,channel=outside?extendCreek(pts,H):pts,line=(w,c,dx=0,dy=0,alpha=1)=>{a.globalAlpha=alpha;a.strokeStyle=c;a.lineWidth=w;a.lineJoin="round";a.lineCap="round";a.beginPath();channel.forEach(([x,y],k)=>k?a.lineTo(x+dx,y+dy):a.moveTo(x+dx,y+dy));a.stroke();a.globalAlpha=1;};
   line(40,S.bank[0],2,2,.55);line(33,S.bank[1]);line(29,S.bank[2]);line(25,S.bank[3]);line(21,S.water[0]);line(16,S.water[1]);line(9,S.water[2]);line(2,S.water[3],-3,-1,.55);
   if(S.snow)iceCracks(pts);
   if(creek.spring){const {x,y}=creek.spring;ell(x+2,y+3,30,17,S.bank[0]+"88");ell(x,y,28,16,S.bank[2]);ell(x,y,25,14,S.water[0]);ell(x,y,21,11,S.water[1]);ell(x-4,y-3,13,6,S.water[2]);occ.push({x,y,r:34});
@@ -114,6 +128,7 @@ export function paintTerrain(a,game,opts={}){
    if(k%4===0)living.push({type:"glint",x:x+(random()-.5)*6,y,ph:random()*6});});}
 
  // 2. Road: ambient occlusion on the grass, a worn earth edge, sandy bed and a lighter worn centre.
+ if(outside){a.save();a.beginPath();a.rect(0,0,W,H);a.clip();}
  a.lineJoin="round";a.lineCap="round";roadPath();
  for(const [w,c] of [[78,S.ao+"24"],[70,S.ao+"30"],[62,S.ao+"66"]]){a.strokeStyle=c;a.lineWidth=w;a.stroke();}
  a.strokeStyle=S.road[0];a.lineWidth=55;a.stroke();
@@ -136,6 +151,7 @@ export function paintTerrain(a,game,opts={}){
  // Winter: soft snowbanks along the road edges, lit on top.
  if(S.snow)for(let i=0;i<520;i++){const [s0,s1]=spans[i%spans.length],n=s0+random()*(s1-s0),p=game.pointAt(n),q=game.pointAt(n+1),dx=q.x-p.x,dy=q.y-p.y,l=Math.hypot(dx,dy)||1,side=random()<.5?-1:1,d=24+random()*6,x=p.x-dy/l*d*side,y=p.y+dx/l*d*side;
   if(padDist(x,y)<30||roadDist(x,y)<21||creekDist(x,y)<18||inIce(x,y,6))continue;const r=4+random()*5;ell(x+1,y+1.5,r,r*.5,"#8fa3b455");ell(x,y,r,r*.5,"#f6f9fb");}
+ if(outside)a.restore();
 
  // Causeway: where the road crosses a frozen lake it runs on a raised stone causeway topped with packed snow,
  // so the slow stretch of ice is obvious at a glance.
@@ -245,9 +261,19 @@ export function paintTerrain(a,game,opts={}){
  // Place names are no longer painted on the battlefield (owner request, 2026-11-22); map.labels stays as data.
 
  // 7. Light: warm key light from the top-left, cool shade bottom-right, gentle vignette.
- const key=a.createRadialGradient(W*.18,H*.05,0,W*.18,H*.05,W*.85);key.addColorStop(0,S.key+"30");key.addColorStop(1,S.key+"00");a.fillStyle=key;a.fillRect(0,0,W,H);
- const shade=a.createLinearGradient(0,0,W,H);shade.addColorStop(.55,S.shade+"00");shade.addColorStop(1,S.shade+"40");a.fillStyle=shade;a.fillRect(0,0,W,H);
- const v=a.createRadialGradient(W/2,H/2,H*.45,W/2,H/2,W*.62);v.addColorStop(0,"#0a140f00");v.addColorStop(1,"#0a140f66");a.fillStyle=v;a.fillRect(0,0,W,H);
+ const key=a.createRadialGradient(W*.18,H*.05,0,W*.18,H*.05,W*.85);key.addColorStop(0,S.key+"30");key.addColorStop(1,S.key+"00");a.fillStyle=key;fillGround();
+ const shade=a.createLinearGradient(0,0,W,H);shade.addColorStop(.55,S.shade+"00");shade.addColorStop(1,S.shade+"40");a.fillStyle=shade;fillGround();
+ const v=a.createRadialGradient(W/2,H/2,H*.45,W/2,H/2,W*.62);v.addColorStop(0,"#0a140f00");v.addColorStop(1,"#0a140f66");a.fillStyle=v;fillGround();
+ if(outside){
+  // Shade across the outsides only. At the join, retain the same light as the original terrain.
+  const tint=S.snow?"#172b3b":S.lava?"#1f1516":"#122a23";
+  for(const [x,y,dx,dy] of [[0,0,-1,0],[W,0,1,0],[0,0,0,-1],[0,H,0,1]]){
+   const edge=a.createLinearGradient(x,y,x+dx*205,y+dy*145);
+   edge.addColorStop(0,tint+"00");edge.addColorStop(.5,tint+(S.snow?"43":"27"));edge.addColorStop(1,tint+(S.snow?"72":"50"));
+   a.fillStyle=edge;fillGround();
+  }
+  a.restore();
+ }
  if(opts.still)living=keepLiving;
 
  function tuft(x,y,h){a.lineWidth=1.3;for(let k=-1;k<=1;k++){a.strokeStyle=k?S.tuft[0]:S.tuft[1];a.beginPath();a.moveTo(x+k*1.6,y);a.quadraticCurveTo(x+k*2.6,y-h*.6,x+k*3.6,y-h);a.stroke();}}
