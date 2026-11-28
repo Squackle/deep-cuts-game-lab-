@@ -1,0 +1,12 @@
+:root { color-scheme: dark; font: 1rem/1.5 system-ui, sans-serif; }
+body { margin: 0; background: #151b20; color: #edf5f5; }
+main { box-sizing: border-box; max-width: 52rem; margin: auto; padding: 1rem; }
+a { color: #a6e4f9; }
+p { margin: .6rem 0; }
+h1, h2 { line-height: 1.2; margin-block-end: .35em; }
+select, button { box-sizing: border-box; max-width: 100%; min-height: 44px; font: inherit; background: #29424a; color: inherit; padding: .35em .75em; border: 1px solid #87b5ba; border-radius: .35rem; }
+:focus-visible { outline: 3px solid #ffd88d; outline-offset: 2px; }
+button:disabled { opacity: .55; }
+.buttons { display: flex; flex-wrap: wrap; gap: .4rem; }
+#map { width: 100%; height: auto; display: block; background: #25322d; border-radius: .5rem; }
+#report { min-height: 1.5rem; }
