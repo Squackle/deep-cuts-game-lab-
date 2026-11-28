@@ -17,11 +17,11 @@ function wardReady(){
  return run;
 }
 
-test("Matriarch 1.5 is a new isolated engine ruleset and has exactly five WUBRG mutations",()=>{
+test("Dominion retains the Matriarch ruleset and exactly five WUBRG mutations",()=>{
  assert.equal(RULES_VERSION,"hive-1.5.4");
  assert.equal(Object.keys(newRun({seed:1}).mutations).length,5);
  const html=readFileSync(new URL("../hive-run/index.html",import.meta.url),"utf8");
- assert.match(html,/1\.5 · MATRIARCH/);
+ assert.match(html,/2\.0 · DOMINION/); // Presentation release; engine remains hive-1.5.4.
  assert.match(html,/id="wardButton"/);
  assert.match(html,/data-lair-boss="broodmother"/);
  assert.doesNotMatch(html,/trainingButton/);

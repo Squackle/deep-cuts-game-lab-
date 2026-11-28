@@ -55,7 +55,10 @@ function lairTitle(){return "THE LAIR · "+lairDetails(selectedLairBoss).name}
 let awaitingMutationResume=false;
 const sessionBests=createSessionBest();
 // Game state diagnostics remain hidden. Inspect local DOM/game state using developer tools.
-const prefersReducedMotion=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches??false;
+// MediaQueryList.matches is live: reuse the query instead of creating a new
+// object for every render pass and every animated effect.
+const reducedMotionQuery=window.matchMedia?.("(prefers-reduced-motion: reduce)");
+const prefersReducedMotion=()=>reducedMotionQuery?.matches??false;
 let selectedMode="hunt",selectedChallenge="arcade";
 try{selectedMode=localStorage.getItem("hive-mode-v1")==="classic"?"classic":"hunt"}catch{}
 $("gameMode").value=selectedMode;
@@ -375,8 +378,8 @@ function begin(){
  hideOverlay();hideMutationDraft($("mutationOverlay"));
  setEncounterMusic(musicForRun());syncUI();
  announce(lairActive()?"Unranked boss practice. Face "+lairDetails(selectedLairBoss).name+".":MODES[selectedMode].description);
- if(lairActive())showBossBriefing();
- canvas.focus({preventScroll:true});
+ // The modal owns focus until its countdown finishes.
+ if(!lairActive()||!showBossBriefing())canvas.focus({preventScroll:true});
 }
 function reset(){
  if(startingRun)return;
@@ -506,16 +509,18 @@ function drawArtCreature(part,kind,id,heading){
 function draw(){
  if(!context)return;
  const run=state.run;
+ const now=performance.now(),reduced=prefersReducedMotion();
+ const animationTime=reduced?0:now;
  paintBackdrop(context,canvas,arenaBackground,COLS,ROWS,CELLS,run.biome);
  const body=run.status==="running"?smoothBody(state.visualBefore,run.body,
-  motionPhase(state.accumulator,effectiveTickMs(run)),{enabled:!prefersReducedMotion()}):run.body;
+  motionPhase(state.accumulator,effectiveTickMs(run)),{enabled:!reduced}):run.body;
  drawTerrain(context,run,CELLS);
  drawHatchlingWards(context,run,CELLS);
  // The brood is a gameplay target; keep it conspicuous over busy art.
- if(run.food)drawBroodPickup(context,run.food,CELLS,performance.now());
+ if(run.food)drawBroodPickup(context,run.food,CELLS,animationTime);
  if(run.encounter)drawWebs(context,run.encounter.webs,CELLS);
- drawPrey(context,run.enemies,CELLS,performance.now(),prefersReducedMotion());
- drawBroodmotherHatchlings(context,run,CELLS,performance.now());
+ drawPrey(context,run.enemies,CELLS,now,reduced);
+ drawBroodmotherHatchlings(context,run,CELLS,animationTime);
  drawTrapHints(context,run,CELLS);
  if(run.encounter){
   drawMiniboss(context,run.enemies,CELLS,run.encounter.phase);
@@ -536,10 +541,10 @@ function draw(){
  }
  drawPlayerLocator(context,body[0],run.turnQueue[0]??run.direction,CELLS,"above");
  drawQueuedTurn(context,run.body[0],run.turnQueue[0],COLS,ROWS,CELLS);
- renderMutationEffects(context,run,CELLS,performance.now(),visualBurst,prefersReducedMotion());
- drawLairEffects(context,run,CELLS,performance.now(),lairBurst,prefersReducedMotion());
- if(lastCapture)drawCapture(context,lastCapture.pos,CELLS,performance.now(),lastCapture.until,prefersReducedMotion());
- drawCaptureFlash(context,beaconCapture,CELLS,performance.now(),prefersReducedMotion());
+ renderMutationEffects(context,run,CELLS,now,visualBurst,reduced);
+ drawLairEffects(context,run,CELLS,now,lairBurst,reduced);
+ if(lastCapture)drawCapture(context,lastCapture.pos,CELLS,now,lastCapture.until,reduced);
+ drawCaptureFlash(context,beaconCapture,CELLS,now,reduced);
  if(run.status==="over"){
   context.fillStyle="#dcb78b";
   const head=run.body[0];context.fillRect(head.x*CELLS+5,head.y*CELLS+5,10,10);
@@ -650,8 +655,9 @@ function loop(time){
   if(catchUps===3)state.accumulator=Math.min(state.accumulator,effectiveTickMs(state.run));
  }
  soundtrack.tick(); // tiny lookahead schedules original 8-bit notes on AudioContext clock.
- draw();
- drawVictoryCelebration(time);
+ // The opaque victory layer covers the board; never paint the hidden arena.
+ if(victoryVisible())drawVictoryCelebration(time);
+ else draw();
  requestAnimationFrame(loop);
 }
 // Unlock on direct interaction; an async score request is too late for autoplay rules.
@@ -684,6 +690,8 @@ $("musicButton").addEventListener("click",()=>{
  announce(state.musicOn?(state.ctx?.state==="running"?TRACKS[soundtrack.trackId].name+" playing.":"Music enabled. Use a game control to allow desktop audio."):"Background music muted.");
 });
 document.addEventListener("keydown",event=>{
+ // Browser/OS shortcuts and IME composition must not become game actions.
+ if(event.ctrlKey||event.metaKey||event.altKey||event.isComposing)return;
  if(victoryVisible()){
   if(event.key==="Tab"){
    const options=[$("victoryPlayAgain"),$("victoryReturn"),$("victoryRewatch")];
@@ -708,6 +716,16 @@ document.addEventListener("keydown",event=>{
  if(["INPUT","TEXTAREA","SELECT"].includes(focus?.tagName))return;
  if(!event.repeat)wakeAudio();
  if(state.run.status==="draft"){
+  if(event.key==="Tab"){
+   const cards=Array.from($("mutationChoices").querySelectorAll("button"));
+   if(cards.length){
+    event.preventDefault();
+    const current=cards.indexOf(document.activeElement);
+    const next=event.shiftKey?(current<=0?cards.length-1:current-1):(current+1)%cards.length;
+    cards[next].focus({preventScroll:true});
+   }
+   return;
+  }
   const index=mutationSelectionIndex(event.key,event.repeat);
   if(index!==null){event.preventDefault();selectMutation(state.run.draftOptions[index]);}
   else if(Object.hasOwn(KEY_DIRECTIONS,event.key))event.preventDefault();
@@ -746,7 +764,7 @@ function swipeDirection(event){
  if(awaitingMutationResume?resumeMutationByKey(SWIPE_RESUME_KEYS[heading]):handleDirection(heading))pointer.triggered=true;
 }
 canvas.addEventListener("pointerdown",event=>{
- if(state.run.status!=="running"||state.pointer)return;
+ if(state.run.status!=="running"||bossGate.blocking||state.pointer||event.isPrimary===false||event.button!==0)return;
  if(event.cancelable&&event.pointerType==="touch")event.preventDefault();
  state.pointer={x:event.clientX,y:event.clientY,id:event.pointerId,triggered:false};
  try{canvas.setPointerCapture(event.pointerId)}catch{}
@@ -760,12 +778,15 @@ canvas.addEventListener("pointerup",event=>{
  swipeDirection(event); // Handles quick flicks without an intermediate move event.
  if(state.pointer?.id===event.pointerId)state.pointer=null;
 });
-canvas.addEventListener("pointercancel",event=>{
+function clearSwipePointer(event){
  if(state.pointer?.id===event.pointerId)state.pointer=null;
-});
+}
+canvas.addEventListener("pointercancel",clearSwipePointer);
+canvas.addEventListener("lostpointercapture",clearSwipePointer);
 document.addEventListener("visibilitychange",()=>{
  if(document.hidden){
   victoryFanfare.stop();
+  state.pointer=null; // A hidden tab cannot retain an unfinished swipe.
   if(bossGate.blocking)reopenBossBriefing();
    else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
   soundtrack.stop(); // Also silence title-screen music in hidden tabs.
@@ -777,6 +798,7 @@ window.addEventListener("focus",()=>{
 });
 window.addEventListener("pagehide",()=>{
  victoryFanfare.stop();
+ state.pointer=null;
  if(bossGate.blocking)reopenBossBriefing();
  else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
  soundtrack.stop();
@@ -784,6 +806,7 @@ window.addEventListener("pagehide",()=>{
 });
 window.addEventListener("blur",()=>{
  victoryFanfare.stop();
+ state.pointer=null;
  if(bossGate.blocking)reopenBossBriefing();
  else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
  soundtrack.stop();

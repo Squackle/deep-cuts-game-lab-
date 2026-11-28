@@ -44,11 +44,17 @@ export function showMutationDraft(overlay,container,options,onSelect,mode="hunt"
 export function hideMutationDraft(overlay){
  if(overlay)overlay.hidden=true;
 }
+// A root-local cache avoids tearing down identical badges on every tick or
+// audio/keyboard sync. The signature includes the mode-specific effect labels.
+const hudSignatures=new WeakMap();
 export function drawMutationHud(root,run){
  if(!root)return;
  const owned=COLORS.filter(color=>run.mutations[color]>0);
  const active=activeEffects(run);
+ const signature=JSON.stringify([owned.map(color=>[color,run.mutations[color]]),active.map(effect=>[effect.color,effect.label])]);
+ if(hudSignatures.get(root)===signature)return;
  root.replaceChildren();
+ hudSignatures.set(root,signature);
  if(!owned.length){
   const empty=root.ownerDocument.createElement("span");
   empty.className="mutation-none";empty.textContent="NO MUTATIONS YET";
