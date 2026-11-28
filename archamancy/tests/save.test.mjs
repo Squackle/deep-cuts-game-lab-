@@ -40,3 +40,49 @@ test("a boss saved mid-fight is still tracked in the boss log after resuming",()
  boss.hp=1;boss.progress=h.map.distance+5;h.step();
  assert.equal(h.playtestReport().bossLog[0].outcome,"leaked");
 });
+
+test("malformed saved collections never mutate a live run; invalid resources are rejected",()=>{
+ const g=createEngine(31,"sandbox","hollow");
+ assert.ok(g.command({type:"sandboxEnemy",enemy:"grimgut",count:1}));g.step();
+ const baseline=JSON.stringify(g.snapshot().state);
+ const changes=[
+  ["bossLog object",s=>{s.bossLog={};}],
+  ["null boss record",s=>{s.bossLog=[null];}],
+  ["waveHistory object",s=>{s.waveHistory={};}],
+  ["queue object",s=>{s.queue={};}],
+  ["hand object",s=>{s.hand={};}],
+  ["stats array",s=>{s.stats=[];}],
+  ["towers array",s=>{s.towers=[];}],
+  ["rubble null",s=>{s.rubble=null;}],
+  ["negative wave",s=>{s.wave=-1;}],
+  ["fractional tick",s=>{s.tick=.5;}],
+  ["negative mana",s=>{s.mana=-1;}]
+ ];
+ for(const [label,change] of changes){
+  const bad=JSON.parse(JSON.stringify(g.snapshot()));change(bad.state);
+  assert.equal(g.restore(bad),false,label+" must be rejected");
+  assert.equal(JSON.stringify(g.snapshot().state),baseline,label+" must not partially mutate the run");
+ }
+ assert.ok(g.restore(JSON.parse(JSON.stringify(g.snapshot()))),"a valid saved battle still restores");
+ g.step();assert.ok(Number.isFinite(g.state.tick));
+});
+
+test("fixed-seed combat has identical outcomes after checkpoints across maps and unranked modes",()=>{
+ for(const [map,mode,seed] of [
+  ["hollow","campaign",11],["confluence","campaign",13],["frostfen","campaign",17],
+  ["pass","campaign",19],["caldera","campaign",23],["hollow","endless",29],["caldera","sandbox",31]
+ ]){
+  const g=createEngine(seed,mode,map);
+  assert.ok(g.command({type:"build",pad:0,kind:"judgment"}),map+" build");
+  assert.ok(g.command({type:"wave"}),map+" wave");
+  let h=null;
+  for(let t=0;t<380;t++){
+   g.step();if(t===117){const saved=JSON.parse(JSON.stringify(g.snapshot()));h=createEngine(1,mode,map);assert.ok(h.restore(saved),map+" restore");}
+   else if(h)h.step();
+  }
+  assert.deepEqual(h.playtestReport(),g.playtestReport(),map+" checkpoint replay");
+  const h2=createEngine(1,mode,map);assert.ok(h2.restore(JSON.parse(JSON.stringify(g.snapshot()))),map+" final restore");
+  for(let t=0;t<30;t++){g.step();h2.step();}
+  assert.deepEqual(h2.playtestReport(),g.playtestReport(),map+"/"+mode+" deterministic continuation");
+ }
+});

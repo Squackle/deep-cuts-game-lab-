@@ -1,8 +1,9 @@
-// Five opt-in, unranked decision workshops selected from tested authored cases.
+// Five adapted workshops and two new controlled comparison boards.
 // This does not edit any of the original 250 Classic IDs or Daily ranked manifest.
 // Reuses the same real stack engine; reference length is NOT a proven minimum.
 import original from '../data/scenarios.json' with {type:'json'};
 import expansion from '../data/campaign-expansion.json' with {type:'json'};
+import {RULES_VERSION} from './cards.js';
 import {commanderScenario} from './commander.js';
 import {createGame,tapLand,activate,autoplay,legalActions,legalTargets} from './engine.js';
 
@@ -11,29 +12,48 @@ const SOURCE=[...original,...expansion];
 const DESIGNS=Object.freeze([
  {source:'sb-07',title:'Do Less, Win More',focus:'Avoid unnecessary responses',
   question:'Does the stack really need both answers, or can one well-timed protection solve the actual objective?',
-  lesson:'A reference line is only one legal answer. Test whether one response already accomplishes the goal.'},
+  lesson:'Selfless Spirit grants your creatures indestructible before either destroy effect resolves. Sacrificing it is a cost. Countering Murder as well is unnecessary for this objective.'},
  {source:'sb-16',title:'Two Lives, Two Targets',focus:'Allocate protection to different threats',
   question:'Two creatures face separate damage. Which protection belongs on which permanent?',
-  lesson:'Read the incoming spell targets, then allocate the response effects. More casts alone do not guarantee success.'},
+  lesson:'Allocate the boosts to different creatures. Blossoming Defense also makes the opposing spell targeting its creature illegal; Titanic Growth protects the other by raising toughness above its damage.'},
  {source:'sb-18',title:'The Counterspell Trap',focus:'Read counterspell restrictions',
   question:'One response can stop any spell; another cannot target the threatening sorcery.',
-  lesson:'Legal target restrictions and stack order matter more than the number of cards in hand.'},
+  lesson:'Essence Scatter targets creature spells, not Wrath of God. Cancel can stop the sweeper; a toughness boost can survive damage but cannot prevent destruction.'},
  {source:'sb-23',title:'Counter or Gain Life?',focus:'Balance two incoming threats',
   question:'When multiple spells threaten your life, determine what must resolve and what must be stopped.',
-  lesson:'Preventing one hit might not be enough. Evaluate your final life total after the full stack resolves.'},
+  lesson:'Compare remaining life with the total incoming damage. Healing Salve can gain three life in this exercise; counter the other damaging spell if the total still threatens you.'},
  {source:'sb-28',title:'Win and Keep the Giant',focus:'Coordinate victory and preservation',
   question:'Lethal damage to the opponent is not enough if your named creature does not survive.',
-  lesson:'Track all objective conditions across priority windows; a fast win without the creature is still a loss.'}
+  lesson:'Protect the giant, survive the incoming damage and counter the spell aimed at your lethal Bolt. The stack resolves top first; your victory must satisfy both objective conditions.'}
 ]);
-export const STRATEGY_TRIALS=Object.freeze(DESIGNS.map((design,i)=>{
+const adapted=DESIGNS.map((design,i)=>{
  const ix=SOURCE.findIndex(p=>p.id===design.source);
  if(ix<0)throw Error('Missing original authored Stackbreaker case '+design.source);
- const source=commanderScenario(SOURCE[ix],ix);
+ // Preserve the authored interaction, not the seeded Commander filler.
+ // Ranked boards still use the original Commander adapter. Here the learner
+ // sees only the authored resources and deliberately selected alternatives.
+ const source={...structuredClone(SOURCE[ix]),solution:commanderScenario(SOURCE[ix],ix).solution};
  return {...source,id:'st-'+String(i+1).padStart(2,'0'),
   title:design.title,intro:design.question,
   strategyFocus:design.focus,strategyLesson:design.lesson,sourceId:design.source,
-  unranked:true,trialVersion:STRATEGY_TRIALS_VERSION};
-}));
+  retryPrompt:["Replay using only Selfless Spirit; leave every other response unused.","Try swapping which creature receives each protection spell. Compare the damage and legality on resolution.","Try countering Wrath first versus boosting the Bear first. Compare legal timing and remaining resources.","Try an alternate counter target and compare the final life total.","Try a different order of the three responses; all objectives must still hold."][i],unranked:true,trialVersion:STRATEGY_TRIALS_VERSION};
+});
+function paymentTrial(n,title,mana,lesson){
+ return {id:'st-'+String(n).padStart(2,'0'),version:RULES_VERSION,title,tier:'Investigator',
+  intro:'Keep the Lion alive through Murder and Languish. Which response must answer each threat?',
+  hint:'Languish does not target. Counter it; use hexproof against Murder. Check what mana remains.',
+  explanation:lesson,strategyFocus:'Protect against two different threats',strategyLesson:lesson,
+  life:{player:20,opponent:20},mana,lands:[],units:[{id:'lion',card:'Savannah Lions',controller:'player'}],
+  activeActor:'opponent',opponentPolicy:'alwaysPass',
+  stack:[{id:'sweep',card:'Languish',controller:'opponent'},{id:'removal',card:'Murder',controller:'opponent',targetId:'lion'}],
+  hand:[{id:'counter',card:'Negate'},{id:'shield',card:'Blossoming Defense'}],
+  objective:{type:'keepUnit',unitId:'lion'},solution:[['counter','sweep'],['shield','lion']],
+  sourceId:null,retryPrompt:["Try both orders of the two responses, and compare remaining green mana.","Try protecting first, then countering; alternatively spend colorless on Negate first."][n-6],unranked:true,trialVersion:STRATEGY_TRIALS_VERSION};
+}
+export const STRATEGY_TRIALS=Object.freeze([...adapted,
+ paymentTrial(6,'Two threats, spare green',{U:1,G:2},'Negate must counter Languish. Blossoming Defense stops Murder by making its target illegal. The second green mana is available even after paying Negate.'),
+ paymentTrial(7,'Two threats, no spare green',{U:1,G:1,C:1},'The same two responses suffice, but spending green on Negate first strands Blossoming Defense. Spend colorless on the generic cost, or cast the protection first. Hexproof cannot stop a non-targeting toughness reduction.')
+]);
 
 // Exercise all ordered subsets of the supplied reference line, not every
 // possible legal strategy. The result is an upper bound on response count,

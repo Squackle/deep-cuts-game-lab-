@@ -33,14 +33,14 @@ test('canceling restart cannot erase the active run and restores the in-game men
 });
 test('confirming restart resets only the active run, retaining previous difficulty and layout',()=>{
  const confirmation=code(' $("restartConfirm").addEventListener',' $("restart").addEventListener');
- assert.match(confirmation,/restart\(run\.mode,challenge,run\)/);
+ assert.match(confirmation,/restart\(run\.mode,challenge,run,mission\)/);
  assert.match(confirmation,/daily\.dailyFor\(run\.daily\.date,MAPS\)/);
- const restartBody=code(' function restart(mode,dc=null,from=null){',' let restartSource=null');
- for(const span of ['from?.seed','from?.mapId','from?.season','from?.difficulty','from?.perks','from?.locked','from?.commander?.id','from?.kit','clearRun()'])
+ const restartBody=code(' function restart(mode,dc=null,from=null,mission=null){',' let restartSource=null');
+ for(const span of ['from?.seed','from?.mapId','from?.season','from?.difficulty','from?.perks','from?.locked','from?.commander?.id','from?.kit','clearRun(mission?MISSION_RUN_KEY:RUN_KEY)'])
   assert.ok(restartBody.includes(span),'retains '+span);
  assert.match(restartBody,/from\?!!from\.onslaught/,'saved Onslaught setting is preserved');
- assert.match(restartBody,/clearRun\(\)/);
- assert.ok(js.indexOf('clearRun();',js.indexOf('function restart(mode,dc=null,from=null)'))>js.indexOf('function restart(mode,dc=null,from=null)'), 'clear on the confirmed path only');
+ assert.match(restartBody,/clearRun\(mission\?MISSION_RUN_KEY:RUN_KEY\)/);
+ assert.match(restartBody,/clearRun\(mission\?MISSION_RUN_KEY:RUN_KEY\);/,'restart clears only its own save slot');
 });
 test('empty wave history no longer crashes the UI with undefined.wave',()=>{
  assert.match(js,/const lastWave=s\.waveHistory\.at\(-1\);if\(!lastWave\)\{seenWaves=0;return;\}/);
