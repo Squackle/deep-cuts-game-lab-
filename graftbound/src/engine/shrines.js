@@ -1,3 +1,4 @@
+import { maxSpellLevel } from './rewards.js';
 // Wayshrines (v0.5). Each shrine rolls up to 4 offerings from a pool, filtered by the run's state.
 // One offering per shrine; the node is consumed when chosen. Every option has a distinct consequence and a cost
 // or limit, so there is no free loop and no option that is best in every situation.
@@ -18,7 +19,7 @@ export const SHRINES = {
   penance: { name: 'Penance Brazier', glyph: '◐', text: run => `Offer ${penanceCost(run)} health (cannot drop you below 1) to lower Global Threat by ${Math.min(PENANCE_REDUCTION, run.worldThreat?.level || 0)} (now ${run.worldThreat?.level || 0}).`,
     when: run => (run.worldThreat?.level || 0) > 0 && run.hp > penanceCost(run) },
   inscribe: { name: 'Inscription Altar', glyph: '✎', text: () => 'Empower one spell in your spellbook by one level (max level 3).',
-    when: run => run.spellbook.some(s => s.level < 3) },
+    when: run => run.spellbook.some(s => s.level < maxSpellLevel(s.id)) },
 };
 export const offeringCost = run => Math.max(2, Math.ceil(run.maxHp * 0.2));
 /** v1.5.0 Penance: a quarter of maximum health for -2 Global Threat. */

@@ -4,7 +4,7 @@ import { generateMap, nodeById, availableNodes, ACT_COUNT } from './campaign.js'
 import { buildEncounter, templateFor, reinforcements, bossAdaptation, REINFORCE_CAP, COUNTERS, buildFocus } from './encounters.js';
 import { strengthOf, expectedStrength } from './strength.js';
 import { createBattle } from './combat.js';
-import { generatePack, MAX_SPELL_LEVEL, primerPack } from './rewards.js';
+import { generatePack, MAX_SPELL_LEVEL, maxSpellLevel, primerPack } from './rewards.js';
 import { resolveCard } from '../cards/catalog.js';
 import { isBossCard } from '../data/legendary.js';
 import { stepOf } from './power.js';
@@ -48,7 +48,7 @@ export const runStats = run => deriveStats(run.evo, { sparkBonus: run.sparkBonus
 export const maxHpOf = run => runStats(run).maxHealth;
 export const woundsOf = run => Math.max(0, maxHpOf(run) - (run.hp == null ? maxHpOf(run) : run.hp));
 export const stepOfRun = run => stepOf(run.act, run.current != null ? nodeById(run.map, run.current).depth : 0);
-const packOpts = run => ({ spellbook: run.spellbook, noRares: run.challenges.includes('pauper'), evo: run.evo, step: stepOfRun(run), minSpells: run.spellbook.length < 2 && (run.act || 0) === 0 ? 2 : 1 });
+const packOpts = run => ({ equipmentInventory:run.equipmentInventory, spellbook: run.spellbook, noRares: run.challenges.includes('pauper'), evo: run.evo, step: stepOfRun(run), minSpells: run.spellbook.length < 2 && (run.act || 0) === 0 ? 2 : 1 });
 function setHp(run, hp) { run.hp = Math.max(1, Math.min(maxHpOf(run), hp)); }
 
 export function enterNode(run, nodeId) {
@@ -135,7 +135,7 @@ export function concludeBattle(run) {
   }
   const tier = isBoss ? 'boss' : b.nodeType === 'elite' || b.ambushed ? 'elite' : 'battle';   // v1.7.0: surviving an ambush pays an elite pack
   const forced = b.nodeType === 'tutorial' ? [TUTORIAL_CARD] : [];
-  run.pending = { cards: generatePack(b.rng.s ^ 0x5eed, { tier, forced, ...packOpts(run) }), tier, boss: isBoss };
+  run.pending = { cards: generatePack(b.rng.s ^ 0x5eed, { tier, forced, ...packOpts(run),actualTier:b.nodeType }), tier, boss: isBoss };
   // The first level grants three reward choices, each its own pack.
   if (run.stats.battlesWon === 1 && run.act === 0 && !run.primerDone)
     run.pending.firstVictoryPacks = { index: 1, total: 3, seed: (b.rng.s ^ 0x5eed) >>> 0 };
@@ -151,6 +151,7 @@ export function chooseReward(run, cardId, releaseIndex) {
   if (isBossCard(cardId)) throw new Error('Boss creatures are encounter-only and cannot be chosen as rewards');
   const card = resolveCard(cardId); if (!card || !card.reference) throw new Error('Unknown card ' + cardId);
   if (isBossCard(card)) throw new Error('Boss creatures are encounter-only and cannot be chosen as rewards');
+  if(card.fixedLevel&&((run.evo.absorbed||[]).some(a=>a.cardId===cardId)||run.spellbook.some(a=>a.id===cardId)||(run.equipmentInventory||[]).includes(cardId)))throw new Error('Pilot card already acquired');
   let change;
   const maxBefore = maxHpOf(run);
   if (card.kind === 'creature') {
@@ -175,7 +176,7 @@ export function chooseReward(run, cardId, releaseIndex) {
   } else {
     if (run.pending.tier === 'graftsmith') throw new Error('The Graftsmith offers creatures only');
     const e = run.spellbook.find(s => s.id === cardId); const wardBefore = maxHpOf(run);
-    if (e) { e.level = Math.min(MAX_SPELL_LEVEL, e.level + 1); change = { kind: 'empower', cardId, level: e.level }; }
+    if (e) { e.level = Math.min(maxSpellLevel(cardId), e.level + 1); change = { kind: 'empower', cardId, level: e.level }; }
     else { run.spellbook.push({ id: cardId, level: 1 }); if ((run.equippedSpellIds || []).length < (run.handCapacity || BASE_HAND_CAPACITY)) (run.equippedSpellIds ||= []).push(cardId); change = { kind: 'learn', cardId, level: 1 }; }
     if (maxHpOf(run) > wardBefore) setHp(run, run.hp + (maxHpOf(run) - wardBefore));   // v1.4.0 Spellward arrives as fresh health
     journalNote(run, 'spell', { cardId, name: card.name, level: change.level });
@@ -239,7 +240,7 @@ export function shrineChoice(run, choice, arg) {
     case 'spark': run.sparkBonus += 3; run.sparkFonts = (run.sparkFonts || 0) + 1; setHp(run, run.hp + 3); run.phase = 'map'; return done({ kind: 'spark', amount: 3 });
     case 'arcane': run.manaBonus = Math.min(MAX_MANA_FONTS, (run.manaBonus || 0) + 1); run.phase = 'map'; return done({ kind: 'arcane' });
     case 'inscribe': {
-      const e = run.spellbook.find(s => s.id === arg && s.level < MAX_SPELL_LEVEL); if (!e) throw new Error('Choose a spell that can be empowered');
+      const e = run.spellbook.find(s => s.id === arg && s.level < maxSpellLevel(s.id)); if (!e) throw new Error('Choose a spell that can be empowered');
       e.level++; run.phase = 'map'; return done({ kind: 'inscribe', cardId: e.id, level: e.level });
     }
     case 'penance': {

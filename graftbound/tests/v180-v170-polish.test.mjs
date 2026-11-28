@@ -161,5 +161,5 @@ test('#19 labels: priority layout + status folding; #21 torso-conforming graft l
 });
 test('v1.7.0 rules fingerprint and challenge revision', async () => {
   const { RULES_VERSION, RANKED_CHALLENGES } = await import('../src/engine/ranked.js'); const { GAME } = await import('../src/config.js');
-  assert.equal(GAME.version, '1.8.4-candidate'); assert.equal(RULES_VERSION, 'graftbound-rules-1.8.4-candidate'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 31);
+  assert.equal(GAME.version, '1.9.0-candidate'); assert.equal(RULES_VERSION, 'graftbound-rules-1.9.0-candidate'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 32);
 });

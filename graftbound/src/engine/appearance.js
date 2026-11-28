@@ -19,6 +19,7 @@ export function dominantColor(evo) {
   for (const c of ['verdant', 'umbral', 'ember', 'tide', 'radiant']) if ((evo.colors[c] || 0) > n) { n = evo.colors[c]; best = c; }
   return best;
 }
+export const PILOT_GRAFT_MARKS=Object.freeze({'mtg:essence-warden':'leafCollar','mtg:bloodthirsty-aerialist':'batRibs','mtg:marauding-blight-priest':'obsidianMantle','mtg:kessig-flamebreather':'emberThroat','mtg:welcoming-vampire':'palePlume','mtg:verdant-force':'rootArmor'});
 export function deriveAppearance(evo, visual = null) {
   const total = evo.absorbed.length;
   const dom = dominantColor(evo);
@@ -37,6 +38,7 @@ export function deriveAppearance(evo, visual = null) {
   return {
     stage: total === 0 ? 'blank' : total < 4 ? 'stirring' : total < 9 ? 'awakened' : 'ascendant',
     size, anatomy: resolveAnatomy(evo), skinTone: visual?.skinTone ?? 0, skinPattern: visual?.skinPattern || { mode: 'single', tones: [visual?.skinTone ?? 0] }, dominant: dom, tintMix: +mix.toFixed(3), body, glow: dom ? PALETTE[dom] : [1, 0.86, 0.5],
+    pilotMarks:[...new Set(evo.absorbed.map(x=>PILOT_GRAFT_MARKS[x.cardId]).filter(Boolean))],
     slots, effects: effects.slice(0, MAX_EFFECTS), dormant, markings: Object.keys(evo.colors).sort(),
   };
 }

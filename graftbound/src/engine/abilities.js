@@ -5,9 +5,10 @@ import { ENEMIES } from '../data/enemies.js';
 import { TERRAIN_RULES } from '../data/terrain.js';
 import { hasAura, detachAura } from './attachments.js';
 import { resolveShinobiHit, scarabDied, splitWurmcoil } from './printed-triggers.js';
-import { onUnitDeath, onHeroHeal } from './trait-triggers.js';
+import { onUnitDeath, onHeroHeal, skullclampDraw } from './trait-triggers.js';
 
-export const has = (u, kw) => kw === 'flying' ? isFlying(u) : !!(u.keywords && u.keywords[kw]);
+export const has = (u, kw) => kw === 'flying' ? isFlying(u) : !u.shadowSuppressed?.[kw]&&!!(u.keywords && u.keywords[kw]);
+const indestructible=u=>!u.shadowSuppressed?.indestructible&&!!(u.statuses?.indestructible||u.keywords?.indestructible);
 export const kv = (u, kw) => (u.keywords && u.keywords[kw]) || 0;
 export const alive = u => !!u && u.hp > 0;
 export const player = s => s.units.find(u => u.hero);
@@ -138,7 +139,7 @@ function kill(s, ev, u, element = null) {
       for(let i=0;i<3&&i<available.length;i++){
         const d=ENEMIES[forms[i]],tile=available[i];
         const golem={uid:s.nextUid++,side:'enemy',defId:forms[i],name:d.name,x:tile.x,y:tile.y,hp:d.toughness,maxHp:d.toughness,power:d.power,toughness:d.toughness,move:d.move,keywords:{...d.keywords},statuses:{},token:true};
-        s.units.push(golem);ev.push({t:'summon',uid:golem.uid,defId:forms[i],x:tile.x,y:tile.y,by:u.uid});
+        s.units.push(golem);ev.push({t:'summon',uid:golem.uid,defId:forms[i],x:tile.x,y:tile.y,by:u.uid,phase:s.phase,turn:s.turn,entryPower:golem.power});
       }
       ev.push({t:'realAbility',uid:u.uid,name:'Triplicate Titan · three Golems'});
     }
@@ -158,9 +159,11 @@ export function sacrificeAlly(s,ev,u){
 /** State-based actions: creature with zero Toughness dies even without receiving damage.
  * This is required for printed -1/-1 counter and Aura interactions. */
 export function checkStateBasedDeath(s, ev, u) {
-  if (u && u.hp > 0 && u.toughness <= 0) { u.hp = 0; kill(s, ev, u); return true; }
+  if (u && !u.deadResolved && u.toughness <= 0) { u.hp = 0; kill(s, ev, u); return true; }
   return false;
 }
+/** Attachment modifiers may already have set HP to zero; never revive a dead bearer. */
+export function resolveAttachmentDeath(s,ev,u){if(u&&!u.deadResolved&&(u.hp<=0||u.toughness<=0)){u.hp=0;kill(s,ev,u);return true;}return false;}
 /** Damage pipeline: strike cap (bosses) -> armor (combat only) -> shield -> health.
  *  Only combat damage (strikes/counterblows) triggers Deathtouch and Lifelink; spells bypass armor. */
 export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hit', element = null, cause = null, lifelinkGroup = null } = {}) {
@@ -192,12 +195,12 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
   // Dauntless Escort may sacrifice itself to give all other allies Indestructible
   // until end of turn when a legal lethal attack or spell threatens a creature.
   if(tgt.side==='enemy' && src?.side==='player' && tgt.defId!=='tortoise' &&
-     !tgt.statuses.indestructible && a>(tgt.statuses.shield||0) && a-(tgt.statuses.shield||0)>=tgt.hp){
+     !indestructible(tgt) && a>(tgt.statuses.shield||0) && a-(tgt.statuses.shield||0)>=tgt.hp){
     const escort=enemies(s).find(u=>u.defId==='tortoise'&&u!==tgt);
     if(escort){
       escort.hp=0;ev.push({t:'realAbility',uid:escort.uid,name:'Dauntless Escort · sacrifice for indestructible'});
       kill(s,ev,escort);
-      for(const ally of enemies(s)) {ally.statuses.indestructible=1;ev.push({t:'status',uid:ally.uid,status:'indestructible',value:1});}
+      for(const ally of enemies(s)) {if(ally.shadowSuppressed)ally.shadowSuppressed.indestructible=false;ally.statuses.indestructible=1;ev.push({t:'status',uid:ally.uid,status:'indestructible',value:1});}
     }
   }
   const sh = tgt.statuses.shield || 0;
@@ -212,7 +215,7 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
   // v1.4.0: the hero is the player's life total, not a creature card — enemy Deathtouch deals its damage (+2), never instant death.
   const dt = combat && src && has(src, 'deathtouch') && a > 0 && !tgt.boss && !tgt.hero;
   tgt.hp = dt ? 0 : Math.max(0, tgt.hp - a);
-  if(tgt.statuses.indestructible && tgt.toughness>0 && tgt.hp<=0){tgt.hp=1;ev.push({t:'indestructible',uid:tgt.uid});}
+  if(indestructible(tgt) && tgt.toughness>0 && tgt.hp<=0){tgt.hp=1;ev.push({t:'indestructible',uid:tgt.uid});}
   const lost = hpBefore - tgt.hp;
   ev.push({ t: 'damage', uid: tgt.uid, amount: a, blocked, deathtouch: dt, kind, element, src: src ? src.uid : null });
   if (src && src.side === 'player' && tgt.side === 'enemy') s.stats.damageDealt += lost;
@@ -255,7 +258,7 @@ export function dealDamage(s, ev, src, tgt, amount, { combat = false, kind = 'hi
   if(tgt.hp<=0 && tgt.toughness>0 && hasAura(tgt,'mtg:hyena-umbra') && (combat||kind==='spell'||kind==='arrow')){
     detachAura(tgt,'mtg:hyena-umbra');tgt.hp=tgt.maxHp;ev.push({t:'auraBreak',uid:tgt.uid,id:'mtg:hyena-umbra'});
   } else if(tgt.hp<=0 && hasAura(tgt,'mtg:gift-of-immortality') && !tgt.token && tgt.toughness>0){
-    ev.push({t:'death',uid:tgt.uid,kind:'gift'});
+    ev.push({t:'death',uid:tgt.uid,kind:'gift'});skullclampDraw(s,ev,tgt);
     detachAura(tgt,'mtg:gift-of-immortality');tgt.hp=tgt.maxHp;
     (s.pendingAuras ||= []).push({uid:tgt.uid,id:'mtg:gift-of-immortality'});
     ev.push({t:'revive',uid:tgt.uid,kind:'gift',hp:tgt.hp});

@@ -3,13 +3,15 @@
 import { ANCHORS } from './anatomy.js';
 import { anatomyAnchor } from '../engine/anatomy-resolver.js';
 export const EQUIPMENT_PRINTINGS=Object.freeze({
+ 'mtg:skullclamp':{set:'Darksteel',character:'Original dark steel cranial clamp with articulated teeth and amber pivot'},
+ 'mtg:shadowspear':{set:'Theros Beyond Death',character:'Original obsidian spearhead, bronze shaft and violet core'},
  'mtg:accorder-s-shield':{set:'Scars of Mirrodin',character:'Faceted broad alloy shield; silver face, riveted rim, etched geometric device'},
  'mtg:basilisk-collar':{set:'Worldwake',character:'Broad dark scaled neckband with small curved fangs and linked tooth ornaments'},
  'mtg:swiftfoot-boots':{set:'Magic 2012',character:'Warm leather enchanted boots with shining brass bindings and luminous soles'},
  'mtg:mask-of-memory':{set:'Mirrodin',character:'Inscribed metal face mask with pronounced brow and paired narrow eye openings'},
  'mtg:moonsilver-spear':{set:'Avacyn Restored',character:'Long luminous moon-silver spear with stylized silver spearhead and crossguard'},
 });
-const KIND={'mtg:accorder-s-shield':'shield','mtg:basilisk-collar':'collar','mtg:swiftfoot-boots':'boots','mtg:mask-of-memory':'mask','mtg:moonsilver-spear':'spear'};
+const KIND={'mtg:skullclamp':'clamp','mtg:shadowspear':'shadowSpear','mtg:accorder-s-shield':'shield','mtg:basilisk-collar':'collar','mtg:swiftfoot-boots':'boots','mtg:mask-of-memory':'mask','mtg:moonsilver-spear':'spear'};
 export const gearKinds=ids=>[...new Set((ids||[]).map(i=>KIND[i]).filter(Boolean))];
 function p(g,x,y,w,h,c){g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),Math.max(1,Math.round(w)),Math.max(1,Math.round(h)));}
 function line(g,x0,y0,x1,y1,c,w=1){let n=Math.ceil(Math.max(Math.abs(x1-x0),Math.abs(y1-y0)));for(let i=0;i<=n;i++){let t=i/Math.max(1,n);p(g,x0+(x1-x0)*t,y0+(y1-y0)*t,w,w,c);}}
@@ -21,6 +23,16 @@ function anchor(app,k){return anatomyAnchor(app?.anatomy,k,ANCHORS.hero[k])||ANC
 function paint(g,app,kind,anim,f,back){
  const bob=anim===1?(f%2):anim===0?(f>1?1:0):0;
  const [hx,hy]=anchor(app,'face'),[nx,ny]=anchor(app,'neck'),[lx,ly]=anchor(app,'forearmLeft'),[rx,ry]=anchor(app,'gripRight');
+ if(kind==='clamp'){
+  const y=hy-8+bob;
+  shape(g,[[hx-9,y+7],[hx-9,y+1],[hx-5,y-3],[hx+5,y-3],[hx+9,y+1],[hx+9,y+7],[hx+5,y+7],[hx+5,y],[hx-5,y],[hx-5,y+7]],'#444c58');
+  line(g,hx-6,y-1,hx+6,y-1,'#9ca4b2');p(g,hx-1,y-3,3,3,'#e8b76a');return;
+ }
+ if(kind==='shadowSpear'){
+  const x=rx,y=ry+bob,tx=Math.min(56,x+(anim===2?13:4)),ty=Math.max(8,y-23);
+  line(g,x-3,y+7,tx,ty,'#a17c46',2);
+  shape(g,[[tx,ty-8],[tx+4,ty],[tx+1,ty+7],[tx-4,ty+2]],'#292337','#b49b78');line(g,tx,ty-4,tx,ty+3,'#a679d5');return;
+ }
  if(kind==='boots'){
   for(const k of ['footLeft','footRight']){let [x,y]=anchor(app,k);x-=3;y-=7;const widen=(app.anatomy?.morph?.lower==='ungulate'?2:0);
    shape(g,[[x-1-widen,y],[x+6+widen,y],[x+7+widen,y+8],[x-2-widen,y+8]],'#8d5c36');

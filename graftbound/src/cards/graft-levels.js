@@ -42,6 +42,12 @@ export const GRAFT_LEVELS = Object.freeze({
   witness: L(2, [{ uses: 1 }, { uses: 2 }], p => `Return a Graveyard spell ${p.uses}× per battle`),
   pridemate: L(3, [{ start: 0 }, { start: 1 }, { start: 2 }], p => `Life gain: +1/+1 counter; start with ${p.start}`),
   vito: L(2, [{ bonus: 0 }, { bonus: 1 }], p => `Life gain makes the nearest foe lose that much${p.bonus ? ` +${p.bonus}` : ''} life (not damage)`),
+  essenceWarden: L(1,[{heal:1}],()=> 'Each other creature enters: gain 1 life'),
+  aerialist: L(1,[{}],()=> 'Each hero life gain: +1/+1'),
+  blightPriest: L(1,[{loss:1}],()=> 'Each hero life gain: nearest foe loses 1 life'),
+  flamebreather: L(1,[{damage:1}],()=> 'Noncreature spell cast: nearest foe takes 1'),
+  welcomingVampire: L(1,[{draw:1}],()=> 'First small ally each phase: draw 1'),
+  verdantForce: L(1,[{token:[1,1]}],()=> 'Each phase start: green 1/1 Saproling'),
   // Capped at level 1: the printed effect is a single switch or would scale unsafely. Duplicates add printed P/T only.
   archmage: L(1, [{}], () => 'Spells draw a card'), morbid: L(1, [{}], () => 'First death each phase draws'),
   mentor: L(1, [{}], () => 'Small ally enters: pay 1 to draw'), ivy: L(1, [{}], () => 'Green ally: +1/+1 counter'),

@@ -35,6 +35,12 @@ export const GRAFT_TRAITS = Object.freeze({
   'Eternal Witness': { id:'witness', trigger:'graveyard', value:1, note:'Once each battle, choose a real spell card in your Graveyard to return to your hand.' },
   'Hornet Queen': { id:'hornetQueen', trigger:'battleStart', value:1, note:'Flying and Deathtouch. At battle start summon four green 1/1 Flying Deathtouch Hornets, board space permitting.' },
   'Deep Forest Hermit': { id:'hermit', trigger:'battleStart', value:1, note:'At battle start summon four green Squirrels with +1/+1 for three player turns. Squirrels remain afterward; the hero never Vanishes.' },
+  'Essence Warden': { id:'essenceWarden', trigger:'creatureEntered', value:1, note:'Each other creature entering on either side gives your hero 1 nominal life, even at full health.' },
+  'Bloodthirsty Aerialist': { id:'aerialist', trigger:'lifeGained', value:1, note:'Flying. Each distinct positive hero life-gain event gives one battle-only +1/+1 counter.' },
+  'Marauding Blight-Priest': { id:'blightPriest', trigger:'lifeGained', value:1, note:'Each positive hero life-gain event makes the nearest living enemy lose 1 life, not damage.' },
+  'Kessig Flamebreather': { id:'flamebreather', trigger:'spellCast', value:1, note:'Each successful instant, sorcery or Aura cast deals 1 damage to the nearest enemy. Equipping is not casting.' },
+  'Welcoming Vampire': { id:'welcomingVampire', trigger:'creatureEntered', value:1, note:'Flying. First other friendly creature of entry power 2 or less each player/enemy phase draws one card.' },
+  'Verdant Force': { id:'verdantForce', trigger:'turnStart', value:1, note:'Create a real 1/1 green Saproling at the beginning of each player and enemy phase if a legal tile exists.' },
   'Wurmcoil Engine': { id:'wurmcoil', trigger:'unitDied', value:2, note:'When Wurmcoil itself dies on the board, it splits into one 3/3 Deathtouch Wurm and one 3/3 Lifelink Wurm; hero grafts retain its printed keywords.' },
 });
 export function traitOf(cardOrName) { const name=typeof cardOrName==='string'?cardOrName:cardOrName?.name;return GRAFT_TRAITS[name] || null; }

@@ -80,7 +80,7 @@ test('end screen shows Time Taken on victory and defeat (and per act; partial fo
 // ── 3. Spell access & new real spells ─────────────────────────────────────
 test('three new REAL spells with reviewed adaptations fill new roles (weaken, burst, board-wide area)', () => {
   for (const n of ['Disfigure', 'Titanic Growth', 'Pyroclasm']) { assert.ok(REAL_SPELLS.some(c => c.name === n), n); const c = rewardCards().find(x => x.name === n); assert.ok(c && c.reference && /Adapted/.test(c.adaptationNote), n); }
-  assert.equal(rewardCards().filter(c => c.kind === 'spell').length, 21);
+  assert.equal(rewardCards().filter(c => c.kind === 'spell').length, 25);
   const s = arena(['hh......', '........', '........', '.......P'], { h: 'hound' }, { spellbook: book(['disfigure', 'pyroclasm', 'titanic-growth']) }); s.p.mana = 9; s.p.maxMana = 9;
   const [a, b] = enemies(s); cast(s, 'mtg:disfigure', a.x, a.y); assert.equal(a.hp, 2); assert.equal(a.statuses.weakened, 2);
   cast(s, 'mtg:pyroclasm', player(s).x, player(s).y); assert.equal(a.hp, 0); assert.equal(b.hp, 0, '2 to every foe');
@@ -137,9 +137,9 @@ test('auto-end: stances keep the turn only when useful (Guard when threatened, C
   ch.units[1].x = 3; ch.units[1].y = 0; assert.ok(usefulStances(ch).includes('channel'));
 });
 test('ranked replays include stances and remain byte-identical under the current rules revision', () => {
-  assert.equal(RULES_VERSION, 'graftbound-rules-1.8.4-candidate'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 31);
+  assert.equal(RULES_VERSION, 'graftbound-rules-1.9.0-candidate'); assert.equal(RANKED_CHALLENGES['gb-expedition-01'].revision, 32);
   const { run, log } = playRanked(); assert.ok(log.length >= 15, 'the bot made a meaningful deterministic decision sequence; stance legality is tested in controlled arenas above');
-  assert.equal(JSON.stringify(replayRun('gb-expedition-01', log, { revision: 31 }).run), JSON.stringify(run));
+  assert.equal(JSON.stringify(replayRun('gb-expedition-01', log, { revision: 32 }).run), JSON.stringify(run));
   const i = log.findIndex(d => d.type === 'guard'); if (i >= 0) { const bad = log.map(d => ({ ...d })); bad.splice(i, 0, { ...bad[i] }); bad.forEach((d, k) => (d.seq = k)); assert.throws(() => replayRun('gb-expedition-01', bad)); }
 });
 

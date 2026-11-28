@@ -12,7 +12,14 @@ const C = (name, mana_cost, cmc, type_line, power, toughness, keywords, color_id
 import { traitOf } from './trait-registry.js';
 const S = (name, mana_cost, cmc, type_line, color_identity, rarity) => ({ name, mana_cost, cmc, type_line, keywords: [], color_identity, rarity, spell: true });
 
+// Owner-approved r32 development pilot. Live printing verification remains a release gate.
 export const REAL_CREATURES = [
+  C('Essence Warden','{G}',1,'Creature — Elf Shaman',1,1,[],['G'],'common'),
+  C('Bloodthirsty Aerialist','{1}{B}{B}',3,'Creature — Vampire Rogue',2,3,['Flying'],['B'],'uncommon'),
+  C('Marauding Blight-Priest','{2}{B}',3,'Creature — Vampire Cleric',3,2,[],['B'],'common'),
+  C('Kessig Flamebreather','{1}{R}',2,'Creature — Human Shaman',1,3,[],['R'],'common'),
+  C('Welcoming Vampire','{2}{W}',3,'Creature — Vampire',2,3,['Flying'],['W'],'rare'),
+  C('Verdant Force','{5}{G}{G}{G}',8,'Creature — Elemental',7,7,[],['G'],'rare'),
   // White
   C('Savannah Lions', '{W}', 1, 'Creature — Cat', 2, 1, [], ['W'], 'common'),
   C('Elite Vanguard', '{W}', 1, 'Creature — Human Soldier', 2, 1, [], ['W'], 'uncommon'),
@@ -128,6 +135,10 @@ export const REAL_CREATURES = [
   C('Bronze Sable', '{2}', 2, 'Artifact Creature — Sable', 2, 1, [], [], 'common'),
 ];
 export const REAL_SPELLS = [
+  {...S('Opt','{U}',1,'Instant',['U'],'common'),keywords:['Scry']},
+  S('Village Rites','{B}',1,'Instant',['B'],'common'),
+  S('Sleep','{2}{U}{U}',4,'Sorcery',['U'],'uncommon'),
+  S('Harmonize','{2}{G}{G}',4,'Sorcery',['G'],'uncommon'),
   S('Shock', '{R}', 1, 'Instant', ['R'], 'common'),
   S('Lightning Bolt', '{R}', 1, 'Instant', ['R'], 'uncommon'),
   S('Flame Slash', '{R}', 1, 'Sorcery', ['R'], 'common'),
@@ -157,6 +168,6 @@ export function poolRecord(e) {
   const keywordLine = e.spell ? '' : e.keywords.join(', ').replace(/(^|, )([A-Z])/g, (m, a, b) => a + (a ? b.toLowerCase() : b));
   return { source: 'scryfall', bundled: true, id: '', oracleId: '', name: e.name, manaCost: e.mana_cost, cmc: e.cmc, colors: e.color_identity.slice(),
     typeLine: e.type_line, power: e.spell ? null : e.power, toughness: e.spell ? null : e.toughness, keywords: e.kind ? [] : e.keywords.slice(),
-    oracleText: e.spell ? null : (traitOf(e.name)?.note || keywordLine), set: '', setName: '', rarity: e.rarity, artist: '', image: { normal: null, artCrop: null },
+    oracleText: e.oracle || (e.spell ? null : (traitOf(e.name)?.note || keywordLine)), set: '', setName: '', rarity: e.rarity, artist: '', image: { normal: null, artCrop: null },
     scryfallUri: null, rulingsUri: null };
 }

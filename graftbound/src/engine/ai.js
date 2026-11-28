@@ -609,7 +609,7 @@ export function actEnemy(s, ev, e) {
           }
           if (!spots.length) break;
           const u = spawnEnemy(s, a.defId, spots[0].x, spots[0].y); u.summoned = true; e.summons = (e.summons || 0) + 1;
-          ev.push({ t: 'summon', uid: u.uid, defId: a.defId, x: u.x, y: u.y, by: e.uid });
+          ev.push({ t: 'summon', uid: u.uid, defId: a.defId, x: u.x, y: u.y, by: e.uid, phase:s.phase,turn:s.turn,entryPower:u.power });
         }
         break;
       }
@@ -677,7 +677,7 @@ export function spawnTokensAround(s, ev, owner, defId, n=1) {
   let made=0;
   for(const loc of candidates.slice(0,n)) {
     const u=spawnEnemy(s,defId,loc.x,loc.y);u.token=true;u.summoned=true;
-    ev.push({t:'summon',uid:u.uid,defId,x:u.x,y:u.y,by:owner.uid});made++;
+    ev.push({t:'summon',uid:u.uid,defId,x:u.x,y:u.y,by:owner.uid,phase:s.phase,turn:s.turn,entryPower:u.power});made++;
   }
   if (made < n) { owner.pendingSummons=(owner.pendingSummons||0)+(n-made); ev.push({t:'summonPending',uid:owner.uid,defId,count:n-made}); }
   return made;

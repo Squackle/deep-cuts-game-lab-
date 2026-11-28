@@ -36,7 +36,12 @@ export function isReviewedAbilityWord(name, word) {
 
 /** Explicit, reviewed spell adaptations: { effect template, number bonus, gem cost, vfx id, honest note }.
  *  v0.5 costs were raised because spells now reach the whole battlefield. */
+const PILOT_NAMES=new Set(['Essence Warden','Bloodthirsty Aerialist','Marauding Blight-Priest','Kessig Flamebreather','Welcoming Vampire','Verdant Force','Opt','Village Rites','Sleep','Harmonize','Skullclamp','Shadowspear']);
 export const SPELL_ADAPTATIONS = {
+  'Opt': {effect:'pilot_scry',template:'page_draw',cost:1,vfx:'pilotOpt',target:'self',text:'Scry 1, then draw one card.',note:'Adapted: Inspect the real top card; keep it or put it on the bottom, then draw. Opt cannot draw itself during resolution.'},
+  'Village Rites': {effect:'pilot_sacrifice',template:'page_draw',cost:1,vfx:'pilotRites',target:'sacrifice',text:'Sacrifice a nonhero ally, then draw two cards.',note:'Adapted: Choose a living summoned ally as an additional cost.'},
+  'Sleep': {effect:'pilot_sleep',template:'rootsnare',cost:4,vfx:'pilotSleep',target:'self',text:'Current enemies skip their next action. Each boss can be affected once per encounter.',note:'Adapted: All current enemies are stunned; subsequent Sleep casts cannot stun the same boss.'},
+  'Harmonize': {effect:'pilot_draw',template:'page_draw',cost:4,vfx:'pilotHarmonize',target:'self',text:'Draw three cards.',note:'Adapted: Draw from the encounter library, refilling from graveyard when empty.'},
   'Shock':              { effect: 'ember_dart', cost: 1, vfx: 'shock',      note: 'Adapted: 2 damage to one foe anywhere on the battlefield.' },
   'Lightning Bolt':     { effect: 'ember_dart', bonus: 1, cost: 2, vfx: 'lightningBolt', note: 'Adapted: 3 damage to one foe anywhere on the battlefield (costs 2 gems here).' },
   'Flame Slash':        { effect: 'ember_dart', bonus: 2, cost: 3, vfx: 'flameSlash',  note: 'Adapted: 4 damage to one foe (costs 3 gems here).' },
@@ -78,7 +83,7 @@ export function toGameCard(sf) {
   if (!sf || sf.source !== 'scryfall') return { ok: false, reasons: ['not a normalized Scryfall record'] };
   if (isBossCard(sf)) return { ok: false, reasons: ['GRAFTBOUND boss identity is encounter-only and cannot become a graft or reward'] };
   const isCreature = /\bCreature\b/.test(sf.typeLine);
-  const base = { id: 'mtg:' + slug(sf.name), reference: true, name: sf.name, rarity: sf.rarity, color: COLOR_MAP[sf.colors[0]] || 'radiant',
+  const base = { id: 'mtg:' + slug(sf.name), reference: true, pilot:PILOT_NAMES.has(sf.name), fixedLevel:PILOT_NAMES.has(sf.name), name: sf.name, rarity: sf.rarity, color: COLOR_MAP[sf.colors[0]] || 'radiant',
     mv: typeof sf.cmc === 'number' ? sf.cmc : null,
     sourceInfo: { manaCost: sf.manaCost, typeLine: sf.typeLine, oracleText: sf.oracleText, set: sf.set, setName: sf.setName, scryfallUri: sf.scryfallUri, image: sf.image, keywords: sf.keywords, artist: sf.artist || '', bundled: !!sf.bundled } };
   if (isCreature) {
@@ -110,6 +115,6 @@ export function toGameCard(sf) {
   }
   const ad = SPELL_ADAPTATIONS[sf.name];
   if (!ad) return { ok: false, reasons: ['spell has no reviewed adaptation'] };
-  const eff = getCard(ad.effect);
-  return { ok: true, card: { ...base, kind: 'spell', effect: ad.effect, bonus: ad.bonus || 0, cost: ad.cost ?? eff.cost, target: sf.name === 'Healing Salve' ? 'creature' : ['Giant Growth','Titanic Growth','Shock','Lightning Bolt','Flame Slash','Arc Lightning','Frost Breath','Disfigure','Lightning Strike','Murder','Drain Life'].includes(sf.name)?'creature':eff.target, range: eff.range, category: eff.category, text: ['Shock','Lightning Bolt','Flame Slash','Arc Lightning','Frost Breath','Disfigure','Lightning Strike','Murder','Drain Life'].includes(sf.name) ? (ad.text||eff.text).replace('a foe','target creature').replace('one foe','target creature') : (ad.text||eff.text), art: eff.art, vfx: ad.vfx, adaptationNote: ad.note } };
+  const eff = getCard(ad.template||ad.effect);
+  return { ok: true, card: { ...base, kind: 'spell', effect: ad.effect, bonus: ad.bonus || 0, cost: ad.cost ?? eff.cost, target: ad.target || (sf.name === 'Healing Salve' ? 'creature' : ['Giant Growth','Titanic Growth','Shock','Lightning Bolt','Flame Slash','Arc Lightning','Frost Breath','Disfigure','Lightning Strike','Murder','Drain Life'].includes(sf.name)?'creature':eff.target), range: eff.range, category: eff.category, text: ['Shock','Lightning Bolt','Flame Slash','Arc Lightning','Frost Breath','Disfigure','Lightning Strike','Murder','Drain Life'].includes(sf.name) ? (ad.text||eff.text).replace('a foe','target creature').replace('one foe','target creature') : (ad.text||eff.text), art: eff.art, vfx: ad.vfx, adaptationNote: ad.note } };
 }

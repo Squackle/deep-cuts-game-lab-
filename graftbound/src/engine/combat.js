@@ -4,7 +4,7 @@ import { reachable, pathTo, manhattan, lineOfSight, tileAt, T, key, DIRS } from 
 import { traitLevelsOf } from '../cards/graft-levels.js';
 import { makeRng } from '../core/rng.js';
 import { resolveCard as getCard } from '../cards/catalog.js';
-import { player, enemies, allies, alive, has, kv, heal, addShield, attackExchange, enterTiles, walkPath, dealDamage, smashRock } from './abilities.js';
+import { player, enemies, allies, alive, has, kv, heal, addShield, attackExchange, enterTiles, walkPath, dealDamage, smashRock, resolveAttachmentDeath } from './abilities.js';
 import { spellTargets, castSpellEffect, castBlockReason, spellCost } from './spells.js';
 import { actEnemy, actAlly, spawnEnemy, previewIntent, announcePhase , spawnTokensAround, resolveToxrillEndStep, surgeAfterAct } from './ai.js';
 import { STARTING_NAME } from './evolution.js';
@@ -15,7 +15,7 @@ import { attachAura, hasGear, attachEquipment, detachEquipment, EQUIPMENT_SLOTS 
 import { resolveScarabEndStep, scarabRecast } from './printed-triggers.js';
 import { onBattleGrafts, onHeroAttack, onHeroSpell, onHeroDraw, traitDraw } from './trait-triggers.js';
 import { availableMana, spendMana, addChannel, CHANNEL_MANA_CAP, CHANNEL_CHARGE_CAP } from './mana.js';
-import { initialComboEvents, resolveComboEvents, hasComboChoices, comboActivate, resolveComboChoice } from './combo-triggers.js';
+import { initialComboEvents, resolveComboEvents, hasComboChoices, comboActivate, resolveComboChoice, pilotPhaseStart, beginScry } from './combo-triggers.js';
 
 export const BATTLE_VERSION = 11;
 export const RIFT_DAMAGE = TERRAIN_RULES.rift.pulseDamage, LAVA_DAMAGE = TERRAIN_RULES.lava.endTurnDamage;
@@ -54,6 +54,8 @@ export function hazardPreview(s) {
 export function startPlayerTurn(s) {
   const ev = []; const p = player(s);
   s.turn++; s.phase = 'player'; s.stats.turns = s.turn;
+  pilotPhaseStart(s,ev);
+  if(s.phase!=='player')return finish(s,ev);
   if(s.deck){s.spellbook=s.deck.hand;if(s.turn>1){const back=refillFromGraveyard(s.deck);if(back)ev.push({t:'deckReshuffle',count:back,uid:p.uid});const drawn=drawCards(s.deck,1);for(const c of drawn){ev.push({t:'cardDraw',id:c.id,uid:p.uid});onHeroDraw(s,ev);}}}
   p.tapped=false;
   if (p.suppressed && p.suppressedTurn == null) p.suppressedTurn = s.turn;   // Redaction lasts for exactly this turn
@@ -107,7 +109,7 @@ export function summonAngel(s,ev,bearer){
    const x=bearer.x+dx*radius,y=bearer.y+dy*radius;
    if(x<0||y<0||x>=s.w||y>=s.h||tileAt(s,x,y)===T.ROCK||s.units.some(u=>u.hp>0&&u.x===x&&u.y===y))continue;
    const u={uid:s.nextUid++,side:bearer.side,hero:false,defId:'angel',name:'Angel',power:4,toughness:4,hp:4,maxHp:4,move:3,
-     keywords:{flying:1},statuses:{},token:true,x,y};s.units.push(u);ev.push({t:'summon',uid:u.uid,defId:'angel',x,y,by:bearer.uid,ally:bearer.side==='player'});return u;
+     keywords:{flying:1},statuses:{},token:true,x,y};s.units.push(u);ev.push({t:'summon',uid:u.uid,defId:'angel',x,y,by:bearer.uid,ally:bearer.side==='player',phase:s.phase,turn:s.turn,entryPower:u.power});return u;
  }
  // Preserve trigger if crowded: spawn on a later opening. Never silently delete a promised Angel.
  s.pendingAngels=(s.pendingAngels||0)+1;ev.push({t:'legendaryAbility',uid:bearer.uid,name:'Angel waits for an open tile'});return null;
@@ -137,8 +139,8 @@ export function attack(s, targetUid) {
   const hpBefore=t.hp;attackExchange(s, ev, p, t);
   // Mask of Memory is adapted from player combat damage to combat damage to a creature.
   if(s.deck && hasGear(p,'mtg:mask-of-memory') && t.hp < hpBefore){
-    const drawn=drawCards(s.deck,2);for(const c of drawn){ev.push({t:'cardDraw',id:c.id,uid:p.uid});onHeroDraw(s,ev);}
-    if(drawn.length) {s.deck.pendingDiscards=(s.deck.pendingDiscards||0)+1;if(!s.p.freeCastUsed)s.p.freeCast=true;}
+    const drawn=traitDraw(s,ev,2)||0;
+    if(drawn) {s.deck.pendingDiscards=(s.deck.pendingDiscards||0)+1;if(!s.p.freeCastUsed)s.p.freeCast=true;}
   }
   if(!has(p,'vigilance'))p.tapped=true;
   s.p.attacksLeft--;
@@ -161,6 +163,7 @@ export function equipBattle(s,id,uid,slot=0) {
   if(!Number.isSafeInteger(uid)||!Number.isSafeInteger(slot))throw new Error('Invalid equipment target');
   const choice=equipmentOptions(s).find(o=>o.id===id&&o.uid===uid&&o.slot===slot);
   if(!choice)throw new Error('Equipment unavailable, insufficient mana, or illegal bearer');
+  const before=allies(s).slice();
   const target=s.units.find(u=>u.uid===uid);
   const replaced=target.hero?(s.heroEquipmentSlots||[null,null])[slot]||null:target.equipment?.[0]||null;
   for(const u of s.units)if(u.equipment?.includes(id))detachEquipment(u,id);
@@ -174,7 +177,9 @@ export function equipBattle(s,id,uid,slot=0) {
     s.heroEquipmentSlots=s.heroEquipmentSlots.map(v=>v===id?null:v);
   }
   const manaEvent=spendMana(s,choice.cost);s.stats.actions++;s.stats.interactions++;
-  return [manaEvent,{t:'equipmentAttach',uid,id,slot,removed:replaced,amount:choice.cost}];
+  const ev=[manaEvent,{t:'equipmentAttach',uid,id,slot,removed:replaced,amount:choice.cost}];
+  for(const u of before)if(u.hp<=0||u.toughness<=0)resolveAttachmentDeath(s,ev,u);
+  return finish(s,ev);
 }
 // ── v0.8 tactical stances: available to every creature, independent of card rewards ─────────────────────
 // Both cost your ATTACK for the turn (no free actions), so they compete with striking. Values live in
@@ -243,7 +248,13 @@ export function cast(s, spellId, x, y, xValue = 1, mode = null) {
     const target=s.units.find(u=>u.hp>0&&u.x===x&&u.y===y);
     attachAura(target,spellId);ev.push({t:'auraCast',uid:player(s).uid,target:target.uid,id:spellId,x,y,name:card.name,color:card.color});ev.push({t:'auraAttach',uid:target.uid,id:spellId,x,y,name:card.name});
   } else castSpellEffect(s, ev, spellId, entry.level, x, y, xValue, mode);
+  if(card.effect==='pilot_scry'){
+    const held=playFromHand(s.deck,spellId,{permanent:true});s.spellbook=s.deck.hand;
+    if(s.p.freeCast){s.p.freeCast=false;s.p.freeCastUsed=true;}
+    beginScry(s,ev,held);return finish(s,ev);
+  }
   if(s.deck){playFromHand(s.deck,spellId,{permanent:card.kind==='aura'});s.spellbook=s.deck.hand;}
+  if(card.kind==='spell'||card.kind==='aura')ev.push({t:'noncreatureSpellCast',uid:player(s).uid,id:spellId});
   if(card.kind==='spell'&&/^(Instant|Sorcery)\b/.test(card.sourceInfo?.typeLine||'')){
     onHeroSpell(s,ev);ev.push({t:'comboSpellCast',uid:player(s).uid,id:spellId});
   }
@@ -276,6 +287,7 @@ export function endTurn(s) {
   for(const u of s.units){const t=u.statuses.temporaryToughness||0;if(t){u.maxHp=Math.max(0,u.maxHp-t);u.hp=Math.min(u.hp,u.maxHp);u.toughness=Math.max(0,u.toughness-t);u.statuses.temporaryToughness=0;u.statuses.empowered=0;}}
   p.statuses.empowered = 0; p.statuses.weakened = 0; p.statuses.grounded = 0; if (p.statuses.stunned) p.statuses.stunned = 0; s.p.silenced = null;
   if (p.suppressed && p.suppressedTurn != null && p.suppressedTurn <= s.turn) { Object.assign(p.keywords, p.suppressed); ev.push({ t: 'restored', uid: p.uid, keyword: Object.keys(p.suppressed)[0] }); p.suppressed = null; p.suppressedTurn = null; }
+  for(const u of s.units)delete u.shadowSuppressed;
   // Sacrifice-granted Indestructible expires at the end of the protected turn.
   for(const u of s.units)if(u.statuses.indestructible){u.statuses.indestructible=0;ev.push({t:'status',uid:u.uid,status:'indestructible',value:0});}
   // The player end step is also an end step for Toxrill's printed trigger.
@@ -283,6 +295,8 @@ export function endTurn(s) {
   resolveScarabEndStep(s,ev);
   if(s.phase === 'lost')return finish(s,ev);
   s.phase = 'enemy'; ev.push({ t: 'turn', phase: 'enemy', turn: s.turn });
+  pilotPhaseStart(s,ev);
+  if(s.phase!=='enemy')return finish(s,ev);
   for(const u of s.units)if(u.side==='enemy')u.tapped=false;
   // Foe phase priority: existing enemies act before friendly summons. The ordering
   // of enemy UIDs and of surviving ally UIDs remains stable for replay determinism.
@@ -382,5 +396,15 @@ export function intents(s) { return enemies(s).map(e => previewIntent(s, e)); }
 export { player, enemies };
 
 /** Validated, deterministic player decisions for optional graft triggers and activated powers. */
-export const chooseCombo=(s,kind,arg)=>resolveComboChoice(s,kind,arg);
+export function chooseCombo(s,kind,arg){
+  if(kind!=='scry')return resolveComboChoice(s,kind,arg);
+  const ev=resolveComboChoice(s,kind,arg);
+  if(s.deck)s.spellbook=s.deck.hand;
+  if(s.phase==='player'){
+    ev.push({t:'noncreatureSpellCast',uid:player(s).uid,id:'mtg:opt'});
+    onHeroSpell(s,ev);ev.push({t:'comboSpellCast',uid:player(s).uid,id:'mtg:opt'});
+    const arasta=enemies(s).find(e=>e.defId==='arasta');if(arasta)spawnTokensAround(s,ev,arasta,'spider',1);
+  }
+  return finish(s,ev);
+}
 export const activateCombo=(s,kind,arg)=>comboActivate(s,kind,arg);

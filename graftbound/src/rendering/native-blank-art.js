@@ -226,6 +226,24 @@ function graftSeams(g,A,stage){
  *  it to the torso silhouette; 'rest' paints everything else; null paints all (legacy/tests). */
 let PART_FILTER=null;export const setPartFilter=f=>{PART_FILTER=f;};
 const want=kind=>!PART_FILTER||PART_FILTER===kind;
+// Six original lineage accents, attached to the current native pose.
+function pilotMark(g,A,mark,view,frame){
+ const [nx,ny]=A.neck,[x,y]=A.chest,[bx,by]=A.back;
+ if(mark==='leafCollar'){
+  for(const side of [-1,1])for(let i=0;i<3;i++){const u=nx+side*(4+i*4),v=ny+5+i*2;shape(g,[[u,v],[u+side*7,v-7],[u+side*9,v+2],[u+side*3,v+5]],i===1?'#9cbd70':'#466f47',c.deep,1);}
+ }else if(mark==='batRibs'){
+  for(const side of [-1,1]){const root=[bx+side*11,by-8],tip=[bx+side*(29+frame%2*2),by-25];line(g,[root,tip,[bx+side*36,by+2]],'#75445f',2.7);line(g,[root,[bx+side*23,by+9]],'#c88ca5',1.7);}
+ }else if(mark==='obsidianMantle'){
+  for(const side of [-1,1])shape(g,[[x+side*5,y-15],[x+side*19,y-9],[x+side*14,y+3],[x+side*8,y+6]],'#413447','#241e2b',1.5);
+  oval(g,x,y-9,3,3,'#977ca8','#302436',1);
+ }else if(mark==='emberThroat'){
+  for(let i=0;i<3;i++)oval(g,nx,ny+3+i*4,5-i,2.4,i===0?'#ffe3a1':'#e37737','#6d322b',1.1);
+ }else if(mark==='palePlume'){
+  for(const side of [-1,1])for(let i=0;i<4;i++){const u=bx+side*(12+i*4),v=by-9+i*4;shape(g,[[u,v],[u+side*12,v-8],[u+side*8,v+7]],'#ead6d4','#876f88',.8);}
+ }else if(mark==='rootArmor'){
+  for(const side of [-1,1]){const [hx,hy]=A.hip;line(g,[[x+side*8,y-12],[x+side*13,y+7],[hx+side*9,hy+5]],'#594333',5);line(g,[[x+side*8,y-12],[x+side*13,y+7],[hx+side*9,hy+5]],'#b79566',1.7);}
+ }
+}
 function paintGraftPose(g,app,A,view,state,frame,pass){
   const t=app?.anatomy?.features||{},m=app?.anatomy?.morph||{};
   const hasEvolution=(app?.anatomy?.stage||0)>0;
@@ -257,6 +275,7 @@ function paintGraftPose(g,app,A,view,state,frame,pass){
   if(t.eyes&&view!==1){const [x,y]=A.head;oval(g,x+5,y-5,2,1,c.venom);}
   if(t.venom)for(const p of [A.leftHand,A.rightHand]){oval(g,p[0],p[1]+2,4,5,c.venom,c.ink,1.2);oval(g,p[0]-1,p[1],1.4,1.6,'#f0e2ff');}
   graftSeams(g,A,app?.anatomy?.stage||0);
+  for(const mark of app.pilotMarks||[])pilotMark(g,A,mark,view,frame);
   if(t.tendrils){const [x,y]=A.hip;for(let i=-1;i<=1;i++){line(g,[[x+i*6,y],[x+i*12,y+16],[x+i*18,y+26]],c.ink,5);line(g,[[x+i*6,y],[x+i*12,y+16],[x+i*18,y+26]],c.venom,3);}}
 }
 export function drawNativeBlankGraftSheet(g,app,pass){
@@ -273,6 +292,7 @@ export function drawNativeBlankGraftSheet(g,app,pass){
 }
 // Equipment remains separate from permanent grafts and uses the same pose anchors.
 const GEAR={
+  'mtg:skullclamp':'clamp','mtg:shadowspear':'shadowSpear',
   'mtg:accorder-s-shield':'shield','mtg:basilisk-collar':'collar',
   'mtg:swiftfoot-boots':'boots','mtg:mask-of-memory':'mask',
   'mtg:moonsilver-spear':'spear'
@@ -280,6 +300,17 @@ const GEAR={
 export const nativeBlankGearKinds=ids=>[...new Set((ids||[]).map(id=>GEAR[id]).filter(Boolean))];
 function paintGearPose(g,A,view,state,frame,kind){
   const [hx,hy]=A.head,[fx,fy]=A.face,[nx,ny]=A.neck;
+  if(kind==='clamp'){
+    const y=hy-12;
+    shape(g,[[hx-14,y+12],[hx-15,y+1],[hx-8,y-6],[hx+8,y-6],[hx+15,y+1],[hx+14,y+12],[hx+8,y+12],[hx+8,y],[hx-8,y],[hx-8,y+12]],'#444c58',c.deep,1.6);
+    line(g,[[hx-9,y-3],[hx+9,y-3]],c.steelHi,1.8);oval(g,hx,y-5,2.6,2.6,c.gold,c.deep,1);return;
+  }
+  if(kind==='shadowSpear'){
+    const [x,y]=A.rightHand,tip=[Math.min(110,x+(state==='attack'?27:8)),Math.max(20,y-42)];
+    line(g,[[x-4,y+16],tip],c.bronze,3.6);
+    shape(g,[[tip[0],tip[1]-13],[tip[0]+7,tip[1]],[tip[0]+1,tip[1]+10],[tip[0]-7,tip[1]+2]],'#30243e',c.gold,1.4);
+    line(g,[[tip[0],tip[1]-8],[tip[0],tip[1]+5]],'#b19af0',1.7);return;
+  }
   if(kind==='boots'){
     for(const p of [A.leftFoot,A.rightFoot]){
       const [x,y]=p;

@@ -357,9 +357,14 @@ export async function toxicOrb(sc, { from, to, tiles = [], target }) {
   });
   await sleep(sc, 120);
 }
-export const VFX = { infest: toxicOrb, toxicOrb, strikeBolt, murder, revitalize, divination, snakeskin, disfigure: (sc, a) => shadowDisfigure(sc, a), titanic, pyroclasm, lightningBolt, spark, shock, chain, fire, flameSlash, fireball, frost, poison, heal, salve, shield, growth, drain: (sc, a) => shadowDrain(sc, a), summon, wind };
+// Original pilot cues: distinct palette, geometry and motion; gameplay is already resolved.
+async function pilotOpt(sc,{from}){const col=[.25,.8,1];sc.addRing({pos:from,r0:.12,r1:.65,life:.42,col,width:.055,spokes:3,spin:2});sc.fx.burst(from,col,sc.reduced?5:12,{speed:.6,up:1.2,size:10});await sleep(sc,150);}
+async function pilotRites(sc,{from,to}){const col=[.72,.2,.55];await sc.projectile(from,to||from,col,.18);sc.addRing({pos:to||from,r0:.7,r1:.15,life:.35,col,width:.07,spokes:5,spin:-2});sc.fx.burst(to||from,col,sc.reduced?5:14,{speed:.8,up:.9,size:12});await sleep(sc,160);}
+async function pilotSleep(sc,{from}){const col=[.66,.77,1];for(let i=0;i<3;i++)sc.addRing({pos:[from[0],.06+i*.2,from[2]],r0:.2,r1:1.25+i*.4,life:.55,col,width:.045,spokes:6,spin:.5});await sleep(sc,180);}
+async function pilotHarmonize(sc,{from}){const col=[.4,.94,.58];for(let i=0;i<3;i++)sc.addRing({pos:[from[0],.2+i*.3,from[2]],r0:.3,r1:.75,life:.5,col,width:.06,spokes:5,spin:1});sc.fx.burst(from,col,sc.reduced?6:18,{speed:1,up:1.2,size:11});await sleep(sc,180);}
+export const VFX = { infest: toxicOrb, pilotOpt,pilotRites,pilotSleep,pilotHarmonize, toxicOrb, strikeBolt, murder, revitalize, divination, snakeskin, disfigure: (sc, a) => shadowDisfigure(sc, a), titanic, pyroclasm, lightningBolt, spark, shock, chain, fire, flameSlash, fireball, frost, poison, heal, salve, shield, growth, drain: (sc, a) => shadowDrain(sc, a), summon, wind };
 /** The 13 curated real spells and their unique VFX identities (dev/vfx.html gallery + tests). */
-export const SPELL_VFX = { 'Shock': 'shock', 'Lightning Bolt': 'lightningBolt', 'Flame Slash': 'flameSlash', 'Arc Lightning': 'chain', 'Fireball': 'fireball', 'Giant Growth': 'growth',
+export const SPELL_VFX = { 'Opt':'pilotOpt','Village Rites':'pilotRites','Sleep':'pilotSleep','Harmonize':'pilotHarmonize','Shock': 'shock', 'Lightning Bolt': 'lightningBolt', 'Flame Slash': 'flameSlash', 'Arc Lightning': 'chain', 'Fireball': 'fireball', 'Giant Growth': 'growth',
   'Drain Life': 'drain', 'Infest': 'infest', 'Raise the Alarm': 'summon', 'Healing Hands': 'heal', 'Healing Salve': 'salve', 'Feat of Resistance': 'shield', 'Frost Breath': 'frost',
   'Snakeskin Veil': 'snakeskin', 'Disfigure': 'disfigure', 'Titanic Growth': 'titanic', 'Pyroclasm': 'pyroclasm',
   'Lightning Strike': 'strikeBolt', 'Murder': 'murder', 'Revitalize': 'revitalize', 'Divination': 'divination' };

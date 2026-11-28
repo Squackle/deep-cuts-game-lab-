@@ -9,6 +9,10 @@ const R = () => Math.random() - 0.5;
 
 /** Per-spell charge identity. tier: 0 quick, 1 normal, 2 powerful. Times are ms at normal speed. */
 export const CAST_PROFILE = {
+  pilotOpt: {col:[.25,.8,1],gather:85,build:50,tier:0,motes:18,cue:'castArcane',origin:'head',self:true},
+  pilotRites: {col:[.72,.2,.55],gather:145,build:75,tier:1,motes:25,cue:'castDark',origin:'hands'},
+  pilotSleep: {col:[.66,.77,1],gather:210,build:120,tier:1,motes:34,cue:'castFrost',origin:'chest',self:true},
+  pilotHarmonize: {col:[.4,.94,.58],gather:205,build:110,tier:1,motes:34,cue:'castNature',origin:'chest',self:true},
   shock:         { col: [0.55, 0.84, 1], gather: 62, build: 50, tier: 0, motes: 22, arcs: 4, cue: 'crackle', origin: 'hands' },
   lightningBolt: { col: [0.62, 0.82, 1], gather: 300, build: 220, tier: 2, motes: 60, arcs: 4, cue: 'charge',     origin: 'chest', core: true },
   flameSlash:    { col: [1, 0.5, 0.15],  gather: 200, build: 120, tier: 1, motes: 34, embers: true, cue: 'castFire', origin: 'hands' },
@@ -84,6 +88,7 @@ const secs = (sc, ms) => ms / 1000 / Math.max(0.01, sc.speed);
 /** A distinct cast signature for every curated spell. Purely cosmetic: no rules, saves or RNG state read.
  *  Spokes alter the light geometry, while pulse tempo shifts the charging silhouette. */
 export const CAST_SIGNATURES = Object.freeze({
+  pilotOpt:[3,2],pilotRites:[5,-2],pilotSleep:[6,.5],pilotHarmonize:[5,1],
   shock: [3,0.3], lightningBolt: [7,1.0], chain: [5,0.7],
   fire: [5,0.7], fireball: [9,1.1], flameSlash: [2,0.5], pyroclasm: [12,1.3],
   growth: [6,0.7], titanic: [8,1], snakeskin: [4,0.45],
@@ -194,6 +199,7 @@ export function impactAmplifier(sc, P, at, power, manaTier = P.tier + 1, level =
  *  object, no collision state, no rule changes. Reduced motion/instant modes skip it.
  *  Each spell identity has an authored silhouette, not just a recolored explosion. */
 export const AFTERMATH_SIGILS = Object.freeze({
+  pilotOpt:'ward',pilotRites:'void',pilotSleep:'snowflake',pilotHarmonize:'roots',
   shock: 'spark', lightningBolt: 'storm', chain: 'storm',
   fire: 'embers', fireball: 'inferno', flameSlash: 'embers', pyroclasm: 'inferno',
   growth: 'roots', titanic: 'roots', snakeskin: 'roots',
