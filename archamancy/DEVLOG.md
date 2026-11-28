@@ -612,3 +612,70 @@ Logan's iPhone screenshot (Safari landscape with the tab bar, about 858x287 CSS 
 
 - The Confluence's Gauntlet now has its own threat: a Mossbridge Troll wades in on wave 3, five return on wave 13, and eight reprise on wave 24 just before Lorthos. Each edited wave keeps its total enemy health within about 3% of the old lineup.
 - Wave 4 flyer tutorial, the 25-wave format, Lorthos at wave 25 and every other map's waves are unchanged (maps.test.mjs regression test).
+
+
+## 2026-11-24 — beta 13.54 Mono-Blue Trial counterplay candidate
+Owner confirmed wave-17 Hard Onslaught Caldera loss was a deliberate mono-blue badge attempt. Deep Freeze detects shroud from tier III, Endless Reflections deals physical echoes to magic-immune foes (normal armor still applies; other targets remain magic), and Arcane Library pulse interval is reduced from 95 to 75 ticks. Mirrorworks copied damage cannot fall below its own power and primary incoming-hit estimates use the actual copied attack. Forecast distinguishes blue-only counterplay from mixed-color builds; no trial eligibility changes. Urza is unchanged pending comparative simulations. SAVE_FORMAT remains 1; older saves load under the updated rules, while reproducibility of old combat belongs to its original engine revision. No production promotion.
+
+- Follow-up tuning: Mirrorworks attacks every 16 rather than 18 ticks at tier I; its Endless Reflections branch prioritizes magic-immune targets, while respecting altitude, visibility, range, overkill reservations and selected ordering within the eligible group. Extra echoes honor the same immunity and visibility rules. Urza's single Construct base health/damage are 100 + 25 per tower and 12 + 4 per tower (formerly 80 + 20 and 10 + 3); no additional tokens or mana income. Existing saves and all badges retained. Urza adjustment is modest and remains subject to comparative balance evidence.
+
+- Verification follow-up: command-only seed 1 Easy Caldera Onslaught won all 25 waves with 2 fortress health; standard Normal Hollow won with 6 health. Hard Caldera Onslaught remains unresolved: three paired baseline/candidate runs reached waves 22–23 vs 22, with shrouded leaks 8→2 and Warden leaks 43→38. A winning Hard Onslaught strategy is not established. No further speculative damage multiplier; trial rules unchanged. Consolidate overlapping save validation and balance work into one ARCHEMANCY release PR, keeping both histories.
+
+- Hard Onslaught follow-up: the trial checks tower colors only, not commander or spell identity. An optimized 15-spell deck (no required troop towers) and Atraxa beat Hard Caldera Onslaught across seeds 1, 2, 3 on both versions. Baseline fortress health 14/12/12, candidate 18/16/17; Warden leaks 4/6/5 versus 0/1/1. This is a command-only synthetic comparison using identical inputs, not a replay of the owner run. With the same optimized deck and Urza, the candidate reached wave 25 but lost with 23 completed waves (seed 1); no claim of Urza-specific victory. Reproduce with node archamancy/tools/mono-blue-balance.mjs 3 caldera hard --optimized. The prior Hard result above applies to the original Urza/owner-loadout benchmark only. Added the legal Atraxa strategy as a three-seed regression, without altering badge eligibility or introducing arbitrary further buffs.
+
+- Owner Green Hard Onslaught Hollow report (13.53): victory 7 HP, 13 leaks all through wave 14 (11 flyers), 12,404 Grove mana, Ancient Behemoth 618,868 total damage. Do not buff all green towers. Extend mono-color forecast advice to all five colors using actual all-built history, including sold towers; warn about Green Reach and Venom, White armor penetration, Red lightning, Black curses and army counterplay. Add shared-road rally advice and a factual no-combat warning. Fix Thornheart overlap: a lower-cap poison hit cannot reduce already-existing stronger stacks or shorten poison/root duration. Damage formulas, spawn timing, badge requirements and save format unchanged. Report adds towerColors/monoColor for easier eligibility analysis. Candidate remains 13.54 (unreleased).
+
+- Owner Black Confluence 13.53 report: 16 leaks before wave 5 cleared, 19 waves complete, 13 Hex / 3 Necropolis / 1 Foundry; no global Black buff. Preserve longer curses and track actual marginal curse-amplified damage separately (not added to total; marks prevent double attribution). Add ordinary early overlap warning. Ritual Giant Growth and paid deck upgrade previews now show exact next-battle discounted mana and real damage bonus vs unchanged utility effects; all five land levels visible, shop/pack next-level bonuses explicit. Shared mana-cost formula and delayed Pyroclasm damage now use matching red land and spell upgrade modifiers rather than losing spell identity after cast. Same save format; no new trial rules.
+
+- Release gate follow-up: defer delayed Pyroclasm modifier change; exact-head Easy Mono-Blue fixed-seed victory regressed from 25 waves/2 HP to loss at wave 25. Reverting only the extra burn scaling restores the baseline victory. Pyroclasm remains a cost-only upgrade, and land previews explicitly describe matching-color direct damage (not delayed spell burn) and troop health. Black curse corrections and shop/pack previews remain.
+
+## 2026-11-25 — 13.55 range and measured tower statistics
+Owner requested range upgrades and richer telemetry while preserving challenge. Ranged/support towers: +5/+10/+20% base range at tiers II/III/IV, Blue +1/+2/+4% after larger uniform increases regressed the existing Easy Mono-Blue seed. Archmage/Mirror amplifier and height bonuses still additive. Troop rally range, Foundry death-income radius, Library aura and Grove economy remain independent. Shared live engine range/power/interval helpers power inspection, branch previews and battlefield circles. Report adds tower built/sold ticks, upgrade snapshots, hit/kill counts, damage by enemy type and boss/flyer damage (overlapping categories, not new damage). No enemy curve, damage, cooldown, pricing, badge, save-format or strategy hint additions. Fixed-seed progressed optimized Hard Onslaught comparison: 20/25 win with candidate vs 19/25 historical baseline; Easy Caldera wins 3 HP; Hard Blue seeds 1–3 18/16/19 HP. Not a universal human difficulty certification. Existing saves continue under new engine; original version for exact historical playback.
+
+## 2026-11-26 — 13.56 Confluence chapter pilot
+
+Troll Ford is a six-wave playtest mission available when The Confluence is selected. One Mossbridge Troll introduces regeneration, then mixed waves test concentrated fire around the merge and air coverage. The pilot tracks combat time in Battle statistics and does not write to the regular campaign save or award Gauntlet progression. Seed 1 Normal cleared in about three minutes of combat with 20 fortress health in a deterministic scripted playtest. Human first-clear time is unmeasured.
+
+## 2026-11-26 — 13.57 regional campaign expansion
+
+The Regional missions browser adds chapter progression across all five battlefields. The catalog includes 24 campaign missions (19 chapter battles and five existing regional Gauntlets), 18 regional challenges and 12 commander trials. Split Current sends armored enemies north and trolls south. Challenges use fixed spellbooks, tower limits, lean opening mana or Onslaught. Commander trials loan their named commander and spellbook.
+
+Regional missions have their own resumable slot and best stars. First chapter wins grant XP, Treasure and a draft; existing Gauntlet victories still determine the campaign ante. Earlier Gauntlet stars count toward the appropriate regional finale. The 17-hour target calls for human playtime measurements; scripted combat benchmarks exclude deliberation and loadout planning.
+
+## 2026-11-26 — 13.58 campaign map
+
+The Campaign Map opens a larger atlas of all five regions. Region pins zoom into illustrated mission roads with completion stars and unlock requirements. Select a mission to read its briefing before deploying. Challenges and commander trials sit alongside each road. Saved regional missions can be resumed from the atlas, and returning from a chapter battle opens that region again.
+
+## 2026-11-26 — 13.59 tower artwork
+
+Redrew all fifteen tower families from tiers I to IV, including both upgrade paths. White uses carved limestone and brass, Blue enameled stone and glass, Black basalt and amethyst, Red iron and embers, and Green living wood and mossed stone. Upgrade silhouettes reflect their roles, including multi-bolt lances, clockwork, a heavier siege barrel, larger tusks, and poison pods. Detailed paint stays in the existing cached sprites. Tower statistics, save format, and engine rules are unchanged.
+
+## 2026-11-26 — 13.60 battlefield characters and motion
+
+Redrew all 19 enemies and bosses, 13 allied troop models and 16 commanders. The renderer interpolates movement along the road between simulation ticks. Attack poses stay in step with the underlying timers, commander abilities now have a visible casting pose, and defeated allies and enemies briefly collapse where they fell. The renderer reuses contact shadows and hit sprites, composites the terrain separately, and bounds damage labels in crowded battles. Combat rules, deterministic simulation and save format are unchanged.
+
+## 2026-11-26 — 13.61 spell and ultimate effects
+
+Added localized cast animations for all 30 spells, all 16 commander abilities, and the 30 ultimate upgrade paths. Ice shards, forks of lightning, spectral gates, and school-themed crests match their cast sources. Commander abilities have individual emblems, including Heliod's sun and Dragon Tempest's wings. Same-tick damage labels combine when targets are close. Cast geometry is bounded and provides a still outline under reduced motion. Engine rules, difficulty, achievements, and save format are unchanged.
+
+## 2026-11-26 — 13.62 command hall and collection polish
+Follow-up to the recovered Codex 13.61 spellcraft release. Added a read-only Hall of Legends on the title screen, with all sixteen actual redrawn game models, available attributed card art, commander statistics, current unlock status and filters. It never selects a commander or mutates a run. Reworked title hierarchy, campaign controls, collection typography and card frames, and added attributed spell art to discovered Codex entries. Reuses current battlefield terrain behind the title; Codex's uncommitted full-resolution title art was unavailable, so no replacement was invented. Engine rules unchanged, SAVE_FORMAT=1 retained. Portrait gameplay rotation gate remains as before. Full browser visual acceptance and bespoke title artwork remain follow-up work.
+
+## 2026-11-26 — 13.63 Dawnwatch scenic title and spellbook
+Built on #368's Hall of Legends and menu improvements. The original full-resolution Codex illustration was not committed and remains unavailable; a new self-contained vector landscape depicts a mountain valley, river, bridge and watchtower, with no remote title-art dependencies. Title and results screens use it with legibility overlays and reduced-motion behavior. The existing 30-card editor now displays card art where cached, type, mana cost, artist attribution and accessible copy-count labels. Campaign shop/deck/draft tiles credit available art. Existing handlers, rules, save format, collection ownership and orientation behavior unchanged. No public Arcade or other game modifications. Manual visual review beyond automated smoke remains outstanding.
+
+## 2026-11-26 — 13.64 painted title and campaign navigation
+
+The title and result screens feature the painted river keep as a local WebP. Campaign Map stays the first title action. Battlefield, difficulty, season and Onslaught controls live together in Gauntlet setup, with current choices and the Deck and Shop visible from the cover. The atlas shows overall chapter progress. Deck and shop inventory counters show Treasure, spell and relic capacity, and ante. The victory recap shows Treasure and a direct route to the existing spell draft. The Hall of Legends, Codex, spellbook, star upgrades, battle rules and format 1 saves are retained.
+
+## 2026-11-26 — 13.65 altitude priority and 13.66 title ambience and balance
+
+Flying First and Ground First fall back to the other altitude when the preferred targets are unavailable. Both remains the default. Title flags, beacon, fog and water animate over the painted scene, with alignment retained when title controls scroll and still art under reduced motion. The targeted pilot adjusts Deep Freeze slow to 2.4 seconds, Grasping Forest root to 1.5 seconds and Tier II–IV Soul Foundry base payouts to 22/27/32 per death within the existing caps. The larger Deep Freeze adjustment failed the fixed Easy Mono-Blue win and was replaced with the smaller slow increase. See AMBIENT-BALANCE-13.66.md for paired runs.
+
+## 2026-11-27 — 13.67 visible title motion
+
+Increased the banner's fabric movement and made the watchtower beacon flicker and emit rising sparks. Fog and water move at a clearer pace. The decorative overlay uses viewport sizing, stays aligned when the title scrolls, and disappears under reduced motion. This release updates presentation only.
+
+## 2026-11-27 — 13.68 painted title motion
+
+Animate the original painting in the valley river, foreground rapids, fog and watchtower flame. Feathered masks keep the banks, trees and stonework fixed, and the existing flags continue to wave. The scene respects reduced motion and stays aligned when the menu scrolls. This release updates presentation only.

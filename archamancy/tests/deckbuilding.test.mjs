@@ -152,3 +152,65 @@ test("shop booster packs: two per visit, kept on reroll, open one and keep one c
  assert.equal(camp.packBlocker(c, 1, cards), "Relic slots full: sell one in your Deck");
  assert.equal(camp.sanitize({ ...c, pack: { kind: "relic", opts: ["landR", "nope"] } }, cards).pack, null, "bad pack contents dropped");
 });
+
+test("campaign saves retain legitimate shops but bound and reject malformed inventory",()=>{
+ const good=camp.newCampaign(42),cards=createEngine(42).cards;
+ good.shop={rerolls:3,fresh:true,items:[
+  {kind:"relic",id:"solring",price:6,sold:false},
+  {kind:"spell",id:"twins",price:3,sold:true}
+ ],packs:[{kind:"ritual",price:4,sold:false}]};
+ good.draft=["cascade","prism"];
+ const retained=camp.sanitize(JSON.parse(JSON.stringify(good)),cards);
+ assert.deepEqual(retained.shop,good.shop,"legitimate existing shop inventory remains unchanged");
+ assert.deepEqual(retained.draft,good.draft);
+ const bad={...good,deck:[...good.deck,...Array.from({length:10000},()=> "not-a-card")],
+  draft:[...good.draft,...Array.from({length:10000},()=> "not-a-card")],
+  shop:{rerolls:-90,fresh:true,
+  items:[{kind:"relic",id:"solring",price:6,sold:false},
+   {kind:"ritual",id:"solring",price:1,sold:false},
+   {kind:"relic",id:"solring",price:-99,sold:false},
+   ...Array.from({length:10000},()=>({kind:"relic",id:"solring",price:6,sold:false}))],
+  packs:[{kind:"ritual",price:4,sold:false},{kind:"relic",price:-10,sold:false},...Array.from({length:10000},()=>({kind:"bogus",price:4,sold:false}))]},
+  };
+ const clean=camp.sanitize(bad,cards);
+ assert.equal(clean.shop.rerolls,0,"negative reroll counts cannot give a free-reroll discount");
+ assert.equal(clean.shop.items[0].id,"solring");
+ assert.ok(clean.shop.items.length<=64,"a corrupted saved shop cannot materialize thousands of entries");
+ assert.deepEqual(clean.shop.packs,[{kind:"ritual",price:4,sold:false}]);
+ assert.deepEqual(clean.deck,good.deck,"valid player deck survives trailing malformed entries");
+ assert.deepEqual(clean.draft,good.draft,"valid draft offer survives trailing malformed entries");
+ const high=camp.sanitize({...good,shop:{...good.shop,rerolls:Number.MAX_SAFE_INTEGER}},cards);
+ assert.equal(high.shop.rerolls,1e6,"large reroll counters cannot overflow later costs");
+});
+
+
+test("stale offers and draft choices never charge Treasure or create duplicate singleton inventory",()=>{
+ const c=camp.newCampaign(12);c.treasure=100;c.relics=["solring"];c.boons=["gallery"];c.lands.R=5;
+ c.shop={items:[{kind:"spell",id:"meteor",price:3},{kind:"relic",id:"solring",price:6},{kind:"boon",id:"gallery",price:10},{kind:"land",id:"landR",price:3},{kind:"relic",id:"__proto__",price:1}],packs:[]};
+ c.draft=["meteor","twins"];const before=JSON.stringify(c);
+ for(let i=0;i<c.shop.items.length;i++)assert.equal(camp.buy(c,i,cards),null);
+ assert.equal(camp.pickDraft(c,"meteor"),false);
+ assert.equal(JSON.stringify(c),before);
+ c.pack={kind:"spell",opts:["meteor","twins"]};assert.equal(camp.choosePack(c,"meteor",cards),null);
+ assert.ok(camp.choosePack(c,"twins",cards));assert.equal(c.treasure,100);assert.equal(new Set(c.deck).size,c.deck.length);
+});
+test("shop rolls terminate and retain unique offers with exhausted land and relic pools",()=>{
+ for(let seed=1;seed<=30;seed++){
+  const c=camp.newCampaign(seed);c.relics=RELICS.map(r=>r.id);c.lands={W:5,U:5,B:5,R:5,G:5};
+  const shop=camp.rollShop(c,cards);assert.ok(shop.items.length<=8);assert.equal(new Set(shop.items.map(i=>i.id)).size,shop.items.length);
+  assert.ok(shop.items.every(i=>i.kind!=="land"&&i.kind!=="relic"));
+ }
+});
+
+
+test("ritual and ordinary upgrade previews use the next battle's actual mana discounts and show only real damage effects",()=>{
+ const c=camp.newCampaign(8);c.relics=["baral"];c.up.meteor=1;c.up.inquiry=1;c.up.flame=1;
+ for(const id of ["meteor","inquiry","flame","offering"]){
+  const p=camp.spellUpgradePreview(c,id,cards,1),g=createEngine(8);
+  g.command({type:"perks",perks:{spellcraft:1}});assert.ok(g.command({type:"kit",...camp.kitFor(c)}));assert.equal(p.cost,g.castCost(id));
+  const next=camp.sanitize({...c,up:{...c.up,[id]:Math.min(2,(c.up[id]||0)+1)}},cards),h=createEngine(8);h.command({type:"perks",perks:{spellcraft:1}});assert.ok(h.command({type:"kit",...camp.kitFor(next)}));assert.equal(p.nextCost,h.castCost(id));
+ }
+ assert.equal(camp.spellUpgradePreview(c,"meteor",cards).nextDamageBonus,50);assert.equal(camp.spellUpgradePreview(c,"flame",cards).nextDamageBonus,0);
+ assert.equal(camp.spellUpgradePreview(c,"inquiry",cards).damage,false);assert.equal(camp.spellUpgradePreview(c,"offering",cards).nextCost,0);
+ const p=camp.landPreview(c,"B");assert.deepEqual(p,{level:0,nextLevel:1,bonus:0,nextBonus:8,max:false});c.lands.B=4;assert.equal(camp.landPreview(c,"B").nextBonus,40);c.lands.B=5;assert.equal(camp.landPreview(c,"B").max,true);
+});

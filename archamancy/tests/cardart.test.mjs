@@ -34,3 +34,43 @@ test("missing card names never enter the request queue",async()=>{
  assert.match(calls[0],/exact=Fireball$/);
  assert.equal(art.get("Fireball").artist,"Test Artist");
 });
+
+test("bad cached artwork links, oversized caches and malformed names fail safely",async()=>{
+ const valid={art:"https://cards.scryfall.io/art_crop/front/a.jpg",artist:"Artist",link:"https://scryfall.com/card/mkm/1/test"};
+ const s=store();
+ s.setItem("archemancy.cardart.v1",JSON.stringify({
+  Good:valid,
+  Evil:{...valid,link:"javascript:alert(1)"},
+  Host:{...valid,link:"https://scryfall.com.attacker.example/card/mkm/1"}
+ }));
+ const calls=[];
+ const art=createCardArt({storage:s,delay:0,fetchFn:async url=>{calls.push(url);return card("replacement");}});
+ assert.equal(art.get("Good").link,valid.link,"valid existing Scryfall art survives");
+ assert.equal(art.get("Evil"),null,"unsafe cached link is rejected");
+ assert.equal(art.get("Host"),null,"lookalike hosts cannot be cached");
+ for(const name of ["x".repeat(161),"bad\nname"])assert.equal(art.get(name),null);
+ await settle();assert.equal(calls.length,2,"only bad cached entries are refetched");
+ const huge=store();huge.setItem("archemancy.cardart.v1","{".repeat(300000));
+ const hCalls=[];const fresh=createCardArt({storage:huge,delay:0,fetchFn:async url=>{hCalls.push(url);return card("x");}});
+ assert.equal(fresh.get("Good"),null,"oversized disposable cache is ignored");
+ await settle();assert.equal(hCalls.length,1);assert.equal(fresh.get("Good").artist,"Test Artist");
+});
+
+test("cached artwork count is bounded without clearing progress or valid recent images",async()=>{
+ const s=store(),valid=i=>({art:"https://cards.scryfall.io/art_crop/front/a"+i+".jpg",artist:"A"});
+ const entries=Object.fromEntries(Array.from({length:360},(_,i)=>["Card"+i,valid(i)]));
+ s.setItem("archemancy.cardart.v1",JSON.stringify(entries));
+ s.setItem("archemancy.progress.v1","keep-player-progression");
+ const art=createCardArt({storage:s,fetchFn:null});
+ assert.deepEqual(art.get("Card0"),valid(0));
+ assert.equal(art.get("Card359"),null,"excess cache rows are discarded at load");
+ assert.equal(s.getItem("archemancy.progress.v1"),"keep-player-progression");
+});
+
+test("disposable cache strips extra persisted fields and keeps valid old entries",async()=>{
+ const s=store(),valid={art:"https://cards.scryfall.io/art_crop/front/a.jpg",artist:"Artist"};
+ s.setItem("archemancy.cardart.v1",JSON.stringify({Old:{...valid,unexpected:"x".repeat(200000)}}));
+ const art=createCardArt({storage:s,delay:0,fetchFn:async()=>card("new")});
+ assert.deepEqual(art.get("Old"),valid);art.get("New");await settle();
+ const raw=s.getItem("archemancy.cardart.v1");assert.ok(raw.length<256*1024);assert.deepEqual(JSON.parse(raw).Old,valid);
+});
