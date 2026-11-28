@@ -114,6 +114,10 @@ Every package produces: a scoped design/spec or implementation, deterministic te
 
 Following the owner's request to deploy the remaining phases together, the isolated Mana Heist workstream packaged **three independently testable partial capabilities in one release**: [state-verified three-step optional hints (P05), reduced animated effects (P12) and derived guest milestones (P13)](release/CONSOLIDATED-PRELAUNCH-BUNDLE-20261019.md). Existing save export/import, keyboard/mobile changes, QA collection and 500-stage replay coverage remain unchanged. This does **not** mark P01–P15 complete: the 500-stage curriculum lacks independent human curation/calibration, full rules audit remains open, real device and 15–20-person beta evidence are missing, and P01 image/brand rights remain BLOCKED. G1, G2, G3 and P15 public promotion therefore remain BLOCKED. Read the bundle release record for an explicit 15-package gap ledger and rollback.
 
+## November 24 maintenance preview — partial P02/P03/P05
+
+PR [#338](https://github.com/Squackle/deep-cuts-game-lab-/pull/338) isolates automatic-cast memoization per puzzle definition (stable IDs can survive a revision) and makes state-verified Hint 2/3 display the actual mana payment, paired/bonus mana output, and chosen untap source. Regression fixtures compare two same-ID revisions with different finishing colors and replay exact hint routes. No stage definitions, save keys, scoring, mana legality, or rules version changes. The cache assumes level definitions are not mutated in place during a session, as the campaign constructs definitions once. These are maintenance improvements, not P02/P03/P05 acceptance: full Oracle audit, all-campaign auto-cast solvability/strategy coverage, human calibration, physical-device QA and P01 rights review remain open. See PR checks for final-head evidence; preview and browser acceptance must be verified before merging. Rollback: close this draft PR or revert its scoped changes only.
+
 ## Status ledger for future agents
 
 | Package | Status | Evidence |

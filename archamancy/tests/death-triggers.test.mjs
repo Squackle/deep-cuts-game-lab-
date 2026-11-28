@@ -49,3 +49,14 @@ test("Soul Foundry earns from commander token and commander deaths in range",()=
  const mid=g.state.stats.soulMana;for(let i=0;i<40&&!cm.dead;i++)g.step();
  assert.ok(cm.dead);assert.ok(g.state.stats.soulMana>mid,"commander death fed the foundry");
 });
+
+test("Tier II Soul Foundry pays 22 mana on an in-range death while retaining its cap",()=>{
+ const g=setup("krenko");assert.ok(g.command({type:"build",pad:5,kind:"foundry"}));
+ assert.ok(g.command({type:"upgrade",pad:5}));
+ go(g);for(let i=0;i<400&&!g.state.troops.some(u=>u.source==="cmd");i++)g.step();
+ const tok=g.state.troops.find(u=>u.source==="cmd"&&u.hp>0);assert.ok(tok);
+ tok.progress=g.nearestPath(g.map.pads[5].x,g.map.pads[5].y);
+ const before=g.state.stats.soulMana;kill(g,tok);
+ assert.equal(g.state.stats.soulMana-before,22);
+ assert.equal(g.towerStats(g.state.towers[5]).manaPerWave,80);
+});
