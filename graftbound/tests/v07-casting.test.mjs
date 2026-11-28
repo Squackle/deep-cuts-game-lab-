@@ -6,6 +6,7 @@ import './helpers.mjs';
 import { castSpellVisual, castOrigin, charge, CAST_PROFILE, profileFor, withTimeout } from '../src/rendering/casting.js';
 import { SPELL_VFX } from '../src/rendering/vfx.js';
 import { rewardCards } from '../src/cards/catalog.js';
+import { BattleUI } from '../src/ui/battle-ui.js';
 
 const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 function stub({ speed = 25, reduced = false, caster = {} } = {}) {
@@ -87,9 +88,39 @@ test('no lingering effects: charge arcs stop after release; camera zoom returns;
   assert.equal(await withTimeout(new Promise(() => {}), 60), undefined, 'hung promise is released by the UI timeout');
 });
 
-test('rules independence: the casting pipeline imports no engine/rules modules, and battle playback awaits it before damage', () => {
+test('rules independence: the casting pipeline imports no engine/rules modules', () => {
   const src = readFileSync(new URL('../src/rendering/casting.js', import.meta.url), 'utf8');
   assert.ok(!/engine\/|data\/|cards\//.test(src.split('\n').filter(l => l.startsWith('import')).join('\n')));
   const ui = readFileSync(new URL('../src/ui/battle-ui.js', import.meta.url), 'utf8');
-  assert.match(ui, /await withTimeout\(castSpellVisual\(/); assert.match(ui, /case 'spell': await this\.playSpell\(e\); break;/);
+  assert.match(ui, /await withTimeout\(castSpellVisual\(/);
+});
+
+test('battle playback holds damage until each spell animation resolves', async () => {
+  for (const [id, vfx] of [['mtg:shock', 'shock'], ['mtg:pyroclasm', 'pyroclasm']]) {
+    const animation = Promise.withResolvers();
+    const log = [];
+    const victim = { hp: 2, shield: 0 };
+    const ui = {
+      disp: new Map([[2, victim]]),
+      labels: new Map(),
+      scene: { faceCombatEvent() {}, hit() {}, async death(uid, element, cinematic) {
+        log.push(['death', uid, element, cinematic]);
+      } },
+      audio: { play() {} },
+      app: { status() {} },
+      playSpell(event) { log.push(['spell', event.id]); return animation.promise; },
+      float() {}, renderLabel() { log.push(['health', victim.hp]); }, syncDisp() {}, renderHUD() {},
+      isHero() { return false; }, async wait() {},
+    };
+    const playback = BattleUI.prototype.play.call(ui, [
+      { t: 'spell', id, uid: 1, vfx }, { t: 'batch', kind: 'spell' },
+      { t: 'damage', kind: 'spell', uid: 2, src: 1, amount: 2, blocked: 0, element: 'fire' },
+      { t: 'death', uid: 2, element: 'fire' }, { t: 'batchEnd', kind: 'spell' },
+    ]);
+    assert.deepEqual(log, [['spell', id]]);
+    assert.equal(victim.hp, 2);
+    animation.resolve();
+    await playback;
+    assert.deepEqual(log, [['spell', id], ['health', 0], ['death', 2, 'fire', id==='mtg:pyroclasm']]);
+  }
 });
