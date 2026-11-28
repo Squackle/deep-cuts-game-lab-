@@ -76,4 +76,3 @@ export function drawSmokeOnArena(ctx, image, scene, {elevation=0.12, steps=5, op
   }
   ctx.restore();
 }
-
