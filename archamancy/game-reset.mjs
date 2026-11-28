@@ -1,7 +1,9 @@
+import {MISSION_RUN_KEY} from "./missions.mjs";
 // Full ARCHEMANCY progression reset. Never clear the whole origin: other Game Lab
 // games, sound preferences and downloaded card-art metadata share localStorage.
 export const GAME_PROGRESS_KEYS=Object.freeze([
  "archemancy.progress.v1", // XP, level, commanders, maps, stars, trials, codex, deck, shop
+ MISSION_RUN_KEY,
  "archemancy.run.v1",      // latest resumable battle
  "archemancy.daily.v1",    // daily completions and streaks
  "archemancy.tips.v1"      // first-play tutorial completion
