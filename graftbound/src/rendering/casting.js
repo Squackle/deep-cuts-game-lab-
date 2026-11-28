@@ -174,7 +174,7 @@ export async function castSpellVisual(sc, { kind, uid, to, target = null, tiles 
       const center=to||from; const n=Math.min(7,2+Math.max(0,Math.min(3,level))*2);
       for(let i=0;i<n;i++){const a=i*Math.PI*2/n;sc.addBolt({a:[center[0]+Math.cos(a)*0.32,center[1]+0.5+Math.sin(a*2)*0.22,center[2]+Math.sin(a)*0.32],b:[center[0],center[1]+0.15,center[2]],life:0.16,width:0.032,col:[0.72,0.9,1],segs:4});}
     }
-    if (!instant) {
+    if (!instant && kind !== 'pyroclasm') {
       impactAmplifier(sc, P, to || from, power, manaTier, spellLevel);
       aftermathSigil(sc, kind, to || from, power, manaTier, spellLevel);
     }

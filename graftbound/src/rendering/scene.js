@@ -11,6 +11,7 @@ import { Particles } from './particles.js';
 import { spriteAnimationFrame, defeatTiming } from './sprite-animation.js';
 import { chooseSpriteDirection } from './hd2d-art-pack.js';
 import { combatFacingTarget } from './combat-facing.js';
+import { PyroclasmVisual } from './pyroclasm-live.js';
 
 export const PX = 1 / 19;
 const PITCH = 0.66;
@@ -49,6 +50,7 @@ export class Scene {
   setQuality(name) { this.r.setQuality(name); this.fx.density = this.r.q.particles * (this.reduced ? 0.5 : 1); this.rockFx.density = this.fx.density; }
   world(x, y) { return [x - this.w / 2 + 0.5, 0, y - this.h / 2 + 0.5]; }
   loadArena(battle, seed, theme = 'hollow') {
+    this.pyroclasm?.reset();
     if (this.static) { this.r.free(this.static.mesh); this.r.free(this.static.shafts); }
     this.w = battle.w; this.h = battle.h; this.theme = theme;
     const env = buildEnvironment(battle, seed, theme);
@@ -163,8 +165,19 @@ export class Scene {
     const d = norm([v.pos[0] - this.focus[0] + 0.001, 0, v.pos[2] - this.focus[2]]);
     this.tween(0.16, k => { if (this.units.get(uid) !== v || v.hitMotion !== motion) return; const s = k >= 1 ? 0 : Math.sin(k * Math.PI) * (big ? 0.12 : 0.06); v.recoil = [d[0] * s, 0, d[2] * s]; });
   }
-  async death(uid, element = null) {
+  startPyroclasm(from) {
+    if (this.speed >= 50) return Promise.resolve();
+    if (!this.pyroclasm) this.pyroclasm = new PyroclasmVisual(this);
+    return this.pyroclasm.start(from);
+  }
+  async death(uid, element = null, pyroclasm = false) {
     const v = this.units.get(uid); if (!v) return;
+    if (pyroclasm && this.pyroclasm?.canvas) {
+      const at=[...v.pos];
+      await this.tween(0.22,k=>{v.dissolve=k;});
+      if(this.removeUnit(uid,v))this.pyroclasm.addAsh(uid,at);
+      return;
+    }
     if (/Skeleton/i.test(v.key)) {   // v1.7.0: collapse into a bone pile, hold, then fade. The unit view is removed at once,
       const at = [v.pos[0], v.pos[1], v.pos[2]];   // so there is never an invisible blocker; the pile is a pure decal.
       await this.tween(0.22, k => { v.squash = k * 1.4; v.dissolve = k * 0.6; }); if (!this.removeUnit(uid, v)) return;
@@ -438,6 +451,7 @@ export class Scene {
       particles: { data: this.fx.pack(), count: this.fx.n, scale: 0.012 },
       rockParticles: { data: this.rockFx.pack(), count: this.rockFx.n, scale: 0.012 },
     });
+    this.pyroclasm?.frame(dt);
   }
   ambient(dt) {
     this.ambientT -= dt; if (this.ambientT > 0) return; this.ambientT = 0.05;

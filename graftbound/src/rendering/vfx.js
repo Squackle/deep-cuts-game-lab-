@@ -277,6 +277,8 @@ export async function titanic(sc, { from, to, target, uid, power = 1 }) {
 }
 /** v0.8 Pyroclasm — fire gathers in the caster, then a burning shockwave rolls out across the whole battlefield. */
 export async function pyroclasm(sc, { from, tiles = [], power = 1 }) {
+  if(sc.speed>=50)return;
+  if(sc.startPyroclasm){try{await sc.startPyroclasm(from);return;}catch(err){console.warn('Pyroclasm overlay unavailable; using legacy effect',err);}}
   const O = [1, 0.45, 0.12]; const c = [from[0], 0.03, from[2]];
   sc.screenFlash([1, 0.6, 0.3], 0.22); sc.light(add(c, [0, 0.6, 0]), O, 6, 0.8, 2.6);
   sc.addRing({ pos: c, r0: 0.2, r1: 6.5, life: 0.75, col: O, width: 0.22 }); sc.addRing({ pos: c, r0: 0.1, r1: 5, life: 0.6, col: [1, 0.8, 0.4], width: 0.08 });
