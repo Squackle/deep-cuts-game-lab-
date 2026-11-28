@@ -1,8 +1,16 @@
 import {CHAPTERS, CHALLENGES, COMMANDER_TRIALS} from "./missions.mjs";
 import {REGIONS, missionOpen, missionStars, mapOpen} from "./progress.mjs";
 import {NODES, paintWorld} from "./worldmap.mjs";
+import {atlasIllustration, drawAtlasIllustration, paintAtlasFrame} from "./atlas-art.mjs";
 
-const roadHeights = [.65, .34, .59, .28, .52];
+// Each route follows its landscape and leaves space below its pins for wrapped labels.
+const roadHeights = {
+ hollow: [.55,.32,.52,.28,.51],
+ confluence: [.38,.55,.38,.27,.48],
+ frostfen: [.55,.44,.28,.38,.55],
+ pass: [.48,.40,.23,.33,.55],
+ caldera: [.41,.55,.34,.55,.40]
+};
 const categoryNames = ["Mission road", "Challenges", "Commander trials"];
 
 function element(tag, className, content) {
@@ -45,15 +53,15 @@ function paintRoad(canvas, points, entries, profile) {
   ctx.beginPath();
   ctx.moveTo(px, py);
   ctx.bezierCurveTo(middle, py, middle, y, x, y);
-  ctx.setLineDash([]);
-  ctx.strokeStyle = "#142017e8";
-  ctx.lineWidth = 15;
-  ctx.stroke();
-  ctx.strokeStyle = open ? "#d6aa60" : "#9e9b85";
-  ctx.lineWidth = 7;
-  ctx.setLineDash(open ? [] : [12, 11]);
-  ctx.stroke();
+  for (const [color, width, dash] of [["#16201782", 18, []], ["#4c392c", 11, []],
+   [open ? "#c59757" : "#797162", 6.5, []], [open ? "#fae4a8" : "#cec4a9", 3, open ? [] : [8, 12]]]) {
+   ctx.strokeStyle = color;
+   ctx.lineWidth = width;
+   ctx.setLineDash(dash);
+   ctx.stroke();
+  }
  }
+ paintAtlasFrame(ctx, width, height);
 }
 
 export function createCampaignAtlas({profile, paintRegion, lockReason, savedMission, onResume, onLaunch, onNavigate}) {
@@ -129,6 +137,7 @@ export function createCampaignAtlas({profile, paintRegion, lockReason, savedMiss
  function enterRegion(index, animate = true) {
   if (zoom) return;
   onNavigate();
+  atlasIllustration(REGIONS[index].map);
   const scene = viewport.querySelector(".atlas-world-scene");
   if (!animate || !scene || matchMedia("(prefers-reduced-motion: reduce)").matches) {
    showRegion(index);
@@ -156,7 +165,21 @@ export function createCampaignAtlas({profile, paintRegion, lockReason, savedMiss
   const groups = [chapter, CHALLENGES.filter(m => m.mapId === map), COMMANDER_TRIALS.filter(m => m.mapId === map)];
   title.textContent = region.name;
   back.hidden = false;
-  paintRegion(regionArt.getContext("2d"), map);
+  const context = regionArt.getContext("2d");
+  const illustration = atlasIllustration(map);
+  const draw = image => {
+   if (regionIndex !== index) return;
+   drawAtlasIllustration(context, image, regionArt.width, regionArt.height);
+   regionArt.style.filter = "none";
+   regionArt.dataset.atlasArt = map;
+  };
+  if (illustration.image) draw(illustration.image);
+  else {
+   delete regionArt.dataset.atlasArt;
+   regionArt.style.removeProperty("filter");
+   paintRegion(context, map);
+   illustration.ready.then(image => {if (image) draw(image);});
+  }
   const categories = element("nav", "atlas-categories");
   categories.setAttribute("aria-label", "Mission categories");
   const toolbar = element("div", "atlas-toolbar");
@@ -185,7 +208,7 @@ export function createCampaignAtlas({profile, paintRegion, lockReason, savedMiss
    if (road) {
     board.append(regionArt);
     const roadArt = canvas("atlas-road-art", 1000, 460);
-    const points = entries.map((_, i) => [.13 + .74 * i / (entries.length - 1), roadHeights[i]]);
+    const points = entries.map((_, i) => [.13 + .74 * i / (entries.length - 1), roadHeights[map][i]]);
     paintRoad(roadArt, points, entries, profile);
     board.append(roadArt);
     regionBody.replaceChildren(board, detail);
