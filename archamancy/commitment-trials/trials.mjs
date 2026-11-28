@@ -1,6 +1,6 @@
 import {createEngine, VERSION} from '../engine.mjs';
 
-export const TRIAL_ENGINE_VERSION = '0.1.0-beta.13.54';
+export const TRIAL_ENGINE_VERSION = '0.1.0-beta.13.68';
 export const TRIALS = {
   green: {
     name: 'Green · Roots and Reach', color: 'G', first: 4, last: 6, mana: 1550, minimum: 14,
