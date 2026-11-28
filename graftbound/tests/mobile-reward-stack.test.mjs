@@ -175,3 +175,43 @@ test('Reveal All is a prominent button before the pack on every reward screen', 
   assert.match(css, /\.rewardscr #rw-reveal/);
   assert.match(css, /min-height:44px/);
 });
+
+
+test('fast release uses final pointer coordinates even without a move sample', async () => {
+  const f = fixture();
+  f.api.handleTap(tap(f.slots[0])); await settle();
+  const target = { closest: s => s === '.slot' ? f.slots[0] : null };
+  f.fan.fire('pointerdown', { isPrimary: true, pointerId: 31, clientX: 100, clientY: 100, target });
+  f.fan.fire('pointerup', { pointerId: 31, clientX: 200, clientY: 103 });
+  await settle();
+  assert.equal(f.slots[1].classList.contains('gb-stack-top'), true);
+  assert.deepEqual(f.revealed, [0]);
+});
+
+test('lost pointer capture cancels a drag and allows a new deliberate swipe', async () => {
+  const f = fixture();
+  f.api.handleTap(tap(f.slots[0])); await settle();
+  const target = { closest: s => s === '.slot' ? f.slots[0] : null };
+  f.fan.fire('pointerdown', { isPrimary: true, pointerId: 32, clientX: 100, clientY: 100, target });
+  f.fan.fire('pointermove', { pointerId: 32, clientX: 200, clientY: 101, cancelable: true, preventDefault() {} });
+  f.fan.fire('lostpointercapture', { pointerId: 32 });
+  await settle();
+  assert.equal(f.slots[0].classList.contains('gb-stack-top'), true);
+  assert.equal(f.slots[0].classList.contains('gb-stack-dragging'), false);
+  f.fan.fire('pointerdown', { isPrimary: true, pointerId: 33, clientX: 100, clientY: 100, target });
+  f.fan.fire('pointerup', { pointerId: 33, clientX: 200, clientY: 101 });
+  await settle();
+  assert.equal(f.slots[1].classList.contains('gb-stack-top'), true);
+});
+
+test('release after reversing a right drag does not dismiss the card', async () => {
+  const f = fixture();
+  f.api.handleTap(tap(f.slots[0])); await settle();
+  const target = { closest: s => s === '.slot' ? f.slots[0] : null };
+  f.fan.fire('pointerdown', { isPrimary: true, pointerId: 34, clientX: 100, clientY: 100, target });
+  f.fan.fire('pointermove', { pointerId: 34, clientX: 200, clientY: 101, cancelable: true, preventDefault() {} });
+  f.fan.fire('pointerup', { pointerId: 34, clientX: 105, clientY: 101 });
+  await settle();
+  assert.equal(f.slots[0].classList.contains('gb-stack-top'), true);
+  assert.equal(f.slots[0].classList.contains('gb-stack-dragging'), false);
+});

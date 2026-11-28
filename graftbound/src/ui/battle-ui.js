@@ -6,6 +6,7 @@ import { TACTICS } from '../data/tactics.js';
 import { getLegalPlayerActions, shouldAutoEnd } from '../engine/legal.js';
 import { describeTile, pathWarning } from '../engine/describe.js';
 import { bossPhaseOf, bossPhaseName } from '../engine/ai.js';
+import { tacticalThreat, slimeEndStepWarning, slimeEndStepRisk } from './tactical-threats.js';
 import { castBlockReason, spellCost, rangeLabel, formatSpellText } from '../engine/spells.js';
 import { reachable, pathTo, key, unitAt, T, tileAt } from '../core/grid.js';
 import { ENEMIES } from '../data/enemies.js';
@@ -86,6 +87,7 @@ export class BattleUI {
   }
   wait(ms) { return new Promise(r => setTimeout(r, ms / this.app.animFactor())); }
   async start(run, s, { fresh }) {
+    this.cancelAutoEnd(); this.autoEnds = 0;
     this.resetTileInspectLock();
     this._comboShowing=false;this.victoryPlayed=false;this.ending=false;this.cardAnimations.stop(); this.concealedDraws.clear();this.initialHandConcealed=!!fresh&&!!s.deck;this.run = run; this.s = s; this.spell = null; this.spellMode = null; this.hover = null; this.pendingTap = null;
     $('labels').innerHTML = ''; this.labels.clear(); this.disp.clear();
@@ -122,7 +124,7 @@ export class BattleUI {
     const duration=this.app.animFactor()>1.5?550:1000;overlay.style.setProperty('--gb-shuffle-ms',duration+'ms');
     try{await new Promise(res=>setTimeout(res,duration+50));}finally{overlay.remove();}
   }
-  stop() { this.resetTileInspectLock();this._comboShowing=false;this.cardAnimations.stop(); this.hideHandPreview(); $('hud').classList.add('hidden'); $('labels').innerHTML = ''; this.labels.clear(); this.s = null; }
+  stop() { this.cancelAutoEnd(); this.resetTileInspectLock();this._comboShowing=false;this.cardAnimations.stop(); this.hideHandPreview(); $('hud').classList.add('hidden'); $('labels').innerHTML = ''; this.labels.clear(); this.s = null; }
   addUnitView(u) {
     let v;
     if (u.hero) {
@@ -149,17 +151,25 @@ export class BattleUI {
         v.hover = u.defId === 'golemFly' && u.keywords?.flying ? 0.14 : 0;
         v.style = { ...(v.style || {}), flying: !!(u.defId === 'golemFly' && u.keywords?.flying), armored: true };
       }
-      { const key = friend ? tokenKey : ENEMIES[u.defId].sprite, img = this.app.assets.images[key];   // v1.7.0 wolf coats / pack leader
-        const coat = LEADER_KEYS.has(key) ? LEADER_COAT : WOLF_KEYS.has(key) ? wolfCoatFor(this.run?.seed || 0, u.uid, THEME_BIOME[this.scene?.theme] || 'temperate') : null;
-        if (coat && coat.hue != null && img) this.scene.setUnitTexture(u.uid, recoatSheet(img, coat, key)); }
-      if (friend && tokenKey === 'mtg_friendlySoldier') {
-        const src=this.app.assets.images.mtg_friendlySoldier, mask=this.app.assets.images['mtg_friendlySoldier:skinMask'];
-        this.scene.setUnitTexture(u.uid,composeAllyAttachments(recolorSkin(src,mask,skinToneForSeed(this.run.seed,u.uid)),v.fw,u.equipment||[],u.auras||[]));
-      }
+      const base = this.unitAttachmentBase(u.uid, v.key);
+      if (base && (base !== this.app.assets.images[v.key] || u.equipment?.length || u.auras?.length))
+        this.scene.setUnitTexture(u.uid, this.composeUnitAttachments(base, v, u));
     }
     if(u.auras?.length) this.applyAuraLight(u);
     const el = document.createElement('div'); el.className = 'ulabel ' + (u.side === 'player' ? 'player' : 'enemy'); $('labels').appendChild(el); this.labels.set(u.uid, el);
     return v;
+  }
+  // One deterministic source path for initial load and attachment repaint.
+  unitAttachmentBase(uid, key) {
+    const base = this.app.assets.images[key]; if (!base) return null;
+    if (key === 'mtg_friendlySoldier') return recolorSkin(base, this.app.assets.images[key + ':skinMask'], skinToneForSeed(this.run.seed, uid));
+    const coat = LEADER_KEYS.has(key) ? LEADER_COAT : WOLF_KEYS.has(key) ? wolfCoatFor(this.run?.seed || 0, uid, THEME_BIOME[this.scene?.theme] || 'temperate') : null;
+    return coat && coat.hue != null ? recoatSheet(base, coat, key) : base;
+  }
+  composeUnitAttachments(base, v, unit) {
+    const meta = this.app.assets.manifest.sprites[v.key], manifest = this.app.assets.manifest;
+    return composeAllyAttachments(base, v.fw, unit.equipment || [], unit.auras || [], meta.cols || manifest.cols,
+      { height: v.fh, views: meta.views || manifest.views, animations: meta.anims || manifest.anims });
   }
   /** Repaint the exact unit that changed, never silently update only the hero.
    * Cosmetic transitions are derived from saved battle state; no gameplay RNG. */
@@ -170,9 +180,8 @@ export class BattleUI {
       const app=deriveAppearance(this.run.evo,visualForRun(this.run));
       { const bm=this.app.assets.manifest.sprites.blank; this.scene.setUnitTexture(uid,composeEquippedSheet(this.app.assets,app,unit.equipment||[],unit.auras||[]),visualScale('blank',bm,bm.bounds,{heroSize:app.size})); }
     }else{
-      let base=this.app.assets.images[v.key];if(!base)return;
-      if(v.key==='mtg_friendlySoldier')base=recolorSkin(base,this.app.assets.images['mtg_friendlySoldier:skinMask'],skinToneForSeed(this.run.seed,uid));
-      this.scene.setUnitTexture(uid,composeAllyAttachments(base,v.fw,unit.equipment||[],unit.auras||[],this.app.assets.manifest.cols));
+      const base = this.unitAttachmentBase(uid, v.key); if (!base) return;
+      this.scene.setUnitTexture(uid, this.composeUnitAttachments(base, v, unit));
     }
     this.applyAuraLight(unit);
   }
@@ -213,8 +222,9 @@ export class BattleUI {
     let intent = '';
     if (it && this.s.phase === 'player') {
       const ic = { attack: ICON.sword, spit: ICON.spit, hex: ICON.stun, harpoon: ICON.hook, aim: ICON.aim, fire: ICON.aim, slam: ICON.slam, summon: ICON.summon, support: ICON.shield, guard: ICON.guard, stunned: ICON.stun, move: ICON.move }[it.kind] || ICON.move;
+      const threat = tacticalThreat(this.s, it);
       const cls = it.kind === 'fire' || it.kind === 'slam' ? 'locked' : (it.damage ? 'threat' : 'calm');
-      intent = `<div class="intent ${cls}" title="${esc(this.intentText(it))}">${ic}${it.damage ? `<b>${it.damage}</b>` : ''}${it.extra ? `<span class="xtra">+${ICON.sword}${it.extra}</span>` : ''}${it.poison ? `<span class="psn">${ICON.poison}${it.poison}</span>` : ''}${it.weaken ? `<span class="wk">−${it.weaken}⚔</span>` : ''}</div>`;
+      intent = `<div class="intent ${cls}" title="${esc(this.intentText(it, threat))}">${ic}${it.damage ? `<b>${it.damage}${threat.hits > 1 ? '×' + threat.hits : ''}</b>` : ''}${it.extra ? `<span class="xtra">+${ICON.sword}${it.extra}</span>` : ''}${it.poison ? `<span class="psn">${ICON.poison}${it.poison}</span>` : ''}${it.weaken ? `<span class="wk">−${it.weaken}⚔</span>` : ''}</div>`;
     }
     const u = this.s.units.find(x => x.uid === uid);
     const armor = u && u.keywords && u.keywords.armor ? `<span class="st ar">▣${u.keywords.armor}</span>` : '';
@@ -225,19 +235,20 @@ export class BattleUI {
     el._h = el.offsetHeight || 24;
     { const view = this.scene.units.get(uid); if (view) view.statusFx = statusVisuals(d, view.statusFx); }
   }
-  intentText(it) {
+  intentText(it, threat = tacticalThreat(this.s, it)) {
     const tgt = it.target && this.s.units.find(u => u.uid === it.target);
     const who = tgt && !tgt.hero ? ' your ' + tgt.name : ' you';
-    return (({ attack: `Will strike${who} for ${it.damage}`, spit: `Will spit for ${it.damage} and poison ${it.poison}`, hex: `Will curse you: ${it.damage} damage and −${it.weaken} power on your next turn`,
+    return (({ attack: `Plans to strike${who} for ${it.damage}${threat.hits > 1 ? ' per hit' : ''}`, spit: `Will spit for ${it.damage} and poison ${it.poison}`, hex: `Will curse you: ${it.damage} damage and −${it.weaken} power on your next turn`,
       harpoon: `Harpoon: ${it.damage} damage${it.ground ? ' and Grounds you (no flying next turn)' : ''}`, aim: 'Will take aim along a line', fire: `Fires ${it.damage} along the red line`,
       slam: `${it.damage} to every red tile${it.extra ? ` (and strikes for ${it.extra} if adjacent)` : ''}`, summon: 'Will summon reinforcements', smash: 'Will smash through the rock (uses its whole turn)', support: 'Will empower its Saprolings', guard: 'Will shield adjacent allies', stunned: 'Stunned — loses its next action' })[it.kind] || 'Will move')
       + (it.quick ? ` · then a quick shot for ${it.quick.damage} at ${(t => !t || t.hero ? 'you' : 'your ' + t.name)(this.s.units.find(u => u.uid === it.quick.target))}` : '')
       + (it.guarded ? ` · Blocks ${it.guarded}` : '') + (it.silence ? ` · Silences your ${getCard(it.silence).name} next turn` : '')
-      + (it.redact ? ` · Redaction: your ${KEYWORDS[it.redact].name} is suppressed during your next turn (it returns after)` : '') + (it.briars ? ' · Briars will sprout around you (fire burns them)' : '') + (it.mirror ? ` · Will copy your ${KEYWORDS[it.mirror].name}` : '');
+      + (it.redact ? ` · Redaction: your ${KEYWORDS[it.redact].name} is suppressed during your next turn (it returns after)` : '') + (it.briars ? ' · Briars will sprout around you (fire burns them)' : '') + (it.mirror ? ` · Will copy your ${KEYWORDS[it.mirror].name}` : '') + (threat.notes.length ? ' · ' + threat.notes.join(' · ') : '');
   }
   renderHUD() {
     const s = this.s; const p = player(s); const d = this.disp.get(p.uid) || { hp: p.hp, maxHp: p.maxHp, shield: 0 };
     const ap = deriveAppearance(this.run.evo, visualForRun(this.run));
+    const slimeWarning = slimeEndStepWarning(s), slimeRisk = slimeEndStepRisk(s);
     d.guardShield = p.statuses.guardShield || 0;
     $('plate').innerHTML = `
       <div class="pl-top"><div><div class="pl-name">${esc(this.run.name)}</div><div class="pl-stage">${STAGE[ap.stage]} · ${this.run.evo.absorbed.length} graft${this.run.evo.absorbed.length === 1 ? '' : 's'}</div></div>
@@ -247,7 +258,7 @@ export class BattleUI {
       <div class="pl-res"><span class="mana" tabindex="0" data-tip="Mana ${this.dispMana}/${s.p.maxMana}. Spells cost gems. You regain ${s.p.regen} each turn${s.p.arcane ? `; Arcane adds +${s.p.arcane} to spell numbers` : ''}.">${Array.from({ length: Math.max(s.p.maxMana, this.dispMana) }, (_, i) => `<i class="${i < this.dispMana ? 'on' : ''}">${ICON.gem}</i>`).join('')}</span>
 </div>
       <div class="pl-act" role="group" aria-label="Movement, attacks and banked mana"></div>
-      <div class="pl-kw">${kwChips(p.keywords)}${d.poison ? `<span class="chip bad" tabindex="0" data-tip="Poison: lose ${d.poison} health at the start of your turn, then it drops by 1.">${ICON.poison}Poison ${d.poison}</span>` : ''}${p.slime ? `<span class="chip bad" tabindex="0" data-tip="Toxrill adds one slime counter at each end step. Each counter gives −1/−1 while Toxrill is alive.">☣ Slime ${p.slime}</span>` : ''}${d.grounded ? `<span class="chip bad" tabindex="0" data-tip="Grounded: no flying and −1 movement this turn.">${ICON.hook}Grounded</span>` : ''}${p.suppressed ? `<span class="chip bad" tabindex="0" data-tip="Redacted by the Unwritten for this turn only. It returns when your turn ends.">✖ ${esc(Object.keys(p.suppressed).map(k => KEYWORDS[k].name).join(', '))}</span>` : ''}</div>`;
+      <div class="pl-kw">${kwChips(p.keywords)}${slimeRisk ? `<span class="chip bad" tabindex="0" data-tip="${esc(slimeWarning)}">☣ ${slimeRisk === 1 ? 'Fatal end step' : 'Fatal slime risk'}</span>` : ''}${d.poison ? `<span class="chip bad" tabindex="0" data-tip="Poison: lose ${d.poison} health at the start of your turn, then it drops by 1.">${ICON.poison}Poison ${d.poison}</span>` : ''}${p.slime ? `<span class="chip bad" tabindex="0" data-tip="Toxrill adds one slime counter at each end step. Each counter gives −1/−1 while Toxrill is alive.">☣ Slime ${p.slime}</span>` : ''}${d.grounded ? `<span class="chip bad" tabindex="0" data-tip="Grounded: no flying and −1 movement this turn.">${ICON.hook}Grounded</span>` : ''}${p.suppressed ? `<span class="chip bad" tabindex="0" data-tip="Redacted by the Unwritten for this turn only. It returns when your turn ends.">✖ ${esc(Object.keys(p.suppressed).map(k => KEYWORDS[k].name).join(', '))}</span>` : ''}</div>`;
     // v1.5.0 compact HUD: movement and attacks live in the hero plate's action strip (one coordinated panel).
     $('gb-action-counters').innerHTML = '';
     const strip = $('plate').querySelector('.pl-act');
@@ -264,6 +275,8 @@ export class BattleUI {
     this.renderStances(s);
     const skill=$('graftPowers'), options=comboActiveOptions(s);
     if(skill){skill.hidden=!options.length&&!s.traits?.includes('skeleton');skill.disabled=this.busy||s.phase!=='player'||hasComboChoices(s)||!options.length;skill.textContent='✦';skill.setAttribute('aria-label',`Open ${options.length} available Graft Powers`);skill.title=`Graft Powers (${options.length})`;  if(!options.length&&s.traits?.includes('skeleton'))skill.title=reassembleReason(s)||'Reassemble available';}
+    $('endTurn').title = slimeWarning;
+    $('endTurn').setAttribute('aria-label', slimeWarning ? 'End turn. ' + slimeWarning : 'End turn');
     $('endTurn').disabled = this.busy || s.phase !== 'player';
     $('endTurn').classList.toggle('glow', s.phase === 'player' && !this.busy && !getLegalPlayerActions(s).any);
   }
@@ -451,7 +464,7 @@ export class BattleUI {
     const tiles = [];
     const danger = this.intents.flatMap(i => (i.kind === 'fire' || i.kind === 'slam') ? i.tiles : []);
     this.scene.setDanger(danger); this.scene.setHazard(s.phase === 'player' ? hazardPreview(s) : []);
-    if (danger.length) this.app.hint('danger', 'Red tiles will be struck on the enemy turn. Step out of them — foes standing there get hit too.');
+    if (danger.length) this.app.hint('danger', 'Red tiles indicate incoming attacks. Leave the marked tiles; arrows stop at the first opposing creature, while some area attacks also hit foes.');
     if (hazardPreview(s).length) this.app.hint('rift', 'Violet rifts pulse for 3 damage at the end of this round. Do not end your turn on them.');
     for (const v of this.scene.units.values()) v.outline = 0;
     if (this.busy || s.phase !== 'player') { this.scene.setOverlay(this.cursorTiles([])); return; }
@@ -714,15 +727,26 @@ export class BattleUI {
       el.setAttribute?.('data-tile-pinned', `${t.x},${t.y}`);
     });
   }
+  cancelAutoEnd() {
+    if (this.autoEndTimer != null) clearTimeout(this.autoEndTimer);
+    this.autoEndTimer = null;
+    if (this.autoEnding) this.app.status('');
+    this.autoEnding = false;
+  }
+  canAutoEnd(s) {
+    return this.s === s && this.app.mode === 'battle' && !this.app.modalOpen() &&
+      !document.hidden && !this.ending && !discardRequirement(s).need &&
+      shouldAutoEnd(s, { busy: this.busy, targeting: !!this.spell, enabled: this.app.meta.settings.autoEnd !== false });
+  }
   maybeAutoEnd() {
     const s = this.s;
-    const enabled = this.app.meta.settings.autoEnd !== false;
-    if (this.autoEnding || !shouldAutoEnd(s, { busy: this.busy, targeting: !!this.spell, enabled })) return;
+    if (this.autoEnding || !this.canAutoEnd(s)) return;
     if ((this.autoEnds || 0) >= 25) return;   // safety valve: a long stun-lock never loops unattended
+    const turn = s.turn;
     this.autoEnding = true; this.app.status('No actions left — your turn ends');
-    setTimeout(async () => {
-      this.autoEnding = false;
-      if (!this.s || !shouldAutoEnd(this.s, { busy: this.busy, targeting: !!this.spell, enabled: this.app.meta.settings.autoEnd !== false })) { this.app.status(''); return; }
+    this.autoEndTimer = setTimeout(async () => {
+      this.autoEndTimer = null; this.autoEnding = false;
+      if (!this.canAutoEnd(s) || s.turn !== turn) { this.app.status(''); return; }
       this.autoEnds = (this.autoEnds || 0) + 1; await this.doEndTurn();
     }, 520 / Math.min(this.app.animFactor(), 10));
   }
@@ -858,7 +882,7 @@ export class BattleUI {
   async act(fn) {
     if (this.busy) return;
     if (this.inputClosed()) { this.audio.play('nope'); return; }
-    this.busy = true; this.pendingTap = null; this.showInspect(null); this.scene.setOverlay([]); this.syncDisp();
+    this.cancelAutoEnd(); this.busy = true; this.pendingTap = null; this.showInspect(null); this.scene.setOverlay([]); this.syncDisp();
     let ev;
     try { ev = await fn(); } catch (err) { this.busy = false; this.reject(err.message || 'Not allowed'); this.refresh(); this.maybeAutoEnd(); return; }
     // Keep newly drawn cards concealed until their flights from the library finish.

@@ -139,11 +139,11 @@ export function attachMobileRewardStack(fan, {
   }
 
   fan.addEventListener('pointerdown', e => {
-    if (busy || sequence.done || !sequence.flipped || !e.isPrimary) return;
+    if (busy || gesture || sequence.done || !sequence.flipped || !e.isPrimary || (e.button != null && e.button !== 0)) return;
     const slot = e.target.closest('.slot');
     if (slot !== slots[sequence.index] || e.target.closest('button')) return;
     gesture = { id: e.pointerId, slot, x: e.clientX, y: e.clientY, dx: 0, dy: 0, moved: false };
-    slot.setPointerCapture?.(e.pointerId);
+    try { slot.setPointerCapture?.(e.pointerId); } catch (_) { /* Capture can fail if the pointer has already ended. */ }
   });
   fan.addEventListener('pointermove', e => {
     if (!gesture || e.pointerId !== gesture.id) return;
@@ -159,10 +159,13 @@ export function attachMobileRewardStack(fan, {
   });
   const releaseGesture = (e, cancelled = false) => {
     if (!gesture || e.pointerId !== gesture.id) return;
-    const { slot, dx, dy, moved } = gesture;
+    const { slot, x, y, dx: lastX, dy: lastY, moved } = gesture;
+    // A fast swipe may end between pointermove samples; the release is authoritative.
+    const dx = !cancelled && Number.isFinite(e.clientX) ? e.clientX - x : lastX;
+    const dy = !cancelled && Number.isFinite(e.clientY) ? e.clientY - y : lastY;
     gesture = null;
     try { slot.releasePointerCapture?.(e.pointerId); } catch (_) { /* Pointer may already have been released. */ }
-    if (moved) { suppressTapSlot = slot; suppressTapUntil = Date.now() + 450; }
+    if (moved || Math.abs(dx) > 8 || Math.abs(dy) > 8) { suppressTapSlot = slot; suppressTapUntil = Date.now() + 450; }
     slot.classList.remove('gb-stack-dragging');
     if (!cancelled && isRightSwipe(dx, dy, slot.getBoundingClientRect().width)) {
       dismissTop();
@@ -173,6 +176,7 @@ export function attachMobileRewardStack(fan, {
   };
   fan.addEventListener('pointerup', e => releaseGesture(e));
   fan.addEventListener('pointercancel', e => releaseGesture(e, true));
+  fan.addEventListener('lostpointercapture', e => releaseGesture(e, true));
   // Keyboard users can flip with Enter/Space and dismiss with Right Arrow.
   fan.addEventListener('keydown', e => {
     if (sequence.done || e.target !== slots[sequence.index]) return;

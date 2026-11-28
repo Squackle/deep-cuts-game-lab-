@@ -188,7 +188,15 @@ export function createStore(storage) {
       } catch (err) {
         storage.setItem(KEYS.run + BAD, raw); storage.removeItem(KEYS.run);
         const bak = storage.getItem(KEYS.run + BAK);
-        if (bak) { try { const r = loadRunFrom(bak); return { ...r, error: String(err.message || err), recovered: true }; } catch { /* fall through */ } }
+        if (bak) {
+          try {
+            const r = loadRunFrom(bak);
+            // Restore the primary immediately: a second reload before the next
+            // gameplay action must not lose the recovered adventure.
+            storage.setItem(KEYS.run, wrap(RUN_VERSION, r.run));
+            return { ...r, error: String(err.message || err), recovered: true };
+          } catch { /* invalid backup or storage failure: do not claim recovery */ }
+        }
         return { run: null, error: String(err.message || err) };
       }
     },

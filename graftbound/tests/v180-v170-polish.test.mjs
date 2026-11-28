@@ -13,7 +13,8 @@ const book = ids => ids.map(id => ({ id: 'mtg:' + id, level: 1 }));
 // #25 Mentor soft-lock
 test('#25 pending-choice modal is locked against backdrop/Escape and closeModal always re-prompts', () => {
   const m = src('src/main.js'), ui = src('src/ui/battle-ui.js');
-  assert.match(m, /if \(this\.modalLocked\(\) && !e\.target\.closest\('\[data-close\]'\)\) return;/);
+  // Mandatory choices cannot be dismissed even by a nested data-close control.
+  assert.match(m, /if \(this\.modalLocked\(\)\) return; if \(e\.target\.id === 'modal' \|\| e\.target\.closest\('\[data-close\]'\)\) this\.closeModal\(\);/);
   assert.match(m, /if \(!this\.modalLocked\(\)\) this\.closeModal\(\)/);
   assert.match(m, /setTimeout\(\(\) => this\.battle\.promptComboChoices\(\), 0\)/);
   assert.match(ui, /role=\\?"alertdialog\\?"[\s\S]{0,4000}?,'',\{locked:true\}\);/);
@@ -143,7 +144,7 @@ test('#10 wolf coats are deterministic per uid; the pack leader is always distin
 });
 test('#12 skeleton defeat: view removed immediately, bone pile is a decal; #13 poison orb; #16 four-stage hand', async () => {
   const sc = src('src/rendering/scene.js'), sm = src('src/rendering/shadow-magic.js'), v = src('src/rendering/vfx.js');
-  assert.match(sc, /if \(\/Skeleton\/i\.test\(v\.key\)\)/); assert.match(sc, /this\.removeUnit\(uid\);\n      this\.addShadow\(\{ tex: 'bones'/);
+  assert.match(sc, /if \(\/Skeleton\/i\.test\(v\.key\)\)/); assert.match(sc, /if \(!this\.removeUnit\(uid, v\)\) return;\n      this\.addShadow\(\{ tex: 'bones'/);
   assert.match(v, /export const VFX = \{ infest: toxicOrb,/); assert.match(v, /sort\(\(a, b\) => a\.d - b\.d\)/);
   const { GRASP_STAGES } = await import('../src/rendering/shadow-magic.js'); assert.ok(GRASP_STAGES.gather >= 300 && GRASP_STAGES.intensify >= 250);
   assert.match(sm, /1 · gather/); assert.match(sm, /2 · intensify/); assert.match(sm, /3 · emerge from the cloud/);

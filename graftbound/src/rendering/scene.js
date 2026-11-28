@@ -54,7 +54,8 @@ export class Scene {
     const env = buildEnvironment(battle, seed, theme);
     this.r.env = { ...env.env, sunDir: norm(env.env.sunDir) }; this.r.tint = env.tint; this.mote = env.mote;
     this.static = { mesh: this.r.upload(env.opaque), shafts: this.r.upload(env.shafts), foliage: env.foliage, lights: env.lights, emitters: env.emitters };
-    for (const uid of [...this.units.keys()]) this.units.delete(uid);
+    for (const uid of this.units.keys()) this.removeUnit(uid);
+    this.shadows = [];
     this.fx.clear(); this.rockFx.clear(); this.fxLights = []; this.bolts = []; this.rings = []; this.arrows = []; this.setOverlay([]); this.setDanger([]); this.setHazard([]);
   }
   /** Rebuild only the static environment (e.g. the Pyre Matron melts tiles into lava); units/FX are kept. */
@@ -64,13 +65,15 @@ export class Scene {
     this.static = { mesh: this.r.upload(env.opaque), shafts: this.r.upload(env.shafts), foliage: env.foliage, lights: env.lights, emitters: env.emitters };
   }
   addUnit(u, spriteKey, opts = {}) {
+    // Replacing a view with the same UID must release its private composed texture.
+    this.removeUnit(u.uid);
     const meta = this.man.sprites[spriteKey];
     // v1.7.0: feet + horizontal centre come from the MEASURED art bounds (creature-scale.js), not frame constants.
     const an = anchorsOf(meta, meta.bounds);
     const v = { uid: u.uid, side: u.side, key: spriteKey, tex: opts.tex || this.tex[spriteKey], fw: meta.w, fh: meta.h, pivot: an.pivot, cx: an.cx, topPx: (meta.boundsAll || meta.bounds)?.y0 ?? 0, hover: u.keywords?.flying && !u.statuses?.grounded ? (meta.hover ? 0.35 : 0.14) : 0,
       pixelScale: meta.pixelScale || 1, animSet: meta.anims || this.man.anims, views: meta.views || this.man.views,
       pos: this.world(u.x, u.y), dir: u.side === 'enemy' ? [0, 1] : [0, -1], anim: 'idle', animT: Math.random(), scale: opts.scale || 1, flash: 0, flashCold: 0, dissolve: 0, outline: 0,
-      lunge: [0, 0, 0], spawnK: 1, hidden: false, aura: null };
+      lunge: [0, 0, 0], recoil: [0, 0, 0], spawnK: 1, hidden: false, aura: null };
     if (!opts.scale) v.scale = visualScale(spriteKey, meta, meta.bounds);
     if (u.facing) v.dir = [u.facing[0], u.facing[1]];   // v1.7.0: saved last-move direction (engine field)
     this.units.set(u.uid, v); return v;
@@ -82,7 +85,12 @@ export class Scene {
     // v1.7.0: label/health-bar height from the COMPOSED model (wings, horns...) in front and back idle frames.
     const rows = Object.keys(v.animSet || this.man.anims).length, b = measureBounds(canvas, v.fw, v.fh, [[0, 0], [0, rows]]); if (b) v.topPx = Math.min(b.y0, v.pivot - 4);
   }
-  removeUnit(uid) { this.units.delete(uid); }
+  removeUnit(uid, expected = null) {
+    const v = this.units.get(uid);
+    if (!v || (expected && expected !== v)) return false;
+    if (v.ownTex) this.r.freeTexture(v.ownTex);
+    return this.units.delete(uid);
+  }
   /** v1.6.0: an alpha-tested shadow sprite (mist / spectral hand). frames: [[col,row],...] with fps, or seq [{at,frame}]. */
   addShadow(o) { this.shadows.push({ age: -(o.delay || 0), fps: 6, fadeIn: 0.15, fadeOut: 0.3, vel: [0, 0, 0], ...o, pos: o.pos.slice() }); if (this.shadows.length > 160) this.shadows.shift(); }
   play(uid, anim) { const v = this.units.get(uid); if (v) { v.anim = anim; v.animT = 0; } }
@@ -95,8 +103,8 @@ export class Scene {
     return this.tween(0.5, k => { v.castLift = Math.sin(Math.PI * k) * 0.09; v.squash = -Math.sin(Math.PI * k) * 0.5; }).then(() => { v.castLift = 0; v.squash = 0; });
   }
   heightOf(v) { return Math.max(0.1, (v.pivot - (v.topPx ?? 0)) * PX * HCOMP * v.scale * (v.pixelScale || 1)); }   // v1.7.0: true visible height
-  headPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) + 0.1, v.pos[2]]; }   // v1.7.0: above the whole model
-  centerPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0] + v.lunge[0], v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) * 0.45, v.pos[2] + v.lunge[2]]; }
+  headPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0] + v.lunge[0] + (v.recoil?.[0] || 0), v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) + 0.1, v.pos[2] + v.lunge[2] + (v.recoil?.[2] || 0)]; }   // v1.7.0: above the whole model
+  centerPos(uid) { const v = this.units.get(uid); if (!v) return [0, 0, 0]; return [v.pos[0] + v.lunge[0] + (v.recoil?.[0] || 0), v.pos[1] + v.hover + (v.castLift || 0) + this.heightOf(v) * 0.45, v.pos[2] + v.lunge[2] + (v.recoil?.[2] || 0)]; }
   face(v, to) { if (!v) return; const dx = to[0] - v.pos[0], dz = to[2] - v.pos[2]; if (Math.abs(dx) + Math.abs(dz) > 0.01) v.dir = [dx, dz]; }
   /** Visual-only: turn the acting creature toward the real target or telegraphed tiles.
    * Do not mutate combat units, saved facing or deterministic replay data. */
@@ -108,13 +116,14 @@ export class Scene {
   }
   tween(dur, fn) { if (this.speed >= 50) { fn(1); return Promise.resolve(); } dur = dur / this.speed; return new Promise(res => this.tweens.push({ t: 0, dur: Math.max(0.001, dur), fn, res })); }
   async movePath(uid, path, perTile = 0.17) {
-    const v = this.units.get(uid); if (!v) return; v.anim = 'walk';
+    const v = this.units.get(uid); if (!v) return; v.anim = 'walk'; v.animT = 0;
     for (let i = 1; i < path.length; i++) {
       const a = this.world(path[i - 1].x, path[i - 1].y), b = this.world(path[i].x, path[i].y); this.face(v, b);
       await this.tween(perTile, k => { const e = easeIO(k); v.pos[0] = a[0] + (b[0] - a[0]) * e; v.pos[2] = a[2] + (b[2] - a[2]) * e; });
+      if (this.units.get(uid) !== v) return;
       this.onStep && this.onStep(v);
     }
-    v.anim = 'idle';
+    v.anim = 'idle'; v.animT = 0;
   }
   async slide(uid, path) { const v = this.units.get(uid); if (!v || path.length < 2) return; const a = this.world(path[0].x, path[0].y), b = this.world(path.at(-1).x, path.at(-1).y); this.face(v, b); v.anim = 'hurt'; v.animT = 0; await this.tween(0.25, k => { const e = ease(k); v.pos[0] = a[0] + (b[0] - a[0]) * e; v.pos[2] = a[2] + (b[2] - a[2]) * e; }); }
   async teleport(uid, x, y, col = [0.5, 0.8, 1]) {
@@ -128,6 +137,9 @@ export class Scene {
   async lunge(uid, targetUid) {
     const v = this.units.get(uid), t = this.units.get(targetUid); if (!v || !t) return;
     this.face(v, t.pos); v.anim = 'attack'; v.animT = 0;
+    const motion = v.attackMotion = (v.attackMotion || 0) + 1;
+    const current = () => this.units.get(uid) === v && v.attackMotion === motion;
+    const origin = v.lunge.slice();
     const dx = t.pos[0] - v.pos[0], dz = t.pos[2] - v.pos[2], l = Math.hypot(dx, dz) || 1;
     // Attack silhouette follows evolved body mass: armored foes visibly plant, fliers dart.
     // Pure presentation; no attack timings or server/replay decisions depend on this.
@@ -135,29 +147,33 @@ export class Scene {
     const flying = !!v.style?.flying;
     const reach = this.reduced ? 0.16 : heavy ? 0.3 : flying ? 0.54 : 0.42;
     const windup = this.reduced ? 0.045 : heavy ? 0.17 : flying ? 0.075 : 0.11;
-    await this.tween(windup, k => { v.lunge = [-dx / l * 0.1 * k, 0, -dz / l * 0.1 * k]; });
+    await this.tween(windup, k => { if (current()) v.lunge = [origin[0] * (1-k) - dx / l * 0.1 * k, 0, origin[2] * (1-k) - dz / l * 0.1 * k]; });
+    if (!current()) return;
     if (heavy && !this.reduced) this.addRing({ pos: [v.pos[0], 0.035, v.pos[2]], r0: 0.1, r1: 0.35, life: 0.2, col: [0.75, 0.63, 0.42], width: 0.03 });
-    await this.tween(this.reduced ? 0.05 : 0.08, k => { const e = ease(k); v.lunge = [dx / l * (reach * e - 0.1), 0, dz / l * (reach * e - 0.1)]; });
-    const back = v.lunge.slice(); this.tween(this.reduced ? 0.07 : 0.2, k => { v.lunge = back.map(c => c * (1 - k)); });
+    await this.tween(this.reduced ? 0.05 : 0.08, k => { if (!current()) return; const e = ease(k); v.lunge = [dx / l * (reach * e - 0.1), 0, dz / l * (reach * e - 0.1)]; });
+    if (!current()) return;
+    const back = v.lunge.slice(); this.tween(this.reduced ? 0.07 : 0.2, k => { if (current()) v.lunge = back.map(c => c * (1 - k)); });
   }
   hit(uid, color = [1, 0.6, 0.3], big = false, cold = false) {
     const v = this.units.get(uid); if (!v) return;
     v.flash = 1; v.flashCold = cold ? 1 : 0; v.anim = 'hurt'; v.animT = 0; if (!this.reduced) this.shake(big ? 0.1 : 0.04);
     const c = this.centerPos(uid); this.fx.burst(c, color, big ? 36 : 18, { speed: big ? 2.6 : 1.8 }); this.light(c, color, big ? 3.2 : 2.2, 0.25, big ? 2.2 : 1.4);
-    const back = v.lunge.slice(); const d = norm([v.pos[0] - this.focus[0] + 0.001, 0, v.pos[2] - this.focus[2]]);
-    this.tween(0.16, k => { const s = Math.sin(k * Math.PI) * (big ? 0.12 : 0.06); v.lunge = [back[0] + d[0] * s, 0, back[2] + d[2] * s]; });
+    // Recoil is independent of attack motion: a counter-hit cannot preserve an old lunge offset.
+    const motion = v.hitMotion = (v.hitMotion || 0) + 1;
+    const d = norm([v.pos[0] - this.focus[0] + 0.001, 0, v.pos[2] - this.focus[2]]);
+    this.tween(0.16, k => { if (this.units.get(uid) !== v || v.hitMotion !== motion) return; const s = k >= 1 ? 0 : Math.sin(k * Math.PI) * (big ? 0.12 : 0.06); v.recoil = [d[0] * s, 0, d[2] * s]; });
   }
   async death(uid, element = null) {
     const v = this.units.get(uid); if (!v) return;
     if (/Skeleton/i.test(v.key)) {   // v1.7.0: collapse into a bone pile, hold, then fade. The unit view is removed at once,
       const at = [v.pos[0], v.pos[1], v.pos[2]];   // so there is never an invisible blocker; the pile is a pure decal.
-      await this.tween(0.22, k => { v.squash = k * 1.4; v.dissolve = k * 0.6; }); this.removeUnit(uid);
+      await this.tween(0.22, k => { v.squash = k * 1.4; v.dissolve = k * 0.6; }); if (!this.removeUnit(uid, v)) return;
       this.addShadow({ tex: 'bones', seq: [{ at: 0, frame: [0, 0] }, { at: 0.18, frame: [1, 0] }], pos: at, size: 0.7, life: this.reduced ? 0.6 : 1.6, fadeIn: 0, fadeOut: 0.5 });
       return;
     }
     const timing = defeatTiming(v.animSet); v.anim = timing.authored ? 'defeat' : 'hurt'; v.animT = 0;
     const c = this.centerPos(uid); const colors={fire:[1,0.35,0.1],frost:[0.65,0.9,1],lightning:[0.5,0.7,1],void:[0.48,0.15,0.55],poison:[0.35,0.9,0.3],nature:[0.4,0.9,0.35],radiant:[1,0.9,0.5]}; const col=colors[element]||[0.95,0.85,0.55];this.fx.burst(c,col,44,{speed:2.2,up:element==='frost'?1:2});this.fx.burst(c,element==='void'?[0.16,0.06,0.18]:[0.3,0.2,0.15],18,{speed:1.2,up:0.5,size:18});if(element==='fire'||element==='frost'||element==='void')this.addRing({pos:[c[0],0.08,c[2]],r0:0.15,r1:0.85,life:0.5,col,width:0.07,spokes:element==='frost'?6:5});
-    await this.tween(timing.seconds, k => { const t = timing.fadeStart ? Math.max(0, (k - timing.fadeStart) / (1 - timing.fadeStart)) : k; v.dissolve = t; v.flash = 0.3 * (1 - t); }); this.removeUnit(uid);
+    await this.tween(timing.seconds, k => { const t = timing.fadeStart ? Math.max(0, (k - timing.fadeStart) / (1 - timing.fadeStart)) : k; v.dissolve = t; v.flash = 0.3 * (1 - t); }); this.removeUnit(uid, v);
   }
   async spawn(uid) { const v = this.units.get(uid); if (!v) return; v.dissolve = 1; this.fx.burst(v.pos, [0.4, 0.9, 0.35], 28, { speed: 1.2, up: 2 }); await this.tween(0.45, k => { v.dissolve = 1 - k; }); v.dissolve = 0; }
   async projectile(from, to, color, dur = 0.28, arc = 0.5, { embers = false, size = 30, molten = false } = {}) {
@@ -263,6 +279,9 @@ export class Scene {
     return n;
   }
   buildSprites(dt) {
+    // Reserve once before making batch views. Large fights/foliage/FX cannot overrun the old fixed 500-quad buffer.
+    const needed = (this.units.size + this.static.foliage.length + this.shadows.length) * 6 * SPR_FLOATS;
+    if (needed > this.sprBuf.length) this.sprBuf = new Float32Array(Math.max(needed, this.sprBuf.length * 2));
     const batches = [], man = this.man, cam = this.cam;
     const fwdH = [cam.fwd[0], cam.fwd[2]]; const rH = [cam.right[0], cam.right[2]];
     const byTex = new Map();
@@ -278,8 +297,10 @@ export class Scene {
         const pose = spriteAnimationFrame(v.anim, v.animT, anims);
         if (pose.reset) { v.anim = 'idle'; v.animT = 0; }
         const f = pose.frame;
-        const frontDot = v.dir[0] * fwdH[0] + v.dir[1] * fwdH[1];
-        const sideDot = v.dir[0] * rH[0] + v.dir[1] * rH[1];
+        // The angular dead zone must not depend on how far away the target was.
+        const length = Math.hypot(v.dir[0], v.dir[1]) || 1;
+        const frontDot = (v.dir[0] * fwdH[0] + v.dir[1] * fwdH[1]) / length;
+        const sideDot = (v.dir[0] * rH[0] + v.dir[1] * rH[1]) / length;
         const dirSel = chooseSpriteDirection(v.views || man.views, frontDot, sideDot), viewIndex = dirSel.index;
         // v1.7.0: native-facing aware mirroring with hysteresis (no idle flip-flopping)
         const hasSides = (v.views || man.views).includes('left'); const flip = hasSides ? dirSel.flip : (v.lastFlip = mirrorFor(man.sprites[v.key]?.facesRight ?? FACES_RIGHT.has(v.key), sideDot, v.lastFlip ?? false));
@@ -290,7 +311,7 @@ export class Scene {
         const wdt = v.fw * PX * s * pixelScale * (1 + sq * 0.06), hgt = v.fh * PX * HCOMP * s * pixelScale * (1 - sq * 0.07);
         const bob = v.hover ? Math.sin(this.time * 3 + v.uid) * 0.06 : 0;
         const ox = -(v.cx || 0) * (flip ? -1 : 1) * PX * s * pixelScale;   // v1.7.0 centre the ART (not the frame) on the tile
-        const c = [v.pos[0] + v.lunge[0] + rH[0] * ox, v.pos[1] + v.hover + (v.castLift || 0) + bob - (v.fh - v.pivot) * PX * HCOMP * s * pixelScale, v.pos[2] + v.lunge[2] + rH[1] * ox];
+        const c = [v.pos[0] + v.lunge[0] + (v.recoil?.[0] || 0) + rH[0] * ox, v.pos[1] + v.hover + (v.castLift || 0) + bob - (v.fh - v.pivot) * PX * HCOMP * s * pixelScale, v.pos[2] + v.lunge[2] + (v.recoil?.[2] || 0) + rH[1] * ox];
         v.flash = Math.max(0, v.flash - dt * 4);
         off = this.pushQuad(this.sprBuf, off, c, wdt, hgt, flip ? [u1, v0, u0, v1] : [u0, v0, u1, v1], [v.flash, v.dissolve, v.outline, v.flashCold]);
       }

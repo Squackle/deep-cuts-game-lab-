@@ -19,8 +19,9 @@ export const RANKED_CHALLENGES = {
 export const ACTIVE_CHALLENGE = 'gb-expedition-01';
 
 export function challengeFor(id, revision) {
+  if (typeof id !== 'string' || !Object.hasOwn(RANKED_CHALLENGES, id)) throw new Error('Unknown or retired challenge');
   const c = RANKED_CHALLENGES[id];
-  if (!c || (revision != null && c.revision !== revision)) throw new Error('Unknown or retired challenge');
+  if (revision != null && c.revision !== revision) throw new Error('Unknown or retired challenge');
   return c;
 }
 export function startRanked(id = ACTIVE_CHALLENGE) {
@@ -42,10 +43,14 @@ const SHAPES = {
 };
 /** Strict envelope validation: exact keys, typed values, contiguous sequence. */
 export function validDecision(d, seq) {
-  if (!d || typeof d !== 'object' || Array.isArray(d) || d.seq !== seq || !SHAPES[d.type]) return false;
+  if (!d || typeof d !== 'object' || Array.isArray(d)) return false;
+  const proto = Object.getPrototypeOf(d);
+  if (proto !== Object.prototype && proto !== null) return false;
+  if (!Object.hasOwn(d, 'seq') || !Object.hasOwn(d, 'type') || !Number.isSafeInteger(seq) || seq < 0 || d.seq !== seq ||
+      typeof d.type !== 'string' || !Object.hasOwn(SHAPES, d.type)) return false;
   const shape = SHAPES[d.type];
-  for (const k of Object.keys(d)) if (k !== 'seq' && k !== 'type' && !(k in shape)) return false;
-  return Object.entries(shape).every(([k, ok]) => ok(d[k]));
+  for (const k of Reflect.ownKeys(d)) if (k !== 'seq' && k !== 'type' && !Object.hasOwn(shape, k)) return false;
+  return Object.entries(shape).every(([k, ok]) => ok(Object.hasOwn(d, k) ? d[k] : undefined));
 }
 
 /** Apply ONE decision through the real engine. Throws on anything the engine would reject. */
@@ -91,8 +96,19 @@ export function replayRun(id, decisions, { revision, rulesVersion = RULES_VERSIO
 /** Server checkpoint step: continue an authoritative run state with a bounded segment of new decisions. */
 export function applySegment(checkpoint, decisions) {
   if (!Array.isArray(decisions) || !decisions.length || decisions.length > MAX_SEGMENT) throw new Error('Bad segment size');
+  const meta = checkpoint?.ranked;
+  if (!meta || typeof meta !== 'object') throw new Error('Not a ranked checkpoint');
+  if (meta.rulesVersion !== RULES_VERSION) throw new Error('Rules version mismatch');
+  const challenge = challengeFor(meta.challengeId, meta.revision);
+  if (meta.revision !== challenge.revision || meta.cardPoolVersion !== challenge.cardPoolVersion ||
+      meta.scoringVersion !== challenge.scoringVersion || meta.replay !== REPLAY_VERSION) {
+    throw new Error('Checkpoint metadata mismatch');
+  }
+  if (!Number.isSafeInteger(meta.seq) || meta.seq < 0 || meta.seq > MAX_DECISIONS ||
+      decisions.length > MAX_DECISIONS - meta.seq) throw new Error('Replay too long or invalid checkpoint sequence');
+  // Only trusted server-owned checkpoints may reach this function. These checks
+  // reject incompatible metadata; they do not authenticate arbitrary state.
   const run = structuredClone(checkpoint);
-  if (run.ranked.rulesVersion !== RULES_VERSION) throw new Error('Rules version mismatch');
   for (const d of decisions) applyDecision(run, d);
   return { run, totals: expeditionTotals(run) };
 }

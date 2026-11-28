@@ -208,6 +208,7 @@ export function createRenderer(canvas) {
     return { t, w: img.width, h: img.height };
   };
   R.updateTexture = (tex, img) => { gl.bindTexture(gl.TEXTURE_2D, tex.t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img); tex.w = img.width; tex.h = img.height; };
+  R.freeTexture = tex => { if (tex?.t) gl.deleteTexture(tex.t); };
   R.upload = data => { const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW); return { buf, count: data.length / STRIDE }; };
   R.dynamic = (m, data) => { if (!m) m = { buf: gl.createBuffer(), count: 0 }; gl.bindBuffer(gl.ARRAY_BUFFER, m.buf); gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW); m.count = data.length / STRIDE; return m; };
   R.free = m => { if (m && m.buf) gl.deleteBuffer(m.buf); };

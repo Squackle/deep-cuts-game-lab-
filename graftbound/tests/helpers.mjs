@@ -6,6 +6,7 @@ import { T, manhattan, tileAt } from '../src/core/grid.js';
 import { resolveCard } from '../src/cards/catalog.js';
 import { comboChoices, hasComboChoices } from '../src/engine/combo-triggers.js';
 import { chooseCombo } from '../src/engine/combat.js';
+import { selectTacticalCast } from './tactical-cast-policy.mjs';
 installReferenceSet();
 
 export function evoWith(...cards) { let e = newEvolution(); for (const c of cards) e = absorb(e, c).evo; return e; }
@@ -22,14 +23,18 @@ export function arena(rows, enemyMap, { evo = newEvolution(), spellbook = [], se
 }
 /** Greedy bot (deliberately simple; balance numbers are directional). */
 /** opts.tactics (default true): Guard when a foe threatens you and your attack went unused (v0.8). */
-export function botPlay(s, maxTurns = 40, { tactics = true } = {}) {
+export function botPlay(s, maxTurns = 40, { tactics = true, smarterSpells = false } = {}) {
   for (let t = 0; t < maxTurns; t++) {
-    if (s.phase !== 'player') return s.phase;
     if (s.phase !== 'player') return s.phase;
     const settle=()=>{let limit=0;while(hasComboChoices(s)&&limit++<64){const choice=comboChoices(s);const best=choice.choices.find(c=>c.arg===0)||choice.choices[0];if(!best)break;chooseCombo(s,choice.kind,best.arg);}};
     settle();
     const danger = new Set([...intents(s).flatMap(i => (i.kind === 'fire' || i.kind === 'slam') ? i.tiles.map(q => q.x + ',' + q.y) : []), ...hazardPreview(s).map(q => q.x + ',' + q.y)]);
-    for (const sp of s.spellbook) {
+    for (const sp of smarterSpells ? [...s.spellbook] : s.spellbook) {
+      if (smarterSpells) {
+        const action = selectTacticalCast(s, sp.id);
+        if (action) { cast(s, sp.id, action.x, action.y, 1, action.mode); settle(); if (s.phase !== 'player') return s.phase; }
+        continue;
+      }
       const c = resolveCard(sp.id); if (['blink_step'].includes(c.effect || sp.id)) continue;
       const opts = castOptions(s, sp.id); if (!opts.length) continue;
       if (c.category === 'healing' && player(s).hp > player(s).maxHp * 0.6) continue;
